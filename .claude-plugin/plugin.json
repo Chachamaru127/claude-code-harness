@@ -2,7 +2,9 @@
   "name": "cursor-cc-plugins",
   "version": "1.0.0",
   "description": "Cursor ↔ Claude Code 2エージェントワークフローを実現するプラグイン。PM（Cursor）とWorker（Claude Code）の役割分担、Plans.md管理、CI/CD自動修正を提供します。",
-  "author": "Cursor-CC Plugins",
+  "author": {
+    "name": "Cursor-CC Plugins"
+  },
   "license": "MIT",
   "keywords": [
     "cursor",
@@ -12,79 +14,17 @@
     "ci-cd",
     "vibecoder"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Chachamaru127/cursor-cc-plugins"
-  },
-  "components": {
-    "commands": [
-      {
-        "name": "init",
-        "path": "${CLAUDE_PLUGIN_ROOT}/commands/init.md",
-        "description": "プロジェクトをCursor-CC ワークフロー用にセットアップ。新規・既存プロジェクト両対応。"
-      },
-      {
-        "name": "start-task",
-        "path": "${CLAUDE_PLUGIN_ROOT}/commands/start-task.md",
-        "description": "Cursorから受け取ったタスクを開始。AGENTS.mdとPlans.mdを確認し作業準備。"
-      },
-      {
-        "name": "handoff-to-cursor",
-        "path": "${CLAUDE_PLUGIN_ROOT}/commands/handoff-to-cursor.md",
-        "description": "作業完了時にCursorへの引き継ぎレポートを生成。"
-      },
-      {
-        "name": "sync-status",
-        "path": "${CLAUDE_PLUGIN_ROOT}/commands/sync-status.md",
-        "description": "Plans.mdの現在状態を確認し、進捗サマリーを出力。"
-      }
-    ],
-    "agents": [
-      {
-        "name": "project-analyzer",
-        "path": "${CLAUDE_PLUGIN_ROOT}/agents/project-analyzer.md",
-        "description": "新規/既存プロジェクトを自動検出し、適切なセットアップフローを選択。"
-      },
-      {
-        "name": "ci-cd-fixer",
-        "path": "${CLAUDE_PLUGIN_ROOT}/agents/ci-cd-fixer.md",
-        "description": "CI失敗時の自動診断・修正。3回失敗でCursorにエスカレーション。"
-      },
-      {
-        "name": "project-state-updater",
-        "path": "${CLAUDE_PLUGIN_ROOT}/agents/project-state-updater.md",
-        "description": "セッション間のハンドオフとPlans.md状態同期を担当。"
-      }
-    ],
-    "skills": [
-      {
-        "name": "session-init",
-        "path": "${CLAUDE_PLUGIN_ROOT}/skills/session-init/SKILL.md",
-        "description": "セッション開始時の環境確認とタスク把握。"
-      },
-      {
-        "name": "workflow-guide",
-        "path": "${CLAUDE_PLUGIN_ROOT}/skills/workflow-guide/SKILL.md",
-        "description": "Cursor-CC ワークフローのガイダンス提供。"
-      },
-      {
-        "name": "plans-management",
-        "path": "${CLAUDE_PLUGIN_ROOT}/skills/plans-management/SKILL.md",
-        "description": "Plans.mdのタスク管理とマーカー運用。"
-      }
-    ]
-  },
-  "templates": {
-    "directory": "${CLAUDE_PLUGIN_ROOT}/templates",
-    "files": [
-      "AGENTS.md.template",
-      "CLAUDE.md.template",
-      "Plans.md.template",
-      "cursor/commands/assign-to-cc.md",
-      "cursor/commands/review-cc-work.md"
-    ]
-  },
-  "compatibility": {
-    "claudeCode": ">=1.0.0"
-  }
+  "repository": "https://github.com/Chachamaru127/cursor-cc-plugins",
+  "homepage": "https://github.com/Chachamaru127/cursor-cc-plugins",
+  "commands": [
+    "./commands/init.md",
+    "./commands/start-task.md",
+    "./commands/handoff-to-cursor.md",
+    "./commands/sync-status.md"
+  ],
+  "agents": [
+    "./agents/project-analyzer.md",
+    "./agents/ci-cd-fixer.md",
+    "./agents/project-state-updater.md"
+  ]
 }
