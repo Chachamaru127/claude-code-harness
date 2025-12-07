@@ -1,192 +1,231 @@
 # cursor-cc-plugins v2.2
 
-**VibeCoder が自然言語だけで高品質なプロジェクトを開発できる**
-Cursor ↔ Claude Code 2エージェントワークフロー
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blue)](https://docs.anthropic.com/en/docs/claude-code)
+
+**Build high-quality projects using only natural language.**
+
+A 2-agent workflow plugin for Cursor ↔ Claude Code collaboration, designed for VibeCoders who want to develop without deep technical knowledge.
 
 ---
 
-## ✨ v2.2 の新機能
+## Features
 
-### 🆕 v2.2 追加機能
-- 🎯 **ワンコマンドセットアップ**: `/setup-2agent` で Cursor + Claude Code 体制を一発構築
-- 🔧 **トラブルシューティング**: 「動かない」「壊れた」で自動診断・修復
-- 📋 **Cursor 連携強化**: PM 用コマンドも自動配置
+### v2.2 (Latest)
+- 🎯 **One-Command Setup**: `/setup-2agent` instantly configures the Cursor + Claude Code 2-agent system
+- 🔧 **Troubleshooting**: Say "it's broken" or "not working" for automatic diagnosis and repair
+- 📋 **Enhanced Cursor Integration**: PM commands auto-deployed to `.cursor/`
 
-### v2.1 機能
-- 🔧 **エラー自動修復**: ビルド/テストエラーを検出し最大3回自動修正
-- ⚡ **並列処理最適化**: 独立タスクを自動で並列実行（最大67%高速化）
-- 🧠 **セッション記憶**: 前回の作業内容・決定事項を自動記録・参照
+### v2.1
+- 🔧 **Auto Error Recovery**: Detects build/test errors and auto-fixes up to 3 times
+- ⚡ **Parallel Processing**: Independent tasks run in parallel (up to 67% faster)
+- 🧠 **Session Memory**: Automatically records and recalls previous work and decisions
 
-### v2.0 機能
-- 🚀 **Plan → Work → Review サイクル**: 計画 → 実装 → レビューの完全自動化
-- 🏗️ **実際のプロジェクト生成**: `create-next-app` 等を自動実行
-- 🔍 **コードレビュー**: セキュリティ・パフォーマンス・品質の自動チェック
-- 🪝 **ライフサイクルフック**: セッション開始時の自動状態確認
-- 💡 **VibeCoder ガイド**: 「どうすればいい？」で次のアクションを提示
-
----
-
-## 🎯 こんな人向け
-
-- 技術的な知識がなくてもアプリを作りたい（VibeCoder）
-- Cursor と Claude Code を連携させたい
-- 計画 → 実装 → レビューのサイクルを自動化したい
+### v2.0
+- 🚀 **Plan → Work → Review Cycle**: Fully automated planning, implementation, and review
+- 🏗️ **Real Project Generation**: Automatically runs `create-next-app`, etc.
+- 🔍 **Code Review**: Automated security, performance, and quality checks
+- 🪝 **Lifecycle Hooks**: Auto-checks project state on session start
+- 💡 **VibeCoder Guide**: Ask "what should I do?" to get next action suggestions
 
 ---
 
-## インストール
+## Who Is This For?
+
+- **VibeCoders**: Build apps without technical expertise using natural language
+- **Teams**: Coordinate work between Cursor (PM) and Claude Code (Worker)
+- **Developers**: Automate the plan → implement → review cycle
+
+---
+
+## Installation
 
 ```bash
-# マーケットプレースから追加
+# Add the marketplace
 /plugin marketplace add Chachamaru127/cursor-cc-plugins
 
-# プラグインをインストール
+# Install the plugin
 /plugin install cursor-cc-plugins
 ```
 
+### Project-Level Configuration (Team Sharing)
+
+Add to your project's `.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "cursor-cc-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "Chachamaru127/cursor-cc-plugins"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "cursor-cc-plugins@cursor-cc-marketplace": true
+  }
+}
+```
+
 ---
 
-## クイックスタート
+## Quick Start
 
-### VibeCoder 向け（技術知識不要）
+### For VibeCoders (No Technical Knowledge Required)
 
 ```
-あなた: 「ブログを作りたい」
+You: "I want to build a blog"
 
 Claude Code:
-1. 何点か質問（誰が使う？似てるサービスは？）
-2. 技術スタックを提案（Next.js + Supabase がおすすめ）
-3. プロジェクトを自動生成
-4. 「動かして」と言えば開発サーバー起動
+1. Asks a few questions (Who will use it? Similar services?)
+2. Suggests tech stack (Next.js + Supabase recommended)
+3. Auto-generates the project
+4. Say "run it" to start the dev server
 ```
 
-### コマンド一覧
+### Commands
 
-| コマンド | 用途 | 言い方の例 |
-|---------|------|-----------|
-| `/init` | プロジェクト開始 | 「ブログを作りたい」 |
-| `/setup-2agent` | 🆕 2エージェント体制構築 | 「Cursorと連携できるようにして」 |
-| `/plan` | 機能を計画に変換 | 「認証機能を追加したい」 |
-| `/work` | 計画を実行 | 「フェーズ1を始めて」 |
-| `/review` | コードレビュー | 「レビューして」 |
-| `/start-task` | タスク開始 | 「次のタスク」 |
-| `/handoff-to-cursor` | 完了報告 | 「終わった」 |
-| `/sync-status` | 状態確認 | 「今の状況は？」 |
+| Command | Purpose | Example Phrase |
+|---------|---------|----------------|
+| `/init` | Start a project | "I want to build a blog" |
+| `/setup-2agent` | Setup 2-agent system | "Setup Cursor integration" |
+| `/plan` | Convert feature to plan | "Add authentication" |
+| `/work` | Execute the plan | "Start phase 1" |
+| `/review` | Code review | "Review the code" |
+| `/start-task` | Start next task | "Next task" |
+| `/handoff-to-cursor` | Report completion | "Done" |
+| `/sync-status` | Check status | "What's the status?" |
 
 ---
 
-## 🔄 Plan → Work → Review サイクル
+## Plan → Work → Review Cycle
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                      /plan                              │
-│  「〇〇を作りたい」→ 構造化されたタスクリスト            │
-│  - WebSearch で最新技術を調査                           │
-│  - Plans.md にフェーズ分けして追加                      │
+│  "I want to build X" → Structured task list             │
+│  - WebSearch for latest tech recommendations            │
+│  - Adds phased tasks to Plans.md                        │
 └─────────────────────┬───────────────────────────────────┘
                       ▼
 ┌─────────────────────────────────────────────────────────┐
 │                      /work                              │
-│  計画を実行 → 実際のコードを生成                        │
-│  - TodoWrite で進捗追跡                                 │
-│  - create-next-app 等を実行                             │
-│  - ファイルを生成                                       │
+│  Execute plan → Generate actual code                    │
+│  - Track progress with TodoWrite                        │
+│  - Run create-next-app, etc.                            │
+│  - Generate files                                       │
 └─────────────────────┬───────────────────────────────────┘
                       ▼
 ┌─────────────────────────────────────────────────────────┐
 │                      /review                            │
-│  コード品質をチェック                                   │
-│  - セキュリティ                                         │
-│  - パフォーマンス                                       │
-│  - コード品質                                           │
+│  Check code quality                                     │
+│  - Security                                             │
+│  - Performance                                          │
+│  - Code quality                                         │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## エージェント一覧
+## Agents
 
-| エージェント | 用途 |
-|-------------|------|
-| project-analyzer | 新規/既存プロジェクト判定 |
-| project-scaffolder | プロジェクト構造の自動生成 |
-| code-reviewer | コード品質の多角的レビュー |
-| ci-cd-fixer | CI失敗時の自動修正（3回まで） |
-| project-state-updater | Plans.md 状態同期 |
-| error-recovery | 🆕 エラー検出・自動修復 |
-
----
-
-## スキル一覧
-
-| スキル | トリガーフレーズ |
-|--------|------------------|
-| session-init | 「セッション開始」「作業開始」 |
-| workflow-guide | 「ワークフローについて教えて」 |
-| plans-management | 「タスクを追加して」 |
-| vibecoder-guide | 「どうすればいい？」「次は？」 |
-| session-memory | 「前回何をした？」「前回の続きから」 |
-| parallel-workflows | 「並列で実行して」「まとめてやって」 |
-| troubleshoot | 🆕「動かない」「壊れた」「エラーが出た」 |
+| Agent | Purpose |
+|-------|---------|
+| project-analyzer | Detects new vs existing projects |
+| project-scaffolder | Auto-generates project structure |
+| code-reviewer | Multi-aspect code quality review |
+| ci-cd-fixer | Auto-fixes CI failures (up to 3 attempts) |
+| project-state-updater | Syncs Plans.md state |
+| error-recovery | Detects and auto-repairs errors |
 
 ---
 
-## VibeCoder 向けフレーズ対応表
+## Skills
 
-| やりたいこと | 言い方 |
-|-------------|--------|
-| プロジェクト開始 | 「〇〇を作りたい」 |
-| 続きをやる | 「続けて」「次」 |
-| 動作確認 | 「動かして」「見せて」 |
-| 機能追加 | 「〇〇を追加して」 |
-| レビュー | 「チェックして」「レビューして」 |
-| 困った時 | 「どうすればいい？」 |
-| 全部任せる | 「全部やって」「おまかせ」 |
-| エラー修正 | 「直して」「エラーを修正して」 |
-| 前回の続き | 「前回の続きから」「前回何をした？」 |
-| 高速実行 | 「まとめてやって」「並列で実行して」 |
-| トラブル解決 | 🆕「動かない」「壊れた」「診断して」 |
-| 2エージェント構築 | 🆕「Cursorと連携して」「2エージェントセットアップ」 |
+| Skill | Trigger Phrases |
+|-------|-----------------|
+| session-init | "start session", "begin work" |
+| workflow-guide | "explain the workflow" |
+| plans-management | "add a task" |
+| vibecoder-guide | "what should I do?", "what's next?" |
+| session-memory | "what did we do last time?", "continue from before" |
+| parallel-workflows | "run in parallel", "do these together" |
+| troubleshoot | "it's broken", "not working", "diagnose" |
 
 ---
 
-## Plans.md マーカー
+## Natural Language Phrases
 
-| マーカー | 意味 |
-|---------|------|
-| `cursor:依頼中` | Cursor から依頼 |
-| `cc:TODO` | 未着手 |
-| `cc:WIP` | 作業中 |
-| `cc:完了` | 完了（確認待ち） |
-| `cursor:確認済` | Cursor 確認完了 |
+| What You Want | What to Say |
+|---------------|-------------|
+| Start a project | "I want to build X" |
+| Continue work | "continue", "next" |
+| Run the app | "run it", "show me" |
+| Add a feature | "add X feature" |
+| Review code | "check it", "review" |
+| Get help | "what should I do?" |
+| Delegate everything | "do everything", "take over" |
+| Fix errors | "fix it", "repair the error" |
+| Resume previous work | "continue from last time" |
+| Speed up | "do these together", "run in parallel" |
+| Troubleshoot | "it's broken", "diagnose" |
+| Setup 2-agent | "setup Cursor integration" |
 
 ---
 
-## 2エージェント体制
+## Plans.md Markers
+
+| Marker | Meaning |
+|--------|---------|
+| `cursor:requested` | Requested by Cursor |
+| `cc:TODO` | Not started |
+| `cc:WIP` | Work in progress |
+| `cc:done` | Completed (awaiting review) |
+| `cursor:verified` | Verified by Cursor |
+
+---
+
+## 2-Agent Architecture
 
 ```
-Cursor (PM)          Claude Code (Worker)
-    │                       │
-    │  タスク依頼           │
-    │──────────────────────>│
-    │                       │
-    │                       │ 実装・テスト・コミット
-    │                       │
-    │  完了報告             │
-    │<──────────────────────│
-    │                       │
-    │ レビュー・本番判断     │
-    │                       │
+Cursor (PM)              Claude Code (Worker)
+    │                           │
+    │  Task Request             │
+    │──────────────────────────>│
+    │                           │
+    │                           │ Implement, Test, Commit
+    │                           │
+    │  Completion Report        │
+    │<──────────────────────────│
+    │                           │
+    │ Review & Deploy Decision  │
+    │                           │
 ```
 
+### Roles
+
+| Agent | Role | Responsibilities |
+|-------|------|------------------|
+| **Cursor (PM)** | Project Manager | Planning, review, production deployment decisions |
+| **Claude Code (Worker)** | Developer | Coding, testing, staging deployment |
+
 ---
 
-## ライセンス
+## Contributing
 
-MIT License
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ---
 
-## 作者
+## License
 
-Cursor-CC Plugins Contributors
+MIT License - see [LICENSE](LICENSE) for details.
+
+---
+
+## Links
+
+- [GitHub Repository](https://github.com/Chachamaru127/cursor-cc-plugins)
+- [Claude Code Documentation](https://docs.anthropic.com/en/docs/claude-code)
+- [Report Issues](https://github.com/Chachamaru127/cursor-cc-plugins/issues)
