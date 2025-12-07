@@ -5,8 +5,7 @@
     "version": "1.0.0"
   },
   "owner": {
-    "name": "JARVIS Project",
-    "email": "contact@vibecoding-japan.xyz"
+    "name": "Cursor-CC Plugins"
   },
   "plugins": [
     {
@@ -15,9 +14,9 @@
       "description": "Cursor（PM）と Claude Code（Worker）の2エージェント体制でプロジェクトを管理。Plans.md タスク管理、CI/CD 自動修正（3回ルール）、VibeCoder 向けセットアップを提供。",
       "version": "1.0.0",
       "author": {
-        "name": "JARVIS Project"
+        "name": "Cursor-CC Plugins"
       },
-      "homepage": "https://github.com/vibecoding-japan/cursor-cc-plugins",
+      "homepage": "https://github.com/Chachamaru127/cursor-cc-plugins",
       "license": "MIT",
       "keywords": [
         "cursor",

@@ -2,7 +2,7 @@
   "name": "cursor-cc-plugins",
   "version": "1.0.0",
   "description": "Cursor ↔ Claude Code 2エージェントワークフローを実現するプラグイン。PM（Cursor）とWorker（Claude Code）の役割分担、Plans.md管理、CI/CD自動修正を提供します。",
-  "author": "JARVIS Project",
+  "author": "Cursor-CC Plugins",
   "license": "MIT",
   "keywords": [
     "cursor",
@@ -14,7 +14,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/claude-code-plugins/cursor-cc-plugins"
+    "url": "https://github.com/Chachamaru127/cursor-cc-plugins"
   },
   "components": {
     "commands": [

@@ -20,7 +20,7 @@ PM（Cursor）とWorker（Claude Code）の役割分担、Plans.md管理、CI/CD
 ```bash
 # Claude Code のプラグインディレクトリにクローン
 cd ~/.claude/plugins/
-git clone https://github.com/claude-code-plugins/cursor-cc-plugins
+git clone https://github.com/Chachamaru127/cursor-cc-plugins
 ```
 
 または、Claude Code マーケットプレースからインストール。
@@ -149,4 +149,4 @@ Issue や Pull Request を歓迎します。
 
 ## 作者
 
-JARVIS Project
+Cursor-CC Plugins Contributors
