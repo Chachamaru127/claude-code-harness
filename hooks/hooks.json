@@ -1,0 +1,37 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '📋 セッション開始: Plans.md を確認中...' && cat Plans.md 2>/dev/null | head -30 || echo '⚠️ Plans.md が見つかりません。/cursor-cc-plugins:init でセットアップしてください。'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"📝 ファイル変更を記録: $(date '+%Y-%m-%d %H:%M')\" >> .claude/session-log.md 2>/dev/null || true"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '🔔 通知を受信しました'"
+          }
+        ]
+      }
+    ]
+  }
+}

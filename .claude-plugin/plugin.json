@@ -1,7 +1,7 @@
 {
   "name": "cursor-cc-plugins",
-  "version": "1.0.0",
-  "description": "Cursor ↔ Claude Code 2エージェントワークフローを実現するプラグイン。PM（Cursor）とWorker（Claude Code）の役割分担、Plans.md管理、CI/CD自動修正を提供します。",
+  "version": "2.0.0",
+  "description": "Cursor ↔ Claude Code 2エージェントワークフロー。VibeCoder が自然言語だけで高品質なプロジェクトを開発できる Plan→Work→Review サイクルを提供。",
   "author": {
     "name": "Cursor-CC Plugins"
   },
@@ -10,21 +10,29 @@
     "cursor",
     "workflow",
     "2-agent",
-    "plans-management",
+    "vibecoder",
+    "plan-work-review",
+    "project-scaffolding",
     "ci-cd",
-    "vibecoder"
+    "code-review"
   ],
   "repository": "https://github.com/Chachamaru127/cursor-cc-plugins",
   "homepage": "https://github.com/Chachamaru127/cursor-cc-plugins",
   "commands": [
     "./commands/init.md",
+    "./commands/plan.md",
+    "./commands/work.md",
+    "./commands/review.md",
     "./commands/start-task.md",
     "./commands/handoff-to-cursor.md",
     "./commands/sync-status.md"
   ],
   "agents": [
     "./agents/project-analyzer.md",
+    "./agents/project-scaffolder.md",
+    "./agents/code-reviewer.md",
     "./agents/ci-cd-fixer.md",
     "./agents/project-state-updater.md"
-  ]
+  ],
+  "hooks": "./hooks/hooks.json"
 }
