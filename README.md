@@ -7,6 +7,8 @@
 
 A 2-agent workflow plugin for Cursor ↔ Claude Code collaboration, designed for VibeCoders who want to develop without deep technical knowledge.
 
+English | [日本語](README.ja.md)
+
 ---
 
 ## Table of Contents
