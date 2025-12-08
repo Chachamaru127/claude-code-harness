@@ -1,11 +1,14 @@
-# cursor-cc-plugins v2.2
+# cursor-cc-plugins v3.0
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blue)](https://docs.anthropic.com/en/docs/claude-code)
+[![Safety First](https://img.shields.io/badge/Safety-First-green)](docs/ADMIN_GUIDE.md)
 
 **Build high-quality projects using only natural language.**
 
 A development workflow plugin for Claude Code, designed for VibeCoders who want to develop without deep technical knowledge. Optionally supports 2-agent collaboration with Cursor.
+
+> **v3.0 Highlights**: Safety-first design with configurable modes, path restrictions, and pre/post operation reports. See [Admin Guide](docs/ADMIN_GUIDE.md) for team deployment.
 
 English | [日本語](README.ja.md)
 
@@ -16,10 +19,11 @@ English | [日本語](README.ja.md)
 ## Table of Contents
 
 1. [What This Plugin Provides](#1-what-this-plugin-provides) - Commands and their purposes
-2. [How to Talk to Claude Code](#2-how-to-talk-to-claude-code) - Natural language → which feature runs
-3. [When Things Go Wrong](#3-when-things-go-wrong) - Troubleshooting and recovery
-4. [The Complete Development Flow](#4-the-complete-development-flow) - Visual guide from idea to completion
-5. [Advanced: 2-Agent Collaboration](#5-advanced-2-agent-collaboration) - Optional Cursor + Claude Code setup
+2. [Safety & Configuration](#2-safety--configuration) - Configurable safety modes and settings
+3. [How to Talk to Claude Code](#3-how-to-talk-to-claude-code) - Natural language → which feature runs
+4. [When Things Go Wrong](#4-when-things-go-wrong) - Troubleshooting and recovery
+5. [The Complete Development Flow](#5-the-complete-development-flow) - Visual guide from idea to completion
+6. [Advanced: 2-Agent Collaboration](#6-advanced-2-agent-collaboration) - Optional Cursor + Claude Code setup
 
 ---
 
@@ -44,6 +48,7 @@ This plugin gives you **8 commands** that automate the entire development proces
 | `/start-task` | Picks up the next task from the plan | **Keep momentum** - no decision fatigue about what's next |
 | `/handoff-to-cursor` | Creates a completion report (for 2-agent setup) | **Team handoff** - clean communication between agents |
 | `/setup-2agent` | Configures 2-agent collaboration (optional) | **Team setup** - enables Cursor + Claude Code workflow |
+| `/health-check` | Diagnoses environment and shows available features | **Troubleshooting** - verify your setup is correct |
 
 ### Automatic Features (No Command Needed)
 
@@ -56,7 +61,76 @@ This plugin gives you **8 commands** that automate the entire development proces
 
 ---
 
-## 2. How to Talk to Claude Code
+## 2. Safety & Configuration
+
+v3.0 introduces a **safety-first design** with configurable behavior modes. This protects against accidental destructive operations.
+
+### Safety Modes
+
+| Mode | What It Does | Use Case |
+|------|--------------|----------|
+| `dry-run` | Shows what would happen, no changes | **Default** - safe exploration |
+| `apply-local` | Makes changes locally, no push | Development - most common |
+| `apply-and-push` | Full automation including git push | CI/CD integration (careful!) |
+
+### Quick Setup
+
+Create `cursor-cc.config.json` in your project root:
+
+```json
+{
+  "safety": {
+    "mode": "apply-local",
+    "require_confirmation": true
+  },
+  "git": {
+    "allow_auto_commit": false,
+    "allow_auto_push": false,
+    "protected_branches": ["main", "master"]
+  },
+  "paths": {
+    "allowed_modify": ["src/", "app/", "components/"],
+    "protected": [".github/", ".env", "secrets/"]
+  }
+}
+```
+
+### What's Protected by Default
+
+| Permission | Default | Control |
+|-----------|---------|---------|
+| File read | ✅ Enabled | - |
+| File write | ✅ Enabled | `paths.allowed_modify` |
+| git commit | ❌ Disabled | `git.allow_auto_commit` |
+| git push | ❌ Disabled | `git.allow_auto_push` |
+| rm -rf | ❌ Disabled | `destructive_commands.allow_rm_rf` |
+| npm install | ✅ Enabled | `destructive_commands.allow_npm_install` |
+
+### Pre/Post Operation Reports
+
+All potentially dangerous operations now show:
+- **Pre-execution summary**: What will be done, which files affected
+- **Post-execution report**: What was done, what changed
+
+This ensures full transparency and auditability.
+
+### Team Deployment
+
+See [Admin Guide](docs/ADMIN_GUIDE.md) for:
+- Recommended configurations (personal/team/enterprise)
+- Risk evaluation per feature
+- Troubleshooting common issues
+
+### Limitations
+
+See [Limitations](docs/LIMITATIONS.md) for:
+- Supported OS and CI providers
+- Claude Code CLI vs Web restrictions
+- Known issues and workarounds
+
+---
+
+## 3. How to Talk to Claude Code
 
 You don't need to remember commands. Just say what you want naturally, and the right feature will activate automatically.
 
@@ -221,7 +295,7 @@ Claude Code (/work running):
 
 ---
 
-## 3. When Things Go Wrong
+## 4. When Things Go Wrong
 
 Problems happen. Here's how to handle them:
 
@@ -278,7 +352,7 @@ Claude Code (VibeCoder Guide):
 
 ---
 
-## 4. The Complete Development Flow
+## 5. The Complete Development Flow
 
 Here's how a typical project progresses from idea to completion:
 
@@ -505,7 +579,7 @@ RESULT: Complete todo app with create, due dates, complete, and delete
 
 ---
 
-## 5. Advanced: 2-Agent Collaboration
+## 6. Advanced: 2-Agent Collaboration
 
 > **This section is optional.** Most users can use Claude Code alone. This is for teams that want to split responsibilities between Cursor and Claude Code.
 

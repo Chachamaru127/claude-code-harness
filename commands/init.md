@@ -7,10 +7,36 @@ VibeCoder が自然言語だけで開発を始められるよう、プロジェ�
 
 ## このコマンドの特徴
 
-- 🎯 技術的な質問はしない（Claude Code が提案）
+- 🎯 技術選択は設定に基づく（auto/ask/fixed モード）
 - 🚀 実際のプロジェクトを生成（create-next-app 等を実行）
 - 📋 Plans.md に具体的なタスクを自動追加
 - 💡 「次に何を言えばいいか」を常に提示
+
+---
+
+## 設定の読み込み
+
+実行前に `cursor-cc.config.json` を確認：
+
+```json
+{
+  "scaffolding": {
+    "tech_choice_mode": "auto | ask | fixed",
+    "base_stack": "next-supabase | rails-postgres | express-mongodb | ...",
+    "allow_web_search": true
+  }
+}
+```
+
+**tech_choice_mode の動作**:
+
+| モード | 動作 | 使用場面 |
+|-------|------|---------|
+| `auto` | AI が最適な技術を提案（デフォルト） | VibeCoder 向け |
+| `ask` | 必ずユーザーに確認する | 複数選択肢がある場合 |
+| `fixed` | base_stack で指定した技術を使用 | 社内標準がある場合 |
+
+**設定がない場合のデフォルト**: `ask`（必ずユーザーに確認）
 
 ---
 
@@ -57,17 +83,24 @@ ls -la 2>/dev/null | head -10
 
 **回答を待つ**
 
-### Step 3: 技術スタックを調査・提案
+### Step 3: 技術スタックの決定（設定に基づく）
 
-**重要: ユーザーには技術的な質問をしない**
+**tech_choice_mode に応じて動作が変わる**:
 
-WebSearch で調査：
+#### モード: `fixed`（社内標準がある場合）
+
 ```
-"{{プロジェクトタイプ}} tech stack 2025 beginner friendly"
-"{{類似サービス}} architecture simple"
+cursor-cc.config.json の base_stack を使用:
+  - "next-supabase" → Next.js + Supabase + Tailwind
+  - "rails-postgres" → Ruby on Rails + PostgreSQL
+  - "express-mongodb" → Express.js + MongoDB
+  - "django-postgres" → Django + PostgreSQL
+  - "laravel-mysql" → Laravel + MySQL
+
+ユーザーには確認せず、指定されたスタックで作成を進める。
 ```
 
-調査結果を元に提案：
+#### モード: `ask`（デフォルト・推奨）
 
 > 💡 **「{{やりたいこと}}」なら、こんな構成がおすすめです：**
 >
@@ -80,11 +113,26 @@ WebSearch で調査：
 > - Next.js + FastAPI + PostgreSQL
 > - より柔軟だが、設定が少し多い
 >
-> **おすすめは 🅰️ です。後から変更もできます。**
+> **🅲️ その他**（指定がある場合）
+> - 「Rails で作りたい」「Python がいい」など
 >
-> どちらにしますか？（A / B / おまかせ）
+> どちらにしますか？（A / B / C / おまかせ）
 
 **回答を待つ**
+
+#### モード: `auto`（VibeCoder向け）
+
+```
+allow_web_search = true の場合:
+  WebSearch で調査：
+  "{{プロジェクトタイプ}} tech stack 2025 beginner friendly"
+  "{{類似サービス}} architecture simple"
+
+allow_web_search = false の場合:
+  デフォルトのシンプル構成（Next.js + Supabase）を提案
+
+ユーザーには「この構成で進めますね」と報告のみ。
+```
 
 ### Step 4: 最低限の確認
 

@@ -1,0 +1,173 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "cursor-cc-plugins Configuration",
+  "description": "Configuration schema for cursor-cc-plugins safety and behavior settings",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Config version for compatibility",
+      "default": "1.0"
+    },
+    "safety": {
+      "type": "object",
+      "description": "Safety controls for dangerous operations",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["dry-run", "apply-local", "apply-and-push"],
+          "default": "dry-run",
+          "description": "Operation mode: dry-run (show what would happen), apply-local (make changes but no push), apply-and-push (full automation - requires explicit enable)"
+        },
+        "require_confirmation": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require user confirmation before destructive operations"
+        },
+        "max_auto_retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5,
+          "default": 3,
+          "description": "Maximum automatic retry attempts before escalation"
+        }
+      },
+      "default": {}
+    },
+    "git": {
+      "type": "object",
+      "description": "Git operation controls",
+      "properties": {
+        "allow_auto_commit": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow automatic git commits without confirmation"
+        },
+        "allow_auto_push": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow automatic git push without confirmation (requires allow_auto_commit)"
+        },
+        "protected_branches": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["main", "master", "production"],
+          "description": "Branches where auto-push is never allowed"
+        },
+        "commit_prefix": {
+          "type": "string",
+          "default": "fix:",
+          "description": "Prefix for auto-generated commit messages"
+        }
+      },
+      "default": {}
+    },
+    "paths": {
+      "type": "object",
+      "description": "Path restrictions for file operations",
+      "properties": {
+        "allowed_modify": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["src/", "app/", "components/", "lib/", "pages/", "Plans.md", "AGENTS.md", "CLAUDE.md"],
+          "description": "Paths that can be modified (glob patterns supported)"
+        },
+        "protected": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": [".github/", ".gitlab/", "infra/", "k8s/", "terraform/", ".env", ".env.*", "credentials/", "secrets/"],
+          "description": "Paths that are never modified automatically"
+        },
+        "plans_file": {
+          "type": "string",
+          "default": "Plans.md",
+          "description": "Path to the plans/task file"
+        },
+        "agents_file": {
+          "type": "string",
+          "default": "AGENTS.md",
+          "description": "Path to the agents configuration file"
+        }
+      },
+      "default": {}
+    },
+    "ci": {
+      "type": "object",
+      "description": "CI/CD integration settings",
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": ["github_actions", "gitlab_ci", "circleci", "none", "auto"],
+          "default": "auto",
+          "description": "CI provider (auto = detect from config files)"
+        },
+        "enable_auto_fix": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable automatic CI error fixing (dangerous - requires explicit enable)"
+        },
+        "require_gh_cli": {
+          "type": "boolean",
+          "default": true,
+          "description": "Require gh CLI for GitHub Actions operations"
+        }
+      },
+      "default": {}
+    },
+    "scaffolding": {
+      "type": "object",
+      "description": "Project scaffolding settings",
+      "properties": {
+        "tech_choice_mode": {
+          "type": "string",
+          "enum": ["auto", "ask", "fixed"],
+          "default": "ask",
+          "description": "How to handle technology choices: auto (AI decides), ask (always ask user), fixed (use preset stack)"
+        },
+        "base_stack": {
+          "type": "string",
+          "description": "Preset technology stack when tech_choice_mode is 'fixed' (e.g., 'next-supabase', 'rails-postgres', 'express-mongodb')"
+        },
+        "allow_web_search": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow web search for technology recommendations"
+        },
+        "templates": {
+          "type": "object",
+          "description": "Custom template overrides",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "default": {}
+    },
+    "destructive_commands": {
+      "type": "object",
+      "description": "Controls for potentially destructive commands",
+      "properties": {
+        "allow_rm_rf": {
+          "type": "boolean",
+          "default": false,
+          "description": "Allow rm -rf commands (node_modules, etc.)"
+        },
+        "allow_npm_install": {
+          "type": "boolean",
+          "default": true,
+          "description": "Allow npm install commands"
+        },
+        "require_size_check": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check project size before destructive operations"
+        },
+        "max_files_to_modify": {
+          "type": "integer",
+          "default": 20,
+          "description": "Maximum number of files that can be modified in one operation"
+        }
+      },
+      "default": {}
+    }
+  },
+  "additionalProperties": false
+}

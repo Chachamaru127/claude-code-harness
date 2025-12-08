@@ -1,11 +1,14 @@
-# cursor-cc-plugins v2.2
+# cursor-cc-plugins v3.0
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blue)](https://docs.anthropic.com/en/docs/claude-code)
+[![Safety First](https://img.shields.io/badge/Safety-First-green)](docs/ADMIN_GUIDE.md)
 
 **自然言語だけで高品質なプロジェクトを開発できる**
 
 VibeCoder（技術知識がなくても開発したい人）向けの Claude Code 開発ワークフロープラグイン。オプションで Cursor との2エージェント協調もサポート。
+
+> **v3.0 ハイライト**: セーフティファースト設計。設定可能な動作モード、パス制限、事前/事後レポート機能を追加。チーム導入は [Admin Guide](docs/ADMIN_GUIDE.md) を参照。
 
 [English](README.md) | 日本語
 
@@ -16,10 +19,11 @@ VibeCoder（技術知識がなくても開発したい人）向けの Claude Cod
 ## 目次
 
 1. [このプラグインでできること](#1-このプラグインでできること) - コマンドとその目的
-2. [Claude Code への話しかけ方](#2-claude-code-への話しかけ方) - 自然言語 → どの機能が動くか
-3. [問題が起きたとき](#3-問題が起きたとき) - トラブルシューティングと復旧
-4. [開発フローの全体像](#4-開発フローの全体像) - アイデアから完成までの流れ
-5. [上級編：2エージェント協調](#5-上級編2エージェント協調) - Cursor + Claude Code のオプション設定
+2. [セーフティと設定](#2-セーフティと設定) - 設定可能なセーフティモード
+3. [Claude Code への話しかけ方](#3-claude-code-への話しかけ方) - 自然言語 → どの機能が動くか
+4. [問題が起きたとき](#4-問題が起きたとき) - トラブルシューティングと復旧
+5. [開発フローの全体像](#5-開発フローの全体像) - アイデアから完成までの流れ
+6. [上級編：2エージェント協調](#6-上級編2エージェント協調) - Cursor + Claude Code のオプション設定
 
 ---
 
@@ -44,6 +48,7 @@ VibeCoder（技術知識がなくても開発したい人）向けの Claude Cod
 | `/start-task` | 計画から次のタスクを開始 | **勢いを維持** - 次に何をするか迷わない |
 | `/handoff-to-cursor` | 完了レポートを作成（2エージェント設定用） | **チーム引き継ぎ** - エージェント間のきれいなコミュニケーション |
 | `/setup-2agent` | 2エージェント協調を設定（オプション） | **チームセットアップ** - Cursor + Claude Code ワークフローを有効化 |
+| `/health-check` | 環境を診断し、使用可能な機能を表示 | **トラブルシューティング** - セットアップが正しいか確認 |
 
 ### 自動機能（コマンド不要）
 
@@ -56,7 +61,76 @@ VibeCoder（技術知識がなくても開発したい人）向けの Claude Cod
 
 ---
 
-## 2. Claude Code への話しかけ方
+## 2. セーフティと設定
+
+v3.0 では**セーフティファースト設計**を導入。設定可能な動作モードで、意図しない破壊的操作から保護します。
+
+### セーフティモード
+
+| モード | 動作 | 使用場面 |
+|--------|------|---------|
+| `dry-run` | 何が起きるか表示、変更なし | **デフォルト** - 安全に探索 |
+| `apply-local` | ローカルで変更、push なし | 開発時 - 最も一般的 |
+| `apply-and-push` | git push を含む完全自動化 | CI/CD 統合（注意!） |
+
+### クイックセットアップ
+
+プロジェクトルートに `cursor-cc.config.json` を作成：
+
+```json
+{
+  "safety": {
+    "mode": "apply-local",
+    "require_confirmation": true
+  },
+  "git": {
+    "allow_auto_commit": false,
+    "allow_auto_push": false,
+    "protected_branches": ["main", "master"]
+  },
+  "paths": {
+    "allowed_modify": ["src/", "app/", "components/"],
+    "protected": [".github/", ".env", "secrets/"]
+  }
+}
+```
+
+### デフォルトで保護されるもの
+
+| 権限 | デフォルト | 制御 |
+|------|---------|------|
+| ファイル読み取り | ✅ 有効 | - |
+| ファイル書き込み | ✅ 有効 | `paths.allowed_modify` |
+| git commit | ❌ 無効 | `git.allow_auto_commit` |
+| git push | ❌ 無効 | `git.allow_auto_push` |
+| rm -rf | ❌ 無効 | `destructive_commands.allow_rm_rf` |
+| npm install | ✅ 有効 | `destructive_commands.allow_npm_install` |
+
+### 事前/事後レポート
+
+危険な可能性のある操作はすべて以下を表示：
+- **事前サマリ**: 何をするか、どのファイルに影響するか
+- **事後レポート**: 何をしたか、何が変わったか
+
+これにより完全な透明性と監査可能性を確保します。
+
+### チーム導入
+
+[Admin Guide](docs/ADMIN_GUIDE.md) を参照：
+- 推奨設定（個人/チーム/エンタープライズ）
+- 機能ごとのリスク評価
+- よくある問題のトラブルシューティング
+
+### 制限事項
+
+[Limitations](docs/LIMITATIONS.md) を参照：
+- 対応 OS と CI プロバイダー
+- Claude Code CLI vs Web の制限
+- 既知の問題と回避策
+
+---
+
+## 3. Claude Code への話しかけ方
 
 コマンドを覚える必要はありません。やりたいことを自然に話すだけで、適切な機能が自動的に起動します。
 
@@ -221,7 +295,7 @@ Claude Code (/work 実行中):
 
 ---
 
-## 3. 問題が起きたとき
+## 4. 問題が起きたとき
 
 問題は起きます。対処方法はこちら：
 
@@ -278,7 +352,7 @@ Claude Code (VibeCoder ガイド):
 
 ---
 
-## 4. 開発フローの全体像
+## 5. 開発フローの全体像
 
 アイデアから完成までの典型的なプロジェクトの流れ：
 
@@ -505,7 +579,7 @@ Claude Code (VibeCoder ガイド):
 
 ---
 
-## 5. 上級編：2エージェント協調
+## 6. 上級編：2エージェント協調
 
 > **このセクションはオプションです。** ほとんどのユーザーは Claude Code 単体で使えます。これは、Cursor と Claude Code で責任を分担したいチーム向けです。
 
