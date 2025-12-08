@@ -1,6 +1,6 @@
 {
   "name": "cursor-cc-plugins",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "Cursor ↔ Claude Code 2エージェントワークフロー。VibeCoder が自然言語だけで高品質なプロジェクトを開発できる Plan→Work→Review サイクルを提供。ワンコマンドセットアップ・エラー自動修復・トラブルシューティング機能付き。",
   "author": {
     "name": "Cursor-CC Plugins"
