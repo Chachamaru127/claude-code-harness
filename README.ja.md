@@ -9,6 +9,8 @@ VibeCoder（技術知識がなくても開発したい人）向けの Claude Cod
 
 [English](README.md) | 日本語
 
+![2つのAI、1つのシームレスなワークフロー - Cursorが計画、Claude Codeが構築](docs/images/workflow-ja.png)
+
 ---
 
 ## 目次

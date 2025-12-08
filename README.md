@@ -9,6 +9,8 @@ A development workflow plugin for Claude Code, designed for VibeCoders who want 
 
 English | [日本語](README.ja.md)
 
+![Two AIs, One Seamless Workflow - Cursor plans, Claude Code builds](docs/images/workflow-en.png)
+
 ---
 
 ## Table of Contents
