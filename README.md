@@ -5,7 +5,7 @@
 
 **Build high-quality projects using only natural language.**
 
-A 2-agent workflow plugin for Cursor ↔ Claude Code collaboration, designed for VibeCoders who want to develop without deep technical knowledge.
+A development workflow plugin for Claude Code, designed for VibeCoders who want to develop without deep technical knowledge. Optionally supports 2-agent collaboration with Cursor.
 
 English | [日本語](README.ja.md)
 
@@ -17,6 +17,7 @@ English | [日本語](README.ja.md)
 2. [How to Talk to Claude Code](#2-how-to-talk-to-claude-code) - Natural language → which feature runs
 3. [When Things Go Wrong](#3-when-things-go-wrong) - Troubleshooting and recovery
 4. [The Complete Development Flow](#4-the-complete-development-flow) - Visual guide from idea to completion
+5. [Advanced: 2-Agent Collaboration](#5-advanced-2-agent-collaboration) - Optional Cursor + Claude Code setup
 
 ---
 
@@ -39,8 +40,8 @@ This plugin gives you **8 commands** that automate the entire development proces
 |---------|--------------|-----------------|
 | `/sync-status` | Shows current progress and what's left to do | **Stay oriented** - know where you are at any time |
 | `/start-task` | Picks up the next task from the plan | **Keep momentum** - no decision fatigue about what's next |
-| `/handoff-to-cursor` | Creates a completion report for the PM (Cursor) | **Team handoff** - clean communication between agents |
-| `/setup-2agent` | Configures both Cursor and Claude Code for teamwork | **Team setup** - one command to enable 2-agent collaboration |
+| `/handoff-to-cursor` | Creates a completion report (for 2-agent setup) | **Team handoff** - clean communication between agents |
+| `/setup-2agent` | Configures 2-agent collaboration (optional) | **Team setup** - enables Cursor + Claude Code workflow |
 
 ### Automatic Features (No Command Needed)
 
@@ -502,6 +503,80 @@ RESULT: Complete todo app with create, due dates, complete, and delete
 
 ---
 
+## 5. Advanced: 2-Agent Collaboration
+
+> **This section is optional.** Most users can use Claude Code alone. This is for teams that want to split responsibilities between Cursor and Claude Code.
+
+### When to Use 2-Agent Setup
+
+- Large projects with multiple developers
+- Teams that want clear separation between planning (PM) and implementation (Worker)
+- Projects requiring formal review/approval workflows
+
+### Roles
+
+| Agent | Role | Responsibilities |
+|-------|------|------------------|
+| **Cursor** | PM (Project Manager) | Planning, task assignment, code review, production deployment decisions |
+| **Claude Code** | Worker (Developer) | Implementation, testing, staging deployment, completion reports |
+
+### Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         2-AGENT COLLABORATION FLOW                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   Cursor (PM)                              Claude Code (Worker)             │
+│       │                                           │                         │
+│       │  1. Plan feature & assign task            │                         │
+│       │  ────────────────────────────────────────>│                         │
+│       │     "Build user authentication"           │                         │
+│       │                                           │                         │
+│       │                                           │  2. /start-task         │
+│       │                                           │     /plan → /work       │
+│       │                                           │     Implement & test    │
+│       │                                           │                         │
+│       │  3. Completion report                     │                         │
+│       │  <────────────────────────────────────────│                         │
+│       │     /handoff-to-cursor                    │                         │
+│       │                                           │                         │
+│       │  4. Review & approve                      │                         │
+│       │     (or request changes)                  │                         │
+│       │                                           │                         │
+│       │  5. Deploy to production                  │                         │
+│       │     (PM responsibility)                   │                         │
+│       │                                           │                         │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Setup
+
+Run `/setup-2agent` to configure both agents with the necessary files:
+
+```
+Files created:
+├── AGENTS.md           # Shared rules for both agents
+├── CLAUDE.md           # Claude Code specific settings
+├── Plans.md            # Shared task tracking
+└── .cursor/
+    └── commands/
+        ├── assign-to-cc.md      # For PM to assign tasks
+        └── review-cc-work.md    # For PM to review completions
+```
+
+### Task Status Markers
+
+| Marker | Meaning | Who Sets It |
+|--------|---------|-------------|
+| `cursor:requested` | Task assigned by PM | Cursor |
+| `cc:TODO` | Not started | Claude Code |
+| `cc:WIP` | Work in progress | Claude Code |
+| `cc:done` | Completed, awaiting review | Claude Code |
+| `cursor:verified` | Reviewed and approved | Cursor |
+
+---
+
 ## Installation
 
 ```bash
@@ -531,31 +606,6 @@ To share with your team, add to `.claude/settings.json`:
   }
 }
 ```
-
----
-
-## For Teams: 2-Agent Collaboration
-
-For teams using Cursor (PM) and Claude Code (Worker) together:
-
-```
-Cursor (PM)              Claude Code (Worker)
-    │                           │
-    │  "Build login feature"    │
-    │──────────────────────────>│
-    │                           │
-    │                           │ /plan + /work
-    │                           │
-    │  "Done!" (/handoff)       │
-    │<──────────────────────────│
-    │                           │
-    │ Reviews and approves      │
-```
-
-| Agent | Role | Responsibilities |
-|-------|------|------------------|
-| **Cursor** | PM | Plans features, reviews work, deploys to production |
-| **Claude Code** | Worker | Writes code, tests, deploys to staging |
 
 ---
 
