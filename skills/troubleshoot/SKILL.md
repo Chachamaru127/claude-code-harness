@@ -1,3 +1,13 @@
+---
+name: ccp-troubleshoot
+description: "問題発生時の診断と解決をガイドするスキル"
+metadata:
+  skillport:
+    category: worker
+    tags: [troubleshoot, debug, error, diagnosis]
+    alwaysApply: false
+---
+
 # Troubleshoot Skill
 
 問題発生時の診断と解決をガイドするスキル。

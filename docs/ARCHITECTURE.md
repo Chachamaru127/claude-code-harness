@@ -1,15 +1,15 @@
-# cursor-cc-plugins v2 Architecture
+# cursor-cc-plugins v3 Architecture
 
-> **Version**: 2.0
+> **Version**: 3.0
 > **Last Updated**: 2025-12-09
 
-This document describes the internal architecture of cursor-cc-plugins v2, which introduces a 3-layer Skill / Workflow / Profile separation.
+This document describes the internal architecture of cursor-cc-plugins v3, which introduces a 3-layer Skill / Workflow / Profile separation.
 
 ---
 
 ## Overview
 
-cursor-cc-plugins v2 uses a modular architecture with three main layers:
+cursor-cc-plugins v3 uses a modular architecture with three main layers:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -211,7 +211,7 @@ output_style:
 
 ## SkillPort Integration
 
-cursor-cc-plugins v2 integrates with [SkillPort](https://github.com/Chachamaru127/skillport) for skill sharing between Cursor and Claude Code.
+cursor-cc-plugins v3 integrates with [SkillPort](https://github.com/Chachamaru127/skillport) for skill sharing between Cursor and Claude Code.
 
 ### Pattern A: External Tool (Recommended)
 
@@ -264,9 +264,9 @@ Claude Code reads skills directly from the filesystem. No additional configurati
 
 ## Backward Compatibility
 
-v2 maintains full backward compatibility with existing commands:
+v3 maintains full backward compatibility with existing commands:
 
-| v1 Command | v2 Behavior |
+| v1 Command | v3 Behavior |
 |------------|-------------|
 | `/init` | Triggers `init.yaml` workflow |
 | `/plan` | Triggers `plan.yaml` workflow |

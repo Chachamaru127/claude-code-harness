@@ -1,3 +1,13 @@
+---
+name: ccp-session-memory
+description: "セッション間の学習と記憶を管理するスキル"
+metadata:
+  skillport:
+    category: core
+    tags: [session, memory, history, context]
+    alwaysApply: false
+---
+
 # Session Memory Skill
 
 セッション間の学習と記憶を管理するスキル。

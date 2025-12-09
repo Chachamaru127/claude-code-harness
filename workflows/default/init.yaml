@@ -59,8 +59,9 @@ steps:
     skill: ccp-generate-workflow-files
     input:
       templates:
-        - generators/agents.md.tpl
-        - generators/plans.md.tpl
+        - templates/AGENTS.md.template
+        - templates/CLAUDE.md.template
+        - templates/Plans.md.template
       context_from:
         - project_context
     output:

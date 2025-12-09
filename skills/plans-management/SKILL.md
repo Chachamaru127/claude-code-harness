@@ -1,3 +1,13 @@
+---
+name: ccp-plans-management
+description: "Plans.md のタスク管理とマーカー運用を行うスキル"
+metadata:
+  skillport:
+    category: pm
+    tags: [plans, task, management, marker]
+    alwaysApply: false
+---
+
 # Plans Management Skill
 
 Plans.md のタスク管理とマーカー運用を行うスキル。

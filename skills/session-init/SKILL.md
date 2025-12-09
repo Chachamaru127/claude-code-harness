@@ -1,3 +1,13 @@
+---
+name: ccp-session-init
+description: "セッション開始時の環境確認と現在のタスク状況把握を行うスキル"
+metadata:
+  skillport:
+    category: core
+    tags: [session, init, startup, status]
+    alwaysApply: false
+---
+
 # Session Init Skill
 
 セッション開始時の環境確認と現在のタスク状況把握を行うスキル。

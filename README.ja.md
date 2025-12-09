@@ -24,7 +24,7 @@ VibeCoder（技術知識がなくても開発したい人）向けの Claude Cod
 4. [問題が起きたとき](#4-問題が起きたとき) - トラブルシューティングと復旧
 5. [開発フローの全体像](#5-開発フローの全体像) - アイデアから完成までの流れ
 6. [上級編：2エージェント協調](#6-上級編2エージェント協調) - Cursor + Claude Code のオプション設定
-7. [アーキテクチャ (v2)](#7-アーキテクチャ-v2) - Skill/Workflow/Profile アーキテクチャと SkillPort 連携
+7. [アーキテクチャ](#7-アーキテクチャ) - Skill/Workflow/Profile アーキテクチャと SkillPort 連携
 
 ---
 
@@ -725,13 +725,13 @@ Claude Code (VibeCoder ガイド):
 
 ---
 
-## 7. アーキテクチャ (v2)
+## 7. アーキテクチャ
 
-> **v2 の新機能**: Skill / Workflow / Profile 分離によるモジュラーアーキテクチャ。詳細は [Architecture Documentation](docs/ARCHITECTURE.md) を参照。
+> **v3 の新機能**: Skill / Workflow / Profile 分離によるモジュラーアーキテクチャ。詳細は [Architecture Documentation](docs/ARCHITECTURE.md) を参照。
 
 ### 概要
 
-cursor-cc-plugins v2 は3層アーキテクチャを導入:
+cursor-cc-plugins v3 は3層アーキテクチャを導入:
 
 ```
 ┌────────────────────────────────────────────────────────────┐

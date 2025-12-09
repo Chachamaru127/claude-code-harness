@@ -1,3 +1,13 @@
+---
+name: ccp-parallel-workflows
+description: "複数タスクの並列実行を最適化するスキル"
+metadata:
+  skillport:
+    category: worker
+    tags: [parallel, workflow, optimization, concurrent]
+    alwaysApply: false
+---
+
 # Parallel Workflows Skill
 
 複数タスクの並列実行を最適化するスキル。

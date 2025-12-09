@@ -1,3 +1,13 @@
+---
+name: ccp-workflow-guide
+description: "Cursor ↔ Claude Code 2エージェントワークフローのガイダンスを提供するスキル"
+metadata:
+  skillport:
+    category: core
+    tags: [workflow, guide, cursor, collaboration]
+    alwaysApply: false
+---
+
 # Workflow Guide Skill
 
 Cursor ↔ Claude Code 2エージェントワークフローのガイダンスを提供するスキル。

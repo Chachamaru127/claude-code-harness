@@ -24,7 +24,7 @@ English | [日本語](README.ja.md)
 4. [When Things Go Wrong](#4-when-things-go-wrong) - Troubleshooting and recovery
 5. [The Complete Development Flow](#5-the-complete-development-flow) - Visual guide from idea to completion
 6. [Advanced: 2-Agent Collaboration](#6-advanced-2-agent-collaboration) - Optional Cursor + Claude Code setup
-7. [Architecture (v2)](#7-architecture-v2) - Skill/Workflow/Profile architecture and SkillPort integration
+7. [Architecture](#7-architecture) - Skill/Workflow/Profile architecture and SkillPort integration
 
 ---
 
@@ -727,13 +727,13 @@ To share with your team, add to `.claude/settings.json`:
 
 ---
 
-## 7. Architecture (v2)
+## 7. Architecture
 
-> **New in v2**: Modular architecture with Skill / Workflow / Profile separation. See [Architecture Documentation](docs/ARCHITECTURE.md) for full details.
+> **New in v3**: Modular architecture with Skill / Workflow / Profile separation. See [Architecture Documentation](docs/ARCHITECTURE.md) for full details.
 
 ### Overview
 
-cursor-cc-plugins v2 introduces a 3-layer architecture:
+cursor-cc-plugins v3 introduces a 3-layer architecture:
 
 ```
 ┌────────────────────────────────────────────────────────────┐

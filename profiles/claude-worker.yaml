@@ -29,11 +29,15 @@ skills:
       - ci           # CI 失敗分析・修正
     exclude: []      # 必要に応じて pm も使用可能
 
-# Plans.md でのマーカー
+# Plans.md でのマーカー（日本語・英語両方を認識）
 markers:
-  todo: "cc:TODO"
-  wip: "cc:WIP"
-  done: "cc:完了"
+  todo:
+    - "cc:TODO"
+  wip:
+    - "cc:WIP"
+  done:
+    - "cc:完了"
+    - "cc:done"
 
 # 制約事項
 constraints:
