@@ -16,6 +16,61 @@ VibeCoder（技術知識がなくても開発したい人）向けの Claude Cod
 
 ---
 
+## 🚀 クイックスタート: モードを選択
+
+**まず、どのモードで開発するか決めてください：**
+
+| モード | 最初に話す相手 | おすすめ |
+|--------|---------------|----------|
+| **🅰️ Solo** | Claude Code | 個人プロジェクト、クイックプロトタイプ |
+| **🅱️ 2-Agent** | **Cursor** | チームプロジェクト、正式な計画が必要な場合 |
+
+### 🅰️ Solo モード（Claude Code のみ）
+
+```bash
+# 1. インストール
+/plugin marketplace add Chachamaru127/cursor-cc-plugins
+/plugin install cursor-cc-plugins
+
+# 2. 開始
+「ブログアプリを作りたい」
+
+# 3. 以上！
+```
+
+### 🅱️ 2-Agent モード（Cursor + Claude Code）
+
+```
+⚠️ 最初は Cursor に相談！Claude Code ではない！
+
+1. [Cursor] 「ブログアプリを作りたい」
+   → Cursor が計画作成 → /assign-to-cc
+
+2. [あなた] タスクをコピー → Claude Code に貼り付け
+
+3. [Claude Code] /start-task → 実装 → /handoff-to-cursor
+
+4. [あなた] 結果をコピー → Cursor に貼り付け
+
+5. [Cursor] レビュー → 本番デプロイ
+```
+
+> 💡 Claude Code で `/setup-2agent` を実行して必要なファイルをセットアップ。
+
+---
+
+## ⚡ v2 からのアップグレード
+
+| 質問 | 回答 |
+|------|------|
+| プロジェクトが壊れる？ | **いいえ** - v2 のコマンドはそのまま動く |
+| v3 で何が変わった？ | セーフティ設定、Skill/Workflow/Profile アーキテクチャ |
+| 何か変更が必要？ | Advanced モード機能を使いたい場合のみ |
+
+**破壊的変更**: なし。Simple モード = v2 と同じ。
+
+---
+
 ## 目次
 
 1. [このプラグインでできること](#1-このプラグインでできること) - コマンドとその目的
@@ -760,6 +815,23 @@ cursor-cc-plugins v3 は3層アーキテクチャを導入:
 | `ci` | CI失敗対応 | analyze-failures, fix-tests |
 
 ### SkillPort 連携
+
+**SkillPort を使うべき？**
+
+| あなたは... | 結論 |
+|-------------|------|
+| 個人開発者 | **不要** - そのまま使える |
+| チームでスキルを共有したい | **推奨** - チーム全体でスキルを共有 |
+| Cursor + Claude Code 両方使う | **便利** - 同じスキル定義を共有 |
+
+**SkillPort あり vs なし:**
+
+| 項目 | なし | あり |
+|------|------|------|
+| セットアップ | 不要 | MCP 設定が必要 |
+| スキル共有 | ローカルのみ | チーム全体で配布可能 |
+| マルチツール対応 | Claude Code のみ | Cursor + Claude Code + 他の MCP クライアント |
+| 推奨対象 | 個人利用 | チーム・企業 |
 
 [SkillPort](https://github.com/Chachamaru127/skillport) MCP サーバー経由で Cursor と Claude Code 間でスキルを共有:
 

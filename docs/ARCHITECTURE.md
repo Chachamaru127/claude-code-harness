@@ -370,6 +370,95 @@ After max retries, Claude Code escalates to Cursor with:
 
 ---
 
+## Concrete Example: Tracing /init Workflow
+
+This section shows exactly how a workflow calls skills, so you can understand and extend them.
+
+### Step 1: User runs /init
+
+```
+User: "I want to build a blog app"
+```
+
+### Step 2: Workflow YAML is loaded
+
+**File**: `workflows/default/init.yaml`
+
+```yaml
+phase: init
+description: "プロジェクトを初期化し、開発ワークフローをセットアップする"
+
+steps:
+  - id: read-context
+    skill: ccp-core-read-repo-context  # ← This skill is called
+    input:
+      files:
+        - README.md
+        - package.json
+    mode: required
+```
+
+### Step 3: Skill is executed
+
+**File**: `skills/core/ccp-core-read-repo-context/SKILL.md`
+
+```markdown
+---
+name: ccp-core-read-repo-context
+description: "リポジトリのコンテキストを読み取り理解する"
+metadata:
+  skillport:
+    category: core
+---
+
+# Read Repository Context
+
+リポジトリの構造とコンテキストを把握するためのスキル。
+
+## 実行手順
+
+### Step 1: 基本構造の把握
+- ls -la
+- find . -maxdepth 2 -type d
+- cat README.md
+...
+```
+
+### Step 4: What happens in the conversation
+
+```
+Claude Code: (ccp-core-read-repo-context executing)
+"プロジェクトを確認しています...
+
+📁 現在のディレクトリ: 空のフォルダ
+📝 README.md: なし
+📦 package.json: なし
+
+→ 新規プロジェクトとして初期化します"
+
+Claude Code: (ccp-init-requirements executing)
+"🎯 どんなものを作りたいですか？"
+```
+
+### Complete Skill Chain for /init
+
+| Step | Skill | File Location |
+|------|-------|---------------|
+| 1 | ccp-core-read-repo-context | `skills/core/ccp-core-read-repo-context/SKILL.md` |
+| 2 | ccp-init-requirements | `skills/pm/ccp-init-requirements/SKILL.md` |
+| 3 | ccp-project-scaffolder | `skills/core/ccp-project-scaffolder/SKILL.md` |
+| 4 | ccp-generate-workflow-files | `skills/core/ccp-generate-workflow-files/SKILL.md` |
+| 5 | ccp-plan-review | `skills/pm/ccp-plan-review/SKILL.md` |
+| 6 | ccp-vibecoder-guide | `skills/core/ccp-vibecoder-guide/SKILL.md` |
+
+### Adding Your Own Skill
+
+1. Create: `skills/worker/ccp-my-custom-skill/SKILL.md`
+2. Add frontmatter with `name`, `description`, `metadata.skillport.category`
+3. Reference in workflow: `skill: ccp-my-custom-skill`
+
+---
+
 ## Related Documents
 
 - [Admin Guide](ADMIN_GUIDE.md) - Team deployment and configuration

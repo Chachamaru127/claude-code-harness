@@ -16,6 +16,61 @@ English | [日本語](README.ja.md)
 
 ---
 
+## 🚀 Quick Start: Choose Your Mode
+
+**First, decide how you want to work:**
+
+| Mode | Who to talk to first | Best for |
+|------|---------------------|----------|
+| **🅰️ Solo** | Claude Code | Personal projects, quick prototypes |
+| **🅱️ 2-Agent** | **Cursor** | Team projects, formal planning |
+
+### 🅰️ Solo Mode (Claude Code only)
+
+```bash
+# 1. Install
+/plugin marketplace add Chachamaru127/cursor-cc-plugins
+/plugin install cursor-cc-plugins
+
+# 2. Start
+"I want to build a blog app"
+
+# 3. That's it!
+```
+
+### 🅱️ 2-Agent Mode (Cursor + Claude Code)
+
+```
+⚠️ Start with Cursor, NOT Claude Code!
+
+1. [Cursor] "I want to build a blog app"
+   → Cursor creates plan → /assign-to-cc
+
+2. [You] Copy task → Paste to Claude Code
+
+3. [Claude Code] /start-task → implements → /handoff-to-cursor
+
+4. [You] Copy result → Paste to Cursor
+
+5. [Cursor] Review → Deploy to production
+```
+
+> 💡 Run `/setup-2agent` in Claude Code to set up the required files.
+
+---
+
+## ⚡ Upgrading from v2?
+
+| Question | Answer |
+|----------|--------|
+| Does my project break? | **No** - v2 commands work the same |
+| What's new in v3? | Safety config, Skill/Workflow/Profile architecture |
+| Do I need to change anything? | Only if you want Advanced mode features |
+
+**Breaking changes**: None. Simple mode = same as v2.
+
+---
+
 ## Table of Contents
 
 1. [What This Plugin Provides](#1-what-this-plugin-provides) - Commands and their purposes
@@ -762,6 +817,23 @@ cursor-cc-plugins v3 introduces a 3-layer architecture:
 | `ci` | CI failure handling | analyze-failures, fix-tests |
 
 ### SkillPort Integration
+
+**Should you use SkillPort?**
+
+| You are... | Recommendation |
+|------------|----------------|
+| Individual developer | **Not needed** - works out of the box |
+| Team sharing skills | **Recommended** - share skills across team |
+| Using both Cursor + Claude Code | **Convenient** - same skill definitions for both |
+
+**With vs Without SkillPort:**
+
+| Aspect | Without SkillPort | With SkillPort |
+|--------|-------------------|----------------|
+| Setup | None needed | MCP configuration required |
+| Skill sharing | Local only | Team-wide distribution |
+| Multi-tool support | Claude Code only | Cursor + Claude Code + other MCP clients |
+| Best for | Personal use | Team / Enterprise |
 
 Skills can be shared between Cursor and Claude Code via [SkillPort](https://github.com/Chachamaru127/skillport) MCP server:
 
