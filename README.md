@@ -4,11 +4,9 @@
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blue)](https://docs.anthropic.com/en/docs/claude-code)
 [![Safety First](https://img.shields.io/badge/Safety-First-green)](docs/ADMIN_GUIDE.md)
 
-**Build high-quality projects using only natural language.**
+**Cursor が PM、Claude Code が Worker として協調する「2エージェント開発ワークフロー」プラグイン。**
 
-A development workflow plugin for Claude Code, designed for VibeCoders who want to develop without deep technical knowledge. Optionally supports 2-agent collaboration with Cursor.
-
-> **v3.0 Highlights**: Safety-first design with configurable modes, path restrictions, and pre/post operation reports. See [Admin Guide](docs/ADMIN_GUIDE.md) for team deployment.
+Plans.md と共通のスキルレイヤーを共有しながら、Cursor が要件整理・タスク分解を行い、Claude Code が実装・テスト・修正を担当します。Solo モード（Claude Code のみ）も利用可能ですが、**推奨は 2-Agent 構成**です。
 
 English | [日本語](README.ja.md)
 
@@ -16,923 +14,237 @@ English | [日本語](README.ja.md)
 
 ---
 
-## 🚀 Quick Start: Choose Your Mode
+## Table of Contents
 
-**First, decide how you want to work:**
-
-| Mode | Who to talk to first | Best for |
-|------|---------------------|----------|
-| **🅰️ Solo** | Claude Code | Personal projects, quick prototypes |
-| **🅱️ 2-Agent** | **Cursor** | Team projects, formal planning |
-
-### 🅰️ Solo Mode (Claude Code only)
-
-```bash
-# 1. Install
-/plugin marketplace add Chachamaru127/cursor-cc-plugins
-/plugin install cursor-cc-plugins
-
-# 2. Start
-"I want to build a blog app"
-
-# 3. That's it!
-```
-
-### 🅱️ 2-Agent Mode (Cursor + Claude Code)
-
-```
-⚠️ Start with Cursor, NOT Claude Code!
-
-1. [Cursor] "I want to build a blog app"
-   → Cursor creates plan → /assign-to-cc
-
-2. [You] Copy task → Paste to Claude Code
-
-3. [Claude Code] /start-task → implements → /handoff-to-cursor
-
-4. [You] Copy result → Paste to Cursor
-
-5. [Cursor] Review → Deploy to production
-```
-
-> 💡 Run `/setup-2agent` in Claude Code to set up the required files.
+1. [2-Agent Overview](#1-2-agent-overview) - Cursor + Claude Code の役割分担
+2. [Quick Start](#2-quick-start) - セットアップと最初の一歩
+3. [Commands](#3-commands) - 使えるコマンド一覧
+4. [Safety & Configuration](#4-safety--configuration) - セーフティ設定の概要
+5. [Solo Mode](#5-solo-mode) - Claude Code のみで使う場合
+6. [Documentation](#6-documentation) - 詳細ドキュメントへのリンク
 
 ---
 
-## ⚡ Upgrading from v2?
+## 1. 2-Agent Overview
+
+このプラグインは、**2つのエージェントが役割分担して開発を進める**ことを前提に設計されています。
+
+### Cursor (PM Agent)
+
+- ユーザーの要望を受けて**要件整理**
+- Plans.md に**タスクを分解**して記述
+- **進捗管理**や優先度の調整
+- 完了報告を**レビュー**して本番デプロイ判断
+
+### Claude Code (Worker Agent)
+
+- Plans.md のタスクをもとに**実装・リファクタ**
+- **テスト**の追加・修正
+- **CIエラー**の解析と修正（最大3回自動リトライ）
+- **stagingデプロイ**まで担当
+
+### How They Collaborate
+
+```
+┌─────────────────┐                      ┌─────────────────┐
+│  Cursor (PM)    │                      │  Claude Code    │
+│                 │                      │   (Worker)      │
+│  • Requirements │   Plans.md (shared)  │  • Implement    │
+│  • Task分解     │ ◄──────────────────► │  • Test         │
+│  • Review       │                      │  • Fix CI       │
+│  • Prod deploy  │                      │  • Staging      │
+└────────┬────────┘                      └────────┬────────┘
+         │                                        │
+         │   /assign-to-cc                        │
+         └───────────────────────────────────────►│
+                                                  │
+         │◄───────────────────────────────────────┘
+         │   /handoff-to-cursor
+```
+
+両者は **Plans.md** と **skills/ 以下の SKILL.md** を共有しながら協調します。
+
+---
+
+## 2. Quick Start
+
+### Recommended: 2-Agent Mode (Cursor + Claude Code)
+
+**これが本プラグインの標準の使い方です。**
+
+#### Step 1: Install (Claude Code)
+
+```bash
+/plugin marketplace add Chachamaru127/cursor-cc-plugins
+/plugin install cursor-cc-plugins
+```
+
+#### Step 2: Setup 2-Agent Files (Claude Code)
+
+```
+/setup-2agent
+```
+
+This creates: `AGENTS.md`, `Plans.md`, `.cursor/commands/`
+
+#### Step 3: Start Development (Cursor)
+
+```
+[Cursor] "I want to build a blog app"
+         → Cursor creates plan → /assign-to-cc
+
+[You]    Copy task → Paste to Claude Code
+
+[Claude Code] /start-task → implements → /handoff-to-cursor
+
+[You]    Copy result → Paste to Cursor
+
+[Cursor] Review → Deploy to production
+```
+
+> 📖 詳細なワークフローは [docs/usage-2agent.md](docs/usage-2agent.md) を参照
+
+---
+
+### Fallback: Solo Mode (Claude Code only)
+
+Cursor を使えない環境や、簡単なプロトタイプ用の**サブモード**です。
+
+```bash
+# Install
+/plugin marketplace add Chachamaru127/cursor-cc-plugins
+/plugin install cursor-cc-plugins
+
+# Start (直接 Claude Code に話しかける)
+"I want to build a todo app"
+```
+
+> 📖 Solo モードの詳細は [docs/usage-solo.md](docs/usage-solo.md) を参照
+
+---
+
+## 3. Commands
+
+| Command | Who Uses | What It Does |
+|---------|----------|--------------|
+| `/init` | Claude Code | プロジェクト作成・セットアップ |
+| `/plan` | Both | 機能をタスクに分解 |
+| `/work` | Claude Code | タスクを実行してコード生成 |
+| `/review` | Both | コード品質チェック |
+| `/sync-status` | Both | 進捗状況を確認 |
+| `/start-task` | Claude Code | PM からのタスクを開始 |
+| `/handoff-to-cursor` | Claude Code | 完了報告を生成 |
+| `/setup-2agent` | Claude Code | 2-Agent 用ファイルを生成 |
+
+### Cursor Commands (after /setup-2agent)
+
+| Command | What It Does |
+|---------|--------------|
+| `/assign-to-cc` | Claude Code にタスクを依頼 |
+| `/review-cc-work` | Claude Code の完了報告をレビュー |
+
+---
+
+## 4. Safety & Configuration
+
+v3.0 では**セーフティファースト設計**を採用。意図しない破壊的操作から保護します。
+
+### Safety Modes
+
+| Mode | Behavior | Use Case |
+|------|----------|----------|
+| `dry-run` | 変更なし、何が起きるか表示 | デフォルト・安全に探索 |
+| `apply-local` | ローカル変更のみ、push なし | 通常の開発 |
+| `apply-and-push` | git push を含む完全自動化 | CI/CD（要注意） |
+
+### Quick Config
+
+`cursor-cc.config.json`:
+
+```json
+{
+  "safety": { "mode": "apply-local" },
+  "git": { "protected_branches": ["main", "master"] },
+  "paths": { "protected": [".env", "secrets/"] }
+}
+```
+
+> 📖 詳細な設定は [docs/ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md) を参照
+
+---
+
+## 5. Solo Mode
+
+Solo Mode は **2-Agent モードの簡易版**です。
+
+| Feature | Solo Mode | 2-Agent Mode |
+|---------|-----------|--------------|
+| Planning | セルフ管理 | Cursor が担当 |
+| Code Review | セルフレビュー | Cursor がレビュー |
+| Production Deploy | 手動 | Cursor が判断 |
+| Best For | プロトタイプ | 本番プロジェクト |
+
+### Natural Language (Solo Mode)
+
+| Say This | What Runs |
+|----------|-----------|
+| "Build a blog" | `/init` |
+| "Add login" | `/plan` + `/work` |
+| "Run it" | Dev server starts |
+| "Check it" | `/review` |
+
+> 📖 Solo モードの詳細は [docs/usage-solo.md](docs/usage-solo.md) を参照
+
+---
+
+## 6. Documentation
+
+### Usage Guides
+
+| Document | Description |
+|----------|-------------|
+| [usage-2agent.md](docs/usage-2agent.md) | 2-Agent モードの詳細ガイド |
+| [usage-solo.md](docs/usage-solo.md) | Solo モードの詳細ガイド |
+| [ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md) | チーム導入・セーフティ設定 |
+| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Skill/Workflow/Profile 構造 |
+| [LIMITATIONS.md](docs/LIMITATIONS.md) | 制限事項と回避策 |
+
+### Architecture (v3)
+
+v3 は 3層の **Skill / Workflow / Profile** アーキテクチャを採用:
+
+```
+Profile (誰が使うか)  →  Workflow (どう流れるか)  →  Skill (何をするか)
+```
+
+#### SkillPort Integration
+
+| Without SkillPort | With SkillPort |
+|-------------------|----------------|
+| Claude Code 内で完結 | Cursor からも同じ skills/ を利用可能 |
+| セットアップ不要 | MCP 設定が必要 |
+| 個人向け | チーム・マルチツール向け |
+
+> 📖 詳細は [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) を参照
+
+---
+
+## Upgrading from v2?
 
 | Question | Answer |
 |----------|--------|
 | Does my project break? | **No** - v2 commands work the same |
-| What's new in v3? | Safety config, Skill/Workflow/Profile architecture |
-| Do I need to change anything? | Only if you want Advanced mode features |
-
-**Breaking changes**: None. Simple mode = same as v2.
-
-### What Changed (Before/After)
-
-**Commands** - No change needed:
-```
-# v2 (still works in v3)        # v3 (same behavior)
-/init                      →    /init
-/plan                      →    /plan
-/work                      →    /work
-"Add login feature"        →    "Add login feature"
-```
-
-**New in v3** - Optional features:
-```
-# v2: No safety config
-# v3: Add cursor-cc.config.json for team guardrails
-{
-  "safety": { "mode": "apply-local" },
-  "git": { "protected_branches": ["main"] }
-}
-
-# v2: Skills embedded in plugin
-# v3: Skills are editable SKILL.md files
-skills/worker/ccp-my-custom-skill/SKILL.md  ← Create your own!
-```
-
----
-
-## Table of Contents
-
-1. [What This Plugin Provides](#1-what-this-plugin-provides) - Commands and their purposes
-2. [Safety & Configuration](#2-safety--configuration) - Configurable safety modes and settings
-3. [How to Talk to Claude Code](#3-how-to-talk-to-claude-code) - Natural language → which feature runs
-4. [When Things Go Wrong](#4-when-things-go-wrong) - Troubleshooting and recovery
-5. [The Complete Development Flow](#5-the-complete-development-flow) - Visual guide from idea to completion
-6. [Advanced: 2-Agent Collaboration](#6-advanced-2-agent-collaboration) - Optional Cursor + Claude Code setup
-7. [Architecture](#7-architecture) - Skill/Workflow/Profile architecture and SkillPort integration
-
----
-
-## 1. What This Plugin Provides
-
-This plugin gives you **8 commands** that automate the entire development process. Here's what each one does and why it exists:
-
-### Core Commands
-
-| Command | What It Does | Why You Need It |
-|---------|--------------|-----------------|
-| `/init` | Asks questions about your idea, suggests technology, creates project | **Start here** - turns your vague idea into a real project |
-| `/plan` | Breaks down a feature request into organized tasks | **Before building** - prevents chaos by creating a clear roadmap |
-| `/work` | Executes the planned tasks and writes actual code | **The building phase** - does the heavy lifting |
-| `/review` | Checks code for security, performance, and quality issues | **Quality gate** - catches problems before they become disasters |
-
-### Support Commands
-
-| Command | What It Does | Why You Need It |
-|---------|--------------|-----------------|
-| `/sync-status` | Shows current progress and what's left to do | **Stay oriented** - know where you are at any time |
-| `/start-task` | Picks up the next task from the plan | **Keep momentum** - no decision fatigue about what's next |
-| `/handoff-to-cursor` | Creates a completion report (for 2-agent setup) | **Team handoff** - clean communication between agents |
-| `/setup-2agent` | Configures 2-agent collaboration (optional) | **Team setup** - enables Cursor + Claude Code workflow |
-| `/health-check` | Diagnoses environment and shows available features | **Troubleshooting** - verify your setup is correct |
-
-### Automatic Features (No Command Needed)
-
-| Feature | What It Does | When It Activates |
-|---------|--------------|-------------------|
-| **Session Memory** | Remembers what you did in previous sessions | When you ask about past work |
-| **Error Recovery** | Automatically fixes build/test errors (up to 3 times) | When errors are detected |
-| **Parallel Processing** | Runs independent tasks simultaneously | When multiple tasks don't depend on each other |
-| **Troubleshoot** | Diagnoses and suggests fixes for problems | When you say something is broken |
-
----
-
-## 2. Safety & Configuration
-
-v3.0 introduces a **safety-first design** with configurable behavior modes. This protects against accidental destructive operations.
-
-### Safety Modes
-
-| Mode | What It Does | Use Case |
-|------|--------------|----------|
-| `dry-run` | Shows what would happen, no changes | **Default** - safe exploration |
-| `apply-local` | Makes changes locally, no push | Development - most common |
-| `apply-and-push` | Full automation including git push | CI/CD integration (careful!) |
-
-### Quick Setup
-
-Create `cursor-cc.config.json` in your project root:
-
-```json
-{
-  "safety": {
-    "mode": "apply-local",
-    "require_confirmation": true
-  },
-  "git": {
-    "allow_auto_commit": false,
-    "allow_auto_push": false,
-    "protected_branches": ["main", "master"]
-  },
-  "paths": {
-    "allowed_modify": ["src/", "app/", "components/"],
-    "protected": [".github/", ".env", "secrets/"]
-  }
-}
-```
-
-### What's Protected by Default
-
-| Permission | Default | Control |
-|-----------|---------|---------|
-| File read | ✅ Enabled | - |
-| File write | ✅ Enabled | `paths.allowed_modify` |
-| git commit | ❌ Disabled | `git.allow_auto_commit` |
-| git push | ❌ Disabled | `git.allow_auto_push` |
-| rm -rf | ❌ Disabled | `destructive_commands.allow_rm_rf` |
-| npm install | ✅ Enabled | `destructive_commands.allow_npm_install` |
-
-### Pre/Post Operation Reports
-
-All potentially dangerous operations now show:
-- **Pre-execution summary**: What will be done, which files affected
-- **Post-execution report**: What was done, what changed
-
-This ensures full transparency and auditability.
-
-### Team Deployment
-
-See [Admin Guide](docs/ADMIN_GUIDE.md) for:
-- Recommended configurations (personal/team/enterprise)
-- Risk evaluation per feature
-- Troubleshooting common issues
-
-### Limitations
-
-See [Limitations](docs/LIMITATIONS.md) for:
-- Supported OS and CI providers
-- Claude Code CLI vs Web restrictions
-- Known issues and workarounds
-
----
-
-## 3. How to Talk to Claude Code
-
-You don't need to remember commands. Just say what you want naturally, and the right feature will activate automatically.
-
-### Starting a Project
-
-| What to Say | What Happens Behind the Scenes |
-|-------------|--------------------------------|
-| "I want to build a blog" | → **`/init`** activates: asks clarifying questions, recommends tech stack, generates project |
-| "Create a recipe sharing app" | → **`/init`** activates: same flow, tailored to your description |
-| "Start a new project for task management" | → **`/init`** activates: analyzes requirements, suggests structure |
-
-**Example conversation:**
-```
-You: "I want to build a recipe sharing app"
-
-Claude Code (/init running):
-"Let me understand your vision better:
- 1. Who will use this app?
- 2. What similar apps do you like?
- 3. What's the #1 feature you need?"
-
-You: "Home cooks, I like Cookpad, saving favorites is key"
-
-Claude Code:
-"I recommend: Next.js + Supabase + Tailwind
- Creating your project now..."
- ✅ Project created!
-```
-
----
-
-### Adding Features
-
-| What to Say | What Happens Behind the Scenes |
-|-------------|--------------------------------|
-| "Add user login" | → **`/plan`** activates: breaks into tasks → **`/work`** executes them |
-| "I want users to save recipes" | → **`/plan`** activates: creates feature roadmap → **`/work`** builds it |
-| "Add a search function" | → **`/plan`** + **`/work`**: plans then implements |
-
-**Example conversation:**
-```
-You: "Add user login"
-
-Claude Code (/plan running):
-"Breaking this down into tasks:
- - [ ] Create login page
- - [ ] Create signup page
- - [ ] Connect authentication
- Adding to Plans.md..."
-
-Claude Code (/work running):
-"Implementing Phase 1..."
- ✅ Created src/app/login/page.tsx
- ✅ Created src/app/signup/page.tsx
- ✅ Connected Supabase Auth
-"Done! Say 'run it' to test."
-```
-
----
-
-### Running and Testing
-
-| What to Say | What Happens Behind the Scenes |
-|-------------|--------------------------------|
-| "Run it" | → Starts development server, opens in browser |
-| "Show me" | → Same as "run it" |
-| "Test it" | → Runs automated tests if they exist |
-
-**Example:**
-```
-You: "Run it"
-
-Claude Code:
-"Starting dev server...
- 🌐 Open http://localhost:3000"
-```
-
----
-
-### Checking Quality
-
-| What to Say | What Happens Behind the Scenes |
-|-------------|--------------------------------|
-| "Check it" | → **`/review`** activates: security, performance, code quality scan |
-| "Review the code" | → **`/review`** activates: same comprehensive check |
-| "Is everything okay?" | → **`/review`** activates: reports any issues found |
-
-**Example:**
-```
-You: "Check if everything is okay"
-
-Claude Code (/review running):
-"Running quality checks...
-
- ✅ Security: No vulnerabilities
- ✅ Performance: Good (no slow queries)
- ⚠️  Code Quality: 2 minor suggestions
-     - Consider adding error handling to line 45
-     - Unused import on line 12
-
- Overall: Ready for production!"
-```
-
----
-
-### Checking Progress
-
-| What to Say | What Happens Behind the Scenes |
-|-------------|--------------------------------|
-| "What's the status?" | → **`/sync-status`** activates: shows completed and remaining tasks |
-| "How much is done?" | → **`/sync-status`** activates: progress summary |
-| "What's next?" | → **`/start-task`** activates: picks up next task |
-
-**Example:**
-```
-You: "What's the status?"
-
-Claude Code (/sync-status running):
-"📊 Project Status:
-
- ✅ Completed (3):
-    - User login
-    - Recipe upload
-    - Image storage
-
- 🔄 In Progress (1):
-    - Comment system
-
- 📋 Remaining (2):
-    - Search function
-    - User profiles
-
- Progress: 60% complete"
-```
-
----
-
-### Resuming After a Break
-
-| What to Say | What Happens Behind the Scenes |
-|-------------|--------------------------------|
-| "What did we do last time?" | → **Session Memory** activates: recalls previous session |
-| "Continue from where we left off" | → **Session Memory** + **`/start-task`**: resumes work |
-| "Pick up where we stopped" | → Same as above |
-
-**Example:**
-```
-You: "What did we do last time?"
-
-Claude Code (Session Memory):
-"Last session (Dec 7):
- ✅ Completed: User login, Recipe upload
- 🔄 Stopped at: Comment system (50% done)
-
- Want me to continue with the comment system?"
-
-You: "Yes, continue"
-
-Claude Code (/work running):
-"Resuming comment system implementation..."
-```
-
----
-
-## 4. When Things Go Wrong
-
-Problems happen. Here's how to handle them:
-
-### Something Broke
-
-| What to Say | What Happens Behind the Scenes |
-|-------------|--------------------------------|
-| "It's broken" | → **Troubleshoot** activates: diagnoses the issue |
-| "Not working" | → **Troubleshoot** activates: analyzes error logs |
-| "Fix this error" | → **Error Recovery** activates: auto-fixes up to 3 times |
-
-**Example:**
-```
-You: "It's broken"
-
-Claude Code (Troubleshoot):
-"🔍 Diagnosing...
-
- Found: Database connection error
- Cause: Environment variable SUPABASE_URL not set
-
- 🔧 Fixing automatically..."
-
-Claude Code (Error Recovery):
-"✅ Fixed! Added missing environment variable.
- Try 'run it' again."
-```
-
-### Lost or Confused
-
-| What to Say | What Happens Behind the Scenes |
-|-------------|--------------------------------|
-| "What should I do?" | → **VibeCoder Guide** activates: suggests next action based on context |
-| "I'm stuck" | → **VibeCoder Guide** activates: analyzes situation, offers options |
-| "Help" | → Shows available actions for current state |
-
-**Example:**
-```
-You: "What should I do next?"
-
-Claude Code (VibeCoder Guide):
-"Based on your current progress:
-
- ✅ Login feature is complete
- 🔄 Comment system is 50% done
-
- I suggest:
- 1. 'Continue with comments' - finish what we started
- 2. 'Check it' - review what's built so far
- 3. 'Run it' - test current features
-
- What would you like?"
-```
-
----
-
-## 5. The Complete Development Flow
-
-Here's how a typical project progresses from idea to completion:
-
-```
-╔═══════════════════════════════════════════════════════════════════════════════╗
-║                           THE DEVELOPMENT JOURNEY                              ║
-╠═══════════════════════════════════════════════════════════════════════════════╣
-║                                                                                ║
-║  PHASE 1: IDEA → PROJECT                                                       ║
-║  ─────────────────────────                                                     ║
-║                                                                                ║
-║    You: "I want to build X"                                                    ║
-║                │                                                               ║
-║                ▼                                                               ║
-║    ┌─────────────────────────────────────────┐                                ║
-║    │  /init                                  │                                ║
-║    │  • Asks clarifying questions            │                                ║
-║    │  • Recommends technology                │                                ║
-║    │  • Creates project structure            │                                ║
-║    └─────────────────────────────────────────┘                                ║
-║                │                                                               ║
-║                ▼                                                               ║
-║    ✅ Project created!                                                         ║
-║                                                                                ║
-╠═══════════════════════════════════════════════════════════════════════════════╣
-║                                                                                ║
-║  PHASE 2: FEATURE DEVELOPMENT LOOP                                             ║
-║  ─────────────────────────────────                                             ║
-║                                                                                ║
-║         ┌──────────────────────────────────────────────────────────┐          ║
-║         │                                                          │          ║
-║         ▼                                                          │          ║
-║    You: "Add X feature"                                            │          ║
-║         │                                                          │          ║
-║         ▼                                                          │          ║
-║    ┌─────────────────────────────────────────┐                     │          ║
-║    │  /plan                                  │                     │          ║
-║    │  • Breaks feature into tasks            │                     │          ║
-║    │  • Adds to Plans.md                     │                     │          ║
-║    └─────────────────────────────────────────┘                     │          ║
-║         │                                                          │          ║
-║         ▼                                                          │          ║
-║    ┌─────────────────────────────────────────┐                     │          ║
-║    │  /work                                  │                     │          ║
-║    │  • Writes actual code                   │                     │          ║
-║    │  • Creates files                        │                     │          ║
-║    │  • Runs commands (npm install, etc.)    │                     │          ║
-║    └─────────────────────────────────────────┘                     │          ║
-║         │                                                          │          ║
-║         ▼                                                          │          ║
-║    You: "Run it"                                                   │          ║
-║         │                                                          │          ║
-║         ▼                                                          │          ║
-║    ┌─────────────────────────────────────────┐                     │          ║
-║    │  Development server starts              │                     │          ║
-║    │  • Test in browser                      │                     │          ║
-║    └─────────────────────────────────────────┘                     │          ║
-║         │                                                          │          ║
-║         ▼                                                          │          ║
-║    ┌─────────────────┐     ┌─────────────────┐                     │          ║
-║    │ Works?          │────▶│ "Add next       │─────────────────────┘          ║
-║    │ Yes ✅          │     │  feature"       │                                ║
-║    └────────┬────────┘     └─────────────────┘                                ║
-║             │ No ❌                                                            ║
-║             ▼                                                                  ║
-║    ┌─────────────────────────────────────────┐                                ║
-║    │  You: "It's broken" or "Fix it"         │                                ║
-║    │                                         │                                ║
-║    │  Error Recovery:                        │                                ║
-║    │  • Diagnoses problem                    │                                ║
-║    │  • Auto-fixes (up to 3 times)           │                                ║
-║    │  • Reports if can't fix                 │                                ║
-║    └─────────────────────────────────────────┘                                ║
-║                                                                                ║
-╠═══════════════════════════════════════════════════════════════════════════════╣
-║                                                                                ║
-║  PHASE 3: QUALITY CHECK                                                        ║
-║  ──────────────────────                                                        ║
-║                                                                                ║
-║    You: "Check it" or "Review the code"                                        ║
-║         │                                                                      ║
-║         ▼                                                                      ║
-║    ┌─────────────────────────────────────────┐                                ║
-║    │  /review                                │                                ║
-║    │  • Security scan                        │                                ║
-║    │  • Performance check                    │                                ║
-║    │  • Code quality analysis                │                                ║
-║    │  • Suggests improvements                │                                ║
-║    └─────────────────────────────────────────┘                                ║
-║         │                                                                      ║
-║         ▼                                                                      ║
-║    ✅ Quality report generated                                                 ║
-║                                                                                ║
-╠═══════════════════════════════════════════════════════════════════════════════╣
-║                                                                                ║
-║  PHASE 4: SESSION MANAGEMENT                                                   ║
-║  ──────────────────────────                                                    ║
-║                                                                                ║
-║    ┌─────────────────────────────────────────┐                                ║
-║    │  End of session?                        │                                ║
-║    │                                         │                                ║
-║    │  Session Memory automatically saves:    │                                ║
-║    │  • What was completed                   │                                ║
-║    │  • What's in progress                   │                                ║
-║    │  • Important decisions made             │                                ║
-║    └─────────────────────────────────────────┘                                ║
-║                                                                                ║
-║    Next session:                                                               ║
-║    You: "What did we do last time?"                                            ║
-║         │                                                                      ║
-║         ▼                                                                      ║
-║    ┌─────────────────────────────────────────┐                                ║
-║    │  Session Memory recalls:                │                                ║
-║    │  • Previous work                        │                                ║
-║    │  • Unfinished tasks                     │                                ║
-║    │  • Context and decisions                │                                ║
-║    └─────────────────────────────────────────┘                                ║
-║         │                                                                      ║
-║         ▼                                                                      ║
-║    You: "Continue" → Back to PHASE 2                                           ║
-║                                                                                ║
-╠═══════════════════════════════════════════════════════════════════════════════╣
-║                                                                                ║
-║  PHASE 5: COMPLETION                                                           ║
-║  ──────────────────                                                            ║
-║                                                                                ║
-║    All features done?                                                          ║
-║         │                                                                      ║
-║         ▼                                                                      ║
-║    You: "Check everything one more time"                                       ║
-║         │                                                                      ║
-║         ▼                                                                      ║
-║    ┌─────────────────────────────────────────┐                                ║
-║    │  /review (final)                        │                                ║
-║    │  • Complete security audit              │                                ║
-║    │  • Performance optimization             │                                ║
-║    │  • Ready for deployment                 │                                ║
-║    └─────────────────────────────────────────┘                                ║
-║         │                                                                      ║
-║         ▼                                                                      ║
-║    🎉 Your app is complete!                                                    ║
-║                                                                                ║
-╚═══════════════════════════════════════════════════════════════════════════════╝
-```
-
----
-
-## Real-World Example: Building a Todo App
-
-Here's a concrete example showing the complete flow:
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-DAY 1: Getting Started
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-You: "I want to build a todo app"
-     └─→ /init activates
-         • Asks: "Personal or team use? Need due dates? Categories?"
-         • You answer: "Personal, yes due dates, no categories"
-         • Creates Next.js + Tailwind project
-
-You: "Run it"
-     └─→ Starts dev server at localhost:3000
-         • You see blank starter page
-
-You: "Add ability to create todos"
-     └─→ /plan activates: creates task list
-     └─→ /work activates: builds the feature
-         ✅ Created todo input form
-         ✅ Added to database
-
-You: "Run it"
-     └─→ Test: You can now create todos!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-DAY 2: Adding Features
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-You: "What did we do last time?"
-     └─→ Session Memory activates
-         • "Yesterday: Created todo app, added todo creation"
-         • "Ready to continue?"
-
-You: "Add due dates"
-     └─→ /plan + /work
-         ✅ Added date picker
-         ✅ Updated database schema
-
-You: "Add ability to mark complete"
-     └─→ /plan + /work
-         ✅ Added checkbox functionality
-         ✅ Strike-through styling
-
-You: "Check it"
-     └─→ /review activates
-         ✅ Security: OK
-         ✅ Performance: OK
-         ⚠️ Suggestion: Add loading state
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-DAY 3: Final Touches
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-You: "Add delete functionality"
-     └─→ /plan + /work
-         ✅ Added delete button
-         ✅ Confirmation dialog
-
-You: "Make it look nicer"
-     └─→ /work applies styling
-         ✅ Modern UI with shadows
-         ✅ Smooth animations
-
-You: "Check everything one more time"
-     └─→ /review (comprehensive)
-         ✅ All checks passed
-         🎉 Ready for deployment!
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-RESULT: Complete todo app with create, due dates, complete, and delete
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
-
----
-
-## 6. Advanced: 2-Agent Collaboration
-
-> **This section is optional.** Most users can use Claude Code alone. This is for teams that want to split responsibilities between Cursor and Claude Code.
-
-### How It Works
-
-**You are the hub.** Cursor and Claude Code don't communicate directly—you copy instructions and results between them.
-
-```
-┌─────────────┐          ┌─────────┐          ┌──────────────┐
-│   Cursor    │  ──────► │   You   │  ──────► │ Claude Code  │
-│   (PM)      │  Creates │  (Hub)  │  Paste   │  (Worker)    │
-│             │  task    │         │  task    │              │
-│             │ ◄────── │         │ ◄────── │              │
-│             │  Review  │         │  Copy    │              │
-│             │          │         │  result  │              │
-└─────────────┘          └─────────┘          └──────────────┘
-```
-
-### When to Use 2-Agent Setup
-
-- Large projects requiring formal planning before implementation
-- When you want Cursor to focus on architecture/review, Claude Code on coding
-- Projects requiring clear separation between planning and execution
-
-### Roles
-
-| Agent | Role | Responsibilities |
-|-------|------|------------------|
-| **Cursor** | PM (Project Manager) | Planning, task creation, code review, production deployment decisions |
-| **Claude Code** | Worker (Developer) | Implementation, testing, staging deployment, completion reports |
-| **You** | Hub (Coordinator) | Copy tasks from Cursor → Claude Code, copy results back |
-
-### Workflow
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         2-AGENT COLLABORATION FLOW                          │
-│                                                                             │
-│                         ┌─────────────────────┐                             │
-│                         │        You          │                             │
-│                         │   (Coordinator)     │                             │
-│                         └──────────┬──────────┘                             │
-│                                    │                                        │
-│   ┌────────────────────────────────┼────────────────────────────────┐       │
-│   │                                │                                │       │
-│   ▼                                │                                ▼       │
-│ ┌──────────────────┐               │               ┌──────────────────┐     │
-│ │     Cursor       │               │               │   Claude Code    │     │
-│ │      (PM)        │               │               │    (Worker)      │     │
-│ └────────┬─────────┘               │               └────────┬─────────┘     │
-│          │                         │                        │               │
-│          │ 1. Create plan          │                        │               │
-│          │    /assign-to-cc        │                        │               │
-│          │                         │                        │               │
-│          └──────────────────────►  │ 2. Copy task           │               │
-│                                    │    to Claude Code      │               │
-│                                    │ ─────────────────────► │               │
-│                                    │                        │               │
-│                                    │                        │ 3. /start-task│
-│                                    │                        │    /plan      │
-│                                    │                        │    /work      │
-│                                    │                        │               │
-│                                    │ 4. Copy result         │               │
-│          ◄──────────────────────── │    to Cursor           │               │
-│          │                         │ ◄───────────────────── │               │
-│          │                         │    /handoff-to-cursor  │               │
-│          │ 5. Review & approve     │                        │               │
-│          │    /review-cc-work      │                        │               │
-│          │                         │                        │               │
-│          │ 6. Deploy to production │                        │               │
-│          │    (PM decision)        │                        │               │
-│          │                         │                        │               │
-└──────────┴─────────────────────────┴────────────────────────┴───────────────┘
-```
-
-### Step-by-Step Guide
-
-| Step | Where | What to Do |
-|------|-------|------------|
-| 1 | **Cursor** | Describe what you want → Cursor creates a task with `/assign-to-cc` |
-| 2 | **You** | Copy the task instruction from Cursor |
-| 3 | **Claude Code** | Paste the task → Claude Code runs `/start-task` → implements |
-| 4 | **Claude Code** | When done, run `/handoff-to-cursor` → generates completion report |
-| 5 | **You** | Copy the completion report from Claude Code |
-| 6 | **Cursor** | Paste the report → Cursor reviews with `/review-cc-work` |
-| 7 | **Cursor** | Approve or request changes → repeat if needed |
-
-### Setup
-
-Run `/setup-2agent` to configure both agents with the necessary files:
-
-```
-Files created:
-├── AGENTS.md           # Shared rules for both agents
-├── CLAUDE.md           # Claude Code specific settings
-├── Plans.md            # Shared task tracking
-└── .cursor/
-    └── commands/
-        ├── assign-to-cc.md      # For PM to assign tasks
-        └── review-cc-work.md    # For PM to review completions
-```
-
-### Task Status Markers
-
-| Marker | Meaning | Who Sets It |
-|--------|---------|-------------|
-| `cursor:requested` | Task assigned by PM | Cursor |
-| `cc:TODO` | Not started | Claude Code |
-| `cc:WIP` | Work in progress | Claude Code |
-| `cc:done` | Completed, awaiting review | Claude Code |
-| `cursor:verified` | Reviewed and approved | Cursor |
+| What's new? | Safety config, Skill/Workflow/Profile architecture |
+| Do I need to change? | Only for Advanced features |
 
 ---
 
 ## Installation
 
 ```bash
-# Add the marketplace
 /plugin marketplace add Chachamaru127/cursor-cc-plugins
-
-# Install the plugin
 /plugin install cursor-cc-plugins
 ```
-
-### Team Configuration
-
-To share with your team, add to `.claude/settings.json`:
-
-```json
-{
-  "extraKnownMarketplaces": {
-    "cursor-cc-marketplace": {
-      "source": {
-        "source": "github",
-        "repo": "Chachamaru127/cursor-cc-plugins"
-      }
-    }
-  },
-  "enabledPlugins": {
-    "cursor-cc-plugins@cursor-cc-marketplace": true
-  }
-}
-```
-
----
-
-## 7. Architecture
-
-> **New in v3**: Modular architecture with Skill / Workflow / Profile separation. See [Architecture Documentation](docs/ARCHITECTURE.md) for full details.
-
-### Overview
-
-cursor-cc-plugins v3 introduces a 3-layer architecture:
-
-```
-┌────────────────────────────────────────────────────────────┐
-│  Profile Layer    (Who uses what)                          │
-│  cursor-pm.yaml, claude-worker.yaml                        │
-└──────────────────────────┬─────────────────────────────────┘
-                           │
-┌──────────────────────────▼─────────────────────────────────┐
-│  Workflow Layer   (How things flow)                        │
-│  init.yaml, plan.yaml, work.yaml, review.yaml              │
-└──────────────────────────┬─────────────────────────────────┘
-                           │
-┌──────────────────────────▼─────────────────────────────────┐
-│  Skill Layer      (What to do)                             │
-│  SKILL.md files with SkillPort-compatible frontmatter      │
-└────────────────────────────────────────────────────────────┘
-```
-
-### Skill Categories
-
-| Category | Purpose | Example Skills |
-|----------|---------|----------------|
-| `core` | Base principles, safety rules | general-principles, diff-aware-editing |
-| `pm` | Planning, requirements | init-requirements, plan-feature |
-| `worker` | Implementation, testing | impl-feature, write-tests |
-| `ci` | CI failure handling | analyze-failures, fix-tests |
-
-### SkillPort Integration
-
-**Should you use SkillPort?**
-
-| You are... | Recommendation |
-|------------|----------------|
-| Individual developer | **Not needed** - works out of the box |
-| Team sharing skills | **Recommended** - share skills across team |
-| Using both Cursor + Claude Code | **Convenient** - same skill definitions for both |
-
-**With vs Without SkillPort:**
-
-| Aspect | Without SkillPort | With SkillPort |
-|--------|-------------------|----------------|
-| Setup | None needed | MCP configuration required |
-| Skill sharing | Local only | Team-wide distribution |
-| Multi-tool support | Claude Code only | Cursor + Claude Code + other MCP clients |
-| Best for | Personal use | Team / Enterprise |
-
-**Concrete Benefits of SkillPort:**
-
-```
-Without SkillPort (Individual):
-┌─────────────────┐
-│  Your Machine   │
-│  └── skills/    │  ← Only you can use these
-└─────────────────┘
-
-With SkillPort (Team):
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│  Alice (Cursor) │     │  Bob (Claude)   │     │  CI Server      │
-│       ↓         │     │       ↓         │     │       ↓         │
-└────────┬────────┘     └────────┬────────┘     └────────┬────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 ▼
-                    ┌─────────────────────────┐
-                    │  Shared skills/ repo    │
-                    │  • Consistent reviews   │  ← Everyone uses same rules
-                    │  • Unified code style   │
-                    │  • Company standards    │
-                    └─────────────────────────┘
-```
-
-**Example: Team Code Review Consistency**
-- Without: Alice's review checks 5 things, Bob's checks 3 different things
-- With: Everyone uses `ccp-review-security` → same 10 security checks for all
-
-Skills can be shared between Cursor and Claude Code via [SkillPort](https://github.com/Chachamaru127/skillport) MCP server:
-
-```json
-// .cursor/mcp.json
-{
-  "mcpServers": {
-    "ccp-skills": {
-      "command": "uvx",
-      "args": ["skillport"],
-      "env": {
-        "SKILLPORT_SKILLS_DIR": "/path/to/cursor-cc-plugins/skills",
-        "SKILLPORT_ENABLED_CATEGORIES": "core,pm,worker,ci"
-      }
-    }
-  }
-}
-```
-
-### Extending Skills
-
-Create custom skills in `skills/{category}/{skill-name}/SKILL.md`:
-
-```markdown
----
-name: ccp-custom-my-skill
-description: "What this skill does"
-metadata:
-  skillport:
-    category: worker
-    tags: [custom, example]
-    alwaysApply: false
----
-
-# My Custom Skill
-
-Instructions...
-```
-
-### Simple vs Advanced Mode
-
-| Mode | Description | Who It's For |
-|------|-------------|--------------|
-| Simple | Use commands as before | Most users |
-| Advanced | Customize workflows/skills via YAML | Power users |
 
 ---
 
