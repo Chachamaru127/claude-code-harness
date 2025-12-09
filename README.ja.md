@@ -1,290 +1,221 @@
-# cursor-cc-plugins v3.0
+# cursor-cc-plugins
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blue)](https://docs.anthropic.com/en/docs/claude-code)
-[![Safety First](https://img.shields.io/badge/Safety-First-green)](docs/ADMIN_GUIDE.md)
 
-**Cursor が PM、Claude Code が Worker として協調する「2エージェント開発ワークフロー」プラグイン。**
+**2つのAIがチームを組んで、あなたの開発をサポート。**
 
-Plans.md と共通のスキルレイヤーを共有しながら、Cursor が要件整理・タスク分解を行い、Claude Code が実装・テスト・修正を担当します。Solo モード（Claude Code のみ）も利用可能ですが、**推奨は 2-Agent 構成**です。
+Cursor が「何を作るか」を一緒に考え、Claude Code が「実際に作る」。
+まるでPMとエンジニアがペアで働くように、2つのAIが役割分担してプロジェクトを進めます。
 
 [English](README.md) | 日本語
 
-![2つのAI、1つのシームレスなワークフロー - Cursorが計画、Claude Codeが構築](docs/images/workflow-ja.png)
+![Cursor が計画、Claude Code が構築](docs/images/workflow-ja.png)
 
 ---
 
-## 目次
-
-1. [2-Agent 概要](#1-2-agent-概要) - Cursor + Claude Code の役割分担
-2. [クイックスタート](#2-クイックスタート) - セットアップと最初の一歩
-3. [コマンド](#3-コマンド) - 使えるコマンド一覧
-4. [セーフティと設定](#4-セーフティと設定) - セーフティ設定の概要
-5. [Solo モード](#5-solo-モード) - Claude Code のみで使う場合
-6. [ドキュメント](#6-ドキュメント) - 詳細ドキュメントへのリンク
-
----
-
-## 1. 2-Agent 概要
-
-このプラグインは、**2つのエージェントが役割分担して開発を進める**ことを前提に設計されています。
-
-### Cursor (PM エージェント)
-
-- ユーザーの要望を受けて**要件整理**
-- Plans.md に**タスクを分解**して記述
-- **進捗管理**や優先度の調整
-- 完了報告を**レビュー**して本番デプロイ判断
-
-### Claude Code (Worker エージェント)
-
-- Plans.md のタスクをもとに**実装・リファクタ**
-- **テスト**の追加・修正
-- **CIエラー**の解析と修正（最大3回自動リトライ）
-- **stagingデプロイ**まで担当
-
-### 協調の仕組み
+## これは何？
 
 ```
-┌─────────────────┐                      ┌─────────────────┐
-│  Cursor (PM)    │                      │  Claude Code    │
-│                 │                      │   (Worker)      │
-│  • 要件整理     │   Plans.md (共有)    │  • 実装         │
-│  • タスク分解   │ ◄──────────────────► │  • テスト       │
-│  • レビュー     │                      │  • CI修正       │
-│  • 本番デプロイ │                      │  • Staging      │
-└────────┬────────┘                      └────────┬────────┘
-         │                                        │
-         │   /assign-to-cc                        │
-         └───────────────────────────────────────►│
-                                                  │
-         │◄───────────────────────────────────────┘
-         │   /handoff-to-cursor
+あなた: 「ブログアプリを作りたい」
+
+    ↓ Cursor (PM役) が計画を立てる
+
+Cursor: 「タスクを整理しました。Claude Code に依頼しますね」
+
+    ↓ あなたが Claude Code に渡す
+
+Claude Code (実装役): 「実装しました！レビューをお願いします」
+
+    ↓ あなたが Cursor に戻す
+
+Cursor: 「レビューOK。本番にデプロイしましょう」
 ```
 
-両者は **Plans.md** と **skills/ 以下の SKILL.md** を共有しながら協調します。
+**1つのAIだけでは難しかった「企画→実装→レビュー」のサイクルが、2つのAIの連携で可能に。**
 
 ---
 
-## 2. クイックスタート
+## 3ステップで始める
 
-### 推奨: 2-Agent モード (Cursor + Claude Code)
+### Step 1: インストール
 
-**これが本プラグインの標準の使い方です。**
-
-#### Step 1: インストール (Claude Code)
+Claude Code で以下を実行：
 
 ```bash
 /plugin marketplace add Chachamaru127/cursor-cc-plugins
 /plugin install cursor-cc-plugins
 ```
 
-#### Step 2: 2-Agent ファイルセットアップ (Claude Code)
+### Step 2: セットアップ ⭐ これが最初！
 
-```
+```bash
 /setup-2agent
 ```
 
-作成されるファイル: `AGENTS.md`, `Plans.md`, `.cursor/commands/`, `.cursor-cc-version`
+このコマンドで必要なファイルが全て作成されます。
 
-> **Note**: `/setup-2agent` は**プラグインの初期設定**です（1回のみ）。新しいプロジェクトを1から作る場合は、この後に `/init` を実行します。
+### Step 3: Cursor で相談開始
 
-#### Step 3: 開発開始 (Cursor)
+**ここからは Cursor を開いてください。**
 
 ```
-[Cursor] 「ブログアプリを作りたい」
-         → Cursor が計画作成 → /assign-to-cc
+あなた → Cursor: 「ECサイトを作りたいんだけど」
 
-[あなた] タスクをコピー → Claude Code に貼り付け
-
-[Claude Code] /start-task → 実装 → /handoff-to-cursor
-
-[あなた] 結果をコピー → Cursor に貼り付け
-
-[Cursor] レビュー → 本番デプロイ
+Cursor: 「いいですね！まずは必要な機能を整理しましょう...」
 ```
 
-> 📖 詳細なワークフローは [docs/usage-2agent.md](docs/usage-2agent.md) を参照
+Cursor が計画を立て、実装が必要になったら Claude Code に依頼します。
 
 ---
 
-### フォールバック: Solo モード (Claude Code のみ)
+## 開発の流れ
 
-Cursor を使えない環境や、簡単なプロトタイプ用の**サブモード**です。
+```
+┌─────────────────────────────────────────────────────────────┐
+│                                                             │
+│   1. Cursor に相談                                          │
+│      「〇〇を作りたい」「〇〇機能を追加したい」              │
+│              │                                              │
+│              ▼                                              │
+│   2. Cursor がタスクを整理                                  │
+│      → /assign-to-cc でタスクを出力                        │
+│              │                                              │
+│              ▼                                              │
+│   3. タスクを Claude Code にコピー                          │
+│      (あなたがコピー&ペーストで橋渡し)                      │
+│              │                                              │
+│              ▼                                              │
+│   4. Claude Code が実装                                     │
+│      → /handoff-to-cursor で完了報告                       │
+│              │                                              │
+│              ▼                                              │
+│   5. 完了報告を Cursor にコピー                             │
+│      (あなたがコピー&ペーストで橋渡し)                      │
+│              │                                              │
+│              ▼                                              │
+│   6. Cursor がレビュー                                      │
+│      → 問題なければ本番デプロイ判断                        │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**ポイント**: Cursor と Claude Code は直接通信しません。**あなたがコピー&ペーストで橋渡し**します。これにより何が起きているか常に把握でき、安全です。
+
+---
+
+## なぜ2つのAIを使うのか？
+
+### 具体例で比較
+
+**1つのAIだけの場合:**
+```
+あなた: 「ログイン機能を追加して」
+AI: 「実装しました！」
+あなた: 「...これで大丈夫なのかな？」（自分でチェックする必要あり）
+```
+
+**2-Agent (このプラグイン) の場合:**
+```
+あなた → Cursor: 「ログイン機能を追加して」
+Cursor: 「セキュリティ要件も含めてタスク整理しました」
+    ↓
+Claude Code: 「実装しました」
+    ↓
+Cursor: 「レビューしました。SQLインジェクション対策もOK。デプロイしましょう」
+```
+
+### 比較表
+
+| 項目 | 1つのAIだけ | 2-Agent |
+|------|------------|---------|
+| 企画 | 曖昧になりがち | Cursor が整理 |
+| 実装 | 実装のみに集中 | Claude Code が担当 |
+| レビュー | 自分で自分を確認 | **別のAIが客観チェック** |
+| 品質 | バラつきあり | 一定の品質を維持 |
+
+---
+
+## 覚えるコマンドは2つだけ
+
+最初に覚えるのはこれだけ：
+
+| コマンド | どこで | 何をする |
+|---------|--------|----------|
+| `/setup-2agent` | Claude Code | **最初に1回だけ実行**。必要なファイルを作成 |
+| `/start-task` | Claude Code | Cursor からのタスクを受け取って作業開始 |
+
+あとは自然に Cursor と Claude Code が案内してくれます。
+
+### 補足：新しいプロジェクトを作る場合
+
+既存プロジェクトに導入する場合は `/setup-2agent` だけでOK。
+
+**ゼロから新しいアプリを作る場合**は、`/setup-2agent` の後に：
+```bash
+/init
+```
+で新規プロジェクトを作成できます。
+
+---
+
+## Cursor がない場合（Solo モード）
+
+Cursor を使えない環境では、Claude Code だけでも使えます。
 
 ```bash
-# インストール
-/plugin marketplace add Chachamaru127/cursor-cc-plugins
-/plugin install cursor-cc-plugins
-
-# 開始（直接 Claude Code に話しかける）
+# インストール後、直接話しかけるだけ
 「Todoアプリを作りたい」
 ```
 
-> 📖 Solo モードの詳細は [docs/usage-solo.md](docs/usage-solo.md) を参照
+ただし、Solo モードは簡易版です：
+- レビューは自分で行う必要がある
+- 本番デプロイ判断は手動
+- 企画から実装まで1つのAIで完結
+
+**本格的なプロジェクトには 2-Agent モードを推奨します。**
+
+> 詳細: [docs/usage-solo.md](docs/usage-solo.md)
 
 ---
 
-## 3. コマンド
+## もっと詳しく
 
-### ⚠️ `/setup-2agent` と `/init` の違い
+| ドキュメント | 内容 |
+|-------------|------|
+| [2-Agent 詳細ガイド](docs/usage-2agent.md) | ワークフローの詳細、会話例 |
+| [Solo モードガイド](docs/usage-solo.md) | Claude Code のみで使う場合 |
+| [チーム導入ガイド](docs/ADMIN_GUIDE.md) | セーフティ設定、チーム運用 |
+| [アーキテクチャ](docs/ARCHITECTURE.md) | 技術的な詳細 |
+
+---
+
+## FAQ
+
+### Q: `/setup-2agent` と `/init` の違いは？
 
 | コマンド | 目的 | いつ使う |
 |---------|------|---------|
-| `/setup-2agent` | プラグイン初期設定 | **インストール直後（1回のみ）** |
-| `/init` | 新規プロジェクト作成 | 新しいアプリを1から作る時 |
+| `/setup-2agent` | プラグインの準備 | **最初に1回** |
+| `/init` | 新規プロジェクト作成 | 新しいアプリを作る時だけ |
 
-**正しい順序**: `/setup-2agent` → `/init`（新規の場合）→ `/plan` + `/work`
+### Q: v2 から更新したら壊れる？
 
-### 全コマンド一覧
-
-| コマンド | 誰が使う | 何をするか |
-|---------|----------|-----------|
-| `/setup-2agent` | Claude Code | **プラグイン初期設定**（最初に1回） |
-| `/init` | Claude Code | 新規プロジェクト作成 |
-| `/plan` | 両方 | 機能をタスクに分解 |
-| `/work` | Claude Code | タスクを実行してコード生成 |
-| `/review` | 両方 | コード品質チェック |
-| `/sync-status` | 両方 | 進捗状況を確認 |
-| `/start-task` | Claude Code | PM からのタスクを開始 |
-| `/handoff-to-cursor` | Claude Code | 完了報告を生成 |
-
-### Cursor コマンド (/setup-2agent 実行後)
-
-| コマンド | 何をするか |
-|---------|-----------|
-| `/assign-to-cc` | Claude Code にタスクを依頼 |
-| `/review-cc-work` | Claude Code の完了報告をレビュー |
-
----
-
-## 4. セーフティと設定
-
-v3.0 では**セーフティファースト設計**を採用。意図しない破壊的操作から保護します。
-
-### セーフティモード
-
-| モード | 動作 | 使用場面 |
-|--------|------|---------|
-| `dry-run` | 変更なし、何が起きるか表示 | デフォルト・安全に探索 |
-| `apply-local` | ローカル変更のみ、push なし | 通常の開発 |
-| `apply-and-push` | git push を含む完全自動化 | CI/CD（要注意） |
-
-### クイック設定
-
-`cursor-cc.config.json`:
-
-```json
-{
-  "safety": { "mode": "apply-local" },
-  "git": { "protected_branches": ["main", "master"] },
-  "paths": { "protected": [".env", "secrets/"] }
-}
-```
-
-> 📖 詳細な設定は [docs/ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md) を参照
-
----
-
-## 5. Solo モード
-
-Solo モードは **2-Agent モードの簡易版**です。
-
-| 機能 | Solo モード | 2-Agent モード |
-|------|------------|---------------|
-| 計画 | セルフ管理 | Cursor が担当 |
-| コードレビュー | セルフレビュー | Cursor がレビュー |
-| 本番デプロイ | 手動 | Cursor が判断 |
-| 推奨用途 | プロトタイプ | 本番プロジェクト |
-
-### 自然言語コマンド (Solo モード)
-
-| 言い方 | 何が動くか |
-|--------|-----------|
-| 「ブログを作りたい」 | `/init` |
-| 「ログイン機能を追加」 | `/plan` + `/work` |
-| 「動かして」 | 開発サーバー起動 |
-| 「チェックして」 | `/review` |
-
-> 📖 Solo モードの詳細は [docs/usage-solo.md](docs/usage-solo.md) を参照
-
----
-
-## 6. ドキュメント
-
-### 使い方ガイド
-
-| ドキュメント | 説明 |
-|-------------|------|
-| [usage-2agent.md](docs/usage-2agent.md) | 2-Agent モードの詳細ガイド |
-| [usage-solo.md](docs/usage-solo.md) | Solo モードの詳細ガイド |
-| [ADMIN_GUIDE.md](docs/ADMIN_GUIDE.md) | チーム導入・セーフティ設定 |
-| [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Skill/Workflow/Profile 構造 |
-| [LIMITATIONS.md](docs/LIMITATIONS.md) | 制限事項と回避策 |
-
-### アーキテクチャ (v3)
-
-v3 は 3層の **Skill / Workflow / Profile** アーキテクチャを採用:
-
-```
-Profile (誰が使うか)  →  Workflow (どう流れるか)  →  Skill (何をするか)
-```
-
-#### SkillPort 連携
-
-| SkillPort なし | SkillPort あり |
-|---------------|---------------|
-| Claude Code 内で完結 | Cursor からも同じ skills/ を利用可能 |
-| セットアップ不要 | MCP 設定が必要 |
-| 個人向け | チーム・マルチツール向け |
-
-> 📖 詳細は [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) を参照
-
----
-
-## v2 からのアップグレード
-
-| 質問 | 回答 |
-|------|------|
-| プロジェクトが壊れる？ | **いいえ** - v2 のコマンドはそのまま動く |
-| v3 で何が変わった？ | セーフティ設定、Skill/Workflow/Profile アーキテクチャ、バージョン管理 |
-| 何か変更が必要？ | アドバンスド機能を使いたい場合のみ |
-
-### バージョン管理機能 (v3 新機能)
-
-`/setup-2agent` 実行時に `.cursor-cc-version` ファイルが作成されます：
-
-- **更新通知**: プラグイン更新後に「⚠️ 更新があります (v2.x → v3.x)」と表示
-- **重複セットアップ防止**: 最新バージョンの場合はスキップ
-- **自動バージョン管理**: 手動での追跡は不要
+いいえ。v2 のコマンドはそのまま動きます。
 
 ```bash
-# プラグイン更新後
 /plugin update cursor-cc-plugins
-/setup-2agent   # 更新を検出して適用を促す
+/setup-2agent  # 更新を検出して適用
 ```
 
 ---
-
-## インストール
-
-```bash
-/plugin marketplace add Chachamaru127/cursor-cc-plugins
-/plugin install cursor-cc-plugins
-```
-
----
-
-## コントリビュート
-
-ガイドラインは [CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
-
-## ライセンス
-
-MIT License - 詳細は [LICENSE](LICENSE) を参照してください。
 
 ## リンク
 
-- [GitHub リポジトリ](https://github.com/Chachamaru127/cursor-cc-plugins)
-- [Claude Code ドキュメント](https://docs.anthropic.com/en/docs/claude-code)
+- [GitHub](https://github.com/Chachamaru127/cursor-cc-plugins)
 - [問題を報告](https://github.com/Chachamaru127/cursor-cc-plugins/issues)
+- [Claude Code ドキュメント](https://docs.anthropic.com/en/docs/claude-code)
+
+---
+
+MIT License
