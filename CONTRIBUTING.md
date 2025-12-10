@@ -76,6 +76,33 @@ cursor-cc-plugins/
 2. Define trigger phrases
 3. Update README.md
 
+## Version Management
+
+Version is defined in two places that must stay in sync:
+- `VERSION` - Source of truth
+- `.claude-plugin/plugin.json` - Used by plugin system
+
+### Version Scripts
+
+```bash
+# Check if versions are in sync
+./scripts/sync-version.sh check
+
+# Sync plugin.json to VERSION
+./scripts/sync-version.sh sync
+
+# Bump patch version (0.3.1 → 0.3.2)
+./scripts/sync-version.sh bump
+```
+
+### Pre-commit Hook
+
+A pre-commit hook automatically checks version consistency. If `VERSION` or `plugin.json` is modified and they don't match, the commit will fail.
+
+To fix: `./scripts/sync-version.sh sync`
+
+---
+
 ## Testing
 
 Before submitting:
