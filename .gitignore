@@ -18,6 +18,12 @@ Thumbs.db
 .claude/memory/
 .claude/session-log.md
 
+# 2-Agent setup files (auto-generated)
+/AGENTS.md
+/Plans.md
+/.cursor/commands/
+/.cursor-cc-version
+
 # Logs
 *.log
 
