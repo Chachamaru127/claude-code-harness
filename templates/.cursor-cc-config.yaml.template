@@ -1,0 +1,38 @@
+# .cursor-cc-config.yaml
+# cursor-cc-plugins 設定ファイル
+#
+# このファイルでファイル整理の閾値をカスタマイズできます。
+# 不要な場合は削除しても問題ありません（デフォルト値が使用されます）。
+
+# ファイル自動整理設定
+cleanup:
+  # Plans.md の整理設定
+  plans:
+    archive_after_days: 7      # 完了からN日経過でアーカイブ移動
+    max_lines: 200             # この行数を超えたら警告
+    archive_max_items: 50      # アーカイブセクションの最大件数
+    split_to_monthly: true     # 月別ファイルに分割するか
+
+  # session-log.md の整理設定
+  session_log:
+    archive_after_days: 30     # N日経過で月別アーカイブ
+    max_lines: 500             # この行数を超えたら警告
+    archive_path: ".claude/memory/archive/sessions/"
+
+  # CLAUDE.md の設定
+  claude_md:
+    max_lines: 100             # この行数を超えたら警告
+    warn_only: true            # 警告のみ（自動編集しない）
+
+  # 実行タイミング
+  # - session_start: セッション開始時に自動チェック
+  # - manual: /cleanup コマンド時のみ
+  # - hook: ファイル書き込み時にチェック（PostToolUse Hook）
+  auto_run: hook
+
+# Hooks 設定（自動生成される .claude/settings.json に反映）
+hooks:
+  enabled: true
+  post_tool_use:
+    - matcher: "Edit|Write"
+      script: "~/.claude/scripts/auto-cleanup-hook.sh"

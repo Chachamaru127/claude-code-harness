@@ -216,6 +216,41 @@ last_setup_command: setup-2agent
 - **テンプレートを直接コピー**: 簡略化せず、詳細版テンプレートを使用
 - **バージョン管理**: `.cursor-cc-version` で更新検出を可能にする
 
+### Step 6: Hooks 設定の配置（自動整理機能）
+
+```bash
+# スクリプトディレクトリ作成
+mkdir -p .claude/scripts
+
+# Hook スクリプトをコピー
+PLUGIN_PATH="$HOME/.claude/plugins/marketplaces/cursor-cc-marketplace"
+cp "$PLUGIN_PATH/templates/hooks/auto-cleanup-hook.sh" .claude/scripts/
+chmod +x .claude/scripts/auto-cleanup-hook.sh
+
+# 設定ファイルをコピー
+cp "$PLUGIN_PATH/templates/.cursor-cc-config.yaml.template" .cursor-cc-config.yaml
+```
+
+**.claude/settings.json** を作成または更新:
+
+```json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./.claude/scripts/auto-cleanup-hook.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
 ---
 
 ## 関連スキル
@@ -223,3 +258,4 @@ last_setup_command: setup-2agent
 - `ccp-generate-workflow-files` - AGENTS.md, CLAUDE.md, Plans.md の生成
 - `ccp-session-memory` - メモリ構造の活用方法
 - `ccp-core-read-repo-context` - 既存ファイルの確認
+- `ccp-auto-cleanup` - 自動整理機能

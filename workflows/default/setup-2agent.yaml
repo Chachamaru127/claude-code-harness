@@ -95,6 +95,24 @@ steps:
         - .cursor-cc-version
     mode: required
 
+  # Step 5: Hooks 設定の配置（自動整理機能）
+  - id: setup-hooks
+    skill: ccp-setup-2agent-files
+    condition: "should_proceed"
+    input:
+      templates:
+        - templates/hooks/auto-cleanup-hook.sh
+        - templates/.cursor-cc-config.yaml.template
+      variables:
+        - plugin_version
+    output:
+      create_files:
+        - .claude/scripts/auto-cleanup-hook.sh
+        - .cursor-cc-config.yaml
+      configure:
+        - .claude/settings.json  # Hooks 設定を追加
+    mode: optional
+
 # 成功時の出力
 on_success:
   message: |
@@ -107,6 +125,7 @@ on_success:
     ├── CLAUDE.md              # Claude Code 専用設定
     ├── Plans.md               # タスク管理（共有）
     ├── .cursor-cc-version     # バージョン管理
+    ├── .cursor-cc-config.yaml # 設定ファイル（カスタマイズ可）
     ├── .cursor/
     │   └── commands/          # Cursor 用コマンド (5個)
     │       ├── start-session.md     # セッション開始
@@ -115,7 +134,10 @@ on_success:
     │       ├── assign-to-cc.md      # タスク依頼
     │       └── review-cc-work.md    # 完了レビュー
     └── .claude/
-        └── memory/
+        ├── memory/            # セッション記録
+        ├── scripts/           # 自動化スクリプト
+        │   └── auto-cleanup-hook.sh
+        └── settings.json      # Hooks 設定
     ```
 
     ---
@@ -139,6 +161,21 @@ on_success:
     | `/start-task` | タスク開始 |
     | `/handoff-to-cursor` | 完了報告 |
     | `/sync-status` | 状態確認 |
+    | `/cleanup` | ファイル整理 |
+
+    ---
+
+    🧹 **自動整理機能（NEW）**:
+
+    Plans.md 等への書き込み時に自動でサイズをチェック。
+    閾値を超えた場合は整理を提案します。
+
+    | 設定 | デフォルト |
+    |------|-----------|
+    | Plans.md 最大行数 | 200行 |
+    | アーカイブ移動 | 完了から7日後 |
+
+    設定変更: `.cursor-cc-config.yaml` を編集
 
     ---
 

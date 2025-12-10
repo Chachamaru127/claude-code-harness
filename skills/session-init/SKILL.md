@@ -41,6 +41,30 @@ Session Init スキルは、Claude Code セッション開始時に自動的に�
 
 ## 実行手順
 
+### Step 0: ファイル状態チェック（自動整理）
+
+セッション開始前にファイルサイズをチェック：
+
+```bash
+# Plans.md の行数チェック
+if [ -f "Plans.md" ]; then
+  lines=$(wc -l < Plans.md)
+  if [ "$lines" -gt 200 ]; then
+    echo "⚠️ Plans.md が ${lines} 行です。/cleanup で整理を推奨"
+  fi
+fi
+
+# session-log.md の行数チェック
+if [ -f ".claude/memory/session-log.md" ]; then
+  lines=$(wc -l < .claude/memory/session-log.md)
+  if [ "$lines" -gt 500 ]; then
+    echo "⚠️ session-log.md が ${lines} 行です。/cleanup sessions で整理を推奨"
+  fi
+fi
+```
+
+整理が必要な場合は提案を表示（作業には影響しない）。
+
 ### Step 1: 環境確認
 
 以下を並列で実行：
@@ -117,6 +141,7 @@ Plans.md から以下を抽出：
 
 - `/start-task` - タスクの詳細確認と作業開始
 - `/sync-status` - Plans.md の進捗サマリー
+- `/cleanup` - ファイルの自動整理
 
 ---
 
