@@ -28,7 +28,25 @@ steps:
         - plugin_version
     mode: required
 
-  # Step 2: 更新判定
+  # Step 2: 足りないファイルの検出
+  - id: detect-missing-files
+    skill: ccp-update-2agent-files
+    input:
+      required_files:
+        - ".cursor/commands/start-session.md"
+        - ".cursor/commands/project-overview.md"
+        - ".cursor/commands/plan-with-cc.md"
+        - ".cursor/commands/assign-to-cc.md"
+        - ".cursor/commands/review-cc-work.md"
+        - ".claude/scripts/auto-cleanup-hook.sh"
+        - ".cursor-cc-config.yaml"
+    output:
+      variables:
+        - missing_files      # 不足しているファイル一覧
+        - needs_file_add     # ファイル追加が必要か
+    mode: required
+
+  # Step 3: 更新判定
   - id: check-update-needed
     skill: ccp-update-2agent-files
     input:
@@ -36,14 +54,16 @@ steps:
         - setup_status
         - installed_version
         - plugin_version
+        - missing_files
+        - needs_file_add
       force_update: "{{force_option}}"  # --force オプション
     output:
       variables:
         - should_proceed
-        - update_reason  # outdated | force | not_needed | not_installed
+        - update_reason  # outdated | force | missing_files | not_needed | not_installed
     mode: required
 
-  # Step 3: バックアップ作成
+  # Step 4: バックアップ作成
   - id: create-backup
     skill: ccp-update-2agent-files
     condition: "should_proceed"
@@ -56,7 +76,7 @@ steps:
         - backup_files
     mode: required
 
-  # Step 4: Plans.md のマージ更新
+  # Step 5: Plans.md のマージ更新
   - id: merge-plans
     skill: ccp-merge-plans
     condition: "should_proceed && detected_files.plans"
@@ -72,7 +92,7 @@ steps:
         - merge_successful
     mode: required
 
-  # Step 5: AGENTS.md / CLAUDE.md の更新
+  # Step 6: AGENTS.md / CLAUDE.md の更新
   - id: update-workflow-files
     skill: ccp-generate-workflow-files
     condition: "should_proceed"
@@ -94,7 +114,7 @@ steps:
         - normalized_files  # リネームされたファイル
     mode: required
 
-  # Step 6: Cursor コマンドの更新（全5ファイル）
+  # Step 7: Cursor コマンドの更新（全5ファイル）
   - id: update-cursor-commands
     skill: ccp-setup-2agent-files
     condition: "should_proceed"
@@ -120,7 +140,7 @@ steps:
         - .cursor/commands/review-cc-work.md
     mode: required
 
-  # Step 7: Hooks 設定の更新（v0.3.7+）
+  # Step 8: Hooks 設定の更新（v0.3.7+）
   - id: update-hooks
     skill: ccp-setup-2agent-files
     condition: "should_proceed"
@@ -138,7 +158,7 @@ steps:
         - .claude/settings.json
     mode: optional
 
-  # Step 8: バージョンファイルの更新
+  # Step 9: バージョンファイルの更新
   - id: update-version-file
     skill: ccp-setup-2agent-files
     condition: "should_proceed"
@@ -181,9 +201,17 @@ on_success:
     | AGENTS.md | 構造を更新 |
     | CLAUDE.md | 構造を更新 |
     | Plans.md | タスク保持 + 構造更新 |
-    | .cursor/commands/ | 5ファイルに拡充 |
-    | .claude/scripts/ | 自動整理スクリプト追加 |
-    | .cursor-cc-config.yaml | 設定ファイル追加 |
+    | .cursor/commands/ | 5ファイル |
+    | .claude/scripts/ | 自動整理スクリプト |
+    | .cursor-cc-config.yaml | 設定ファイル |
+
+    {{#if missing_files}}
+    ### ⚠️ 今回追加されたファイル（不足していたもの）
+
+    {{#each missing_files}}
+    - `{{this}}`
+    {{/each}}
+    {{/if}}
 
     ---
 
