@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blue)](https://docs.anthropic.com/en/docs/claude-code)
 [![2-Agent](https://img.shields.io/badge/2--Agent-Workflow-orange)](docs/usage-2agent.md)
+[![Version](https://img.shields.io/badge/version-0.3.9-green)](CHANGELOG.md)
 
 **Cursor（PM）が計画。Claude Code（Worker）が実装。2つのAI、1つのシームレスなワークフロー。**
 
@@ -90,13 +91,31 @@ Cursor: 「いいですね！タスクに分解しますね...」
 
 ## コマンド
 
-| コマンド | どこで | 何をする |
-|---------|-------|----------|
-| `/setup-2agent` | Claude Code | **最初に実行**。ワークフローファイルを作成 |
-| `/start-task` | Claude Code | Cursor からのタスクを受け取る |
-| `/handoff-to-cursor` | Claude Code | 完了報告を Cursor に送る |
-| `/assign-to-cc` | Cursor | タスクを Claude Code に送る |
-| `/review-cc-work` | Cursor | Claude Code の作業をレビュー |
+### Claude Code コマンド
+
+| コマンド | 説明 |
+|---------|------|
+| `/setup-2agent` | **最初に実行**。ワークフローファイルを作成 |
+| `/update-2agent` | 既存セットアップを最新版に更新 |
+| `/init` | 新規プロジェクトを初期化 |
+| `/plan` | 計画を立てる |
+| `/work` | タスクを実装 |
+| `/review` | 変更をレビュー |
+| `/start-task` | Cursor からのタスクを受け取る |
+| `/handoff-to-cursor` | 完了報告を Cursor に送る |
+| `/sync-status` | Plans.md の状態を同期 |
+| `/health-check` | 環境診断 |
+| `/cleanup` | ファイル整理（Plans.md のアーカイブなど） |
+
+### Cursor コマンド
+
+| コマンド | 説明 |
+|---------|------|
+| `/assign-to-cc` | タスクを Claude Code に送る |
+| `/review-cc-work` | Claude Code の作業をレビュー |
+| `/start-session` | セッション開始→計画→依頼まで自動化 |
+| `/project-overview` | プロジェクト全体を確認 |
+| `/plan-with-cc` | Claude Code と一緒に計画 |
 
 > 新規プロジェクトの場合は `/setup-2agent` の後に `/init` を実行。
 
@@ -113,6 +132,17 @@ Cursor がない？Claude Code 単体でも動きます：
 Solo モードはシンプルですが、PM/Worker分離やクロスレビューのメリットはありません。
 
 > 詳細: [docs/usage-solo.md](docs/usage-solo.md)
+
+---
+
+## 機能
+
+- **2エージェントワークフロー**: PM/Worker の役割分担で責務を明確化
+- **セーフティファースト**: デフォルトで dry-run モード、保護ブランチ、3回ルール
+- **VibeCoder フレンドリー**: 非技術者向けの自然言語インターフェース
+- **自動整理機能** (v0.3.7+): PostToolUse フックによる自動ファイルサイズ監視
+- **差分更新**: `/update-2agent` でシームレスなバージョンアップグレード
+- **カスタマイズ可能**: `cursor-cc.config.json` でチーム固有の設定
 
 ---
 

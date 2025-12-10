@@ -5,6 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blue)](https://docs.anthropic.com/en/docs/claude-code)
 [![2-Agent](https://img.shields.io/badge/2--Agent-Workflow-orange)](docs/usage-2agent.md)
+[![Version](https://img.shields.io/badge/version-0.3.9-green)](CHANGELOG.md)
 
 **Cursor (PM) plans. Claude Code (Worker) builds. Two AIs, one seamless workflow.**
 
@@ -90,13 +91,31 @@ When implementation is needed, Cursor outputs a task for Claude Code.
 
 ## Commands
 
-| Command | Where | What It Does |
-|---------|-------|--------------|
-| `/setup-2agent` | Claude Code | **First step.** Creates workflow files |
-| `/start-task` | Claude Code | Receives task from Cursor |
-| `/handoff-to-cursor` | Claude Code | Sends completion report to Cursor |
-| `/assign-to-cc` | Cursor | Sends task to Claude Code |
-| `/review-cc-work` | Cursor | Reviews Claude Code's work |
+### Claude Code Commands
+
+| Command | What It Does |
+|---------|--------------|
+| `/setup-2agent` | **First step.** Creates workflow files |
+| `/update-2agent` | Updates existing setup to latest version |
+| `/init` | Initialize a new project |
+| `/plan` | Create a plan |
+| `/work` | Implement tasks |
+| `/review` | Review changes |
+| `/start-task` | Receives task from Cursor |
+| `/handoff-to-cursor` | Sends completion report to Cursor |
+| `/sync-status` | Sync Plans.md status |
+| `/health-check` | Environment diagnostics |
+| `/cleanup` | Clean up files (Plans.md archiving, etc.) |
+
+### Cursor Commands
+
+| Command | What It Does |
+|---------|--------------|
+| `/assign-to-cc` | Sends task to Claude Code |
+| `/review-cc-work` | Reviews Claude Code's work |
+| `/start-session` | Start session → plan → assign (automated flow) |
+| `/project-overview` | View project overview |
+| `/plan-with-cc` | Plan with Claude Code |
 
 > For new projects from scratch, run `/init` after `/setup-2agent`.
 
@@ -113,6 +132,17 @@ No Cursor? Claude Code works alone too:
 Solo mode is simpler but lacks the PM/Worker separation and cross-review benefits.
 
 > Details: [docs/usage-solo.md](docs/usage-solo.md)
+
+---
+
+## Features
+
+- **2-Agent Workflow**: PM/Worker separation with clear responsibilities
+- **Safety First**: dry-run mode by default, protected branches, 3-retry rule
+- **VibeCoder Friendly**: Natural language interface for non-technical users
+- **Auto Cleanup** (v0.3.7+): PostToolUse hooks for automatic file size monitoring
+- **Incremental Updates**: `/update-2agent` for seamless version upgrades
+- **Configurable**: `cursor-cc.config.json` for team-specific settings
 
 ---
 
