@@ -67,8 +67,13 @@ steps:
     condition: "should_proceed"
     input:
       templates:
+        # Cursor コマンド（5ファイル）
+        - templates/cursor/commands/start-session.md
+        - templates/cursor/commands/project-overview.md
+        - templates/cursor/commands/plan-with-cc.md
         - templates/cursor/commands/assign-to-cc.md
         - templates/cursor/commands/review-cc-work.md
+        # その他
         - templates/.cursor-cc-version.template
       variables:
         - plugin_version
@@ -76,11 +81,17 @@ steps:
         - project_name
     output:
       create_files:
+        # Cursor コマンド
+        - .cursor/commands/start-session.md
+        - .cursor/commands/project-overview.md
+        - .cursor/commands/plan-with-cc.md
         - .cursor/commands/assign-to-cc.md
         - .cursor/commands/review-cc-work.md
+        # メモリ
         - .claude/memory/session-log.md
         - .claude/memory/decisions.md
         - .claude/memory/patterns.md
+        # バージョン
         - .cursor-cc-version
     mode: required
 
@@ -97,27 +108,43 @@ on_success:
     ├── Plans.md               # タスク管理（共有）
     ├── .cursor-cc-version     # バージョン管理
     ├── .cursor/
-    │   └── commands/
-    │       ├── assign-to-cc.md      # タスク依頼コマンド
-    │       └── review-cc-work.md    # 完了レビューコマンド
+    │   └── commands/          # Cursor 用コマンド (5個)
+    │       ├── start-session.md     # セッション開始
+    │       ├── project-overview.md  # プロジェクト確認
+    │       ├── plan-with-cc.md      # 計画立案
+    │       ├── assign-to-cc.md      # タスク依頼
+    │       └── review-cc-work.md    # 完了レビュー
     └── .claude/
         └── memory/
-            ├── session-log.md
-            ├── decisions.md
-            └── patterns.md
     ```
 
     ---
 
-    🚀 **次のステップ**:
+    🎯 **Cursor (PM) で使えるコマンド**:
 
-    | やりたいこと | どこで | コマンド/アクション |
-    |-------------|--------|-------------------|
-    | 新規プロジェクト作成 | Claude Code | `/init` |
-    | タスクを依頼 | Cursor | `/assign-to-cc` |
-    | 実装開始 | Claude Code | `/start-task` |
-    | 完了報告 | Claude Code | `/handoff-to-cursor` |
-    | レビュー | Cursor | `/review-cc-work` |
+    | コマンド | 用途 | いつ使う |
+    |---------|------|---------|
+    | `/start-session` | セッション開始 | 作業を始める時 |
+    | `/project-overview` | 全体確認 | 状況を把握したい時 |
+    | `/plan-with-cc` | 計画立案 | 何をすべきか相談したい時 |
+    | `/assign-to-cc` | タスク依頼 | 具体的な作業を依頼する時 |
+    | `/review-cc-work` | 完了レビュー | 作業結果を確認する時 |
+
+    ---
+
+    🔧 **Claude Code (Worker) で使えるコマンド**:
+
+    | コマンド | 用途 |
+    |---------|------|
+    | `/start-task` | タスク開始 |
+    | `/handoff-to-cursor` | 完了報告 |
+    | `/sync-status` | 状態確認 |
+
+    ---
+
+    🚀 **最初の一歩**:
+
+    **Cursor** で `/start-session` を実行して、今日やりたいことを伝えてください。
 
     💡 困ったら「どうすればいい？」と聞いてください
 

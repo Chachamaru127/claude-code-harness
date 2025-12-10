@@ -23,10 +23,20 @@ metadata:
 
 ## 生成するファイル
 
+### Cursor コマンド (.cursor/commands/)
+
+| ファイル | 用途 | 使うタイミング |
+|---------|------|---------------|
+| `start-session.md` | セッション開始 | 作業を始める時 |
+| `project-overview.md` | プロジェクト全体確認 | 状況を把握したい時 |
+| `plan-with-cc.md` | 計画を立てる | 何をすべきか相談したい時 |
+| `assign-to-cc.md` | タスク依頼 | 具体的な作業を依頼する時 |
+| `review-cc-work.md` | 完了レビュー | Claude Code の作業を確認する時 |
+
+### その他のファイル
+
 | ファイル | 用途 |
 |---------|------|
-| `.cursor/commands/assign-to-cc.md` | Cursor → Claude Code へのタスク依頼コマンド |
-| `.cursor/commands/review-cc-work.md` | Cursor での完了レビューコマンド |
 | `.claude/memory/session-log.md` | セッション間の作業ログ |
 | `.claude/memory/decisions.md` | 重要な決定事項の記録 |
 | `.claude/memory/patterns.md` | 学んだパターンの記録 |
@@ -81,20 +91,28 @@ PROJECT_NAME=$(basename "$(pwd)")
 
 ### Step 3: Cursor コマンドの配置
 
-**重要**: テンプレートファイルをそのままコピーする
+**重要**: テンプレートフォルダ内の全コマンドをコピーする
 
 ```bash
 # ディレクトリ作成
 mkdir -p .cursor/commands
 
-# テンプレートからコピー
-cp ~/.claude/plugins/marketplaces/cursor-cc-marketplace/templates/cursor/commands/assign-to-cc.md .cursor/commands/
-cp ~/.claude/plugins/marketplaces/cursor-cc-marketplace/templates/cursor/commands/review-cc-work.md .cursor/commands/
+# テンプレートから全コマンドをコピー
+PLUGIN_PATH="$HOME/.claude/plugins/marketplaces/cursor-cc-marketplace"
+
+cp "$PLUGIN_PATH/templates/cursor/commands/start-session.md" .cursor/commands/
+cp "$PLUGIN_PATH/templates/cursor/commands/project-overview.md" .cursor/commands/
+cp "$PLUGIN_PATH/templates/cursor/commands/plan-with-cc.md" .cursor/commands/
+cp "$PLUGIN_PATH/templates/cursor/commands/assign-to-cc.md" .cursor/commands/
+cp "$PLUGIN_PATH/templates/cursor/commands/review-cc-work.md" .cursor/commands/
 ```
 
-**コピー元テンプレート**:
-- `templates/cursor/commands/assign-to-cc.md`
-- `templates/cursor/commands/review-cc-work.md`
+**コピー元テンプレート** (5ファイル):
+- `templates/cursor/commands/start-session.md` - セッション開始
+- `templates/cursor/commands/project-overview.md` - プロジェクト確認
+- `templates/cursor/commands/plan-with-cc.md` - 計画立案
+- `templates/cursor/commands/assign-to-cc.md` - タスク依頼
+- `templates/cursor/commands/review-cc-work.md` - 完了レビュー
 
 ### Step 4: メモリ構造の初期化
 
