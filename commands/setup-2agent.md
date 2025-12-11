@@ -40,9 +40,21 @@ Cursor (PM) と Claude Code (Worker) の2エージェント体制を**プロジ�
 
 スクリプトが作成するファイル（自動検証）：
 
-- [ ] `.cursor/commands/` (5ファイル)
-- [ ] `.claude/rules/` (4ファイル: workflow, coding-standards, plans-management, testing)
-- [ ] `.claude/memory/` (3ファイル)
+- [ ] `.cursor/commands`
+- [ ] `.cursor/commands/start-session.md`
+- [ ] `.cursor/commands/handoff-to-claude.md`
+- [ ] `.cursor/commands/review-cc-work.md`
+- [ ] `.cursor/commands/plan-with-cc.md`
+- [ ] `.cursor/commands/project-overview.md`
+- [ ] `.claude/rules`
+- [ ] `.claude/rules/workflow.md`
+- [ ] `.claude/rules/coding-standards.md`
+- [ ] `.claude/rules/plans-management.md`
+- [ ] `.claude/rules/testing.md`
+- [ ] `.claude/memory`
+- [ ] `.claude/memory/session-log.md`
+- [ ] `.claude/memory/decisions.md`
+- [ ] `.claude/memory/patterns.md`
 - [ ] `.cursor-cc-version`
 
 Claude が生成するファイル：
