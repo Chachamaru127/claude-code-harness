@@ -32,6 +32,16 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/track-changes.sh",
             "statusMessage": "変更を記録中..."
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/auto-test-runner.sh",
+            "statusMessage": "テスト推奨を確認中..."
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/plans-watcher.sh",
+            "statusMessage": "Plans.md 変更を監視中..."
           }
         ]
       }
