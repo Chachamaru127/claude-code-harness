@@ -4,6 +4,24 @@ cursor-cc-plugins のバージョン履歴です。
 
 ---
 
+## [0.5.2] - 2025-12-12
+
+### Added
+- 📊 **セッション監視フック (Session Monitoring)**
+  - `session-monitor.sh` - セッション開始時にプロジェクト状態を表示
+  - `track-changes.sh` - ファイル変更を追跡し重要な変更を検出
+  - `session-summary.sh` - セッション終了時にサマリーを生成
+  - `.claude/state/session.json` に状態を永続化
+  - Plans.md / CLAUDE.md / AGENTS.md の変更を自動検出
+
+### Changed
+- `hooks/hooks.json` に新しいフックを追加
+  - SessionStart: session-monitor.sh
+  - PostToolUse: track-changes.sh
+  - Stop: session-summary.sh
+
+---
+
 ## [0.5.1] - 2025-12-12
 
 ### Added

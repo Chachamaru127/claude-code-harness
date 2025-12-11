@@ -10,6 +10,11 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-init.sh",
             "statusMessage": "セッション初期化中..."
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-monitor.sh",
+            "statusMessage": "プロジェクト状態を確認中..."
           }
         ]
       }
@@ -22,6 +27,11 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/auto-cleanup-hook.sh",
             "statusMessage": "ファイルサイズチェック中..."
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/track-changes.sh",
+            "statusMessage": "変更を記録中..."
           }
         ]
       }
@@ -29,6 +39,11 @@
     "Stop": [
       {
         "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-summary.sh",
+            "statusMessage": "セッションサマリーを生成中..."
+          },
           {
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/collect-cleanup-context.sh",
