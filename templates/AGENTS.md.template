@@ -21,7 +21,7 @@
 Cursor (PM)          Claude Code (Worker)
     │                       │
     │  1. タスク依頼        │
-    │  (/assign-to-cc)      │
+    │  (/handoff-to-claude)      │
     │──────────────────────>│
     │                       │
     │                       │ 2. 実装・テスト・コミット

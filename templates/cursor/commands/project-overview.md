@@ -143,5 +143,5 @@ src/
 |---------|------|
 | `/start-session` | セッション開始 |
 | `/plan-with-cc` | 計画を立てる |
-| `/assign-to-cc` | タスクを依頼 |
+| `/handoff-to-claude` | タスクを依頼 |
 | `/review-cc-work` | 完了レビュー |

@@ -21,7 +21,7 @@
 
 - [ ] `.cursor/commands`
 - [ ] `.cursor/commands/start-session.md`
-- [ ] `.cursor/commands/assign-to-cc.md`
+- [ ] `.cursor/commands/handoff-to-claude.md`
 - [ ] `.cursor/commands/review-cc-work.md`
 - [ ] `.cursor/commands/plan-with-cc.md`
 - [ ] `.cursor/commands/project-overview.md`

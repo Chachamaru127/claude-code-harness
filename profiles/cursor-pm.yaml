@@ -45,7 +45,7 @@ constraints:
 # ハンドオフ設定
 handoff:
   # タスクを Claude Code に渡す際のコマンド
-  to_worker: "/assign-to-cc"
+  to_worker: "/handoff-to-claude"
   # Claude Code からの報告を受け取る際のコマンド
   from_worker: "/review-cc-work"
 

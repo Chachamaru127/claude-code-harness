@@ -85,7 +85,7 @@ normalize_filename "$PLANS_FILE" "Plans.md"
 │       ├── start-session.md        # v0.3.5+（Named Sessions: v0.4.0+）
 │       ├── project-overview.md     # v0.3.5+
 │       ├── plan-with-cc.md         # v0.3.5+
-│       ├── assign-to-cc.md
+│       ├── handoff-to-claude.md
 │       └── review-cc-work.md
 └── .claude/
     ├── rules/                      # v0.4.0+
@@ -134,7 +134,7 @@ REQUIRED_FILES=(
   ".cursor/commands/start-session.md"
   ".cursor/commands/project-overview.md"
   ".cursor/commands/plan-with-cc.md"
-  ".cursor/commands/assign-to-cc.md"
+  ".cursor/commands/handoff-to-claude.md"
   ".cursor/commands/review-cc-work.md"
   ".claude/rules/workflow.md"              # v0.4.0+
   ".claude/rules/coding-standards.md"      # v0.4.0+
@@ -235,7 +235,7 @@ mkdir -p .cursor/commands
 cp "$PLUGIN_PATH/templates/cursor/commands/start-session.md" .cursor/commands/
 cp "$PLUGIN_PATH/templates/cursor/commands/project-overview.md" .cursor/commands/
 cp "$PLUGIN_PATH/templates/cursor/commands/plan-with-cc.md" .cursor/commands/
-cp "$PLUGIN_PATH/templates/cursor/commands/assign-to-cc.md" .cursor/commands/
+cp "$PLUGIN_PATH/templates/cursor/commands/handoff-to-claude.md" .cursor/commands/
 cp "$PLUGIN_PATH/templates/cursor/commands/review-cc-work.md" .cursor/commands/
 ```
 

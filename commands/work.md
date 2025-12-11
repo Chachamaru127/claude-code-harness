@@ -13,7 +13,7 @@ TodoWrite ツールで進捗を追跡しながら、着実にタスクを完了�
 | **2エージェントモード** | `/start-task` | Cursor から依頼されたタスクを実行 |
 
 **2エージェント体制** (`/setup-2agent` 済み) の場合:
-- **Cursor** から `/assign-to-cc` でタスクを依頼された後、`/start-task` を使ってください
+- **Cursor** から `/handoff-to-claude` でタスクを依頼された後、`/start-task` を使ってください
 - `/work` は Cursor との連携を行わないソロ実行用です
 
 ---

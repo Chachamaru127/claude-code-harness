@@ -79,7 +79,7 @@ When implementation is needed, Cursor outputs a task for Claude Code.
 │  • Review       │ ◄──────────────────► │  • Test         │
 │  • Prod deploy  │                      │  • Staging      │
 └────────┬────────┘                      └────────┬────────┘
-         │   /assign-to-cc                        │
+         │   /handoff-to-claude                        │
          └───────────────────────────────────────►│
          │◄───────────────────────────────────────┘
          │   /handoff-to-cursor
@@ -111,7 +111,7 @@ When implementation is needed, Cursor outputs a task for Claude Code.
 
 | Command | What It Does |
 |---------|--------------|
-| `/assign-to-cc` | Sends task to Claude Code |
+| `/handoff-to-claude` | Sends task to Claude Code |
 | `/review-cc-work` | Reviews Claude Code's work |
 | `/start-session` | Start session → plan → assign (automated flow) |
 | `/project-overview` | View project overview |

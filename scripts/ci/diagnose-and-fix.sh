@@ -86,7 +86,7 @@ check_templates() {
     "templates/Plans.md.template"
     "templates/.cursor-cc-version.template"
     "templates/cursor/commands/start-session.md"
-    "templates/cursor/commands/assign-to-cc.md"
+    "templates/cursor/commands/handoff-to-claude.md"
     "templates/cursor/commands/review-cc-work.md"
     "templates/rules/workflow.md.template"
     "templates/rules/coding-standards.md.template"

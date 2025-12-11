@@ -36,7 +36,7 @@ steps:
         - ".cursor/commands/start-session.md"
         - ".cursor/commands/project-overview.md"
         - ".cursor/commands/plan-with-cc.md"
-        - ".cursor/commands/assign-to-cc.md"
+        - ".cursor/commands/handoff-to-claude.md"
         - ".cursor/commands/review-cc-work.md"
         - ".claude/scripts/auto-cleanup-hook.sh"
         - ".cursor-cc-config.yaml"
@@ -123,7 +123,7 @@ steps:
         - templates/cursor/commands/start-session.md
         - templates/cursor/commands/project-overview.md
         - templates/cursor/commands/plan-with-cc.md
-        - templates/cursor/commands/assign-to-cc.md
+        - templates/cursor/commands/handoff-to-claude.md
         - templates/cursor/commands/review-cc-work.md
       variables:
         - plugin_version
@@ -136,7 +136,7 @@ steps:
         - .cursor/commands/start-session.md
         - .cursor/commands/project-overview.md
         - .cursor/commands/plan-with-cc.md
-        - .cursor/commands/assign-to-cc.md
+        - .cursor/commands/handoff-to-claude.md
         - .cursor/commands/review-cc-work.md
     mode: required
 

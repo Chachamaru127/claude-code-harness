@@ -29,7 +29,7 @@ REQUIRED_TEMPLATES=(
   "templates/cursor/commands/start-session.md"
   "templates/cursor/commands/project-overview.md"
   "templates/cursor/commands/plan-with-cc.md"
-  "templates/cursor/commands/assign-to-cc.md"
+  "templates/cursor/commands/handoff-to-claude.md"
   "templates/cursor/commands/review-cc-work.md"
   "templates/rules/workflow.md.template"
   "templates/rules/coding-standards.md.template"

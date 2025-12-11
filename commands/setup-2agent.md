@@ -28,7 +28,7 @@ Cursor (PM) と Claude Code (Worker) の2エージェント体制を一発でセ
 
 - [ ] `.cursor/commands`
 - [ ] `.cursor/commands/start-session.md`
-- [ ] `.cursor/commands/assign-to-cc.md`
+- [ ] `.cursor/commands/handoff-to-claude.md`
 - [ ] `.cursor/commands/review-cc-work.md`
 - [ ] `.cursor/commands/plan-with-cc.md`
 - [ ] `.cursor/commands/project-overview.md`
@@ -100,7 +100,7 @@ Step 2 で Claude が生成するファイル：
 ├── .cursor-cc-version     # バージョン管理
 ├── .cursor/
 │   └── commands/
-│       ├── assign-to-cc.md      # タスク依頼コマンド
+│       ├── handoff-to-claude.md      # タスク依頼コマンド
 │       └── review-cc-work.md    # 完了レビューコマンド
 └── .claude/
     ├── rules/                   # ワークフロールール（v0.4.0+）
@@ -186,7 +186,7 @@ find . -maxdepth 1 -iname "plans.md" -type f 2>/dev/null | head -1
 
 | やりたいこと | どちらで言う | 言い方 |
 |-------------|-------------|--------|
-| タスクを依頼 | Cursor | 「〇〇を実装して」→ `/assign-to-cc` |
+| タスクを依頼 | Cursor | 「〇〇を実装して」→ `/handoff-to-claude` |
 | 実装する | Claude Code | 「次のタスク」→ `/start-task` |
 | 完了報告 | Claude Code | 「終わった」→ `/handoff-to-cursor` |
 | レビュー | Cursor | 「確認して」→ `/review-cc-work` |

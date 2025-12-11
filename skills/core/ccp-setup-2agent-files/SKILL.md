@@ -30,7 +30,7 @@ metadata:
 | `start-session.md` | セッション開始 | 作業を始める時 |
 | `project-overview.md` | プロジェクト全体確認 | 状況を把握したい時 |
 | `plan-with-cc.md` | 計画を立てる | 何をすべきか相談したい時 |
-| `assign-to-cc.md` | タスク依頼 | 具体的な作業を依頼する時 |
+| `handoff-to-claude.md` | タスク依頼 | 具体的な作業を依頼する時 |
 | `review-cc-work.md` | 完了レビュー | Claude Code の作業を確認する時 |
 
 ### Claude Rules (.claude/rules/) - v0.4.0+
@@ -110,7 +110,7 @@ PLUGIN_PATH="$HOME/.claude/plugins/marketplaces/cursor-cc-marketplace"
 cp "$PLUGIN_PATH/templates/cursor/commands/start-session.md" .cursor/commands/
 cp "$PLUGIN_PATH/templates/cursor/commands/project-overview.md" .cursor/commands/
 cp "$PLUGIN_PATH/templates/cursor/commands/plan-with-cc.md" .cursor/commands/
-cp "$PLUGIN_PATH/templates/cursor/commands/assign-to-cc.md" .cursor/commands/
+cp "$PLUGIN_PATH/templates/cursor/commands/handoff-to-claude.md" .cursor/commands/
 cp "$PLUGIN_PATH/templates/cursor/commands/review-cc-work.md" .cursor/commands/
 ```
 
@@ -118,7 +118,7 @@ cp "$PLUGIN_PATH/templates/cursor/commands/review-cc-work.md" .cursor/commands/
 - `templates/cursor/commands/start-session.md` - セッション開始
 - `templates/cursor/commands/project-overview.md` - プロジェクト確認
 - `templates/cursor/commands/plan-with-cc.md` - 計画立案
-- `templates/cursor/commands/assign-to-cc.md` - タスク依頼
+- `templates/cursor/commands/handoff-to-claude.md` - タスク依頼
 - `templates/cursor/commands/review-cc-work.md` - 完了レビュー
 
 ### Step 4: Claude Rules の配置（v0.4.0+）

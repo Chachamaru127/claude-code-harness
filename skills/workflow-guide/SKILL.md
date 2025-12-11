@@ -48,7 +48,7 @@ Cursor ↔ Claude Code 2エージェントワークフローのガイダンス�
 ┌─────────────────────────────────────────────────────────┐
 │                    Cursor (PM)                          │
 │  ・タスクを Plans.md に追加                              │
-│  ・Claude Code に作業を依頼（/assign-to-cc）            │
+│  ・Claude Code に作業を依頼（/handoff-to-claude）            │
 │  ・完了報告をレビュー                                    │
 │  ・本番デプロイの判断                                    │
 └─────────────────────┬───────────────────────────────────┘
@@ -109,7 +109,7 @@ cursor:依頼中 → cc:WIP → cc:完了 → cursor:確認済
 
 | コマンド | 用途 |
 |---------|------|
-| `/assign-to-cc` | Claude Code にタスク依頼 |
+| `/handoff-to-claude` | Claude Code にタスク依頼 |
 | `/review-cc-work` | 完了報告のレビュー |
 
 ---

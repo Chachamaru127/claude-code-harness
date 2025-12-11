@@ -87,7 +87,7 @@ check_dir() {
 # 必須ファイルの確認
 check_dir ".cursor/commands"
 check_file ".cursor/commands/start-session.md"
-check_file ".cursor/commands/assign-to-cc.md"
+check_file ".cursor/commands/handoff-to-claude.md"
 check_file ".cursor/commands/review-cc-work.md"
 check_file ".cursor/commands/plan-with-cc.md"
 check_file ".cursor/commands/project-overview.md"

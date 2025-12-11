@@ -22,6 +22,13 @@ description: Claude Code への作業依頼プロンプトを生成します。C
 ```markdown
 # Claude Code 作業指示
 
+## セッション名
+**推奨**: 作業開始後、以下のコマンドでセッションに名前を付けてください：
+```
+/rename {project}-{feature}-{YYYYMMDD}
+```
+例: `/rename jarvis-chat-button-20251211`
+
 ## 作業概要
 $ARGUMENTS
 
@@ -74,7 +81,7 @@ $ARGUMENTS
 ## 使用例
 
 ```
-/assign-to-cc "認証機能の実装"
+/handoff-to-claude "フローティングチャットボタンの削除"
 ```
 
 → 指示プロンプトが出力される

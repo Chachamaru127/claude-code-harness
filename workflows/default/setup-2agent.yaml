@@ -14,7 +14,7 @@ steps:
         - AGENTS.md
         - CLAUDE.md
         - Plans.md
-        - .cursor/commands/assign-to-cc.md
+        - .cursor/commands/handoff-to-claude.md
         - .cursor/commands/review-cc-work.md
       context_from:
         - repo_tree
@@ -71,7 +71,7 @@ steps:
         - templates/cursor/commands/start-session.md
         - templates/cursor/commands/project-overview.md
         - templates/cursor/commands/plan-with-cc.md
-        - templates/cursor/commands/assign-to-cc.md
+        - templates/cursor/commands/handoff-to-claude.md
         - templates/cursor/commands/review-cc-work.md
         # その他
         - templates/.cursor-cc-version.template
@@ -85,7 +85,7 @@ steps:
         - .cursor/commands/start-session.md
         - .cursor/commands/project-overview.md
         - .cursor/commands/plan-with-cc.md
-        - .cursor/commands/assign-to-cc.md
+        - .cursor/commands/handoff-to-claude.md
         - .cursor/commands/review-cc-work.md
         # メモリ
         - .claude/memory/session-log.md
@@ -131,7 +131,7 @@ on_success:
     │       ├── start-session.md     # セッション開始
     │       ├── project-overview.md  # プロジェクト確認
     │       ├── plan-with-cc.md      # 計画立案
-    │       ├── assign-to-cc.md      # タスク依頼
+    │       ├── handoff-to-claude.md      # タスク依頼
     │       └── review-cc-work.md    # 完了レビュー
     └── .claude/
         ├── memory/            # セッション記録
@@ -149,7 +149,7 @@ on_success:
     | `/start-session` | セッション開始 | 作業を始める時 |
     | `/project-overview` | 全体確認 | 状況を把握したい時 |
     | `/plan-with-cc` | 計画立案 | 何をすべきか相談したい時 |
-    | `/assign-to-cc` | タスク依頼 | 具体的な作業を依頼する時 |
+    | `/handoff-to-claude` | タスク依頼 | 具体的な作業を依頼する時 |
     | `/review-cc-work` | 完了レビュー | 作業結果を確認する時 |
 
     ---

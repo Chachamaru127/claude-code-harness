@@ -315,5 +315,5 @@ Cursor:
 |---------|------|
 | `/project-overview` | 詳細な状況確認のみ |
 | `/plan-with-cc` | 計画立案のみ |
-| `/assign-to-cc` | タスク依頼のみ |
+| `/handoff-to-claude` | タスク依頼のみ |
 | `/review-cc-work` | レビューのみ |

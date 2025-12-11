@@ -35,7 +35,7 @@
 │ └────────┬─────────┘               │               └────────┬─────────┘     │
 │          │                         │                        │               │
 │          │ 1. Create plan          │                        │               │
-│          │    /assign-to-cc        │                        │               │
+│          │    /handoff-to-claude        │                        │               │
 │          │                         │                        │               │
 │          └──────────────────────►  │ 2. Copy task           │               │
 │                                    │    to Claude Code      │               │
@@ -91,7 +91,7 @@ Cursor (PM):
 
  Adding to Plans.md with marker: cursor:requested"
 
-Cursor: /assign-to-cc
+Cursor: /handoff-to-claude
 "📋 Task ready for Claude Code. Please copy this to Claude Code."
 ```
 

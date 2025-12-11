@@ -170,5 +170,5 @@ Cursor:
 | コマンド | 用途 |
 |---------|------|
 | `/start-session` | 状況確認から始める |
-| `/assign-to-cc` | 具体的なタスクを依頼 |
+| `/handoff-to-claude` | 具体的なタスクを依頼 |
 | `/project-overview` | プロジェクト全体を確認 |
