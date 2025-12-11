@@ -320,28 +320,34 @@ detect_git_info() {
 detect_important_patterns() {
   local patterns=()
 
-  # セキュリティ関連
-  if [ -f "SECURITY.md" ] || grep -riq "security" README.md CONTRIBUTING.md 2>/dev/null; then
+  # 検索対象ファイル（存在するもののみ）
+  local search_files=""
+  for f in README.md CONTRIBUTING.md AGENTS.md CLAUDE.md; do
+    [ -f "$f" ] && search_files="$search_files $f"
+  done
+
+  # セキュリティ関連（日本語対応）
+  if [ -f "SECURITY.md" ] || grep -riqE "security|セキュリティ|バリデーション|SQLインジェクション|認証" $search_files 2>/dev/null; then
     patterns+=("security")
   fi
 
-  # テスト重視
-  if grep -riq "test coverage\|coverage.*%\|must have tests\|require.*test" README.md CONTRIBUTING.md 2>/dev/null; then
+  # テスト重視（日本語対応）
+  if grep -riqE "test coverage|coverage.*%|must have tests|require.*test|テスト.*必須|カバレッジ|ユニットテスト" $search_files 2>/dev/null; then
     patterns+=("testing-required")
   fi
 
-  # アクセシビリティ
-  if grep -riq "accessibility\|a11y\|wcag\|aria" README.md CONTRIBUTING.md package.json 2>/dev/null; then
+  # アクセシビリティ（日本語対応）
+  if grep -riqE "accessibility|a11y|wcag|aria|アクセシビリティ|スクリーンリーダー" $search_files package.json 2>/dev/null; then
     patterns+=("accessibility")
   fi
 
-  # パフォーマンス
-  if grep -riq "performance\|core web vitals\|lighthouse" README.md CONTRIBUTING.md 2>/dev/null; then
+  # パフォーマンス（日本語対応）
+  if grep -riqE "performance|core web vitals|lighthouse|パフォーマンス|レスポンス.*ms|N\+1" $search_files 2>/dev/null; then
     patterns+=("performance")
   fi
 
   # 国際化
-  if grep -riq "i18n\|internationalization\|localization" README.md package.json 2>/dev/null; then
+  if grep -riqE "i18n|internationalization|localization|国際化" $search_files package.json 2>/dev/null; then
     patterns+=("i18n")
   fi
 
