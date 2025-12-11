@@ -4,6 +4,26 @@ cursor-cc-plugins のバージョン履歴です。
 
 ---
 
+## [0.4.8] - 2025-12-12
+
+### Added
+- 🎯 **ルールのプロジェクトローカライズ機能**
+  - `scripts/analyze-project.sh` - プロジェクト構造を自動分析
+  - `scripts/localize-rules.sh` - ルールをプロジェクトに最適化
+  - `/localize-rules` コマンド - 既存プロジェクトでルールを再ローカライズ
+
+### Changed
+- `/setup-2agent` 実行時にプロジェクト構造を分析し、ルールを自動ローカライズ
+  - 言語検出（TypeScript, Python, Go, Rust, Ruby, Java, Kotlin）
+  - ソースディレクトリ検出（src/, app/, lib/ など）
+  - テストディレクトリ検出（tests/, __tests__/, spec/ など）
+  - 言語固有のルールセクション追加（TypeScript, Python, React 固有ルール）
+
+### Documentation
+- ローカライズ機能のドキュメントを追加
+
+---
+
 ## [0.4.7] - 2025-12-12
 
 ### Added
