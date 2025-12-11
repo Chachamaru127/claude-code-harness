@@ -4,23 +4,37 @@ cursor-cc-plugins のバージョン履歴です。
 
 ---
 
-## [0.4.8] - 2025-12-12
+## [0.5.0] - 2025-12-12
 
 ### Added
-- 🎯 **ルールのプロジェクトローカライズ機能**
-  - `scripts/analyze-project.sh` - プロジェクト構造を自動分析
-  - `scripts/localize-rules.sh` - ルールをプロジェクトに最適化
-  - `/localize-rules` コマンド - 既存プロジェクトでルールを再ローカライズ
+- 🔍 **適応型セットアップ (Adaptive Setup)**
+  - プロジェクトの技術スタック・既存設定を自動分析
+  - `scripts/analyze-project.sh` - JSON形式で分析結果を出力
+  - Node.js, Python, Rust, Go, Ruby, Java の検出
+  - React, Next.js, Vue, Django, FastAPI 等のフレームワーク検出
+  - ESLint, Prettier, Biome, Ruff 等のLinter/Formatter検出
+  - 既存の Claude/Cursor 設定を尊重（上書きしない）
+  - Conventional Commits パターンの検出
+  - セキュリティ・テスト・アクセシビリティ等の重要事項検出
+
+- 📁 **3フェーズセットアップフロー**
+  - Phase 1: プロジェクト分析と結果表示
+  - Phase 2: ルールカスタマイズ（LLMが最適化）
+  - Phase 3: インタラクティブ確認と配置
+
+- 🆕 **新規スキル・ドキュメント**
+  - `skills/core/ccp-adaptive-setup/SKILL.md` - 適応型セットアップスキル
+  - `docs/design/adaptive-setup.md` - 設計ドキュメント
 
 ### Changed
-- `/setup-2agent` 実行時にプロジェクト構造を分析し、ルールを自動ローカライズ
-  - 言語検出（TypeScript, Python, Go, Rust, Ruby, Java, Kotlin）
-  - ソースディレクトリ検出（src/, app/, lib/ など）
-  - テストディレクトリ検出（tests/, __tests__/, spec/ など）
-  - 言語固有のルールセクション追加（TypeScript, Python, React 固有ルール）
+- `/setup-2agent` コマンドを適応型に更新
+- `scripts/setup-2agent.sh` に `--analyze-only` オプション追加
+- 既存設定がある場合は `/update-2agent` を案内
 
-### Documentation
-- ローカライズ機能のドキュメントを追加
+### Philosophy
+- **非破壊的更新**: 既存のカスタマイズを上書きしない
+- **プロジェクト理解**: 技術スタック・規約を把握してから配置
+- **段階的確認**: 分析結果をユーザーに提示してから実行
 
 ---
 

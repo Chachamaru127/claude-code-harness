@@ -1,47 +1,51 @@
-# /setup-2agent - 2エージェント体制セットアップ
+# /setup-2agent - 適応型2エージェント体制セットアップ
 
-Cursor (PM) と Claude Code (Worker) の2エージェント体制を一発でセットアップします。
-両方のエージェントに必要なファイルを自動生成します。
+Cursor (PM) と Claude Code (Worker) の2エージェント体制を**プロジェクトの状態を分析して**セットアップします。
+既存の設定やコーディング規約を検出し、プロジェクトに最適化されたルールを生成します。
 
 ---
 
 ## ⚠️ 実行手順（必須）
 
-**このコマンドを実行する際、以下の手順を必ず実行すること：**
+**このコマンドを実行する際、以下の3フェーズを実行すること：**
 
-### Step 1: セットアップスクリプトを実行
+### Phase 1: プロジェクト分析
+
+```bash
+# 分析スクリプトを実行
+~/.claude/plugins/marketplaces/cursor-cc-marketplace/scripts/analyze-project.sh
+```
+
+分析内容を確認し、検出された技術スタック・規約をユーザーに報告。
+
+### Phase 2: ルールカスタマイズ
+
+分析結果に基づき、以下を決定：
+- 適用する基本ルール
+- プロジェクト固有のルール追加
+- 既存規約（ESLint/Prettier等）の反映
+
+### Phase 3: セットアップ実行
 
 ```bash
 ~/.claude/plugins/marketplaces/cursor-cc-marketplace/scripts/setup-2agent.sh
 ```
 
-### Step 2: AGENTS.md, CLAUDE.md, Plans.md を生成
-
-スクリプト実行後、テンプレートを使って以下を生成：
+その後、テンプレートを使って以下を生成：
 - AGENTS.md ← `templates/AGENTS.md.template`
 - CLAUDE.md ← `templates/CLAUDE.md.template`
 - Plans.md ← `templates/Plans.md.template`
 
-### Step 3: 検証チェックリストを確認
+### 検証チェックリスト
 
 スクリプトが作成するファイル（自動検証）：
 
-- [ ] `.cursor/commands`
-- [ ] `.cursor/commands/start-session.md`
-- [ ] `.cursor/commands/handoff-to-claude.md`
-- [ ] `.cursor/commands/review-cc-work.md`
-- [ ] `.cursor/commands/plan-with-cc.md`
-- [ ] `.cursor/commands/project-overview.md`
-- [ ] `.claude/rules`
-- [ ] `.claude/rules/workflow.md`
-- [ ] `.claude/rules/coding-standards.md`
-- [ ] `.claude/memory`
-- [ ] `.claude/memory/session-log.md`
-- [ ] `.claude/memory/decisions.md`
-- [ ] `.claude/memory/patterns.md`
+- [ ] `.cursor/commands/` (5ファイル)
+- [ ] `.claude/rules/` (4ファイル: workflow, coding-standards, plans-management, testing)
+- [ ] `.claude/memory/` (3ファイル)
 - [ ] `.cursor-cc-version`
 
-Step 2 で Claude が生成するファイル：
+Claude が生成するファイル：
 
 - [ ] `AGENTS.md`
 - [ ] `CLAUDE.md`
@@ -53,12 +57,13 @@ Step 2 で Claude が生成するファイル：
 
 ## このコマンドの特徴
 
-- **ワンコマンドセットアップ**: 必要なファイルを全て自動生成
-- **Cursor側設定も生成**: `.cursor/commands/` にPM用コマンドを配置
-- **テンプレートベース**: `templates/` の詳細版テンプレートを使用
-- **バージョン管理**: 更新が必要な場合に通知
+- **適応型セットアップ**: プロジェクトを分析し、最適なルールを生成
+- **技術スタック検出**: Node.js, Python, Rust, Go 等を自動検出
+- **既存規約の反映**: ESLint, Prettier, tsconfig 等の設定を取り込み
+- **既存設定の保持**: マージ方式で上書きを防止
+- **重要事項のルール化**: テスト必須、セキュリティ等を自動ルール化
+- **インタラクティブ確認**: セットアップ前に内容を確認
 - **Case-Insensitive検出**: `plans.md` / `Plans.md` / `PLANS.MD` を同一視
-- **既存ファイル対応**: 既存がある場合は `/update-2agent` を案内
 
 ---
 

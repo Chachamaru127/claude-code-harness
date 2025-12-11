@@ -1,202 +1,377 @@
 #!/bin/bash
 # analyze-project.sh
-# プロジェクト構造を分析してルールのローカライズに必要な情報を収集
+# プロジェクト分析スクリプト - 適応型セットアップ用
 #
-# 出力: JSON 形式でプロジェクト情報を出力
+# Usage: ./scripts/analyze-project.sh [project_path]
+# Output: JSON形式のプロジェクト分析結果
 
 set -e
 
-# ================================
-# 言語・フレームワーク検出
-# ================================
-detect_languages() {
-  local languages=()
+PROJECT_PATH="${1:-.}"
+cd "$PROJECT_PATH"
 
-  # JavaScript/TypeScript
+# JSON出力用の一時ファイル
+RESULT_FILE=$(mktemp)
+
+# ================================
+# ヘルパー関数
+# ================================
+
+json_escape() {
+  echo -n "$1" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))' 2>/dev/null || echo '""'
+}
+
+file_exists() {
+  [ -f "$1" ] && echo "true" || echo "false"
+}
+
+dir_exists() {
+  [ -d "$1" ] && echo "true" || echo "false"
+}
+
+# ================================
+# 1. 技術スタック検出
+# ================================
+
+detect_tech_stack() {
+  local techs=()
+  local frameworks=()
+  local testing=()
+
+  # Node.js / JavaScript / TypeScript
   if [ -f "package.json" ]; then
-    if grep -q '"typescript"' package.json 2>/dev/null || [ -f "tsconfig.json" ]; then
-      languages+=("typescript")
-    else
-      languages+=("javascript")
+    techs+=("nodejs")
+
+    # TypeScript
+    if [ -f "tsconfig.json" ]; then
+      techs+=("typescript")
     fi
 
     # フレームワーク検出
     if grep -q '"react"' package.json 2>/dev/null; then
-      languages+=("react")
-    fi
-    if grep -q '"vue"' package.json 2>/dev/null; then
-      languages+=("vue")
+      frameworks+=("react")
     fi
     if grep -q '"next"' package.json 2>/dev/null; then
-      languages+=("nextjs")
+      frameworks+=("nextjs")
     fi
-    if grep -q '"@angular' package.json 2>/dev/null; then
-      languages+=("angular")
+    if grep -q '"vue"' package.json 2>/dev/null; then
+      frameworks+=("vue")
+    fi
+    if grep -q '"nuxt"' package.json 2>/dev/null; then
+      frameworks+=("nuxt")
+    fi
+    if grep -q '"express"' package.json 2>/dev/null; then
+      frameworks+=("express")
+    fi
+    if grep -q '"fastify"' package.json 2>/dev/null; then
+      frameworks+=("fastify")
+    fi
+    if grep -q '"svelte"' package.json 2>/dev/null; then
+      frameworks+=("svelte")
+    fi
+
+    # テストフレームワーク
+    if grep -q '"jest"' package.json 2>/dev/null; then
+      testing+=("jest")
+    fi
+    if grep -q '"vitest"' package.json 2>/dev/null; then
+      testing+=("vitest")
+    fi
+    if grep -q '"mocha"' package.json 2>/dev/null; then
+      testing+=("mocha")
+    fi
+    if grep -q '"playwright"' package.json 2>/dev/null; then
+      testing+=("playwright")
+    fi
+    if grep -q '"cypress"' package.json 2>/dev/null; then
+      testing+=("cypress")
     fi
   fi
 
   # Python
   if [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "setup.py" ]; then
-    languages+=("python")
-    if [ -f "pyproject.toml" ] && grep -q "django" pyproject.toml 2>/dev/null; then
-      languages+=("django")
-    fi
-    if [ -f "requirements.txt" ] && grep -qi "flask" requirements.txt 2>/dev/null; then
-      languages+=("flask")
-    fi
-    if [ -f "requirements.txt" ] && grep -qi "fastapi" requirements.txt 2>/dev/null; then
-      languages+=("fastapi")
-    fi
-  fi
+    techs+=("python")
 
-  # Go
-  if [ -f "go.mod" ]; then
-    languages+=("go")
+    if [ -f "pyproject.toml" ]; then
+      if grep -q "django" pyproject.toml 2>/dev/null; then
+        frameworks+=("django")
+      fi
+      if grep -q "fastapi" pyproject.toml 2>/dev/null; then
+        frameworks+=("fastapi")
+      fi
+      if grep -q "flask" pyproject.toml 2>/dev/null; then
+        frameworks+=("flask")
+      fi
+      if grep -q "pytest" pyproject.toml 2>/dev/null; then
+        testing+=("pytest")
+      fi
+    fi
   fi
 
   # Rust
   if [ -f "Cargo.toml" ]; then
-    languages+=("rust")
+    techs+=("rust")
+  fi
+
+  # Go
+  if [ -f "go.mod" ]; then
+    techs+=("go")
   fi
 
   # Ruby
   if [ -f "Gemfile" ]; then
-    languages+=("ruby")
+    techs+=("ruby")
     if grep -q "rails" Gemfile 2>/dev/null; then
-      languages+=("rails")
+      frameworks+=("rails")
+    fi
+    if grep -q "rspec" Gemfile 2>/dev/null; then
+      testing+=("rspec")
     fi
   fi
 
-  # Java/Kotlin
+  # Java
   if [ -f "pom.xml" ] || [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
-    if [ -f "build.gradle.kts" ] || find . -name "*.kt" -maxdepth 3 2>/dev/null | head -1 | grep -q .; then
-      languages+=("kotlin")
-    else
-      languages+=("java")
+    techs+=("java")
+    if [ -f "build.gradle" ] || [ -f "build.gradle.kts" ]; then
+      frameworks+=("gradle")
     fi
   fi
 
-  # デフォルト
-  if [ ${#languages[@]} -eq 0 ]; then
-    languages+=("unknown")
+  # 出力
+  if [ ${#techs[@]} -eq 0 ]; then
+    echo "\"technologies\": [],"
+  else
+    echo "\"technologies\": [$(printf '"%s",' "${techs[@]}" | sed 's/,$//')],"
   fi
 
-  # JSON配列として出力
-  printf '%s\n' "${languages[@]}" | jq -R . | jq -s .
+  if [ ${#frameworks[@]} -eq 0 ]; then
+    echo "\"frameworks\": [],"
+  else
+    echo "\"frameworks\": [$(printf '"%s",' "${frameworks[@]}" | sed 's/,$//')],"
+  fi
+
+  if [ ${#testing[@]} -eq 0 ]; then
+    echo "\"testing\": []"
+  else
+    echo "\"testing\": [$(printf '"%s",' "${testing[@]}" | sed 's/,$//')]"
+  fi
 }
 
 # ================================
-# ソースディレクトリ検出
+# 2. 既存コーディング規約検出
 # ================================
-detect_source_dirs() {
-  local src_dirs=()
 
-  # 一般的なソースディレクトリ
-  for dir in src app lib source pkg cmd internal; do
-    if [ -d "$dir" ]; then
-      src_dirs+=("$dir")
+detect_coding_standards() {
+  local linters=()
+  local formatters=()
+  local strict_mode="false"
+
+  # ESLint
+  for eslint_file in .eslintrc .eslintrc.js .eslintrc.json .eslintrc.yml .eslintrc.yaml eslint.config.js eslint.config.mjs; do
+    if [ -f "$eslint_file" ]; then
+      linters+=("eslint:$eslint_file")
+      break
     fi
   done
 
-  # Next.js の pages/app ディレクトリ
-  for dir in pages app; do
-    if [ -d "$dir" ] && [ -f "package.json" ] && grep -q '"next"' package.json 2>/dev/null; then
-      # 重複チェック
-      local exists=false
-      for existing in "${src_dirs[@]}"; do
-        if [ "$existing" = "$dir" ]; then
-          exists=true
-          break
-        fi
-      done
-      if [ "$exists" = false ]; then
-        src_dirs+=("$dir")
-      fi
+  # Prettier
+  for prettier_file in .prettierrc .prettierrc.js .prettierrc.json .prettierrc.yml .prettierrc.yaml prettier.config.js; do
+    if [ -f "$prettier_file" ]; then
+      formatters+=("prettier:$prettier_file")
+      break
     fi
   done
 
-  # Python のパッケージディレクトリ（__init__.py があるディレクトリ）
-  if [ -f "pyproject.toml" ] || [ -f "setup.py" ]; then
-    for dir in */; do
-      if [ -f "${dir}__init__.py" ] && [[ "$dir" != "tests/" ]] && [[ "$dir" != "test/" ]]; then
-        src_dirs+=("${dir%/}")
-      fi
-    done
+  # EditorConfig
+  if [ -f ".editorconfig" ]; then
+    formatters+=("editorconfig:.editorconfig")
   fi
 
-  # デフォルト（ルート）
-  if [ ${#src_dirs[@]} -eq 0 ]; then
-    src_dirs+=(".")
+  # TypeScript strict mode
+  if [ -f "tsconfig.json" ]; then
+    if grep -q '"strict":\s*true' tsconfig.json 2>/dev/null; then
+      strict_mode="true"
+    fi
   fi
 
-  # JSON 配列を生成
-  printf '%s\n' "${src_dirs[@]}" | jq -R . | jq -s .
+  # Biome
+  if [ -f "biome.json" ]; then
+    linters+=("biome:biome.json")
+    formatters+=("biome:biome.json")
+  fi
+
+  # Ruff (Python)
+  if [ -f "ruff.toml" ] || [ -f ".ruff.toml" ]; then
+    linters+=("ruff:ruff.toml")
+  fi
+
+  # Black (Python)
+  if [ -f "pyproject.toml" ] && grep -q "black" pyproject.toml 2>/dev/null; then
+    formatters+=("black:pyproject.toml")
+  fi
+
+  if [ ${#linters[@]} -eq 0 ]; then
+    echo "\"linters\": [],"
+  else
+    echo "\"linters\": [$(printf '"%s",' "${linters[@]}" | sed 's/,$//')],"
+  fi
+
+  if [ ${#formatters[@]} -eq 0 ]; then
+    echo "\"formatters\": [],"
+  else
+    echo "\"formatters\": [$(printf '"%s",' "${formatters[@]}" | sed 's/,$//')],"
+  fi
+
+  echo "\"typescript_strict\": $strict_mode"
 }
 
 # ================================
-# テストディレクトリ検出
+# 3. 既存ドキュメント検出
 # ================================
-detect_test_dirs() {
-  local test_dirs=()
 
-  # 一般的なテストディレクトリ
-  for dir in tests test __tests__ spec e2e cypress; do
-    if [ -d "$dir" ]; then
-      test_dirs+=("$dir")
-    fi
-  done
+detect_documentation() {
+  local docs=()
 
-  # src 内のテストディレクトリ
-  if [ -d "src/__tests__" ]; then
-    test_dirs+=("src/__tests__")
+  [ -f "README.md" ] && docs+=("README.md")
+  [ -f "CONTRIBUTING.md" ] && docs+=("CONTRIBUTING.md")
+  [ -f "CODE_OF_CONDUCT.md" ] && docs+=("CODE_OF_CONDUCT.md")
+  [ -f "SECURITY.md" ] && docs+=("SECURITY.md")
+  [ -f "CHANGELOG.md" ] && docs+=("CHANGELOG.md")
+  [ -d "docs" ] && docs+=("docs/")
+
+  if [ ${#docs[@]} -eq 0 ]; then
+    echo "\"documentation\": []"
+  else
+    echo "\"documentation\": [$(printf '"%s",' "${docs[@]}" | sed 's/,$//')]"
   fi
-
-  # テストファイルのパターン検出
-  local has_colocated_tests=false
-  if find . -maxdepth 4 \( -name "*.test.*" -o -name "*.spec.*" \) 2>/dev/null | head -1 | grep -q .; then
-    has_colocated_tests=true
-  fi
-
-  # JSON オブジェクトを生成
-  local dirs_json="[]"
-  if [ ${#test_dirs[@]} -gt 0 ]; then
-    dirs_json=$(printf '%s\n' "${test_dirs[@]}" | jq -R . | jq -s .)
-  fi
-
-  echo "{\"dirs\": $dirs_json, \"has_colocated_tests\": $has_colocated_tests}"
 }
 
 # ================================
-# ファイル拡張子検出
+# 4. 既存 Claude/Cursor 設定検出
 # ================================
-detect_extensions() {
-  local result="["
-  local first=true
 
-  # 主要な拡張子をカウント
-  for ext in ts tsx js jsx py rb go rs java kt swift c cpp h hpp cs php md sh; do
-    count=$(find . -maxdepth 5 -name "*.$ext" 2>/dev/null | wc -l | tr -d ' ')
-    if [ "$count" -gt 0 ]; then
-      if [ "$first" = true ]; then
-        first=false
-      else
-        result+=","
-      fi
-      result+="{\"ext\":\"$ext\",\"count\":$count}"
-    fi
-  done
+detect_existing_setup() {
+  local claude_files=()
+  local cursor_files=()
 
-  result+="]"
-  echo "$result"
+  # Claude 設定
+  [ -f "CLAUDE.md" ] && claude_files+=("CLAUDE.md")
+  [ -f ".claude/CLAUDE.md" ] && claude_files+=(".claude/CLAUDE.md")
+  [ -d ".claude/rules" ] && claude_files+=(".claude/rules/")
+  [ -d ".claude/memory" ] && claude_files+=(".claude/memory/")
+
+  # Cursor 設定
+  [ -d ".cursor/commands" ] && cursor_files+=(".cursor/commands/")
+  [ -d ".cursor/rules" ] && cursor_files+=(".cursor/rules/")
+
+  # バージョンファイル
+  local version="none"
+  if [ -f ".cursor-cc-version" ]; then
+    version=$(grep "^version:" .cursor-cc-version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
+  fi
+
+  if [ ${#claude_files[@]} -eq 0 ]; then
+    echo "\"claude_config\": [],"
+  else
+    echo "\"claude_config\": [$(printf '"%s",' "${claude_files[@]}" | sed 's/,$//')],"
+  fi
+
+  if [ ${#cursor_files[@]} -eq 0 ]; then
+    echo "\"cursor_config\": [],"
+  else
+    echo "\"cursor_config\": [$(printf '"%s",' "${cursor_files[@]}" | sed 's/,$//')],"
+  fi
+
+  echo "\"cursor_cc_version\": \"$version\""
 }
 
 # ================================
-# メイン出力
+# 5. Git 情報検出
 # ================================
+
+detect_git_info() {
+  if [ ! -d ".git" ]; then
+    echo "\"git\": null"
+    return
+  fi
+
+  # 最近のコミットプレフィックス分析
+  local commit_prefixes=$(git log --oneline -50 2>/dev/null | grep -oE "^[a-f0-9]+ (feat|fix|docs|refactor|test|chore|style|perf|ci|build|revert):" | cut -d' ' -f2 | sort | uniq -c | sort -rn | head -5 || echo "")
+
+  # ブランチ名
+  local branch=$(git branch --show-current 2>/dev/null || echo "unknown")
+
+  # コミット規約の検出
+  local conventional_commits="false"
+  if echo "$commit_prefixes" | grep -qE "(feat|fix|chore):" 2>/dev/null; then
+    conventional_commits="true"
+  fi
+
+  echo "\"git\": {"
+  echo "  \"branch\": \"$branch\","
+  echo "  \"conventional_commits\": $conventional_commits"
+  echo "}"
+}
+
+# ================================
+# 6. 重要事項の検出（キーワードベース）
+# ================================
+
+detect_important_patterns() {
+  local patterns=()
+
+  # セキュリティ関連
+  if [ -f "SECURITY.md" ] || grep -riq "security" README.md CONTRIBUTING.md 2>/dev/null; then
+    patterns+=("security")
+  fi
+
+  # テスト重視
+  if grep -riq "test coverage\|coverage.*%\|must have tests\|require.*test" README.md CONTRIBUTING.md 2>/dev/null; then
+    patterns+=("testing-required")
+  fi
+
+  # アクセシビリティ
+  if grep -riq "accessibility\|a11y\|wcag\|aria" README.md CONTRIBUTING.md package.json 2>/dev/null; then
+    patterns+=("accessibility")
+  fi
+
+  # パフォーマンス
+  if grep -riq "performance\|core web vitals\|lighthouse" README.md CONTRIBUTING.md 2>/dev/null; then
+    patterns+=("performance")
+  fi
+
+  # 国際化
+  if grep -riq "i18n\|internationalization\|localization" README.md package.json 2>/dev/null; then
+    patterns+=("i18n")
+  fi
+
+  if [ ${#patterns[@]} -eq 0 ]; then
+    echo "\"important_patterns\": []"
+  else
+    echo "\"important_patterns\": [$(printf '"%s",' "${patterns[@]}" | sed 's/,$//')]"
+  fi
+}
+
+# ================================
+# メイン: JSON 出力
+# ================================
+
 echo "{"
-echo "  \"languages\": $(detect_languages),"
-echo "  \"source_dirs\": $(detect_source_dirs),"
-echo "  \"test_info\": $(detect_test_dirs),"
-echo "  \"extensions\": $(detect_extensions),"
-echo "  \"project_name\": \"$(basename "$(pwd)")\""
+echo "\"project_path\": \"$(pwd)\","
+echo "\"project_name\": \"$(basename "$(pwd)")\","
+echo "\"analyzed_at\": \"$(date -Iseconds)\","
+
+# 各セクション
+detect_tech_stack
+echo ","
+detect_coding_standards
+echo ","
+detect_documentation
+echo ","
+detect_existing_setup
+echo ","
+detect_git_info
+echo ","
+detect_important_patterns
+
 echo "}"

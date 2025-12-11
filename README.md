@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blue)](https://docs.anthropic.com/en/docs/claude-code)
 [![2-Agent](https://img.shields.io/badge/2--Agent-Workflow-orange)](docs/usage-2agent.md)
-[![Version](https://img.shields.io/badge/version-0.4.8-green)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.5.0-green)](CHANGELOG.md)
 
 **Cursor (PM) plans. Claude Code (Worker) builds. Two AIs, one seamless workflow.**
 

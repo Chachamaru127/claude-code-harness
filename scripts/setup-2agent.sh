@@ -1,8 +1,11 @@
 #!/bin/bash
 # setup-2agent.sh
-# 2エージェント体制の初回セットアップを確実に実行するスクリプト
+# 適応型2エージェント体制セットアップスクリプト
 #
-# Usage: ~/.claude/plugins/marketplaces/cursor-cc-marketplace/scripts/setup-2agent.sh
+# Usage: ~/.claude/plugins/marketplaces/cursor-cc-marketplace/scripts/setup-2agent.sh [--analyze-only]
+#
+# Options:
+#   --analyze-only  分析結果のみ表示（セットアップは実行しない）
 #
 # このスクリプトは /setup-2agent コマンドから呼び出されます。
 
@@ -12,10 +15,110 @@ PLUGIN_PATH="$HOME/.claude/plugins/marketplaces/cursor-cc-marketplace"
 PLUGIN_VERSION=$(cat "$PLUGIN_PATH/VERSION")
 TODAY=$(date +%Y-%m-%d)
 PROJECT_NAME=$(basename "$(pwd)")
+ANALYZE_ONLY=false
 
-echo "🚀 cursor-cc-plugins セットアップ (v${PLUGIN_VERSION})"
+# オプション解析
+if [ "$1" = "--analyze-only" ]; then
+  ANALYZE_ONLY=true
+fi
+
+echo "🚀 cursor-cc-plugins 適応型セットアップ (v${PLUGIN_VERSION})"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
+
+# ================================
+# Phase 1: プロジェクト分析
+# ================================
+echo "🔍 [Phase 1] プロジェクト分析中..."
+echo ""
+
+ANALYSIS=$("$PLUGIN_PATH/scripts/analyze-project.sh" 2>/dev/null || echo "{}")
+
+# 分析結果を表示
+display_analysis() {
+  # 技術スタック
+  local techs=$(echo "$ANALYSIS" | jq -r '.technologies[]?' 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
+  local frameworks=$(echo "$ANALYSIS" | jq -r '.frameworks[]?' 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
+  local testing=$(echo "$ANALYSIS" | jq -r '.testing[]?' 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
+
+  echo "📦 検出した技術スタック:"
+  if [ -n "$techs" ]; then
+    echo "   言語: $techs"
+  else
+    echo "   言語: (検出なし)"
+  fi
+  if [ -n "$frameworks" ]; then
+    echo "   フレームワーク: $frameworks"
+  fi
+  if [ -n "$testing" ]; then
+    echo "   テスト: $testing"
+  fi
+  echo ""
+
+  # コーディング規約
+  local linters=$(echo "$ANALYSIS" | jq -r '.linters[]?' 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
+  local formatters=$(echo "$ANALYSIS" | jq -r '.formatters[]?' 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
+  local strict=$(echo "$ANALYSIS" | jq -r '.typescript_strict' 2>/dev/null)
+
+  echo "📜 検出したコーディング規約:"
+  if [ -n "$linters" ]; then
+    echo "   Linter: $linters"
+  fi
+  if [ -n "$formatters" ]; then
+    echo "   Formatter: $formatters"
+  fi
+  if [ "$strict" = "true" ]; then
+    echo "   TypeScript: strict mode"
+  fi
+  if [ -z "$linters" ] && [ -z "$formatters" ]; then
+    echo "   (検出なし - デフォルト規約を適用)"
+  fi
+  echo ""
+
+  # 既存設定
+  local claude_config=$(echo "$ANALYSIS" | jq -r '.claude_config[]?' 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
+  local cursor_config=$(echo "$ANALYSIS" | jq -r '.cursor_config[]?' 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
+  local cc_version=$(echo "$ANALYSIS" | jq -r '.cursor_cc_version' 2>/dev/null)
+
+  echo "📁 既存の設定:"
+  if [ -n "$claude_config" ]; then
+    echo "   Claude: $claude_config"
+  fi
+  if [ -n "$cursor_config" ]; then
+    echo "   Cursor: $cursor_config"
+  fi
+  if [ "$cc_version" != "none" ] && [ "$cc_version" != "null" ]; then
+    echo "   cursor-cc-plugins: v$cc_version"
+  fi
+  if [ -z "$claude_config" ] && [ -z "$cursor_config" ]; then
+    echo "   (新規セットアップ)"
+  fi
+  echo ""
+
+  # 重要事項
+  local patterns=$(echo "$ANALYSIS" | jq -r '.important_patterns[]?' 2>/dev/null | tr '\n' ', ' | sed 's/,$//')
+  if [ -n "$patterns" ]; then
+    echo "⚠️ 重要視されている事項:"
+    echo "   $patterns"
+    echo ""
+  fi
+
+  # Git 情報
+  local conventional=$(echo "$ANALYSIS" | jq -r '.git.conventional_commits' 2>/dev/null)
+  if [ "$conventional" = "true" ]; then
+    echo "📝 コミット規約: Conventional Commits を検出"
+    echo ""
+  fi
+}
+
+display_analysis
+
+# 分析のみの場合はここで終了
+if [ "$ANALYZE_ONLY" = true ]; then
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "分析完了。セットアップを実行するには --analyze-only なしで再実行してください。"
+  exit 0
+fi
 
 # ================================
 # 既存ファイルチェック
@@ -35,46 +138,29 @@ fi
 # ================================
 # Cursor コマンドの配置
 # ================================
-echo "📁 [1/6] Cursor コマンドを配置..."
+echo "📁 [1/5] Cursor コマンドを配置..."
 mkdir -p .cursor/commands
 cp "$PLUGIN_PATH/templates/cursor/commands"/*.md .cursor/commands/
 echo "  ✅ .cursor/commands/ (5ファイル)"
 
 # ================================
-# Claude Rules の配置（ローカライズ）
+# Claude Rules の配置
 # ================================
-echo "📁 [2/6] Claude Rules を配置 & ローカライズ..."
+echo "📁 [2/5] Claude Rules を配置..."
 mkdir -p .claude/rules
 
-# まず workflow.md と plans-management.md をコピー（ローカライズ不要）
-for template in workflow.md.template plans-management.md.template; do
-  if [ -f "$PLUGIN_PATH/templates/rules/$template" ]; then
+for template in "$PLUGIN_PATH/templates/rules"/*.template; do
+  if [ -f "$template" ]; then
     rule_name=$(basename "$template" .template)
-    cp "$PLUGIN_PATH/templates/rules/$template" ".claude/rules/$rule_name"
-    echo "  ✅ .claude/rules/$rule_name (テンプレート)"
+    cp "$template" ".claude/rules/$rule_name"
+    echo "  ✅ .claude/rules/$rule_name"
   fi
 done
-
-# coding-standards.md と testing.md はローカライズ
-echo "  🔍 プロジェクト構造を分析中..."
-if "$PLUGIN_PATH/scripts/localize-rules.sh" > /dev/null 2>&1; then
-  echo "  ✅ .claude/rules/coding-standards.md (ローカライズ済)"
-  echo "  ✅ .claude/rules/testing.md (ローカライズ済)"
-else
-  # ローカライズ失敗時はテンプレートをコピー
-  for template in coding-standards.md.template testing.md.template; do
-    if [ -f "$PLUGIN_PATH/templates/rules/$template" ]; then
-      rule_name=$(basename "$template" .template)
-      cp "$PLUGIN_PATH/templates/rules/$template" ".claude/rules/$rule_name"
-      echo "  ⚠️ .claude/rules/$rule_name (テンプレート - ローカライズ失敗)"
-    fi
-  done
-fi
 
 # ================================
 # メモリ構造の初期化
 # ================================
-echo "📁 [3/6] メモリ構造を初期化..."
+echo "📁 [3/5] メモリ構造を初期化..."
 mkdir -p .claude/memory
 
 if [ ! -f ".claude/memory/session-log.md" ]; then
@@ -133,7 +219,7 @@ fi
 # ================================
 # バージョンファイルの作成
 # ================================
-echo "📁 [4/6] バージョンファイルを作成..."
+echo "📁 [4/5] バージョンファイルを作成..."
 cat > .cursor-cc-version << EOF
 # cursor-cc-plugins version tracking
 # Created by /setup-2agent
@@ -148,7 +234,7 @@ echo "  ✅ .cursor-cc-version"
 # 検証チェックリスト
 # ================================
 echo ""
-echo "🔍 [5/6] 検証チェックリスト..."
+echo "🔍 [5/5] 検証チェックリスト..."
 ERRORS=0
 
 check_file() {
@@ -195,36 +281,19 @@ check_file ".cursor-cc-version"
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
-echo ""
-echo "📊 [6/6] ローカライズ情報..."
-
-# プロジェクト分析結果を表示
-if [ -f ".claude/rules/coding-standards.md" ]; then
-  DETECTED_PATHS=$(grep "^paths:" .claude/rules/coding-standards.md 2>/dev/null | head -1 | sed 's/paths: *//' | tr -d '"')
-  if [ -n "$DETECTED_PATHS" ]; then
-    echo "  📂 検出されたソースパス: ${DETECTED_PATHS:0:60}..."
-  fi
-fi
-
 if [ $ERRORS -eq 0 ]; then
-  echo ""
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "✅ セットアップ完了！ (v${PLUGIN_VERSION})"
   echo ""
   echo "📝 作成されたファイル:"
   echo "  - .cursor/commands/: 5ファイル"
-  echo "  - .claude/rules/: 4ファイル (プロジェクトにローカライズ済)"
+  echo "  - .claude/rules/: 4ファイル (paths: 条件付き適用)"
   echo "  - .claude/memory/: 3ファイル"
   echo "  - .cursor-cc-version"
   echo ""
   echo "💡 次のステップ:"
   echo "  - AGENTS.md, CLAUDE.md, Plans.md を作成（Claude が対話で生成）"
   echo "  - Cursor で /start-session を実行"
-  echo ""
-  echo "🔧 ルールを再ローカライズ: /localize-rules"
 else
-  echo ""
-  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "⚠️ セットアップ完了（$ERRORS 個の警告あり）"
 fi
 
