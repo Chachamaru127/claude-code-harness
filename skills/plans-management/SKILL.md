@@ -1,6 +1,7 @@
 ---
 name: ccp-plans-management
-description: "Plans.md のタスク管理とマーカー運用を行うスキル"
+description: "Plans.md のタスク管理とマーカー運用を行うスキルPlans.mdの作成・更新・タスク管理が必要な場合に使用します。Plans.mdの作成・更新・タスク管理が必要な場合に使用します。"
+allowed-tools: ["Read", "Write", "Edit"]
 metadata:
   skillport:
     category: pm

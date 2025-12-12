@@ -1,6 +1,7 @@
 ---
 name: ccp-troubleshoot
-description: "問題発生時の診断と解決をガイドするスキル"
+description: "問題発生時の診断と解決をガイドするスキルエラーや問題が発生し、診断が必要な場合に使用します。エラーや問題が発生し、診断が必要な場合に使用します。"
+allowed-tools: ["Read", "Grep", "Bash"]
 metadata:
   skillport:
     category: worker

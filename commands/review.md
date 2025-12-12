@@ -41,22 +41,48 @@ git diff --name-only HEAD~5 2>/dev/null || find . -name "*.ts" -o -name "*.tsx" 
 
 ```python
 # 並列レビューの実装例
-from anthropic import Anthropic
+import subprocess
+import json
 
-client = Anthropic()
+# 変更ファイルを取得
+result = subprocess.run(
+    ["git", "diff", "--name-only", "HEAD~5"],
+    capture_output=True, text=True
+)
+changed_files = result.stdout.strip().split('\n')
 
-# 4つのレビュータスクを並列実行
-tasks = [
-    {"type": "security", "agent": "claude-code-workflow:code-reviewer", "focus": "security"},
-    {"type": "performance", "agent": "claude-code-workflow:code-reviewer", "focus": "performance"},
-    {"type": "quality", "agent": "claude-code-workflow:code-reviewer", "focus": "quality"},
-    {"type": "accessibility", "agent": "claude-code-workflow:code-reviewer", "focus": "accessibility"}
+# 4つのレビュー観点を定義
+review_tasks = [
+    {
+        "focus": "security",
+        "prompt": f"以下のファイルのセキュリティ脆弱性をチェックしてください：{changed_files}",
+        "skill": "ccp-review-security"
+    },
+    {
+        "focus": "performance",
+        "prompt": f"以下のファイルのパフォーマンス問題をチェックしてください：{changed_files}",
+        "skill": "ccp-review-performance"
+    },
+    {
+        "focus": "quality",
+        "prompt": f"以下のファイルのコード品質をチェックしてください：{changed_files}",
+        "skill": "ccp-review-quality"
+    },
+    {
+        "focus": "accessibility",
+        "prompt": f"以下のファイルのアクセシビリティをチェックしてください：{changed_files}",
+        "skill": "ccp-review-accessibility"
+    }
 ]
 
-# Task toolで並列実行
-for task in tasks:
-    # 各タスクを同時に起動
-    pass
+# Claude CodeのTask toolを使用して並列実行
+# 注：実際にはClaude Codeが自動的に並列化します
+print("🔍 並列レビューを開始します...")
+for task in review_tasks:
+    print(f"  - {task['focus']}: {task['skill']}")
+
+# 結果は各サブエージェントから返され、
+# ccp-review-aggregateスキルで統合されます
 ```
 
 レビュー観点：

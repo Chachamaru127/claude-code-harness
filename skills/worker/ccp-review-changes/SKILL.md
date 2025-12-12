@@ -1,6 +1,7 @@
 ---
 name: ccp-review-changes
-description: "自分の変更をセルフレビューし、改善提案を出す"
+description: "自分の変更をセルフレビューし、改善提案を出すコード変更後のセルフレビューが必要な場合に使用します。コード変更後のセルフレビューが必要な場合に使用します。"
+allowed-tools: ["Read", "Grep", "Bash"]
 metadata:
   skillport:
     category: worker

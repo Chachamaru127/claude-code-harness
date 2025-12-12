@@ -1,6 +1,7 @@
 ---
 name: ccp-ci-analyze-failures
-description: "CI の失敗ログを解析し、原因を特定する"
+description: "CI の失敗ログを解析し、原因を特定するCI/CDパイプラインでテストやビルドが失敗した場合に使用します。CI/CDパイプラインでテストやビルドが失敗した場合に使用します。"
+allowed-tools: ["Read", "Grep", "Bash"]
 metadata:
   skillport:
     category: ci

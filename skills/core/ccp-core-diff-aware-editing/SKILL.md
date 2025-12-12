@@ -1,6 +1,7 @@
 ---
 name: ccp-core-diff-aware-editing
-description: "最小限の差分でファイルを編集し、既存コードへの影響を最小化する"
+description: "最小限の差分でファイルを編集し、既存コードへの影響を最小化するファイル編集時に常に適用され、最小限の差分で変更を行います。ファイル編集時に常に適用され、最小限の差分で変更を行います。"
+allowed-tools: ["Read", "Edit"]
 metadata:
   skillport:
     category: core

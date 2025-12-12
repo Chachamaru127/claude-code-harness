@@ -28,6 +28,7 @@
     "./commands/review.md",
     "./commands/start-task.md",
 
+    "./commands/setup-cursor.md",
     "./commands/health-check.md",
     "./commands/cleanup.md",
     "./commands/localize-rules.md",

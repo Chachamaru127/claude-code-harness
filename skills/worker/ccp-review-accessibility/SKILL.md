@@ -1,6 +1,7 @@
 ---
 name: ccp-review-accessibility
-description: "Webアクセシビリティ（a11y）をチェックするスキル"
+description: "Webアクセシビリティ（a11y）をチェックするスキルWebアプリケーションのアクセシビリティレビューが要求された場合に使用します。Webアプリケーションのアクセシビリティレビューが要求された場合に使用します。"
+allowed-tools: ["Read", "Grep", "Bash"]
 metadata:
   skillport:
     category: worker

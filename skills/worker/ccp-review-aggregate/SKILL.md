@@ -1,6 +1,7 @@
 ---
 name: ccp-review-aggregate
-description: "複数のレビュー結果を集約し総合評価を生成するスキル"
+description: "複数のレビュー結果を集約し総合評価を生成するスキル複数のレビュー結果を統合して総合評価を作成する場合に使用します。複数のレビュー結果を統合して総合評価を作成する場合に使用します。"
+allowed-tools: ["Read"]
 metadata:
   skillport:
     category: worker

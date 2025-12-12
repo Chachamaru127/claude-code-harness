@@ -67,6 +67,7 @@ graph LR
 | `/work` | 計画に基づいてコードを実装します |
 | `/review` | コードの品質を多角的にレビューします（並列実行） |
 | `/start-task` | 特定のタスクを開始します |
+| `/setup-cursor` | **[オプション]** Cursor連携を有効化します |
 | `/health-check` | プロジェクトの健全性を診断します |
 | `/cleanup` | 不要なファイルをクリーンアップします |
 | `/localize-rules` | プロジェクト固有のルールを作成します |
@@ -78,6 +79,15 @@ graph LR
 3層アーキテクチャ（Profile → Workflow → Skill）により、高い再利用性と保守性を実現しています。
 
 詳細は[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)をご覧ください。
+
+## Cursor連携（オプション）
+
+`/setup-cursor`コマンドでCursorとの連携を有効化できます。
+
+- **計画・レビュー**: CursorまたはClaude Codeのどちらでも可能
+- **実装**: Claude Code専用
+
+詳細は[docs/CURSOR_INTEGRATION.md](docs/CURSOR_INTEGRATION.md)をご覧ください。
 
 ## cursor-cc-pluginsとの違い
 

@@ -1,6 +1,7 @@
 ---
 name: ccp-session-memory
-description: "セッション間の学習と記憶を管理するスキル"
+description: "セッション間の学習と記憶を管理するスキルセッション間で情報を永続化する必要がある場合に使用します。セッション間で情報を永続化する必要がある場合に使用します。"
+allowed-tools: ["Read", "Write", "Append"]
 metadata:
   skillport:
     category: core
