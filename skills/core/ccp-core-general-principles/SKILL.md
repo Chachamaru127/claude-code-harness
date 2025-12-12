@@ -1,6 +1,6 @@
 ---
 name: ccp-core-general-principles
-description: "cursor-cc-plugins の基本原則と安全なファイル操作ルール"
+description: "開発の基本原則とセーフティルールを提供する。すべてのタスクで適用される基本的なガイドライン。"
 metadata:
   skillport:
     category: core

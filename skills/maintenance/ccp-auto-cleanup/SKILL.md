@@ -1,6 +1,7 @@
 ---
 name: ccp-auto-cleanup
-description: "ファイルの自動整理・アーカイブを行うスキル"
+description: "不要なファイルや古いログをクリーンアップする。Plans.mdが肥大化した場合、またはセッション終了時に使用します。"
+allowed-tools: [Read,Write,Edit,Bash]
 metadata:
   skillport:
     category: maintenance

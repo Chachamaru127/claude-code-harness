@@ -1,6 +1,7 @@
 ---
 name: ccp-work-impl-feature
-description: "Plans.md のタスクに基づいて機能を実装する"
+description: "Plans.md のタスクに基づいて機能を実装する。/workコマンドが実行された場合、またはPlans.mdに実装待ちのタスクがある場合に使用します。"
+allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash"]
 metadata:
   skillport:
     category: worker

@@ -1,6 +1,7 @@
 ---
 name: ccp-work-write-tests
-description: "実装した機能に対応するテストコードを追加・修正する"
+description: "テストコードを作成する。/workコマンドでテストが必要な場合、またはコード実装後にテストが不足している場合に使用します。"
+allowed-tools: [Read,Write,Edit,Bash]
 metadata:
   skillport:
     category: worker

@@ -1,6 +1,7 @@
 ---
 name: ccp-verify-build
-description: "ビルドとテストを実行して変更の正常性を確認するスキル"
+description: "ビルドとテストを実行して動作を確認する。実装完了後、またはレビュー前に動作確認が必要な場合に使用します。"
+allowed-tools: [Read,Bash]
 metadata:
   skillport:
     category: worker

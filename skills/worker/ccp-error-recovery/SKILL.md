@@ -1,6 +1,7 @@
 ---
 name: ccp-error-recovery
-description: "ビルド・テストエラーを自動診断し修正を試みるスキル"
+description: "エラーが発生した際に自動修正を試みる。ビルドエラー、テスト失敗、または実行時エラーが検出された場合に使用します。"
+allowed-tools: [Read,Edit,Bash]
 metadata:
   skillport:
     category: worker
