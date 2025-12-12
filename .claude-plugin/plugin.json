@@ -1,46 +1,26 @@
 {
   "name": "claude-code-harness",
-  "version": "1.0.0",
-  "description": "Claude Code専用の開発ハーネス。自律的なPlan→Work→Reviewサイクルで高品質な開発を実現。Skills、Rules、Hooksを活用した包括的な開発支援フレームワーク。",
-  "author": {
-    "name": "Claude Code Harness Contributors"
-  },
-  "license": "MIT",
-  "keywords": [
-    "claude-code",
-    "workflow",
-    "autonomous",
-    "plan-work-review",
-    "project-scaffolding",
-    "ci-cd",
-    "code-review",
-    "error-recovery",
-    "parallel-processing",
-    "session-memory",
-    "troubleshoot"
-  ],
-  "repository": "https://github.com/Chachamaru127/claude-code-harness",
+  "version": "2.0.0",
+  "description": "A harness for solo developers (Vibecoders) to handle full-cycle contract development.",
+  "author": "Manus AI & Chachamaru",
   "homepage": "https://github.com/Chachamaru127/claude-code-harness",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Chachamaru127/claude-code-harness.git"
+  },
   "commands": [
-    "./commands/init.md",
-    "./commands/plan.md",
-    "./commands/work.md",
-    "./commands/review.md",
-    "./commands/start-task.md",
-
-    "./commands/setup-cursor.md",
-    "./commands/health-check.md",
-    "./commands/cleanup.md",
-    "./commands/localize-rules.md",
-    "./commands/remember.md",
-    "./commands/parallel-tasks.md"
-  ],
-  "agents": [
-    "./agents/project-analyzer.md",
-    "./agents/project-scaffolder.md",
-    "./agents/code-reviewer.md",
-    "./agents/ci-cd-fixer.md",
-    "./agents/project-state-updater.md",
-    "./agents/error-recovery.md"
+    { "name": "/plan", "description": "Create a project plan and proposal for clients." },
+    { "name": "/crud", "description": "Generate CRUD endpoints with validation and authorization." },
+    { "name": "/ci-setup", "description": "Set up CI/CD with GitHub Actions." },
+    { "name": "/deploy-setup", "description": "Automate deployment to Vercel or Netlify." },
+    { "name": "/component", "description": "Integrate shadcn/ui components and ensure responsiveness." },
+    { "name": "/auth", "description": "Integrate authentication with Clerk or Supabase Auth." },
+    { "name": "/payments", "description": "Integrate payments with Stripe." },
+    { "name": "/review", "description": "Review code from a Vibecoder's perspective." },
+    { "name": "/auto-fix", "description": "Automatically fix issues found in reviews." },
+    { "name": "/analytics", "description": "Integrate analytics with Google Analytics or Vercel Analytics." },
+    { "name": "/validate", "description": "Validate the project before delivery." },
+    { "name": "/feedback", "description": "Implement a feedback collection feature." },
+    { "name": "/work", "description": "Implement features based on the plan." }
   ]
 }
