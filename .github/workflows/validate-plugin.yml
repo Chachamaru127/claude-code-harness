@@ -6,6 +6,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -14,6 +17,30 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check version bump (warn)
+        id: version_bump
+        continue-on-error: true
+        run: |
+          bash ./scripts/ci/check-version-bump.sh
+
+      - name: Auto bump patch version & push (when missing)
+        if: steps.version_bump.outcome == 'failure' && github.event_name == 'push' && github.actor != 'github-actions[bot]'
+        run: |
+          echo "::warning title=Version bump missing::Code changes detected but VERSION was not bumped. Auto-bumping patch version and pushing."
+
+          bash ./scripts/sync-version.sh bump
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          NEW_VERSION="$(cat VERSION | tr -d '[:space:]')"
+
+          git add VERSION .claude-plugin/plugin.json || true
+          git commit -m "chore: bump version to ${NEW_VERSION}" || echo "No version changes to commit"
+          git push
 
       - name: Validate plugin structure
         run: |
