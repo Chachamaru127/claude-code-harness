@@ -38,7 +38,17 @@ jobs:
 
           NEW_VERSION="$(cat VERSION | tr -d '[:space:]')"
 
-          git add VERSION .claude-plugin/plugin.json || true
+          # Keep marketplace metadata in sync if present
+          if [ -f .claude-plugin/marketplace.json ]; then
+            node -e "const fs=require('fs');const p='.claude-plugin/marketplace.json';const v=process.env.NEW_VERSION;const j=JSON.parse(fs.readFileSync(p,'utf8'));if(j.metadata){j.metadata.version=v;}if(Array.isArray(j.plugins)){j.plugins=j.plugins.map(pl=>({...pl,version:v}));}fs.writeFileSync(p, JSON.stringify(j,null,2)+'\\n');"
+          fi
+
+          # Keep README badge in sync if present
+          if [ -f README.md ]; then
+            perl -pi -e "s/\\[!\\[Version: \\d+\\.\\d+\\.\\d+\\]\\(https:\\/\\/img\\.shields\\.io\\/badge\\/version-\\d+\\.\\d+\\.\\d+-blue\\.svg\\)\\]\\(VERSION\\)/[![Version: ${NEW_VERSION}](https:\\/\\/img.shields.io\\/badge\\/version-${NEW_VERSION}-blue.svg)](VERSION)/" README.md || true
+          fi
+
+          git add VERSION .claude-plugin/plugin.json .claude-plugin/marketplace.json README.md || true
           git commit -m "chore: bump version to ${NEW_VERSION}" || echo "No version changes to commit"
           git push
 
