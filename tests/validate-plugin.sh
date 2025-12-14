@@ -107,9 +107,19 @@ echo "2. コマンドの検証"
 echo "----------------------------------------"
 
 # コマンドは plugin.json で手動列挙せず、commands/ を自動検出する（Claude Code Plugins reference 準拠）
+# サブディレクトリ内のコマンドも検出（core/, handoff/, optional/ 等）
 if [ -d "$PLUGIN_ROOT/commands" ]; then
-    CMD_COUNT=$(find "$PLUGIN_ROOT/commands" -maxdepth 1 -name "*.md" -type f | wc -l | tr -d ' ')
+    CMD_COUNT=$(find "$PLUGIN_ROOT/commands" -name "*.md" -type f | wc -l | tr -d ' ')
     pass_test "commands/ に ${CMD_COUNT} 個のコマンドファイルがあります"
+
+    # サブディレクトリ構造を表示
+    for subdir in "$PLUGIN_ROOT/commands"/*/; do
+        if [ -d "$subdir" ]; then
+            subdir_name=$(basename "$subdir")
+            subdir_count=$(find "$subdir" -name "*.md" -type f | wc -l | tr -d ' ')
+            pass_test "  └─ ${subdir_name}/ に ${subdir_count} 個のコマンド"
+        fi
+    done
 
     # frontmatter description の存在確認（SlashCommand tool / /help の発見性向上）
     MISSING_DESC=0
@@ -120,7 +130,7 @@ if [ -d "$PLUGIN_ROOT/commands" ]; then
             warn_test "frontmatter description が見つかりません: $(basename "$cmd_file")"
             MISSING_DESC=$((MISSING_DESC + 1))
         fi
-    done < <(find "$PLUGIN_ROOT/commands" -maxdepth 1 -name "*.md" -type f | sort)
+    done < <(find "$PLUGIN_ROOT/commands" -name "*.md" -type f | sort)
 else
     fail_test "commands ディレクトリが見つかりません"
 fi
