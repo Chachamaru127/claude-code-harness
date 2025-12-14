@@ -350,7 +350,7 @@ export CLAUDE_MD_MAX_LINES=150
 - **B（70–79）**: 便利だが運用が属人化しやすい
 - **C（〜69）**: アイデア段階。仕組みの整合/検証が不足
 
-### 採点表（このリポジトリ: v2.0.1）
+### 採点表（このリポジトリ: v2.0.3）
 
 | カテゴリ | 配点 | 何を見るか | 本リポジトリ |
 | --- | ---: | --- | ---: |
@@ -396,12 +396,12 @@ export CLAUDE_MD_MAX_LINES=150
 ```
 claude-code-harness/
 ├── .claude-plugin/         # プラグインメタデータ（plugin.json）
-├── commands/               # スラッシュコマンド（27）
+├── commands/               # スラッシュコマンド（25）
 ├── workflows/              # ワークフロー定義（5）
 ├── skills/                 # スキル（35）
 ├── agents/                 # サブエージェント（6）
 ├── hooks/                  # Hooks 定義
-├── scripts/                # Hooks/運用スクリプト（19）
+├── scripts/                # Hooks/運用スクリプト（20）
 ├── templates/              # 生成テンプレート（AGENTS/CLAUDE/Plans, Cursor commands 等）
 └── docs/                   # 詳細ドキュメント
 ```
@@ -412,7 +412,21 @@ claude-code-harness/
 
 > 詳細は [CHANGELOG.md](CHANGELOG.md) を参照してください（0.5.x は Imported history として同梱）。
 
-### 現行: v2.0.1（2025-12-14）
+### 現行: v2.0.3（2025-12-14）
+
+**Changed**
+
+- `cursor-cc` 表記を `claude-code-harness` へ統一
+- 互換コマンド（`/init`, `/review`）を削除（移行期間終了）
+- Cursor連携: `.claude-code-harness-version` / `.claude-code-harness.config.yaml` へ整理
+
+### 直前: v2.0.2（2025-12-14）
+
+**Added**
+
+- CI/コミット前チェック: バージョン未更新時の **自動パッチバンプ**（CI + pre-commit）
+
+### 直前: v2.0.1（2025-12-14）
 
 **Added**
 

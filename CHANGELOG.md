@@ -4,6 +4,22 @@ claude-code-harness の変更履歴です。
 
 ---
 
+## [2.0.3] - 2025-12-14
+
+### Changed
+- `cursor-cc` 表記を `claude-code-harness` へ統一
+- 互換コマンド（`/init`, `/review`）を削除（移行期間終了）
+- Cursor連携: `.claude-code-harness-version` / `.claude-code-harness.config.yaml` へ整理
+
+---
+
+## [2.0.2] - 2025-12-14
+
+### Added
+- CI/コミット前チェック: バージョン未更新時の **自動パッチバンプ**（CI + pre-commit）
+
+---
+
 ## [2.0.1] - 2025-12-14
 
 ### Added
