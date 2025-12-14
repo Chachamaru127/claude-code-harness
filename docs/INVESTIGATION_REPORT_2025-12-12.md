@@ -26,7 +26,7 @@
 - **Agents**: `agents/*.md`（6個）
 - **Hooks**: `hooks/hooks.json` + `scripts/*.sh`
 - **Workflows**: `workflows/default/*.yaml`（5本: init/plan/work/review/start-task）
-- **Safety/Config**: `claude-code-harness.config.schema.json`（互換: `cursor-cc.config.schema.json`。dry-run 等の安全制御）
+- **Safety/Config**: `claude-code-harness.config.schema.json`（dry-run 等の安全制御）
 
 ---
 
@@ -87,7 +87,7 @@
 
 ## 安全性（良い点）
 
-- `claude-code-harness.config.schema.json`（互換: `cursor-cc.config.schema.json`）に `dry-run` / `apply-local` / `apply-and-push` があり、安全設計の思想が明文化されています。
+- `claude-code-harness.config.schema.json` に `dry-run` / `apply-local` / `apply-and-push` があり、安全設計の思想が明文化されています。
 - `scripts/` 内の grep では、危険な `rm -rf` / `sudo` / `git push` などの露骨な破壊的コマンドは見当たりませんでした（少なくとも現状確認範囲）。
 
 ---

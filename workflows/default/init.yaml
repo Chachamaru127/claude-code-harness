@@ -47,7 +47,7 @@ steps:
         - project_name
         - tech_choice
       context_from:
-        - config_file  # claude-code-harness.config.json（推奨） / cursor-cc.config.json（互換・旧）
+        - config_file  # claude-code-harness.config.json
     output:
       update_files:
         - package.json

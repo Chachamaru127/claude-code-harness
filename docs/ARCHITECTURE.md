@@ -56,7 +56,7 @@ claude-code-harness/
 
 ### 4.2. Rules
 
-`claude-code-harness.config.schema.json`（互換: `cursor-cc.config.schema.json`）で厳密に定義された設定ファイルにより、安全性（`dry-run`モード）やパス制限（`protected`パス）を強制します。
+`claude-code-harness.config.schema.json` で厳密に定義された設定ファイルにより、安全性（`dry-run`モード）やパス制限（`protected`パス）を強制します。
 
 ### 4.3. Hooks
 

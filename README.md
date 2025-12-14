@@ -6,7 +6,7 @@
 Claude Code を「Plan → Work → Review」の型で自律運用し、個人開発を“もう1段”プロ品質へ引き上げる **開発ハーネス（Claude Code プラグイン）** です。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version: 2.0.3](https://img.shields.io/badge/version-2.0.3-blue.svg)](VERSION)
+[![Version: 2.0.4](https://img.shields.io/badge/version-2.0.4-blue.svg)](VERSION)
 
 **現在のハーネススコア**: **92 / 100（S）**（→ [採点基準](#個人開発ハーネスの採点基準--スコア)）
 
@@ -375,7 +375,7 @@ export CLAUDE_MD_MAX_LINES=150
 
 - ✅ `CONTRIBUTING.md` のプロダクト名/導線を現行に同期（完了）
 - ✅ GitHub Actions のCIを復活し、`validate-plugin` / `check-consistency` を自動実行（完了）
-- ✅ `claude-code-harness.config.*` を追加し、`cursor-cc.config.*` は互換として維持（完了）
+- ✅ `claude-code-harness.config.*` へ命名を統一（互換終了）（完了）
 
 ---
 
@@ -412,7 +412,15 @@ claude-code-harness/
 
 > 詳細は [CHANGELOG.md](CHANGELOG.md) を参照してください（0.5.x は Imported history として同梱）。
 
-### 現行: v2.0.3（2025-12-14）
+### 現行: v2.0.4（2025-12-14）
+
+**Changed**
+
+- CI: バージョン未更新時の **自動push（=二重実行）** を廃止し、警告＋失敗に変更（pre-commit 推奨）
+- `cursor-cc.config.*` の互換表記/残骸を完全撤去し、`claude-code-harness.config.*` へ一本化
+- コマンド説明を VibeCoder 向けに統一（各 `commands/*.md` に「こう言えばOK / 成果物」を追記）
+
+### 直前: v2.0.3（2025-12-14）
 
 **Changed**
 
@@ -432,12 +440,12 @@ claude-code-harness/
 
 - README: 目次を追加（長文でも迷子にならない導線）
 - GitHub Actions: `validate-plugin` / `check-consistency` を自動実行（`.github/workflows/validate-plugin.yml`）
-- 設定ファイル: `claude-code-harness.config.*` を追加（互換: `cursor-cc.config.*` を維持）
+- 設定ファイル: `claude-code-harness.config.*` を追加（命名を統一）
 
 **Changed**
 
 - `CONTRIBUTING.md` のプロダクト名/導線/導入手順を現行に同期
-- 旧 `cursor-cc.config.*` 参照を「新名称優先 + 互換あり」に整理
+- 設定ファイル名の整理（互換終了）
 
 ### 直前: v2.0.0（2025-12-13）
 

@@ -7,6 +7,17 @@ description: Serenaメモリを読み込み、decisions/patterns（SSOT）へ反
 Serena（または同等の永続メモリ機構）に残っている情報を読み込み、プロジェクトのSSOTである
 `.claude/memory/decisions.md` と `.claude/memory/patterns.md` に反映します。
 
+## バイブコーダー向け（こう言えばOK）
+
+- 「**今回分かったことを次回も使えるように残して**」→ このコマンド
+- 「**決定事項（なぜ）と、やり方（どうやる）を分けて整理して**」→ decisions/patternsに分離して反映します
+- 「**どれを残すべきか分からない**」→ 重要度で選別し、SSOTに入れる候補だけ提案します
+
+## できること
+
+- Serenaメモリから **確定情報だけ**を抽出し、SSOT（decisions/patterns）へ追記/更新する
+- 途中メモや個人情報など、SSOTに入れるべきでない内容を除外する
+
 > 注意: Serenaメモリは**開発者ローカルのメモ**として使われることも多いので、SSOTへ反映するのは「確定した情報」だけに絞ります。
 
 参照: `docs/MEMORY_POLICY.md`

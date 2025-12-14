@@ -6,6 +6,17 @@ description: Cursor連携のセットアップ（.cursor/commands 生成）
 
 このコマンドは、**Cursor側のカスタムコマンド**（`.cursor/commands/*.md`）を生成し、2-agent運用（Cursor PM + Claude Code Worker）を開始できる状態にします。
 
+## バイブコーダー向け（こう言えばOK）
+
+- 「**CursorとClaude Codeで役割分担したい**」→ このコマンド
+- 「**計画はCursor、実装はClaudeに任せたい**」→ 2-agent運用の導線を生成します
+- 「**どっちで何をやるの？**」→ 役割と手順を“コマンドとして”用意します
+
+## できること（成果物）
+
+- Cursor側の `.cursor/commands/*.md` を生成して、PM運用（依頼/レビュー/ハンドオフ）を即開始できる
+- SSOT（decisions/patterns）を整えて“次回も同じ品質で回る”状態を作る
+
 あわせて、2-agent運用で必須になりやすい **SSOTメモリ（decisions/patterns）** も初期化することを推奨します（詳細: `docs/MEMORY_POLICY.md`）。
 
 ## 生成するファイル

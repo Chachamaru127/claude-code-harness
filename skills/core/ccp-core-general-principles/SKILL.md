@@ -33,7 +33,7 @@ claude-code-harness を使用する際の基本原則です。すべてのワー
 
 ### 3. 設定ファイルの尊重
 
-`claude-code-harness.config.json`（推奨）または `cursor-cc.config.json`（互換・旧） の設定に従う：
+`claude-code-harness.config.json` の設定に従う：
 
 - `safety.mode`: dry-run / apply-local / apply-and-push
 - `paths.protected`: 保護されたパスは変更しない

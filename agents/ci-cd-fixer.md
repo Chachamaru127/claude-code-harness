@@ -22,7 +22,7 @@ CI失敗時の診断・修正を行うエージェント。**安全性を最優�
 
 ## 設定の読み込み
 
-実行前に `claude-code-harness.config.json`（推奨）/ `cursor-cc.config.json`（互換・旧） を確認：
+実行前に `claude-code-harness.config.json` を確認：
 
 ```json
 {
@@ -94,7 +94,7 @@ fi
 
 ```
 設定ファイルを読み込み:
-  - claude-code-harness.config.json が存在する → 設定を適用（互換: cursor-cc.config.json）
+  - claude-code-harness.config.json が存在する → 設定を適用
   - 存在しない → 最も安全なデフォルトを使用
 
 動作モード:
@@ -181,7 +181,7 @@ gh run view {{run_id}} --log-failed
 #### dry-run モード（デフォルト）
 ```
 📝 dry-run モードのため、実際の変更は行いません
-上記のプランを実行するには、claude-code-harness.config.json（互換: cursor-cc.config.json）で mode を変更してください
+上記のプランを実行するには、claude-code-harness.config.json で mode を変更してください
 ```
 
 #### apply-local モード

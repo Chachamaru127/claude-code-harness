@@ -4,6 +4,15 @@ claude-code-harness の変更履歴です。
 
 ---
 
+## [2.0.4] - 2025-12-14
+
+### Changed
+- CI: バージョン未更新時の **自動push（=CI二重実行の原因）** を廃止し、警告＋失敗に変更（pre-commit での自動更新を推奨）
+- `cursor-cc.config.*` の互換表記/残骸を完全撤去し、`claude-code-harness.config.*` へ一本化
+- コマンド説明を VibeCoder 向けに統一（各 `commands/*.md` に「こう言えばOK / 成果物」を追記）
+
+---
+
 ## [2.0.3] - 2025-12-14
 
 ### Changed
@@ -25,11 +34,10 @@ claude-code-harness の変更履歴です。
 ### Added
 - README: 目次（TOC）を追加し、長文でも迷子にならない導線を整備
 - GitHub Actions: `validate-plugin` / `check-consistency` を自動実行（`.github/workflows/validate-plugin.yml`）
-- 設定ファイル: `claude-code-harness.config.schema.json` / `claude-code-harness.config.example.json` を追加（互換: `cursor-cc.config.*` を維持）
+- 設定ファイル: `claude-code-harness.config.schema.json` / `claude-code-harness.config.example.json` を追加
 
 ### Changed
 - `CONTRIBUTING.md` のプロダクト名/導線/導入手順を現行に同期
-- 旧 `cursor-cc.config.*` 参照を「新名称優先 + 互換あり」に整理
 - Marketplace メタデータを `claude-code-harness` に同期
 
 ---
@@ -321,7 +329,7 @@ claude-code-harness の変更履歴です。
 - `/cleanup` コマンド
   - 手動でファイル整理を実行
   - `--dry-run` オプションでプレビュー
-- `.cursor-cc-config.yaml` 設定ファイル
+- `.claude-code-harness.config.yaml` 設定ファイル
   - 閾値をプロジェクトごとにカスタマイズ可能
 - `ccp-auto-cleanup` スキル
 - `.claude/scripts/auto-cleanup-hook.sh`

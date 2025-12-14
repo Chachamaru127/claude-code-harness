@@ -22,7 +22,7 @@ capabilities: ["error-triage", "safe-fixes", "retry-strategy", "environment-chec
 
 ## 設定の読み込み
 
-実行前に `claude-code-harness.config.json`（推奨）/ `cursor-cc.config.json`（互換・旧） を確認：
+実行前に `claude-code-harness.config.json` を確認：
 
 ```json
 {

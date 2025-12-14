@@ -45,7 +45,7 @@ constraints:
   no_production_deploy: true
   # staging デプロイまでは許可
   allow_staging_deploy: true
-  # claude-code-harness.config.json の設定に従う（互換: cursor-cc.config.json）
+  # claude-code-harness.config.json の設定に従う
   respect_config: true
 
 # エラー回復設定
@@ -62,7 +62,7 @@ handoff:
   # Cursor からタスクを受け取る際のコマンド
   from_pm: "/start-task"
 
-# セーフティ設定（claude-code-harness.config.json の設定を優先。互換: cursor-cc.config.json）
+# セーフティ設定（claude-code-harness.config.json の設定を優先）
 safety:
   # デフォルトの動作モード
   default_mode: "apply-local"

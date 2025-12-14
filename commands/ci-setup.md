@@ -6,6 +6,17 @@ description: CI/CD構築（GitHub Actions）
 
 GitHub Actionsを使用したCI/CDパイプラインを自動構築します。
 
+## バイブコーダー向け（こう言えばOK）
+
+- 「**CIを入れて**」→ このコマンド
+- 「**PRでテストが走るようにして**」→ PR/Push時のチェックを整備します
+- 「**何を走らせればいいか分からない**」→ プロジェクトを解析して lint/typecheck/test/build を提案します
+
+## できること（成果物）
+
+- `.github/workflows/*` を追加し、lint/typecheck/test/build などを自動実行
+- 失敗時の原因切り分けと修正案まで一緒に出す（安全第一）
+
 **機能**:
 - ✅ Lint（ESLint, Prettier）
 - ✅ Type Check（TypeScript）
