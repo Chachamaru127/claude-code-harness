@@ -1,0 +1,34 @@
+# .claude-code-harness.config.yaml
+# claude-code-harness settings file
+#
+# This file lets you customize cleanup thresholds.
+# If omitted, default values are used.
+
+cleanup:
+  plans:
+    archive_after_days: 7
+    max_lines: 200
+    archive_max_items: 50
+    split_to_monthly: true
+
+  session_log:
+    archive_after_days: 30
+    max_lines: 500
+    archive_path: ".claude/memory/archive/sessions/"
+
+  claude_md:
+    max_lines: 100
+    warn_only: true
+
+  # - session_start: check at session start
+  # - manual: only when /cleanup runs
+  # - hook: check on PostToolUse hook
+  auto_run: hook
+
+hooks:
+  enabled: true
+  post_tool_use:
+    - matcher: "Edit|Write"
+      script: "~/.claude/scripts/auto-cleanup-hook.sh"
+
+

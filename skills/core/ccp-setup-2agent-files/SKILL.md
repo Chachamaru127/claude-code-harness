@@ -48,7 +48,7 @@ metadata:
 | `.claude/memory/session-log.md` | セッション間の作業ログ |
 | `.claude/memory/decisions.md` | 重要な決定事項の記録 |
 | `.claude/memory/patterns.md` | 学んだパターンの記録 |
-| `.cursor-cc-version` | プラグインバージョン管理 |
+| `.claude-code-harness-version` | プラグインバージョン管理 |
 
 ---
 
@@ -63,7 +63,7 @@ metadata:
 
 ### バージョンチェック
 
-既存の `.cursor-cc-version` がある場合、バージョンを比較して以下を判定：
+既存の `.claude-code-harness-version` がある場合、バージョンを比較して以下を判定：
 
 | 状態 | 判定 | `should_proceed` | `update_type` |
 |------|------|------------------|---------------|
@@ -95,7 +95,7 @@ PROJECT_NAME=$(basename "$(pwd)")
 
 ```bash
 # 既存ファイルをチェック
-[ -f .cursor-cc-version ] && echo "existing: .cursor-cc-version"
+[ -f .claude-code-harness-version ] && echo "existing: .claude-code-harness-version"
 [ -d .cursor/commands ] && echo "existing: .cursor/commands/"
 [ -d .claude/memory ] && echo "existing: .claude/memory/"
 ```
@@ -204,11 +204,11 @@ mkdir -p .claude/memory
 **テンプレートから変数を置換して作成**:
 
 ```bash
-# templates/.cursor-cc-version.template を読み込み、変数を置換
+# templates/.claude-code-harness-version.template を読み込み、変数を置換
 sed -e "s/{{VERSION}}/${PLUGIN_VERSION}/g" \
     -e "s/{{DATE}}/${TODAY}/g" \
-    "$PLUGIN_PATH/templates/.cursor-cc-version.template" \
-    > .cursor-cc-version
+    "$PLUGIN_PATH/templates/.claude-code-harness-version.template" \
+    > .claude-code-harness-version
 ```
 
 または直接作成:
@@ -242,7 +242,7 @@ last_setup_command: setup-cursor
 
 - **既存ファイルがある場合**: 上書き確認を求める
 - **テンプレートを直接コピー**: 簡略化せず、詳細版テンプレートを使用
-- **バージョン管理**: `.cursor-cc-version` で更新検出を可能にする
+- **バージョン管理**: `.claude-code-harness-version` で更新検出を可能にする
 
 ### Step 7: Hooks 設定の配置（自動整理機能）
 
@@ -256,7 +256,7 @@ cp "$PLUGIN_PATH/templates/hooks/auto-cleanup-hook.sh" .claude/scripts/
 chmod +x .claude/scripts/auto-cleanup-hook.sh
 
 # 設定ファイルをコピー
-cp "$PLUGIN_PATH/templates/.cursor-cc-config.yaml.template" .cursor-cc-config.yaml
+cp "$PLUGIN_PATH/templates/.claude-code-harness.config.yaml.template" .claude-code-harness.config.yaml
 ```
 
 **.claude/settings.json** は `ccp-generate-claude-settings` で作成/更新（既存があれば非破壊マージ）:

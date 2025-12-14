@@ -145,7 +145,7 @@ grep -E '(cc:|cursor:)' Plans.md
 #### Step 3: 同期レポートの生成
 
 ```markdown
-## 🔄 Cursor-CC 同期レポート
+## 🔄 2-Agent 同期レポート
 
 **同期日時**: {{YYYY-MM-DD HH:MM}}
 

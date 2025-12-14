@@ -84,7 +84,7 @@ check_templates() {
     "templates/AGENTS.md.template"
     "templates/CLAUDE.md.template"
     "templates/Plans.md.template"
-    "templates/.cursor-cc-version.template"
+    "templates/.claude-code-harness-version.template"
     "templates/cursor/commands/start-session.md"
     "templates/cursor/commands/handoff-to-claude.md"
     "templates/cursor/commands/review-cc-work.md"

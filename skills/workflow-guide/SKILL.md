@@ -24,7 +24,7 @@ Cursor ↔ Claude Code 2エージェントワークフローのガイダンス�
 - 「作業の流れを教えて」
 - 「どうやって進めればいい？」
 - "how does the workflow work?"
-- "explain cursor-cc workflow"
+- "explain 2-agent workflow"
 
 ---
 

@@ -130,7 +130,7 @@ grep -E "\[x\].*\([0-9]{4}-[0-9]{2}-[0-9]{2}\)" Plans.md
 
 ## 設定のカスタマイズ
 
-`.cursor-cc-config.yaml` で閾値を変更可能：
+`.claude-code-harness.config.yaml` で閾値を変更可能：
 
 ```yaml
 cleanup:

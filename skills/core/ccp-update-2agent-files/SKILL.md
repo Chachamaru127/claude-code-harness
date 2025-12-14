@@ -45,7 +45,7 @@ detect_file() {
 AGENTS_FILE=$(detect_file "agents.md")
 CLAUDE_FILE=$(detect_file "claude.md")
 PLANS_FILE=$(detect_file "plans.md")
-VERSION_FILE=".cursor-cc-version"
+VERSION_FILE=".claude-code-harness-version"
 ```
 
 ### 検出結果の正規化
@@ -79,8 +79,8 @@ normalize_filename "$PLANS_FILE" "Plans.md"
 ├── AGENTS.md
 ├── CLAUDE.md
 ├── Plans.md
-├── .cursor-cc-version
-├── .cursor-cc-config.yaml          # v0.3.7+
+├── .claude-code-harness-version
+├── .claude-code-harness.config.yaml
 ├── .cursor/
 │   └── commands/
 │       ├── start-session.md        # v0.3.5+（Named Sessions: v0.4.0+）
@@ -112,8 +112,8 @@ PLUGIN_PATH="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
 PLUGIN_VERSION=$(cat "$PLUGIN_PATH/VERSION" 2>/dev/null || echo "0.0.0")
 
 # インストール済みバージョン
-if [ -f .cursor-cc-version ]; then
-  INSTALLED_VERSION=$(grep "^version:" .cursor-cc-version | cut -d' ' -f2)
+if [ -f .claude-code-harness-version ]; then
+  INSTALLED_VERSION=$(grep "^version:" .claude-code-harness-version | cut -d' ' -f2)
   SETUP_STATUS="existing"
 else
   INSTALLED_VERSION=""
@@ -140,7 +140,7 @@ REQUIRED_FILES=(
   ".claude/rules/workflow.md"              # v0.4.0+
   ".claude/rules/coding-standards.md"      # v0.4.0+
   ".claude/scripts/auto-cleanup-hook.sh"
-  ".cursor-cc-config.yaml"
+  ".claude-code-harness.config.yaml"
 )
 
 MISSING_FILES=()
@@ -166,7 +166,7 @@ fi
 
 | 条件 | update_type | 動作 |
 |------|-------------|------|
-| `.cursor-cc-version` なし | `not_installed` | `/setup-cursor` を案内 |
+| `.claude-code-harness-version` なし | `not_installed` | `/setup-cursor` を案内 |
 | バージョン同じ & ファイル揃ってる | `current` | スキップ |
 | バージョン同じ & ファイル不足 | `missing_files` | 不足分を追加 |
 | バージョン古い | `outdated` | 更新を実行 |
@@ -187,14 +187,14 @@ fi
 ### Step 4: バックアップ作成
 
 ```bash
-BACKUP_DIR=".cursor-cc-backup-$(date +%Y%m%d-%H%M%S)"
+BACKUP_DIR=".claude-code-harness-backup-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$BACKUP_DIR"
 
 # 既存ファイルをバックアップ
 [ -n "$AGENTS_FILE" ] && cp "$AGENTS_FILE" "$BACKUP_DIR/"
 [ -n "$CLAUDE_FILE" ] && cp "$CLAUDE_FILE" "$BACKUP_DIR/"
 [ -n "$PLANS_FILE" ] && cp "$PLANS_FILE" "$BACKUP_DIR/"
-[ -f .cursor-cc-version ] && cp .cursor-cc-version "$BACKUP_DIR/"
+[ -f .claude-code-harness-version ] && cp .claude-code-harness-version "$BACKUP_DIR/"
 
 echo "📦 バックアップ: $BACKUP_DIR"
 ```
@@ -270,8 +270,8 @@ cp "$PLUGIN_PATH/templates/hooks/auto-cleanup-hook.sh" .claude/scripts/
 chmod +x .claude/scripts/auto-cleanup-hook.sh
 
 # 設定ファイルをコピー（存在しない場合のみ）
-[ ! -f .cursor-cc-config.yaml ] && \
-  cp "$PLUGIN_PATH/templates/.cursor-cc-config.yaml.template" .cursor-cc-config.yaml
+[ ! -f .claude-code-harness.config.yaml ] && \
+  cp "$PLUGIN_PATH/templates/.claude-code-harness.config.yaml.template" .claude-code-harness.config.yaml
 
 # .claude/settings.json を更新（既存設定は非破壊マージ）
 # ここは `ccp-generate-claude-settings` を実行して統一する
@@ -282,7 +282,7 @@ chmod +x .claude/scripts/auto-cleanup-hook.sh
 ### Step 10: バージョンファイルの更新
 
 ```bash
-cat > .cursor-cc-version << EOF
+cat > .claude-code-harness-version << EOF
 # claude-code-harness version tracking
 # Updated by /setup-cursor
 

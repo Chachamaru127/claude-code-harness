@@ -77,7 +77,7 @@ LLM は以下の条件で cleanup を推奨します：
 
 ## 設定ファイル
 
-`.cursor-cc-config.yaml` で閾値をカスタマイズ可能：
+`.claude-code-harness.config.yaml` で閾値をカスタマイズ可能：
 
 ```yaml
 cleanup:
@@ -106,7 +106,7 @@ cleanup:
 
 ```bash
 # 設定ファイルがあれば読み込み、なければデフォルト値
-CONFIG_FILE=".cursor-cc-config.yaml"
+CONFIG_FILE=".claude-code-harness.config.yaml"
 if [ -f "$CONFIG_FILE" ]; then
   # YAML パース
   PLANS_MAX_LINES=$(grep "max_lines:" "$CONFIG_FILE" | head -1 | awk '{print $2}')

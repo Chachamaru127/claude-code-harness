@@ -56,7 +56,7 @@ Task tool で subagent_type="project-analyzer" を指定
 [ -f go.mod ] && echo "go.mod:yes" || echo "go.mod:no"
 ```
 
-### Step 2: Cursor-CC ワークフローファイルの確認
+### Step 2: 2-Agent ワークフローファイルの確認
 
 ```bash
 [ -f AGENTS.md ] && echo "AGENTS.md:yes" || echo "AGENTS.md:no"

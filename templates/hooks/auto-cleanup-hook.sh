@@ -6,7 +6,7 @@
 #   $CLAUDE_FILE_PATHS - 変更されたファイルパス（スペース区切り）
 #
 # 設定:
-#   .cursor-cc-config.yaml で閾値をカスタマイズ可能
+#   .claude-code-harness.config.yaml で閾値をカスタマイズ可能
 
 # デフォルト閾値
 PLANS_MAX_LINES=${PLANS_MAX_LINES:-200}
@@ -14,7 +14,7 @@ SESSION_LOG_MAX_LINES=${SESSION_LOG_MAX_LINES:-500}
 CLAUDE_MD_MAX_LINES=${CLAUDE_MD_MAX_LINES:-100}
 
 # 設定ファイルがあれば読み込み
-CONFIG_FILE=".cursor-cc-config.yaml"
+CONFIG_FILE=".claude-code-harness.config.yaml"
 if [ -f "$CONFIG_FILE" ]; then
   # 簡易 YAML パース
   PLANS_MAX_LINES=$(grep -A5 "plans:" "$CONFIG_FILE" | grep "max_lines:" | head -1 | awk '{print $2}' || echo $PLANS_MAX_LINES)

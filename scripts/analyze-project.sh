@@ -266,8 +266,8 @@ detect_existing_setup() {
 
   # バージョンファイル
   local version="none"
-  if [ -f ".cursor-cc-version" ]; then
-    version=$(grep "^version:" .cursor-cc-version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
+  if [ -f ".claude-code-harness-version" ]; then
+    version=$(grep "^version:" .claude-code-harness-version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
   fi
 
   if [ ${#claude_files[@]} -eq 0 ]; then
@@ -282,7 +282,7 @@ detect_existing_setup() {
     echo "\"cursor_config\": [$(printf '"%s",' "${cursor_files[@]}" | sed 's/,$//')],"
   fi
 
-  echo "\"cursor_cc_version\": \"$version\""
+  echo "\"harness_version\": \"$version\""
 }
 
 # ================================

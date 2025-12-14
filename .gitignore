@@ -25,7 +25,7 @@ Thumbs.db
 /Plans.md
 /.cursor/
 /.cursor/commands/
-/.cursor-cc-version
+/.claude-code-harness-version
 
 # Logs
 *.log

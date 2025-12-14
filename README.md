@@ -335,15 +335,6 @@ export CLAUDE_MD_MAX_LINES=150
 | `/sync-ssot-from-serena` | Serenaメモリを読み込み、decisions/patterns（SSOT）へ反映 |
 | `/notebooklm-yaml` | NotebookLMのスライド用デザインYAMLを生成 |
 
-### 互換（非推奨）
-
-Claude Code 組み込みコマンドと衝突しうるため、**移行用に残しています（実行は推奨しません）**。
-
-| コマンド | 代替 |
-| --- | --- |
-| `/init` | `/harness-init` |
-| `/review` | `/harness-review` |
-
 ---
 
 ## 個人開発ハーネスの採点基準 & スコア
@@ -445,7 +436,7 @@ claude-code-harness/
 **Changed**
 
 - `.claude-plugin/plugin.json` を最新Plugins reference準拠へ（authorをobject化、commands手動列挙を廃止）
-- コマンド衝突回避: `/harness-init` `/harness-review` に統一（旧名コマンドは互換案内用）
+- コマンド衝突回避: `/harness-init` `/harness-review` に統一（旧名コマンドは廃止）
 - README/Docs を `/harness-init` `/harness-review` 前提に更新
 
 **Fixed**
