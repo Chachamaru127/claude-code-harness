@@ -55,7 +55,7 @@ is_safe() {
   echo "$cmd" | grep -Eiq '^git[[:space:]]+(status|diff|log|branch|rev-parse|show|ls-files)([[:space:]]|$)' && return 0
 
   # JS/TS test & verification commands
-  echo "$cmd" | grep -Eiq '^(npm|pnpm|yarn)[[:space:]]+(test|run[[:space:]]+(test|lint|typecheck|build)|lint|typecheck|build)([[:space:]]|$)' && return 0
+  echo "$cmd" | grep -Eiq '^(npm|pnpm|yarn)[[:space:]]+(test|run[[:space:]]+(test|lint|typecheck|build)|lint|typecheck|build)([[:space:]].*)?$' && return 0
 
   # Python tests
   echo "$cmd" | grep -Eiq '^(pytest|python[[:space:]]+-m[[:space:]]+pytest)([[:space:]]|$)' && return 0

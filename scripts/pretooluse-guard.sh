@@ -92,7 +92,8 @@ is_path_traversal() {
 is_protected_path() {
   local p="$1"
   case "$p" in
-    .git/*|*/.git/*) return 0 ;;
+    .git|.git/*|*/.git|*/.git/*) return 0 ;;
+    .gitignore|.gitattributes) return 0 ;;
     .env|.env.*|*/.env|*/.env.*) return 0 ;;
     secrets/*|*/secrets/*) return 0 ;;
     *.pem|*.key|*id_rsa*|*id_ed25519*|*/.ssh/*) return 0 ;;
