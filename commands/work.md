@@ -1,5 +1,5 @@
 ---
-description: Plans.mdの計画を実行して実装する
+description: （ソロ向け）Plans.mdのタスクを実行して実装する（Cursor依頼の開始は /start-task）
 ---
 
 # /work - 計画の実行

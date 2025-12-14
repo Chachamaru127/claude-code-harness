@@ -1,5 +1,5 @@
 ---
-description: Cursorから受領したタスク開始のセットアップ
+description: （2-agent向け）Cursor依頼タスクを開始する（ソロでPlans実行は /work）
 ---
 
 # /start-task - タスク開始

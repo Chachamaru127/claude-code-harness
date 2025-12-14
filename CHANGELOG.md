@@ -4,6 +4,13 @@ claude-code-harness の変更履歴です。
 
 ---
 
+## [2.0.5] - 2025-12-14
+
+### Changed
+- `/work` と `/start-task` の使い分けがコマンド一覧で分かるように、description（表示文言）を改善
+
+---
+
 ## [2.0.4] - 2025-12-14
 
 ### Changed
