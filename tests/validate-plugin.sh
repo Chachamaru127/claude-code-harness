@@ -117,7 +117,11 @@ if [ -d "$PLUGIN_ROOT/commands" ]; then
         if [ -d "$subdir" ]; then
             subdir_name=$(basename "$subdir")
             subdir_count=$(find "$subdir" -name "*.md" -type f | wc -l | tr -d ' ')
-            pass_test "  └─ ${subdir_name}/ に ${subdir_count} 個のコマンド"
+            if [ "$subdir_count" -gt 0 ]; then
+                pass_test "  └─ ${subdir_name}/ に ${subdir_count} 個のコマンド"
+            else
+                warn_test "  └─ ${subdir_name}/ は空です（コマンドファイルがありません）"
+            fi
         fi
     done
 
