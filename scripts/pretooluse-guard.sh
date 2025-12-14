@@ -10,6 +10,49 @@
 
 set +e
 
+detect_lang() {
+  # Default to Japanese for this harness (can be overridden).
+  # - CLAUDE_CODE_HARNESS_LANG=en で英語
+  # - CLAUDE_CODE_HARNESS_LANG=ja で日本語
+  if [ -n "${CLAUDE_CODE_HARNESS_LANG:-}" ]; then
+    echo "${CLAUDE_CODE_HARNESS_LANG}"
+    return 0
+  fi
+  echo "ja"
+}
+
+LANG_CODE="$(detect_lang)"
+
+msg() {
+  # msg <key> [arg]
+  local key="$1"
+  local arg="${2:-}"
+
+  if [ "$LANG_CODE" = "en" ]; then
+    case "$key" in
+      deny_path_traversal) echo "Blocked: path traversal in file_path ($arg)" ;;
+      ask_write_outside_project) echo "Confirm: writing outside project directory ($arg)" ;;
+      deny_protected_path) echo "Blocked: protected path ($arg)" ;;
+      deny_sudo) echo "Blocked: sudo is not allowed via Claude Code hooks" ;;
+      ask_git_push) echo "Confirm: git push requested ($arg)" ;;
+      ask_rm_rf) echo "Confirm: rm -rf requested ($arg)" ;;
+      *) echo "$key $arg" ;;
+    esac
+    return 0
+  fi
+
+  # ja (default)
+  case "$key" in
+    deny_path_traversal) echo "ブロック: パストラバーサルの疑い（file_path: $arg）" ;;
+    ask_write_outside_project) echo "確認: プロジェクト外への書き込み（file_path: $arg）" ;;
+    deny_protected_path) echo "ブロック: 保護対象パスへの操作（path: $arg）" ;;
+    deny_sudo) echo "ブロック: sudo はフック経由では許可していません" ;;
+    ask_git_push) echo "確認: git push を実行しようとしています（command: $arg）" ;;
+    ask_rm_rf) echo "確認: rm -rf を実行しようとしています（command: $arg）" ;;
+    *) echo "$key $arg" ;;
+  esac
+}
+
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
@@ -104,13 +147,13 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
   [ -z "$FILE_PATH" ] && exit 0
 
   if is_path_traversal "$FILE_PATH"; then
-    emit_deny "Blocked: path traversal in file_path ($FILE_PATH)"
+    emit_deny "$(msg deny_path_traversal "$FILE_PATH")"
     exit 0
   fi
 
   # If absolute and outside project cwd, ask for confirmation.
   if [ -n "$CWD" ] && [[ "$FILE_PATH" == /* ]] && [[ "$FILE_PATH" != "$CWD/"* ]]; then
-    emit_ask "Confirm: writing outside project directory ($FILE_PATH)"
+    emit_ask "$(msg ask_write_outside_project "$FILE_PATH")"
     exit 0
   fi
 
@@ -121,7 +164,7 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
   fi
 
   if is_protected_path "$REL_PATH"; then
-    emit_deny "Blocked: protected path ($REL_PATH)"
+    emit_deny "$(msg deny_protected_path "$REL_PATH")"
     exit 0
   fi
 
@@ -132,17 +175,17 @@ if [ "$TOOL_NAME" = "Bash" ]; then
   [ -z "$COMMAND" ] && exit 0
 
   if echo "$COMMAND" | grep -Eiq '(^|[[:space:]])sudo([[:space:]]|$)'; then
-    emit_deny "Blocked: sudo is not allowed via Claude Code hooks"
+    emit_deny "$(msg deny_sudo)"
     exit 0
   fi
 
   if echo "$COMMAND" | grep -Eiq '(^|[[:space:]])git[[:space:]]+push([[:space:]]|$)'; then
-    emit_ask "Confirm: git push requested ($COMMAND)"
+    emit_ask "$(msg ask_git_push "$COMMAND")"
     exit 0
   fi
 
   if echo "$COMMAND" | grep -Eiq '(^|[[:space:]])rm[[:space:]]+-rf([[:space:]]|$)'; then
-    emit_ask "Confirm: rm -rf requested ($COMMAND)"
+    emit_ask "$(msg ask_rm_rf "$COMMAND")"
     exit 0
   fi
 

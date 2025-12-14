@@ -4,6 +4,13 @@ claude-code-harness の変更履歴です。
 
 ---
 
+## [2.0.6] - 2025-12-14
+
+### Changed
+- PreToolUseガードの確認/拒否メッセージを日本語化（`CLAUDE_CODE_HARNESS_LANG=en` で英語に切替可）
+
+---
+
 ## [2.0.5] - 2025-12-14
 
 ### Changed
