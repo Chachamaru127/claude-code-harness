@@ -4,6 +4,13 @@ claude-code-harness の変更履歴です。
 
 ---
 
+## [2.0.9] - 2025-12-14
+
+### Added
+- 仕様書/運用ドキュメント（Plans/AGENTS/Rules）を最新運用（PM↔Impl, pm:*）へ同期する `/sync-project-specs` を追加
+
+---
+
 ## [2.0.8] - 2025-12-14
 
 ### Changed

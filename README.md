@@ -6,7 +6,7 @@
 Claude Code を「Plan → Work → Review」の型で自律運用し、個人開発を“もう1段”プロ品質へ引き上げる **開発ハーネス（Claude Code プラグイン）** です。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version: 2.0.8](https://img.shields.io/badge/version-2.0.8-blue.svg)](VERSION)
+[![Version: 2.0.9](https://img.shields.io/badge/version-2.0.9-blue.svg)](VERSION)
 
 **現在のハーネススコア**: **92 / 100（S）**（→ [採点基準](#個人開発ハーネスの採点基準--スコア)）
 
@@ -342,6 +342,7 @@ export CLAUDE_MD_MAX_LINES=150
 | `/remember` | 学習事項をRules/Commands/Skillsとして記録 |
 | `/localize-rules` | プロジェクト構造に合わせてルールをローカライズ |
 | `/sync-ssot-from-serena` | Serenaメモリを読み込み、decisions/patterns（SSOT）へ反映 |
+| `/sync-project-specs` | 仕様書/運用ドキュメント（Plans/AGENTS/Rules）を最新運用（PM↔Impl, pm:*）へ同期 |
 | `/notebooklm-yaml` | NotebookLMのスライド用デザインYAMLを生成 |
 
 ---
