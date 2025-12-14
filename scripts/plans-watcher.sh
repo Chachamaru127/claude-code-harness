@@ -1,5 +1,5 @@
 #!/bin/bash
-# plans-watcher.sh - Plans.md の変更を監視し、Cursor (PM) への通知を生成
+# plans-watcher.sh - Plans.md の変更を監視し、PM への通知を生成（互換: cursor:*）
 # PostToolUse フックから呼び出される
 
 set +e  # エラーで停止しない
@@ -89,19 +89,19 @@ count_markers() {
     echo "$count"
 }
 
-# 現在の状態を取得
-CURSOR_PENDING=$(count_markers "cursor:依頼中")
+# 現在の状態を取得（pm:* を正規。cursor:* は互換で同義扱い）
+PM_PENDING=$(( $(count_markers "pm:依頼中") + $(count_markers "cursor:依頼中") ))
 CC_TODO=$(count_markers "cc:TODO")
 CC_WIP=$(count_markers "cc:WIP")
 CC_DONE=$(count_markers "cc:完了")
-CURSOR_CONFIRMED=$(count_markers "cursor:確認済")
+PM_CONFIRMED=$(( $(count_markers "pm:確認済") + $(count_markers "cursor:確認済") ))
 
 # 新しいタスクを検出
 NEW_TASKS=""
 if [ -f "$PREV_STATE_FILE" ]; then
-    PREV_CURSOR_PENDING=$(jq -r '.cursor_pending // 0' "$PREV_STATE_FILE" 2>/dev/null || echo "0")
-    if [ "$CURSOR_PENDING" -gt "$PREV_CURSOR_PENDING" ] 2>/dev/null; then
-        NEW_TASKS="cursor:依頼中"
+    PREV_PM_PENDING=$(jq -r '.pm_pending // 0' "$PREV_STATE_FILE" 2>/dev/null || echo "0")
+    if [ "$PM_PENDING" -gt "$PREV_PM_PENDING" ] 2>/dev/null; then
+        NEW_TASKS="pm:依頼中"
     fi
 fi
 
@@ -118,11 +118,11 @@ fi
 cat > "$PREV_STATE_FILE" << EOF
 {
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
-  "cursor_pending": $CURSOR_PENDING,
+  "pm_pending": $PM_PENDING,
   "cc_todo": $CC_TODO,
   "cc_wip": $CC_WIP,
   "cc_done": $CC_DONE,
-  "cursor_confirmed": $CURSOR_CONFIRMED
+  "pm_confirmed": $PM_CONFIRMED
 }
 EOF
 
@@ -134,22 +134,22 @@ generate_notification() {
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
     if [ -n "$NEW_TASKS" ]; then
-        echo "🆕 新規タスク: Cursor から依頼あり"
+        echo "🆕 新規タスク: PM から依頼あり"
         echo "   → /start-task で確認してください"
     fi
 
     if [ -n "$COMPLETED_TASKS" ]; then
-        echo "✅ タスク完了: Cursor へ報告可能"
-        echo "   → /handoff-to-cursor で報告してください"
+        echo "✅ タスク完了: PM へ報告可能"
+        echo "   → /handoff-to-pm-claude（または /handoff-to-cursor）で報告してください"
     fi
 
     echo ""
     echo "📊 現在のステータス:"
-    echo "   cursor:依頼中  : $CURSOR_PENDING 件"
+    echo "   pm:依頼中      : $PM_PENDING 件（互換: cursor:依頼中）"
     echo "   cc:TODO        : $CC_TODO 件"
     echo "   cc:WIP         : $CC_WIP 件"
     echo "   cc:完了        : $CC_DONE 件"
-    echo "   cursor:確認済  : $CURSOR_CONFIRMED 件"
+    echo "   pm:確認済      : $PM_CONFIRMED 件（互換: cursor:確認済）"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
 }
@@ -159,11 +159,12 @@ if [ -n "$NEW_TASKS" ] || [ -n "$COMPLETED_TASKS" ]; then
     generate_notification
 fi
 
-# Cursor 通知用のファイルを生成（2エージェント間の連携用）
+# PM 通知用のファイルを生成（2ロール運用の連携用）
 if [ -n "$NEW_TASKS" ] || [ -n "$COMPLETED_TASKS" ]; then
-    NOTIFICATION_FILE="${STATE_DIR}/cursor-notification.md"
-    cat > "$NOTIFICATION_FILE" << EOF
-# Cursor (PM) への通知
+    PM_NOTIFICATION_FILE="${STATE_DIR}/pm-notification.md"
+    CURSOR_NOTIFICATION_FILE="${STATE_DIR}/cursor-notification.md" # 互換
+    cat > "$PM_NOTIFICATION_FILE" << EOF
+# PM への通知
 
 **生成日時**: $(date +"%Y-%m-%d %H:%M:%S")
 
@@ -172,20 +173,23 @@ if [ -n "$NEW_TASKS" ] || [ -n "$COMPLETED_TASKS" ]; then
 EOF
 
     if [ -n "$NEW_TASKS" ]; then
-        echo "### 🆕 新規タスク" >> "$NOTIFICATION_FILE"
-        echo "" >> "$NOTIFICATION_FILE"
-        echo "Cursor から新しいタスクが依頼されました。" >> "$NOTIFICATION_FILE"
-        echo "" >> "$NOTIFICATION_FILE"
+        echo "### 🆕 新規タスク" >> "$PM_NOTIFICATION_FILE"
+        echo "" >> "$PM_NOTIFICATION_FILE"
+        echo "PM から新しいタスクが依頼されました（pm:依頼中 / 互換: cursor:依頼中）。" >> "$PM_NOTIFICATION_FILE"
+        echo "" >> "$PM_NOTIFICATION_FILE"
     fi
 
     if [ -n "$COMPLETED_TASKS" ]; then
-        echo "### ✅ 完了タスク" >> "$NOTIFICATION_FILE"
-        echo "" >> "$NOTIFICATION_FILE"
-        echo "Claude Code がタスクを完了しました。レビューをお願いします。" >> "$NOTIFICATION_FILE"
-        echo "" >> "$NOTIFICATION_FILE"
+        echo "### ✅ 完了タスク" >> "$PM_NOTIFICATION_FILE"
+        echo "" >> "$PM_NOTIFICATION_FILE"
+        echo "Impl Claude がタスクを完了しました。レビューをお願いします（cc:完了）。" >> "$PM_NOTIFICATION_FILE"
+        echo "" >> "$PM_NOTIFICATION_FILE"
     fi
 
-    echo "---" >> "$NOTIFICATION_FILE"
-    echo "" >> "$NOTIFICATION_FILE"
-    echo "**次のアクション**: Cursor で \`/review-cc-work\` を実行してください。" >> "$NOTIFICATION_FILE"
+    echo "---" >> "$PM_NOTIFICATION_FILE"
+    echo "" >> "$PM_NOTIFICATION_FILE"
+    echo "**次のアクション**: PM Claude でレビューし、必要なら再依頼（/handoff-to-impl-claude）。" >> "$PM_NOTIFICATION_FILE"
+
+    # 互換: 旧ファイル名にも同内容を出力
+    cp -f "$PM_NOTIFICATION_FILE" "$CURSOR_NOTIFICATION_FILE" 2>/dev/null || true
 fi

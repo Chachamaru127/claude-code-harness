@@ -138,8 +138,8 @@ grep -E '(cc:|cursor:)' Plans.md
 
 | 不整合パターン | 対処 |
 |---------------|------|
-| `cc:完了` が長期間 `cursor:確認済` にならない | Cursorに確認を促す |
-| `cursor:依頼中` が `cc:WIP` にならない | Claude Code が着手を忘れている |
+| `cc:完了` が長期間 `pm:確認済`（互換: `cursor:確認済`）にならない | PM に確認を促す |
+| `pm:依頼中`（互換: `cursor:依頼中`）が `cc:WIP` にならない | Claude Code が着手を忘れている |
 | 複数の `cc:WIP` が存在 | 並行作業の確認 |
 
 #### Step 3: 同期レポートの生成
@@ -160,7 +160,7 @@ grep -E '(cc:|cursor:)' Plans.md
 
 以下のタスクは Claude Code で完了済みです。確認をお願いします：
 
-- [ ] {{タスク名}} `cc:完了` → `cursor:確認済` に更新
+- [ ] {{タスク名}} `cc:完了` → `pm:確認済`（互換: `cursor:確認済`）に更新
 
 ### 不整合・警告
 
@@ -176,8 +176,10 @@ grep -E '(cc:|cursor:)' Plans.md
 | `cc:TODO` | Claude Code 未着手 | Cursor / Claude Code |
 | `cc:WIP` | Claude Code 作業中 | Claude Code |
 | `cc:完了` | Claude Code 完了（確認待ち） | Claude Code |
-| `cursor:確認済` | Cursor 確認完了 | Cursor |
-| `cursor:依頼中` | Cursor から依頼 | Cursor |
+| `pm:確認済` | PM 確認完了 | PM |
+| `pm:依頼中` | PM から依頼 | PM |
+| `cursor:確認済` | （互換）pm:確認済 と同義 | Cursor |
+| `cursor:依頼中` | （互換）pm:依頼中 と同義 | Cursor |
 | `blocked` | ブロック中（理由を併記） | どちらでも |
 
 ---
@@ -187,7 +189,7 @@ grep -E '(cc:|cursor:)' Plans.md
 ```
 [新規タスク]
     ↓
-cursor:依頼中 ─→ cc:TODO ─→ cc:WIP ─→ cc:完了 ─→ cursor:確認済
+pm:依頼中 ─→ cc:TODO ─→ cc:WIP ─→ cc:完了 ─→ pm:確認済
                    ↑           │
                    └───────────┘
                     (差し戻し)

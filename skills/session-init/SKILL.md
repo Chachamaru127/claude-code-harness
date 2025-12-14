@@ -91,7 +91,7 @@ head -50 AGENTS.md 2>/dev/null || echo "AGENTS.md not found"
 Plans.md から以下を抽出：
 
 - `cc:WIP` - 前回から継続中のタスク
-- `cursor:依頼中` - Cursor から新規依頼されたタスク
+- `pm:依頼中` - PM から新規依頼されたタスク（互換: cursor:依頼中）
 - `cc:TODO` - 未着手だが割り当て済みのタスク
 
 ### Step 3: 状況レポートの出力
@@ -107,7 +107,7 @@ Plans.md から以下を抽出：
 ### 📋 今日のタスク
 
 **優先タスク**:
-- {{cursor:依頼中 または cc:WIP のタスク}}
+- {{pm:依頼中（互換: cursor:依頼中） または cc:WIP のタスク}}
 
 **その他のタスク**:
 - {{cc:TODO のタスク一覧}}

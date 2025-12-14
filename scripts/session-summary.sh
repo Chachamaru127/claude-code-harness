@@ -112,7 +112,7 @@ EOF
   # WIP タスク（存在すれば軽く抽出）
   WIP_TASKS=""
   if [ -f "Plans.md" ]; then
-    WIP_TASKS=$(grep -n "cc:WIP\|cursor:依頼中" Plans.md 2>/dev/null | head -20 || true)
+    WIP_TASKS=$(grep -n "cc:WIP\|pm:依頼中\|cursor:依頼中" Plans.md 2>/dev/null | head -20 || true)
   fi
 
   {

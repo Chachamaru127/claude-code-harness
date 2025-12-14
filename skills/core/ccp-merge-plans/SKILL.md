@@ -134,7 +134,7 @@ echo "  アーカイブ: $ARCHIVE_COUNT"
 
 ## 🟡 未着手のタスク
 
-<!-- cc:TODO, cursor:依頼中 のタスクをここに記載 -->
+<!-- cc:TODO, pm:依頼中（互換: cursor:依頼中） のタスクをここに記載 -->
 
 {{TASKS_TODO}}
 
@@ -142,7 +142,7 @@ echo "  アーカイブ: $ARCHIVE_COUNT"
 
 ## 🟢 完了タスク
 
-<!-- cc:完了, cursor:確認済 のタスクをここに記載 -->
+<!-- cc:完了, pm:確認済（互換: cursor:確認済） のタスクをここに記載 -->
 
 {{TASKS_DONE}}
 
@@ -160,11 +160,13 @@ echo "  アーカイブ: $ARCHIVE_COUNT"
 
 | マーカー | 意味 |
 |---------|------|
-| `cursor:依頼中` | Cursor から依頼されたタスク |
+| `pm:依頼中` | PM から依頼されたタスク（互換: cursor:依頼中） |
 | `cc:TODO` | Claude Code 未着手 |
 | `cc:WIP` | Claude Code 作業中 |
 | `cc:完了` | Claude Code 完了（確認待ち） |
-| `cursor:確認済` | Cursor 確認完了 |
+| `pm:確認済` | PM 確認完了（互換: cursor:確認済） |
+| `cursor:依頼中` | （互換）pm:依頼中 と同義 |
+| `cursor:確認済` | （互換）pm:確認済 と同義 |
 | `blocked` | ブロック中（理由を併記） |
 
 ---

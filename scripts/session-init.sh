@@ -21,7 +21,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 # Plans.md チェック
 if [ -f "Plans.md" ]; then
   # 進行中タスク数をカウント
-  wip_count=$(grep -c "cc:WIP\|cursor:依頼中" Plans.md 2>/dev/null || echo "0")
+  wip_count=$(grep -c "cc:WIP\|pm:依頼中\|cursor:依頼中" Plans.md 2>/dev/null || echo "0")
   todo_count=$(grep -c "cc:TODO" Plans.md 2>/dev/null || echo "0")
 
   echo -e "📄 Plans.md: ${GREEN}検出${NC}"
@@ -32,7 +32,7 @@ if [ -f "Plans.md" ]; then
   if [ "$wip_count" -gt 0 ]; then
     echo ""
     echo -e "${YELLOW}⚡ 進行中のタスク:${NC}"
-    grep -B1 "cc:WIP\|cursor:依頼中" Plans.md 2>/dev/null | grep -v "^--$" | head -10 || true
+    grep -B1 "cc:WIP\|pm:依頼中\|cursor:依頼中" Plans.md 2>/dev/null | grep -v "^--$" | head -10 || true
   fi
 else
   echo -e "📄 Plans.md: ${YELLOW}未検出${NC}"

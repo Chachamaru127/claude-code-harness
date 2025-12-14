@@ -73,7 +73,8 @@ if [ -f "$PLANS_FILE" ]; then
   PLANS_MODIFIED=$(stat -f "%m" "$PLANS_FILE" 2>/dev/null || stat -c "%Y" "$PLANS_FILE" 2>/dev/null || echo "0")
   WIP_COUNT=$(count_tasks "cc:WIP")
   TODO_COUNT=$(count_tasks "cc:TODO")
-  PENDING_COUNT=$(count_tasks "cursor:依頼中")
+  # pm:* を正規。cursor:* は互換で同義扱い
+  PENDING_COUNT=$(( $(count_tasks "pm:依頼中") + $(count_tasks "cursor:依頼中") ))
   COMPLETED_COUNT=$(count_tasks "cc:完了")
 else
   PLANS_EXISTS="false"

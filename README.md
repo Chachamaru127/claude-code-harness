@@ -6,7 +6,7 @@
 Claude Code を「Plan → Work → Review」の型で自律運用し、個人開発を“もう1段”プロ品質へ引き上げる **開発ハーネス（Claude Code プラグイン）** です。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version: 2.0.6](https://img.shields.io/badge/version-2.0.6-blue.svg)](VERSION)
+[![Version: 2.0.7](https://img.shields.io/badge/version-2.0.7-blue.svg)](VERSION)
 
 **現在のハーネススコア**: **92 / 100（S）**（→ [採点基準](#個人開発ハーネスの採点基準--スコア)）
 
@@ -184,10 +184,11 @@ claude --plugin-dir /path/to/claude-code-harness
 - **自動修正**: `/auto-fix`
 - **納品前検証**: `/validate`
 
-必要なら **報告テンプレ**を生成（Cursor運用向け）：
+必要なら **報告テンプレ**を生成（PM Claude / Cursor運用向け）：
 
 ```bash
-/handoff-to-cursor
+/handoff-to-pm-claude
+# （互換）/handoff-to-cursor
 ```
 
 ### 3) Cursor(PM) × Claude Code(Worker) で役割分担（任意）
@@ -197,8 +198,14 @@ claude --plugin-dir /path/to/claude-code-harness
 ```
 
 - **Cursor側**: `/plan-with-cc` → `/handoff-to-claude`
-- **Claude Code側**: `/start-task` → `/work` → `/handoff-to-cursor`
+- **Claude Code側**: `/start-task` → `/work` → `/handoff-to-cursor`（互換）
 - **Cursor側**: `/review-cc-work`
+
+### 3.5) ソロでも PM ↔ Impl を分離（おすすめ）
+
+- **PM Claude**: `/plan` → `/handoff-to-impl-claude`
+- **Impl Claude（Claude Code）**: `/start-task` → `/work` → `/handoff-to-pm-claude`
+- **PM Claude**: レビューして `pm:確認済` に更新（必要なら再依頼）
 
 ### 4) レビューを待たない（並列・バックグラウンド）
 
@@ -232,7 +239,7 @@ claude --plugin-dir /path/to/claude-code-harness
 
 - `.claude/state/session.json`: セッション状態（変更ファイル履歴など）
 - `.claude/state/test-recommendation.json`: テスト推奨（変更ファイル→推奨コマンド）
-- `.claude/state/cursor-notification.md`: Cursor(PM)向け通知（Plans.md更新時）
+- `.claude/state/pm-notification.md`: PM向け通知（Plans.md更新時。互換: `.claude/state/cursor-notification.md`）
 - `.claude/memory/session-log.md`: セッションログ（**ローカル運用推奨**。方針は `docs/MEMORY_POLICY.md`）
 
 ### Hooksの“うるささ”を避ける設計
@@ -329,7 +336,9 @@ export CLAUDE_MD_MAX_LINES=150
 | --- | --- |
 | `/setup-cursor` | Cursor連携のセットアップ（.cursor/commands 生成） |
 | `/start-task` | Cursorから受領したタスク開始のセットアップ |
-| `/handoff-to-cursor` | Cursor(PM)向けの完了報告を生成 |
+| `/handoff-to-pm-claude` | PM Claude向けの完了報告を生成（ソロ 2-Claude 推奨） |
+| `/handoff-to-impl-claude` | Impl Claude向けの依頼文を生成（PM Claude→実装役） |
+| `/handoff-to-cursor` | （互換）Cursor(PM)向けの完了報告を生成 |
 | `/remember` | 学習事項をRules/Commands/Skillsとして記録 |
 | `/localize-rules` | プロジェクト構造に合わせてルールをローカライズ |
 | `/sync-ssot-from-serena` | Serenaメモリを読み込み、decisions/patterns（SSOT）へ反映 |

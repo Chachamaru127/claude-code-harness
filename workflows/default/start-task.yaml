@@ -1,5 +1,5 @@
 # /start-task ワークフロー定義
-# Cursor（PM）から受け取ったタスクを開始
+# PM（Cursor / PM Claude）から受け取ったタスクを開始（互換: cursor:*）
 
 phase: start-task
 description: "タスクを開始するためのセットアップを行うフェーズ"
@@ -25,6 +25,7 @@ steps:
         - Plans.md
       filter:
         markers:
+          - "pm:依頼中"
           - "cursor:依頼中"
           - "cc:TODO"
           - "cc:WIP"
@@ -71,7 +72,7 @@ steps:
       files:
         - Plans.md
       action: update_marker
-      from: "cursor:依頼中|cc:TODO"
+      from: "pm:依頼中|cursor:依頼中|cc:TODO"
       to: "cc:WIP"
     output:
       update_files:
@@ -94,7 +95,7 @@ on_success:
 
     ---
 
-    完了したら `/handoff-to-cursor` で報告します。
+    完了したら `/handoff-to-pm-claude`（または `/handoff-to-cursor`）で報告します。
 
 # タスクが見つからない場合
 on_empty:
@@ -102,7 +103,8 @@ on_empty:
     ⚠️ **進行中のタスクが見つかりません**
 
     以下を確認してください：
-    1. Cursor で `/handoff-to-claude` を実行してタスクを依頼
+    1. PM Claude: `/handoff-to-impl-claude` でタスク依頼文を作成
+       （Cursor PM の場合は `/handoff-to-claude`）
     2. `Plans.md` に直接タスクを追加
 
     または、やりたいことを教えてください。

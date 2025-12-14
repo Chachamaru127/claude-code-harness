@@ -58,7 +58,7 @@ error_recovery:
 # ハンドオフ設定
 handoff:
   # 作業完了を Cursor に報告するコマンド
-  to_pm: "/handoff-to-cursor"
+  to_pm: "/handoff-to-pm-claude"
   # Cursor からタスクを受け取る際のコマンド
   from_pm: "/start-task"
 

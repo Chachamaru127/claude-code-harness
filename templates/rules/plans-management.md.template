@@ -17,11 +17,13 @@ paths: "**/Plans.md"
 
 | マーカー | 付与者 | 意味 |
 |---------|--------|------|
-| `cursor:依頼中` | Cursor | タスクを依頼 |
+| `pm:依頼中` | PM（Cursor/PM Claude） | タスクを依頼 |
 | `cc:TODO` | Claude Code | 未着手 |
 | `cc:WIP` | Claude Code | 作業中 |
 | `cc:完了` | Claude Code | 完了 |
-| `cursor:確認済` | Cursor | レビュー完了 |
+| `pm:確認済` | PM（Cursor/PM Claude） | レビュー完了 |
+| `cursor:依頼中` | Cursor | （互換）`pm:依頼中` と同義 |
+| `cursor:確認済` | Cursor | （互換）`pm:確認済` と同義 |
 
 ## セクション構成
 
@@ -30,10 +32,10 @@ paths: "**/Plans.md"
 （cc:WIP のタスク）
 
 ## 🟡 未着手のタスク
-（cc:TODO, cursor:依頼中 のタスク）
+（cc:TODO, pm:依頼中（互換: cursor:依頼中） のタスク）
 
 ## 🟢 完了タスク
-（cc:完了, cursor:確認済 のタスク）
+（cc:完了, pm:確認済（互換: cursor:確認済） のタスク）
 
 ## 📦 アーカイブ
 （古い完了タスク）

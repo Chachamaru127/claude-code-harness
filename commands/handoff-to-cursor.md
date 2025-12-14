@@ -2,9 +2,10 @@
 description: Cursor(PM)向けの完了報告を生成
 ---
 
-# /handoff-to-cursor - 完了報告（Cursorへ貼り付け）
+# /handoff-to-cursor - 完了報告（PMへ貼り付け / 互換）
 
-このコマンドは、Cursor（PM）へ貼り付けるための **作業サマリー** を生成します。
+このコマンドは、PM（Cursor など）へ貼り付けるための **作業サマリー** を生成します。
+ソロ 2-Claude 運用では、より明確な **`/handoff-to-pm-claude`** を推奨します（本コマンドは互換として維持）。
 
 ## バイブコーダー向け（こう言えばOK）
 

@@ -4,6 +4,17 @@ claude-code-harness の変更履歴です。
 
 ---
 
+## [2.0.7] - 2025-12-14
+
+### Added
+- ソロでも「PM ↔ Impl」の2ロール運用を再現するため、`/handoff-to-pm-claude` と `/handoff-to-impl-claude` を追加
+
+### Changed
+- Plans マーカーに `pm:依頼中` / `pm:確認済` を追加（`cursor:*` は互換として同義扱い）
+- Plans 更新通知の出力先を `.claude/state/pm-notification.md` に追加（互換: `cursor-notification.md`）
+
+---
+
 ## [2.0.6] - 2025-12-14
 
 ### Changed
@@ -102,7 +113,7 @@ claude-code-harness の変更履歴です。
 - 👁️ **Phase 3: 常駐監視エージェント**
   - `auto-test-runner.sh` - ソースコード変更時にテスト推奨
   - `plans-watcher.sh` - Plans.md 変更を監視し Cursor へ通知
-  - `.claude/state/cursor-notification.md` - Cursor (PM) への通知生成
+  - `.claude/state/pm-notification.md` - PM への通知生成（互換: `.claude/state/cursor-notification.md`）
   - 関連テストファイルの自動検出
 
 ### Changed

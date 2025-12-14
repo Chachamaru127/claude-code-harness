@@ -74,17 +74,19 @@ Cursor (PM)          Claude Code (Worker)
 
 | マーカー | 意味 | 設定者 |
 |---------|------|--------|
-| `cursor:依頼中` | Cursor から依頼 | Cursor |
+| `pm:依頼中` | PM から依頼（互換: cursor:依頼中） | PM（Cursor/PM Claude） |
 | `cc:TODO` | Claude Code 未着手 | どちらでも |
 | `cc:WIP` | Claude Code 作業中 | Claude Code |
 | `cc:完了` | Claude Code 完了 | Claude Code |
-| `cursor:確認済` | Cursor 確認完了 | Cursor |
+| `pm:確認済` | PM 確認完了（互換: cursor:確認済） | PM（Cursor/PM Claude） |
+| `cursor:依頼中` | （互換）pm:依頼中 と同義 | Cursor |
+| `cursor:確認済` | （互換）pm:確認済 と同義 | Cursor |
 | `blocked` | ブロック中 | どちらでも |
 
 ### 状態遷移
 
 ```
-cursor:依頼中 → cc:WIP → cc:完了 → cursor:確認済
+pm:依頼中 → cc:WIP → cc:完了 → pm:確認済
 ```
 
 ---
