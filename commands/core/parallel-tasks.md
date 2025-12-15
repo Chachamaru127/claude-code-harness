@@ -1,5 +1,5 @@
 ---
-description: "[オプション] 複数タスクの並列実行と統合レポート生成"
+description: 複数タスクの並列実行と統合レポート生成
 ---
 
 # /parallel-tasks - 並列タスク実行

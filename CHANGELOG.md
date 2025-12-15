@@ -4,6 +4,29 @@ claude-code-harness の変更履歴です。
 
 ---
 
+## [2.1.1] - 2025-12-15
+
+### Changed
+- コマンド整理: 27個 → 17個に削減（スキル化で整理）
+- `/plan` を `/plan-with-agent` に名称変更
+- `/parallel-tasks` を core に昇格
+- `/skill-list` コマンドを追加（スキル一覧表示）
+- `/cleanup` の説明を改善（いつ使うべきかを明確化）
+- `/harness-init` に `/localize-rules` 相当の処理を統合
+
+### Removed
+- `/start-task` を削除（`/work` に統合済み）
+- 以下のコマンドをスキルに移行:
+  - `/analytics`, `/auth`, `/auto-fix`, `/component`, `/deploy-setup`
+  - `/feedback`, `/health-check`, `/notebooklm-yaml`, `/payments`, `/setup-cursor`
+  - `/handoff-to-impl-claude`, `/handoff-to-pm-claude`
+
+### Notes
+- スキルは会話の中で自動的に呼び出されるため、明示的なコマンド実行は不要
+- `/skill-list` でスキル一覧を確認可能
+
+---
+
 ## [2.0.9] - 2025-12-14
 
 ### Added

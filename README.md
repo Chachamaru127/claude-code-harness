@@ -6,7 +6,7 @@
 Claude Code を「Plan → Work → Review」の型で自律運用し、個人開発を“もう1段”プロ品質へ引き上げる **開発ハーネス（Claude Code プラグイン）** です。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version: 2.1.0](https://img.shields.io/badge/version-2.1.0-blue.svg)](VERSION)
+[![Version: 2.1.1](https://img.shields.io/badge/version-2.1.1-blue.svg)](VERSION)
 
 **現在のハーネススコア**: **92 / 100（S）**（→ [採点基準](#個人開発ハーネスの採点基準--スコア)）
 
@@ -295,56 +295,62 @@ export CLAUDE_MD_MAX_LINES=150
 
 ## コマンド（わかりやすいリファレンス）
 
-> 迷ったら：まず **`/harness-init` → `/plan` → `/work` → `/harness-review`**。
+> 迷ったら：まず **`/harness-init` → `/plan-with-agent` → `/work` → `/harness-review`**。
 
 ### コア（Plan → Work → Review）
 
 | コマンド | 目的 | いつ使う | 主な成果物 |
 | --- | --- | --- | --- |
 | `/harness-init` | 初期化・導線づくり | 最初に1回（新規/既存どちらも） | `Plans.md`/`AGENTS.md`/`CLAUDE.md`（+任意でSSOT） |
-| `/plan` | 計画・合意形成 | 何を作るか決める/詰まった時 | `Plans.md` 更新 |
+| `/plan-with-agent` | 計画・合意形成 | 何を作るか決める/詰まった時 | `Plans.md` 更新 |
 | `/work` | 実装 | Plans のタスクを進める | コード変更 + `Plans.md` 更新 |
 | `/harness-review` | レビュー | 実装後/PR前/納品前 | 多観点レビュー結果（必要なら修正へ） |
+| `/parallel-tasks` | 並列実行 | 複数タスクを同時に進める | 統合レポート |
+| `/skill-list` | スキル一覧 | 使える機能を確認したい | スキル一覧表示 |
 
 ### 品質/運用（信頼性を上げる）
 
 | コマンド | 目的 |
 | --- | --- |
-| `/health-check` | 環境診断（依存/設定/利用可能機能の確認） |
 | `/validate` | プロジェクト検証（env/依存/ビルド/テスト/デプロイ準備） |
-| `/auto-fix` | レビュー指摘事項の自動修正 |
 | `/cleanup` | Plans.md / session-log.md 等の自動整理 |
 | `/sync-status` | 進捗確認→Plans.md更新→次アクション提案（状況把握の起点） |
 | `/refactor` | コードの安全なリファクタリング（テスト維持・段階的実行） |
 
-### 実装支援（よくある機能を最短で）
+### 実装支援
 
 | コマンド | 目的 |
 | --- | --- |
-| `/component` | UIコンポーネント生成（shadcn/ui 等） |
-| `/auth` | 認証機能の実装（Clerk / Supabase Auth 等） |
 | `/crud` | CRUD自動生成（検証・認可・本番対応） |
-| `/payments` | 決済機能の実装（Stripe） |
 | `/ci-setup` | CI/CD構築（GitHub Actions） |
-| `/deploy-setup` | デプロイ自動化設定（Vercel/Netlify 等） |
-| `/analytics` | Analytics統合（GA/Vercel Analytics 等） |
-| `/feedback` | フィードバック収集機能の実装 |
-| `/parallel-tasks` | 複数タスクの並列実行と統合レポート生成 |
 
-### Cursor連携 / ナレッジ（任意）
+### Cursor連携 / ナレッジ
 
 | コマンド | 目的 |
 | --- | --- |
-| `/setup-cursor` | Cursor連携のセットアップ（.cursor/commands 生成） |
-| `/start-task` | Cursorから受領したタスク開始のセットアップ |
-| `/handoff-to-pm-claude` | PM Claude向けの完了報告を生成（ソロ 2-Claude 推奨） |
-| `/handoff-to-impl-claude` | Impl Claude向けの依頼文を生成（PM Claude→実装役） |
-| `/handoff-to-cursor` | （互換）Cursor(PM)向けの完了報告を生成 |
+| `/handoff-to-cursor` | Cursor(PM)向けの完了報告を生成 |
 | `/remember` | 学習事項をRules/Commands/Skillsとして記録 |
 | `/localize-rules` | プロジェクト構造に合わせてルールをローカライズ |
-| `/sync-ssot-from-serena` | Serenaメモリを読み込み、decisions/patterns（SSOT）へ反映 |
-| `/sync-project-specs` | [念のため] 作業後にPlans.md等が更新されているか不明な時に実行 |
-| `/notebooklm-yaml` | NotebookLMのスライド用デザインYAMLを生成 |
+| `/sync-ssot-from-serena` | Serenaメモリ→SSOT反映 |
+| `/sync-project-specs` | 作業後にPlans.md等が更新されているか不明な時に実行 |
+
+### スキル（会話の中で自動呼び出し）
+
+多くの機能はスキルに移行しました。`/skill-list` で一覧を確認できます。
+
+| スキル | 目的 | トリガー例 |
+| --- | --- | --- |
+| `analytics` | Analytics統合 | 「アクセス解析を入れて」 |
+| `auth` | 認証機能 | 「ログイン機能を付けて」 |
+| `auto-fix` | 自動修正 | 「指摘を修正して」 |
+| `component` | UIコンポーネント | 「ヒーローを作って」 |
+| `deploy-setup` | デプロイ設定 | 「Vercelにデプロイしたい」 |
+| `feedback` | フィードバック機能 | 「フィードバックフォームを追加」 |
+| `health-check` | 環境診断 | 「環境をチェックして」 |
+| `payments` | 決済機能 | 「Stripeで決済を付けたい」 |
+| `setup-cursor` | Cursor連携 | 「2-agent運用を始めたい」 |
+| `handoff-to-impl` | PM→Impl依頼 | 「実装役に渡して」 |
+| `handoff-to-pm` | Impl→PM報告 | 「PMに完了報告」 |
 
 ---
 
