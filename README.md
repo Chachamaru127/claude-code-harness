@@ -6,7 +6,7 @@
 Claude Code を「Plan → Work → Review」の型で自律運用し、個人開発を“もう1段”プロ品質へ引き上げる **開発ハーネス（Claude Code プラグイン）** です。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version: 2.1.1](https://img.shields.io/badge/version-2.1.1-blue.svg)](VERSION)
+[![Version: 2.1.2](https://img.shields.io/badge/version-2.1.2-blue.svg)](VERSION)
 
 **現在のハーネススコア**: **92 / 100（S）**（→ [採点基準](#個人開発ハーネスの採点基準--スコア)）
 
@@ -37,15 +37,15 @@ Claude Code を「Plan → Work → Review」の型で自律運用し、個人�
 
 ## 3行でわかる
 
-- **`/plan`**: 「次に何をするか」を **Plans.md** に落として迷いを消す
-- **`/work`**: Plans.md を実行して“動くコード”を積み上げる
-- **`/harness-review` + Hooks**: 品質・安全・継続性を自動化して“雑にならない”状態を作る
+- **`/plan-with-agent`**: 「次に何をするか」を **Plans.md** に落として迷いを消す
+- **`/work`**: Plans.md を実行して"動くコード"を積み上げる（並列実行対応）
+- **`/harness-review` + Hooks**: 品質・安全・継続性を自動化して"雑にならない"状態を作る
 
 ## これは何？
 
 Claude Code の強み（実装スピード）を活かしつつ、個人開発で起きがちな問題をハーネスで解決します。
 
-- **迷う（何をすべきか分からない）** → `/plan` で「次の一手」をタスクリスト化
+- **迷う（何をすべきか分からない）** → `/plan-with-agent` で「次の一手」をタスクリスト化
 - **雑になる（品質が落ちる）** → `/harness-review` で多観点レビュー（並列）
 - **事故る（危険な操作）** → Hooks でガードレール（保護パス・危険コマンド）
 - **忘れる（前提が抜ける）** → SSOT（decisions/patterns）で意思決定を蓄積
@@ -65,10 +65,10 @@ Claude Code の強み（実装スピード）を活かしつつ、個人開発�
 
 ![主な特徴](docs/images/features.png)
 
-### Plan → Work → Review を“自律ループ”にする
+### Plan → Work → Review を"自律ループ"にする
 
-- `/plan`: 要望を **Plans.md** に落としてタスク分解
-- `/work`: Plans.md を読み、タスクを実装してステータス更新
+- `/plan-with-agent`: 要望を **Plans.md** に落としてタスク分解
+- `/work`: Plans.md を読み、タスクを並列実行で効率的に実装
 - `/harness-review`: セキュリティ/性能/品質/アクセシビリティを多観点レビュー（並列）
 
 ### 安全に任せられる（Hooks）
@@ -89,7 +89,7 @@ Claude Code の強み（実装スピード）を活かしつつ、個人開発�
 
 ### （任意）Cursor連携で 2-agent 運用
 
-- `/setup-cursor`: `.cursor/commands/*.md` を生成し、**Cursor(PM)** と **Claude Code(Worker)** を役割分担
+- `setup-cursor` スキル: `.cursor/commands/*.md` を生成し、**Cursor(PM)** と **Claude Code(Worker)** を役割分担
 - `/handoff-to-cursor`: 完了報告テンプレを生成（Cursorへ貼り付け）
 
 ---
@@ -125,7 +125,7 @@ claude --plugin-dir /path/to/claude-code-harness
 ### 4) ふだんの開発ループ
 
 ```bash
-/plan
+/plan-with-agent
 /work
 /harness-review
 ```
@@ -166,7 +166,7 @@ claude --plugin-dir /path/to/claude-code-harness
 
 ```bash
 /harness-init
-/plan
+/plan-with-agent
 /work
 /harness-review
 ```
@@ -174,38 +174,37 @@ claude --plugin-dir /path/to/claude-code-harness
 レビューで指摘が出たら：
 
 ```bash
-/auto-fix
+# 「指摘を修正して」と言えば auto-fix スキルが自動起動
 /validate
 ```
 
-### 2) 受託/納品で“安心して提出できる”状態にする
+### 2) 受託/納品で"安心して提出できる"状態にする
 
 - **レビュー（多観点）**: `/harness-review`
-- **自動修正**: `/auto-fix`
+- **自動修正**: 「指摘を修正して」→ auto-fix スキル
 - **納品前検証**: `/validate`
 
-必要なら **報告テンプレ**を生成（PM Claude / Cursor運用向け）：
+必要なら **報告テンプレ**を生成（Cursor運用向け）：
 
 ```bash
-/handoff-to-pm-claude
-# （互換）/handoff-to-cursor
+/handoff-to-cursor
 ```
 
 ### 3) Cursor(PM) × Claude Code(Worker) で役割分担（任意）
 
-```bash
-/setup-cursor
-```
+「2-agent運用を始めたい」と言えば setup-cursor スキルが起動し、`.cursor/commands/*.md` を生成します。
 
 - **Cursor側**: `/plan-with-cc` → `/handoff-to-claude`
-- **Claude Code側**: `/start-task` → `/work` → `/handoff-to-cursor`（互換）
+- **Claude Code側**: `/work` → `/handoff-to-cursor`
 - **Cursor側**: `/review-cc-work`
 
 ### 3.5) ソロでも PM ↔ Impl を分離（おすすめ）
 
-- **PM Claude**: `/plan` → `/handoff-to-impl-claude`
-- **Impl Claude（Claude Code）**: `/start-task` → `/work` → `/handoff-to-pm-claude`
-- **PM Claude**: レビューして `pm:確認済` に更新（必要なら再依頼）
+スキルを活用して役割分担できます：
+
+- **PM役**: `/plan-with-agent` → 「実装役に渡して」（handoff-to-impl スキル）
+- **Impl役（Claude Code）**: `/work` → 「PMに完了報告」（handoff-to-pm スキル）
+- **PM役**: レビューして `pm:確認済` に更新（必要なら再依頼）
 
 ### 4) レビューを待たない（並列・バックグラウンド）
 
@@ -267,16 +266,14 @@ export CLAUDE_MD_MAX_LINES=150
 
 ```bash
 /harness-init
-/plan
+/plan-with-agent
 /work
 /harness-review
 ```
 
 ### Cursor 併用（任意）
 
-```bash
-/setup-cursor
-```
+「2-agent運用を始めたい」と言えば setup-cursor スキルが起動します。
 
 これで Cursor 側に以下のコマンドが生成されます（`.cursor/commands/`）:
 
@@ -366,7 +363,7 @@ export CLAUDE_MD_MAX_LINES=150
 - **B（70–79）**: 便利だが運用が属人化しやすい
 - **C（〜69）**: アイデア段階。仕組みの整合/検証が不足
 
-### 採点表（このリポジトリ: v2.1.0）
+### 採点表（このリポジトリ: v2.1.2）
 
 | カテゴリ | 配点 | 何を見るか | 本リポジトリ |
 | --- | ---: | --- | ---: |
@@ -400,7 +397,7 @@ export CLAUDE_MD_MAX_LINES=150
 このプラグインは 3層（Profile → Workflow → Skill）で構成されています。
 
 - **Profile**: `profiles/claude-worker.yaml`
-- **Workflow**: `workflows/default/*.yaml`（init/plan/work/review/start-task）
+- **Workflow**: `workflows/default/*.yaml`（init/plan/work/review）
 - **Skill**: `skills/**/SKILL.md`
 
 詳しくは `docs/ARCHITECTURE.md` を参照してください。
@@ -412,12 +409,12 @@ export CLAUDE_MD_MAX_LINES=150
 ```
 claude-code-harness/
 ├── .claude-plugin/         # プラグインメタデータ（plugin.json）
-├── commands/               # スラッシュコマンド（25）
+├── commands/               # スラッシュコマンド（16）
 ├── workflows/              # ワークフロー定義（5）
-├── skills/                 # スキル（35）
+├── skills/                 # スキル（47）
 ├── agents/                 # サブエージェント（6）
 ├── hooks/                  # Hooks 定義
-├── scripts/                # Hooks/運用スクリプト（20）
+├── scripts/                # Hooks/運用スクリプト
 ├── templates/              # 生成テンプレート（AGENTS/CLAUDE/Plans, Cursor commands 等）
 └── docs/                   # 詳細ドキュメント
 ```
@@ -428,20 +425,41 @@ claude-code-harness/
 
 > 詳細は [CHANGELOG.md](CHANGELOG.md) を参照してください（0.5.x は Imported history として同梱）。
 
-### 現行: v2.1.0（2025-12-15）
+### 現行: v2.1.2（2025-12-15）
+
+**Changed**
+
+- `/parallel-tasks` を `/work` に統合（コマンド数 17 → 16）
+- `/work` を「並列実行ファースト」に強化:
+  - 独立タスク2つ以上 → デフォルトで並列実行
+  - 依存関係分析の自動化
+  - 統合レポート形式の追加
+  - 部分失敗時のエラーハンドリング強化
+
+### 直前: v2.1.1（2025-12-15）
+
+**Changed**
+
+- コマンド整理: 27個 → 17個に削減（スキル化で整理）
+- `/plan` を `/plan-with-agent` に名称変更
+- `/skill-list` コマンドを追加（スキル一覧表示）
+- `/cleanup` の説明を改善（いつ使うべきかを明確化）
+- `/harness-init` に `/localize-rules` 相当の処理を統合
+
+**Removed**
+
+- `/start-task` を削除（`/work` に統合済み）
+- 以下のコマンドをスキルに移行:
+  - `/analytics`, `/auth`, `/auto-fix`, `/component`, `/deploy-setup`
+  - `/feedback`, `/health-check`, `/notebooklm-yaml`, `/payments`, `/setup-cursor`
+  - `/handoff-to-impl-claude`, `/handoff-to-pm-claude`
+
+### 直前: v2.1.0（2025-12-15）
 
 **Added**
 
 - `/refactor` コマンド: コードの安全なリファクタリング（テスト維持・段階的実行）
 - 並列実行ガイダンス: `/validate`, `/harness-review`, `/refactor`, `/work`, `/sync-status`, `/sync-project-specs` に判断ポイントを追加
-- 開発用/リポジトリ用ファイルの判断ガイド: `/harness-init`, `/ci-setup`, `/deploy-setup` に追加
-
-**Changed**
-
-- `/sync-status`: 進捗確認 → Plans.md更新 → 次アクション提案の一連フローに改善
-- `/sync-project-specs`: 「念のため」実行するオプションコマンドとして位置づけを明確化
-- コマンド説明の視覚的区別: メインコマンド 8 個 vs オプションコマンド（`[オプション]` プレフィックス）
-- `/start-task` を `[統合済→/work]` としてマーク（/work に機能統合）
 
 ### 直前: v2.0.5（2025-12-14）
 

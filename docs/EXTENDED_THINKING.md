@@ -26,7 +26,7 @@ Extended Thinkingは、Claudeが複雑な問題に対して、即座に結論を
 
 ## 3. `claude-code-harness`での活用例
 
-### `/plan`コマンド
+### `/plan-with-agent`コマンド
 
 ```
 /plan "新しい認証システムを設計する。ステップバイステップで考えて、複数の選択肢（JWT, OAuth, SAML）のトレードオフを評価してください。"

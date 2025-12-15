@@ -57,7 +57,7 @@ Cursor ↔ Claude Code 2エージェントワークフローのガイダンス�
                       ▼
 ┌─────────────────────────────────────────────────────────┐
 │                  Claude Code (Worker)                   │
-│  ・/start-task でタスク確認                             │
+│  ・/work でタスク実行（並列実行対応）                   │
 │  ・実装 → テスト → コミット                             │
 │  ・CI 失敗時は自動修正（3回まで）                        │
 │  ・/handoff-to-cursor で完了報告                        │
@@ -104,10 +104,17 @@ pm:依頼中 → cc:WIP → cc:完了 → pm:確認済
 | コマンド | 用途 |
 |---------|------|
 | `/harness-init` | プロジェクトセットアップ |
-| `/start-task` | タスク開始 |
-| `/handoff-to-pm-claude` | 完了報告（PM Claudeへ） |
-| `/handoff-to-cursor` | 完了報告（互換: Cursor PMへ） |
+| `/plan-with-agent` | 計画・タスク分解 |
+| `/work` | タスク実行（並列実行対応） |
+| `/handoff-to-cursor` | 完了報告（Cursor PMへ） |
 | `/sync-status` | 状態確認 |
+
+### スキル（会話で自動起動）
+
+| スキル | トリガー例 |
+|--------|-----------|
+| `handoff-to-pm` | 「PMに完了報告」 |
+| `handoff-to-impl` | 「実装役に渡して」 |
 
 ### Cursor 側（参考）
 

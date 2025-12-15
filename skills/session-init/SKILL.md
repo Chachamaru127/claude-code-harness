@@ -140,7 +140,7 @@ Plans.md から以下を抽出：
 
 ## 関連コマンド
 
-- `/start-task` - タスクの詳細確認と作業開始
+- `/work` - タスク実行（並列実行対応）
 - `/sync-status` - Plans.md の進捗サマリー
 - `/cleanup` - ファイルの自動整理
 

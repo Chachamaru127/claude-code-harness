@@ -699,7 +699,7 @@ git commit -m "feat: レビュー機能追加"
 ## 🎯 まとめ
 
 ### 新規プロジェクト
-1. `/plan` で計画
+1. `/plan-with-agent` で計画
 2. `/auth` で認証
 3. `/crud` でデータ
 4. `/work` で実装
@@ -711,7 +711,7 @@ git commit -m "feat: レビュー機能追加"
 1. **コミット必須**
 2. `setup-existing-project.sh` 実行
 3. **既存ドキュメント確認**
-4. `/plan` で計画更新（既存を尊重）
+4. `/plan-with-agent` で計画更新（既存を尊重）
 5. **小さく実装**
 6. **こまめに確認**
 

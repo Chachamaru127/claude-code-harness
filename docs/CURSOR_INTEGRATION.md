@@ -91,7 +91,7 @@ Cursor連携を有効化していても、Claude Code単独での開発も可能
 | :--- | :--- |
 | `/work` | Plans.mdに基づいて実装（Cursor連携時も変わらず） |
 | `/harness-review` | コードレビュー（推奨。組み込み review と衝突しない） |
-| `/plan` | 計画立案（Cursorでも計画可能） |
+| `/plan-with-agent` | 計画立案（Cursorでも計画可能） |
 
 ## ベストプラクティス
 
