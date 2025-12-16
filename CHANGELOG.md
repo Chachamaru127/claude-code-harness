@@ -4,6 +4,31 @@ claude-code-harness の変更履歴です。
 
 ---
 
+## [2.2.0] - 2025-12-15
+
+### Changed
+- **ライセンスを MIT から独自ライセンスに変更**
+  - 利用・改変・商用利用は広く許可
+  - 再配布・販売・類似サービス提供を明確に禁止
+  - AI（LLM）利用を許可、結果責任はユーザーに帰属
+  - 無保証・免責を明確化
+
+### Added
+- LICENSE.md（英語版）を追加
+- LICENSE.ja.md（日本語版）を追加
+- README.md にライセンス説明セクションを追加（日英バイリンガル対応）
+
+### Removed
+- 旧 LICENSE ファイル（MIT License）を削除
+
+### Updated
+- .claude-plugin/plugin.json: `"license": "MIT"` → `"license": "Proprietary"`
+- .claude-plugin/marketplace.json: `"license": "MIT"` → `"license": "Proprietary"`
+- README.md: MITバッジを削除し、Proprietaryバッジに変更
+- VERSION: 2.1.2 → 2.2.0
+
+---
+
 ## [2.1.2] - 2025-12-15
 
 ### Changed

@@ -1,6 +1,6 @@
 {
   "name": "claude-code-harness",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "A harness for solo developers (Vibecoders) to handle full-cycle contract development.",
   "author": {
     "name": "Manus AI & Chachamaru",
@@ -8,7 +8,7 @@
   },
   "homepage": "https://github.com/Chachamaru127/claude-code-harness",
   "repository": "https://github.com/Chachamaru127/claude-code-harness",
-  "license": "MIT",
+  "license": "Proprietary",
   "keywords": [
     "claude-code",
     "plugin",

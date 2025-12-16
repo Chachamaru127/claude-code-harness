@@ -5,8 +5,8 @@
 **思考の流れを妨げない開発体験**
 Claude Code を「Plan → Work → Review」の型で自律運用し、個人開発を“もう1段”プロ品質へ引き上げる **開発ハーネス（Claude Code プラグイン）** です。
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version: 2.1.2](https://img.shields.io/badge/version-2.1.2-blue.svg)](VERSION)
+[![Version: 2.2.0](https://img.shields.io/badge/version-2.2.0-blue.svg)](VERSION)
+[![License: Proprietary](https://img.shields.io/badge/License-Proprietary-red.svg)](LICENSE.md)
 
 **現在のハーネススコア**: **92 / 100（S）**（→ [採点基準](#個人開発ハーネスの採点基準--スコア)）
 
@@ -595,8 +595,40 @@ README構成や導線設計の参考として、以下の公開例/公式資料�
 
 ---
 
-## ライセンス
+## ライセンス / License
 
-MIT License（[LICENSE](LICENSE)）
+本プロジェクトは **独自ライセンス** の下で提供されています。
+This project is provided under a **proprietary license**.
+
+- 📄 [English Version (LICENSE.md)](LICENSE.md)
+- 📄 [日本語版 (LICENSE.ja.md)](LICENSE.ja.md)
+
+### ✅ 許可事項 / Permitted Uses
+
+- **個人利用・商用利用**: 受託開発、自社プロダクト、フリーランス業務など、広く利用可能
+  **Personal & Commercial Use**: Contract development, in-house products, freelance work, etc.
+- **改変・カスタマイズ**: プロジェクトに合わせて自由に編集
+  **Modification & Customization**: Free to edit for your projects
+- **AI（LLM）利用**: Claude、GPT等を用いた編集・拡張・コード生成補助
+  **AI (LLM) Use**: Editing, extension, and code generation assistance using Claude, GPT, etc.
+
+### ❌ 禁止事項 / Prohibited Acts
+
+- **再配布・販売**: 本プラグインそのもの、またはこれを含むパッケージの配布・販売
+  **Redistribution & Sale**: Distribution or sale of the plugin itself or packages containing it
+- **テンプレート販売**: 本プラグインをテンプレートとして販売・配布すること
+  **Template Sales**: Selling or distributing the plugin as a template
+- **類似サービス提供**: 本プラグインと競合する開発ツール、プラグイン、ハーネスサービスの提供
+  **Similar Services**: Providing competing development tools, plugins, or harness services
+- **公序良俗違反**: 違法行為、詐欺、アダルトコンテンツ、ヘイトスピーチなどへの利用
+  **Illegal Use**: Use for illegal activities, fraud, adult content, hate speech, etc.
+
+### 💡 要約 / Summary
+
+**「使う・改変する・商用利用する」は自由。「再配布・販売・類似サービス化」は禁止。**
+**"Use, modify, and commercialize" freely. "Redistribute, sell, or create similar services" are prohibited.**
+
+詳細は LICENSE.md（英語）または LICENSE.ja.md（日本語）をご確認ください。
+For details, see LICENSE.md (English) or LICENSE.ja.md (Japanese).
 
 
