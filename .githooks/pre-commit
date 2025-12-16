@@ -27,7 +27,7 @@ if [ -z "$CHANGED_CODE" ]; then
   # Even if no code changes, keep VERSION/plugin.json consistent when those files are staged.
   if [ -f "./scripts/sync-version.sh" ]; then
     if ! bash ./scripts/sync-version.sh check >/dev/null 2>&1; then
-      echo "⚠️  VERSION と plugin.json が不一致です。自動で同期します..."
+      echo "[pre-commit] VERSION and plugin.json mismatch. Syncing..."
       bash ./scripts/sync-version.sh sync
       git add VERSION .claude-plugin/plugin.json 2>/dev/null || true
     fi
@@ -36,8 +36,8 @@ if [ -z "$CHANGED_CODE" ]; then
 fi
 
 # If we have code changes staged, require version bump (auto-fix by bumping patch).
-BASE_VERSION="$(git show HEAD:VERSION 2>/dev/null | tr -d '[:space:]' || true)"
-INDEX_VERSION="$(git show :VERSION 2>/dev/null | tr -d '[:space:]' || true)"
+BASE_VERSION="$(git show HEAD:VERSION 2>/dev/null | tr -d '[:space:]' || echo "")"
+INDEX_VERSION="$(git show :VERSION 2>/dev/null | tr -d '[:space:]' || echo "")"
 
 if [ -z "$INDEX_VERSION" ] && [ -f VERSION ]; then
   INDEX_VERSION="$(cat VERSION | tr -d '[:space:]')"
@@ -49,8 +49,8 @@ if [ -z "$BASE_VERSION" ] || [ -z "$INDEX_VERSION" ]; then
 fi
 
 if [ "$BASE_VERSION" = "$INDEX_VERSION" ]; then
-  echo "⚠️  コード変更が staged されていますが VERSION が更新されていません（$INDEX_VERSION）。"
-  echo "    → 自動でパッチバージョンを上げてコミットに含めます。"
+  echo "[pre-commit] Code changes staged but VERSION not bumped ($INDEX_VERSION)."
+  echo "             -> Auto-bumping patch version..."
 
   bash ./scripts/sync-version.sh bump
 
@@ -59,9 +59,7 @@ if [ "$BASE_VERSION" = "$INDEX_VERSION" ]; then
   git add .claude-plugin/marketplace.json README.md 2>/dev/null || true
 
   NEW_VERSION="$(cat VERSION | tr -d '[:space:]')"
-  echo "✅ VERSION を自動更新しました: $BASE_VERSION → $NEW_VERSION"
+  echo "[pre-commit] VERSION updated: $BASE_VERSION -> $NEW_VERSION"
 fi
 
 exit 0
-
-
