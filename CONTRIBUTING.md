@@ -101,6 +101,35 @@ Version is defined in two places that must stay in sync:
 - **Local (recommended)**: run `./scripts/sync-version.sh check` before committing
 - **CI (recommended)**: run `./tests/validate-plugin.sh` and `./scripts/ci/check-consistency.sh` on PRs
 
+## CHANGELOG 記載ルール（必須）
+
+**CHANGELOG.md は「ユーザー目線で何がどう変わったか」を記載する。**
+
+各バージョンエントリには必ず以下を含める:
+
+```markdown
+## [X.Y.Z] - YYYY-MM-DD
+
+### 🎯 あなたにとって何が変わるか
+
+**一言サマリー（太字）**
+
+#### Before
+- 変更前の状態・体験
+
+#### After
+- 変更後の状態・体験
+- ユーザーにとって何が嬉しいか
+
+### 変更内容
+- 技術的な変更の詳細（必要に応じて）
+```
+
+**優先すべきこと**:
+- 技術的な詳細より「使い方の変化」「体験の改善」を優先
+- Before/After を明確に
+- 「あなたにとって何が嬉しいか」がわかるように
+
 ---
 
 ## Testing

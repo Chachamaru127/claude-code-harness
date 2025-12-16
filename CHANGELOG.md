@@ -2,64 +2,140 @@
 
 claude-code-harness の変更履歴です。
 
+> **📝 記載ルール**: このCHANGELOGは「ユーザー目線で何がどう変わったか」を記載します。
+> - **Before/After** を明確に
+> - 技術的な詳細より「使い方の変化」「体験の改善」を優先
+> - 「あなたにとって何が嬉しいか」がわかるように
+
+---
+
+## [2.2.1] - 2025-12-16
+
+### 🎯 あなたにとって何が変わるか
+
+**エージェントがより賢く動くようになりました。**
+
+#### Before
+- エージェントが何のツールを使えるか不明確
+- 複数エージェントを並列実行しても見分けがつかない
+- スキルの情報が1ファイルに詰め込まれ、トークン消費が非効率
+
+#### After
+- 各エージェントが使えるツールが明示され、適切なツールのみ使用
+- エージェントに色（color）がつき、並列実行時に識別しやすい
+- スキルが階層化され、必要な情報だけ読み込むため高速化
+
+### 変更内容
+
+#### エージェント定義の公式形式準拠（6ファイル）
+
+```yaml
+# Before
+---
+description: ...
+capabilities: [...]
+---
+
+# After
+---
+name: code-reviewer
+description: ...
+tools: [Read, Grep, Glob, Bash]
+model: sonnet
+color: blue
+---
+```
+
+| エージェント | 役割 | color |
+|-------------|------|-------|
+| code-reviewer | コードレビュー | 🔵 blue |
+| ci-cd-fixer | CI修正 | 🟠 orange |
+| error-recovery | エラー復旧 | 🔴 red |
+| project-analyzer | プロジェクト分析 | 🟢 green |
+| project-scaffolder | プロジェクト生成 | 🟣 purple |
+| project-state-updater | 状態管理 | 🔵 cyan |
+
+#### スキルのProgressive Disclosure構造化
+
+```
+# Before
+skills/plans-management/
+└── SKILL.md   # 全情報が1ファイル
+
+# After
+skills/plans-management/
+├── SKILL.md              # コア情報のみ
+├── references/
+│   └── markers.md        # 詳細仕様（必要時のみ読込）
+└── examples/
+    └── task-lifecycle.md # 実例（必要時のみ読込）
+```
+
+**対象スキル**: plans-management, workflow-guide
+
 ---
 
 ## [2.2.0] - 2025-12-15
 
-### Changed
-- **ライセンスを MIT から独自ライセンスに変更**
-  - 利用・改変・商用利用は広く許可
-  - 再配布・販売・類似サービス提供を明確に禁止
-  - AI（LLM）利用を許可、結果責任はユーザーに帰属
-  - 無保証・免責を明確化
+### 🎯 あなたにとって何が変わるか
 
-### Added
-- LICENSE.md（英語版）を追加
-- LICENSE.ja.md（日本語版）を追加
+**ライセンスが変わりました（使い方は変わりません）。**
+
+#### Before (MIT License)
+- 誰でも自由に再配布・販売可能
+- 類似サービスを作って販売可能
+
+#### After (Proprietary License)
+- **あなたの使い方は変わりません**: 個人利用・商用利用・改変・AI利用は引き続き自由
+- **禁止されること**: 再配布・販売・類似サービスの提供
+
+### 変更内容
+- ライセンスを MIT から独自ライセンスに変更
+- LICENSE.md（英語）、LICENSE.ja.md（日本語）を追加
 - README.md にライセンス説明セクションを追加（日英バイリンガル対応）
-
-### Removed
-- 旧 LICENSE ファイル（MIT License）を削除
-
-### Updated
-- .claude-plugin/plugin.json: `"license": "MIT"` → `"license": "Proprietary"`
-- .claude-plugin/marketplace.json: `"license": "MIT"` → `"license": "Proprietary"`
-- README.md: MITバッジを削除し、Proprietaryバッジに変更
-- VERSION: 2.1.2 → 2.2.0
 
 ---
 
 ## [2.1.2] - 2025-12-15
 
-### Changed
-- `/parallel-tasks` を `/work` に統合（コマンド数 17 → 16）
-- `/work` を「並列実行ファースト」に強化:
-  - 独立タスク2つ以上 → デフォルトで並列実行
-  - 依存関係分析の自動化
-  - 統合レポート形式の追加
-  - 部分失敗時のエラーハンドリング強化
+### 🎯 あなたにとって何が変わるか
+
+**`/work` だけで並列実行できるようになりました。**
+
+#### Before
+- 通常のタスク実行: `/work`
+- 並列実行したい時: `/parallel-tasks`（別コマンド）
+
+#### After
+- **すべて `/work` でOK**: 独立したタスクが複数あれば自動で並列実行
+- コマンドを覚える必要が減った（17 → 16コマンド）
+
+### 変更内容
+- `/parallel-tasks` を `/work` に統合
+- `/work` が自動で依存関係を分析し、並列/直列を判断
 
 ---
 
 ## [2.1.1] - 2025-12-15
 
-### Changed
-- コマンド整理: 27個 → 17個に削減（スキル化で整理）
-- `/plan` を `/plan-with-agent` に名称変更
-- `/skill-list` コマンドを追加（スキル一覧表示）
-- `/cleanup` の説明を改善（いつ使うべきかを明確化）
-- `/harness-init` に `/localize-rules` 相当の処理を統合
+### 🎯 あなたにとって何が変わるか
 
-### Removed
-- `/start-task` を削除（`/work` に統合済み）
-- 以下のコマンドをスキルに移行:
-  - `/analytics`, `/auth`, `/auto-fix`, `/component`, `/deploy-setup`
-  - `/feedback`, `/health-check`, `/notebooklm-yaml`, `/payments`, `/setup-cursor`
-  - `/handoff-to-impl-claude`, `/handoff-to-pm-claude`
+**コマンドを覚える必要が大幅に減りました。**
 
-### Notes
-- スキルは会話の中で自動的に呼び出されるため、明示的なコマンド実行は不要
-- `/skill-list` でスキル一覧を確認可能
+#### Before
+- 27個のコマンドを覚える必要があった
+- `/analytics`, `/auth`, `/deploy-setup` など個別コマンドを実行
+
+#### After
+- **16個のコマンドだけ**でOK
+- 残りは「認証を追加して」「デプロイ設定して」と**会話するだけ**で自動起動（スキル化）
+
+### 変更内容
+- コマンド数: 27個 → 17個に削減
+- `/plan` → `/plan-with-agent` に名称変更
+- `/skill-list` でスキル一覧を確認可能に
+- 以下がスキル化（会話で自動起動）:
+  - `/analytics`, `/auth`, `/auto-fix`, `/deploy-setup` など
 
 ---
 
