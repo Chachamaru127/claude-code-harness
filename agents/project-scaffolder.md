@@ -1,6 +1,9 @@
 ---
+name: project-scaffolder
 description: 指定スタックで動くプロジェクトを自動生成
-capabilities: ["project-scaffolding", "template-generation", "dependency-install", "config-setup", "next-steps"]
+tools: [Write, Bash, Read, Glob]
+model: sonnet
+color: purple
 ---
 
 # Project Scaffolder Agent

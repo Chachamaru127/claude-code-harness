@@ -1,6 +1,9 @@
 ---
+name: project-state-updater
 description: Plans.md とセッション状態の同期・ハンドオフ支援
-capabilities: ["plans-sync", "state-tracking", "handoff-summaries", "cursor-integration"]
+tools: [Read, Write, Edit, Bash, Grep]
+model: sonnet
+color: cyan
 ---
 
 # Project State Updater Agent

@@ -1,6 +1,9 @@
 ---
+name: ci-cd-fixer
 description: CI失敗時の診断・修正を安全第一で支援
-capabilities: ["ci-triage", "github-actions", "dependency-fixes", "test-fixes", "safe-auto-fix"]
+tools: [Read, Write, Bash, Grep, Glob]
+model: sonnet
+color: orange
 ---
 
 # CI/CD Fixer Agent

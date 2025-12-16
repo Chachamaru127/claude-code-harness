@@ -1,6 +1,9 @@
 ---
+name: error-recovery
 description: エラー復旧（原因切り分け→安全な修正→再検証）
-capabilities: ["error-triage", "safe-fixes", "retry-strategy", "environment-checks", "escalation"]
+tools: [Read, Write, Edit, Bash, Grep, Glob]
+model: sonnet
+color: red
 ---
 
 # Error Recovery Agent

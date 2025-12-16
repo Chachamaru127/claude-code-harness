@@ -1,6 +1,9 @@
 ---
+name: project-analyzer
 description: 新規/既存プロジェクト判定と技術スタック検出
-capabilities: ["repo-analysis", "stack-detection", "project-classification", "recommendation"]
+tools: [Read, Bash, Glob, Grep]
+model: sonnet
+color: green
 ---
 
 # Project Analyzer Agent
