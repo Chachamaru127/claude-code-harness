@@ -5,7 +5,6 @@
 # Purpose:
 # - If "code paths" are modified but VERSION isn't bumped, auto-bump patch version and stage it.
 # - Keep VERSION and .claude-plugin/plugin.json in sync.
-# - Warn if CHANGELOG.md is not updated when version is bumped.
 #
 # Install:
 #   ./scripts/install-git-hooks.sh
@@ -49,8 +48,6 @@ if [ -z "$BASE_VERSION" ] || [ -z "$INDEX_VERSION" ]; then
   exit 0
 fi
 
-VERSION_BUMPED=false
-
 if [ "$BASE_VERSION" = "$INDEX_VERSION" ]; then
   echo "[pre-commit] Code changes staged but VERSION not bumped ($INDEX_VERSION)."
   echo "             -> Auto-bumping patch version..."
@@ -63,35 +60,6 @@ if [ "$BASE_VERSION" = "$INDEX_VERSION" ]; then
 
   NEW_VERSION="$(cat VERSION | tr -d '[:space:]')"
   echo "[pre-commit] VERSION updated: $BASE_VERSION -> $NEW_VERSION"
-  VERSION_BUMPED=true
-else
-  # Version was already bumped manually
-  VERSION_BUMPED=true
-fi
-
-# Check if CHANGELOG.md is updated when version is bumped
-if [ "$VERSION_BUMPED" = true ]; then
-  CHANGELOG_STAGED="$(git diff --cached --name-only -- CHANGELOG.md 2>/dev/null || true)"
-  if [ -z "$CHANGELOG_STAGED" ]; then
-    echo ""
-    echo "================================================================"
-    echo "[pre-commit] WARNING: CHANGELOG.md not updated!"
-    echo "================================================================"
-    echo ""
-    echo "  Code changes detected but CHANGELOG.md was not modified."
-    echo "  Please update CHANGELOG.md with:"
-    echo ""
-    echo "    ## [$(cat VERSION)] - $(date +%Y-%m-%d)"
-    echo ""
-    echo "    ### What changed"
-    echo "    - Your changes here..."
-    echo ""
-    echo "  Run: git add CHANGELOG.md && git commit --amend"
-    echo ""
-    echo "================================================================"
-    echo ""
-    # Warning only, don't block the commit
-  fi
 fi
 
 exit 0

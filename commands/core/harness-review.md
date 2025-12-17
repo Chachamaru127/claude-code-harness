@@ -69,50 +69,37 @@ git diff --name-only HEAD~5 2>/dev/null || find . -name "*.ts" -o -name "*.tsx" 
 4. `/harness-review accessibility` を実行 → `Ctrl+B` でバックグラウンドへ
 5. 各サブエージェントが完了すると自動的に通知されます
 
-```python
-# 並列レビューの実装例
-import subprocess
-import json
+**Task tool による並列起動（1つのレスポンス内で4つ同時呼び出し）:**
 
-# 変更ファイルを取得
-result = subprocess.run(
-    ["git", "diff", "--name-only", "HEAD~5"],
-    capture_output=True, text=True
-)
-changed_files = result.stdout.strip().split('\n')
+```
+🔍 並列レビュー開始...
 
-# 4つのレビュー観点を定義
-review_tasks = [
-    {
-        "focus": "security",
-        "prompt": f"以下のファイルのセキュリティ脆弱性をチェックしてください：{changed_files}",
-        "skill": "ccp-review-security"
-    },
-    {
-        "focus": "performance",
-        "prompt": f"以下のファイルのパフォーマンス問題をチェックしてください：{changed_files}",
-        "skill": "ccp-review-performance"
-    },
-    {
-        "focus": "quality",
-        "prompt": f"以下のファイルのコード品質をチェックしてください：{changed_files}",
-        "skill": "ccp-review-quality"
-    },
-    {
-        "focus": "accessibility",
-        "prompt": f"以下のファイルのアクセシビリティをチェックしてください：{changed_files}",
-        "skill": "ccp-review-accessibility"
-    }
-]
+Task tool #1:
+  description: "Security review"
+  subagent_type: "claude-code-harness:code-reviewer"
+  prompt: "セキュリティ観点でレビュー。対象: {changed_files}
+          チェック項目: 環境変数管理、入力バリデーション、SQL/XSS対策"
 
-# Claude CodeのTask toolを使用して並列実行
-# 注：実際にはClaude Codeが自動的に並列化します
-print("🔍 並列レビューを開始します...")
-for task in review_tasks:
-    print(f"  - {task['focus']}: {task['skill']}")
+Task tool #2:
+  description: "Performance review"
+  subagent_type: "claude-code-harness:code-reviewer"
+  prompt: "パフォーマンス観点でレビュー。対象: {changed_files}
+          チェック項目: 再レンダリング、N+1クエリ、メモ化"
 
-# 結果は各サブエージェントから返され、
-# ccp-review-aggregateスキルで統合されます
+Task tool #3:
+  description: "Quality review"
+  subagent_type: "claude-code-harness:code-reviewer"
+  prompt: "コード品質観点でレビュー。対象: {changed_files}
+          チェック項目: 型安全性、エラーハンドリング、命名規則"
+
+Task tool #4:
+  description: "Accessibility review"
+  subagent_type: "claude-code-harness:code-reviewer"
+  prompt: "アクセシビリティ観点でレビュー。対象: {changed_files}
+          チェック項目: セマンティックHTML、alt、キーボード操作"
+
+→ 4つのサブエージェントが並列実行
+→ 結果を統合して総合評価を出力
 ```
 
 レビュー観点：

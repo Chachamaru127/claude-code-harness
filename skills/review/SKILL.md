@@ -40,5 +40,28 @@ metadata:
 ## 実行手順
 
 1. ユーザーのリクエストを分類
-2. 適切な小スキルの doc.md を読む
-3. その内容に従ってレビュー実行
+2. 並列実行の判定（下記参照）
+3. 適切な小スキルの doc.md を読む、または並列サブエージェント起動
+4. 結果を統合してレビュー完了
+
+## 並列サブエージェント起動（推奨）
+
+以下の条件を**両方**満たす場合、Task tool で code-reviewer を並列起動:
+
+- レビュー観点 >= 2（例: セキュリティ + パフォーマンス）
+- 変更ファイル >= 5
+
+**起動パターン（1つのレスポンス内で複数の Task tool を同時呼び出し）:**
+
+```
+Task tool 並列呼び出し:
+  #1: subagent_type="claude-code-harness:code-reviewer"
+      prompt="セキュリティ観点でレビュー: {files}"
+  #2: subagent_type="claude-code-harness:code-reviewer"
+      prompt="パフォーマンス観点でレビュー: {files}"
+  #3: subagent_type="claude-code-harness:code-reviewer"
+      prompt="コード品質観点でレビュー: {files}"
+```
+
+**小規模な場合（条件を満たさない）:**
+- 子スキル（doc.md）を順次読み込んで直列実行

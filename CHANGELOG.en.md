@@ -6,6 +6,34 @@ Change history for claude-code-harness.
 > - Clear **Before/After** comparisons
 > - Focus on "usage changes" and "experience improvements" over technical details
 > - Make it clear "what's in it for you"
+> - **Based on**: Link to Claude Code official features when referenced
+
+---
+
+## [2.4.0] - 2025-12-17
+
+### What's Changed for You
+
+**Reviews and CI fixes now run in parallel. Skills automatically spawn subagents.**
+
+#### Before
+- `/harness-review` checked 4 aspects (security/performance/quality/accessibility) sequentially
+- Large reviews took a long time
+- `agents/` subagent definitions weren't being utilized
+
+#### After
+- **Parallel reviews**: When conditions are met (aspects>=2 & files>=5), Task tool spawns 4 subagents simultaneously
+- **CI fix delegation**: Complex CI failures auto-delegate to ci-cd-fixer subagent
+- **Time savings**: Up to 75% faster with parallel execution (full 4-aspect review)
+
+### Changes
+- Added subagent orchestration to CLAUDE.md (+2 lines only)
+- Added parallel subagent launch logic to `skills/review/SKILL.md`
+- Added ci-cd-fixer integration to `skills/ci/SKILL.md`
+- Clarified Task tool patterns in `commands/core/harness-review.md`
+
+### Based on
+- [Claude Code Subagents](https://code.claude.com/docs/en/sub-agents) - Parallel subagent spawning via Task tool
 
 ---
 

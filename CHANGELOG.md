@@ -6,6 +6,34 @@ claude-code-harness の変更履歴です。
 > - **Before/After** を明確に
 > - 技術的な詳細より「使い方の変化」「体験の改善」を優先
 > - 「あなたにとって何が嬉しいか」がわかるように
+> - **参照元（Based on）**: Claude Code の公式機能を参照した場合はリンク付きで記載
+
+---
+
+## [2.4.0] - 2025-12-17
+
+### 🎯 あなたにとって何が変わるか
+
+**レビューやCI修正が並列実行で高速化。スキルがサブエージェントを自動起動します。**
+
+#### Before
+- `/harness-review` は4つの観点（セキュリティ/パフォーマンス/品質/アクセシビリティ）を順番にチェック
+- 大規模なレビューは時間がかかる
+- `agents/` のサブエージェント定義が活用されていなかった
+
+#### After
+- **並列レビュー**: 条件を満たす場合（観点>=2 & ファイル>=5）、Task tool で4つのサブエージェントを同時起動
+- **CI修正の委譲**: 複雑なCI失敗は ci-cd-fixer サブエージェントに自動委譲
+- **時間短縮**: 並列実行により最大75%の時間短縮（4観点のフルレビュー時）
+
+### 変更内容
+- CLAUDE.md にサブエージェント連携を追記（+2行のみ）
+- `skills/review/SKILL.md` に並列サブエージェント起動ロジックを追加
+- `skills/ci/SKILL.md` に ci-cd-fixer 連携を追加
+- `commands/core/harness-review.md` の Task tool パターンを明確化
+
+### 参照元（Based on）
+- [Claude Code Subagents](https://code.claude.com/docs/en/sub-agents) - Task tool による並列サブエージェント起動
 
 ---
 
