@@ -151,7 +151,7 @@ Before submitting:
 
    **Windows users**: Git hooks require [Git for Windows](https://gitforwindows.org/) which includes Git Bash. The hooks run automatically via Git Bash regardless of your shell (PowerShell, CMD, etc.).
 
-2. Test locally in a separate project using `--plugin-dir`:
+3. Test locally in a separate project using `--plugin-dir`:
 
    ```bash
    cd /path/to/your-project
