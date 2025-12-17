@@ -55,7 +55,7 @@ Change history for claude-code-harness.
 
 ---
 
-## [2.3.1] - 2025-12-16
+## [2.3.2] - 2025-12-16
 
 ### What's Changed for You
 
@@ -74,7 +74,7 @@ Change history for claude-code-harness.
 
 ---
 
-## [2.3.0] - 2025-12-17
+## [2.3.1] - 2025-12-16
 
 ### What's Changed for You
 
@@ -98,7 +98,7 @@ Change history for claude-code-harness.
 
 ---
 
-## [2.2.2] - 2025-12-17
+## [2.3.0] - 2025-12-16
 
 ### What's Changed for You
 
