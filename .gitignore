@@ -41,8 +41,11 @@ Thumbs.db
 
 # Benchmarks (local testing only, not for distribution)
 /benchmarks/
-docs/チョウサレポート20251218.md
+
+# docs (local-only / not for distribution)
+docs/FIX_PLAN_*.md
+docs/INVESTIGATION_REPORT_*.md
+docs/*TOKEN_REPORT*.md
+docs/チョウサレポート*.md
 docs/claude-code-bypass-permissions-guide.md
-docs/INVESTIGATION_REPORT_2025-12-18.md
-docs/INVESTIGATION_REPORT_2025-12-18_permission-prompts.md
 docs/constitution.md
