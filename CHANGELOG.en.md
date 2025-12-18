@@ -10,6 +10,33 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.5.1] - 2025-12-19
+
+### What's Changed for You
+
+**bypassPermissions-first permissions setup: fewer repetitive edit prompts while keeping dangerous actions guarded via deny/ask.**
+
+#### Before
+- `disableBypassPermissionsMode: "disable"` could prevent enabling bypassPermissions
+- If `Edit` / `Write` were placed under `permissions.ask`, you could get prompted on every edit
+
+#### After
+- **Allow bypassPermissions**: removed `disableBypassPermissionsMode` from the security template
+- **Project-only default**: added `.claude/settings.local.json` template with `defaultMode: "bypassPermissions"`
+- **Regression prevention**: added CI check to keep this setup from regressing (8/8)
+
+### Changes
+- Removed `disableBypassPermissionsMode` from `templates/claude/settings.security.json.template`
+- Added `templates/claude/settings.local.json.template` (`defaultMode: "bypassPermissions"`)
+- Updated `commands/core/harness-init.md` and `skills/setup/ccp-generate-claude-settings/doc.md`
+- Added bypassPermissions-first regression check to `scripts/ci/check-consistency.sh` (8/8)
+
+### Based on
+- [Claude Code settings](https://code.claude.com/docs/en/settings) - `permissions.defaultMode`, `disableBypassPermissionsMode`
+- [IAM: Configuring permissions](https://code.claude.com/docs/en/iam#configuring-permissions) - allow/ask/deny precedence
+
+---
+
 ## [2.5.0] - 2025-12-19
 
 ### What's Changed for You
@@ -27,8 +54,7 @@ Change history for claude-code-harness.
 - **Dependency & parallel notation**: Plans.md supports `[depends:X]`, `[parallel:A,B]` syntax
 - **docs/ standardization**: `/plan-with-agent` outputs unified to `docs/proposal.md`, `docs/technical-spec.md`, `docs/priority_matrix.md`
 - **Constitution support**: Centralized quality gates, DoD, and principles in `docs/constitution.md`
-- **bypassPermissions-first workflow**: Control only dangerous actions with deny/ask, reducing repetitive edit prompts (added a `settings.local.json` template)
-- **Regression prevention**: CI checks for `/start-task` removal, docs/ normalization, and bypassPermissions-first setup
+- **Regression prevention**: CI checks for `/start-task` removal and docs/ normalization
 
 ### Changes
 
@@ -53,14 +79,13 @@ Change history for claude-code-harness.
 
 #### Phase 5: Strengthen regression checks
 - Added to `scripts/ci/check-consistency.sh`:
-  - `/start-task` removal regression check (6/8)
-  - docs/ normalization check (7/8)
+  - `/start-task` removal regression check (6/7)
+  - docs/ normalization check (7/7)
   - Added `technical-spec.md` to coverage
-  - bypassPermissions-first regression check (8/8)
 
 #### Other
 - Unified output list in `commands/core/plan-with-agent.md`
-- All validation tests passed (35/35 plugin validation, 8/8 consistency checks)
+- All validation tests passed (35/35 plugin validation, 7/7 consistency checks)
 
 ### Based on
 - [OpenSpec/spec-kit/cc-sdd](https://github.com/OpenSpec) - Dependency & parallel notation concepts
