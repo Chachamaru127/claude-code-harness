@@ -10,6 +10,61 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.5.0] - 2025-12-19
+
+### What's Changed for You
+
+**SDD (Simple Development Discipline) Upgrade: Plans.md-centric workflow enhanced with dependency and parallel execution support.**
+
+#### Before
+- Had two commands `/start-task` and `/work` - needed to know when to use which
+- Plans.md couldn't express task dependencies or parallel execution
+- Specification documents (proposal.md, etc.) scattered between root and `docs/`
+- Constitution (development principles) settings not defined in schema
+
+#### After
+- **`/start-task` removed**: Unified into `/work` for consistent flow from start to completion
+- **Dependency & parallel notation**: Plans.md supports `[depends:X]`, `[parallel:A,B]` syntax
+- **docs/ standardization**: `/plan-with-agent` outputs unified to `docs/proposal.md`, `docs/technical-spec.md`, `docs/priority_matrix.md`
+- **Constitution support**: Centralized quality gates, DoD, and principles in `docs/constitution.md`
+- **Regression prevention**: CI checks for `/start-task` removal and docs/ normalization
+
+### Changes
+
+#### Phase 1: Remove /start-task workflow
+- Deleted `workflows/default/start-task.yaml`
+- Removed start-task references from profiles, templates, scripts
+- Completed `/sync-status` → `/work` integration
+
+#### Phase 2: Enhance /work workflow
+- Added cc:WIP auto-transition to `workflows/default/work.yaml`
+- Added marker auto-update documentation to `commands/core/work.md`
+
+#### Phase 3: Extend Plans.md management
+- Added dependency & parallel notation to `templates/Plans.md.template`
+- Added extended syntax to `templates/rules/plans-management.md.template`
+- Added visual dependency analysis examples to `skills/plans-management/SKILL.md`
+
+#### Phase 4: Constitution file support
+- Support `docs/constitution.md` creation
+- Added `constitution` property to `claude-code-harness.config.schema.json`
+- Added i18n and constitution sections to config files
+
+#### Phase 5: Strengthen regression checks
+- Added to `scripts/ci/check-consistency.sh`:
+  - `/start-task` removal regression check (6/7)
+  - docs/ normalization check (7/7)
+  - Added `technical-spec.md` to coverage
+
+#### Other
+- Unified output list in `commands/core/plan-with-agent.md`
+- All validation tests passed (35/35 plugin validation, 7/7 consistency checks)
+
+### Based on
+- [OpenSpec/spec-kit/cc-sdd](https://github.com/OpenSpec) - Dependency & parallel notation concepts
+
+---
+
 ## [2.4.1] - 2025-12-17
 
 ### What's Changed for You
