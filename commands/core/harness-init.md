@@ -414,6 +414,226 @@ command -v gh >/dev/null 2>&1 && echo "✅ gh" || echo "⚠️ gh (CI自動修�
 [ -f package.json ] && npm run lint --if-present
 ```
 
+---
+
+## Phase 4: セットアップ検証と再試行
+
+**重要**: セットアップ完了前に、必須ファイルがすべて生成されているか確認します。
+
+### Step 1: 選択モードの記録確認
+
+ユーザーが選択したモードを確認（Phase 0-2 で記録済み）：
+
+```bash
+# 設定ファイルから読み取り
+if [ -f .claude-code-harness-version ]; then
+  SETUP_MODE=$(grep "^setup_mode:" .claude-code-harness-version | cut -d' ' -f2)
+else
+  echo "⚠️ セットアップモードが記録されていません"
+  SETUP_MODE="solo"  # デフォルト
+fi
+```
+
+### Step 2: 必須ファイルのチェックリスト検証
+
+選択モードに応じて、必須ファイルをチェック：
+
+#### Solo モードのチェックリスト
+
+```bash
+REQUIRED_FILES=(
+  "AGENTS.md"
+  "CLAUDE.md"
+  "Plans.md"
+  ".claude/settings.json"
+  ".claude/memory/decisions.md"
+  ".claude/memory/patterns.md"
+  ".claude-code-harness-version"
+)
+
+MISSING_FILES=()
+
+for file in "${REQUIRED_FILES[@]}"; do
+  if [ ! -f "$file" ]; then
+    MISSING_FILES+=("$file")
+  fi
+done
+```
+
+#### 2-Agent モードのチェックリスト
+
+```bash
+REQUIRED_FILES=(
+  # Solo モードの必須ファイル
+  "AGENTS.md"
+  "CLAUDE.md"
+  "Plans.md"
+  ".claude/settings.json"
+  ".claude/memory/decisions.md"
+  ".claude/memory/patterns.md"
+  ".claude-code-harness-version"
+  # 2-Agent モード追加ファイル
+  ".cursor/commands/start-session.md"
+  ".cursor/commands/project-overview.md"
+  ".cursor/commands/plan-with-cc.md"
+  ".cursor/commands/handoff-to-claude.md"
+  ".cursor/commands/review-cc-work.md"
+  ".claude/rules/workflow.md"
+)
+
+MISSING_FILES=()
+
+for file in "${REQUIRED_FILES[@]}"; do
+  if [ ! -f "$file" ]; then
+    MISSING_FILES+=("$file")
+  fi
+done
+```
+
+### Step 3: チェック結果の表示
+
+#### すべてのファイルが存在する場合
+
+```
+✅ セットアップ検証: 完了
+
+【チェックリスト】
+✅ AGENTS.md
+✅ CLAUDE.md
+✅ Plans.md
+✅ .claude/settings.json
+✅ .claude/memory/decisions.md
+✅ .claude/memory/patterns.md
+✅ .claude-code-harness-version
+✅ .cursor/commands/ (5ファイル)  ← 2-Agent モードのみ
+✅ .claude/rules/workflow.md      ← 2-Agent モードのみ
+
+→ Step 4 へ
+```
+
+#### ファイルが不足している場合
+
+```
+⚠️ セットアップ検証: 不足ファイルあり
+
+【チェックリスト】
+✅ AGENTS.md
+✅ CLAUDE.md
+✅ Plans.md
+✅ .claude/settings.json
+✅ .claude/memory/decisions.md
+✅ .claude/memory/patterns.md
+✅ .claude-code-harness-version
+❌ .cursor/commands/start-session.md
+❌ .cursor/commands/project-overview.md
+❌ .cursor/commands/plan-with-cc.md
+❌ .cursor/commands/handoff-to-claude.md
+❌ .cursor/commands/review-cc-work.md
+❌ .claude/rules/workflow.md
+
+🔴 不足ファイル (6件):
+- .cursor/commands/start-session.md
+- .cursor/commands/project-overview.md
+- .cursor/commands/plan-with-cc.md
+- .cursor/commands/handoff-to-claude.md
+- .cursor/commands/review-cc-work.md
+- .claude/rules/workflow.md
+
+これらのファイルは 2-Agent モードで必須です。
+自動生成しますか？
+
+- yes - 不足ファイルを自動生成
+- 手動確認 - 何が問題か確認してから再試行
+- スキップ - このまま完了（非推奨）
+```
+
+**回答を待つ**
+
+### Step 4: 不足ファイルの自動生成（yes 選択時）
+
+不足しているファイルを特定のスキルで生成：
+
+```bash
+# Cursor コマンドファイルが不足している場合
+if [[ " ${MISSING_FILES[@]} " =~ ".cursor/commands/" ]]; then
+  echo "📁 Cursor コマンドファイルを生成中..."
+
+  PLUGIN_PATH="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
+  mkdir -p .cursor/commands
+
+  for cmd in "$PLUGIN_PATH/templates/cursor/commands"/*.md; do
+    if [ -f "$cmd" ]; then
+      cp "$cmd" .cursor/commands/
+      echo "✅ 作成: $(basename $cmd)"
+    fi
+  done
+fi
+
+# ルールファイルが不足している場合
+if [[ " ${MISSING_FILES[@]} " =~ ".claude/rules/" ]]; then
+  echo "📁 ルールファイルを生成中..."
+
+  mkdir -p .claude/rules
+
+  for template in "$PLUGIN_PATH/templates/rules"/*.template; do
+    if [ -f "$template" ]; then
+      rule_name=$(basename "$template" .template)
+      cp "$template" ".claude/rules/$rule_name"
+      echo "✅ 作成: $rule_name"
+    fi
+  done
+fi
+
+# ワークフローファイルが不足している場合
+WORKFLOW_FILES=("AGENTS.md" "CLAUDE.md" "Plans.md")
+for wf_file in "${WORKFLOW_FILES[@]}"; do
+  if [[ " ${MISSING_FILES[@]} " =~ "$wf_file" ]]; then
+    echo "📁 $wf_file を生成中..."
+    # generate-workflow-files スキルを実行
+  fi
+done
+
+# settings.json が不足している場合
+if [[ " ${MISSING_FILES[@]} " =~ ".claude/settings.json" ]]; then
+  echo "📁 .claude/settings.json を生成中..."
+  # generate-claude-settings スキルを実行
+fi
+
+# メモリファイルが不足している場合
+MEMORY_FILES=("decisions.md" "patterns.md")
+for mem_file in "${MEMORY_FILES[@]}"; do
+  if [[ " ${MISSING_FILES[@]} " =~ ".claude/memory/$mem_file" ]]; then
+    mkdir -p .claude/memory
+    cp "$PLUGIN_PATH/templates/memory/$mem_file.template" ".claude/memory/$mem_file"
+    echo "✅ 作成: .claude/memory/$mem_file"
+  fi
+done
+```
+
+### Step 5: 再検証
+
+不足ファイルを生成した後、再度チェックリストを実行：
+
+```bash
+# もう一度チェック
+MISSING_FILES=()
+for file in "${REQUIRED_FILES[@]}"; do
+  if [ ! -f "$file" ]; then
+    MISSING_FILES+=("$file")
+  fi
+done
+
+if [ ${#MISSING_FILES[@]} -eq 0 ]; then
+  echo "✅ すべての必須ファイルが生成されました！"
+else
+  echo "⚠️ まだ不足しているファイルがあります:"
+  printf '%s\n' "${MISSING_FILES[@]}"
+  echo ""
+  echo "手動で生成するか、セットアップを最初からやり直してください。"
+  exit 1
+fi
+```
+
 ### Step 6: セットアップ完了レポート
 
 > ✅ **セットアップが完了しました！**
@@ -421,10 +641,21 @@ command -v gh >/dev/null 2>&1 && echo "✅ gh" || echo "⚠️ gh (CI自動修�
 > **環境診断**: ✅ OK
 > **ワークフローファイル**: ✅ 作成済み
 > **SSOT**: ✅ 初期化済み
+> **必須ファイル検証**: ✅ OK（{{モード}}モード: {{ファイル数}}件）
 > **検証**: ✅ OK
 >
+> **セットアップモード**: {{Solo / 2-Agent}}
+>
+> **生成されたファイル:**
+> - AGENTS.md, CLAUDE.md, Plans.md
+> - .claude/settings.json
+> - .claude/memory/ (decisions.md, patterns.md)
+> - {{2-Agent の場合}} .cursor/commands/ (5ファイル)
+> - {{2-Agent の場合}} .claude/rules/
+>
 > **次にやること：**
-> - 「`/plan-with-agent` 〇〇を作りたい」→ プランを作成
+> - {{Solo モード}} 「`/plan-with-agent` 〇〇を作りたい」→ プランを作成
+> - {{2-Agent モード}} Cursor で「〇〇を作りたい」と相談 → `/handoff-to-claude` でタスク依頼
 > - 「`/work`」→ Plans.md のタスクを実行
 > - 「`/sync-status`」→ 現在の状態を確認
 
