@@ -10,6 +10,105 @@ claude-code-harness の変更履歴です。
 
 ---
 
+## [2.5.7] - 2025-12-20
+
+### 🎯 あなたにとって何が変わるか
+
+**`/harness-init` にセットアップ検証チェックリストを追加：2-Agent モードで Cursor コマンドが生成されない問題を防止。**
+
+#### Before
+- 2-Agent モードを選択したのに、`.cursor/commands/` ファイルが生成されないことがあった
+- セットアップ完了後に Cursor を開いて、コマンドがないことに気づく
+- 何が不足しているか分からず、手動で調査が必要だった
+
+#### After
+- **Phase 4: セットアップ検証**を追加 - 必須ファイルの自動チェック
+- **視覚的なチェックリスト**（✅/❌）で不足ファイルを一目で確認
+- **自動再生成**機能 - 不足ファイルを自動で生成して100%完了を保証
+- **モード別検証** - Solo モード（7ファイル）/ 2-Agent モード（13ファイル）
+
+### 変更内容
+- `commands/core/harness-init.md` に Phase 4 を追加
+- Solo モードと 2-Agent モードの必須ファイルチェックリストを定義
+- 不足ファイルの自動検出と再生成ロジックを実装
+- `.claude-code-harness-version` テンプレートに `setup_mode` フィールドを追加
+
+---
+
+## [2.5.6] - 2025-12-20
+
+### 🎯 あなたにとって何が変わるか
+
+**`/harness-update` に破壊的変更の検出機能を追加：間違ったパーミッション構文や非推奨設定を自動修正。**
+
+#### Before
+- アップデート後も間違った設定（`"Bash(npm run *)"` など）が残ったまま
+- 非推奨設定（`disableBypassPermissionsMode`）が削除されず、生産性が低下
+- ユーザーが気づかない設定ミスが放置される
+
+#### After
+- **Phase 1.5: 破壊的変更の検出**を追加 - アップデート前に問題をスキャン
+- **問題の可視化** - 間違った構文を diff 形式で表示（Before/After）
+- **確認フロー** - 自動修正 / 個別確認 / スキップ / キャンセルを選択可能
+- **自動修正** - sed/jq でパーミッション構文を置換、非推奨設定を削除
+
+### 変更内容
+- `commands/optional/harness-update.md` に Phase 1.5 を追加
+- パーミッション構文の検出パターンを実装（スペース+`*`、コロンなし、など）
+- `disableBypassPermissionsMode` の非推奨検出を追加
+- `skills/setup/generate-claude-settings/doc.md` に破壊的変更の注記を追加
+
+---
+
+## [2.5.5] - 2025-12-20
+
+### 🎯 あなたにとって何が変わるか
+
+**`/harness-update` コマンドを新設：既存プロジェクトを最新版に安全にアップデート。**
+
+#### Before
+- ハーネス導入済みプロジェクトを最新版に更新する方法がなかった
+- `/harness-init` は新規プロジェクト向けで、既存プロジェクトには使いにくかった
+- アップデート時に既存の設定やタスクが失われるリスクがあった
+
+#### After
+- **専用コマンド `/harness-update`** - 既存プロジェクト向けの安全なアップデート
+- **バージョン自動検出** - `.claude-code-harness-version` で現在のバージョンを確認
+- **自動バックアップ** - 更新前に `.claude-code-harness/backups/` にバックアップ
+- **非破壊更新** - Plans.md のタスク、settings.json のカスタム設定を保持
+- **選択的アップデート** - 特定のファイルだけ更新することも可能
+
+### 変更内容
+- `commands/optional/harness-update.md` を新規作成
+- バージョン検出、バックアップ、マージ更新のフローを実装
+- カスタム選択モードでファイル単位の更新に対応
+
+---
+
+## [2.5.4] - 2025-12-20
+
+### 🎯 あなたにとって何が変わるか
+
+**パーミッション構文の明示的な例を追加：間違った settings.json が生成されるバグを修正。**
+
+#### Before
+- `generate-claude-settings` スキルで間違った構文（`"Bash(npm run *)"`）が生成されることがあった
+- 正しい構文（`:*` vs `*`）が明示されておらず、Claude が間違えていた
+- `disableBypassPermissionsMode` の扱いが曖昧だった
+
+#### After
+- **正しい構文と間違った構文の完全な例**を追加
+- **構文ルールを明記** - プレフィックスマッチ（`Bash(command:*)`）、部分文字列マッチ（`Bash(:*substring:*)`）
+- **重要セクションを追加** - スキル実行前に必ず確認する注意書き
+- **3つのドキュメントを更新** - `generate-claude-settings`, `setup-2agent-files`, `harness-init`
+
+### 変更内容
+- `skills/setup/generate-claude-settings/doc.md` に正しい/間違った構文の例を追加
+- `skills/2agent/setup-2agent-files/doc.md` の `disableBypassPermissionsMode` 説明を修正
+- `commands/core/harness-init.md` にパーミッション構文の注意書きを追加
+
+---
+
 ## [2.5.3] - 2025-12-20
 
 ### 🎯 あなたにとって何が変わるか

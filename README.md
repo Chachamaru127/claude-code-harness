@@ -317,6 +317,7 @@ export CLAUDE_MD_MAX_LINES=150
 | コマンド | 目的 |
 | --- | --- |
 | `/validate` | プロジェクト検証（env/依存/ビルド/テスト/デプロイ準備） |
+| `/harness-update` | ハーネス導入済みプロジェクトを最新版に安全アップデート（破壊的変更検出・自動修正） |
 | `/cleanup` | Plans.md / session-log.md 等の自動整理 |
 | `/sync-status` | 進捗確認→Plans.md更新→次アクション提案（状況把握の起点） |
 | `/refactor` | コードの安全なリファクタリング（テスト維持・段階的実行） |
