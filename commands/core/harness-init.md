@@ -376,6 +376,52 @@ command -v gh >/dev/null 2>&1 && echo "✅ gh" || echo "⚠️ gh (CI自動修�
 
 問題があれば警告を表示し、解決方法を提示。
 
+### Step 1.5: LSP 環境確認（オプション）
+
+プロジェクトの言語に対応する Language Server の確認：
+
+```bash
+# プロジェクト言語を検出
+DETECTED_LANGS=()
+
+[ -f tsconfig.json ] || [ -f package.json ] && DETECTED_LANGS+=("typescript")
+[ -f requirements.txt ] || [ -f pyproject.toml ] && DETECTED_LANGS+=("python")
+[ -f Cargo.toml ] && DETECTED_LANGS+=("rust")
+[ -f go.mod ] && DETECTED_LANGS+=("go")
+
+# 各言語の LSP サーバー確認
+for lang in "${DETECTED_LANGS[@]}"; do
+  case $lang in
+    typescript)
+      command -v typescript-language-server >/dev/null 2>&1 \
+        && echo "✅ LSP (TypeScript): typescript-language-server" \
+        || echo "⚠️ LSP (TypeScript): npm install -g typescript typescript-language-server"
+      ;;
+    python)
+      (command -v pylsp >/dev/null 2>&1 || command -v pyright >/dev/null 2>&1) \
+        && echo "✅ LSP (Python): pylsp/pyright" \
+        || echo "⚠️ LSP (Python): pip install python-lsp-server"
+      ;;
+    rust)
+      command -v rust-analyzer >/dev/null 2>&1 \
+        && echo "✅ LSP (Rust): rust-analyzer" \
+        || echo "⚠️ LSP (Rust): rustup component add rust-analyzer"
+      ;;
+    go)
+      command -v gopls >/dev/null 2>&1 \
+        && echo "✅ LSP (Go): gopls" \
+        || echo "⚠️ LSP (Go): go install golang.org/x/tools/gopls@latest"
+      ;;
+  esac
+done
+```
+
+> 💡 **LSP を有効化すると**、Go-to-definition、Find-references、Diagnostics などのコード分析機能が使えます。
+>
+> 「**LSPを設定して**」または `/lsp-setup` で詳細設定が可能です。
+>
+> 詳細: [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md)
+
 ### Step 2: SSOT 初期化
 
 `.claude/memory/` が存在しない場合、作成：
