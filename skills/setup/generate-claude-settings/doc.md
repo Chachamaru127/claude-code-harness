@@ -111,11 +111,14 @@ https://code.claude.com/docs/ja/settings
 
 ### Step 3: 既存設定とポリシーをマージ
 
+**重要**: `/harness-update` から呼び出される場合、Phase 1.5 で破壊的変更（パーミッション構文修正、非推奨設定削除）が既に適用されています。
+
 #### マージ方針
 
 - **top-level**: 既存を優先しつつ、ポリシー側の `permissions` を統合
 - `permissions.allow|ask|deny`: **ユニーク化して結合**（既存→ポリシーの順）
 - `permissions.disableBypassPermissionsMode`: **設定しない**（bypassPermissions を許可）
+  - **注意**: 既存設定にこのフィールドがある場合、削除すること（`/harness-update` では Phase 1.5 で削除済み）
 
 #### 実装（推奨コマンド）
 

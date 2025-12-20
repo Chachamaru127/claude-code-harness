@@ -103,9 +103,152 @@ fi
 
 **回答を待つ**
 
-- **yes** → Phase 2 (全体アップデート)
+- **yes** → Phase 1.5 (破壊的変更の確認)
 - **no** → 終了
 - **カスタム** → Phase 2A (選択的アップデート)
+
+---
+
+## Phase 1.5: 破壊的変更の検出と確認
+
+**重要**: アップデート実行前に、既存設定の問題を検出してユーザーに確認します。
+
+### Step 1: .claude/settings.json の検査
+
+既存の `.claude/settings.json` を読み込み、以下をチェック：
+
+```bash
+# settings.json が存在するか確認
+if [ ! -f .claude/settings.json ]; then
+  echo "ℹ️ .claude/settings.json が存在しません（新規作成されます）"
+  # → Phase 2 へ（破壊的変更なし）
+fi
+
+# JSON パーサーで読み込み（jq または python）
+if command -v jq >/dev/null 2>&1; then
+  SETTINGS_CONTENT=$(cat .claude/settings.json)
+else
+  echo "⚠️ jq が見つかりません。手動確認が必要です"
+fi
+```
+
+### Step 2: 問題の検出
+
+以下の問題を検出：
+
+#### 🔴 問題1: 間違ったパーミッション構文
+
+```bash
+# 間違った構文のパターンを検索
+WRONG_PATTERNS=(
+  'Bash\([^:)]+\s\*\)'     # "Bash(npm run *)" のようなパターン
+  'Bash\([^:)]+\*\)'       # "Bash(git diff*)" のようなパターン（:なし）
+  'Bash\(\*[^:][^)]*\*\)'  # "Bash(*credentials*)" のようなパターン
+)
+
+FOUND_ISSUES=()
+
+# 各パターンをチェック
+if echo "$SETTINGS_CONTENT" | grep -E 'Bash\([^:)]+\s\*\)'; then
+  FOUND_ISSUES+=("incorrect_prefix_syntax_with_space")
+fi
+
+if echo "$SETTINGS_CONTENT" | grep -E 'Bash\([^:)]+\*\)' | grep -v ':'; then
+  FOUND_ISSUES+=("incorrect_prefix_syntax_no_colon")
+fi
+
+if echo "$SETTINGS_CONTENT" | grep -E 'Bash\(\*[^:][^)]*\*\)'; then
+  FOUND_ISSUES+=("incorrect_substring_syntax")
+fi
+```
+
+#### 🔴 問題2: 非推奨設定
+
+```bash
+# disableBypassPermissionsMode の存在確認
+if echo "$SETTINGS_CONTENT" | grep -q '"disableBypassPermissionsMode"'; then
+  FOUND_ISSUES+=("deprecated_disable_bypass_permissions")
+fi
+```
+
+### Step 3: 検出結果の表示
+
+問題が見つかった場合、ユーザーに詳細を表示：
+
+> ⚠️ **既存設定に問題が見つかりました**
+>
+> **🔴 問題1: 間違ったパーミッション構文 (3件)**
+>
+> ```diff
+> - "Bash(npm run *)"      ❌ 間違い（スペース+アスタリスク）
+> + "Bash(npm run:*)"      ✅ 正しい（コロン+アスタリスク）
+>
+> - "Bash(pnpm *)"         ❌ 間違い
+> + "Bash(pnpm:*)"         ✅ 正しい
+>
+> - "Bash(git diff*)"      ❌ 間違い（コロンなし）
+> + "Bash(git diff:*)"     ✅ 正しい
+> ```
+>
+> **影響**: 現在のパーミッション設定が正しく動作していません。
+> Claude Code がこれらのコマンドを実行できない可能性があります。
+>
+> ---
+>
+> **🔴 問題2: 非推奨設定 (1件)**
+>
+> ```diff
+> - "disableBypassPermissionsMode": "disable"   ❌ 非推奨（v2.5.0以降）
+> （この設定を削除）
+> ```
+>
+> **理由**: ハーネスは v2.5.0 以降、bypassPermissions を許可する運用に変更されました。
+> 危険な操作のみを `permissions.deny` / `permissions.ask` で制御します。
+>
+> **影響**: 現在の設定では、Edit/Write の度に確認が出て生産性が低下します。
+>
+> ---
+>
+> **これらの問題を自動修正しますか？**
+>
+> - **yes** - 上記の問題をすべて自動修正してアップデート続行
+> - **確認する** - 各問題を個別に確認してから修正
+> - **スキップ** - 問題を修正せずにアップデート続行（非推奨）
+> - **キャンセル** - アップデートを中止
+
+**回答を待つ**
+
+#### 選択肢の処理
+
+- **yes** → 全ての問題を自動修正 → Phase 2 へ
+- **確認する** → Step 4 (個別確認) へ
+- **スキップ** → Phase 2 へ（問題を修正せずに続行、警告表示）
+- **キャンセル** → アップデート中止
+
+### Step 4: 個別確認（「確認する」選択時）
+
+各問題について個別に確認：
+
+> **問題1/2: 間違ったパーミッション構文**
+>
+> 以下の3件を修正しますか？
+> - `"Bash(npm run *)"` → `"Bash(npm run:*)"`
+> - `"Bash(pnpm *)"` → `"Bash(pnpm:*)"`
+> - `"Bash(git diff*)"` → `"Bash(git diff:*)"`
+>
+> (yes / no)
+
+**回答を待つ** → yes なら修正リストに追加
+
+> **問題2/2: 非推奨設定**
+>
+> `disableBypassPermissionsMode` を削除しますか？
+>
+> (yes / no)
+
+**回答を待つ** → yes なら削除リストに追加
+
+すべての確認が完了したら → Phase 2 へ
 
 ---
 
@@ -131,12 +274,64 @@ echo "✅ バックアップ作成: $BACKUP_DIR"
 
 ### Step 2: 設定ファイルの更新
 
-**`.claude/settings.json` の更新** - `generate-claude-settings` スキルを実行:
+**`.claude/settings.json` の更新**
+
+Phase 1.5 で検出した問題を修正してから、`generate-claude-settings` スキルを実行します。
+
+#### Step 2.1: 破壊的変更の適用（Phase 1.5 で承認された場合）
+
+ユーザーが承認した修正を適用：
+
+```bash
+# settings.json を読み込み
+SETTINGS_FILE=".claude/settings.json"
+
+# 問題1: パーミッション構文の修正
+if [ -f "$SETTINGS_FILE" ]; then
+  # スペース+アスタリスクをコロン+アスタリスクに置換
+  # 例: "Bash(npm run *)" → "Bash(npm run:*)"
+  sed -i.bak 's/Bash(\([^:)]*\) \*)/Bash(\1:*)/g' "$SETTINGS_FILE"
+
+  # コロンなしアスタリスクをコロン+アスタリスクに置換
+  # 例: "Bash(git diff*)" → "Bash(git diff:*)"
+  # （ただし既に : がある場合はスキップ）
+  sed -i.bak 's/Bash(\([^:)]*\)\*)/Bash(\1:*)/g' "$SETTINGS_FILE"
+
+  # 部分文字列マッチの修正
+  # 例: "Bash(*credentials*)" → "Bash(:*credentials:*)"
+  sed -i.bak 's/Bash(\*\([^:][^)]*\)\*)/Bash(:*\1:*)/g' "$SETTINGS_FILE"
+
+  echo "✅ パーミッション構文を修正しました"
+fi
+
+# 問題2: 非推奨設定の削除
+if [ -f "$SETTINGS_FILE" ]; then
+  # disableBypassPermissionsMode を削除（jq を使用）
+  if command -v jq >/dev/null 2>&1; then
+    jq 'del(.permissions.disableBypassPermissionsMode)' "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp"
+    mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
+    echo "✅ disableBypassPermissionsMode を削除しました"
+  else
+    # jq がない場合は Python で削除
+    python3 -c "
+import json
+with open('$SETTINGS_FILE', 'r') as f:
+    data = json.load(f)
+if 'permissions' in data and 'disableBypassPermissionsMode' in data['permissions']:
+    del data['permissions']['disableBypassPermissionsMode']
+with open('$SETTINGS_FILE', 'w') as f:
+    json.dump(data, f, indent=2)
+" && echo "✅ disableBypassPermissionsMode を削除しました"
+  fi
+fi
+```
+
+#### Step 2.2: generate-claude-settings スキルの実行
 
 - 既存の `hooks`, `env`, `model`, `enabledPlugins` は保持
 - `permissions.allow|ask|deny` は最新ポリシーとマージ + 重複排除
-- **重要**: 間違ったパーミッション構文 (`"Bash(npm run *)"`) があれば自動修正 (`"Bash(npm run:*)"`)
-- `permissions.disableBypassPermissionsMode` は設定しない（bypassPermissions を許可）
+- Phase 1.5 で修正済みの正しい構文を保持
+- 新しい推奨設定を追加
 
 ### Step 3: ワークフローファイルの更新
 
