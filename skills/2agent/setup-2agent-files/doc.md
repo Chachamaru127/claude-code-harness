@@ -262,9 +262,13 @@ cp "$PLUGIN_PATH/templates/.claude-code-harness.config.yaml.template" .claude-co
 **.claude/settings.json** は `generate-claude-settings` で作成/更新（既存があれば非破壊マージ）:
 
 - `permissions.deny/ask` をチーム運用できる形で整備
-- `permissions.disableBypassPermissionsMode` は常に `"disable"`（bypass抑止）
+- `permissions.disableBypassPermissionsMode` は **設定しない**（bypassPermissions を許可）
+  - セキュリティ要件で bypass を禁止したい場合のみ設定（例: managed-settings.json）
 
-手順は `skills/core/generate-claude-settings/SKILL.md` に従うこと。
+**⚠️ パーミッション構文の注意**: プレフィックスマッチには必ず `:*` を使用（`*` 単独は不可）
+- 正しい: `"Bash(npm run:*)"` / 間違い: `"Bash(npm run *)"`
+
+手順は `skills/setup/generate-claude-settings/doc.md` に従うこと。
 
 ---
 

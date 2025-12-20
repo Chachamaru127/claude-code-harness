@@ -20,6 +20,17 @@ metadata:
 - **bypassPermissions を前提とした運用**（危険操作のみ deny/ask で制御）
 - 既存ファイルが壊れている場合は **バックアップを残して再生成**
 
+## ⚠️ 重要: パーミッション構文の厳守
+
+**このスキルを実行する際は、必ず正しいパーミッション構文を使用すること。**
+
+プレフィックスマッチングには `:*` を使用（`*` 単独や ` *` は不可）：
+
+- ✅ 正しい: `"Bash(npm run:*)"`, `"Bash(git status:*)"`
+- ❌ 間違い: `"Bash(npm run *)"`, `"Bash(git status*)"`, `"Bash(npm run :*)"`
+
+詳細は [Step 4](#step-4-新規生成既存なし退避後) の「パーミッション構文の注意点」を参照。
+
 ## bypassPermissions 前提の運用ポリシー
 
 **重要**: Edit / Write を `permissions.ask` に入れると毎回確認が出て生産性が落ちます。
@@ -127,6 +138,62 @@ https://code.claude.com/docs/ja/settings
 
 - `templates/claude/settings.security.json.template` を `.claude/settings.json` にコピーして作成
 - 必要なら、将来の拡張（hooks追加等）は「既存マージ」ルート（Step 3）で行う
+
+**⚠️ 重要: パーミッション構文の注意点**
+
+プレフィックスマッチングには必ず `:*` を使用すること（`*` 単独は不可）：
+
+**正しい構文:**
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(pnpm:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)"
+    ],
+    "ask": [
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)",
+      "Bash(rm:*)",
+      "Bash(mv:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(:*credentials:*)",
+      "Bash(:*password:*)",
+      "Bash(:*secret:*)"
+    ]
+  }
+}
+```
+
+**間違った構文（絶対に使用しないこと）:**
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",        // ❌ 間違い
+      "Bash(pnpm *)",           // ❌ 間違い
+      "Bash(git diff*)",        // ❌ 間違い
+      "Bash(*credentials*)"     // ❌ 間違い
+    ]
+  }
+}
+```
+
+**構文ルール:**
+- プレフィックスマッチ: `Bash(command:*)` - コマンド以降の全てにマッチ
+- 部分文字列マッチ: `Bash(:*substring:*)` - 任意の位置の文字列にマッチ
+- スペースは含まない: `Bash(npm run:*)` は正しい、`Bash(npm run :*)` は間違い
 
 ---
 

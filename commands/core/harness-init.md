@@ -263,6 +263,11 @@ npm install @supabase/supabase-js lucide-react
 - `permissions.disableBypassPermissionsMode` は **設定しない**（bypassPermissions を許可）
   - セキュリティ要件で bypass を禁止したい場合のみ `"disable"` を設定（例: managed-settings.json）
 
+**⚠️ 重要**: パーミッション設定を生成する際は、必ず正しい構文を使用すること：
+- ✅ 正しい: `"Bash(npm run:*)"`, `"Bash(git status:*)"`
+- ❌ 間違い: `"Bash(npm run *)"`, `"Bash(git status*)"`
+- プレフィックスマッチには `:*` を使用（`*` 単独や ` *` は不可）
+
 **実行**: `generate-claude-settings` スキルを実行して作成/更新すること。
 
 ### Step 7: ワークフローファイル生成
