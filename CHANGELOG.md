@@ -58,9 +58,9 @@ claude-code-harness の変更履歴です。
 #### 設定テンプレート
 - `templates/claude/settings.security.json.template` に CCLSP（Claude Code LSP）MCPサーバー設定を追加
 
-### 参照
-- [Claude Code LSP Documentation](https://docs.anthropic.com/claude-code/lsp)
-- [CCLSP - Claude Code LSP Integration](https://github.com/ktnyt/cclsp)
+### 参照元（Based on）
+- [Claude Code CLI v2.0.74](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) - LSP ツールの追加
+- [CCLSP - Claude Code LSP Integration](https://github.com/ktnyt/cclsp) - MCP サーバー実装
 
 ---
 

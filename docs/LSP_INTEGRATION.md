@@ -6,7 +6,7 @@ Claude Code の LSP（Language Server Protocol）機能を活用するための�
 
 ## LSP 機能の概要
 
-Claude Code v2.0.30+ で利用可能な LSP 機能：
+Claude Code v2.0.74+ で利用可能な LSP 機能：
 
 | 機能 | 説明 | 活用シーン |
 |------|------|-----------|
