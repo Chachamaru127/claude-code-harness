@@ -27,6 +27,64 @@ description-en: "[Optional] Project validation (env/deps/build/test/deploy)"
 
 ---
 
+## 🔧 LSP 機能の活用
+
+検証では LSP（Language Server Protocol）を活用して、ビルド前に問題を検出します。
+
+### LSP Diagnostics による事前検証
+
+型チェック（`npm run typecheck`）に加えて、LSP Diagnostics を実行：
+
+```
+📊 LSP 診断結果（プロジェクト全体）
+
+ファイル数: 42
+エラー: 0件 ✅
+警告: 3件 ⚠️
+情報: 5件
+
+⚠️ 警告:
+├── src/components/Header.tsx:15 - 未使用の変数 'debug'
+├── src/utils/helpers.ts:23 - 非推奨の API 使用
+└── src/pages/Settings.tsx:45 - any 型の使用
+
+→ ビルドは通るが、品質改善の余地あり
+```
+
+### 検証フローへの統合
+
+```
+/validate full 実行時の流れ:
+
+1. 環境変数チェック
+2. 依存関係チェック
+3. LSP Diagnostics ← NEW
+4. Lint
+5. 型チェック
+6. ビルド
+7. テスト
+8. セキュリティ監査
+```
+
+### LSP vs 従来ツールの比較
+
+| 検証項目 | 従来 | LSP 追加のメリット |
+|---------|------|-------------------|
+| 型エラー | `tsc --noEmit` | リアルタイム・詳細な位置情報 |
+| 未使用コード | ESLint | IDE と同じ精度の検出 |
+| 参照切れ | ビルド時エラー | 事前に検出可能 |
+
+### VibeCoder 向けの言い方
+
+| やりたいこと | 言い方 |
+|-------------|--------|
+| 全体の問題をチェック | 「LSP診断を含めて検証して」 |
+| 警告も見たい | 「警告も含めてチェックして」 |
+
+詳細: [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md)
+
+---
+
 ## 💡 バイブコーダー向けの使い方
 
 **このコマンドは、クライアントに納品する前に、すべてが正しく動作することを確認します。**

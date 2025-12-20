@@ -35,3 +35,35 @@ work-write-tests/doc.md を参照
 1. ユーザーのリクエストを分類
 2. 適切な小スキルの doc.md を読む
 3. その内容に従って実装
+
+---
+
+## 🔧 LSP 機能の活用
+
+実装時には LSP（Language Server Protocol）を積極的に活用します。
+
+### 実装前の調査
+
+| LSP 機能 | 用途 |
+|---------|------|
+| **Go-to-definition** | 既存関数の実装パターンを確認 |
+| **Find-references** | 変更の影響範囲を事前把握 |
+| **Hover** | 型情報・API ドキュメントを確認 |
+
+### 実装中の検証
+
+| LSP 機能 | 用途 |
+|---------|------|
+| **Diagnostics** | 型エラー・構文エラーを即座に検出 |
+| **Completions** | 正しい API を使用、タイポ防止 |
+
+### 実装後の確認
+
+```
+実装完了時チェック:
+1. LSP Diagnostics を実行
+2. エラー: 0件を確認
+3. 警告: 必要に応じて対応
+```
+
+詳細: [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md)

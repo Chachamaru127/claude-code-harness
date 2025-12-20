@@ -37,6 +37,59 @@ GitHub Actionsを使用したCI/CDパイプラインを自動構築します。
 
 ---
 
+## 🔧 LSP 機能の活用
+
+CI/CD構築時に LSP（Language Server Protocol）を活用して、より堅牢なパイプラインを構築します。
+
+### LSP Diagnostics を CI に統合
+
+GitHub Actions で LSP 診断を実行することで、従来の型チェックより詳細な問題を検出：
+
+```yaml
+  lsp-diagnostics:
+    name: LSP Diagnostics
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run LSP diagnostics
+        run: npx @ktnyt/cclsp diagnose --format github
+```
+
+### CI 失敗時の LSP 活用
+
+CI が失敗した場合、ローカルで LSP を使って問題を特定：
+
+```
+CI 失敗時のデバッグフロー:
+
+1. エラーログを確認
+2. LSP Diagnostics でローカル検証
+3. Go-to-definition で問題の原因を追跡
+4. Find-references で影響範囲を確認
+5. 修正後、再度 LSP Diagnostics で検証
+```
+
+### VibeCoder 向けの言い方
+
+| やりたいこと | 言い方 |
+|-------------|--------|
+| CI エラーの原因を調べたい | 「LSP でこのエラーを診断して」 |
+| 型エラーを事前にチェック | 「push 前に LSP 診断して」 |
+
+詳細: [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md)
+
+---
+
 ## 使い方
 
 ```

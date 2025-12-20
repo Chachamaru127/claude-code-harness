@@ -61,3 +61,48 @@ Task tool 並列呼び出し:
 
 **小規模な場合（条件を満たさない）:**
 - 子スキル（doc.md）を順次読み込んで直列実行
+
+---
+
+## 🔧 LSP 機能の活用
+
+レビューでは LSP（Language Server Protocol）を活用して精度を向上します。
+
+### LSP をレビューに統合
+
+| レビュー観点 | LSP 活用方法 |
+|-------------|-------------|
+| **品質** | Diagnostics で型エラー・未使用変数を自動検出 |
+| **セキュリティ** | Find-references で機密データの流れを追跡 |
+| **パフォーマンス** | Go-to-definition で重い処理の実装を確認 |
+
+### LSP Diagnostics の出力例
+
+```
+📊 LSP 診断結果
+
+| ファイル | エラー | 警告 |
+|---------|--------|------|
+| src/components/Form.tsx | 0 | 2 |
+| src/utils/api.ts | 1 | 0 |
+
+⚠️ 1件のエラーを検出
+→ レビューで指摘事項に追加
+```
+
+### Find-references による影響分析
+
+```
+🔍 変更影響分析
+
+変更: validateInput()
+
+参照箇所:
+├── src/pages/signup.tsx:34
+├── src/pages/settings.tsx:56
+└── tests/validate.test.ts:12
+
+→ テストでカバー済み ✅
+```
+
+詳細: [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md)

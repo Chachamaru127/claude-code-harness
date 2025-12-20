@@ -238,3 +238,50 @@ UIの不具合は、**画面で再現して観測→修正→再検証**する�
 - 3回失敗したらエスカレーション
 - 破壊的な操作は必ず確認を取る
 - 修正履歴は session-log.md に記録
+
+---
+
+## 🔧 LSP 機能の活用
+
+問題解決では LSP（Language Server Protocol）を活用して正確に原因を特定します。
+
+### LSP Diagnostics による問題検出
+
+```
+🔍 LSP 診断実行中...
+
+📊 診断結果:
+
+| ファイル | 行 | メッセージ |
+|---------|-----|-----------|
+| src/api/user.ts | 23 | 'userId' は undefined の可能性があります |
+| src/components/Form.tsx | 45 | 型 'string' を型 'number' に割り当てることはできません |
+
+→ 2件の問題を検出
+→ 上記が「動かない」原因の可能性が高い
+```
+
+### Go-to-definition による原因追跡
+
+```
+🔍 原因追跡
+
+エラー: Cannot read property 'name' of undefined
+
+追跡:
+1. src/pages/user.tsx:34 - user.name を参照
+2. src/hooks/useUser.ts:12 - user を返す ← Go-to-definition
+3. src/api/user.ts:8 - API レスポンスが null の可能性
+
+→ API エラー時のハンドリング不足が原因
+```
+
+### VibeCoder 向けの使い方
+
+| 症状 | LSP 活用 |
+|------|---------|
+| 「動かない」 | Diagnostics でエラー箇所を特定 |
+| 「どこがおかしい？」 | Go-to-definition で原因を追跡 |
+| 「いつから壊れた？」 | Find-references で変更影響を確認 |
+
+詳細: [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md)

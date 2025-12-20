@@ -27,14 +27,83 @@ description-en: "[Optional] Safe refactoring (test-preserved, incremental)"
 
 ## リファクタリングの種類
 
-| 種類 | 説明 | リスク |
-|------|------|--------|
-| **Rename** | 変数/関数/ファイル名の変更 | 低 |
-| **Extract** | 関数/コンポーネント/定数の抽出 | 低〜中 |
-| **Move** | ファイル/関数の移動 | 中 |
-| **Inline** | 不要な抽象化の削除 | 中 |
-| **Simplify** | 複雑なロジックの簡略化 | 中〜高 |
-| **Restructure** | ディレクトリ構造の変更 | 高 |
+| 種類 | 説明 | リスク | LSP 活用 |
+|------|------|--------|---------|
+| **Rename** | 変数/関数/ファイル名の変更 | 低 | ✅ LSP Rename で安全に一括変更 |
+| **Extract** | 関数/コンポーネント/定数の抽出 | 低〜中 | Find-references で使用箇所を確認 |
+| **Move** | ファイル/関数の移動 | 中 | Find-references で影響範囲を把握 |
+| **Inline** | 不要な抽象化の削除 | 中 | Find-references で使用箇所を確認 |
+| **Simplify** | 複雑なロジックの簡略化 | 中〜高 | Go-to-definition で実装を確認 |
+| **Restructure** | ディレクトリ構造の変更 | 高 | Diagnostics で変更後の問題を検出 |
+
+---
+
+## 🔧 LSP 機能の活用
+
+リファクタリングでは LSP（Language Server Protocol）を**必須ツール**として活用します。
+
+### LSP Rename による安全なリネーム
+
+```
+🔄 LSP Rename 実行
+
+対象: formatDate → formatDateToJapanese
+
+変更箇所:
+├── src/utils/date.ts:15 (定義)
+├── src/components/DateDisplay.tsx:5 (import)
+├── src/components/DateDisplay.tsx:12 (使用)
+├── src/components/EventCard.tsx:8 (import)
+├── src/components/EventCard.tsx:23 (使用)
+└── tests/utils/date.test.ts:3 (import)
+
+合計: 6箇所を一括変更
+→ 漏れなく安全にリネーム完了 ✅
+```
+
+### LSP Find-references による影響分析
+
+リファクタリング前に必ず実行：
+
+```
+🔍 参照分析
+
+対象: validateEmail 関数
+
+参照箇所:
+├── src/components/SignupForm.tsx:45
+├── src/components/SettingsForm.tsx:23
+├── src/api/auth/register.ts:12
+└── tests/utils/validate.test.ts:8
+
+→ 4箇所で使用中
+→ テストあり ✅
+→ リファクタリング可能
+```
+
+### LSP Diagnostics による変更後検証
+
+```
+リファクタリング後:
+
+📊 LSP 診断結果
+
+エラー: 0件 ✅
+警告: 0件 ✅
+
+→ 変更による問題なし
+→ ビルド・テスト実行へ進む
+```
+
+### VibeCoder 向けの言い方
+
+| やりたいこと | 言い方 |
+|-------------|--------|
+| 名前を変えたい | 「`getData` を `fetchUserData` にリネームして」 |
+| 使用箇所を調べたい | 「この関数はどこで使われてる？」 |
+| 変更後のエラーをチェック | 「リファクタリング後に診断して」 |
+
+詳細: [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md)
 
 ---
 

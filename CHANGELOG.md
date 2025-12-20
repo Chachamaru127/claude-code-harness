@@ -10,6 +10,60 @@ claude-code-harness の変更履歴です。
 
 ---
 
+## [2.5.8] - 2025-12-20
+
+### 🎯 あなたにとって何が変わるか
+
+**Claude Code の LSP（Language Server Protocol）機能を全コマンド・スキルで活用できるように。コード理解・レビュー・リファクタリングの精度が大幅向上。**
+
+#### Before
+- コードの定義元や参照箇所を手動で検索していた
+- 型エラーはビルド時にしか検出できなかった
+- リネーム時に変更漏れが発生することがあった
+
+#### After
+- **Go-to-definition**: 関数やクラスの定義元へ即座にジャンプ
+- **Find-references**: シンボルの使用箇所を一覧表示
+- **LSP Diagnostics**: ビルド前に型エラー・警告を検出
+- **LSP Rename**: シンボルを一括で安全にリネーム
+
+### VibeCoder 向けの使い方
+
+| やりたいこと | 言い方 |
+|-------------|--------|
+| 定義を見たい | 「この関数の定義はどこ？」 |
+| 使用箇所を調べたい | 「この変数はどこで使われてる？」 |
+| 名前を変えたい | 「`getData` を `fetchUserData` にリネームして」 |
+| エラーをチェック | 「LSP診断を実行して」 |
+
+### 変更内容
+
+#### ドキュメント
+- `docs/LSP_INTEGRATION.md` を新規追加（LSP活用ガイド）
+
+#### コマンド（LSP活用セクションを追加）
+- `/work` - 実装時のLSP活用（定義ジャンプ、診断）
+- `/harness-review` - レビューでのLSP診断活用
+- `/validate` - 検証フローにLSP診断を統合
+- `/refactor` - LSP Rename による安全なリファクタリング
+- `/ci-setup` - CI でのLSP診断活用
+
+#### スキル（LSP活用セクションを追加）
+- `impl` - 実装時のLSP活用
+- `review` - レビューでのLSP活用
+- `troubleshoot` - 問題解決でのLSP活用
+- `verify` - 検証でのLSP活用
+- `generate-claude-settings` - LSP設定の追加方法
+
+#### 設定テンプレート
+- `templates/claude/settings.security.json.template` に CCLSP（Claude Code LSP）MCPサーバー設定を追加
+
+### 参照
+- [Claude Code LSP Documentation](https://docs.anthropic.com/claude-code/lsp)
+- [CCLSP - Claude Code LSP Integration](https://github.com/ktnyt/cclsp)
+
+---
+
 ## [2.5.7] - 2025-12-20
 
 ### 🎯 あなたにとって何が変わるか

@@ -35,6 +35,64 @@ description-en: Code review (multi-perspective security/performance/quality)
 
 ---
 
+## 🔧 LSP 機能の活用
+
+レビューでは LSP（Language Server Protocol）を活用して、より精度の高い分析を行います。
+
+### LSP Diagnostics によるコード品質チェック
+
+```
+📊 LSP 診断結果
+
+ファイル: src/components/UserForm.tsx
+
+| 行 | 重要度 | メッセージ |
+|----|--------|-----------|
+| 15 | Error | 型 'string' を型 'number' に割り当てることはできません |
+| 23 | Warning | 'tempData' は宣言されていますが、使用されていません |
+| 42 | Info | この async 関数には await がありません |
+
+→ 型エラー・未使用変数を自動検出
+```
+
+### LSP Find-references による影響範囲分析
+
+変更されたコードがどこで使われているかを LSP で分析：
+
+```
+🔍 変更の影響範囲
+
+変更: src/utils/formatDate.ts
+
+参照箇所:
+├── src/components/DateDisplay.tsx:12
+├── src/components/EventCard.tsx:45
+├── src/pages/Dashboard.tsx:78
+└── tests/utils/formatDate.test.ts:5
+
+→ 4ファイルに影響
+→ テストでカバーされていることを確認 ✅
+```
+
+### レビュー観点への統合
+
+| レビュー観点 | LSP 活用 |
+|-------------|---------|
+| **品質** | Diagnostics で型エラー・未使用コードを検出 |
+| **セキュリティ** | 参照分析で機密データの流れを追跡 |
+| **パフォーマンス** | 定義ジャンプで重い処理の実装を確認 |
+
+### VibeCoder 向けの言い方
+
+| やりたいこと | 言い方 |
+|-------------|--------|
+| 型エラーをチェック | 「LSP診断を含めてレビューして」 |
+| 変更の影響を知りたい | 「この変更がどこに影響するか調べて」 |
+
+詳細: [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md)
+
+---
+
 ## このコマンドの目的
 
 **受託開発の品質保証**を自動化します。

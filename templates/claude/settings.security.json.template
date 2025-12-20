@@ -1,6 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
+    "allow": [
+      "mcp__cclsp__*"
+    ],
     "deny": [
       "Bash(sudo:*)",
       "Bash(psql:*)",
@@ -23,6 +26,13 @@
       "Bash(git rebase:*)",
       "Bash(git merge:*)"
     ]
+  },
+  "mcpServers": {
+    "cclsp": {
+      "command": "npx",
+      "args": ["@ktnyt/cclsp"],
+      "description": "LSP integration for code intelligence (go-to-definition, find-references, diagnostics, rename)"
+    }
   }
 }
 
