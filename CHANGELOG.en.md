@@ -10,6 +10,65 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.5.14] - 2025-12-22
+
+### What's Changed for You
+
+**Fixed Hooks JSON output format, automated review → handoff workflow in 2-Agent mode.**
+
+#### Before
+- `UserPromptSubmit` hook sometimes threw "Hook returned incorrect event name" error
+- After `/review-cc-work` (for Cursor PM), you had to run `/handoff-to-claude` separately
+- On approval, "analyze next task → generate request" had to be done manually
+
+#### After
+- **Fixed Hooks JSON output format**: Correctly placed `hookEventName` inside `hookSpecificOutput`
+- **`/review-cc-work` now auto-generates handoff for both approve/request_changes**
+- **On approve**: Analyzes next task from Plans.md and generates request
+- **On request_changes**: Generates request with modification instructions
+- **Added P7 pattern to SSOT**: Documented correct Hooks output format
+
+### Changes
+
+#### Hooks JSON Output Format Fix
+
+```json
+// ✅ Correct format (after fix)
+{
+  "hookSpecificOutput": {
+    "hookEventName": "UserPromptSubmit",
+    "additionalContext": "..."
+  }
+}
+
+// ❌ Wrong format (before fix)
+{
+  "event": "UserPromptSubmit",
+  "hookSpecificOutput": { ... }
+}
+```
+
+- Fixed `scripts/userprompt-inject-policy.sh`
+- Synced to cached version (`~/.claude/plugins/cache/`)
+
+#### 2-Agent Workflow Improvement
+
+- Enhanced `/review-cc-work` flow:
+  - approve → mark `pm:確認済` → analyze next task → generate handoff
+  - request_changes → create modification instructions → generate handoff
+- Added workflow diagram
+
+#### SSOT Update
+
+- Added P7 to `.claude/memory/patterns.md`: "Hooks Output JSON Format"
+- Tagged with `#pattern #hooks #critical`
+
+### Based on
+
+- [Claude Code Hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) - hookSpecificOutput specification
+
+---
+
 ## [2.5.13] - 2025-12-21
 
 ### What's Changed for You

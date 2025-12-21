@@ -190,33 +190,19 @@ To install LSP: run \`/lsp-setup\` command
   fi
 fi
 
-# JSON出力（hookSpecificOutput形式）
+# JSON出力（Claude Code UserPromptSubmit hook形式）
+# hookEventName は hookSpecificOutput の中に配置
 if [ -n "$INJECTION" ]; then
-  # jqが必要な処理なので、jqが無い場合はapproveのみ返す
   if command -v jq >/dev/null 2>&1; then
-    cat <<EOF
-{
-  "decision": "approve",
-  "hookSpecificOutput": {
-    "additionalContext": $(echo "$INJECTION" | jq -Rs '.')
-  }
-}
-EOF
+    jq -nc --arg ctx "$INJECTION" \
+      '{hookSpecificOutput:{hookEventName:"UserPromptSubmit", additionalContext:$ctx}}'
   else
-    # jq無しの場合は追加コンテキスト注入を諦めて approve のみ
-    cat <<EOF
-{
-  "decision": "approve"
-}
-EOF
+    # jq無しの場合は最小限の出力
+    echo '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit"}}'
   fi
 else
-  # 注入不要な場合はapproveのみ
-  cat <<EOF
-{
-  "decision": "approve"
-}
-EOF
+  # 注入不要な場合
+  echo '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit"}}'
 fi
 
 exit 0

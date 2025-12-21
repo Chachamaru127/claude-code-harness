@@ -14,6 +14,72 @@ claude-code-harness の変更履歴です。
 
 ---
 
+## [2.5.14] - 2025-12-22
+
+### 🎯 あなたにとって何が変わるか
+
+**Hooks の JSON 出力形式を修正、2-Agent ワークフローのレビュー → ハンドオフを自動化。**
+
+#### Before
+- `UserPromptSubmit` hook が「Hook returned incorrect event name」エラーを出すことがあった
+- `/review-cc-work`（Cursor PM用）でレビュー後、別途 `/handoff-to-claude` を実行する必要があった
+- 承認時に「次タスクの分析 → 依頼文生成」を手動で行っていた
+
+#### After
+- **Hooks の JSON 出力形式を修正**: `hookEventName` を `hookSpecificOutput` 内に正しく配置
+- **`/review-cc-work` が approve/request_changes どちらでもハンドオフを自動生成**
+- **approve 時**: 次タスクを Plans.md から分析し、依頼文を生成
+- **request_changes 時**: 修正指示を含む依頼文を生成
+- **SSOT に P7 パターンを追加**: Hooks 出力形式の正解パターンを記録
+
+### 主な変更内容
+
+#### Hooks JSON 出力形式の修正
+
+```json
+// ✅ 正しい形式（修正後）
+{
+  "hookSpecificOutput": {
+    "hookEventName": "UserPromptSubmit",
+    "additionalContext": "..."
+  }
+}
+
+// ❌ 間違った形式（修正前）
+{
+  "event": "UserPromptSubmit",
+  "hookSpecificOutput": { ... }
+}
+```
+
+- `scripts/userprompt-inject-policy.sh` を修正
+- キャッシュ版（`~/.claude/plugins/cache/`）にも同期
+
+#### 2-Agent ワークフロー改善
+
+- `/review-cc-work` のフロー改善:
+  - approve → `pm:確認済` → 次タスク分析 → ハンドオフ生成
+  - request_changes → 修正指示作成 → ハンドオフ生成
+- ワークフロー図を追加
+
+#### SSOT 更新
+
+- `.claude/memory/patterns.md` に P7 追加: 「Hooks 出力 JSON フォーマット」
+- `#pattern #hooks #critical` タグ付き
+
+### VibeCoder 向けの使い方
+
+| やりたいこと | 言い方 |
+|-------------|--------|
+| レビュー後に次タスクを依頼 | Cursor で `/review-cc-work` → 生成されたハンドオフをコピペ |
+| Hooks のエラーが出た | 再起動で解消（修正済み） |
+
+### 参照元（Based on）
+
+- [Claude Code Hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) - hookSpecificOutput の仕様
+
+---
+
 ## [2.5.13] - 2025-12-21
 
 ### 🎯 あなたにとって何が変わるか
