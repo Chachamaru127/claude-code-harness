@@ -49,3 +49,7 @@ docs/*TOKEN_REPORT*.md
 docs/チョウサレポート*.md
 docs/claude-code-bypass-permissions-guide.md
 docs/constitution.md
+
+# LSP (Language Server Protocol) configuration
+.lsp.json
+*lsp*config*.json
