@@ -168,6 +168,78 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
     exit 0
   fi
 
+  # ===== LSP/Skills ゲート (Phase0+) =====
+
+  STATE_DIR=".claude/state"
+  SESSION_FILE="$STATE_DIR/session.json"
+  TOOLING_POLICY_FILE="$STATE_DIR/tooling-policy.json"
+  SKILLS_DECISION_FILE="$STATE_DIR/skills-decision.json"
+
+  # stateファイルが存在する場合のみゲートを適用
+  if [ -f "$SESSION_FILE" ] && [ -f "$TOOLING_POLICY_FILE" ]; then
+    # JSONから値を抽出（jq優先）
+    if command -v jq >/dev/null 2>&1; then
+      CURRENT_PROMPT_SEQ=$(jq -r '.prompt_seq // 0' "$SESSION_FILE" 2>/dev/null || echo 0)
+      INTENT=$(jq -r '.intent // "literal"' "$SESSION_FILE" 2>/dev/null || echo "literal")
+      LSP_AVAILABLE=$(jq -r '.lsp.available // false' "$TOOLING_POLICY_FILE" 2>/dev/null || echo false)
+      LSP_LAST_USED_SEQ=$(jq -r '.lsp.last_used_prompt_seq // 0' "$TOOLING_POLICY_FILE" 2>/dev/null || echo 0)
+
+      # ファイル拡張子を取得
+      FILE_EXT="${FILE_PATH##*.}"
+      LSP_AVAILABLE_FOR_EXT=$(jq -r ".lsp.available_by_ext[\"$FILE_EXT\"] // false" "$TOOLING_POLICY_FILE" 2>/dev/null || echo false)
+
+      # Skills decision required チェック
+      SKILLS_DECISION_REQUIRED=$(jq -r '.skills.decision_required // false' "$TOOLING_POLICY_FILE" 2>/dev/null || echo false)
+      SKILLS_DECISION_SEQ=0
+      if [ -f "$SKILLS_DECISION_FILE" ]; then
+        SKILLS_DECISION_SEQ=$(jq -r '.prompt_seq // 0' "$SKILLS_DECISION_FILE" 2>/dev/null || echo 0)
+      fi
+
+      # LSPゲート: semantic かつ LSP利用可能 かつ LSP未実行
+      if [ "$INTENT" = "semantic" ] && [ "$LSP_AVAILABLE" = "true" ] && [ "$LSP_AVAILABLE_FOR_EXT" = "true" ]; then
+        if [ "$LSP_LAST_USED_SEQ" != "$CURRENT_PROMPT_SEQ" ]; then
+          # LSP未実行のまま Write/Edit に入ろうとしている → deny
+          DENY_MSG="[LSP Policy] コード変更前にLSPツールを使って影響範囲を分析してください。
+
+推奨LSPツール（tool_name確定後に更新）:
+- LSP tool: definition, references, rename, diagnostics のいずれか
+- 例: Go-to-definition でシンボルの定義を確認
+- 例: Find-references で使用箇所を確認
+- 例: Diagnostics で型エラーを検出
+
+LSPツールを使って変更の影響範囲を把握してから、再度 Write/Edit を実行してください。
+
+注: Phase0ログで実際の tool_name を確認し、このメッセージを更新することを推奨します。"
+          emit_deny "$DENY_MSG"
+          exit 0
+        fi
+      elif [ "$INTENT" = "semantic" ] && [ "$LSP_AVAILABLE" = "false" ]; then
+        # LSP未導入だが semantic → 推奨メッセージのみ（allow）
+        # ここではdenyしないが、UserPromptSubmitで既に推奨メッセージを出しているので、追加アクションは不要
+        : # no-op
+      fi
+
+      # Skillsゲート: skills-decision.json が必要なのに更新されていない
+      # ただし、skills-decision.json 自体への Write/Edit は常に許可（詰ませない）
+      if [ "$SKILLS_DECISION_REQUIRED" = "true" ] && [[ "$REL_PATH" != *"skills-decision.json"* ]]; then
+        if [ "$SKILLS_DECISION_SEQ" != "$CURRENT_PROMPT_SEQ" ]; then
+          DENY_MSG="[Skills Policy] Skillsの宣言が必要です。
+
+先に \`.claude/state/skills-decision.json\` を更新してから、再度 Write/Edit を実行してください。
+
+例:
+{
+  \"prompt_seq\": $CURRENT_PROMPT_SEQ,
+  \"selected\": [\"skill_name_1\", \"skill_name_2\"],
+  \"mode\": \"declared\"
+}"
+          emit_deny "$DENY_MSG"
+          exit 0
+        fi
+      fi
+    fi
+  fi
+
   exit 0
 fi
 

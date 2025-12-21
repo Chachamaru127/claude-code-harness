@@ -13,6 +13,7 @@ set +e
 # ================================
 STATE_DIR=".claude/state"
 STATE_FILE="$STATE_DIR/session.json"
+TOOLING_POLICY_FILE="$STATE_DIR/tooling-policy.json"
 PLANS_FILE="Plans.md"
 
 # ================================
@@ -102,6 +103,7 @@ cat > "$STATE_FILE" << EOF
   "started_at": "$CURRENT_TIME",
   "cwd": "$(pwd)",
   "project_name": "$PROJECT_NAME",
+  "prompt_seq": 0,
   "git": {
     "branch": "$GIT_BRANCH",
     "uncommitted_changes": $GIT_UNCOMMITTED,
@@ -116,6 +118,122 @@ cat > "$STATE_FILE" << EOF
     "completed_tasks": $COMPLETED_COUNT
   },
   "changes_this_session": []
+}
+EOF
+
+# ================================
+# Tooling Policy ファイル生成
+# ================================
+
+# LSP 可用性の判定（公式LSPプラグイン導入状況）
+LSP_AVAILABLE="false"
+LSP_PLUGINS=""
+
+# 既知の公式LSPプラグイン名（マーケットプレイス）
+# 全10種の公式プラグインをサポート
+OFFICIAL_LSP_PLUGINS="typescript-lsp pyright-lsp rust-analyzer-lsp gopls-lsp clangd-lsp jdtls-lsp swift-lsp lua-lsp php-lsp csharp-lsp"
+
+if command -v claude >/dev/null 2>&1; then
+  # claude plugin list でインストール済みプラグインを確認
+  INSTALLED_PLUGINS=$(claude plugin list 2>/dev/null | grep -o '[a-z-]*lsp' || true)
+
+  # 公式LSPプラグインが1つでも導入されているかチェック
+  for plugin in $OFFICIAL_LSP_PLUGINS; do
+    if echo "$INSTALLED_PLUGINS" | grep -q "$plugin"; then
+      LSP_AVAILABLE="true"
+      LSP_PLUGINS="$LSP_PLUGINS $plugin"
+    fi
+  done
+fi
+
+# Skillsインデックスの生成（name + description）
+SKILLS_INDEX="[]"
+if [ -d "skills" ]; then
+  # JSONフォーマットでskillsを収集（jq優先、なければpythonでフォールバック）
+  if command -v jq >/dev/null 2>&1; then
+    SKILLS_INDEX=$(
+      find skills -name 'doc.md' -type f 2>/dev/null | while read -r doc_file; do
+        skill_name=$(dirname "$doc_file" | sed 's|skills/||')
+        description=$(grep -m 1 '^description:' "$doc_file" 2>/dev/null | sed 's/^description: *//' || echo "")
+        [ -z "$description" ] && description="No description"
+        printf '{"name":"%s","description":"%s"}\n' "$skill_name" "$description"
+      done | jq -s '.' 2>/dev/null || echo "[]"
+    )
+  elif command -v python3 >/dev/null 2>&1; then
+    SKILLS_INDEX=$(
+      find skills -name 'doc.md' -type f 2>/dev/null | python3 - <<'PY' 2>/dev/null
+import sys, json, re, os
+skills = []
+for line in sys.stdin:
+    doc_file = line.strip()
+    skill_name = os.path.dirname(doc_file).replace("skills/", "", 1)
+    description = "No description"
+    try:
+        with open(doc_file, "r") as f:
+            for fline in f:
+                if fline.startswith("description:"):
+                    description = fline.replace("description:", "").strip()
+                    break
+    except Exception:
+        pass
+    skills.append({"name": skill_name, "description": description})
+print(json.dumps(skills))
+PY
+    )
+  fi
+fi
+
+# LSP可用性を拡張子別にマッピング（簡略版）
+LSP_BY_EXT="{}"
+if [ "$LSP_AVAILABLE" = "true" ]; then
+  # 公式LSPプラグインが導入されている場合、対応拡張子をマッピング
+  if echo "$LSP_PLUGINS" | grep -q "typescript-lsp"; then
+    LSP_BY_EXT=$(echo "$LSP_BY_EXT" | jq '. + {"ts": true, "tsx": true, "js": true, "jsx": true}' 2>/dev/null || echo '{"ts":true,"tsx":true,"js":true,"jsx":true}')
+  fi
+  if echo "$LSP_PLUGINS" | grep -q "pyright-lsp"; then
+    LSP_BY_EXT=$(echo "$LSP_BY_EXT" | jq '. + {"py": true}' 2>/dev/null || echo '{"py":true}')
+  fi
+  if echo "$LSP_PLUGINS" | grep -q "rust-analyzer-lsp"; then
+    LSP_BY_EXT=$(echo "$LSP_BY_EXT" | jq '. + {"rs": true}' 2>/dev/null || echo '{"rs":true}')
+  fi
+  if echo "$LSP_PLUGINS" | grep -q "gopls-lsp"; then
+    LSP_BY_EXT=$(echo "$LSP_BY_EXT" | jq '. + {"go": true}' 2>/dev/null || echo '{"go":true}')
+  fi
+  if echo "$LSP_PLUGINS" | grep -q "clangd-lsp"; then
+    LSP_BY_EXT=$(echo "$LSP_BY_EXT" | jq '. + {"c": true, "cpp": true, "h": true, "hpp": true}' 2>/dev/null || echo '{"c":true,"cpp":true,"h":true,"hpp":true}')
+  fi
+  if echo "$LSP_PLUGINS" | grep -q "jdtls-lsp"; then
+    LSP_BY_EXT=$(echo "$LSP_BY_EXT" | jq '. + {"java": true}' 2>/dev/null || echo '{"java":true}')
+  fi
+  if echo "$LSP_PLUGINS" | grep -q "swift-lsp"; then
+    LSP_BY_EXT=$(echo "$LSP_BY_EXT" | jq '. + {"swift": true}' 2>/dev/null || echo '{"swift":true}')
+  fi
+  if echo "$LSP_PLUGINS" | grep -q "lua-lsp"; then
+    LSP_BY_EXT=$(echo "$LSP_BY_EXT" | jq '. + {"lua": true}' 2>/dev/null || echo '{"lua":true}')
+  fi
+  if echo "$LSP_PLUGINS" | grep -q "php-lsp"; then
+    LSP_BY_EXT=$(echo "$LSP_BY_EXT" | jq '. + {"php": true}' 2>/dev/null || echo '{"php":true}')
+  fi
+  if echo "$LSP_PLUGINS" | grep -q "csharp-lsp"; then
+    LSP_BY_EXT=$(echo "$LSP_BY_EXT" | jq '. + {"cs": true}' 2>/dev/null || echo '{"cs":true}')
+  fi
+fi
+
+# tooling-policy.json を生成
+cat > "$TOOLING_POLICY_FILE" << EOF
+{
+  "lsp": {
+    "available": $LSP_AVAILABLE,
+    "plugins": "$LSP_PLUGINS",
+    "available_by_ext": $LSP_BY_EXT,
+    "last_used_prompt_seq": 0,
+    "last_used_tool_name": "",
+    "used_since_last_prompt": false
+  },
+  "skills": {
+    "index": $SKILLS_INDEX,
+    "decision_required": false
+  }
 }
 EOF
 

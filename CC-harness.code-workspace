@@ -1,12 +1,15 @@
 {
 	"folders": [
 		{
+			"name": "claude-code-harness",
 			"path": "."
 		},
 		{
+			"name": "claude-plugins-official",
 			"path": "../../claude-plugins-official"
 		},
 		{
+			"name": "awesome-claude-skills",
 			"path": "../../awesome-claude-skills"
 		}
 	],

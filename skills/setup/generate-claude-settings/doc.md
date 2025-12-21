@@ -63,35 +63,29 @@ MCP サーバーのツールを一括許可するには `mcp__<server>__*` パ�
 | `mcp__context7__*` | Context7 ドキュメント検索ツール |
 | `mcp__serena__*` | Serena LSP 連携ツール |
 | `mcp__playwright__*` | Playwright ブラウザ操作ツール |
-| `mcp__cclsp__*` | CCLSP（Claude Code LSP）ツール群 |
 
 ### LSP 機能の活用
 
-Claude Code の LSP 機能を活用するには、以下の設定を追加します：
+Claude Code の LSP 機能を活用するには、**公式LSPプラグイン（マーケットプレイス）** をインストールします。
 
-```json
-{
-  "mcpServers": {
-    "cclsp": {
-      "command": "npx",
-      "args": ["@ktnyt/cclsp"]
-    }
-  },
-  "permissions": {
-    "allow": [
-      "mcp__cclsp__*"
-    ]
-  }
-}
+```bash
+# 例: TypeScript/JavaScript 用
+claude plugin install typescript-lsp
+
+# 例: Python 用
+claude plugin install pyright-lsp
+
+# 例: Rust 用
+claude plugin install rust-analyzer-lsp
 ```
 
 **LSP で利用可能な機能:**
-- `lookup_symbol_definition` - シンボルの定義元を検索
-- `find_symbol_references` - シンボルの参照箇所を検索
-- `rename_symbol` - シンボルを一括リネーム
-- `get_diagnostics` - コード診断を実行
+- 定義ジャンプ (go-to-definition)
+- 参照検索 (find-references)
+- シンボルリネーム (rename)
+- 診断情報 (diagnostics)
 
-詳細: [docs/LSP_INTEGRATION.md](../../../docs/LSP_INTEGRATION.md)
+詳細: [docs/LSP_INTEGRATION.md](../../../docs/LSP_INTEGRATION.md) または `/lsp-setup` コマンドを実行してください。
 
 **注意**: プロジェクトで使用する MCP サーバーに合わせて設定してください。
 

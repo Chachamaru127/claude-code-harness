@@ -30,7 +30,7 @@ Claude Code マーケットプレイスで提供されている公式 LSP プラ
 |-----------|------|-------------------|
 | `typescript-lsp` | TypeScript/JavaScript | typescript-language-server |
 | `pyright-lsp` | Python | pyright |
-| `rust-lsp` | Rust | rust-analyzer |
+| `rust-analyzer-lsp` | Rust | rust-analyzer |
 
 > **重要**: プラグインは言語サーバーのバイナリを**含みません**。
 > 別途インストールが必要です。
@@ -164,9 +164,14 @@ echo "✅ LSP プラグインのインストール完了"
 |------|------------|-------------------|---------------|
 | **TypeScript/JS** | typescript-language-server | `npm install -g typescript typescript-language-server` | `typescript-lsp` |
 | **Python** | pyright | `pip install pyright` または `npm install -g pyright` | `pyright-lsp` |
-| **Rust** | rust-analyzer | [公式手順](https://rust-analyzer.github.io/manual.html#installation) | `rust-lsp` |
-| **Go** | gopls | `go install golang.org/x/tools/gopls@latest` | カスタム作成 |
-| **C/C++** | clangd | macOS: `brew install llvm` / Ubuntu: `apt install clangd` | カスタム作成 |
+| **Rust** | rust-analyzer | [公式手順](https://rust-analyzer.github.io/manual.html#installation) | `rust-analyzer-lsp` |
+| **Go** | gopls | `go install golang.org/x/tools/gopls@latest` | `gopls-lsp` |
+| **C/C++** | clangd | macOS: `brew install llvm` / Ubuntu: `apt install clangd` | `clangd-lsp` |
+| **Java** | jdtls | [公式手順](https://github.com/eclipse/eclipse.jdt.ls) | `jdtls-lsp` |
+| **Swift** | sourcekit-lsp | Xcode 付属 | `swift-lsp` |
+| **Lua** | lua-language-server | [公式手順](https://github.com/LuaLS/lua-language-server) | `lua-lsp` |
+| **PHP** | intelephense | `npm install -g intelephense` | `php-lsp` |
+| **C#** | omnisharp | [公式手順](https://github.com/OmniSharp/omnisharp-roslyn) | `csharp-lsp` |
 
 ---
 
@@ -193,9 +198,13 @@ claude
 
 ## カスタム LSP プラグインの作成
 
-公式プラグインがない言語（Go, C/C++ 等）の場合、カスタムプラグインを作成できます。
+公式プラグインがマーケットプレイスに存在しない言語や、独自のLSPサーバー設定が必要な場合、カスタムプラグイン（`.lsp.json`）を作成できます。
+
+> **注**: TypeScript/JS, Python, Rust, Go, C/C++, Java, Swift, Lua, PHP, C# は公式プラグインが提供されています。まず `/plugin` で "lsp" を検索してください。
 
 ### `.lsp.json` フォーマット
+
+**例**: カスタム設定でGoのLSPサーバーを起動する場合
 
 ```json
 {

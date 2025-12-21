@@ -10,6 +10,68 @@ claude-code-harness の変更履歴です。
 
 ---
 
+## [Unreleased]
+
+### 🎯 あなたにとって何が変わるか
+
+**LSP/Skills の「必要時強制利用」ポリシーを Hooks で実装。公式LSP準拠に一本化し、コード変更前のLSP分析を必須化。**
+
+#### Before
+- LSP の使用は「推奨」に留まり、使わなくても Write/Edit できた
+- CCLSP(MCP) と ENABLE_LSP_TOOL という複数の導線があり、混乱していた
+- コード変更前の影響分析をスキップしがちだった
+- Skills の評価も「気分次第」で、一貫性がなかった
+
+#### After
+- **semantic なコード変更時、LSP 未実行のまま Write/Edit すると deny される**（LSP導入済みの場合）
+- **公式LSPプラグイン（マーケットプレイス）に一本化**。CCLSP/ENABLE_LSP_TOOL の導線を完全削除
+- **LSP未導入でも作業継続可能**（deny せず、`/lsp-setup` を推奨）
+- deny理由に「次に叩くべきLSPツール名」が具体的に表示され、自己修正を促す
+- **Phase0 ログ**（tool-events.jsonl）で全ツール名を記録し、LSP使用状況を観測可能に
+
+### 主な変更内容
+
+#### LSP/Skills 強制利用ポリシー（Hooks）
+
+- **PreToolUse ゲート**: Write/Edit 前にLSP使用を必須化（semantic かつ LSP導入済みの場合）
+- **UserPromptSubmit 注入**: semantic/literal 判定と forced eval を注入
+- **PostToolUse 追跡**: 公式LSPツールの使用を state に記録
+- **SessionStart state 生成**: LSP可用性と Skills インデックスを `.claude/state/tooling-policy.json` に保存
+
+#### Phase0 ログ実装
+
+- **tool-events.jsonl**: 全ツール名を JSONL 形式で記録（256KB or 2000行でローテーション、最大5世代）
+- **ロック機構**: flock 優先、無ければ mkdir ロックで競合回避
+- **最小フィールドのみ記録**: `tool_name`, `ts`, `session_id`, `prompt_seq`（漏洩リスク回避）
+
+#### 公式LSP準拠への一本化
+
+- **CCLSP/ENABLE_LSP_TOOL 導線を完全削除**:
+  - `templates/claude/settings.security.json.template` から `mcp__cclsp__*` と `mcpServers.cclsp` を削除
+  - `skills/setup/generate-claude-settings/doc.md` の CCLSP 説明を公式LSPプラグインへ置き換え
+  - `commands/optional/ci-setup.md` の `npx @ktnyt/cclsp diagnose` を `npm run type-check/lint` へ置き換え
+  - `docs/LSP_INTEGRATION.md` の ENABLE_LSP_TOOL / CCLSP セクションを公式LSPプラグイン説明へ置き換え
+- **公式LSPプラグインを推奨**: `claude plugin install typescript-lsp` 等
+
+#### Skills decision の json 方式への置換
+
+- **skills-decision.json**: Skills の宣言を state ファイル（`.claude/state/skills-decision.json`）で管理
+- **PreToolUse ゲート**: skills-decision.json が更新されていない Write/Edit を deny（詰ませ防止: skills-decision.json 自体への Write/Edit は常に許可）
+
+### VibeCoder 向けの使い方
+
+| やりたいこと | 言い方 |
+|-------------|--------|
+| LSPを先に使ってから編集したい | （自動で強制されます。deny されたら指示に従ってLSPツールを実行してください） |
+| LSPをセットアップしたい | 「`/lsp-setup`」 |
+
+### 参照元（Based on）
+
+- [Claude Code Hooks](https://code.claude.com/docs/en/hooks) - PreToolUse/PostToolUse/UserPromptSubmit の仕様
+- [Claude Code Plugins](https://code.claude.com/plugins) - 公式LSPプラグイン
+
+---
+
 ## [2.5.10] - 2025-12-21
 
 ### 🎯 あなたにとって何が変わるか
@@ -22,7 +84,7 @@ claude-code-harness の変更履歴です。
 - カスタム設定が必要だった
 
 #### After
-- **公式プラグイン**（`typescript-lsp`, `pyright-lsp`, `rust-lsp`）を `/lsp-setup` が自動インストール
+- **公式プラグイン**（`typescript-lsp`, `pyright-lsp`, `rust-analyzer-lsp` 等）を `/lsp-setup` が検出・提案
 - **ゼロからのセットアップ**が 3 ステップで完了
 - **カスタム言語**（Go, C/C++ 等）も `.lsp.json` で対応可能
 

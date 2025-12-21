@@ -52,20 +52,24 @@ LSP を使うには **2つのもの** が必要です:
 
 ### Step 2: 公式 LSP プラグインをインストール
 
-Claude Code マーケットプレイスから公式プラグインをインストール:
+**プロジェクトで使用する言語に必要なプラグインのみ**インストールしてください。
 
 ```bash
-# TypeScript/JavaScript
+# 例: TypeScript/JavaScript プロジェクトの場合
 claude plugin install typescript-lsp
 
-# Python
+# 例: Python プロジェクトの場合
 claude plugin install pyright-lsp
 
-# Rust
-claude plugin install rust-lsp
+# 例: Go プロジェクトの場合
+claude plugin install gopls-lsp
 ```
 
-または `/plugin` コマンドで "lsp" を検索してインストール。
+**どのプラグインが必要か分からない場合**:
+- `/plugin` コマンドで "lsp" を検索して、プロジェクトの言語に該当するものを選択
+- または `/lsp-setup` コマンドで自動検出・提案を受ける
+
+**利用可能な公式プラグイン**: typescript-lsp, pyright-lsp, rust-analyzer-lsp, gopls-lsp, clangd-lsp, jdtls-lsp, swift-lsp, lua-lsp, php-lsp, csharp-lsp（詳細は下記「公式LSPプラグイン一覧」参照）
 
 ### Step 3: Claude Code を起動
 
@@ -79,14 +83,35 @@ claude
 
 ## 公式 LSP プラグイン一覧
 
-| プラグイン | 言語 | 必要な言語サーバー | インストール |
-|-----------|------|-------------------|-------------|
-| `typescript-lsp` | TypeScript/JS | typescript-language-server | `claude plugin install typescript-lsp` |
-| `pyright-lsp` | Python | pyright | `claude plugin install pyright-lsp` |
-| `rust-lsp` | Rust | rust-analyzer | `claude plugin install rust-lsp` |
+以下の言語向けに公式LSPプラグインが提供されています。**プロジェクトで使用する言語に必要なものだけ**インストールしてください。
 
-> **注意**: プラグインは言語サーバーのバイナリを**含みません**。
-> Step 1 で言語サーバーを別途インストールしてください。
+| プラグイン | 言語 | 必要な言語サーバー |
+|-----------|------|-------------------|
+| `typescript-lsp` | TypeScript/JS | typescript-language-server |
+| `pyright-lsp` | Python | pyright |
+| `rust-analyzer-lsp` | Rust | rust-analyzer |
+| `gopls-lsp` | Go | gopls |
+| `clangd-lsp` | C/C++ | clangd |
+| `jdtls-lsp` | Java | jdtls |
+| `swift-lsp` | Swift | sourcekit-lsp |
+| `lua-lsp` | Lua | lua-language-server |
+| `php-lsp` | PHP | intelephense |
+| `csharp-lsp` | C# | omnisharp |
+
+**インストール方法**:
+```bash
+# 例: TypeScript/JavaScript プロジェクトの場合
+claude plugin install typescript-lsp
+
+# 例: Python プロジェクトの場合
+claude plugin install pyright-lsp
+```
+
+または `/plugin` コマンドで "lsp" を検索して、該当言語のプラグインをインストール。
+
+> **重要**: プラグインは言語サーバーのバイナリを**含みません**。Step 1 で言語サーバーを別途インストールしてください。
+
+> **迷ったら**: `/lsp-setup` コマンドが、プロジェクトの言語を自動検出して必要なプラグインを提案します。
 
 ---
 
@@ -104,60 +129,6 @@ claude
 3. 公式プラグインのインストール
 4. 動作確認
 
----
-
-## カスタム言語のサポート（Go, C/C++ 等）
-
-公式プラグインがない言語は、カスタム LSP プラグインを作成できます。
-
-### `.lsp.json` フォーマット
-
-```json
-{
-  "go": {
-    "command": "gopls",
-    "args": ["serve"],
-    "extensionToLanguage": {
-      ".go": "go"
-    }
-  }
-}
-```
-
-詳細は `/lsp-setup` コマンドの「カスタム LSP プラグインの作成」セクションを参照。
-
----
-
-## LSP の有効化（レガシー方式）
-
-公式プラグインを使わない場合の代替方法:
-
-### 方法1: 環境変数
-
-```bash
-export ENABLE_LSP_TOOL=1
-claude
-```
-
-### 方法2: MCP サーバー経由
-
-`.claude/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "cclsp": {
-      "command": "npx",
-      "args": ["@ktnyt/cclsp"]
-    }
-  },
-  "permissions": {
-    "allow": [
-      "mcp__cclsp__*"
-    ]
-  }
-}
-```
 
 ---
 
@@ -323,13 +294,74 @@ LSP と Grep はそれぞれ得意分野が異なります。適切に使い分�
 
 ---
 
+## Phase0: LSP tool_name の確認（開発者向け）
+
+公式LSPプラグインの実際の `tool_name` を確認するには、Phase0ログを使用します。
+
+### Phase0ログの有効化
+
+Phase0ログはデフォルトで**無効**になっています。tool_name を確認する際のみ、環境変数で有効化してください。
+
+```bash
+# Phase0ログを有効化してClaude Codeを起動
+CC_HARNESS_PHASE0_LOG=1 claude
+
+# または、現在のセッションで有効化
+export CC_HARNESS_PHASE0_LOG=1
+claude
+```
+
+**重要**: tool_name確定後は、必ずPhase0ログを無効化してください（ログ肥大化防止）。
+
+```bash
+# Phase0ログを無効化（デフォルト状態に戻す）
+unset CC_HARNESS_PHASE0_LOG
+```
+
+### 手順
+
+1. **Phase0ログを有効化してセッション開始後、LSPツールを1回実行**:
+   - 例: TypeScriptファイルで definition, references, diagnostics 等を実行
+
+2. **tool-events.jsonl を確認**:
+   ```bash
+   cat .claude/state/tool-events.jsonl | grep -i lsp
+   ```
+
+3. **tool_name の検出条件を確認・調整**:
+   - **現在の実装**: `scripts/posttooluse-log-toolname.sh` が `grep -iq "lsp"` で tool_name に "lsp" が含まれるかチェック
+   - **tool_name が想定と異なる場合** (例: "lsp" を含まない名前の場合):
+     - `scripts/posttooluse-log-toolname.sh` の LSP 検出条件（line 164付近）を更新:
+       ```bash
+       # 例: tool_name が "TypeScriptLSP" の場合
+       if echo "$TOOL_NAME" | grep -iq "lsp\|TypeScriptLSP"; then
+       ```
+   - **matcher依存を回避**: PostToolUse は `matcher: "*"` で全ツールを観測するため、matcher設定は不要
+
+4. **Phase0ログを無効化**:
+   ```bash
+   unset CC_HARNESS_PHASE0_LOG
+   ```
+
+### 想定される tool_name パターン
+
+- `"LSP"` - 基本的なLSPツール
+- `"typescript-lsp"` - 言語別プラグイン名
+- `"LSP:definition"` - 操作別ツール名
+
+いずれも "lsp" を含むため、デフォルトの検出条件（`grep -iq "lsp"`）で対応可能です。
+
+**注意**: Phase0ログは最小フィールドのみ記録（tool_name, ts, session_id, prompt_seq）し、tool_input/tool_response は保存しません（漏洩リスク回避）。
+
+---
+
 ## トラブルシューティング
 
 ### LSP が動作しない場合
 
-1. 環境変数を確認: `echo $ENABLE_LSP_TOOL`
-2. 言語サーバーがインストールされているか確認
-3. MCP サーバー経由での利用を試す
+1. 公式LSPプラグインがインストールされているか確認
+2. 言語サーバーがインストールされているか確認（例: `which typescript-language-server`, `which pyright`）
+3. `/lsp-setup` コマンドで設定を確認
 
 ### 診断結果が表示されない場合
 

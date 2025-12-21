@@ -42,7 +42,29 @@
         ]
       }
     ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/userprompt-inject-policy.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/posttooluse-log-toolname.sh",
+            "timeout": 30
+          }
+        ]
+      },
       {
         "matcher": "Write|Edit",
         "hooks": [
