@@ -26,7 +26,6 @@ Claude Code を「Plan → Work → Review」の型で自律運用し、個人�
 - [個人開発ハーネスの採点基準 & スコア](#個人開発ハーネスの採点基準--スコア)
 - [アーキテクチャ（要約）](#アーキテクチャ要約)
 - [リポジトリ構成（全体像）](#リポジトリ構成全体像)
-- [差分履歴（現行 vs 直前）](#差分履歴現行-vs-直前)
 - [ドキュメント](#ドキュメント)
 - [信頼性 / 検証](#信頼性--検証)
 - [プレゼンテーション](#プレゼンテーション)
@@ -370,7 +369,7 @@ export CLAUDE_MD_MAX_LINES=150
 - **B（70–79）**: 便利だが運用が属人化しやすい
 - **C（〜69）**: アイデア段階。仕組みの整合/検証が不足
 
-### 採点表（このリポジトリ: v2.4.1）
+### 採点表（このリポジトリ: v2.5.13）
 
 | カテゴリ | 配点 | 何を見るか | 本リポジトリ |
 | --- | ---: | --- | ---: |
@@ -416,149 +415,15 @@ export CLAUDE_MD_MAX_LINES=150
 ```
 claude-code-harness/
 ├── .claude-plugin/         # プラグインメタデータ（plugin.json）
-├── commands/               # スラッシュコマンド（16）
-├── workflows/              # ワークフロー定義（5）
-├── skills/                 # スキル（47）
+├── commands/               # スラッシュコマンド（18）
+├── workflows/              # ワークフロー定義（4）
+├── skills/                 # スキル（61）
 ├── agents/                 # サブエージェント（6）
 ├── hooks/                  # Hooks 定義
 ├── scripts/                # Hooks/運用スクリプト
 ├── templates/              # 生成テンプレート（AGENTS/CLAUDE/Plans, Cursor commands 等）
 └── docs/                   # 詳細ドキュメント
 ```
-
----
-
-## 差分履歴（現行 vs 直前）
-
-> 詳細は [CHANGELOG.md](CHANGELOG.md) を参照してください（0.5.x は Imported history として同梱）。
-
-### 現行: v2.4.1（2025-12-17）
-
-**Changed**
-
-- **リブランディング**: 「Claude Code Harness」→「Claude harness」に名称変更
-  - 新ロゴ（SVG）とヒーロー画像（PNG）を追加
-  - 全ドキュメントの名称参照を更新
-
-### 直前: v2.4.0（2025-12-17）
-
-**Added**
-
-- **並列レビュー機能**: `/harness-review` がサブエージェントを並列起動（最大75%時間短縮）
-- **CI修正委譲**: 複雑なCI失敗を ci-cd-fixer サブエージェントに自動委譲
-
-### 直前: v2.2.1（2025-12-16）
-
-**Changed**
-
-- **ライセンス変更**: MITライセンスから独自ライセンスに変更
-  - 使い方は変わらず（個人利用・商用利用・改変は自由）
-  - 再配布・販売・類似サービス化は禁止
-
-### 直前: v2.1.2（2025-12-15）
-
-**Changed**
-
-- `/parallel-tasks` を `/work` に統合（コマンド数 17 → 16）
-- `/work` を「並列実行ファースト」に強化:
-  - 独立タスク2つ以上 → デフォルトで並列実行
-  - 依存関係分析の自動化
-  - 統合レポート形式の追加
-  - 部分失敗時のエラーハンドリング強化
-
-### 直前: v2.1.1（2025-12-15）
-
-**Changed**
-
-- コマンド整理: 27個 → 17個に削減（スキル化で整理）
-- `/plan` を `/plan-with-agent` に名称変更
-- `/skill-list` コマンドを追加（スキル一覧表示）
-- `/cleanup` の説明を改善（いつ使うべきかを明確化）
-- `/harness-init` に `/localize-rules` 相当の処理を統合
-
-**Removed**
-
-- `/start-task` を削除（`/work` に統合済み）
-- 以下のコマンドをスキルに移行:
-  - `/analytics`, `/auth`, `/auto-fix`, `/component`, `/deploy-setup`
-  - `/feedback`, `/health-check`, `/notebooklm-yaml`, `/payments`, `/setup-cursor`
-  - `/handoff-to-impl-claude`, `/handoff-to-pm-claude`
-
-### 直前: v2.1.0（2025-12-15）
-
-**Added**
-
-- `/refactor` コマンド: コードの安全なリファクタリング（テスト維持・段階的実行）
-- 並列実行ガイダンス: `/validate`, `/harness-review`, `/refactor`, `/work`, `/sync-status`, `/sync-project-specs` に判断ポイントを追加
-
-### 直前: v2.0.5（2025-12-14）
-
-**Changed**
-
-- `/work` と `/start-task` の使い分けがコマンド一覧で分かるように、description（表示文言）を改善
-
-### 直前: v2.0.4（2025-12-14）
-
-**Changed**
-
-- CI: バージョン未更新時の **自動push（=二重実行）** を廃止し、警告＋失敗に変更（pre-commit 推奨）
-- `cursor-cc.config.*` の互換表記/残骸を完全撤去し、`claude-code-harness.config.*` へ一本化
-- コマンド説明を VibeCoder 向けに統一（各 `commands/*.md` に「こう言えばOK / 成果物」を追記）
-
-### 直前: v2.0.3（2025-12-14）
-
-**Changed**
-
-- `cursor-cc` 表記を `claude-code-harness` へ統一
-- 互換コマンド（`/init`, `/review`）を削除（移行期間終了）
-- Cursor連携: `.claude-code-harness-version` / `.claude-code-harness.config.yaml` へ整理
-
-### 直前: v2.0.2（2025-12-14）
-
-**Added**
-
-- CI/コミット前チェック: バージョン未更新時の **自動パッチバンプ**（CI + pre-commit）
-
-### 直前: v2.0.1（2025-12-14）
-
-**Added**
-
-- README: 目次を追加（長文でも迷子にならない導線）
-- GitHub Actions: `validate-plugin` / `check-consistency` を自動実行（`.github/workflows/validate-plugin.yml`）
-- 設定ファイル: `claude-code-harness.config.*` を追加（命名を統一）
-
-**Changed**
-
-- `CONTRIBUTING.md` のプロダクト名/導線/導入手順を現行に同期
-- 設定ファイル名の整理（互換終了）
-
-### 直前: v2.0.0（2025-12-13）
-
-**Added**
-
-- PreToolUse/PermissionRequest hooks（ガードレール + 安全コマンド自動許可）
-- Cursor連携用テンプレート（`templates/cursor/commands/*`）と `/setup-cursor`
-- `/handoff-to-cursor`（Cursor(PM)向け完了報告）
-
-**Changed**
-
-- `.claude-plugin/plugin.json` を最新Plugins reference準拠へ（authorをobject化、commands手動列挙を廃止）
-- コマンド衝突回避: `/harness-init` `/harness-review` に統一（旧名コマンドは廃止）
-- README/Docs を `/harness-init` `/harness-review` 前提に更新
-
-**Fixed**
-
-- hooks の stdin JSON 入力対応を統一（PostToolUse系スクリプトの空振りを解消）
-- CI整合性チェックの不足テンプレート問題を解消
-
-### 直前: v0.5.4（2025-12-12）〜 v0.5.0（Imported history）
-
-このリポジトリは **`cursor-cc-plugins`（0.4.x〜0.5.x）をforkして発展**しています。
-
-- Adaptive Setup（プロジェクト分析）
-- セッション監視フック（セッション開始/終了サマリー、変更追跡）
-- `/work`（並列実行対応を強化）
-- `/remember`（学習事項の自動ルール化）
 
 ---
 
