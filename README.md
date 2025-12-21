@@ -312,30 +312,30 @@ export CLAUDE_MD_MAX_LINES=150
 
 ### 品質/運用（信頼性を上げる）
 
-| コマンド | 目的 |
-| --- | --- |
-| `/validate` | プロジェクト検証（env/依存/ビルド/テスト/デプロイ準備） |
-| `/harness-update` | ハーネス導入済みプロジェクトを最新版に安全アップデート（破壊的変更検出・自動修正） |
-| `/cleanup` | Plans.md / session-log.md 等の自動整理 |
-| `/sync-status` | 進捗確認→Plans.md更新→次アクション提案（状況把握の起点） |
-| `/refactor` | コードの安全なリファクタリング（テスト維持・段階的実行） |
+| コマンド | いつ・なぜ使うか（When/Why） | 主な成果物 |
+| --- | --- | --- |
+| `/validate` | デプロイ前やPR前に、環境・依存・ビルド・テストを一括検証したいとき | 検証レポート |
+| `/harness-update` | ハーネスの新機能を使いたい、またはバグ修正を適用したいとき | 更新されたプラグインファイル |
+| `/cleanup` | Plans.mdやsession-log.mdが肥大化して見通しが悪くなったとき | アーカイブ済みファイル |
+| `/sync-status` | 「今どこまで進んだか」「次に何をすべきか」を確認したいとき | Plans.md更新 + 次アクション提案 |
+| `/refactor` | 既存コードを安全に改善したいが、テストを壊したくないとき | リファクタリング済みコード |
 
 ### 実装支援
 
-| コマンド | 目的 |
-| --- | --- |
-| `/crud` | CRUD自動生成（検証・認可・本番対応） |
-| `/ci-setup` | CI/CD構築（GitHub Actions） |
+| コマンド | いつ・なぜ使うか（When/Why） | 主な成果物 |
+| --- | --- | --- |
+| `/crud` | データベース操作の定型コードを素早く生成したいとき | CRUD操作コード（検証・認可付き） |
+| `/ci-setup` | GitHub Actionsで自動テスト・ビルドを回したいとき | `.github/workflows/*.yml` |
 
 ### Cursor連携 / ナレッジ
 
-| コマンド | 目的 |
-| --- | --- |
-| `/handoff-to-cursor` | Cursor(PM)向けの完了報告を生成 |
-| `/remember` | 学習事項をRules/Commands/Skillsとして記録 |
-| `/localize-rules` | プロジェクト構造に合わせてルールをローカライズ |
-| `/sync-ssot-from-serena` | Serenaメモリ→SSOT反映 |
-| `/sync-project-specs` | 作業後にPlans.md等が更新されているか不明な時に実行 |
+| コマンド | いつ・なぜ使うか（When/Why） | 主な成果物 |
+| --- | --- | --- |
+| `/handoff-to-cursor` | Cursor(PM)に作業完了を報告したいとき（2-agent運用時） | 完了報告テンプレート |
+| `/remember` | 今回学んだパターンやルールを次回以降も使いたいとき | Rules/Commands/Skills定義 |
+| `/localize-rules` | プロジェクト固有の命名規則やディレクトリ構造をルール化したいとき | カスタマイズされたルール |
+| `/sync-ssot-from-serena` | Serenaで記録した知識をプロジェクトのSSOTに反映したいとき | 更新された decisions/patterns |
+| `/sync-project-specs` | 作業後にPlans.mdやドキュメントが最新か確認したいとき | 同期されたプロジェクトファイル |
 
 ### スキル（会話の中で自動呼び出し）
 
@@ -559,11 +559,6 @@ claude-code-harness/
 - セッション監視フック（セッション開始/終了サマリー、変更追跡）
 - `/work`（並列実行対応を強化）
 - `/remember`（学習事項の自動ルール化）
-
-### 移行メモ（重要）
-
-- `/init`（互換） → **`/harness-init` を使用**
-- `/review`（互換） → **`/harness-review` を使用**
 
 ---
 
