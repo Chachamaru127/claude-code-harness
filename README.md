@@ -115,27 +115,52 @@ Claude Code の強み（実装スピード）を活かしつつ、個人開発�
 - `git` / `node` / `npm`（プロジェクトにより）
 - 推奨: `jq`（一部スクリプトのJSON処理で利用）
 
-### 1) プラグインをローカルに用意
+### 1) プラグインをインストール（推奨）
 
-このリポジトリを任意の場所にクローンします（例: `~/claude-plugins/claude-code-harness`）。
-
-### 2) あなたのプロジェクトを Claude Code で開く
+Claude Code の公式プラグインシステムを使います：
 
 ```bash
-# あなたのプロジェクトのルートへ移動
+# あなたのプロジェクトで Claude Code を起動
 cd /path/to/your-project
+claude
 
-# プラグインを指定して起動
-claude --plugin-dir /path/to/claude-code-harness
+# マーケットプレイスを追加
+/plugin marketplace add Chachamaru127/claude-code-harness
+
+# プラグインをインストール
+/plugin install claude-code-harness@claude-code-harness-marketplace
 ```
 
-### 3) 初期化（推奨）
+**または**、インタラクティブUIで：
+
+```bash
+/plugin marketplace add Chachamaru127/claude-code-harness
+/plugin  # UI を開く → Discover タブ → claude-code-harness を選択 → Enter
+```
+
+<details>
+<summary>📦 代替方法：ローカルクローン（開発者向け）</summary>
+
+ローカルで開発・カスタマイズしたい場合：
+
+```bash
+# リポジトリをクローン
+git clone https://github.com/Chachamaru127/claude-code-harness.git ~/claude-plugins/claude-code-harness
+
+# プロジェクトで起動
+cd /path/to/your-project
+claude --plugin-dir ~/claude-plugins/claude-code-harness
+```
+
+</details>
+
+### 2) 初期化（推奨）
 
 ```bash
 /harness-init
 ```
 
-### 4) ふだんの開発ループ
+### 3) ふだんの開発ループ
 
 ```bash
 /plan-with-agent
