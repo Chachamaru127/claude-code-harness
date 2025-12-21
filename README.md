@@ -1,8 +1,6 @@
 # Claude harness
 
-![Claude harness](docs/images/Claude%20harness_logo.svg)
-
-![Claude harness](docs/images/Claude%20harness_TOP.png)
+![Claude harness](docs/images/claude-harness-logo-with-text.png)
 
 **思考の流れを妨げない開発体験**
 Claude Code を「Plan → Work → Review」の型で自律運用し、個人開発を“もう1段”プロ品質へ引き上げる **開発ハーネス（Claude Code プラグイン）** です。
