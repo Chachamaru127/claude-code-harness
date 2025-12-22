@@ -2,762 +2,371 @@
 
 Change history for claude-code-harness.
 
-> **Writing Guidelines**: This CHANGELOG describes "what changed for users".
+> **📝 Writing Guidelines**: This CHANGELOG describes "what changed for users".
 > - Clear **Before/After** comparisons
 > - Focus on "usage changes" and "experience improvements" over technical details
 > - Make it clear "what's in it for you"
-> - **Based on**: Link to Claude Code official features when referenced
+
+---
+
+## [Unreleased]
+
+---
+
+## [2.5.23] - 2025-12-23
+
+### 🎯 What's Changed for You
+
+**Added `/release` command. Release workflow (CHANGELOG update, version bump, tag creation) is now standardized.**
+
+#### Before
+- Had to manually update CHANGELOG, VERSION, plugin.json, and create tags for each release
+- Easy to forget steps, inconsistent process
+
+#### After
+- **Just say `/release`** and the release process is guided
+- Consistent flow from CHANGELOG format to version bump to tag creation
+
+---
+
+## [2.5.22] - 2025-12-23
+
+### 🎯 What's Changed for You
+
+**Plugin updates now reliably apply. No more "updated but still using old version".**
+
+#### Before
+- Plugin updates sometimes didn't apply due to stale cache
+- Had to manually delete cache and reinstall
+
+#### After
+- **Just start a new session and latest version auto-applies**
+- No manual intervention needed
 
 ---
 
 ## [2.5.14] - 2025-12-22
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
-**Fixed Hooks JSON output format, automated review → handoff workflow in 2-Agent mode.**
+**Automated post-review handoff in 2-Agent workflow.**
 
 #### Before
-- `UserPromptSubmit` hook sometimes threw "Hook returned incorrect event name" error
-- After `/review-cc-work` (for Cursor PM), you had to run `/handoff-to-claude` separately
-- On approval, "analyze next task → generate request" had to be done manually
+- After `/review-cc-work`, had to run `/handoff-to-claude` separately
+- On approval, had to manually "analyze next task → generate request"
 
 #### After
-- **Fixed Hooks JSON output format**: Correctly placed `hookEventName` inside `hookSpecificOutput`
-- **`/review-cc-work` now auto-generates handoff for both approve/request_changes**
-- **On approve**: Analyzes next task from Plans.md and generates request
-- **On request_changes**: Generates request with modification instructions
-- **Added P7 pattern to SSOT**: Documented correct Hooks output format
-
-### Changes
-
-#### Hooks JSON Output Format Fix
-
-```json
-// ✅ Correct format (after fix)
-{
-  "hookSpecificOutput": {
-    "hookEventName": "UserPromptSubmit",
-    "additionalContext": "..."
-  }
-}
-
-// ❌ Wrong format (before fix)
-{
-  "event": "UserPromptSubmit",
-  "hookSpecificOutput": { ... }
-}
-```
-
-- Fixed `scripts/userprompt-inject-policy.sh`
-- Synced to cached version (`~/.claude/plugins/cache/`)
-
-#### 2-Agent Workflow Improvement
-
-- Enhanced `/review-cc-work` flow:
-  - approve → mark `pm:確認済` → analyze next task → generate handoff
-  - request_changes → create modification instructions → generate handoff
-- Added workflow diagram
-
-#### SSOT Update
-
-- Added P7 to `.claude/memory/patterns.md`: "Hooks Output JSON Format"
-- Tagged with `#pattern #hooks #critical`
-
-### Based on
-
-- [Claude Code Hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) - hookSpecificOutput specification
+- **`/review-cc-work` auto-generates handoff for both approve/request_changes**
+- On approve: auto-analyzes next task and generates request
+- On request_changes: generates request with modification instructions
 
 ---
 
 ## [2.5.13] - 2025-12-21
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
-**LSP/Skills "mandatory when needed" policy implemented via Hooks. Unified to official LSP compliance, making LSP analysis mandatory before code changes.**
+**LSP (code analysis) is now automatically recommended when needed.**
 
-#### Unified to Official LSP Compliance
+#### Before
+- LSP usage was optional, could skip it during code editing
+- Impact analysis before code changes was often skipped
 
-- **All 10 official LSP plugins supported**:
-  - `typescript-lsp`, `pyright-lsp`, `rust-analyzer-lsp` (fixed from old name `rust-lsp`)
-  - `gopls-lsp`, `clangd-lsp`, `jdtls-lsp`, `swift-lsp`, `lua-lsp`, `php-lsp`, `csharp-lsp`
-- **Documentation consistency ensured**:
-  - Clarified "install only what you need for your project" (not installing all)
-  - Rewrote Phase0 procedures based on `posttooluse-log-toolname.sh` (eliminated matcher dependency)
-  - Fixed Go/C/C++ to have official plugins
-- **session-monitor.sh extension mapping expanded**: Support for all 10 LSP plugins
+#### After
+- **LSP analysis auto-recommended during code changes** (when LSP is installed)
+- Work continues even without LSP (`/lsp-setup` for easy installation)
+- All 10 official LSP plugins supported
 
-#### Phase0 Logging Implementation
+---
 
-- **Unified LSP tracking**: `posttooluse-log-toolname.sh` detects LSP-related tools via `grep -iq "lsp"` (eliminated matcher dependency to prevent deadlocks)
-- **Environment-variable controlled**: Enable/disable detailed logging with `CC_HARNESS_PHASE0_LOG=1`
-- **JSONL format logs**: Outputs to `.claude/state/tool-events.jsonl` (rotates at 256KB or 2000 lines, max 5 generations)
-- **State synchronization**: Updates `.claude/state/tooling-policy.json` for LSP availability and skills index
+## [2.5.10] - 2025-12-21
 
-#### LSP Tracking Unification
+### 🎯 What's Changed for You
 
-- **Removed duplicate implementation**: Deleted matcher:"LSP" entry from hooks.json
-- **Single tracking path**: PostToolUse matcher:"*" → posttooluse-log-toolname.sh integration
-- **Deleted unnecessary files**: Removed `posttooluse-lsp-track.sh` (became redundant)
+**LSP setup is now easy.**
 
-### Changes
+#### Before
+- Multiple ways to configure LSP, unclear which to use
 
-#### Documentation Fixes
+#### After
+- **`/lsp-setup` auto-detects and suggests official plugins**
+- Setup completes in 3 steps
 
-**Corrected plugin names** (5 files):
-- docs/LSP_INTEGRATION.md - Updated official plugin list and Phase0 procedures
-- commands/optional/lsp-setup.md - Added full 10-plugin table and fixed Go/C/C++ descriptions
-- skills/setup/generate-claude-settings/doc.md - Fixed rust-lsp references
-- scripts/session-monitor.sh - Updated OFFICIAL_LSP_PLUGINS list and comments
-- CHANGELOG.md - Fixed historical entries
+---
 
-**Enhanced extension mappings**:
-- Added `available_by_ext` for all 10 plugins (ts, py, rs, go, c/cpp, java, swift, lua, php, cs)
+## [2.5.9] - 2025-12-20
 
-#### Implementation Cleanup
+### 🎯 What's Changed for You
 
-**Eliminated duplicate tracking**:
-- Removed matcher:"LSP" entry from hooks/hooks.json
-- Deleted scripts/posttooluse-lsp-track.sh
-- Unified to matcher:"*" → posttooluse-log-toolname.sh path
+**Adding LSP to existing projects is now easy.**
 
-**Test results**:
-- All 37/37 plugin validation tests passed
-- All consistency checks passed
+#### Before
+- Unclear how to add LSP settings to existing projects
 
-### Based on
+#### After
+- **`/lsp-setup` adds LSP to existing projects in one go**
+- Added language-specific installation command list
 
-- [Claude Code Official LSP Plugins](https://github.com/anthropics/claude-plugins-official) - Verified against local repository
-- [Claude Code Hooks System](https://code.claude.com/docs/en/hooks) - PostToolUse hook lifecycle
+---
+
+## [2.5.8] - 2025-12-20
+
+### 🎯 What's Changed for You
+
+**Jump to definitions and find references instantly with LSP.**
+
+#### Before
+- Had to manually search for function definitions and references
+- Type errors only detected at build time
+
+#### After
+- **"Where is this function defined?"** → Jump instantly
+- **"Where is this variable used?"** → List all usages
+- **Detect type errors before build**
+
+---
+
+## [2.5.7] - 2025-12-20
+
+### 🎯 What's Changed for You
+
+**2-Agent mode setup gaps are now auto-detected.**
+
+#### Before
+- Sometimes Cursor commands weren't generated even after selecting 2-Agent mode
+- Unclear what was missing
+
+#### After
+- **Auto-check required files on setup completion**
+- Auto-regenerates missing files
+
+---
+
+## [2.5.6] - 2025-12-20
+
+### 🎯 What's Changed for You
+
+**Old settings are now auto-fixed during updates.**
+
+#### Before
+- Wrong settings remained after updates
+
+#### After
+- **`/harness-update` detects breaking changes and suggests auto-fixes**
+
+---
+
+## [2.5.5] - 2025-12-20
+
+### 🎯 What's Changed for You
+
+**Safely update existing projects to latest version.**
+
+#### Before
+- No way to update existing projects to latest version
+- Risk of losing settings and tasks during update
+
+#### After
+- **`/harness-update` for safe updates**
+- Auto-backup, non-destructive update
+
+---
+
+## [2.5.4] - 2025-12-20
+
+### 🎯 What's Changed for You
+
+**Fixed bug generating invalid settings.json syntax.**
+
+---
+
+## [2.5.3] - 2025-12-20
+
+### 🎯 What's Changed for You
+
+**Skill names are now simpler.**
+
+#### Before
+- Skill names were long like `ccp-work-impl-feature`
+
+#### After
+- **Intuitive names like `impl-feature`**
+
+---
+
+## [2.5.2] - 2025-12-19
+
+### 🎯 What's Changed for You
+
+**Fewer accidental skill activations.**
+
+- Each skill now has clear "when to use / when not to use"
+- Added MCP wildcard permission config examples
 
 ---
 
 ## [2.5.1] - 2025-12-19
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
-**bypassPermissions-first permissions setup: fewer repetitive edit prompts while keeping dangerous actions guarded via deny/ask.**
+**No more confirmation prompts on every edit.**
 
 #### Before
-- `disableBypassPermissionsMode: "disable"` could prevent enabling bypassPermissions
-- If `Edit` / `Write` were placed under `permissions.ask`, you could get prompted on every edit
+- Edit/Write prompts on every edit, interrupting work
 
 #### After
-- **Allow bypassPermissions**: removed `disableBypassPermissionsMode` from the security template
-- **Project-only default**: added `.claude/settings.local.json` template with `defaultMode: "bypassPermissions"`
-- **Regression prevention**: added CI check to keep this setup from regressing (8/8)
-
-### Changes
-- Removed `disableBypassPermissionsMode` from `templates/claude/settings.security.json.template`
-- Added `templates/claude/settings.local.json.template` (`defaultMode: "bypassPermissions"`)
-- Updated `commands/core/harness-init.md` and `skills/setup/ccp-generate-claude-settings/doc.md`
-- Added bypassPermissions-first regression check to `scripts/ci/check-consistency.sh` (8/8)
-
-### Based on
-- [Claude Code settings](https://code.claude.com/docs/en/settings) - `permissions.defaultMode`, `disableBypassPermissionsMode`
-- [IAM: Configuring permissions](https://code.claude.com/docs/en/iam#configuring-permissions) - allow/ask/deny precedence
+- **bypassPermissions reduces prompts while guarding dangerous operations**
 
 ---
 
 ## [2.5.0] - 2025-12-19
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
-**SDD (Simple Development Discipline) Upgrade: Plans.md-centric workflow enhanced with dependency and parallel execution support.**
+**Plans.md now supports task dependencies and parallel execution.**
 
 #### Before
-- Had two commands `/start-task` and `/work` - needed to know when to use which
-- Plans.md couldn't express task dependencies or parallel execution
-- Specification documents (proposal.md, etc.) scattered between root and `docs/`
-- Constitution (development principles) settings not defined in schema
+- Had to know when to use `/start-task` vs `/work`
+- Couldn't express task dependencies
 
 #### After
-- **`/start-task` removed**: Unified into `/work` for consistent flow from start to completion
-- **Dependency & parallel notation**: Plans.md supports `[depends:X]`, `[parallel:A,B]` syntax
-- **docs/ standardization**: `/plan-with-agent` outputs unified to `docs/proposal.md`, `docs/technical-spec.md`, `docs/priority_matrix.md`
-- **Constitution support**: Centralized quality gates, DoD, and principles in `docs/constitution.md`
-- **Regression prevention**: CI checks for `/start-task` removal and docs/ normalization
-
-### Changes
-
-#### Phase 1: Remove /start-task workflow
-- Deleted `workflows/default/start-task.yaml`
-- Removed start-task references from profiles, templates, scripts
-- Completed `/sync-status` → `/work` integration
-
-#### Phase 2: Enhance /work workflow
-- Added cc:WIP auto-transition to `workflows/default/work.yaml`
-- Added marker auto-update documentation to `commands/core/work.md`
-
-#### Phase 3: Extend Plans.md management
-- Added dependency & parallel notation to `templates/Plans.md.template`
-- Added extended syntax to `templates/rules/plans-management.md.template`
-- Added visual dependency analysis examples to `skills/plans-management/SKILL.md`
-
-#### Phase 4: Constitution file support
-- Support `docs/constitution.md` creation
-- Added `constitution` property to `claude-code-harness.config.schema.json`
-- Added i18n and constitution sections to config files
-
-#### Phase 5: Strengthen regression checks
-- Added to `scripts/ci/check-consistency.sh`:
-  - `/start-task` removal regression check (6/7)
-  - docs/ normalization check (7/7)
-  - Added `technical-spec.md` to coverage
-
-#### Other
-- Unified output list in `commands/core/plan-with-agent.md`
-- All validation tests passed (35/35 plugin validation, 7/7 consistency checks)
-
-### Based on
-- [OpenSpec/spec-kit/cc-sdd](https://github.com/OpenSpec) - Dependency & parallel notation concepts
+- **Just `/work`** (`/start-task` removed)
+- **`[depends:X]`, `[parallel:A,B]` syntax for dependencies**
 
 ---
 
 ## [2.4.1] - 2025-12-17
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
-**Plugin renamed to "Claude harness". Fresh branding with new logo and hero image.**
+**Plugin renamed to "Claude harness".**
 
-#### Before
-- Plugin was named "Claude Code Harness"
-- Old naming scattered across documentation and scripts
-
-#### After
-- **New name "Claude harness"**: Simpler and easier to remember
-- **New logo & hero image**: Added SVG logo and PNG hero image
-- Unified naming across all documentation
-
-### Changes
-- Changed plugin.json name to `claude-harness`
-- Set logo and hero image in README.md
-- Updated naming in all documentation (9 files)
-- Removed old hero image (hero.png)
+- Simpler, easier to remember name
+- New logo and hero image
 
 ---
 
 ## [2.4.0] - 2025-12-17
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
-**Reviews and CI fixes now run in parallel. Skills automatically spawn subagents.**
+**Reviews and CI fixes now run in parallel, much faster.**
 
 #### Before
-- `/harness-review` checked 4 aspects (security/performance/quality/accessibility) sequentially
-- Large reviews took a long time
-- `agents/` subagent definitions weren't being utilized
+- 4 aspects (security/performance/quality/accessibility) checked sequentially
 
 #### After
-- **Parallel reviews**: When conditions are met (aspects>=2 & files>=5), Task tool spawns 4 subagents simultaneously
-- **CI fix delegation**: Complex CI failures auto-delegate to ci-cd-fixer subagent
-- **Time savings**: Up to 75% faster with parallel execution (full 4-aspect review)
-
-### Changes
-- Added subagent orchestration to CLAUDE.md (+2 lines only)
-- Added parallel subagent launch logic to `skills/review/SKILL.md`
-- Added ci-cd-fixer integration to `skills/ci/SKILL.md`
-- Clarified Task tool patterns in `commands/core/harness-review.md`
-
-### Based on
-- [Claude Code Subagents](https://code.claude.com/docs/en/sub-agents) - Parallel subagent spawning via Task tool
+- **When conditions met, 4 subagents spawn simultaneously**
+- Up to 75% time savings
 
 ---
 
 ## [2.3.4] - 2025-12-17
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
 **Version auto-bumps on code changes. Works on Windows too.**
 
-#### Before
-- Had to manually run `./scripts/sync-version.sh bump` before commits
-- Forgetting caused CI failures and double work
-
-#### After
-- **Auto version bump**: Patch version auto-increments on commits with code changes
-- **Windows support**: Works from PowerShell/CMD with Git for Windows
-- No more CI failures from forgetting version bumps
-
-### Changes
-- Fixed pre-commit hook encoding issues (Japanese → English messages)
-- Added Windows compatibility docs to `CONTRIBUTING.md` and `install-git-hooks.sh`
-- Enable with `./scripts/install-git-hooks.sh`
+- Pre-commit hook auto-increments patch version
+- Works on Windows
 
 ---
 
 ## [2.3.3] - 2025-12-17
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
-**Skills are now organized by purpose. Easier to find what you need.**
+**Skills are now organized by purpose.**
 
-#### Before
-- Skills scattered across `core/`, `optional/`, `worker/`
-- "Want to review" → Can't find where it is
-
-#### After
-- **14 categories**: impl, review, verify, setup, 2agent, memory, principles, auth, deploy, ui, workflow, docs, ci, maintenance
-- **Find by purpose**: "Review" → `review` category, "Deploy" → `deploy` category
-
-### Changes
-- Reorganized skills into purpose-based categories (52 files changed)
-- Added skill category table to CLAUDE.md
-- Removed old categories (core, optional, worker)
-
-### Acknowledgements
-- Hierarchical skill structure: Implemented based on feedback from [AI Masao](https://note.com/masa_wunder)
+- 14 categories: impl, review, verify, setup, 2agent, memory, principles, auth, deploy, ui, workflow, docs, ci, maintenance
+- "I want to review" → find in `review` category
 
 ---
 
 ## [2.3.2] - 2025-12-16
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
 **Skills activate more reliably.**
-
-#### Before
-- Vague skill descriptions caused unintended activations
-
-#### After
-- **Clear trigger words**: Each skill has exclusive keywords
-- **Evaluation flow**: Auto-evaluates matching skills before work
-
-### Changes
-- Enhanced all skill descriptions (explicit trigger words)
-- Added skill evaluation flow to CLAUDE.md
 
 ---
 
 ## [2.3.1] - 2025-12-16
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
-**Choose Japanese or English. PR submissions to official repo now possible.**
+**Choose Japanese or English.**
 
-#### Before
-- Command descriptions in Japanese only
-- Hard to use for English users
-
-#### After
 - Language selection (JA/EN) in `/harness-init`
-- All 16 commands have English descriptions (`description-en`)
-- Set `i18n.language` in config file
-
-### Changes
-- Added language selection step to `/harness-init`
-- Added `description-en` field to all 16 commands
-- Added `i18n.language` option to config schema
-- Added translation validation script `scripts/i18n/check-translations.sh`
-- Changed license to MIT (for official repo contributions)
 
 ---
 
 ## [2.3.0] - 2025-12-16
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
-**License changed back to MIT. Contributing to official repo is now possible.**
+**License changed back to MIT.**
 
-#### Before (Proprietary License - v2.2.0)
-- Redistribution and sales prohibited
-- PR submissions to official repo not possible
-
-#### After (MIT License)
-- **Free distribution/redistribution**: Fork, PR, packaging allowed
-- **Contributing to official repo possible**: PRs to Anthropic official plugins OK
-- **Usage unchanged**: Personal use, commercial use, modifications still free
-
-### Changes
-- Changed license from proprietary to MIT
-- Updated LICENSE.md, LICENSE.ja.md to standard MIT license text
-- Simplified license section in README.md
+- Contributing to official repo now possible
 
 ---
 
 ## [2.2.1] - 2025-12-16
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
 **Agents work smarter.**
 
-#### Before
-- Unclear what tools agents could use
-- Multiple parallel agents hard to distinguish
-- Skill info crammed in one file, inefficient token usage
-
-#### After
-- Each agent's available tools are explicit, using only appropriate tools
-- Agents have colors for easy identification during parallel execution
-- Skills are hierarchical, loading only needed info for faster performance
-
-### Changes
-
-#### Agent Definitions (Official Format - 6 files)
-
-```yaml
-# Before
----
-description: ...
-capabilities: [...]
----
-
-# After
----
-name: code-reviewer
-description: ...
-tools: [Read, Grep, Glob, Bash]
-model: sonnet
-color: blue
----
-```
-
-| Agent | Role | color |
-|-------|------|-------|
-| code-reviewer | Code review | blue |
-| ci-cd-fixer | CI fixes | orange |
-| error-recovery | Error recovery | red |
-| project-analyzer | Project analysis | green |
-| project-scaffolder | Project generation | purple |
-| project-state-updater | State management | cyan |
-
-#### Progressive Disclosure Skill Structure
-
-```
-# Before
-skills/plans-management/
-└── SKILL.md   # All info in one file
-
-# After
-skills/plans-management/
-├── SKILL.md              # Core info only
-├── references/
-│   └── markers.md        # Detailed specs (load when needed)
-└── examples/
-    └── task-lifecycle.md # Examples (load when needed)
-```
-
-**Target skills**: plans-management, workflow-guide
+- Each agent's available tools are explicit
+- Color-coded for easy identification during parallel execution
 
 ---
 
 ## [2.2.0] - 2025-12-15
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
-**License changed (usage unchanged).**
-
-#### Before (MIT License)
-- Anyone could freely redistribute/sell
-- Could create and sell similar services
-
-#### After (Proprietary License)
-- **Your usage unchanged**: Personal use, commercial use, modifications, AI use still free
-- **Prohibited**: Redistribution, sales, similar service provision
-
-### Changes
-- Changed license from MIT to proprietary
-- Added LICENSE.md (English), LICENSE.ja.md (Japanese)
-- Added license explanation section to README.md (bilingual)
+**License changed to proprietary (later reverted to MIT).**
 
 ---
 
 ## [2.1.2] - 2025-12-15
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
 **Parallel execution with just `/work`.**
 
-#### Before
-- Normal task execution: `/work`
-- For parallel execution: `/parallel-tasks` (separate command)
-
-#### After
-- **Just `/work`**: Auto parallel execution when multiple independent tasks
-- Fewer commands to remember (17 → 16)
-
-### Changes
 - Merged `/parallel-tasks` into `/work`
-- `/work` auto-analyzes dependencies, decides parallel/serial
 
 ---
 
 ## [2.1.1] - 2025-12-15
 
-### What's Changed for You
+### 🎯 What's Changed for You
 
 **Far fewer commands to remember.**
 
-#### Before
-- Had to remember 27 commands
-- Run individual commands like `/analytics`, `/auth`, `/deploy-setup`
-
-#### After
-- **Just 16 commands** needed
-- Rest auto-activate by **just saying** "add auth", "setup deploy" (converted to skills)
-
-### Changes
-- Commands: 27 → 17
-- `/plan` → `/plan-with-agent` renamed
-- `/skill-list` shows available skills
-- These became skills (auto-activate in conversation):
-  - `/analytics`, `/auth`, `/auto-fix`, `/deploy-setup`, etc.
-
----
-
-## [2.0.9] - 2025-12-14
-
-### Added
-- Added `/sync-project-specs` to sync specs/operation docs (Plans/AGENTS/Rules) to latest operation (PM↔Impl, pm:*)
-
----
-
-## [2.0.8] - 2025-12-14
-
-### Changed
-- Added checklists to handoff commands to prevent forgetting Plans.md marker updates in PM/Impl handoff
-- Stop hook detects Plans.md update omissions and shows Japanese reminder (only when changes detected)
-
----
-
-## [2.0.7] - 2025-12-14
-
-### Added
-- Added `/handoff-to-pm-claude` and `/handoff-to-impl-claude` to enable "PM ↔ Impl" 2-role operation solo
-
-### Changed
-- Added `pm:依頼中` / `pm:確認済` to Plans markers (`cursor:*` treated as compatible synonyms)
-- Added Plans update notification output to `.claude/state/pm-notification.md` (compatible: `cursor-notification.md`)
-
----
-
-## [2.0.6] - 2025-12-14
-
-### Changed
-- Localized PreToolUse guard confirm/reject messages to Japanese (`CLAUDE_CODE_HARNESS_LANG=en` switches to English)
-
----
-
-## [2.0.5] - 2025-12-14
-
-### Changed
-- Improved description wording for `/work` and `/start-task` to clarify usage in command list
-
----
-
-## [2.0.4] - 2025-12-14
-
-### Changed
-- CI: Replaced **auto-push on version not updated (causing double CI runs)** with warning + failure (recommending pre-commit auto-update)
-- Completely removed `cursor-cc.config.*` compatibility notation/remnants, unified to `claude-code-harness.config.*`
-- Unified command descriptions for VibeCoder (added "say this / output" to each `commands/*.md`)
-
----
-
-## [2.0.3] - 2025-12-14
-
-### Changed
-- Unified `cursor-cc` notation to `claude-code-harness`
-- Removed compatibility commands (`/init`, `/review`) (migration period ended)
-- Cursor integration: Organized to `.claude-code-harness-version` / `.claude-code-harness.config.yaml`
-
----
-
-## [2.0.2] - 2025-12-14
-
-### Added
-- CI/pre-commit check: **Auto patch bump** on version not updated (CI + pre-commit)
-
----
-
-## [2.0.1] - 2025-12-14
-
-### Added
-- README: Added TOC for easier navigation in long documents
-- GitHub Actions: Auto-run `validate-plugin` / `check-consistency` (`.github/workflows/validate-plugin.yml`)
-- Config files: Added `claude-code-harness.config.schema.json` / `claude-code-harness.config.example.json`
-
-### Changed
-- Synced `CONTRIBUTING.md` product name/flow/installation to current
-- Synced Marketplace metadata to `claude-code-harness`
+- 27 → 16 commands
+- Rest auto-activate via conversation (converted to skills)
 
 ---
 
 ## [2.0.0] - 2025-12-13
 
-### Added
-- PreToolUse/PermissionRequest hooks (guardrails + safe command auto-allow)
-- Cursor integration templates (`templates/cursor/commands/*`) and `/setup-cursor`
-- `/handoff-to-cursor` (completion report for Cursor PM)
+### 🎯 What's Changed for You
 
-### Changed
-- Updated `.claude-plugin/plugin.json` to latest Plugins reference (author as object, removed manual command listing)
-- Command collision avoidance: Unified to `/harness-init` `/harness-review` (old name commands deprecated)
-- Updated README/Docs to `/harness-init` `/harness-review` basis
+**Added Hooks guardrails. Added Cursor integration templates.**
 
-### Fixed
-- Unified stdin JSON input handling for hooks (fixed PostToolUse script misfires)
-- Resolved missing template issue in CI consistency check
+- PreToolUse/PermissionRequest hooks
+- `/handoff-to-cursor` command
 
 ---
 
-## (Imported) cursor-cc-plugins history
+## Past History (v0.x - v1.x)
 
-The following `0.5.x` series is kept as reference from the base `cursor-cc-plugins` history.
+See [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases) for details.
 
----
-
-## [0.5.4] - 2025-12-12
-
-### Fixed
-- CI checklist sync fix
-  - Synced `setup-2agent.md` checklist with script
-  - Removed trailing slashes, listed individual files
-  - Fixed CI `check-checklist-sync.sh` to pass correctly
-
----
-
-## [0.5.3] - 2025-12-12
-
-### Added
-- **Phase 2: Parallel Task Execution**
-  - `/parallel-tasks` command - Execute multiple tasks simultaneously
-  - Integrated report generation - Batch report parallel execution results
-  - Auto dependency detection - Auto-select parallel/serial execution
-  - `parallel-workflows` skill update
-
-- **Phase 3: Resident Monitoring Agent**
-  - `auto-test-runner.sh` - Recommend tests on source code changes
-  - `plans-watcher.sh` - Monitor Plans.md changes and notify Cursor
-  - `.claude/state/pm-notification.md` - PM notification generation (compatible: `.claude/state/cursor-notification.md`)
-  - Auto-detect related test files
-
-### Changed
-- Added new hooks to `hooks/hooks.json`
-  - PostToolUse: auto-test-runner.sh
-  - PostToolUse: plans-watcher.sh
-
----
-
-## [0.5.2] - 2025-12-12
-
-### Added
-- **Session Monitoring Hooks**
-  - `session-monitor.sh` - Show project state on session start
-  - `track-changes.sh` - Track file changes and detect important changes
-  - `session-summary.sh` - Generate summary on session end
-  - Persist state to `.claude/state/session.json`
-  - Auto-detect changes to Plans.md / CLAUDE.md / AGENTS.md
-
-### Changed
-- Added new hooks to `hooks/hooks.json`
-  - SessionStart: session-monitor.sh
-  - PostToolUse: track-changes.sh
-  - Stop: session-summary.sh
-
----
-
-## [0.5.1] - 2025-12-12
-
-### Added
-- `/remember` command - Auto-rule learning items
-  - Just say "remember this" during work to record in optimal format
-  - Auto-determine best destination from Rules/Commands/Skills/Memory
-  - Constraints/prohibitions → Rules
-  - Operation procedures → Commands
-  - Implementation patterns → Skills
-  - Decisions → Memory
-
-### Fixed
-- Added Japanese keyword support for important pattern detection
-  - Security, test required, accessibility, performance, etc.
-  - Added AGENTS.md, CLAUDE.md to search targets
-
----
-
-## [0.5.0] - 2025-12-12
-
-### Added
-- **Adaptive Setup**
-  - Auto-analyze project tech stack and existing config
-  - `scripts/analyze-project.sh` - Output analysis results in JSON
-  - Detect Node.js, Python, Rust, Go, Ruby, Java
-  - Detect React, Next.js, Vue, Django, FastAPI, etc.
-  - Detect ESLint, Prettier, Biome, Ruff, etc.
-  - Respect existing Claude/Cursor settings (no overwrite)
-  - Detect Conventional Commits patterns
-  - Detect security, testing, accessibility important items
-
-- **3-Phase Setup Flow**
-  - Phase 1: Project analysis and results display
-  - Phase 2: Rule customization (LLM optimization)
-  - Phase 3: Interactive confirmation and placement
-
-- **New Skills/Docs**
-  - `skills/core/ccp-adaptive-setup/SKILL.md` - Adaptive setup skill
-  - `docs/design/adaptive-setup.md` - Design document
-
-### Changed
-- Updated `/setup-2agent` command to adaptive
-- Added `--analyze-only` option to `scripts/setup-2agent.sh`
-- Guide to `/update-2agent` when existing config found
-
-### Philosophy
-- **Non-destructive updates**: Don't overwrite existing customizations
-- **Project understanding**: Understand tech stack and conventions before placing
-- **Staged confirmation**: Show analysis results to user before execution
-
----
-
-## [0.4.7] - 2025-12-12
-
-### Added
-- **Claude Rules Best Practices Support**
-  - `paths:` YAML frontmatter for conditional rule application
-  - `plans-management.md.template` - Apply only when editing Plans.md
-  - `testing.md.template` - Apply only when editing test files
-
-### Changed
-- `workflow.md.template` - Explicit global application with `alwaysApply: true`
-- `coding-standards.md.template` - `paths:` specified for code files only
-- Setup script and CI consistency check support 4 rules
-
-### Documentation
-- Improved rule structure referencing Anthropic official best practices
-- Implemented progressive disclosure (apply rules only when needed) principle
-
----
-
-## [0.4.0] - 2025-12-11
-
-### Added
-- **`.claude/rules/` Directory Support**
-  - `workflow.md` - 2-Agent workflow rules
-  - `coding-standards.md` - Coding standards (`paths:` YAML frontmatter for conditional application)
-  - Auto-generated by `/setup-2agent`, updated by `/update-2agent`
-- **Plugin Hooks (`hooks/hooks.json`)**
-  - `${CLAUDE_PLUGIN_ROOT}` variable references plugin root
-  - `SessionStart` hook - Show Plans.md status on session start
-  - `PostToolUse` hook - Auto file size check
-- **Named Sessions**
-  - `/start-session` generates session name in `{project}-{feature}-{YYYYMMDD}` format
-  - `/rename` to change name, `/resume <name>` to resume
-- **CI Consistency Check**
-  - `.github/workflows/consistency-check.yml`
-  - Auto-run template existence, version sync, Hooks validation
-  - Local validation with `scripts/ci/check-consistency.sh`
-
-### Changed
-- Added Phase 5.5 (Claude Rules update) to `/update-2agent`
-- Updated skill definitions for v0.4.0
-  - `ccp-setup-2agent-files` - Added rules placement to Step 4
-  - `ccp-update-2agent-files` - Added rules update to Step 8
-
----
-
-## [0.3.0] - 2025-12-08
-
-### Added
-- Initial release
-- Plan → Work → Review cycle
-- VibeCoder guide
-- Error recovery feature
+Key milestones:
+- **v0.5.0**: Adaptive setup (auto tech stack detection)
+- **v0.4.0**: Claude Rules, Plugin Hooks, Named Sessions support
+- **v0.3.0**: Initial release (Plan → Work → Review cycle)
