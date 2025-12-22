@@ -174,6 +174,48 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
   SESSION_FILE="$STATE_DIR/session.json"
   TOOLING_POLICY_FILE="$STATE_DIR/tooling-policy.json"
   SKILLS_DECISION_FILE="$STATE_DIR/skills-decision.json"
+  SKILLS_POLICY_FILE="$STATE_DIR/skills-policy.json"
+
+  # 除外パスチェック関数
+  is_excluded_path() {
+    local path="$1"
+    local policy_file="$2"
+
+    [ ! -f "$policy_file" ] && return 1
+
+    if command -v jq >/dev/null 2>&1; then
+      # skills_gate.exclude_paths をチェック
+      local exclude_paths
+      exclude_paths=$(jq -r '.skills_gate.exclude_paths[]? // empty' "$policy_file" 2>/dev/null)
+
+      while IFS= read -r pattern; do
+        [ -z "$pattern" ] && continue
+        # パターンマッチ（前方一致 or ワイルドカード）
+        case "$path" in
+          $pattern*) return 0 ;;
+        esac
+        # *.md のようなパターン
+        case "$pattern" in
+          \*.*)
+            local ext="${pattern#\*}"
+            [[ "$path" == *"$ext" ]] && return 0
+            ;;
+        esac
+      done <<< "$exclude_paths"
+
+      # exclude_extensions をチェック
+      local exclude_exts
+      exclude_exts=$(jq -r '.skills_gate.exclude_extensions[]? // empty' "$policy_file" 2>/dev/null)
+      local file_ext=".${path##*.}"
+
+      while IFS= read -r ext; do
+        [ -z "$ext" ] && continue
+        [ "$file_ext" = "$ext" ] && return 0
+      done <<< "$exclude_exts"
+    fi
+
+    return 1
+  }
 
   # stateファイルが存在する場合のみゲートを適用
   if [ -f "$SESSION_FILE" ] && [ -f "$TOOLING_POLICY_FILE" ]; then
@@ -220,9 +262,14 @@ LSPツールを使って変更の影響範囲を把握してから、再度 Writ
       fi
 
       # Skillsゲート: skills-decision.json が必要なのに更新されていない
-      # ただし、skills-decision.json 自体への Write/Edit は常に許可（詰ませない）
+      # ただし以下は常に許可（詰ませない）:
+      # - skills-decision.json 自体
+      # - skills-policy.json で除外されたパス
       if [ "$SKILLS_DECISION_REQUIRED" = "true" ] && [[ "$REL_PATH" != *"skills-decision.json"* ]]; then
-        if [ "$SKILLS_DECISION_SEQ" != "$CURRENT_PROMPT_SEQ" ]; then
+        # 除外パスチェック
+        if is_excluded_path "$REL_PATH" "$SKILLS_POLICY_FILE"; then
+          : # 除外パス → スキップ
+        elif [ "$SKILLS_DECISION_SEQ" != "$CURRENT_PROMPT_SEQ" ]; then
           DENY_MSG="[Skills Policy] Skillsの宣言が必要です。
 
 先に \`.claude/state/skills-decision.json\` を更新してから、再度 Write/Edit を実行してください。

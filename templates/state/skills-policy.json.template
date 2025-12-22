@@ -1,0 +1,27 @@
+{
+  "version": "1.0",
+  "description": "Skills/LSP gate policy - controls which paths require skill evaluation before editing",
+  "skills_gate": {
+    "enabled": true,
+    "exclude_paths": [
+      ".claude/memory/",
+      ".claude/state/",
+      "docs/",
+      "templates/",
+      "*.md"
+    ],
+    "exclude_extensions": [
+      ".md",
+      ".txt",
+      ".json"
+    ]
+  },
+  "lsp_gate": {
+    "enabled": true,
+    "exclude_paths": [
+      ".claude/",
+      "docs/",
+      "templates/"
+    ]
+  }
+}

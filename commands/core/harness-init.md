@@ -448,6 +448,78 @@ done
 
 **実行**: `scripts/localize-rules.sh` を実行してルールを最適化。
 
+### Step 4.5: Skills Policy の設定
+
+プロジェクト構造を分析し、Skills/LSP ゲートの除外パスを設定。
+
+#### デフォルト除外パス
+
+以下のパスはデフォルトで除外（スキル宣言なしで編集可能）：
+
+```json
+{
+  "skills_gate": {
+    "exclude_paths": [
+      ".claude/memory/",
+      ".claude/state/",
+      "docs/",
+      "templates/",
+      "*.md"
+    ],
+    "exclude_extensions": [".md", ".txt", ".json"]
+  }
+}
+```
+
+#### プロジェクト固有の除外パス検出
+
+プロジェクト構造を分析し、追加の除外候補を検出：
+
+```bash
+# ドキュメント系ディレクトリの検出
+EXTRA_EXCLUDE=()
+[ -d "documentation" ] && EXTRA_EXCLUDE+=("documentation/")
+[ -d "notes" ] && EXTRA_EXCLUDE+=("notes/")
+[ -d "wiki" ] && EXTRA_EXCLUDE+=("wiki/")
+[ -d ".github" ] && EXTRA_EXCLUDE+=(".github/")
+[ -d "examples" ] && EXTRA_EXCLUDE+=("examples/")
+
+# 検出結果を表示
+if [ ${#EXTRA_EXCLUDE[@]} -gt 0 ]; then
+  echo "追加の除外候補を検出しました："
+  for path in "${EXTRA_EXCLUDE[@]}"; do
+    echo "  - $path"
+  done
+  echo ""
+  echo "これらを Skills ゲートの除外パスに追加しますか？ (yes/no)"
+fi
+```
+
+#### 設定ファイルの生成
+
+`templates/state/skills-policy.json.template` をベースに、プロジェクト固有の設定を生成：
+
+```bash
+mkdir -p .claude/state
+cp "$PLUGIN_PATH/templates/state/skills-policy.json.template" .claude/state/skills-policy.json
+
+# 追加の除外パスがあれば追加
+if [ ${#EXTRA_EXCLUDE[@]} -gt 0 ]; then
+  # jq で exclude_paths に追加
+  for path in "${EXTRA_EXCLUDE[@]}"; do
+    jq ".skills_gate.exclude_paths += [\"$path\"]" .claude/state/skills-policy.json > tmp.json
+    mv tmp.json .claude/state/skills-policy.json
+  done
+fi
+```
+
+> 💡 **Skills Policy とは？**
+>
+> コード変更前に適切なスキルを評価・使用することを促すポリシーです。
+> ただし、ドキュメントや設定ファイルなど、スキルが不要な編集は除外されます。
+>
+> 設定は `.claude/state/skills-policy.json` で管理され、後から変更可能です。
+
 ### Step 5: 最終検証
 
 プラグイン/プロジェクト構造の検証：
