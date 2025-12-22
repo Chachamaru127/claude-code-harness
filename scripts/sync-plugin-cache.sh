@@ -170,9 +170,9 @@ main() {
       echo -e "${BLUE}[Debug] Checking cache: $cache_version${NC}" >&2
     fi
 
-    # ファイル差分をチェック
+    # ファイル差分をチェック（VERSION も含める）
     local needs_sync=false
-    for rel_path in "scripts/pretooluse-guard.sh" "scripts/posttooluse-log-toolname.sh" "scripts/session-init.sh"; do
+    for rel_path in "VERSION" "scripts/pretooluse-guard.sh" "scripts/posttooluse-log-toolname.sh" "scripts/session-init.sh"; do
       if files_differ "$PLUGIN_SOURCE/$rel_path" "$CACHE_DIR/$rel_path"; then
         needs_sync=true
         break

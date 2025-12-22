@@ -14,6 +14,51 @@ claude-code-harness の変更履歴です。
 
 ---
 
+## [2.5.22] - 2025-12-23
+
+### 🎯 あなたにとって何が変わるか
+
+**プラグインキャッシュの自動同期を修正。VERSION のみ変更時も正しく同期されるように。**
+
+#### Before
+- プラグインを更新しても、キャッシュが古いままで新機能が反映されないことがあった
+- 特に VERSION ファイルのみ変更された場合、同期がスキップされていた
+- 手動でキャッシュを削除して再インストールする必要があった
+
+#### After
+- **セッション開始時に自動でキャッシュ同期が実行される**
+- **VERSION ファイルの変更も検出対象に追加** → バージョンアップが確実に反映
+- claude-mem 非ユーザーにはセッション開始時にバナーが表示される
+
+### 主な変更内容
+
+#### sync-plugin-cache.sh のバグ修正
+
+```bash
+# Before: VERSION が含まれていなかった
+for rel_path in "scripts/pretooluse-guard.sh" ...
+
+# After: VERSION を追加
+for rel_path in "VERSION" "scripts/pretooluse-guard.sh" ...
+```
+
+- VERSION ファイルの差分を検出して同期するように修正
+- これにより「アップデートしたのにキャッシュが古い」問題を解消
+
+#### session-init.sh のバナー表示追加
+
+- セッション開始時に `[claude-code-harness vX.X.X] Session initialized` を stderr に出力
+- claude-mem ユーザーの場合は claude-mem の出力が優先されるため表示されない
+
+### VibeCoder 向けの使い方
+
+| やりたいこと | 言い方 |
+|-------------|--------|
+| 最新版が反映されているか確認 | 新しいセッションを開始するだけで自動同期 |
+| 手動で同期したい | `bash scripts/sync-plugin-cache.sh` |
+
+---
+
 ## [2.5.14] - 2025-12-22
 
 ### 🎯 あなたにとって何が変わるか

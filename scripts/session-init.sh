@@ -15,6 +15,10 @@ set -e
 # スクリプトディレクトリを取得
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# ===== バナー表示（stderr でターミナルに表示） =====
+VERSION=$(cat "$SCRIPT_DIR/../VERSION" 2>/dev/null || echo "unknown")
+echo -e "\033[0;36m[claude-code-harness v${VERSION}]\033[0m Session initialized" >&2
+
 # 出力メッセージを蓄積する変数
 OUTPUT=""
 
