@@ -18,12 +18,13 @@ NC='\033[0m'
 # スクリプトディレクトリを取得
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo -e "${GREEN}📋 claude-code-harness: セッション初期化${NC}"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+# 注意: Claude Code はフックの stderr のみを表示するため、出力は stderr に
+echo -e "${GREEN}📋 claude-code-harness: セッション初期化${NC}" >&2
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
 
 # ===== Step 1: プラグインキャッシュ同期 =====
 if [ -f "$SCRIPT_DIR/sync-plugin-cache.sh" ]; then
-  bash "$SCRIPT_DIR/sync-plugin-cache.sh"
+  bash "$SCRIPT_DIR/sync-plugin-cache.sh" >&2
 fi
 
 # ===== Step 2: Skills Gate 初期化 =====
@@ -43,34 +44,34 @@ if [ -f "$SKILLS_CONFIG_FILE" ]; then
     SKILLS_LIST=$(jq -r '.skills // [] | join(", ")' "$SKILLS_CONFIG_FILE" 2>/dev/null)
 
     if [ "$SKILLS_ENABLED" = "true" ] && [ -n "$SKILLS_LIST" ]; then
-      echo -e "🎯 Skills Gate: ${GREEN}有効${NC}"
-      echo "   利用可能: ${SKILLS_LIST}"
-      echo -e "   ${BLUE}💡 コード編集前にスキルを使用してください${NC}"
+      echo -e "🎯 Skills Gate: ${GREEN}有効${NC}" >&2
+      echo "   利用可能: ${SKILLS_LIST}" >&2
+      echo -e "   ${BLUE}💡 コード編集前にスキルを使用してください${NC}" >&2
     fi
   fi
 fi
 
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
 
 # ===== Step 3: Plans.md チェック =====
 if [ -f "Plans.md" ]; then
   wip_count=$(grep -c "cc:WIP\|pm:依頼中\|cursor:依頼中" Plans.md 2>/dev/null || echo "0")
   todo_count=$(grep -c "cc:TODO" Plans.md 2>/dev/null || echo "0")
 
-  echo -e "📄 Plans.md: ${GREEN}検出${NC}"
-  echo "   - 進行中タスク: ${wip_count}"
-  echo "   - 未着手タスク: ${todo_count}"
+  echo -e "📄 Plans.md: ${GREEN}検出${NC}" >&2
+  echo "   - 進行中タスク: ${wip_count}" >&2
+  echo "   - 未着手タスク: ${todo_count}" >&2
 
   if [ "$wip_count" -gt 0 ]; then
-    echo ""
-    echo -e "${YELLOW}⚡ 進行中のタスク:${NC}"
-    grep -B1 "cc:WIP\|pm:依頼中\|cursor:依頼中" Plans.md 2>/dev/null | grep -v "^--$" | head -10 || true
+    echo "" >&2
+    echo -e "${YELLOW}⚡ 進行中のタスク:${NC}" >&2
+    grep -B1 "cc:WIP\|pm:依頼中\|cursor:依頼中" Plans.md 2>/dev/null | grep -v "^--$" | head -10 >&2 || true
   fi
 else
-  echo -e "📄 Plans.md: ${YELLOW}未検出${NC}"
-  echo "   /harness-init でセットアップしてください"
+  echo -e "📄 Plans.md: ${YELLOW}未検出${NC}" >&2
+  echo "   /harness-init でセットアップしてください" >&2
 fi
 
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
 
 exit 0

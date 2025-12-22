@@ -19,9 +19,27 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 # ===== パス設定 =====
-# プラグインソース（このスクリプトの親ディレクトリ）
+# プラグインソースを検出
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PLUGIN_SOURCE="$(dirname "$SCRIPT_DIR")"
+
+# CLAUDE_PLUGIN_ROOT があればそれを使用、なければ検出を試みる
+if [ -n "$CLAUDE_PLUGIN_ROOT" ]; then
+  PLUGIN_SOURCE="$CLAUDE_PLUGIN_ROOT/claude-code-harness"
+elif [ -d "$HOME/Desktop/Code/CC-harness/claude-code-harness" ]; then
+  # 開発環境のパス
+  PLUGIN_SOURCE="$HOME/Desktop/Code/CC-harness/claude-code-harness"
+else
+  # フォールバック：スクリプトの親ディレクトリ
+  PLUGIN_SOURCE="$(dirname "$SCRIPT_DIR")"
+fi
+
+# キャッシュから実行されている場合はソースを検出
+if [[ "$SCRIPT_DIR" == *"/.claude/plugins/cache/"* ]]; then
+  # キャッシュからの実行 - 開発ソースを探す
+  if [ -d "$HOME/Desktop/Code/CC-harness/claude-code-harness" ]; then
+    PLUGIN_SOURCE="$HOME/Desktop/Code/CC-harness/claude-code-harness"
+  fi
+fi
 
 # プラグイン情報
 PLUGIN_NAME="claude-code-harness"
@@ -123,34 +141,35 @@ sync_critical_files() {
 }
 
 # ===== メイン処理 =====
+# 注意: Claude Code はフックの stderr のみを表示するため、出力は stderr に
 main() {
   local SOURCE_VERSION=$(get_source_version)
-  
+
   # デバッグ情報（環境変数で有効化）
   if [ "${CC_HARNESS_DEBUG:-0}" = "1" ]; then
-    echo -e "${BLUE}[Debug] Plugin source: $PLUGIN_SOURCE${NC}"
-    echo -e "${BLUE}[Debug] Source version: $SOURCE_VERSION${NC}"
-    echo -e "${BLUE}[Debug] Cache base: $CACHE_BASE${NC}"
+    echo -e "${BLUE}[Debug] Plugin source: $PLUGIN_SOURCE${NC}" >&2
+    echo -e "${BLUE}[Debug] Source version: $SOURCE_VERSION${NC}" >&2
+    echo -e "${BLUE}[Debug] Cache base: $CACHE_BASE${NC}" >&2
   fi
-  
+
   # キャッシュディレクトリが存在しない場合
   if [ ! -d "$CACHE_BASE" ]; then
-    echo -e "${YELLOW}⚠️ キャッシュが見つかりません${NC}"
+    echo -e "${YELLOW}⚠️ キャッシュが見つかりません${NC}" >&2
     return 0
   fi
-  
+
   # すべてのキャッシュバージョンに対して同期
   local total_synced=0
   for cache_version_dir in "$CACHE_BASE"/*/; do
     [ ! -d "$cache_version_dir" ] && continue
-    
+
     local cache_version=$(basename "$cache_version_dir")
     local CACHE_DIR="$cache_version_dir"
-    
+
     if [ "${CC_HARNESS_DEBUG:-0}" = "1" ]; then
-      echo -e "${BLUE}[Debug] Checking cache: $cache_version${NC}"
+      echo -e "${BLUE}[Debug] Checking cache: $cache_version${NC}" >&2
     fi
-    
+
     # ファイル差分をチェック
     local needs_sync=false
     for rel_path in "scripts/pretooluse-guard.sh" "scripts/posttooluse-log-toolname.sh" "scripts/session-init.sh"; do
@@ -159,16 +178,16 @@ main() {
         break
       fi
     done
-    
+
     if [ "$needs_sync" = true ]; then
-      echo -e "${YELLOW}🔄 キャッシュ v$cache_version を同期中...${NC}"
+      echo -e "${YELLOW}🔄 キャッシュ v$cache_version を同期中...${NC}" >&2
       SYNCED=$(sync_critical_files "$CACHE_DIR")
       total_synced=$((total_synced + SYNCED))
     fi
   done
-  
+
   if [ "$total_synced" -gt 0 ]; then
-    echo -e "${GREEN}✅ 合計 $total_synced ファイルを同期しました${NC}"
+    echo -e "${GREEN}✅ 合計 $total_synced ファイルを同期しました${NC}" >&2
   fi
 }
 
