@@ -176,11 +176,33 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
   SKILLS_DECISION_FILE="$STATE_DIR/skills-decision.json"
   SKILLS_POLICY_FILE="$STATE_DIR/skills-policy.json"
 
+  # デフォルト除外パターン（policy file がなくても適用）
+  is_default_excluded() {
+    local path="$1"
+    # .md, .txt, .json ファイルは常に除外（ドキュメント・設定ファイル）
+    case "$path" in
+      *.md|*.txt|*.json) return 0 ;;
+    esac
+    # .claude/ 配下は常に除外
+    case "$path" in
+      .claude/*) return 0 ;;
+    esac
+    # docs/, templates/ は常に除外
+    case "$path" in
+      docs/*|templates/*) return 0 ;;
+    esac
+    return 1
+  }
+
   # 除外パスチェック関数
   is_excluded_path() {
     local path="$1"
     local policy_file="$2"
 
+    # まずデフォルト除外をチェック
+    is_default_excluded "$path" && return 0
+
+    # policy file がなければデフォルトのみで判定終了
     [ ! -f "$policy_file" ] && return 1
 
     if command -v jq >/dev/null 2>&1; then
