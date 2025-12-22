@@ -4,15 +4,15 @@
     "description": "claude-code-harness の配布/導入を支援する（単一プラグイン）マーケットプレース"
   },
   "owner": {
-    "name": "Manus AI & Chachamaru"
+    "name": "Chachamaru"
   },
   "plugins": [
     {
-      "name": "claude-code-harness",
+      "name": "claude-harness",
       "source": "./",
       "description": "A harness for solo developers (Vibecoders) to handle full-cycle contract development.",
       "author": {
-        "name": "Manus AI & Chachamaru",
+        "name": "Chachamaru",
         "url": "https://github.com/Chachamaru127"
       },
       "homepage": "https://github.com/Chachamaru127/claude-code-harness",
