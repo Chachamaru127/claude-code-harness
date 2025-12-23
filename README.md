@@ -91,6 +91,25 @@ Claude Code の強み（実装スピード）を活かしつつ、個人開発�
 - **使い方（プロジェクト限定・未コミット推奨）**: `.claude/settings.local.json` で `permissions.defaultMode: "bypassPermissions"` を設定
   - テンプレ: `templates/claude/settings.local.json.template`
 
+### テスト改ざん防止（品質保証）
+
+Coding Agent がテスト失敗時に「楽をする」傾向（テスト改ざん、形骸化実装）を防ぐ **3層防御戦略** を実装しています。
+
+![テスト改ざん防止の3層防御](docs/images/quality-guard.png)
+
+| 層 | 仕組み | 強制力 |
+|----|--------|--------|
+| 第1層: Rules | `.claude/rules/test-quality.md`、`implementation-quality.md` | 良心ベース（常時適用） |
+| 第2層: Skills | `impl`、`verify` スキルに品質ガードレール内蔵 | 文脈的強制（スキル使用時） |
+| 第3層: Hooks | PreToolUse で改ざんパターンを検出（オプション） | 技術的強制 |
+
+**禁止パターン（自動で警告/ブロック）**:
+
+- **テスト改ざん**: `it.skip()` への変更、アサーション削除、lint ルール緩和
+- **形骸化実装**: テスト期待値のハードコード、スタブ、空実装
+
+**出典**: びーぐる氏「Claude Codeにテストで楽をさせない技術」（Claude Code Meetup Tokyo 2025.12.22）
+
 ### "続きから自然に"再開できる（継続性）
 
 ![続きから自然に再開できるSSOTメモリ](docs/images/ssot-memory.png)
