@@ -14,13 +14,16 @@ description-en: Safely update harness-enabled projects to latest version (versio
 - 「新機能を既存プロジェクトに追加したい」
 - 「設定ファイルのフォーマットを最新版に合わせたい」
 - 「間違ったパーミッション構文を修正したい」
+- 「テンプレート更新があると通知された」
 
 ## できること
 
 - `.claude-code-harness-version` でバージョン検出
+- **テンプレート更新の検出とローカライズ判定**
 - 更新が必要なファイルの特定
 - 自動バックアップ作成
 - 非破壊で設定・ワークフローファイルを更新
+- **ローカライズなし → 上書き / ローカライズあり → マージ支援**
 - アップデート後の検証
 
 ---
@@ -76,7 +79,38 @@ fi
 
 **アップデート可能な場合:** → Step 3 へ
 
-#### Step 3: 更新範囲の確認
+#### Step 3: テンプレート更新チェック
+
+`template-tracker.sh status` を実行して、テンプレート更新状況を表示：
+
+```bash
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
+bash "$PLUGIN_ROOT/scripts/template-tracker.sh" status
+```
+
+**出力例:**
+
+```
+=== テンプレート追跡状況 ===
+
+プラグインバージョン: 2.5.25
+最終チェック時: 2.5.20
+
+ファイル                                  記録版       最新版       状態
+--------                                  ------       ------       ----
+CLAUDE.md                                 2.5.20       2.5.25       🔄 上書き可
+AGENTS.md                                 unknown      2.5.25       ⚠️ 要確認
+Plans.md                                  2.5.20       2.5.25       🔧 マージ要
+.claude/rules/workflow.md                 2.5.20       2.5.25       ✅ 最新
+
+凡例:
+  ✅ 最新     : 更新不要
+  🔄 上書き可 : ローカライズなし、上書きで更新可能
+  🔧 マージ要 : ローカライズあり、マージが必要
+  ⚠️ 要確認   : バージョン不明、確認推奨
+```
+
+#### Step 4: 更新範囲の確認
 
 更新対象ファイルを特定してユーザーに確認：
 
@@ -333,12 +367,67 @@ fi
 - Phase 1.5 で修正済みの正しい構文を保持
 - 新しい推奨設定を追加
 
-### Step 3: ワークフローファイルの更新
+### Step 3: ワークフローファイルの更新（テンプレート追跡対応）
 
-**`AGENTS.md` / `CLAUDE.md` / `Plans.md` の更新** - `migrate-workflow-files` スキルを実行:
+**テンプレート追跡状況に応じた更新処理**:
 
-- `Plans.md`: 未完了タスクを保持しつつ、最新フォーマットにマージ
-- `AGENTS.md` / `CLAUDE.md`: 最新テンプレート骨格 + プロジェクト固有ルールを適切な場所に再配置
+各ファイルの状態に応じて処理を分岐：
+
+```bash
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
+
+# テンプレート追跡のチェック結果を取得
+CHECK_RESULT=$(bash "$PLUGIN_ROOT/scripts/template-tracker.sh" check 2>/dev/null)
+
+# jq で更新が必要なファイルを処理
+if command -v jq >/dev/null 2>&1; then
+  echo "$CHECK_RESULT" | jq -r '.updates[]? | "\(.path)|\(.localized)"' | while IFS='|' read -r path localized; do
+    if [ "$localized" = "false" ]; then
+      # ローカライズなし → 上書き
+      echo "🔄 上書き: $path"
+      # テンプレートから生成して上書き
+      # → generate-* スキルを実行
+    else
+      # ローカライズあり → マージ支援
+      echo "🔧 マージ支援: $path"
+      # 差分を表示してユーザーに確認
+    fi
+  done
+fi
+```
+
+**ローカライズなし（🔄 上書き可）の場合:**
+
+自動で最新テンプレートに置き換え：
+- `AGENTS.md` / `CLAUDE.md`: 最新テンプレートで上書き
+- `.claude/rules/*.md`: 最新ルールテンプレートで上書き
+
+**ローカライズあり（🔧 マージ要）の場合:**
+
+> 🔧 **`Plans.md` はローカライズされています**
+>
+> このファイルにはプロジェクト固有の変更が含まれています。
+>
+> **オプション:**
+> 1. **差分を表示** - テンプレートとの差分を確認
+> 2. **マージ支援** - Claude がマージを提案
+> 3. **スキップ** - このファイルはスキップ
+>
+> 選択してください:
+
+**回答を待つ**
+
+マージ支援を選択した場合:
+- 最新テンプレートの構造を維持
+- ユーザーのカスタム部分（タスク、設定）を適切な位置に再配置
+- 差分を表示して最終確認
+
+**更新後の記録:**
+
+```bash
+# 更新したファイルを generated-files.json に記録
+bash "$PLUGIN_ROOT/scripts/template-tracker.sh" record "$path"
+```
 
 ### Step 4: ルールファイルの更新
 

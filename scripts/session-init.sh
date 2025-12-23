@@ -66,6 +66,41 @@ else
   PLANS_INFO="📄 Plans.md: 未検出"
 fi
 
+# ===== Step 4: テンプレート更新チェック =====
+TEMPLATE_INFO=""
+TEMPLATE_TRACKER="$SCRIPT_DIR/template-tracker.sh"
+
+if [ -f "$TEMPLATE_TRACKER" ] && [ -f "$SCRIPT_DIR/../templates/template-registry.json" ]; then
+  # generated-files.json がない場合は初期化
+  if [ ! -f "${STATE_DIR}/generated-files.json" ]; then
+    bash "$TEMPLATE_TRACKER" init >/dev/null 2>&1 || true
+    TEMPLATE_INFO="📦 テンプレート追跡: 初期化完了"
+  else
+    # 更新チェック（JSON出力をパース）
+    CHECK_RESULT=$(bash "$TEMPLATE_TRACKER" check 2>/dev/null || echo '{"needsCheck": false}')
+
+    if command -v jq >/dev/null 2>&1; then
+      NEEDS_CHECK=$(echo "$CHECK_RESULT" | jq -r '.needsCheck // false')
+      UPDATES_COUNT=$(echo "$CHECK_RESULT" | jq -r '.updatesCount // 0')
+
+      if [ "$NEEDS_CHECK" = "true" ] && [ "$UPDATES_COUNT" -gt 0 ]; then
+        # 更新が必要なファイルの詳細を取得
+        LOCALIZED_COUNT=$(echo "$CHECK_RESULT" | jq '[.updates[] | select(.localized == true)] | length')
+        OVERWRITE_COUNT=$((UPDATES_COUNT - LOCALIZED_COUNT))
+
+        TEMPLATE_INFO="⚠️ テンプレート更新: ${UPDATES_COUNT}件"
+        if [ "$OVERWRITE_COUNT" -gt 0 ]; then
+          TEMPLATE_INFO="${TEMPLATE_INFO} (上書き可: ${OVERWRITE_COUNT})"
+        fi
+        if [ "$LOCALIZED_COUNT" -gt 0 ]; then
+          TEMPLATE_INFO="${TEMPLATE_INFO} (マージ要: ${LOCALIZED_COUNT})"
+        fi
+        TEMPLATE_INFO="${TEMPLATE_INFO} → \`/harness-update\` で確認"
+      fi
+    fi
+  fi
+fi
+
 # ===== 出力メッセージの構築 =====
 add_line "# [claude-code-harness] セッション初期化"
 add_line ""
@@ -73,6 +108,10 @@ add_line "${PLANS_INFO}"
 
 if [ -n "$SKILLS_INFO" ]; then
   add_line "${SKILLS_INFO}"
+fi
+
+if [ -n "$TEMPLATE_INFO" ]; then
+  add_line "${TEMPLATE_INFO}"
 fi
 
 add_line ""

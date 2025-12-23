@@ -1,0 +1,108 @@
+{
+  "$schema": "./template-registry.schema.json",
+  "description": "テンプレートと出力先のマッピング。templateVersion はテンプレート更新時に更新する。",
+  "templates": {
+    "CLAUDE.md.template": {
+      "output": "CLAUDE.md",
+      "templateVersion": "2.5.23",
+      "description": "プロジェクト指針",
+      "tracked": true
+    },
+    "AGENTS.md.template": {
+      "output": "AGENTS.md",
+      "templateVersion": "2.5.23",
+      "description": "エージェント設定",
+      "tracked": true
+    },
+    "Plans.md.template": {
+      "output": "Plans.md",
+      "templateVersion": "2.5.23",
+      "description": "タスク管理",
+      "tracked": true
+    },
+    "rules/workflow.md.template": {
+      "output": ".claude/rules/workflow.md",
+      "templateVersion": "2.5.23",
+      "description": "ワークフロールール",
+      "tracked": true
+    },
+    "rules/coding-standards.md.template": {
+      "output": ".claude/rules/coding-standards.md",
+      "templateVersion": "2.5.23",
+      "description": "コーディング規約",
+      "tracked": true
+    },
+    "rules/testing.md.template": {
+      "output": ".claude/rules/testing.md",
+      "templateVersion": "2.5.23",
+      "description": "テストルール",
+      "tracked": true
+    },
+    "rules/plans-management.md.template": {
+      "output": ".claude/rules/plans-management.md",
+      "templateVersion": "2.5.23",
+      "description": "Plans.md管理ルール",
+      "tracked": true
+    },
+    "rules/ui-debugging-dev-browser.md.template": {
+      "output": ".claude/rules/ui-debugging-dev-browser.md",
+      "templateVersion": "2.5.23",
+      "description": "UI デバッグルール",
+      "tracked": true
+    },
+    "memory/decisions.md.template": {
+      "output": ".claude/memory/decisions.md",
+      "templateVersion": "2.5.23",
+      "description": "決定事項記録",
+      "tracked": true
+    },
+    "memory/patterns.md.template": {
+      "output": ".claude/memory/patterns.md",
+      "templateVersion": "2.5.23",
+      "description": "再利用パターン",
+      "tracked": true
+    },
+    "memory/session-log.md.template": {
+      "output": ".claude/memory/session-log.md",
+      "templateVersion": "2.5.23",
+      "description": "セッションログ",
+      "tracked": false
+    },
+    "claude/settings.local.json.template": {
+      "output": ".claude/settings.local.json",
+      "templateVersion": "2.5.23",
+      "description": "ローカル設定",
+      "tracked": true
+    },
+    "claude/settings.security.json.template": {
+      "output": ".claude/settings.json",
+      "templateVersion": "2.5.23",
+      "description": "セキュリティ設定",
+      "tracked": true
+    },
+    "state/skills-policy.json.template": {
+      "output": ".claude/state/skills-policy.json",
+      "templateVersion": "2.5.23",
+      "description": "スキルポリシー",
+      "tracked": false
+    },
+    "state/skills-config.json.template": {
+      "output": ".claude/state/skills-config.json",
+      "templateVersion": "2.5.23",
+      "description": "スキル設定",
+      "tracked": false
+    },
+    ".claude-code-harness.config.yaml.template": {
+      "output": ".claude-code-harness.config.yaml",
+      "templateVersion": "2.5.23",
+      "description": "プラグイン設定",
+      "tracked": true
+    },
+    ".claude-code-harness-version.template": {
+      "output": ".claude-code-harness-version",
+      "templateVersion": "2.5.23",
+      "description": "バージョンファイル",
+      "tracked": false
+    }
+  }
+}

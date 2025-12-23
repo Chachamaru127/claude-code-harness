@@ -1,3 +1,8 @@
+---
+description: リリースプロセス自動化（CHANGELOG更新、バージョン更新、タグ作成）
+description-en: Automate release process (CHANGELOG update, version bump, tag creation)
+---
+
 # /release - リリースプロセス自動化
 
 claude-code-harness のリリースを自動化するコマンドです。
