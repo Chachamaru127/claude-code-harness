@@ -5,7 +5,7 @@
 **思考の流れを妨げない開発体験**
 Claude Code を「Plan → Work → Review」の型で自律運用し、個人開発を“もう1段”プロ品質へ引き上げる **開発ハーネス（Claude Code プラグイン）** です。
 
-[![Version: 2.5.26](https://img.shields.io/badge/version-2.5.26-blue.svg)](VERSION)
+[![Version: 2.5.27](https://img.shields.io/badge/version-2.5.27-blue.svg)](VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 
 **現在のハーネススコア**: **92 / 100（S）**（→ [採点基準](#個人開発ハーネスの採点基準--スコア)）
