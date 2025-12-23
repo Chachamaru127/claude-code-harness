@@ -15,7 +15,7 @@ claude-code-harness のリリースを自動化するコマンドです。
 
 1. **git status** で未コミット変更を確認
 2. **git diff --stat** で変更ファイル一覧
-3. **MEM SEARCH** で最近の作業内容を確認（キーワード: 直近の変更に関連するもの）
+3. **git log --oneline -10** で最近のコミット履歴
 
 ### Step 2: バージョン決定
 
@@ -24,40 +24,81 @@ claude-code-harness のリリースを自動化するコマンドです。
 cat VERSION
 ```
 
-変更内容に応じてバージョンを決定：
+変更内容に応じてバージョンを決定（[Semantic Versioning](https://semver.org/spec/v2.0.0.html) 準拠）：
 - **patch** (x.y.Z): バグ修正、軽微な改善
-- **minor** (x.Y.0): 新機能追加
+- **minor** (x.Y.0): 新機能追加（後方互換あり）
 - **major** (X.0.0): 破壊的変更
 
 ユーザーに確認：「次のバージョンは何にしますか？ (例: 2.5.23)」
 
 ### Step 3: CHANGELOG.md 更新
 
-CHANGELOG.md の `[Unreleased]` セクションの下に新バージョンのエントリを追加。
+**[Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) フォーマットに準拠**
 
-**フォーマット**（CLAUDE.md の記載ルールに従う）：
+CHANGELOG.md の `## [Unreleased]` の直後に新バージョンのエントリを追加。
+
+#### フォーマット
 
 ```markdown
 ## [X.Y.Z] - YYYY-MM-DD
 
-### 🎯 あなたにとって何が変わるか
+### Added
+- 新機能について
 
-**一言サマリー（太字）**
+### Changed
+- 既存機能の変更について
 
-#### Before
-- 変更前の状態・体験
+### Deprecated
+- 間もなく削除される機能について
 
-#### After
-- 変更後の状態・体験
-- ユーザーにとって何が嬉しいか
+### Removed
+- 削除された機能について
 
-### 主な変更内容
-- 技術的な変更の詳細
+### Fixed
+- バグ修正について
 
-### VibeCoder 向けの使い方（任意）
-| やりたいこと | 言い方 |
-|-------------|--------|
-| ... | ... |
+### Security
+- 脆弱性に関する場合
+
+#### Before/After（大きな変更時のみ）
+
+| Before | After |
+|--------|-------|
+| 変更前の状態 | 変更後の状態 |
+```
+
+#### セクション使い分けのルール
+
+| セクション | 使うとき |
+|------------|----------|
+| Added | 完全に新しい機能を追加したとき |
+| Changed | 既存機能の動作や体験を変更したとき |
+| Deprecated | 将来削除予定の機能を告知するとき |
+| Removed | 機能やコマンドを削除したとき |
+| Fixed | バグや不具合を修正したとき |
+| Security | セキュリティ関連の修正をしたとき |
+
+#### Before/After テーブル
+
+大きな体験変化があるときのみ追加：
+- コマンドの廃止・統合
+- ワークフローの変更
+- 破壊的変更
+
+軽微な修正では省略可。
+
+#### バージョン比較リンク
+
+CHANGELOG.md 末尾のリンクセクションに追加：
+
+```markdown
+[X.Y.Z]: https://github.com/Chachamaru127/claude-code-harness/compare/vPREV...vX.Y.Z
+```
+
+既存の `[Unreleased]` リンクも更新：
+
+```markdown
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/vX.Y.Z...HEAD
 ```
 
 ### Step 4: バージョン更新
@@ -106,6 +147,14 @@ git log --oneline -3
 git tag | tail -5
 cat ~/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/*/VERSION | sort -u
 ```
+
+## keepachangelog の原則
+
+1. **人間のために書く** - 機械的なコミットログではなく、ユーザーが理解できる言葉で
+2. **バージョンごとにまとめる** - 同じ種類の変更をグループ化
+3. **最新を先頭に** - 新しいバージョンが上
+4. **日付は ISO 8601** - YYYY-MM-DD 形式
+5. **Unreleased を活用** - 次リリースまでの変更を蓄積
 
 ## 注意事項
 

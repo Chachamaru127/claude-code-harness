@@ -1,372 +1,257 @@
 # Changelog
 
-claude-code-harness の変更履歴です。
+このプロジェクトのすべての注目すべき変更は、このファイルに記録されます。
 
-> **📝 記載ルール**: このCHANGELOGは「ユーザー目線で何がどう変わったか」を記載します。
-> - **Before/After** を明確に
-> - 技術的な詳細より「使い方の変化」「体験の改善」を優先
-> - 「あなたにとって何が嬉しいか」がわかるように
-
----
+フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいており、
+このプロジェクトは [Semantic Versioning](https://semver.org/spec/v2.0.0.html) に準拠しています。
 
 ## [Unreleased]
 
----
+## [2.5.27] - 2025-12-23
+
+### Fixed
+
+- `/release` コマンドが表示されない問題を修正
+  - `.gitignore` から除外を解除し、プラグインユーザーも使用可能に
 
 ## [2.5.26] - 2025-12-23
 
-### 🎯 あなたにとって何が変わるか
+### Added
 
-**プラグイン更新時、生成済みファイル（CLAUDE.md等）が古いテンプレートかどうかを自動検出するようになりました。**
+- プラグイン更新時のテンプレート追跡機能
+  - セッション開始時に「テンプレート更新あり」を自動通知
+  - `/harness-update` でファイルごとに上書き or マージを選択可能
 
-#### Before
-- プラグインのテンプレートが更新されても、既存の CLAUDE.md や Plans.md は古いまま
-- 新機能や改善が反映されず、手動で差分を確認する必要があった
+#### Before/After
 
-#### After
-- **セッション開始時に「テンプレート更新あり」を通知**
-- `/harness-update` でファイルごとに上書き or マージを選択可能
-- ローカライズ（編集済み）ファイルは安全にマージ支援
-
----
+| Before | After |
+|--------|-------|
+| テンプレート更新されても既存ファイルは古いまま | 更新を自動検出し、安全にマージ支援 |
 
 ## [2.5.22] - 2025-12-23
 
-### 🎯 あなたにとって何が変わるか
+### Fixed
 
-**プラグイン更新が確実に反映されるようになりました。「更新したのに古いまま」がなくなります。**
-
-#### Before
-- プラグインを更新しても、キャッシュが古いままで反映されないことがあった
-- 手動でキャッシュを削除して再インストールする必要があった
-
-#### After
-- **新しいセッションを開始するだけで最新版が自動反映**
-- 手動操作は不要
-
----
+- プラグイン更新が反映されない問題を修正
+  - 新しいセッションを開始するだけで最新版が自動反映されるように
 
 ## [2.5.14] - 2025-12-22
 
-### 🎯 あなたにとって何が変わるか
+### Changed
 
-**2-Agent ワークフローでレビュー後のハンドオフが自動化されました。**
-
-#### Before
-- `/review-cc-work` でレビュー後、別途 `/handoff-to-claude` を実行する必要があった
-- 承認時に「次タスクの分析 → 依頼文生成」を手動で行っていた
-
-#### After
-- **`/review-cc-work` が承認/修正依頼どちらでもハンドオフを自動生成**
-- 承認時は次タスクを自動分析、修正依頼時は指示を含む依頼文を生成
-
----
+- `/review-cc-work` がレビュー後のハンドオフを自動生成するように改善
+  - 承認時: 次タスクを自動分析して依頼文を生成
+  - 修正依頼時: 指示を含む依頼文を生成
 
 ## [2.5.13] - 2025-12-21
 
-### 🎯 あなたにとって何が変わるか
+### Added
 
-**LSP（コード分析）が必要な場面で自動的に使われるようになりました。**
-
-#### Before
-- LSP の使用は任意で、使わなくてもコード編集できた
-- コード変更前の影響分析をスキップしがちだった
-
-#### After
-- **コード変更時、LSP 分析が自動で推奨される**（LSP導入済みの場合）
-- LSP未導入でも作業は継続可能（`/lsp-setup` で簡単導入）
-- 公式LSPプラグイン全10種をサポート
-
----
+- コード変更時の LSP 分析自動推奨機能
+  - LSP 導入済みプロジェクトで、変更前の影響分析を自動で推奨
+  - 公式 LSP プラグイン全10種をサポート
 
 ## [2.5.10] - 2025-12-21
 
-### 🎯 あなたにとって何が変わるか
+### Added
 
-**LSP のセットアップが簡単になりました。**
-
-#### Before
-- LSP の設定方法が複数あり、どれを使えばいいかわからなかった
-
-#### After
-- **`/lsp-setup` で公式プラグインを自動検出・提案**
-- 3ステップでセットアップ完了
-
----
+- `/lsp-setup` コマンドで公式プラグインを自動検出・提案
+  - 3ステップでセットアップ完了
 
 ## [2.5.9] - 2025-12-20
 
-### 🎯 あなたにとって何が変わるか
+### Added
 
-**既存プロジェクトへの LSP 導入が簡単になりました。**
-
-#### Before
-- 既存プロジェクトに LSP 設定を追加する手順が不明確だった
-
-#### After
-- **`/lsp-setup` で既存プロジェクトに一括導入**
-- 言語別インストールコマンド一覧を追加
-
----
+- 既存プロジェクトへの LSP 一括導入機能
+- 言語別インストールコマンド一覧
 
 ## [2.5.8] - 2025-12-20
 
-### 🎯 あなたにとって何が変わるか
+### Added
 
-**LSP でコードの定義元や使用箇所を即座に確認できるようになりました。**
-
-#### Before
-- コードの定義元や参照箇所を手動で検索していた
-- 型エラーはビルド時にしか検出できなかった
-
-#### After
-- **「この関数の定義はどこ？」** → 即座にジャンプ
-- **「この変数はどこで使われてる？」** → 使用箇所を一覧表示
-- **ビルド前に型エラーを検出**
-
----
+- LSP によるコード定義元・使用箇所の即時確認機能
+  - 関数定義へのジャンプ
+  - 変数の使用箇所一覧表示
+  - ビルド前の型エラー検出
 
 ## [2.5.7] - 2025-12-20
 
-### 🎯 あなたにとって何が変わるか
+### Fixed
 
-**2-Agent モードのセットアップ漏れを自動検出するようになりました。**
-
-#### Before
-- 2-Agent モードを選択したのに、Cursor コマンドが生成されないことがあった
-- 何が不足しているか分からなかった
-
-#### After
-- **セットアップ完了時に必須ファイルを自動チェック**
-- 不足ファイルを自動で再生成
-
----
+- 2-Agent モードで Cursor コマンドが生成されないことがある問題を修正
+  - セットアップ完了時に必須ファイルを自動チェック・再生成
 
 ## [2.5.6] - 2025-12-20
 
-### 🎯 あなたにとって何が変わるか
+### Added
 
-**アップデート時に古い設定を自動修正するようになりました。**
-
-#### Before
-- アップデート後も間違った設定が残ったまま
-
-#### After
-- **`/harness-update` が破壊的変更を検出して自動修正を提案**
-
----
+- `/harness-update` が破壊的変更を検出して自動修正を提案する機能
 
 ## [2.5.5] - 2025-12-20
 
-### 🎯 あなたにとって何が変わるか
+### Added
 
-**既存プロジェクトを最新版に安全にアップデートできるようになりました。**
-
-#### Before
-- 既存プロジェクトを最新版に更新する方法がなかった
-- アップデート時に設定やタスクが失われるリスクがあった
-
-#### After
-- **`/harness-update` で安全にアップデート**
-- 自動バックアップ、非破壊更新
-
----
+- `/harness-update` コマンドで既存プロジェクトを安全にアップデート
+  - 自動バックアップ、非破壊更新
 
 ## [2.5.4] - 2025-12-20
 
-### 🎯 あなたにとって何が変わるか
+### Fixed
 
-**settings.json の間違った構文が生成されるバグを修正しました。**
-
----
+- settings.json の間違った構文が生成されるバグを修正
 
 ## [2.5.3] - 2025-12-20
 
-### 🎯 あなたにとって何が変わるか
+### Changed
 
-**スキル名がシンプルになりました。**
-
-#### Before
-- スキル名が `ccp-work-impl-feature` のように長かった
-
-#### After
-- **`impl-feature` のように直感的な名前に**
-
----
+- スキル名をシンプルに変更（例: `ccp-work-impl-feature` → `impl-feature`）
 
 ## [2.5.2] - 2025-12-19
 
-### 🎯 あなたにとって何が変わるか
+### Changed
 
-**スキルの誤起動が減りました。**
+- 各スキルに「いつ使う / いつ使わない」を明示してスキルの誤起動を軽減
 
-- 各スキルに「いつ使う / いつ使わない」を明示
-- MCP ワイルドカード許可の設定例を追加
+### Added
 
----
+- MCP ワイルドカード許可の設定例
 
 ## [2.5.1] - 2025-12-19
 
-### 🎯 あなたにとって何が変わるか
+### Changed
 
-**編集のたびに確認が出る問題を解消しました。**
-
-#### Before
-- Edit/Write のたびに確認が出て作業が止まりがちだった
-
-#### After
-- **bypassPermissions で確認を減らしつつ、危険操作はガード**
-
----
+- bypassPermissions で Edit/Write の確認を減らしつつ、危険操作はガード
 
 ## [2.5.0] - 2025-12-19
 
-### 🎯 あなたにとって何が変わるか
+### Added
 
-**Plans.md でタスクの依存関係や並列実行を表現できるようになりました。**
+- Plans.md で依存関係記法 `[depends:X]`, `[parallel:A,B]` をサポート
 
-#### Before
-- `/start-task` と `/work` の使い分けが必要だった
-- タスクの依存関係を表現できなかった
+### Removed
 
-#### After
-- **`/work` だけでOK**（`/start-task` 廃止）
-- **`[depends:X]`, `[parallel:A,B]` 記法で依存関係を表現**
+- `/start-task` コマンドを廃止（`/work` に統合）
 
----
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| `/start-task` と `/work` の使い分けが必要 | `/work` だけでOK |
+| タスクの依存関係を表現できない | 記法で依存関係を表現可能 |
 
 ## [2.4.1] - 2025-12-17
 
-### 🎯 あなたにとって何が変わるか
+### Changed
 
-**プラグイン名が「Claude harness」に変わりました。**
-
-- シンプルで覚えやすい名前に
+- プラグイン名を「Claude harness」に変更
 - 新しいロゴとヒーロー画像
-
----
 
 ## [2.4.0] - 2025-12-17
 
-### 🎯 あなたにとって何が変わるか
+### Changed
 
-**レビューやCI修正が並列実行で高速化しました。**
-
-#### Before
-- 4つの観点（セキュリティ/パフォーマンス/品質/アクセシビリティ）を順番にチェック
-
-#### After
-- **条件を満たす場合、4つのサブエージェントを同時起動**
-- 最大75%の時間短縮
-
----
+- レビューや CI 修正を並列実行で高速化（最大75%の時間短縮）
+  - 4つのサブエージェント（セキュリティ/パフォーマンス/品質/アクセシビリティ）を同時起動
 
 ## [2.3.4] - 2025-12-17
 
-### 🎯 あなたにとって何が変わるか
+### Added
 
-**コード変更時にバージョンが自動で上がるようになりました。**
-
-- pre-commit フックでパッチバージョンを自動バンプ
-- Windows でも動作
-
----
+- pre-commit フックでコード変更時にパッチバージョンを自動バンプ
+- Windows 対応
 
 ## [2.3.3] - 2025-12-17
 
-### 🎯 あなたにとって何が変わるか
+### Changed
 
-**スキルが目的別に整理されました。**
-
-- 14カテゴリ: impl, review, verify, setup, 2agent, memory, principles, auth, deploy, ui, workflow, docs, ci, maintenance
-- 「レビューして」→ `review` カテゴリで見つかる
-
----
+- スキルを14カテゴリに整理（impl, review, verify, setup, 2agent, memory, principles, auth, deploy, ui, workflow, docs, ci, maintenance）
 
 ## [2.3.2] - 2025-12-16
 
-### 🎯 あなたにとって何が変わるか
+### Fixed
 
-**スキルがより確実に起動するようになりました。**
-
----
+- スキルがより確実に起動するように改善
 
 ## [2.3.1] - 2025-12-16
 
-### 🎯 あなたにとって何が変わるか
+### Added
 
-**日本語/英語を選べるようになりました。**
-
-- `/harness-init` で言語選択（JA/EN）
-
----
+- `/harness-init` で言語選択（日本語/英語）
 
 ## [2.3.0] - 2025-12-16
 
-### 🎯 あなたにとって何が変わるか
+### Changed
 
-**ライセンスがMITに戻りました。**
-
-- 公式リポジトリへの貢献が可能に
-
----
+- ライセンスを MIT に変更（公式リポジトリへの貢献が可能に）
 
 ## [2.2.1] - 2025-12-16
 
-### 🎯 あなたにとって何が変わるか
-
-**エージェントがより賢く動くようになりました。**
+### Changed
 
 - 各エージェントが使えるツールを明示
 - 並列実行時に色で識別しやすく
 
----
-
 ## [2.2.0] - 2025-12-15
 
-### 🎯 あなたにとって何が変わるか
+### Changed
 
-**ライセンスが独自ライセンスに変更されました（後にMITに戻りました）。**
-
----
+- ライセンスを独自ライセンスに変更（後に MIT に戻りました）
 
 ## [2.1.2] - 2025-12-15
 
-### 🎯 あなたにとって何が変わるか
-
-**`/work` だけで並列実行できるようになりました。**
+### Changed
 
 - `/parallel-tasks` を `/work` に統合
 
----
-
 ## [2.1.1] - 2025-12-15
 
-### 🎯 あなたにとって何が変わるか
+### Changed
 
-**コマンドを覚える必要が大幅に減りました。**
-
-- 27個 → 16個に削減
-- 残りは会話で自動起動（スキル化）
-
----
+- コマンド数を27個から16個に削減（残りはスキル化して会話で自動起動）
 
 ## [2.0.0] - 2025-12-13
 
-### 🎯 あなたにとって何が変わるか
+### Added
 
-**Hooks によるガードレール機能を追加。Cursor連携テンプレートを追加。**
-
-- PreToolUse/PermissionRequest hooks
-- `/handoff-to-cursor` コマンド
-
----
+- PreToolUse/PermissionRequest hooks によるガードレール機能
+- `/handoff-to-cursor` コマンドで Cursor 連携
 
 ## 過去の履歴（v0.x - v1.x）
 
 詳細は [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases) を参照してください。
 
-主なマイルストーン:
+### 主なマイルストーン
+
 - **v0.5.0**: 適応型セットアップ（技術スタック自動検出）
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
+
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.27...HEAD
+[2.5.27]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.26...v2.5.27
+[2.5.26]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.22...v2.5.26
+[2.5.22]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.14...v2.5.22
+[2.5.14]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.13...v2.5.14
+[2.5.13]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.10...v2.5.13
+[2.5.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.9...v2.5.10
+[2.5.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.8...v2.5.9
+[2.5.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.7...v2.5.8
+[2.5.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.6...v2.5.7
+[2.5.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.5...v2.5.6
+[2.5.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.4...v2.5.5
+[2.5.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.3...v2.5.4
+[2.5.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.2...v2.5.3
+[2.5.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.1...v2.5.2
+[2.5.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.0...v2.5.1
+[2.5.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.4.1...v2.5.0
+[2.4.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.4.0...v2.4.1
+[2.4.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.3.4...v2.4.0
+[2.3.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.3.3...v2.3.4
+[2.3.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.3.2...v2.3.3
+[2.3.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.3.1...v2.3.2
+[2.3.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.3.0...v2.3.1
+[2.3.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.2.1...v2.3.0
+[2.2.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.2.0...v2.2.1
+[2.2.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.1.2...v2.2.0
+[2.1.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.1.1...v2.1.2
+[2.1.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.0.0...v2.1.1
+[2.0.0]: https://github.com/Chachamaru127/claude-code-harness/releases/tag/v2.0.0
