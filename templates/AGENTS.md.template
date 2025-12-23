@@ -1,3 +1,8 @@
+---
+_harness_template: "AGENTS.md.template"
+_harness_version: "2.5.27"
+---
+
 # AGENTS.md - 開発フロー概要
 
 > **プロジェクト**: {{PROJECT_NAME}}

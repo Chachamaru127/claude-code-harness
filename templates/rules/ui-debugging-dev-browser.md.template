@@ -1,6 +1,8 @@
 ---
 description: UIデバッグ/検証は dev-browser（導入済みの場合）を優先する
 alwaysApply: true
+_harness_template: "rules/ui-debugging-dev-browser.md.template"
+_harness_version: "2.5.27"
 ---
 
 # UI Debugging Rule (Prefer Dev Browser When Available)
@@ -30,5 +32,3 @@ alwaysApply: true
 - スクリーンショット/動画
 - コンソールログ/ネットワークログ
 - 可能なら最小の自動E2E（Playwright/Cypress等）を追加して回帰を防ぐ
-
-

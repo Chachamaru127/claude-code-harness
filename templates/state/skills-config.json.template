@@ -1,4 +1,6 @@
 {
+  "_harness_template": "state/skills-config.json.template",
+  "_harness_version": "2.5.27",
   "version": "1.0",
   "enabled": true,
   "skills": ["impl", "review"],

@@ -1,3 +1,8 @@
+---
+_harness_template: "memory/decisions.md.template"
+_harness_version: "2.5.27"
+---
+
 # Decisions (SSOT)
 
 このファイルは「重要な意思決定」の単一の正（Single Source of Truth; SSOT）です。
@@ -40,5 +45,3 @@
 
 - PR/Issue:
 - 参考リンク:
-
-

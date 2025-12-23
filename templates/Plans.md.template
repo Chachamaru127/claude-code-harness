@@ -1,3 +1,8 @@
+---
+_harness_template: "Plans.md.template"
+_harness_version: "2.5.27"
+---
+
 # Plans.md - タスク管理
 
 > **プロジェクト**: {{PROJECT_NAME}}

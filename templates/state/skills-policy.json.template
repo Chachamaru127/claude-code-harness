@@ -1,4 +1,6 @@
 {
+  "_harness_template": "state/skills-policy.json.template",
+  "_harness_version": "2.5.27",
   "version": "1.0",
   "description": "Skills/LSP gate policy - controls which paths require skill evaluation before editing",
   "skills_gate": {

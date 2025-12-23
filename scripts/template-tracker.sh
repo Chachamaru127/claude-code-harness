@@ -18,6 +18,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# フロントマターユーティリティを読み込み
+# shellcheck source=frontmatter-utils.sh
+source "$SCRIPT_DIR/frontmatter-utils.sh"
+
 # 定数
 REGISTRY_FILE="$PLUGIN_ROOT/templates/template-registry.json"
 STATE_DIR=".claude/state"
@@ -175,8 +179,18 @@ cmd_check() {
     local current_hash
     current_hash=$(get_file_hash "$output_path")
 
-    if command -v jq >/dev/null 2>&1; then
+    # Phase B: フロントマター優先でバージョンを取得
+    local frontmatter_version
+    frontmatter_version=$(get_file_version "$output_path" "$GENERATED_FILES")
+
+    if [ -n "$frontmatter_version" ] && [ "$frontmatter_version" != "unknown" ]; then
+      recorded_version="$frontmatter_version"
+    elif command -v jq >/dev/null 2>&1; then
+      # フォールバック: generated-files.json から取得
       recorded_version=$(echo "$generated" | jq -r ".files[\"$output_path\"].templateVersion // \"unknown\"")
+    fi
+
+    if command -v jq >/dev/null 2>&1; then
       recorded_hash=$(echo "$generated" | jq -r ".files[\"$output_path\"].fileHash // \"\"")
     fi
 
@@ -242,8 +256,8 @@ cmd_status() {
   fi
   echo ""
 
-  printf "%-40s %-12s %-12s %-10s\n" "ファイル" "記録版" "最新版" "状態"
-  printf "%-40s %-12s %-12s %-10s\n" "--------" "------" "------" "----"
+  printf "%-40s %-12s %-12s %-10s %s\n" "ファイル" "記録版" "最新版" "状態" "ソース"
+  printf "%-40s %-12s %-12s %-10s %s\n" "--------" "------" "------" "----" "------"
 
   while IFS= read -r template; do
     [ -z "$template" ] && continue
@@ -265,12 +279,31 @@ cmd_status() {
     local current_hash
     current_hash=$(get_file_hash "$output_path")
 
-    if command -v jq >/dev/null 2>&1; then
+    # Phase B: フロントマター優先でバージョンを取得
+    local frontmatter_version
+    frontmatter_version=$(get_file_version "$output_path" "$GENERATED_FILES")
+
+    if [ -n "$frontmatter_version" ] && [ "$frontmatter_version" != "unknown" ]; then
+      recorded_version="$frontmatter_version"
+    elif command -v jq >/dev/null 2>&1; then
+      # フォールバック: generated-files.json から取得
       recorded_version=$(echo "$generated" | jq -r ".files[\"$output_path\"].templateVersion // \"unknown\"")
+    fi
+
+    if command -v jq >/dev/null 2>&1; then
       recorded_hash=$(echo "$generated" | jq -r ".files[\"$output_path\"].fileHash // \"\"")
     fi
 
     local status="✅ 最新"
+    local version_source=""
+
+    # バージョンソースを表示用に記録
+    if has_frontmatter "$output_path" 2>/dev/null; then
+      version_source="[FM]"
+    else
+      version_source="[GF]"
+    fi
+
     if [ "$recorded_version" = "unknown" ]; then
       status="⚠️ 要確認"
     elif [ "$recorded_version" != "$template_version" ]; then
@@ -281,7 +314,7 @@ cmd_status() {
       fi
     fi
 
-    printf "%-40s %-12s %-12s %-10s\n" "$output_path" "$recorded_version" "$template_version" "$status"
+    printf "%-40s %-12s %-12s %-10s %s\n" "$output_path" "$recorded_version" "$template_version" "$status" "$version_source"
   done < <(get_tracked_templates)
 
   echo ""
@@ -290,6 +323,10 @@ cmd_status() {
   echo "  🔄 上書き可 : ローカライズなし、上書きで更新可能"
   echo "  🔧 マージ要 : ローカライズあり、マージが必要"
   echo "  ⚠️ 要確認   : バージョン不明、確認推奨"
+  echo ""
+  echo "ソース:"
+  echo "  [FM] : フロントマターから取得（優先）"
+  echo "  [GF] : generated-files.json から取得（フォールバック）"
 }
 
 # ファイルを最新テンプレートで更新（記録も更新）
