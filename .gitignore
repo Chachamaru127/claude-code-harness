@@ -40,7 +40,7 @@ Thumbs.db
 /test-sandbox/
 
 # Developer-only commands (not for distribution)
-/dev/
+/commands/optional/release.md
 
 # Benchmarks (local testing only, not for distribution)
 /benchmarks/
