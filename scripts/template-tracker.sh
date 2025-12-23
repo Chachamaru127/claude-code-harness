@@ -11,6 +11,11 @@
 #   template-tracker.sh init   - 初期化
 #   template-tracker.sh check  - 更新チェック（SessionStart用、JSON出力）
 #   template-tracker.sh status - 詳細表示（人間向け）
+#
+# 注意（v2.5.30+）:
+# - フロントマターベースの追跡が優先されます（_harness_version, _harness_template）
+# - generated-files.json はフォールバック用です（将来的に非推奨）
+# - 新規生成ファイルはフロントマターでバージョン管理されます
 
 set -e
 

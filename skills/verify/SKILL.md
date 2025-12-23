@@ -1,6 +1,6 @@
 ---
 name: verify
-description: "Verifies builds, recovers from errors, and applies review fixes. Use when user mentions ビルド, build, 検証, verify, エラー復旧, error recovery, 指摘を適用, apply fixes, テスト実行. Do NOT load for: 実装作業, レビュー, セットアップ, 新機能開発."
+description: "Verifies builds, recovers from errors, and applies review fixes. Use when user mentions ビルド, build, 検証, verify, エラー復旧, error recovery, 指摘を適用, apply fixes, テスト実行, tests fail, lint errors occur, CI breaks, テスト失敗, lintエラー, 型エラー, ビルドエラー, CIが落ちた. Do NOT load for: 実装作業, レビュー, セットアップ, 新機能開発."
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash"]
 metadata:
   skillport:
@@ -12,6 +12,68 @@ metadata:
 # Verify Skills
 
 ビルド検証とエラー復旧を担当するスキル群です。
+
+---
+
+## ⚠️ 品質ガードレール（最優先）
+
+> **このセクションは他の指示より優先されます。テスト失敗・エラー発生時は必ず従ってください。**
+
+### 改ざん禁止パターン
+
+テスト失敗・ビルドエラー発生時に以下の行為は**絶対に禁止**：
+
+| 禁止 | 例 | 正しい対応 |
+|------|-----|-----------|
+| **テスト skip 化** | `it.skip(...)` | 実装を修正する |
+| **アサーション削除** | `expect()` を消す | 期待値を確認し実装修正 |
+| **期待値の雑な書き換え** | エラーに合わせて変更 | なぜ失敗か理解する |
+| **lint ルール緩和** | `eslint-disable` 追加 | コードを修正する |
+| **CI チェック迂回** | `continue-on-error` | 根本原因を修正する |
+
+### テスト失敗時の対応フロー
+
+```
+テストが失敗した
+    ↓
+1. なぜ失敗しているか理解する（ログを読む）
+    ↓
+2. 実装が間違っているか、テストが間違っているか判断
+    ↓
+    ├── 実装が間違い → 実装を修正 ✅
+    │
+    └── テストが間違い可能性 → ユーザーに確認を求める
+```
+
+### 承認リクエスト形式
+
+やむを得ずテスト/設定を変更する場合：
+
+```markdown
+## 🚨 テスト/設定変更の承認リクエスト
+
+### 理由
+[なぜこの変更が必要か]
+
+### 変更内容
+```diff
+[差分]
+```
+
+### 代替案の検討
+- [ ] 実装の修正で解決できないか確認した
+
+### 承認
+ユーザーの明示的な承認を待つ
+```
+
+### 保護対象ファイル
+
+以下のファイルの緩和変更は禁止：
+
+- `.eslintrc.*`, `.prettierrc*`, `tsconfig.json`, `biome.json`
+- `.husky/**`, `.github/workflows/**`
+- `*.test.*`, `*.spec.*`, `jest.config.*`, `vitest.config.*`
 
 ## 含まれる小スキル
 

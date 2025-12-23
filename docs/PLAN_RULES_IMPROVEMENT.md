@@ -378,36 +378,38 @@ generated-files.json
 
 ## 9. 統合実装タスク
 
-### 9.1 Phase A: フロントマター追加（即時・非破壊）
+### 9.1 Phase A: フロントマター追加（即時・非破壊） ✅ 完了
 
-- [ ] 全テンプレートファイルに `_harness_*` フロントマター追加
-- [ ] `harness-init` で生成時にフロントマター埋め込み
-- [ ] 既存プロジェクトは影響なし（旧方式継続）
+- [x] 全テンプレートファイル（15個）に `_harness_*` フロントマター追加
+- [x] `frontmatter-utils.sh` を作成（5関数、MD/JSON/YAML対応）
+- [x] 既存プロジェクトは影響なし（旧方式継続）
 
-### 9.2 Phase B: 並行サポート（短期）
+### 9.2 Phase B: 並行サポート（短期） ✅ 完了
 
-- [ ] `harness-update` をフロントマター優先に修正
-- [ ] フォールバック: フロントマターなし → `generated-files.json`
-- [ ] 更新時にフロントマターを自動追加
+- [x] `template-tracker.sh` をフロントマター優先に修正
+- [x] フォールバック: フロントマターなし → `generated-files.json`
+- [x] [FM]/[GF] ソース表示を追加
 
-### 9.3 Phase C: session-init更新（中期）
+### 9.3 Phase C: session-init更新（中期） ✅ 完了
 
-- [ ] `session-init.sh` をフロントマター読み取りに対応
-- [ ] `template-tracker.sh` 呼び出しを条件付きに
+- [x] `session-init.sh` は `template-tracker.sh` 経由で既にフロントマター対応
+- [x] 追加の変更不要（template-tracker.sh がフロントマター優先で動作）
 
-### 9.4 Phase D: 旧方式非推奨（長期）
+### 9.4 Phase D: 旧方式非推奨（長期） ✅ 完了
 
-- [ ] `template-tracker.sh` に deprecation 警告追加
-- [ ] ドキュメントに移行ガイド追加
-- [ ] 次メジャーバージョンで完全削除
+- [x] `template-tracker.sh` に deprecation 注記追加（v2.5.30+）
+- [ ] ドキュメントに移行ガイド追加（オプション）
+- [ ] 次メジャーバージョンで完全削除（v3.0.0 予定）
 
 ---
 
 ## 10. 次のアクション
 
-1. **確認完了**: 計画承認済み
-2. **実装開始**: Phase A（フロントマター追加）から着手
-3. **確定後**: Plans.md に移植
+1. ~~**確認完了**: 計画承認済み~~
+2. ~~**実装開始**: Phase A（フロントマター追加）から着手~~
+3. ~~**確定後**: Plans.md に移植~~
+
+**✅ 全フェーズ完了** (v2.5.30)
 
 ---
 

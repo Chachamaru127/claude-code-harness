@@ -50,6 +50,18 @@
       "description": "UI デバッグルール",
       "tracked": true
     },
+    "rules/test-quality.md.template": {
+      "output": ".claude/rules/test-quality.md",
+      "templateVersion": "2.5.30",
+      "description": "テスト品質保護ルール（改ざん防止）",
+      "tracked": true
+    },
+    "rules/implementation-quality.md.template": {
+      "output": ".claude/rules/implementation-quality.md",
+      "templateVersion": "2.5.30",
+      "description": "実装品質ルール（形骸化防止）",
+      "tracked": true
+    },
     "memory/decisions.md.template": {
       "output": ".claude/memory/decisions.md",
       "templateVersion": "2.5.23",

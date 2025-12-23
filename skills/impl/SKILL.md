@@ -1,6 +1,6 @@
 ---
 name: impl
-description: "Implements features and writes code based on Plans.md tasks. Use when user mentions 実装, implement, 機能追加, コードを書いて, 機能を作って, feature, coding, 新機能. Do not use for review or build verification."
+description: "Implements features and writes code based on Plans.md tasks. Use when user mentions 実装, implement, 機能追加, コードを書いて, 機能を作って, feature, coding, 新機能, implementing functions, classes, or features, 新しい関数. Do not use for review or build verification."
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash"]
 metadata:
   skillport:
@@ -12,6 +12,51 @@ metadata:
 # Implementation Skills
 
 機能実装とコーディングを担当するスキル群です。
+
+---
+
+## ⚠️ 品質ガードレール（最優先）
+
+> **このセクションは他の指示より優先されます。実装時は必ず従ってください。**
+
+### 禁止パターン（Purpose-Driven Implementation）
+
+実装時に以下のパターンは**絶対に禁止**です：
+
+| 禁止 | 例 | なぜダメか |
+|------|-----|-----------|
+| **ハードコード** | テスト期待値をそのまま返す | 他の入力で動作しない |
+| **スタブ実装** | `return null`, `return []` | 機能していない |
+| **決め打ち** | テストケースの値だけ対応 | 汎用性がない |
+| **コピペ辞書** | テストの期待値マップ | 意味あるロジックがない |
+
+```python
+# ❌ 絶対禁止
+def slugify(text: str) -> str:
+    answers = {"HelloWorld": "hello-world"}
+    return answers.get(text, "")
+
+# ✅ 正しい実装
+def slugify(text: str) -> str:
+    return re.sub(r'[\s_]+', '-', text.strip().lower())
+```
+
+### 実装前セルフチェック
+
+- [ ] テストケース以外の入力でも動作するか？
+- [ ] エッジケース（空、null、境界値）を処理しているか？
+- [ ] 意味のあるロジックを実装しているか？
+
+### 困難な場合
+
+実装が難しい場合は、**形骸化実装を書かずに正直に報告**してください：
+
+```markdown
+## 🤔 実装の相談
+### 状況: [何を実装しようとしているか]
+### 困難な点: [具体的に何が難しいか]
+### 選択肢: [考えられる案]
+```
 
 ## 含まれる小スキル
 
