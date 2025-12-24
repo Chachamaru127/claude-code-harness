@@ -7,6 +7,25 @@
 
 ## [Unreleased]
 
+## [2.5.35] - 2025-12-24
+
+### 🎯 あなたにとって何が変わるか
+
+**自分で作ったカスタムフックを消すことなく、安全にアップデートできるようになりました**
+
+#### Before
+- `/harness-update` はすべてのフック設定を削除対象としていた
+
+#### After
+- コマンドパスに `claude-code-harness` を含むフックのみを検出・削除
+- ユーザー独自のカスタムフック（例: `/my-project/scripts/my-guard.sh`）はそのまま保持
+
+### Changed
+
+- フック検出ロジックをコマンドパスで判別するように改善
+  - ハーネス由来のフックのみ警告・削除対象
+  - ユーザー独自フックは保護
+
 ## [2.5.33] - 2025-12-24
 
 ### Added
@@ -274,7 +293,12 @@
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.27...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.35...HEAD
+[2.5.35]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.33...v2.5.35
+[2.5.33]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.32...v2.5.33
+[2.5.32]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.30...v2.5.32
+[2.5.30]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.28...v2.5.30
+[2.5.28]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.27...v2.5.28
 [2.5.27]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.26...v2.5.27
 [2.5.26]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.22...v2.5.26
 [2.5.22]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.14...v2.5.22
