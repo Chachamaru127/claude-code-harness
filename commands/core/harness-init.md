@@ -459,6 +459,7 @@ done
 
 ```bash
 PLUGIN_PATH="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
+PLUGIN_VERSION=$(cat "$PLUGIN_PATH/VERSION" 2>/dev/null || echo "unknown")
 mkdir -p .claude/rules
 
 # 品質保護ルールを展開
@@ -471,6 +472,34 @@ for template in test-quality implementation-quality; do
     echo "✅ 作成: .claude/rules/${template}.md"
   fi
 done
+```
+
+#### Skills Gate Rules の条件付き追加
+
+Skills Gate が有効な場合のみ、`skills-gate.md` ルールを追加します。
+
+```bash
+SKILLS_CONFIG=".claude/state/skills-config.json"
+
+# Skills Gate が有効かチェック
+SKILLS_GATE_ENABLED="false"
+if [ -f "$SKILLS_CONFIG" ]; then
+  if command -v jq >/dev/null 2>&1; then
+    SKILLS_GATE_ENABLED=$(jq -r '.enabled // false' "$SKILLS_CONFIG")
+  fi
+fi
+
+# Skills Gate が有効なら skills-gate.md を追加
+if [ "$SKILLS_GATE_ENABLED" = "true" ]; then
+  if [ -f "$PLUGIN_PATH/templates/rules/skills-gate.md.template" ]; then
+    cp "$PLUGIN_PATH/templates/rules/skills-gate.md.template" ".claude/rules/skills-gate.md"
+    sed -i '' "s/{{VERSION}}/$PLUGIN_VERSION/g" ".claude/rules/skills-gate.md" 2>/dev/null || \
+    sed -i "s/{{VERSION}}/$PLUGIN_VERSION/g" ".claude/rules/skills-gate.md"
+    echo "✅ 作成: .claude/rules/skills-gate.md（Skills Gate 有効）"
+  fi
+else
+  echo "ℹ️ Skills Gate 無効: skills-gate.md はスキップ"
+fi
 ```
 
 > 💡 **品質保護ルールとは？**

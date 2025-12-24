@@ -529,20 +529,144 @@ bash "$PLUGIN_ROOT/scripts/template-tracker.sh" record "$path"
 
 `.claude/rules/` の更新:
 
+**マーカー + ハッシュ方式でローカライズ検出を行い、安全に更新します。**
+
 ```bash
 PLUGIN_PATH="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
+PLUGIN_VERSION=$(cat "$PLUGIN_PATH/VERSION" 2>/dev/null || echo "unknown")
+SKILLS_CONFIG=".claude/state/skills-config.json"
 
-# 最新のルールテンプレートをコピー
+# Skills Gate の状態を確認
+SKILLS_GATE_ENABLED="false"
+if [ -f "$SKILLS_CONFIG" ]; then
+  if command -v jq >/dev/null 2>&1; then
+    SKILLS_GATE_ENABLED=$(jq -r '.enabled // false' "$SKILLS_CONFIG")
+  fi
+fi
+
+# 各ルールテンプレートを処理
 for template in "$PLUGIN_PATH/templates/rules"/*.template; do
-  if [ -f "$template" ]; then
-    rule_name=$(basename "$template" .template)
-    cp "$template" ".claude/rules/$rule_name"
-    echo "✅ 更新: .claude/rules/$rule_name"
+  [ -f "$template" ] || continue
+
+  rule_name=$(basename "$template" .template)
+  output_file=".claude/rules/$rule_name"
+
+  # 条件付きテンプレートのチェック（template-registry.json から condition を取得）
+  TEMPLATE_KEY="rules/$(basename "$template")"
+  CONDITION=""
+  if command -v jq >/dev/null 2>&1; then
+    CONDITION=$(jq -r ".templates[\"$TEMPLATE_KEY\"].condition // \"\"" "$PLUGIN_PATH/templates/template-registry.json" 2>/dev/null)
+  fi
+
+  # 条件付きテンプレートの評価
+  if [ -n "$CONDITION" ]; then
+    case "$CONDITION" in
+      "skills_gate.enabled")
+        if [ "$SKILLS_GATE_ENABLED" != "true" ]; then
+          # 条件を満たさない場合
+          if [ -f "$output_file" ]; then
+            echo "🗑️ 削除提案: $output_file（Skills Gate 無効）"
+          else
+            echo "⏭️ スキップ: $rule_name（Skills Gate 無効）"
+          fi
+          continue
+        fi
+        ;;
+    esac
+  fi
+
+  # ファイルが存在しない場合は新規作成
+  if [ ! -f "$output_file" ]; then
+    cp "$template" "$output_file"
+    sed -i '' "s/{{VERSION}}/$PLUGIN_VERSION/g" "$output_file" 2>/dev/null || \
+    sed -i "s/{{VERSION}}/$PLUGIN_VERSION/g" "$output_file"
+    echo "🆕 作成: $output_file"
+    continue
+  fi
+
+  # マーカーをチェック（ハーネス由来かどうか）
+  if grep -q "^_harness_template:" "$output_file" 2>/dev/null; then
+    # ハーネス由来 → ローカライズ検出して更新
+    # フロントマター以降の内容のハッシュを比較
+    INSTALLED_VERSION=$(grep "^_harness_version:" "$output_file" | sed 's/_harness_version: "//;s/"//')
+
+    if [ "$INSTALLED_VERSION" != "$PLUGIN_VERSION" ]; then
+      # バージョンが異なる → 更新対象
+      # （ローカライズ検出は template-tracker.sh に任せる）
+      echo "🔄 更新: $output_file（$INSTALLED_VERSION → $PLUGIN_VERSION）"
+      cp "$template" "$output_file"
+      sed -i '' "s/{{VERSION}}/$PLUGIN_VERSION/g" "$output_file" 2>/dev/null || \
+      sed -i "s/{{VERSION}}/$PLUGIN_VERSION/g" "$output_file"
+    else
+      echo "✅ 最新: $output_file"
+    fi
+  else
+    # マーカーなし → ユーザーカスタム、保護
+    echo "🛡️ 保護: $output_file（ユーザーカスタム）"
   fi
 done
 ```
 
+**判定ロジック:**
 
+| マーカー | 条件 | 処理 |
+|---------|------|------|
+| あり | 条件なし / 条件満たす | 更新（ローカライズ検出） |
+| あり | 条件満たさない | 削除提案 |
+| なし | - | 保護（ユーザーカスタム） |
+
+#### Skills Gate 有効化の提案
+
+Skills Gate が無効で、`skills-gate.md` が存在しない場合、有効化を提案します。
+
+```bash
+# Skills Gate が無効な場合、有効化を提案
+if [ "$SKILLS_GATE_ENABLED" != "true" ]; then
+  echo ""
+  echo "💡 Skills Gate を有効にしますか？"
+  echo ""
+  echo "Skills Gate は、コード編集前にスキルの使用を促す機能です。"
+  echo "- Rules: Claude に「スキルを使うべき」と認識させる"
+  echo "- Hooks: 忘れた場合の最終防衛線"
+  echo ""
+  echo "有効にすると:"
+  echo "- skills-gate.md ルールが追加されます"
+  echo "- スキル使用が習慣化され、作業品質が向上します"
+  echo ""
+fi
+```
+
+**回答を待つ**
+
+- **yes** → Skills Gate を有効化し、`skills-gate.md` を追加
+- **no** → スキップ
+
+```bash
+# ユーザーが yes を選択した場合
+if [ "$USER_CHOICE" = "yes" ]; then
+  # skills-config.json を有効化
+  if [ -f "$SKILLS_CONFIG" ]; then
+    jq '.enabled = true' "$SKILLS_CONFIG" > tmp.json && mv tmp.json "$SKILLS_CONFIG"
+  else
+    mkdir -p .claude/state
+    cat > "$SKILLS_CONFIG" << EOF
+{
+  "version": "1.0",
+  "enabled": true,
+  "skills": ["impl", "review"],
+  "updated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+  fi
+
+  # skills-gate.md を追加
+  cp "$PLUGIN_PATH/templates/rules/skills-gate.md.template" ".claude/rules/skills-gate.md"
+  sed -i '' "s/{{VERSION}}/$PLUGIN_VERSION/g" ".claude/rules/skills-gate.md" 2>/dev/null || \
+  sed -i "s/{{VERSION}}/$PLUGIN_VERSION/g" ".claude/rules/skills-gate.md"
+  echo "✅ Skills Gate を有効化しました"
+  echo "✅ 作成: .claude/rules/skills-gate.md"
+fi
+```
 
 ### Step 4.5: Skills 設定の差分検出と更新
 

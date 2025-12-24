@@ -62,6 +62,13 @@
       "description": "実装品質ルール（形骸化防止）",
       "tracked": true
     },
+    "rules/skills-gate.md.template": {
+      "output": ".claude/rules/skills-gate.md",
+      "templateVersion": "2.5.41",
+      "description": "Skills Gate ルール（スキル使用促進）",
+      "tracked": true,
+      "condition": "skills_gate.enabled"
+    },
     "memory/decisions.md.template": {
       "output": ".claude/memory/decisions.md",
       "templateVersion": "2.5.23",

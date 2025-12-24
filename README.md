@@ -8,7 +8,7 @@ Claude Code を「Plan → Work → Review」の型で自律運用し、個人�
 
 A **development harness (Claude Code plugin)** that autonomously operates Claude Code in a "Plan → Work → Review" cycle, elevating solo development to professional quality.
 
-[![Version: 2.5.41](https://img.shields.io/badge/version-2.5.41-blue.svg)](VERSION)
+[![Version: 2.5.42](https://img.shields.io/badge/version-2.5.42-blue.svg)](VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 
 **現在のハーネススコア**: **92 / 100（S）**（→ [採点基準](#個人開発ハーネスの採点基準--スコア)）

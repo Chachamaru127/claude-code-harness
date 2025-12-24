@@ -7,6 +7,41 @@
 
 ## [Unreleased]
 
+## [2.5.41] - 2025-12-25
+
+### 🎯 あなたにとって何が変わるか
+
+**Skills Gate が Rules + Hooks の2層構造になり、よりスムーズに動作するようになりました**
+
+#### Before
+- Skills Gate は Hook のみで強制（ブロックメッセージが毎回表示される可能性）
+- ユーザーカスタムの Rules と ハーネス由来の Rules の区別がなかった
+
+#### After
+- **Rules（第1層）**: Claude が自発的に「スキルを使うべき」と認識
+- **Hooks（第2層）**: 忘れた場合の最終防衛線としてのみ発動
+- ユーザーカスタムの Rules は**自動保護**（上書きされない）
+
+### Added
+
+- `skills-gate.md` Rules テンプレートを追加
+  - Skills Gate が有効な場合のみ自動展開
+  - スキル使用の意義と使い方を Claude に認識させる
+- Rules のマーカー + ハッシュ方式による管理
+  - ハーネス由来: `_harness_template`, `_harness_version` で識別
+  - ユーザーカスタム: マーカーなし → 自動保護
+- 条件付きテンプレート機能
+  - `template-registry.json` の `condition` フィールドで制御
+  - 条件を満たす場合のみ展開・更新
+
+### Changed
+
+- `/harness-init`: Skills Gate 有効時のみ `skills-gate.md` を追加
+- `/harness-update`: マーカー検出でユーザーカスタム Rules を保護
+- Skills Gate の設計思想を明確化
+  - Rules: ガイダンス・自発的行動誘導
+  - Hooks: セキュリティ・最終防衛線
+
 ## [2.5.38] - 2025-12-24
 
 ### 🎯 あなたにとって何が変わるか

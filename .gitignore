@@ -50,6 +50,8 @@ docs/*TOKEN_REPORT*.md
 docs/チョウサレポート*.md
 docs/claude-code-bypass-permissions-guide.md
 docs/constitution.md
+docs/update-summary-*.md
+docs/notebooklm-*.yaml
 
 # LSP (Language Server Protocol) configuration
 .lsp.json
