@@ -7,6 +7,53 @@
 
 ## [Unreleased]
 
+## [2.6.0] - 2025-12-25
+
+### 🎯 あなたにとって何が変わるか
+
+**Claude-mem を入れると、セッション跨ぎで「過去の学び」を活用できるようになりました**
+
+#### Before
+- 毎回ゼロからコンテキストを構築
+- 同じミス（テスト改ざん等）を繰り返す可能性
+- 過去のレビュー指摘・バグ修正パターンが引き継がれない
+
+#### After
+- `/harness-mem` で Claude-mem を統合
+- 過去のガードレール発動履歴が表示される
+- `impl`, `review`, `verify` スキルが過去の知見を自動参照
+- 重要な観測は SSOT（decisions.md/patterns.md）に昇格可能
+
+### Added
+
+- `/harness-mem` コマンド - Claude-mem 統合セットアップ
+  - インストール検出・インストール支援
+  - 日本語化オプション
+  - `harness` / `harness--ja` モードを自動設定
+- `/sync-ssot-from-memory` コマンド - メモリから SSOT への昇格
+  - Claude-mem と Serena 両対応
+  - 重複防止のための観測ID追跡
+- `memory-integration.md` Rules テンプレート
+  - Claude-mem 有効時のスキル活用ガイド
+- `harness.json` / `harness--ja.json` モードファイル
+  - ハーネス特化の observation_types（10種）
+  - ハーネス特化の observation_concepts（12種）
+  - ユーザー意図（user-intent）の記録を強化
+- Memory-Enhanced Skills 機能
+  - `impl`: 過去の実装パターン・gotcha を自動参照
+  - `review`: 過去の類似レビュー指摘を参照
+  - `verify`: 過去のビルドエラー解決策・ガードレール履歴を参照
+  - `session-init`: 過去のガードレール発動履歴・作業サマリーを表示
+
+### Changed
+
+- `skills-gate.md` に Memory-Enhanced Skills セクションを追加
+- `template-registry.json` に `memory-integration.md` を登録
+
+### Removed
+
+- `/sync-ssot-from-serena` コマンド（`/sync-ssot-from-memory` に統合）
+
 ## [2.5.41] - 2025-12-25
 
 ### 🎯 あなたにとって何が変わるか
@@ -406,4 +453,5 @@
 [2.2.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.1.2...v2.2.0
 [2.1.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.1.1...v2.1.2
 [2.1.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.0.0...v2.1.1
+[2.6.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.41...v2.6.0
 [2.0.0]: https://github.com/Chachamaru127/claude-code-harness/releases/tag/v2.0.0

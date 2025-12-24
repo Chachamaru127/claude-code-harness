@@ -120,3 +120,42 @@ Skills Gate の有効/無効は `.claude/state/skills-config.json` で管理さ�
 # スキルの追加
 /skills-update add auth
 ```
+
+---
+
+## Memory-Enhanced Skills（Claude-mem 統合時）
+
+Claude-mem が有効な場合、スキルは過去の記憶を活用して品質を向上させます。
+
+### 機能強化されるスキル
+
+| スキル | 強化内容 |
+|--------|---------|
+| `impl` | 過去の実装パターン・gotcha を自動参照 |
+| `review` | 過去の類似レビュー指摘を参照 |
+| `verify` | 過去のビルドエラー解決策を参照 |
+| `session-init` | ガードレール発動履歴・作業サマリーを表示 |
+
+### 活用例
+
+```
+# impl スキル使用時
+📚 過去の関連パターン:
+- API エンドポイント: RESTful 設計パターン採用
+- エラーハンドリング: 統一例外ハンドラー使用
+
+💡 過去の gotcha:
+- CORS 設定: Allow-Origin ヘッダー必須
+```
+
+### Claude-mem なし環境
+
+Claude-mem が未設定の場合、各スキルは通常通り動作します。
+Memory-Enhanced 機能は自動的にスキップされます。
+
+### セットアップ
+
+```bash
+# Claude-mem 統合を有効化
+/harness-mem
+```

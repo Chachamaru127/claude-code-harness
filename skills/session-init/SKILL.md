@@ -66,6 +66,48 @@ fi
 
 整理が必要な場合は提案を表示（作業には影響しない）。
 
+### Step 0.5: Claude-mem 文脈確認（オプション）
+
+Claude-mem が有効な場合、過去の文脈を自動表示：
+
+```bash
+# Claude-mem の状態チェック
+if [ -f "$HOME/.claude-mem/settings.json" ]; then
+  mode=$(cat ~/.claude-mem/settings.json | grep -o '"CLAUDE_MEM_MODE"[^,}]*' | cut -d'"' -f4)
+  if [ "$mode" = "harness" ] || [ "$mode" = "harness--ja" ]; then
+    echo "📚 Claude-mem (harness モード) が有効です"
+  fi
+fi
+```
+
+**Claude-mem 有効時に表示する内容**:
+
+1. **過去のガードレール発動**:
+   - `mem-search` で `guard` タイプの観測を検索
+   - 「このプロジェクトでは過去 N 回テスト改ざんを防止」
+
+2. **直近の作業サマリー**:
+   - 最新のセッションサマリーを表示
+   - 「前回: Feature X の設計完了」
+
+3. **継続タスクの提案**:
+   - Plans.md と組み合わせて次のアクションを提案
+
+```markdown
+## 📚 過去の文脈（Claude-mem）
+
+**ガードレール履歴**:
+- テスト改ざん防止: 2回
+
+**前回のセッション**:
+- Feature X 設計完了
+- RBAC 採用を決定
+
+**💡 継続推奨**: Plans.md の「Feature X 実装」から開始
+```
+
+> **注**: Claude-mem が未設定の場合、このステップはスキップされます。
+
 ### Step 1: 環境確認
 
 以下を並列で実行：

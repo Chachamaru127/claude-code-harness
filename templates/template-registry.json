@@ -64,10 +64,17 @@
     },
     "rules/skills-gate.md.template": {
       "output": ".claude/rules/skills-gate.md",
-      "templateVersion": "2.5.41",
+      "templateVersion": "2.6.0",
       "description": "Skills Gate ルール（スキル使用促進）",
       "tracked": true,
       "condition": "skills_gate.enabled"
+    },
+    "rules/memory-integration.md.template": {
+      "output": ".claude/rules/memory-integration.md",
+      "templateVersion": "2.6.0",
+      "description": "Memory Integration ルール（Claude-mem 連携）",
+      "tracked": true,
+      "condition": "claude_mem.enabled"
     },
     "memory/decisions.md.template": {
       "output": ".claude/memory/decisions.md",

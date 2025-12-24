@@ -78,8 +78,49 @@ work-write-tests/doc.md を参照
 ## 実行手順
 
 1. ユーザーのリクエストを分類
-2. 適切な小スキルの doc.md を読む
-3. その内容に従って実装
+2. **（Claude-mem 有効時）過去の実装パターンを検索**
+3. 適切な小スキルの doc.md を読む
+4. その内容に従って実装
+
+### Step 2: 過去の実装パターン検索（Memory-Enhanced）
+
+Claude-mem が有効な場合、実装前に過去の類似パターンを検索:
+
+```
+# mem-search で過去の実装パターンを検索
+mem-search: type:feature "{実装機能のキーワード}"
+mem-search: concepts:pattern "{関連技術}"
+mem-search: concepts:gotcha "{使用ライブラリ/フレームワーク}"
+mem-search: type:decision "{設計方針に関するキーワード}"
+```
+
+**表示例**:
+
+```markdown
+📚 過去の実装パターン
+
+| 日付 | パターン | ファイル |
+|------|---------|---------|
+| 2024-01-15 | API エンドポイント: RESTful 設計 | src/api/*.ts |
+| 2024-01-20 | フォームバリデーション: Zod 使用 | src/components/forms/*.tsx |
+
+💡 過去の gotcha（落とし穴）:
+- CORS: サーバー側で Allow-Origin 設定必須
+- 型安全: any 禁止、unknown + type guard 推奨
+```
+
+**関連する決定事項の表示**:
+
+```markdown
+⚖️ 関連する設計決定
+
+- D5: 状態管理は Zustand を採用（Redux より軽量）
+- D8: API通信は tRPC を使用（型安全）
+
+💡 上記の決定に従って実装してください
+```
+
+> **注**: Claude-mem が未設定の場合、このステップはスキップされます。
 
 ---
 
