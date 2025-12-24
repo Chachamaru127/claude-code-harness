@@ -7,6 +7,28 @@
 
 ## [Unreleased]
 
+## [2.5.37] - 2025-12-24
+
+### 🎯 あなたにとって何が変わるか
+
+**壁打ちで話した内容を、そのまま計画にできるようになりました**
+
+#### Before
+- `/plan-with-agent` は受託開発向け（提案書が必須）
+- 壁打ち後も最初からヒアリングをやり直す必要があった
+
+#### After
+- Step 0 で「今までの会話を踏まえる」を選択可能
+- 会話から要件を自動抽出 → 確認 → 計画化
+- 提案書はオプション（受託開発時のみ）
+
+### Changed
+
+- `/plan-with-agent` を汎用プラン構築コマンドに刷新
+  - Step 0「会話コンテキスト確認」を追加
+  - 受託開発特化から汎用ツールへ転換
+  - ヒアリング文言を簡素化
+
 ## [2.5.35] - 2025-12-24
 
 ### 🎯 あなたにとって何が変わるか
@@ -293,7 +315,8 @@
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.35...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.37...HEAD
+[2.5.37]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.35...v2.5.37
 [2.5.35]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.33...v2.5.35
 [2.5.33]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.32...v2.5.33
 [2.5.32]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.30...v2.5.32
