@@ -13,23 +13,41 @@ Claude Code を「Plan → Work → Review」の自律サイクルで運用し�
 
 ---
 
-## v2.6 の新機能
+## v2.6 の新機能 | What's New in v2.6
 
-### Claude-mem 統合（セッション跨ぎ学習）
+### 品質判定ゲートシステム（v2.6.2）| Quality Gate System
+
+**適切な場面で適切な品質基準を自動提案**
+*Auto-suggest appropriate quality standards at the right time*
+
+| 判定タイプ | 対象 | 提案内容 |
+|-----------|------|---------|
+| **TDD** | `[feature]` タグ、`src/core/` | 「テストから書きますか？」 |
+| **Security** | 認証/API/決済 | セキュリティチェックリスト表示 |
+| **a11y** | UI コンポーネント | アクセシビリティチェック |
+| **Performance** | DB クエリ、ループ処理 | N+1 警告 |
+
+- 強制ではなく**提案**（VibeCoder にも優しい）
+- `/plan-with-agent` で計画作成時に自動でマーカー付与
+
+### Claude-mem 統合（v2.6.0）| Claude-mem Integration
 
 ```bash
 /harness-mem  # Claude-mem を統合
 ```
 
 **過去の失敗から学び、同じミスを繰り返さない**
+*Learn from past mistakes and avoid repeating them*
 
 - 過去のテスト改ざん警告・ビルドエラー解決策を自動参照
 - `impl` / `review` / `verify` スキルが知見を活用
 - 重要な学びは SSOT（decisions.md/patterns.md）に昇格可能
 
-### Skill 階層リマインダー
+### Skill 階層リマインダー（v2.6.1）| Skill Hierarchy Reminder
 
 親スキルを使うと、**関連する子スキルを自動で提案**。
+*Auto-suggest related child skills when using a parent skill.*
+
 「どのスキルを読めばいいか」で迷わなくなります。
 
 ---
