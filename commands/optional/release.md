@@ -35,6 +35,8 @@ cat VERSION
 
 **[Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) フォーマットに準拠**
 
+> ⚠️ **注意**: CHANGELOG 作成後、Step 3.5 で README 更新が必要か必ず確認すること
+
 CHANGELOG.md の `## [Unreleased]` の直後に新バージョンのエントリを追加。
 
 #### フォーマット
@@ -198,27 +200,45 @@ cat ~/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/
 4. **日付は ISO 8601** - YYYY-MM-DD 形式
 5. **Unreleased を活用** - 次リリースまでの変更を蓄積
 
-### Step 3.5: README.md 更新（機能変更時）
+### Step 3.5: README.md 更新（必須確認）
 
-新機能追加、コマンド変更、ワークフロー変更がある場合のみ実施：
+> 🔴 **必ず確認**: 以下に該当する場合は README.md を更新すること
 
-1. 該当するコマンド/スキルの説明を更新
-2. 日本語・英語両方を更新（バイリンガル対応）
-3. バージョンバッジを新バージョンに更新
+**更新が必要なケース**:
+- ✅ 新機能追加（Added セクションに項目がある）
+- ✅ 既存機能の変更（Changed セクションにユーザー影響がある）
+- ✅ コマンド/スキルの追加・変更
+- ✅ ワークフローの変更
+
+**更新不要なケース**:
+- ❌ バグ修正のみ（Fixed のみ）
+- ❌ 内部リファクタリング
+- ❌ ドキュメント修正のみ
+
+**更新手順**:
+
+1. 「v2.6 の新機能」セクションに追加（該当する場合）
+2. 日本語・英語両方を記載（バイリンガル対応）
+3. 関連するコマンド/スキルの説明を更新
 
 ```markdown
-# バージョンバッジの更新
-[![Version: X.Y.Z](https://img.shields.io/badge/version-X.Y.Z-blue.svg)](VERSION)
+# 新機能セクションの例
+### 機能名（vX.Y.Z）| Feature Name
+
+**日本語説明**
+*English explanation*
+
+- 機能の特徴1
+- 機能の特徴2
 ```
 
 **更新対象セクション例**:
+- 「v2.6 の新機能」 / "What's New in v2.6"
 - 「3行でわかる」 / "In 3 Lines"
-- 「これは何？」 / "What is this?"
-- 「できること（要点）」 / "What You Can Do"
-- 「コマンド」 / "Commands"
+- 「機能一覧」 / "Features"
+- 「コマンド早見表」 / "Commands"
 
 ## 注意事項
 
-- README.md は機能変更時に更新（バグ修正では不要）
 - `skills/test-*` などのテストディレクトリは含めない
 - コミットメッセージは Conventional Commits に従う
