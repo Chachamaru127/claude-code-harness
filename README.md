@@ -1,5 +1,7 @@
 # Claude harness
 
+[English](README.en.md) | 日本語
+
 ![Claude harness](docs/images/claude-harness-logo-with-text.png)
 
 **個人開発を、プロ品質へ | Elevate Solo Development to Pro Quality**
@@ -7,7 +9,7 @@
 Claude Code を「Plan → Work → Review」の自律サイクルで運用し、
 **迷い・雑さ・事故・忘却** を仕組みで防ぐ開発ハーネスです。
 
-[![Version: 2.6.4](https://img.shields.io/badge/version-2.6.4-blue.svg)](VERSION)
+[![Version: 2.6.5](https://img.shields.io/badge/version-2.6.5-blue.svg)](VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![Harness Score](https://img.shields.io/badge/harness_score-92%2F100-brightgreen.svg)](#採点基準)
 

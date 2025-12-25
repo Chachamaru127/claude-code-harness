@@ -200,9 +200,13 @@ cat ~/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/
 4. **日付は ISO 8601** - YYYY-MM-DD 形式
 5. **Unreleased を活用** - 次リリースまでの変更を蓄積
 
-### Step 3.5: README.md 更新（必須確認）
+### Step 3.5: README 更新（必須確認）
 
-> 🔴 **必ず確認**: 以下に該当する場合は README.md を更新すること
+> 🔴 **必ず確認**: 以下に該当する場合は **README.md と README.en.md の両方** を更新すること
+
+**対象ファイル**:
+- `README.md` - 日本語版（メイン）
+- `README.en.md` - 英語版
 
 **更新が必要なケース**:
 - ✅ 新機能追加（Added セクションに項目がある）
@@ -217,12 +221,23 @@ cat ~/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/
 
 **更新手順**:
 
-1. 「v2.6 の新機能」セクションに追加（該当する場合）
-2. 日本語・英語両方を記載（バイリンガル対応）
-3. 関連するコマンド/スキルの説明を更新
+1. **README.md（日本語）** を更新
+   - 「v2.6 の新機能」セクションに追加
+   - 関連するコマンド/スキルの説明を更新
 
+2. **README.en.md（英語）** を同期
+   - 「What's New in v2.6」セクションに追加
+   - 関連するコマンド/スキルの説明を更新
+
+3. **バージョンバッジ** を両方で更新
+   ```markdown
+   [![Version: X.Y.Z](https://img.shields.io/badge/version-X.Y.Z-blue.svg)](VERSION)
+   ```
+
+**新機能セクションの例**:
+
+README.md:
 ```markdown
-# 新機能セクションの例
 ### 機能名（vX.Y.Z）| Feature Name
 
 **日本語説明**
@@ -232,11 +247,23 @@ cat ~/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/
 - 機能の特徴2
 ```
 
+README.en.md:
+```markdown
+### Feature Name (vX.Y.Z)
+
+**English explanation**
+
+- Feature 1
+- Feature 2
+```
+
 **更新対象セクション例**:
-- 「v2.6 の新機能」 / "What's New in v2.6"
-- 「3行でわかる」 / "In 3 Lines"
-- 「機能一覧」 / "Features"
-- 「コマンド早見表」 / "Commands"
+| README.md | README.en.md |
+|-----------|--------------|
+| 「v2.6 の新機能」 | "What's New in v2.6" |
+| 「3行でわかる」 | "In 3 Lines" |
+| 「機能一覧」 | "Features" |
+| 「コマンド早見表」 | "Command Quick Reference" |
 
 ## 注意事項
 
