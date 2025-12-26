@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/pretooluse-guard.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/pretooluse-guard.sh",
             "timeout": 30
           }
         ]
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/permission-request.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/permission-request.sh",
             "timeout": 30
           }
         ]
@@ -31,12 +31,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-init.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/session-init.sh",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-monitor.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/session-monitor.sh",
             "timeout": 30
           }
         ]
@@ -48,7 +48,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/userprompt-inject-policy.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/userprompt-inject-policy.sh",
             "timeout": 30
           }
         ]
@@ -60,7 +60,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/posttooluse-log-toolname.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/posttooluse-log-toolname.sh",
             "timeout": 30
           }
         ]
@@ -70,27 +70,27 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/auto-cleanup-hook.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/auto-cleanup-hook.sh",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/track-changes.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/track-changes.sh",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/auto-test-runner.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/auto-test-runner.sh",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/plans-watcher.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/plans-watcher.sh",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/tdd-order-check.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/tdd-order-check.sh",
             "timeout": 30
           }
         ]
@@ -101,12 +101,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/session-summary.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/session-summary.sh",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/collect-cleanup-context.sh",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/collect-cleanup-context.sh",
             "timeout": 30
           },
           {
