@@ -27,6 +27,24 @@ Claude-mem プラグインがインストールされている必要がありま
 
 ## 実行フロー
 
+### Step 0: OS 検出
+
+```bash
+# OS を検出
+if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "$WINDIR" ]]; then
+  OS_TYPE="windows"
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  OS_TYPE="mac"
+else
+  OS_TYPE="linux"
+fi
+echo "検出された OS: $OS_TYPE"
+```
+
+**Windows の場合**: Windows 固有の設定が適用されます（Step 3.5 参照）
+
+---
+
 ### Step 1: Claude-mem インストール検出
 
 ```bash
@@ -97,6 +115,73 @@ cp templates/modes/harness.json "$CLAUDE_MEM_MODES_DIR/"
 if [ "$HARNESS_MEM_LANG" = "ja" ]; then
   cp templates/modes/harness--ja.json "$CLAUDE_MEM_MODES_DIR/"
 fi
+```
+
+---
+
+### Step 3.5: Windows 固有設定（Windows のみ）
+
+Windows では `.sh` ファイルを直接実行できない問題があるため、追加設定が必要です。
+
+> ⚠️ **Windows 環境を検出しました**
+>
+> Claude-mem が正しく動作するために、以下の設定を行います:
+>
+> 1. **MCP 設定の調整**: `cmd /c` ラッパーを使用
+> 2. **パス形式の変換**: Windows パス形式に対応
+
+**設定ファイルの更新**:
+
+プロジェクトの `.mcp.json` または `~/.claude/mcp.json` に以下を追加:
+
+```json
+{
+  "mcpServers": {
+    "claude-mem": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "claude-mem-mcp"],
+      "env": {
+        "CLAUDE_MEM_MODE": "harness"
+      }
+    }
+  }
+}
+```
+
+**代替設定（npx フルパス指定）**:
+
+npx が見つからない場合は、フルパスを指定:
+
+```json
+{
+  "mcpServers": {
+    "claude-mem": {
+      "command": "C:\\Program Files\\nodejs\\npx.cmd",
+      "args": ["-y", "claude-mem-mcp"],
+      "env": {
+        "CLAUDE_MEM_MODE": "harness"
+      }
+    }
+  }
+}
+```
+
+**WSL を使用する場合（推奨）**:
+
+WSL 環境で Claude Code を実行している場合は、Unix 設定がそのまま使用できます。
+
+```json
+{
+  "mcpServers": {
+    "claude-mem": {
+      "command": "npx",
+      "args": ["-y", "claude-mem-mcp"],
+      "env": {
+        "CLAUDE_MEM_MODE": "harness"
+      }
+    }
+  }
+}
 ```
 
 ---
@@ -215,6 +300,72 @@ mem-search: 過去の解決策をヒット
 ---
 
 ## トラブルシューティング
+
+### Windows: ENOENT エラーが発生する
+
+```
+ENOENT: no such file or directory
+C:\Users\user\AppData\Local\claude-cli-nodejs\Cache\...
+```
+
+**原因**: Windows のパス処理に関する既知の問題（[Issue #229](https://github.com/thedotmack/claude-mem/issues/229)）
+
+**解決策**:
+
+1. **WSL を使用する**（推奨）
+   ```bash
+   # WSL 内で Claude Code を実行
+   wsl
+   claude
+   ```
+
+2. **手動でディレクトリを作成**
+   ```powershell
+   mkdir -p $env:LOCALAPPDATA\claude-cli-nodejs\Cache
+   ```
+
+3. **Issue の修正を待つ**
+   - [Issue #229](https://github.com/thedotmack/claude-mem/issues/229) をウォッチ
+
+---
+
+### Windows: npx が見つからない
+
+**原因**: PATH に Node.js が含まれていない
+
+**解決策**:
+
+```json
+// .mcp.json で絶対パスを指定
+{
+  "mcpServers": {
+    "claude-mem": {
+      "command": "C:\\Program Files\\nodejs\\npx.cmd",
+      "args": ["-y", "claude-mem-mcp"]
+    }
+  }
+}
+```
+
+---
+
+### Windows: VSCode/Cursor で .sh が開いてしまう
+
+**原因**: Windows のファイル関連付けの問題（[Issue #9758](https://github.com/anthropics/claude-code/issues/9758)）
+
+**解決策**: hooks.json で `bash` プレフィックスを使用
+
+```json
+// 修正前
+"command": "${CLAUDE_PLUGIN_ROOT}/scripts/example.sh"
+
+// 修正後
+"command": "bash ${CLAUDE_PLUGIN_ROOT}/scripts/example.sh"
+```
+
+> ⚠️ **harness v2.6.7 以降では自動適用済み**
+
+---
 
 ### Claude-mem が動作しない
 
