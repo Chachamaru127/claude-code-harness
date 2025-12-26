@@ -43,15 +43,39 @@ echo "検出された OS: $OS_TYPE"
 
 **Windows が検出された場合**:
 
-> ⚠️ **Windows 環境では WSL の使用を強く推奨します**
+```bash
+# claude-mem のバージョンを確認
+cat ~/.claude/plugins/marketplaces/thedotmack/plugin/package.json | grep version
+```
+
+> **claude-mem のバージョンによって推奨が異なります**
 >
-> **理由**: Windows ネイティブでは claude-mem のワーカープロセス（port 37777）が
-> 起動に失敗する問題が頻発しています。
+> | バージョン | 推奨 |
+> |-----------|------|
+> | **v7.3.7 以降** | ✅ Windows ネイティブでも動作可能（改善済み） |
+> | **v7.3.6 以前** | ⚠️ WSL を強く推奨（port 37777 問題が頻発） |
+>
+> ---
+>
+> ### v7.3.7 以降の場合
+>
+> Windows ネイティブでの動作が大幅に改善されました:
+> - ゾンビプロセスの自動排除
+> - ワーカー起動タイムアウトの延長（30秒）
+> - Bun ベースのワーカーラッパー
+>
+> **→ Step 3.5（Windows 設定）へ進んでください。**
+>
+> ---
+>
+> ### v7.3.6 以前の場合
+>
+> **WSL の使用を強く推奨します。**
 >
 > **根本原因**:
 > - PowerShell スクリプト（.ps1）の実行問題
 > - ファイル関連付けの破損
-> - プロセス管理の複雑さ
+> - ゾンビプロセスがポートを占有
 >
 > **WSL では発生しない理由**:
 > - シェルスクリプトがネイティブ実行される
@@ -61,10 +85,21 @@ echo "検出された OS: $OS_TYPE"
 > | 選択肢 | 推奨度 |
 > |--------|--------|
 > | **WSL で Claude Code を実行** | ⭐⭐⭐ 強く推奨 |
-> | Windows ネイティブ（問題発生リスク高） | ⚠️ 非推奨 |
+> | Windows ネイティブ | ⚠️ 問題発生リスク高 |
 >
-> **WSL に切り替える場合**: Step 3.6 へ進んでください。
-> **Windows ネイティブで続行する場合**: Step 3.5 へ（自己責任）
+> **→ Step 3.6（WSL セットアップ）へ進んでください。**
+>
+> ---
+>
+> ### アップグレード推奨
+>
+> v7.3.6 以前を使用中の場合は、最新版へのアップグレードを推奨:
+>
+> ```bash
+> /plugin marketplace remove thedotmack/claude-mem
+> /plugin marketplace add thedotmack/claude-mem
+> /plugin install claude-mem
+> ```
 
 ---
 
@@ -142,21 +177,19 @@ fi
 
 ---
 
-### Step 3.5: Windows 固有設定（Windows のみ・非推奨）
+### Step 3.5: Windows 固有設定（Windows のみ）
 
-> 🚨 **警告: Windows ネイティブでの claude-mem 使用は非推奨です**
+> **claude-mem v7.3.7 以降**: Windows ネイティブでの動作が改善されました ✅
 >
-> **port 37777 問題が高確率で発生します。**
+> **v7.3.6 以前**: 以下の問題が発生する可能性があります ⚠️
 >
-> | 問題 | 原因 |
-> |------|------|
-> | ワーカー起動失敗 | PowerShell (.ps1) の実行問題 |
-> | port 37777 タイムアウト | ゾンビプロセス、PID ファイル陳腐化 |
-> | ENOENT エラー | Windows パス処理の問題 |
+> | 問題 | 原因 | v7.3.7 での対応 |
+> |------|------|----------------|
+> | ワーカー起動失敗 | PowerShell (.ps1) の実行問題 | Bun ラッパーに移行 |
+> | port 37777 タイムアウト | ゾンビプロセス | 自動プロセス排除 |
+> | 起動待機タイムアウト | 短すぎるタイムアウト | 30秒に延長 |
 >
-> **強く推奨**: Step 3.6 に進んで WSL 環境をセットアップしてください。
->
-> **それでも Windows ネイティブで続行する場合**は、以下の設定を試してください（動作保証なし）。
+> **v7.3.6 以前を使用中の場合**: 最新版へのアップグレードまたは Step 3.6（WSL）を推奨
 
 Windows では `.sh` ファイルを直接実行できない問題があるため、追加設定が必要です。
 
@@ -459,7 +492,33 @@ Worker service failed to start on port 37777
 Worker failed to start (readiness check timed out after 20000ms)
 ```
 
-**根本原因（Windows ネイティブの場合）**:
+> **まず claude-mem のバージョンを確認してください**
+>
+> ```bash
+> cat ~/.claude/plugins/marketplaces/thedotmack/plugin/package.json | grep version
+> ```
+>
+> | バージョン | 対応 |
+> |-----------|------|
+> | **v7.3.7 以降** | 下記のトラブルシューティングで解決可能 |
+> | **v7.3.6 以前** | 最新版へのアップグレードを強く推奨 |
+
+**v7.3.7 以降で問題が発生する場合**:
+
+```bash
+# 1. ゾンビプロセスを終了
+taskkill /F /IM bun.exe       # Windows
+taskkill /F /IM node.exe      # Windows
+
+# 2. PID ファイルを削除
+del %USERPROFILE%\.claude-mem\worker.pid
+
+# 3. Claude Code を再起動
+```
+
+---
+
+**v7.3.6 以前の場合（根本原因）**:
 
 | 原因 | 詳細 |
 |------|------|
@@ -473,9 +532,11 @@ Worker failed to start (readiness check timed out after 20000ms)
 - ファイル関連付けに依存しない
 - Unix 標準のプロセス管理（シグナル処理が確実）
 
-**推奨解決策**: **WSL に移行する**（Step 3.6 参照）
+**推奨解決策**:
+1. **最新版へアップグレード**（推奨）
+2. **WSL に移行する**（Step 3.6 参照）
 
-**Windows ネイティブでの一時的な回避策**（効果は限定的）:
+**v7.3.6 以前での一時的な回避策**（効果は限定的）:
 
 ```bash
 # 1. ポートの使用状況を確認
