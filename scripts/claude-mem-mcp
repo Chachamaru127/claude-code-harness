@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# claude-mem-mcp - Claude-mem MCP wrapper for Cursor integration
+#
+# This script:
+# 1. Checks if claude-mem worker is running (health check)
+# 2. Auto-starts worker if not running
+# 3. Dynamically detects latest claude-mem version
+# 4. Launches MCP server in stdio mode
+
+set -euo pipefail
+
+# Constants
+WORKER_HEALTH_URL="http://127.0.0.1:37777/health"
+PLUGIN_BASE="$HOME/.claude/plugins/cache/thedotmack/claude-mem"
+TIMEOUT=5
+
+# Function: Get latest claude-mem version
+get_latest_version() {
+    local latest_version_path
+    latest_version_path=$(ls -1d "$PLUGIN_BASE"/*/ 2>/dev/null | sort -V | tail -1)
+
+    if [ -z "$latest_version_path" ]; then
+        echo "Error: claude-mem plugin not found in $PLUGIN_BASE" >&2
+        exit 1
+    fi
+
+    echo "$latest_version_path"
+}
+
+# Function: Check if worker is running
+is_worker_running() {
+    if curl -s -f --max-time "$TIMEOUT" "$WORKER_HEALTH_URL" > /dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Function: Start worker
+start_worker() {
+    local version_path="$1"
+    local worker_cli="$version_path/scripts/worker-cli.js"
+
+    if [ ! -f "$worker_cli" ]; then
+        echo "Error: worker-cli.js not found at $worker_cli" >&2
+        exit 1
+    fi
+
+    echo "Starting claude-mem worker..." >&2
+    node "$worker_cli" start > /dev/null 2>&1
+
+    # Wait for worker to start
+    local max_retries=10
+    local retry=0
+    while [ $retry -lt $max_retries ]; do
+        if is_worker_running; then
+            echo "Worker started successfully" >&2
+            return 0
+        fi
+        sleep 1
+        retry=$((retry + 1))
+    done
+
+    echo "Error: Worker failed to start after ${max_retries} seconds" >&2
+    exit 1
+}
+
+# Main execution
+main() {
+    # Get latest version path
+    LATEST_VERSION=$(get_latest_version)
+    echo "Using claude-mem version: $(basename "$LATEST_VERSION")" >&2
+
+    # Check worker status
+    if ! is_worker_running; then
+        echo "Worker not running, attempting to start..." >&2
+        start_worker "$LATEST_VERSION"
+    else
+        echo "Worker already running" >&2
+    fi
+
+    # Launch MCP server
+    MCP_SERVER="$LATEST_VERSION/scripts/mcp-server.cjs"
+
+    if [ ! -f "$MCP_SERVER" ]; then
+        echo "Error: mcp-server.cjs not found at $MCP_SERVER" >&2
+        exit 1
+    fi
+
+    echo "Launching MCP server..." >&2
+    exec node "$MCP_SERVER"
+}
+
+main "$@"
