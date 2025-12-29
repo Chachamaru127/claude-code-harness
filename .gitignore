@@ -14,7 +14,7 @@ Thumbs.db
 *.swo
 *~
 *.code-workspace
-
+docs/design/
 # Local development
 .claude/
 .serena/
@@ -25,10 +25,15 @@ Thumbs.db
 /AGENTS.md
 /CLAUDE.md
 /Plans.md
-/.cursor/
-/.cursor/commands/
-/.cursor/mcp.json
 /.claude-code-harness-version
+
+# Cursor user-specific configuration
+/.cursor/hooks.json
+/.cursor/mcp.json
+/.cursor/commands/
+/.cursor/plans/
+/.cursor/skills/
+/.cursor/worktrees.json
 
 # Logs
 *.log

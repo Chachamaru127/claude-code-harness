@@ -7,6 +7,144 @@
 
 ## [Unreleased]
 
+## [2.6.13] - 2025-12-27
+
+### 🎯 あなたにとって何が変わるか
+
+**Cursor での作業が自動的に claude-mem に記録され、Claude Code との間で作業履歴を完全に共有できるようになりました**
+
+#### Before（v2.6.12）
+- Cursor から claude-mem の記録を読み取ることは可能
+- Cursor での作業は手動で記録する必要があった
+- Claude Code ⇆ Cursor のデータ共有が片方向
+
+#### After（v2.6.13）
+- **Cursor での作業を自動記録**: プロンプト、ファイル編集、セッション完了
+- **完全な双方向共有**: Claude Code ⇄ claude-mem ⇄ Cursor
+- **ワンコマンドセットアップ**: `/cursor-mem` で全自動設定
+
+### Added
+
+- **Cursor Hooks 統合**: Cursor での作業を自動記録
+  - `scripts/cursor-hooks/utils.js` - 共通ユーティリティ（Worker API 通信、プロジェクト検出、エラーハンドリング）
+  - `scripts/cursor-hooks/record-prompt.js` - beforeSubmitPrompt フック（プロンプト記録）
+  - `scripts/cursor-hooks/record-edit.js` - afterFileEdit フック（ファイル編集記録）
+  - `scripts/cursor-hooks/record-stop.js` - stop フック（セッション完了記録）
+
+- **設定テンプレート**:
+  - `.cursor/hooks.json.example` - Cursor フック設定テンプレート
+  - `.cursorrules.example` - セッション開始時の自動指示テンプレート
+
+- **テストスイート**:
+  - `tests/cursor-mem/test-plan.md` - 10個の詳細テストケース
+    - TC1: プロジェクト検出テスト
+    - TC2-4: 書き込みテスト（全フック）
+    - TC5-6: 双方向読み取りテスト
+    - TC7-8: エラーハンドリングテスト
+    - TC9: パフォーマンステスト
+    - TC10: 並行書き込みテスト
+  - `tests/cursor-mem/verify-records.sh` - 記録検証スクリプト（統計表示、検索、詳細表示）
+
+- **コマンド**:
+  - `/cursor-mem` - Cursor × Claude-mem 統合のワンコマンドセットアップ
+    - Worker 起動確認
+    - MCP 設定スコープ選択（グローバル/ローカル）
+    - hooks.json 自動生成
+    - .cursorrules 自動生成
+    - 動作確認テスト
+
+- **セットアップスクリプト**:
+  - `scripts/setup-cursor-mem.sh` - 対話的セットアップ（`--global`/`--local`/`--skip-test`/`--force` オプション対応）
+
+### Changed
+
+- **ドキュメント更新**:
+  - `docs/guides/cursor-mem-integration.md` に「自動記録の設定」セクション追加
+    - セットアップ手順（5ステップ）
+    - 制限事項の明記（自動コンテキスト注入不可、カバレッジ 60-70%）
+    - カバレッジ比較表
+    - トラブルシューティング
+  - `README.md` に「Cursor × Claude-mem 自動記録（v2.6.13）」セクション追加
+  - `README.md` の `/cursor-mem` コマンドを知識・連携セクションに追加
+
+- `.gitignore` の Cursor セクションを整理
+  - `/.cursor/` （全体無視）→ `.cursor/hooks.json`（ユーザー固有）のみ無視に変更
+  - `.cursor/hooks.json.example` をバージョン管理対象に
+
+### Benefits
+
+- **自動記録**: Cursor での全作業が claude-mem に自動保存（プロンプト、編集、完了）
+- **双方向共有**: Claude Code と Cursor 間で作業履歴が完全に同期
+- **2-Agent 強化**: PM（Cursor）と実装役（Claude Code）の連携が大幅改善
+- **ワンコマンドセットアップ**: `/cursor-mem` で数十秒でセットアップ完了
+- **厳格なテスト**: 10個のテストケースで品質保証
+
+### Technical Details
+
+**自動記録の仕組み**:
+```
+Cursor → Hooks → Worker API → claude-mem DB ← Claude Code
+```
+
+**記録内容**:
+- UserPrompt: ユーザープロンプト + 添付ファイル
+- Edit: ファイルパス + 編集内容（diff）
+- SessionStop: セッション状態 + ループ回数
+
+**エラーハンドリング**:
+- Worker 未起動時も Cursor の動作をブロックしない
+- 10秒タイムアウトでネットワークハングを防止
+- グレースフルな失敗（stderr にエラー出力、Cursor は継続）
+
+**プロジェクト検出**:
+1. `workspace_roots[0]`（Cursor フックから取得）
+2. `CLAUDE_MEM_PROJECT_CWD` 環境変数
+3. `process.cwd()` フォールバック
+
+### Fixed
+
+- **Worker API "private" 判定問題を解決**:
+  - 根本原因: セッション未初期化により全 observation が "private" でスキップされていた
+  - 解決策: `record-prompt.js` で `/api/sessions/init` を呼び出してセッションを事前初期化
+  - `utils.js` に `initSession()` 関数を追加（セッション作成 + プロンプト保存）
+  - `utils.js` に `getProjectName()` 関数を追加（プロジェクト名抽出）
+  - `recordObservation()` にレスポンスステータス確認を追加（"skipped" の検出）
+
+- **Node.js v24 stdin 評価問題を wrapper スクリプトで解決**:
+  - 問題: Node.js v24.10.0+ が stdin を TypeScript として評価し、JSON データで構文エラー
+  - 影響: Cursor Hooks が `SyntaxError: Unexpected token ':'` で失敗
+  - 解決策: `scripts/cursor-hooks/run-hook.sh` wrapper を作成して stdin を Node.js に直接渡す
+  - `.cursor/hooks.json` をプロジェクトルートからの相対パスに修正（`../scripts/` → `scripts/`）
+  - 動作確認: `exit code: 0` で正常完了、claude-mem に記録が保存される
+
+- **ドキュメントの動作確認クエリを修正**:
+  - 存在しない `tool_name` カラムへの参照を修正
+  - 正しいスキーマ（`type`, `title`, `narrative`）を使用するように更新
+  - 「自動記録の仕組み」セクションを追加（セッション初期化フローの説明）
+  - Node.js v24 問題のトラブルシューティングセクションを追加
+
+**技術詳細**:
+- Worker API は `/api/sessions/observations` に送られた observation を "private" として拒否
+- 原因: `user_prompts` テーブルに該当プロンプトが存在しないため
+- 修正: beforeSubmitPrompt フックで事前に `/api/sessions/init` を呼び出し、プロンプトを登録
+- 結果: 後続の observation が正常に記録されるようになった
+
+**動作確認**:
+```bash
+# テスト実行結果
+Session 15461, prompt #1 initialized ✅
+Observation recorded: 10946-10951 ✅
+  - 10946: discovery - Claude-Mem観測ツールの初期化
+  - 10947: change - テストファイルの内容編集
+  - 10948: change - セッション終了
+```
+
+### Limitations
+
+- **自動コンテキスト注入不可**: Cursor の `beforeSubmitPrompt` フックがレスポンスを尊重しないため
+- **エージェント応答は記録されない**: `afterAgentResponse` フックが存在しないため
+- **カバレッジ**: Claude Code の 60-70% 程度（フック制限による）
+
 ## [2.6.12] - 2025-12-27
 
 ### Added

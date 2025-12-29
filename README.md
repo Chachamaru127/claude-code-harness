@@ -9,7 +9,7 @@
 Claude Code を「Plan → Work → Review」の自律サイクルで運用し、
 **迷い・雑さ・事故・忘却** を仕組みで防ぐ開発ハーネスです。
 
-[![Version: 2.6.12](https://img.shields.io/badge/version-2.6.12-blue.svg)](VERSION)
+[![Version: 2.6.14](https://img.shields.io/badge/version-2.6.14-blue.svg)](VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![Harness Score](https://img.shields.io/badge/harness_score-92%2F100-brightgreen.svg)](#採点基準)
 
@@ -51,6 +51,23 @@ Claude Code を「Plan → Work → Review」の自律サイクルで運用し�
 *Auto-suggest related child skills when using a parent skill.*
 
 「どのスキルを読めばいいか」で迷わなくなります。
+
+### Cursor × Claude-mem 自動記録（v2.6.13）| Cursor Auto-Recording
+
+```bash
+/cursor-mem  # ワンコマンドでセットアップ
+```
+
+**Cursor での作業を自動記録し、Claude Code と作業履歴を共有**
+*Auto-record Cursor work and share history with Claude Code*
+
+- **自動記録**: プロンプト、ファイル編集、セッション完了を自動記録
+- **双方向共有**: Claude Code ⇄ claude-mem ⇄ Cursor
+- **2-Agent 運用**: PM（Cursor）と実装役（Claude Code）の連携を強化
+
+詳細: [Cursor 統合ガイド](docs/guides/cursor-mem-integration.md)
+
+**テスト: Cursor フック動作確認** - Cursor 統合フックの動作を確認済み（PreToolUse/PostToolUse が正常に動作）。
 
 ---
 
@@ -187,6 +204,7 @@ claude --plugin-dir ~/claude-plugins/claude-code-harness
 |----------|------|
 | `/remember` | 学習事項を Rules/Commands/Skills に記録 |
 | `/harness-mem` | Claude-mem 統合セットアップ |
+| `/cursor-mem` | Cursor × Claude-mem 自動記録セットアップ |
 | `/handoff-to-cursor` | Cursor(PM) への完了報告 |
 
 ### スキル（会話で自動起動）
@@ -305,3 +323,5 @@ claude-code-harness/
 **MIT License** - 使用・改変・配布・商用利用が自由です。
 
 - [English](LICENSE.md) | [日本語](LICENSE.ja.md)
+
+テスト3

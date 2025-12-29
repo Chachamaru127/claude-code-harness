@@ -171,6 +171,321 @@ Composerが `mcp__claude-mem__add_observations` を使用し、メモリに記�
 
 ---
 
+## 自動記録の設定（オプション）
+
+Cursor Hooks を使用すると、Cursor での作業内容を自動的に claude-mem に記録できます。
+
+### 自動記録される内容
+
+| Hook | タイミング | 記録内容 |
+|------|-----------|---------|
+| `beforeSubmitPrompt` | プロンプト送信前 | ユーザープロンプトと添付ファイル |
+| `afterFileEdit` | ファイル編集後 | ファイルパスと編集内容（diff） |
+| `stop` | セッション完了時 | セッション終了状態とループ回数 |
+
+### セットアップ手順
+
+#### Step 1: hooks.json の作成
+
+プロジェクトルートで `.cursor/hooks.json.example` をコピー：
+
+```bash
+# プロジェクトルートで実行
+cp .cursor/hooks.json.example .cursor/hooks.json
+```
+
+`.cursor/hooks.json` の内容を確認：
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [
+      {
+        "command": "node",
+        "args": ["${workspaceFolder}/scripts/cursor-hooks/record-prompt.js"]
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "node",
+        "args": ["${workspaceFolder}/scripts/cursor-hooks/record-edit.js"]
+      }
+    ],
+    "stop": [
+      {
+        "command": "node",
+        "args": ["${workspaceFolder}/scripts/cursor-hooks/record-stop.js"]
+      }
+    ]
+  }
+}
+```
+
+**⚠️ 重要**: `.cursor/hooks.json` はユーザー固有の設定ファイルのため、git には含まれません（`.gitignore` で除外済み）。
+
+#### Step 2: .cursorrules の設定（推奨）
+
+セッション開始時に過去の記録を自動検索するよう指示：
+
+```bash
+# プロジェクトルートで実行
+cp .cursorrules.example .cursorrules
+
+# 内容をカスタマイズ（オプション）
+# vim .cursorrules
+```
+
+`.cursorrules` には以下のような指示が含まれます：
+
+```markdown
+## Session Start Protocol
+
+At the beginning of each session, search past work using claude-mem MCP tools:
+
+1. Search recent decisions and patterns
+2. Review previous session context
+3. Continue from where you left off
+```
+
+#### Step 3: Worker の起動確認
+
+自動記録には claude-mem ワーカーが起動している必要があります：
+
+```bash
+# ヘルスチェック
+curl http://127.0.0.1:37777/health
+
+# 期待される出力:
+# {"status":"ok"}
+```
+
+起動していない場合：
+
+```bash
+# ワーカーを起動
+claude-mem restart
+```
+
+#### Step 4: Cursor 再起動
+
+設定ファイル作成後、Cursor を再起動してフックを有効化します。
+
+#### Step 5: 動作確認
+
+1. Cursor でプロンプトを送信してみる
+2. ファイルを編集してみる
+3. セッションを完了させる
+
+記録が保存されたか確認：
+
+```bash
+# 最新の記録を確認
+sqlite3 ~/.claude-mem/claude-mem.db \
+  "SELECT id, type, title FROM observations
+   WHERE project = '$(basename $(pwd))'
+   ORDER BY id DESC LIMIT 5;"
+```
+
+以下のような記録が表示されれば成功：
+
+```
+10951|change|テストファイルの内容が更新された
+10950|discovery|Claude-Memの観測システムが正常に初期化された
+10948|change|セッション終了
+10947|change|テストファイルの内容編集
+10946|discovery|Claude-Mem観測ツールの初期化と目的確認
+```
+
+Worker が AI でツールデータを意味のある observation に自動変換します。
+
+### 自動記録の仕組み
+
+Cursor Hooks → Worker API の処理フローを理解することで、トラブルシューティングが容易になります。
+
+#### 1. セッション初期化（beforeSubmitPrompt）
+
+```javascript
+// record-prompt.js
+beforeSubmitPrompt → /api/sessions/init
+  ↓
+Worker: セッション作成 + プロンプト保存
+  ↓
+user_prompts テーブルに登録
+```
+
+**重要**: この初期化ステップにより、後続の observation が "private" でスキップされなくなります。
+
+#### 2. Observation 記録（afterFileEdit, stop）
+
+```javascript
+// record-edit.js, record-stop.js
+afterFileEdit/stop → /api/sessions/observations
+  ↓
+Worker: AI 処理（Haiku モデル使用）
+  ↓
+構造化データに変換:
+  - tool_name: "Edit" → type: "change", title: "テストファイルの内容編集"
+  - tool_input: {...} → narrative: "プロジェクト内のtest.txtファイルに対して..."
+  ↓
+observations テーブルに保存
+```
+
+#### 3. データベーススキーマ
+
+**送信フォーマット（フックスクリプト）**:
+```json
+{
+  "claudeSessionId": "cursor-session-123",
+  "tool_name": "Edit",
+  "tool_input": "{\"file_path\":\"test.txt\",\"old_string\":\"before\",\"new_string\":\"after\"}",
+  "tool_response": "Success",
+  "cwd": "/path/to/project"
+}
+```
+
+**保存フォーマット（データベース）**:
+```sql
+observations (
+  id: 10947,
+  type: "change",
+  title: "テストファイルの内容編集",
+  subtitle: "",
+  narrative: "プロジェクト内のtest.txtファイルに対して文字列置換編集が実行された...",
+  files_modified: "test.txt",
+  ...
+)
+```
+
+Worker が AI で自動的に変換するため、フックスクリプトは生のツールデータを送信するだけで済みます。
+
+### 制限事項
+
+自動記録には以下の制限があります：
+
+1. **自動コンテキスト注入は不可**: セッション開始時に手動で過去記録を検索する必要があります（Cursor の `beforeSubmitPrompt` フックはレスポンスを尊重しないため）
+
+2. **エージェント応答は記録されない**: Cursor には `afterAgentResponse` フックが存在しないため、エージェントの応答は記録できません
+
+3. **ツール実行結果は部分的**: `beforeShellExecution` や `beforeMCPExecution` フックは実行前の情報のみ記録可能（実行結果は取得できない）
+
+4. **Claude Code より記録が少ない**: フックの制限により、Claude Code での記録と比べて 60-70% 程度のカバレッジとなります
+
+### カバレッジ比較
+
+| 記録内容 | Claude Code | Cursor（自動記録） |
+|---------|-------------|-------------------|
+| ユーザープロンプト | ✅ 完全 | ✅ 完全 |
+| ツール呼び出し | ✅ 完全 | ⚠️ 部分的 |
+| ツール結果 | ✅ 完全 | ❌ なし |
+| エージェント思考 | ✅ 完全 | ❌ なし |
+| ファイル編集 | ✅ 完全 | ✅ 完全 |
+| セッション完了 | ✅ 完全 | ✅ 完全 |
+
+### トラブルシューティング（自動記録）
+
+#### 問題: フックが動作しない
+
+**症状**: プロンプトを送信してもデータベースに記録されない
+
+**解決策**:
+
+1. Cursor を完全に再起動
+2. `.cursor/hooks.json` のパスが正しいか確認
+3. スクリプトが実行可能か確認:
+   ```bash
+   ls -la scripts/cursor-hooks/*.js
+   ```
+4. Cursor の開発者ツールでエラーを確認:
+   - `View` → `Toggle Developer Tools` → `Console` タブ
+
+#### 問題: Worker が未起動エラー
+
+**症状**: フックスクリプトのエラーログに "Worker API returned..." が表示される
+
+**解決策**:
+
+```bash
+# Worker を起動
+claude-mem restart
+
+# ステータス確認
+curl http://127.0.0.1:37777/health
+```
+
+#### 問題: プロジェクト検出が正しくない
+
+**症状**: 記録が別のプロジェクトに保存される
+
+**解決策**:
+
+1. MCP 設定で `cwd` と `env.CLAUDE_MEM_PROJECT_CWD` を確認:
+   ```json
+   {
+     "mcpServers": {
+       "claude-mem": {
+         "type": "stdio",
+         "command": "/path/to/claude-mem-mcp",
+         "cwd": "${workspaceFolder}",
+         "env": {
+           "CLAUDE_MEM_PROJECT_CWD": "${workspaceFolder}"
+         }
+       }
+     }
+   }
+   ```
+
+2. フックスクリプトが `workspace_roots` を正しく受け取っているか確認:
+   ```bash
+   # ログを確認
+   tail -f ~/.claude-mem/logs/worker-*.log
+   ```
+
+#### 問題: Node.js v24 で "Unexpected token" エラー
+
+**症状**: Cursor Hooks ログに以下のエラーが表示される:
+
+```
+SyntaxError: Unexpected token ':'
+at evalTypeScript (node:internal/process/execution:260:22)
+exit code: 1
+```
+
+**原因**: Node.js v24.10.0 以降では、stdin を TypeScript コードとして評価しようとするため、Cursor から送信される JSON データが構文エラーになります。
+
+**解決済み**: v2.6.13 以降では wrapper スクリプト (`run-hook.sh`) を使用してこの問題を回避しています。
+
+古いバージョンから更新する場合：
+
+1. `.cursor/hooks.json.example` を参照して hooks.json を更新:
+   ```json
+   {
+     "command": "bash scripts/cursor-hooks/run-hook.sh scripts/cursor-hooks/record-prompt.js"
+   }
+   ```
+
+2. パスは**プロジェクトルートからの相対パス**であることを確認（`../` は不要）
+
+3. wrapper スクリプトに実行権限を付与:
+   ```bash
+   chmod +x scripts/cursor-hooks/run-hook.sh
+   ```
+
+**検証方法**:
+
+```bash
+# Cursor Hooks ログで確認（View → Output → "Cursor Hooks"）
+# 成功時:
+Command: bash scripts/cursor-hooks/run-hook.sh ... exit code: 0
+STDERR: [cursor-hooks] Session XXXXX, prompt #X initialized
+
+# 失敗時:
+exit code: 1  # または exit code: 127
+STDERR: SyntaxError: Unexpected token ':'
+```
+
+---
+
 ## トラブルシューティング
 
 ### 問題1: MCPツールが認識されない

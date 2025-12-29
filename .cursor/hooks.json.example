@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [
+      {
+        "command": "bash scripts/cursor-hooks/run-hook.sh scripts/cursor-hooks/record-prompt.js"
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "bash scripts/cursor-hooks/run-hook.sh scripts/cursor-hooks/record-edit.js"
+      }
+    ],
+    "stop": [
+      {
+        "command": "bash scripts/cursor-hooks/run-hook.sh scripts/cursor-hooks/record-stop.js"
+      }
+    ]
+  }
+}

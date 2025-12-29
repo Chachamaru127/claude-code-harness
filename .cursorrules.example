@@ -1,0 +1,69 @@
+# Cursor × Claude-mem Integration Rules
+
+## Session Start Protocol
+
+At the beginning of each session, search past work using claude-mem MCP tools:
+
+1. Search recent decisions and patterns
+2. Review previous session context
+3. Continue from where you left off
+
+### Example Initial Prompt
+
+"まず過去の作業を確認してください。最近のdecisionとpatternを検索し、前回のセッションの続きから始めましょう。"
+
+### Manual Search Commands
+
+Use the MCP tools directly:
+- Search recent work: Use `search` tool with query
+- Get timeline: Use `timeline` tool
+- Fetch details: Use `get_observations` with IDs
+
+### Workflow
+
+```
+Session Start
+    ↓
+Search claude-mem for recent context
+    ↓
+Review past decisions/patterns
+    ↓
+Continue with informed context
+```
+
+### Important Notes
+
+- **Automatic recording**: Your prompts, file edits, and session completion are automatically recorded to claude-mem via Cursor hooks
+- **Manual context search**: You must manually search past context at session start (automatic injection is not possible due to Cursor limitations)
+- **Project-based memory**: All records are tagged with your project name for easy filtering
+
+### Example Queries
+
+**Find recent decisions:**
+```
+Use search tool: query="decision", type="observations", obs_type="decision", limit=10
+```
+
+**Review last session:**
+```
+Use get_recent_context tool: limit=10
+```
+
+**Find bug fixes:**
+```
+Use search tool: query="bug", obs_type="bugfix", limit=5
+```
+
+### Advanced Usage
+
+**Timeline around a specific observation:**
+```
+Use timeline tool: anchor=<observation_id>, depth_before=3, depth_after=3
+```
+
+**Batch fetch multiple observations:**
+```
+Use get_observations tool: ids=[123, 456, 789]
+```
+
+For complete documentation, see: docs/guides/cursor-mem-integration.md
