@@ -16,7 +16,8 @@ Thumbs.db
 *.code-workspace
 docs/design/
 # Local development
-.claude/
+.claude/*
+!.claude/rules/
 .serena/
 .mcp.json
 .github/mlc_config.json
