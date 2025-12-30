@@ -30,13 +30,14 @@ docs/design/
 
 # Cursor user-specific configuration
 /.cursor/hooks.json
+/.cursor/hooks/
 /.cursor/mcp.json
 /.cursor/commands/
 /.cursor/plans/
 /.cursor/skills/
 /.cursor/worktrees.json
-/.cursor/rules/claude-mem.md
-# Note: .cursor/rules/*.template files are tracked (templates)
+/.cursor/rules/claude-mem*.md
+/.cursor/rules/claude-mem*.mdc
 
 # Logs
 *.log
@@ -72,6 +73,9 @@ skills/test-*/
 
 # 開発用スキル（非公開）
 skills/x-promo/
+
+# Harness UI (開発中 - 配布対象外)
+/harness-ui/
 
 # スライド中間ファイル
 docs/images/slides/

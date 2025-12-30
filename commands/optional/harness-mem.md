@@ -163,8 +163,11 @@ ls ~/.claude/plugins/marketplaces/thedotmack 2>/dev/null
 ハーネス専用のモードファイルを Claude-mem に配置します。
 
 ```bash
-# モードファイルのコピー先
-CLAUDE_MEM_MODES_DIR="$HOME/.claude/plugins/marketplaces/thedotmack/plugin/modes"
+# モードファイルのコピー先（公式の配置場所）
+CLAUDE_MEM_MODES_DIR="$HOME/.claude-mem/modes"
+
+# ディレクトリが存在しない場合は作成
+mkdir -p "$CLAUDE_MEM_MODES_DIR"
 
 # harness.json をコピー
 cp templates/modes/harness.json "$CLAUDE_MEM_MODES_DIR/"
@@ -389,7 +392,7 @@ fi
 >
 > **設定内容:**
 > - モード: `harness` (または `harness--ja`)
-> - モードファイル: `~/.claude/plugins/marketplaces/thedotmack/plugin/modes/harness.json`
+> - モードファイル: `~/.claude-mem/modes/harness.json`
 > - 設定ファイル: `~/.claude-mem/settings.json`
 >
 > **次回セッションから有効になります。**
@@ -667,7 +670,7 @@ cat ~/.claude-mem/settings.json
 # → {"CLAUDE_MEM_MODE": "harness--ja"} であるべき
 
 # モードファイルが存在するか確認
-ls ~/.claude/plugins/marketplaces/thedotmack/plugin/modes/harness--ja.json
+ls ~/.claude-mem/modes/harness--ja.json
 ```
 
 ---
@@ -689,76 +692,19 @@ Claude-mem のハーネスモードを無効化する場合:
 
 ---
 
-## Cursor 統合（オプション）
+## Cursor 統合
 
-### 概要
-
-Cursor IDE から Claude-mem の MCP サーバーにアクセスし、過去のセッション記録を検索・新しい観測を記録できます。
-
-### メリット
-
-- **PM（Cursor）と実装（Claude Code）の役割分担**: 設計判断はCursorで記録、実装はClaude Codeが過去の判断を参照
-- **双方向のデータ共有**: 同じメモリデータベースを共有（WALモードで並行書き込み対応）
-- **クロスツール検索**: Cursorで記録した内容をClaude Codeで検索、その逆も可能
-
-### セットアップ手順
-
-詳細は [docs/guides/cursor-mem-integration.md](../../docs/guides/cursor-mem-integration.md) を参照してください。
-
-#### 簡易手順
-
-1. **MCPラッパースクリプトの配置**
-   ```bash
-   # claude-code-harness プラグインがインストール済みであれば、
-   # scripts/claude-mem-mcp が既に存在します
-   find ~/.claude/plugins/cache -name "claude-mem-mcp" -type f | grep claude-code-harness
-   ```
-
-2. **Cursor MCP設定**
-   プロジェクトルートに `.cursor/mcp.json` を作成：
-   ```json
-   {
-     "mcpServers": {
-       "claude-mem": {
-         "type": "stdio",
-         "command": "/absolute/path/to/claude-code-harness/scripts/claude-mem-mcp"
-       }
-     }
-   }
-   ```
-
-3. **Cursor再起動**
-   設定後、Cursorを再起動してMCPサーバーを認識させます。
-
-### 使用例
-
-#### Cursorで過去の決定を検索
-
-```
-Cursor Composer: 「認証方式の選定理由を教えて」
-→ mcp__claude-mem__search を使用
-→ 過去の決定記録を取得
-```
-
-#### Cursorでレビュー結果を記録
-
-```
-Cursor Composer: 「このRLSポリシーのパターンを記録」
-→ mcp__claude-mem__add_observations を使用
-→ タグ: source:cursor, review, pattern
-```
-
-### 推奨ワークフロー
-
-```
-1. Cursor（PM役）: 設計判断やレビュー結果を記録
-2. Claude Code（実装役）: 過去の判断を参照しながら実装
-3. 双方向検索: どちらからでも過去の記録を検索可能
-```
-
-### トラブルシューティング
-
-詳細は [docs/guides/cursor-mem-integration.md#トラブルシューティング](../../docs/guides/cursor-mem-integration.md#トラブルシューティング) を参照。
+> **v2.6.18 以降**: Cursor 統合は claude-mem v8.5.0+ の公式機能を使用してください。
+>
+> ```bash
+> # claude-mem リポジトリで実行
+> git clone https://github.com/thedotmack/claude-mem.git
+> cd claude-mem
+> bun install
+> bun run cursor:install
+> ```
+>
+> 詳細は [claude-mem CHANGELOG](https://github.com/thedotmack/claude-mem/blob/main/CHANGELOG.md) を参照。
 
 ---
 
@@ -770,4 +716,3 @@ Cursor Composer: 「このRLSポリシーのパターンを記録」
 | `mem-search` | 過去の作業履歴を検索 |
 | `session-init` | セッション開始時に過去の文脈を表示（Claude-mem 統合時） |
 | `/harness-init` | プロジェクト初期化（Claude-mem 統合は別途 `/harness-mem` で） |
-| `cursor-mem` | Cursor から Claude-mem を活用（統合セットアップ後） |

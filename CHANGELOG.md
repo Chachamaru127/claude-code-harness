@@ -7,6 +7,56 @@
 
 ## [Unreleased]
 
+## [2.6.18] - 2025-12-30
+
+### 🎯 あなたにとって何が変わるか
+
+**Cursor × claude-mem 統合を公式実装に移行。ハーネス独自の `/cursor-mem` コマンドを廃止し、claude-mem v8.5.0+ の公式 Cursor サポートを使用します**
+
+#### Before（v2.6.17）
+- ハーネス独自の `/cursor-mem` コマンドでセットアップ
+- `scripts/cursor-hooks/*.js` で記録処理
+- 手動コンテキスト検索が必要
+
+#### After（v2.6.18）
+- **公式コマンド**: `bun run cursor:install` で一発セットアップ
+- **自動コンテキスト注入**: `.cursor/rules/claude-mem-context.mdc` で自動
+- **6種類のフック**: session-init, context-inject, save-observation, save-file-edit, session-summary
+- **無料AI対応**: Gemini, OpenRouter サポート
+
+### Removed
+
+- **`/cursor-mem` コマンド**: `commands/optional/cursor-mem.md` を削除
+  - 公式 `cursor:install` コマンドに移行
+- **カスタムフックスクリプト**: `scripts/cursor-hooks/` を削除
+  - `record-prompt.js`, `record-edit.js`, `record-stop.js`, `run-hook.sh`, `utils.js`
+- **ドキュメント**: `docs/guides/cursor-mem-integration.md` を削除
+- **テンプレート**: `.cursor/rules/claude-mem.md.template` を削除
+- **サンプル**: `.cursor/hooks.json.example` を削除
+
+### Changed
+
+- **.gitignore**: 公式 Cursor フック用に更新
+  - `/.cursor/hooks/` を追加（公式スクリプト）
+  - `/.cursor/rules/claude-mem*.mdc` を追加（自動生成コンテキスト）
+
+### Migration
+
+claude-mem v8.5.0+ の公式 Cursor サポートを使用してください：
+
+```bash
+# リポジトリをクローン
+git clone https://github.com/thedotmack/claude-mem.git
+cd claude-mem
+bun install
+
+# Cursor フックをインストール
+bun run cursor:install
+
+# ステータス確認
+bun run cursor:status
+```
+
 ## [2.6.17] - 2025-12-30
 
 ### 🎯 あなたにとって何が変わるか
