@@ -1,0 +1,25 @@
+{
+  "session_id": "AD255666-4544-4B2D-8783-D4AE866935A1",
+  "started_at": "2025-12-31T14:33:16Z",
+  "cwd": "/Users/tachibanashuuta/Desktop/Code/CC-harness/claude-code-harness/harness-ui",
+  "project_name": "harness-ui",
+  "prompt_seq": 1,
+  "git": {
+    "branch": "(no git)",
+    "uncommitted_changes": 0,
+    "last_commit": "none"
+  },
+  "plans": {
+    "exists": false,
+    "last_modified": 0,
+    "wip_tasks": 0,
+    "todo_tasks": 0,
+    "pending_tasks": 0,
+    "completed_tasks": 0
+  },
+  "changes_this_session": [],
+  "intent": "literal",
+  "ended_at": "2025-12-31T14:33:27Z",
+  "duration_minutes": 540,
+  "memory_logged": true
+}

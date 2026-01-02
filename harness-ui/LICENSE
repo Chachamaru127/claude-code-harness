@@ -1,0 +1,47 @@
+Harness UI - Proprietary License
+
+Copyright (c) 2024-2026 Claude Code Harness Contributors
+
+All rights reserved.
+
+This software and associated documentation files (the "Software") are
+proprietary and confidential. The Software is licensed, not sold.
+
+TERMS AND CONDITIONS:
+
+1. LICENSE GRANT
+   Subject to valid license key verification through Polar.sh, you are
+   granted a limited, non-exclusive, non-transferable license to use
+   the Software for your personal or internal business purposes.
+
+2. RESTRICTIONS
+   You may NOT:
+   - Copy, modify, or distribute the Software without authorization
+   - Remove or circumvent license verification mechanisms
+   - Reverse engineer, decompile, or disassemble the Software
+   - Sublicense, rent, lease, or lend the Software
+   - Use the Software to create competing products
+
+3. LICENSE VERIFICATION
+   The Software requires a valid license key obtained through Polar.sh.
+   Unauthorized use or circumvention of the license verification system
+   is strictly prohibited.
+
+4. TERMINATION
+   This license terminates automatically if you violate any of these terms.
+   Upon termination, you must destroy all copies of the Software.
+
+5. WARRANTY DISCLAIMER
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+6. LIMITATION OF LIABILITY
+   IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+   OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+
+For licensing inquiries: https://polar.sh/tachibanashuuta
+
+---
+
+Note: Other parts of the claude-code-harness project (commands, skills,
+hooks, agents) are licensed under the MIT License. See the root LICENSE
+file for details.

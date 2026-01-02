@@ -1,0 +1,14 @@
+{
+  "lsp": {
+    "available": false,
+    "plugins": "",
+    "available_by_ext": {},
+    "last_used_prompt_seq": 0,
+    "last_used_tool_name": "",
+    "used_since_last_prompt": false
+  },
+  "skills": {
+    "index": [],
+    "decision_required": false
+  }
+}
