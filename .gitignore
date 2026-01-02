@@ -90,3 +90,15 @@ docs/presentation/8.png
 docs/presentation/9.png
 docs/presentation/10.png
 docs/presentation/11.png
+
+# Playwright MCP (ローカルテスト用)
+.playwright-mcp/
+
+# 調査・研究用ドキュメント（非公開）
+docs/research/
+
+# 一時的な画像ファイル
+docs/images/image*.webp
+
+# マイグレーションスクリプト（一時的）
+scripts/migrate-usage-history.js
