@@ -15,6 +15,13 @@
 
 set -euo pipefail
 
+# Check for jq dependency - silently exit if not available
+# (usage tracking should never block the main workflow)
+if ! command -v jq &>/dev/null; then
+  echo '{"continue":true}'
+  exit 0
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 RECORD_USAGE="$SCRIPT_DIR/record-usage.js"
 
