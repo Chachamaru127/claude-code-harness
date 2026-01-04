@@ -34,13 +34,22 @@ description-en: Create implementation plan (idea → Plans.md → ready for /wor
 
 ---
 
-## 使用するスキル
+## 🔧 自動呼び出しスキル（必須）
 
-このコマンドは以下のスキルを活用します：
+**このコマンドは以下のスキルを Skill ツールで明示的に呼び出すこと**：
 
-- `adaptive-setup` - プロジェクト構造の初期化
-- `vibecoder-guide` - VibeCoder向けガイダンス
-- `core-read-repo-context` - プロジェクト状態の把握
+| スキル | 用途 | 呼び出しタイミング |
+|-------|------|------------------|
+| `adaptive-setup` | プロジェクト構造の把握・初期化 | Step 1 の前（プロジェクト状態確認） |
+| `vibecoder-guide` | VibeCoder向けガイダンス | ユーザーが非技術者の場合 |
+
+**呼び出し方法**:
+```
+Skill ツールを使用:
+  skill: "claude-code-harness:setup:adaptive-setup"
+```
+
+> ⚠️ **重要**: スキルを呼び出さずに進めると usage 統計に記録されません。必ず Skill ツールで呼び出してください。
 
 ---
 

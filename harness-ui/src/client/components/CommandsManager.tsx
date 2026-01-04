@@ -1,16 +1,14 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
-import { fetchSkills } from '../lib/api.ts'
-import { useProject } from '../App.tsx'
+import { fetchCommands } from '../lib/api.ts'
 import { useProjectResource } from '../hooks/useProjectResource.ts'
 import { LoadingState, ErrorState } from './shared/index.ts'
-import { getSkillsTokenStatus } from '../lib/tokenStatus.ts'
-import type { Skill } from '../../shared/types.ts'
+import type { Command } from '../../shared/types.ts'
 
 // ============================================================
-// Skill Metadata - カテゴリ情報
+// Command Metadata - カテゴリ情報
 // ============================================================
 
-type SkillCategory = 'impl' | 'review' | 'verify' | 'setup' | '2agent' | 'memory' | 'principles' | 'auth' | 'deploy' | 'ui' | 'workflow' | 'docs' | 'ci' | 'maintenance' | 'other'
+type CommandCategory = 'core' | 'optional'
 
 interface CategoryMetadata {
   icon: string
@@ -20,27 +18,21 @@ interface CategoryMetadata {
   bgColor: string
 }
 
-const categoryMetadata: Record<SkillCategory, CategoryMetadata> = {
-  impl: { icon: '🔨', label: '実装', description: '機能実装とコード作成', color: '#2563eb', bgColor: '#eff6ff' },
-  review: { icon: '🔍', label: 'レビュー', description: 'コードレビューと品質チェック', color: '#7c3aed', bgColor: '#f5f3ff' },
-  verify: { icon: '✅', label: '検証', description: 'ビルド検証とテスト実行', color: '#16a34a', bgColor: '#f0fdf4' },
-  setup: { icon: '⚙️', label: 'セットアップ', description: 'プロジェクト初期化と設定', color: '#0891b2', bgColor: '#ecfeff' },
-  '2agent': { icon: '👥', label: '2エージェント', description: 'PM・実装役の連携設定', color: '#db2777', bgColor: '#fdf2f8' },
-  memory: { icon: '🧠', label: 'メモリ', description: 'SSOT管理とメモリ操作', color: '#9333ea', bgColor: '#faf5ff' },
-  principles: { icon: '📖', label: '原則', description: '開発原則とガイドライン', color: '#ea580c', bgColor: '#fff7ed' },
-  auth: { icon: '🔐', label: '認証', description: '認証・決済機能', color: '#dc2626', bgColor: '#fef2f2' },
-  deploy: { icon: '🚀', label: 'デプロイ', description: 'デプロイとアナリティクス', color: '#059669', bgColor: '#ecfdf5' },
-  ui: { icon: '🎨', label: 'UI', description: 'UIコンポーネント生成', color: '#d946ef', bgColor: '#fdf4ff' },
-  workflow: { icon: '🔄', label: 'ワークフロー', description: 'ハンドオフと自動処理', color: '#0284c7', bgColor: '#f0f9ff' },
-  docs: { icon: '📄', label: 'ドキュメント', description: 'ドキュメント生成', color: '#65a30d', bgColor: '#f7fee7' },
-  ci: { icon: '🔧', label: 'CI/CD', description: 'CI/CD問題解決', color: '#f59e0b', bgColor: '#fffbeb' },
-  maintenance: { icon: '🧹', label: 'メンテナンス', description: 'ファイル整理とクリーンアップ', color: '#6b7280', bgColor: '#f9fafb' },
-  other: { icon: '📁', label: 'その他', description: 'その他のスキル', color: '#71717a', bgColor: '#fafafa' }
-}
-
-function getCategory(skillName: string): SkillCategory {
-  const category = skillName.split('/')[0] || 'other'
-  return (category in categoryMetadata) ? category as SkillCategory : 'other'
+const categoryMetadata: Record<CommandCategory, CategoryMetadata> = {
+  core: {
+    icon: '🎯',
+    label: 'コア',
+    description: '主要なワークフローコマンド（Plan → Work → Review）',
+    color: '#2563eb',
+    bgColor: '#eff6ff'
+  },
+  optional: {
+    icon: '🔧',
+    label: 'オプション',
+    description: 'セットアップや補助的な機能コマンド',
+    color: '#16a34a',
+    bgColor: '#f0fdf4'
+  }
 }
 
 // ============================================================
@@ -48,15 +40,15 @@ function getCategory(skillName: string): SkillCategory {
 // ============================================================
 
 /**
- * Skill Detail Modal
+ * Command Detail Modal
  */
-interface SkillDetailModalProps {
+interface CommandDetailModalProps {
   isOpen: boolean
   onClose: () => void
-  skill: Skill | null
+  command: Command | null
 }
 
-function SkillDetailModal({ isOpen, onClose, skill }: SkillDetailModalProps) {
+function CommandDetailModal({ isOpen, onClose, command }: CommandDetailModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const previousActiveElement = useRef<HTMLElement | null>(null)
@@ -100,10 +92,9 @@ function SkillDetailModal({ isOpen, onClose, skill }: SkillDetailModalProps) {
     }
   }, [isOpen])
 
-  if (!isOpen || !skill) return null
+  if (!isOpen || !command) return null
 
-  const category = getCategory(skill.name)
-  const metadata = categoryMetadata[category]
+  const metadata = categoryMetadata[command.category]
 
   return (
     <div className="modal-overlay" onClick={onClose} role="presentation">
@@ -113,12 +104,12 @@ function SkillDetailModal({ isOpen, onClose, skill }: SkillDetailModalProps) {
         onClick={e => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="skill-modal-title"
+        aria-labelledby="command-modal-title"
       >
         <div className="modal-header">
-          <div className="modal-title" id="skill-modal-title">
+          <div className="modal-title" id="command-modal-title">
             <span className="modal-icon" aria-hidden="true">{metadata.icon}</span>
-            <span>{skill.name}</span>
+            <span>/{command.name}</span>
           </div>
           <button
             ref={closeButtonRef}
@@ -142,12 +133,20 @@ function SkillDetailModal({ isOpen, onClose, skill }: SkillDetailModalProps) {
           {/* Description */}
           <div className="modal-description">
             <h4>説明</h4>
-            {skill.description ? (
-              <p>{skill.description}</p>
+            {command.description ? (
+              <p>{command.description}</p>
             ) : (
               <p className="modal-no-description">説明がありません</p>
             )}
           </div>
+
+          {/* English Description */}
+          {command.descriptionEn && (
+            <div className="modal-description">
+              <h4>Description (EN)</h4>
+              <p>{command.descriptionEn}</p>
+            </div>
+          )}
 
           {/* Category Info Box */}
           <div className="hook-type-info-box">
@@ -157,15 +156,15 @@ function SkillDetailModal({ isOpen, onClose, skill }: SkillDetailModalProps) {
             </div>
             <p className="hook-type-info-desc">{metadata.description}</p>
             <div className="hook-type-info-timing">
-              <span className="hook-timing-label">トークン数:</span>
-              <span className="hook-timing-value">{skill.tokenCount.toLocaleString()}</span>
+              <span className="hook-timing-label">使い方:</span>
+              <span className="hook-timing-value">/{command.name}</span>
             </div>
           </div>
 
           {/* File Path */}
           <div className="modal-description">
             <h4>ファイルパス</h4>
-            <pre className="hook-command-preview">{skill.path}</pre>
+            <pre className="hook-command-preview">{command.path}</pre>
           </div>
         </div>
       </div>
@@ -176,23 +175,21 @@ function SkillDetailModal({ isOpen, onClose, skill }: SkillDetailModalProps) {
 /**
  * Category Summary
  */
-function CategorySummary({ skills }: { skills: Skill[] }) {
+function CategorySummary({ commands }: { commands: Command[] }) {
   const categoryCounts = useMemo(() => {
-    const counts: Record<SkillCategory, number> = {
-      impl: 0, review: 0, verify: 0, setup: 0, '2agent': 0, memory: 0,
-      principles: 0, auth: 0, deploy: 0, ui: 0, workflow: 0, docs: 0,
-      ci: 0, maintenance: 0, other: 0
+    const counts: Record<CommandCategory, number> = {
+      core: 0,
+      optional: 0
     }
-    for (const skill of skills) {
-      const category = getCategory(skill.name)
-      counts[category]++
+    for (const cmd of commands) {
+      counts[cmd.category]++
     }
     return counts
-  }, [skills])
+  }, [commands])
 
   return (
     <div className="hooks-purpose-summary">
-      {(Object.entries(categoryMetadata) as [SkillCategory, CategoryMetadata][]).map(([category, info]) => {
+      {(Object.entries(categoryMetadata) as [CommandCategory, CategoryMetadata][]).map(([category, info]) => {
         const count = categoryCounts[category]
         if (count === 0) return null
         return (
@@ -212,11 +209,10 @@ function CategorySummary({ skills }: { skills: Skill[] }) {
 }
 
 /**
- * Skill Card
+ * Command Card
  */
-function SkillCard({ skill, onClick }: { skill: Skill; onClick: () => void }) {
-  const category = getCategory(skill.name)
-  const metadata = categoryMetadata[category]
+function CommandCard({ command, onClick }: { command: Command; onClick: () => void }) {
+  const metadata = categoryMetadata[command.category]
 
   return (
     <div
@@ -230,12 +226,12 @@ function SkillCard({ skill, onClick }: { skill: Skill; onClick: () => void }) {
           onClick()
         }
       }}
-      aria-label={`${skill.name} の詳細を表示`}
+      aria-label={`/${command.name} の詳細を表示`}
     >
       <div className="hook-card-header">
         <div className="hook-card-title">
           <span className="hook-card-icon">{metadata.icon}</span>
-          <span className="hook-card-name">{skill.name}</span>
+          <span className="hook-card-name">/{command.name}</span>
         </div>
         <span
           className="hook-card-purpose"
@@ -245,12 +241,12 @@ function SkillCard({ skill, onClick }: { skill: Skill; onClick: () => void }) {
         </span>
       </div>
       <p className="hook-card-desc">
-        {skill.description || '説明なし'}
+        {command.description || '説明なし'}
       </p>
       <div className="hook-card-footer">
         <span className="hook-card-matcher">
-          <span className="hook-card-matcher-label">トークン:</span>
-          <code>{skill.tokenCount.toLocaleString()}</code>
+          <span className="hook-card-matcher-label">パス:</span>
+          <code>{command.path.split('/').pop()}</code>
         </span>
       </div>
     </div>
@@ -263,13 +259,11 @@ function SkillCard({ skill, onClick }: { skill: Skill; onClick: () => void }) {
 function CategorySectionHeader({
   category,
   count,
-  tokens,
   isExpanded,
   onToggle
 }: {
-  category: SkillCategory
+  category: CommandCategory
   count: number
-  tokens: number
   isExpanded: boolean
   onToggle: () => void
 }) {
@@ -285,7 +279,7 @@ function CategorySectionHeader({
         <span className="hooks-type-icon">{metadata.icon}</span>
         <div className="hooks-type-info">
           <span className="hooks-type-name">{metadata.label}</span>
-          <span className="hooks-type-timing">{tokens.toLocaleString()} tokens</span>
+          <span className="hooks-type-timing">{count} コマンド</span>
         </div>
         <span className="hooks-type-count">{count}</span>
       </div>
@@ -301,16 +295,15 @@ function CategorySectionHeader({
 // Main Component
 // ============================================================
 
-export function SkillsManager() {
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['impl', 'review']))
-  const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null)
+export function CommandsManager() {
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['core', 'optional']))
+  const [selectedCommand, setSelectedCommand] = useState<Command | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
-  const { activeProject } = useProject()
-  const projectPath = activeProject?.path
 
-  const { data: skills, loading, hasError } = useProjectResource(
-    fetchSkills,
-    projectPath
+  // Commands don't depend on project path (they're plugin-level)
+  const { data: commandsData, loading, hasError } = useProjectResource(
+    fetchCommands,
+    undefined
   )
 
   const toggleCategory = useCallback((category: string) => {
@@ -322,32 +315,27 @@ export function SkillsManager() {
     })
   }, [])
 
-  const handleSkillClick = useCallback((skill: Skill) => {
-    setSelectedSkill(skill)
+  const handleCommandClick = useCallback((command: Command) => {
+    setSelectedCommand(command)
     setModalOpen(true)
   }, [])
 
-  // Memoized calculations (before conditional returns)
-  const tokenStatus = useMemo(
-    () => skills ? getSkillsTokenStatus(skills.totalTokens) : null,
-    [skills]
-  )
-
-  const groupedSkills = useMemo(() => {
-    if (!skills) return {}
-    const groups: Record<string, Skill[]> = {}
-    for (const skill of skills.skills) {
-      const category = getCategory(skill.name)
+  // Group commands by category
+  const groupedCommands = useMemo(() => {
+    if (!commandsData) return {}
+    const groups: Record<string, Command[]> = {}
+    for (const cmd of commandsData.commands) {
+      const category = cmd.category
       if (!groups[category]) groups[category] = []
-      groups[category].push(skill)
+      groups[category].push(cmd)
     }
     return groups
-  }, [skills])
+  }, [commandsData])
 
-  const categoryOrder: SkillCategory[] = ['impl', 'review', 'verify', 'setup', '2agent', 'memory', 'principles', 'auth', 'deploy', 'ui', 'workflow', 'docs', 'ci', 'maintenance', 'other']
+  const categoryOrder: CommandCategory[] = ['core', 'optional']
 
   const sortedCategories = useMemo(() => {
-    const categories = Object.keys(groupedSkills) as SkillCategory[]
+    const categories = Object.keys(groupedCommands) as CommandCategory[]
     return categories.sort((a, b) => {
       const aIndex = categoryOrder.indexOf(a)
       const bIndex = categoryOrder.indexOf(b)
@@ -356,23 +344,23 @@ export function SkillsManager() {
       if (bIndex === -1) return -1
       return aIndex - bIndex
     })
-  }, [groupedSkills])
+  }, [groupedCommands])
 
   if (loading) {
-    return <LoadingState message="Skills を読み込み中..." />
+    return <LoadingState message="Commands を読み込み中..." />
   }
 
-  if (!skills || hasError || !tokenStatus) {
-    return <ErrorState message="Skills の取得に失敗しました" />
+  if (!commandsData || hasError) {
+    return <ErrorState message="Commands の取得に失敗しました" />
   }
 
   return (
     <div className="page-container">
       {/* Page Header */}
       <div className="page-header">
-        <h1 className="page-title">Skills</h1>
+        <h1 className="page-title">Commands</h1>
         <p className="page-subtitle">
-          Claude が使用できるスキル一覧。ワークフローのトリガーで自動起動されます。
+          スラッシュコマンド一覧。チャットで「/コマンド名」と入力して実行します。
         </p>
       </div>
 
@@ -380,10 +368,10 @@ export function SkillsManager() {
       <div className="summary-card">
         <div className="summary-stats">
           <div className="summary-stat">
-            <span className="summary-stat-icon">⚡</span>
+            <span className="summary-stat-icon">📋</span>
             <div className="summary-stat-content">
-              <span className="summary-stat-value">{skills.skills.length}</span>
-              <span className="summary-stat-label">スキル数</span>
+              <span className="summary-stat-value">{commandsData.commands.length}</span>
+              <span className="summary-stat-label">コマンド数</span>
             </div>
           </div>
           <div className="summary-stat">
@@ -393,64 +381,38 @@ export function SkillsManager() {
               <span className="summary-stat-label">カテゴリ</span>
             </div>
           </div>
-          <div className="summary-stat">
-            <span className="summary-stat-icon">📝</span>
-            <div className="summary-stat-content">
-              <span className="summary-stat-value" style={{ color: tokenStatus.color }}>
-                {skills.totalTokens > 1000
-                  ? `${Math.round(skills.totalTokens / 1000)}K`
-                  : skills.totalTokens}
-              </span>
-              <span className="summary-stat-label">トークン（{tokenStatus.label}）</span>
-            </div>
-          </div>
         </div>
 
         {/* Category breakdown */}
-        <CategorySummary skills={skills.skills} />
+        <CategorySummary commands={commandsData.commands} />
 
-        <div className="summary-hint" style={{ color: tokenStatus.color }}>
-          {tokenStatus.hint}
+        <div className="summary-hint">
+          コマンドは commands/core/ と commands/optional/ に定義されています。
         </div>
       </div>
 
-      {/* Unused Skills Warning */}
-      {skills.usageTrackingAvailable && skills.unusedSkills.length > 0 && (
-        <div className="alert alert-warning">
-          <span className="alert-icon">💡</span>
-          <div className="alert-content">
-            <div className="alert-title">未使用の Skills</div>
-            <div className="alert-desc">
-              以下のスキルは最近使用されていません: {skills.unusedSkills.join(', ')}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Skills by Category */}
+      {/* Commands by Category */}
       <div className="hooks-type-sections">
         {sortedCategories.map(category => {
-          const categorySkills = groupedSkills[category] || []
+          const categoryCommands = groupedCommands[category] || []
           const isExpanded = expandedCategories.has(category)
-          const categoryTokens = categorySkills.reduce((sum, s) => sum + s.tokenCount, 0)
 
           return (
             <div key={category} className="hooks-type-section">
               <CategorySectionHeader
-                category={category as SkillCategory}
-                count={categorySkills.length}
-                tokens={categoryTokens}
+                category={category as CommandCategory}
+                count={categoryCommands.length}
                 isExpanded={isExpanded}
                 onToggle={() => toggleCategory(category)}
               />
 
               {isExpanded && (
                 <div className="hooks-list">
-                  {categorySkills.map((skill) => (
-                    <SkillCard
-                      key={skill.path}
-                      skill={skill}
-                      onClick={() => handleSkillClick(skill)}
+                  {categoryCommands.map((cmd) => (
+                    <CommandCard
+                      key={cmd.path}
+                      command={cmd}
+                      onClick={() => handleCommandClick(cmd)}
                     />
                   ))}
                 </div>
@@ -460,21 +422,21 @@ export function SkillsManager() {
         })}
       </div>
 
-      {skills.skills.length === 0 && (
+      {commandsData.commands.length === 0 && (
         <div className="empty-state">
-          <div className="empty-state-icon">⚡</div>
-          <h3 className="empty-state-title">Skills がありません</h3>
+          <div className="empty-state-icon">📋</div>
+          <h3 className="empty-state-title">Commands がありません</h3>
           <p className="empty-state-desc">
-            skills/ ディレクトリに Skill ファイルを追加してください
+            commands/ ディレクトリにコマンドファイルを追加してください
           </p>
         </div>
       )}
 
-      {/* Skill Detail Modal */}
-      <SkillDetailModal
+      {/* Command Detail Modal */}
+      <CommandDetailModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        skill={selectedSkill}
+        command={selectedCommand}
       />
     </div>
   )

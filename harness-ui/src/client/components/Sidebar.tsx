@@ -1,5 +1,3 @@
-import React from 'react'
-
 interface SidebarProps {
   currentPage: string
   onNavigate: (page: string) => void
@@ -8,8 +6,10 @@ interface SidebarProps {
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: '📊' },
   { id: 'skills', label: 'Skills', icon: '⚡' },
+  { id: 'commands', label: 'Commands', icon: '📋' },
   { id: 'memory', label: 'Memory', icon: '🧠' },
   { id: 'rules', label: 'Rules', icon: '📜' },
+  { id: 'hooks', label: 'Hooks', icon: '🔗' },
   { id: 'usage', label: 'Usage', icon: '📈' },
   { id: 'insights', label: 'Insights', icon: '💡' },
   { id: 'guide', label: 'Guide', icon: '📖' },

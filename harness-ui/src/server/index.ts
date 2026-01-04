@@ -6,6 +6,7 @@ import { logger } from 'hono/logger'
 import healthRoutes from './routes/health.ts'
 import plansRoutes from './routes/plans.ts'
 import skillsRoutes from './routes/skills.ts'
+import commandsRoutes from './routes/commands.ts'
 import memoryRoutes from './routes/memory.ts'
 import rulesRoutes from './routes/rules.ts'
 import hooksRoutes from './routes/hooks.ts'
@@ -32,6 +33,7 @@ app.use('*', cors({
 app.route('/api/health', healthRoutes)
 app.route('/api/plans', plansRoutes)
 app.route('/api/skills', skillsRoutes)
+app.route('/api/commands', commandsRoutes)
 app.route('/api/memory', memoryRoutes)
 app.route('/api/rules', rulesRoutes)
 app.route('/api/hooks', hooksRoutes)

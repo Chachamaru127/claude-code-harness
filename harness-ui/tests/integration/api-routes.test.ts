@@ -9,6 +9,7 @@ import rulesRoutes from '../../src/server/routes/rules.ts'
 import hooksRoutes from '../../src/server/routes/hooks.ts'
 import claudeMemRoutes from '../../src/server/routes/claude-mem.ts'
 import usageRoutes from '../../src/server/routes/usage.ts'
+import projectsRoutes from '../../src/server/routes/projects.ts'
 
 // Server will be started for integration tests
 const API_BASE = 'http://localhost:37779' // Use different port for tests
@@ -19,7 +20,7 @@ function createTestApp() {
 
   app.use('*', cors({
     origin: ['http://localhost:37778', 'http://127.0.0.1:37778', 'http://localhost:37779'],
-    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowHeaders: ['Content-Type']
   }))
 
@@ -31,6 +32,7 @@ function createTestApp() {
   app.route('/api/hooks', hooksRoutes)
   app.route('/api/claude-mem', claudeMemRoutes)
   app.route('/api/usage', usageRoutes)
+  app.route('/api/projects', projectsRoutes)
 
   app.get('/api/status', (c) => {
     return c.json({
@@ -220,6 +222,26 @@ describe('API Routes Integration', () => {
       } else {
         expect(data.cleanup).toBeNull()
       }
+    })
+  })
+
+  describe('GET /api/projects', () => {
+    test('returns projects list with required fields', async () => {
+      const response = await fetch(`${API_BASE}/api/projects`)
+      expect(response.ok).toBe(true)
+
+      const data = await response.json()
+      expect(Array.isArray(data.projects)).toBe(true)
+      expect(data).toHaveProperty('activeProjectId')
+      expect(data).toHaveProperty('configPath')
+    })
+
+    test('returns active project endpoint', async () => {
+      const response = await fetch(`${API_BASE}/api/projects/active`)
+      expect(response.ok).toBe(true)
+
+      const data = await response.json()
+      expect(data).toHaveProperty('project')
     })
   })
 

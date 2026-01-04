@@ -1,6 +1,6 @@
 ---
 name: review-apply-fixes
-description: "レビューで検出された問題を自動修正するスキルレビューで発見された問題の自動修正が承認された場合に使用します。レビューで発見された問題の自動修正が承認された場合に使用します。"
+description: "レビューで検出された問題を自動修正するスキル。レビューで発見された問題の自動修正が承認された場合に使用します。"
 allowed-tools: ["Read", "Edit", "Bash"]
 metadata:
   skillport:

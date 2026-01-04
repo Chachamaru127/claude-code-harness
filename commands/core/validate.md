@@ -16,14 +16,29 @@ description-en: "[Optional] Project validation (env/deps/build/test/deploy)"
 
 ---
 
-## 使用するスキル
+## 🔧 自動呼び出しスキル（必須）
 
-このコマンドは以下のスキルを活用します：
+**このコマンドは以下のスキルを Skill ツールで明示的に呼び出すこと**：
 
+| スキル | 用途 | 呼び出しタイミング |
+|-------|------|------------------|
+| `verify` | 検証（親スキル） | 検証開始時 |
+| `review` | レビュー（親スキル） | Full 検証時 |
+
+**呼び出し方法**:
+```
+Skill ツールを使用:
+  skill: "claude-code-harness:verify"    # ビルド・テスト検証
+  skill: "claude-code-harness:review"    # Full 検証時のレビュー
+```
+
+**子スキル（自動ルーティング）**:
 - `review-security` - セキュリティ検証
 - `review-performance` - パフォーマンス検証
 - `review-quality` - 品質検証
 - `verify-build` - ビルド検証
+
+> ⚠️ **重要**: スキルを呼び出さずに進めると usage 統計に記録されません。必ず Skill ツールで呼び出してください。
 
 ---
 

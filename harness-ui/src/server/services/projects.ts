@@ -275,6 +275,12 @@ export function autoRegisterProject(projectPath?: string): Project | null {
   // プロジェクトパスを決定
   const targetPath = projectPath ?? process.env['PROJECT_ROOT'] ?? process.cwd()
 
+  // harness-ui 自身は登録しない（サブディレクトリなので）
+  const dirName = basename(targetPath)
+  if (dirName === 'harness-ui') {
+    return null
+  }
+
   // パス検証
   const validatedPath = validateProjectPath(targetPath, '/')
   if (!validatedPath) {

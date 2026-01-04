@@ -1,6 +1,6 @@
 ---
 name: project-scaffolder
-description: "プロジェクトの初期構造を生成するスキル新規プロジェクトの初期構造を生成する場合に使用します。新規プロジェクトの初期構造を生成する場合に使用します。新規プロジェクトの初期構造を生成する場合に使用します。"
+description: "プロジェクトの初期構造を生成するスキル。新規プロジェクトの初期構造を生成する場合に使用します。"
 allowed-tools: ["Write", "Bash"]
 metadata:
   skillport:

@@ -1,6 +1,6 @@
 ---
 name: update-2agent-files
-description: "既存の2エージェント体制セットアップを更新するスキル（差分更新・マージ対応）既存のCursor連携ファイルを更新する場合に使用します。既存のCursor連携ファイルを更新する場合に使用します。既存のCursor連携ファイルを更新する場合に使用します。"
+description: "既存の2エージェント体制セットアップを更新するスキル（差分更新・マージ対応）。既存のCursor連携ファイルを更新する場合に使用します。"
 allowed-tools: ["Read", "Edit"]
 metadata:
   skillport:

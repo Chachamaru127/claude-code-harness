@@ -1,6 +1,6 @@
 ---
 name: merge-plans
-description: "Plans.md のマージ更新を行うスキル（ユーザータスクを保持）複数のPlans.mdを統合する必要がある場合に使用します。複数のPlans.mdを統合する必要がある場合に使用します。複数のPlans.mdを統合する必要がある場合に使用します。"
+description: "Plans.md のマージ更新を行うスキル（ユーザータスクを保持）。複数のPlans.mdを統合する必要がある場合に使用します。"
 allowed-tools: ["Read", "Write", "Edit"]
 metadata:
   skillport:

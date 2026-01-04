@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useHealth } from '../hooks/useHealth.ts'
 import { usePlans } from '../hooks/usePlans.ts'
+import { useProject } from '../App.tsx'
 import type { Task, WorkflowMode, HealthResponse } from '../../shared/types.ts'
 
 /**
@@ -199,7 +200,7 @@ function ComponentsSummary({
       value: health.breakdown.hooks.count,
       hint: health.breakdown.hooks.count > 10 ? '多め' : '適正',
       status: getStatus(health.breakdown.hooks.status),
-      page: 'insights' // Hooks don't have their own page yet, go to insights
+      page: 'hooks'
     }
   ]
 
@@ -413,8 +414,10 @@ function ErrorState({ message }: { message: string }) {
  */
 export function Dashboard({ onNavigate }: { onNavigate?: (page: string) => void }) {
   const [mode, setMode] = useState<WorkflowMode>('solo')
-  const { health, loading: healthLoading } = useHealth()
-  const { plans, loading: plansLoading } = usePlans(mode)
+  const { activeProject } = useProject()
+  const projectPath = activeProject?.path
+  const { health, loading: healthLoading } = useHealth(projectPath)
+  const { plans, loading: plansLoading } = usePlans(mode, projectPath)
 
   const navigate = onNavigate ?? (() => {})
 

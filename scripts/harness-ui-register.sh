@@ -21,24 +21,51 @@ API_ENDPOINT="${HARNESS_UI_URL}/api/projects"
 PROJECT_PATH="$(pwd)"
 PROJECT_NAME="$(basename "$PROJECT_PATH")"
 
+# フォーマット状態を保持するグローバル変数
+FORMAT_STATUS=""
+FORMAT_WARNING=""
+
 # ハーネス初期化済みかチェック
 # 条件: .claude-code-harness-version が存在（/harness-init で作成される公式マーカー）
-#       または Plans.md にハーネス固有マーカーが含まれる
+#       または Plans.md にハーネス固有マーカーが含まれる（旧フォーマット含む）
 is_harness_project() {
+  FORMAT_STATUS="ok"
+  FORMAT_WARNING=""
+
   # 公式マーカーファイル（最も信頼性が高い）
   if [ -f ".claude-code-harness-version" ]; then
+    check_plans_format
     return 0
   fi
 
   # Plans.md のハーネス固有マーカーをチェック
   if [ -f "Plans.md" ]; then
-    # cc:TODO, cc:WIP, cc:DONE, pm:依頼中 などのマーカーがあればハーネスプロジェクト
-    if grep -qE "cc:(TODO|WIP|WORK|DONE|blocked)|pm:(依頼中|確認済)|cursor:(依頼中|確認済)" "Plans.md" 2>/dev/null; then
+    # 新フォーマット: cc:TODO, cc:WIP, cc:DONE, pm:依頼中 など
+    if grep -qE "cc:(TODO|WIP|WORK|DONE|完了|blocked)|pm:(依頼中|確認済)|cursor:(依頼中|確認済)" "Plans.md" 2>/dev/null; then
+      check_plans_format
+      return 0
+    fi
+    # 旧フォーマット: cursor:WIP, cursor:完了（互換性のため登録は許可、警告表示）
+    if grep -qE "cursor:(WIP|完了)" "Plans.md" 2>/dev/null; then
+      FORMAT_STATUS="migration_needed"
+      FORMAT_WARNING="Plans.md に旧フォーマット(cursor:WIP/完了)を検出。pm:依頼中/pm:確認済 への移行を推奨。"
       return 0
     fi
   fi
 
   return 1
+}
+
+# Plans.md フォーマットチェック（詳細）
+check_plans_format() {
+  if [ ! -f "Plans.md" ]; then
+    return
+  fi
+  # 旧フォーマットマーカーの検出
+  if grep -qE "cursor:(WIP|完了)" "Plans.md" 2>/dev/null; then
+    FORMAT_STATUS="migration_needed"
+    FORMAT_WARNING="Plans.md に旧フォーマット(cursor:WIP/完了)を検出。pm:依頼中/pm:確認済 への移行を推奨。"
+  fi
 }
 
 # harness-ui が起動しているかチェック（タイムアウト 1 秒）
@@ -104,6 +131,14 @@ EOF
   local output=""
   if [ -n "$message" ]; then
     output="$message"
+  fi
+  # フォーマット警告を追加
+  if [ -n "$FORMAT_WARNING" ]; then
+    if [ -n "$output" ]; then
+      output="${output}\n${FORMAT_WARNING}"
+    else
+      output="$FORMAT_WARNING"
+    fi
   fi
 
   # JSON エスケープ

@@ -116,7 +116,7 @@ describe('Response Structure Validation', () => {
     expect(data.breakdown.skills).toHaveProperty('totalTokens')
 
     // Memory breakdown
-    expect(data.breakdown.memory).toHaveProperty('totalTokens')
+    expect(data.breakdown.memory).toHaveProperty('storageTokens')
 
     // Rules breakdown
     expect(data.breakdown.rules).toHaveProperty('count')

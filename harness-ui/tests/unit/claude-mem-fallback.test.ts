@@ -1,4 +1,4 @@
-import { describe, test, expect, mock, beforeEach, afterEach } from 'bun:test'
+import { describe, test, expect, mock, afterEach } from 'bun:test'
 import { fetchObservations, isClaudeMemAvailable, CLAUDE_MEM_API_URL } from '../../src/server/services/claude-mem.ts'
 import type { ClaudeMemResponse } from '../../src/shared/types.ts'
 
@@ -65,8 +65,9 @@ describe('fetchObservations', () => {
       { id: 2, content: 'Another observation', timestamp: '2024-01-01T01:00:00Z', type: 'decision' }
     ]
 
+    // claude-mem returns paginated response: { items: [...], hasMore, limit, offset }
     globalThis.fetch = mock(() =>
-      Promise.resolve(new Response(JSON.stringify(mockObservations), { status: 200 }))
+      Promise.resolve(new Response(JSON.stringify({ items: mockObservations, hasMore: false }), { status: 200 }))
     ) as typeof fetch
 
     const result = await fetchObservations()
@@ -110,8 +111,9 @@ describe('fetchObservations', () => {
   })
 
   test('handles empty observations array', async () => {
+    // claude-mem returns paginated response: { items: [...], hasMore, limit, offset }
     globalThis.fetch = mock(() =>
-      Promise.resolve(new Response(JSON.stringify([]), { status: 200 }))
+      Promise.resolve(new Response(JSON.stringify({ items: [], hasMore: false }), { status: 200 }))
     ) as typeof fetch
 
     const result = await fetchObservations()
@@ -129,9 +131,10 @@ describe('fetchObservations', () => {
     }))
 
     let capturedUrl = ''
+    // claude-mem returns paginated response: { items: [...], hasMore, limit, offset }
     globalThis.fetch = mock((url: string | URL | Request) => {
       capturedUrl = url.toString()
-      return Promise.resolve(new Response(JSON.stringify(mockObservations), { status: 200 }))
+      return Promise.resolve(new Response(JSON.stringify({ items: mockObservations, hasMore: false }), { status: 200 }))
     }) as typeof fetch
 
     await fetchObservations({ limit: 5 })
@@ -140,9 +143,10 @@ describe('fetchObservations', () => {
 
   test('accepts optional type filter parameter', async () => {
     let capturedUrl = ''
+    // claude-mem returns paginated response: { items: [...], hasMore, limit, offset }
     globalThis.fetch = mock((url: string | URL | Request) => {
       capturedUrl = url.toString()
-      return Promise.resolve(new Response(JSON.stringify([]), { status: 200 }))
+      return Promise.resolve(new Response(JSON.stringify({ items: [], hasMore: false }), { status: 200 }))
     }) as typeof fetch
 
     await fetchObservations({ type: 'decision' })

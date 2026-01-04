@@ -1,5 +1,6 @@
 import { readdir, stat } from 'node:fs/promises'
-import { join, extname, basename, resolve, normalize } from 'node:path'
+import { join, extname, basename, resolve, normalize, isAbsolute, sep } from 'node:path'
+import { existsSync, statSync } from 'node:fs'
 
 /**
  * Validate and sanitize project root path to prevent path traversal attacks
@@ -15,13 +16,47 @@ export function validateProjectPath(
     return null
   }
 
-  // Normalize and resolve the path
+  // Security check: reject null bytes (path truncation attack)
+  if (userInput.includes('\0')) {
+    console.warn('[Security] Null byte detected in path')
+    return null
+  }
+
+  // Security check: reject overly long paths
+  if (userInput.length > 500) {
+    console.warn('[Security] Path too long')
+    return null
+  }
+
+  // For absolute paths, validate they exist and are directories
+  // This allows users to specify project paths like "/Users/user/myproject"
+  if (isAbsolute(userInput)) {
+    // Validate the path exists and is a directory
+    try {
+      if (!existsSync(userInput)) {
+        console.warn(`[Security] Absolute path does not exist: ${userInput}`)
+        return null
+      }
+      const stats = statSync(userInput)
+      if (!stats.isDirectory()) {
+        console.warn(`[Security] Absolute path is not a directory: ${userInput}`)
+        return null
+      }
+      return userInput
+    } catch {
+      console.warn(`[Security] Failed to validate absolute path: ${userInput}`)
+      return null
+    }
+  }
+
+  // For relative paths, resolve against the allowed base
   const normalized = normalize(userInput)
   const resolved = resolve(allowedBase, normalized)
 
   // Check if resolved path starts with allowed base (prevents traversal)
   const resolvedBase = resolve(allowedBase)
-  if (!resolved.startsWith(resolvedBase)) {
+  // Use sep to ensure exact directory match (not just string prefix)
+  if (!resolved.startsWith(resolvedBase + sep) && resolved !== resolvedBase) {
     console.warn(`[Security] Path traversal attempt detected: ${userInput}`)
     return null
   }

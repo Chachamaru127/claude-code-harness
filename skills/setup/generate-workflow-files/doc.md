@@ -1,6 +1,6 @@
 ---
 name: generate-workflow-files
-description: "ワークフロー用ファイル（AGENTS.md, CLAUDE.md, Plans.md）を生成するスキル新しいワークフローファイルを生成する必要がある場合に使用します。新しいワークフローファイルを生成する必要がある場合に使用します。新しいワークフローファイルを生成する必要がある場合に使用します。"
+description: "ワークフロー用ファイル（AGENTS.md, CLAUDE.md, Plans.md）を生成するスキル。新しいワークフローファイルを生成する必要がある場合に使用します。"
 allowed-tools: ["Read", "Write"]
 metadata:
   skillport:

@@ -1,6 +1,6 @@
 ---
 name: ci-fix-failing-tests
-description: "CI で失敗したテストを修正するためのガイドCI失敗の原因が特定された後、自動修正を試みる場合に使用します。CI失敗の原因が特定された後、自動修正を試みる場合に使用します。"
+description: "CI で失敗したテストを修正するためのガイド。CI失敗の原因が特定された後、自動修正を試みる場合に使用します。"
 allowed-tools: ["Read", "Edit", "Bash"]
 metadata:
   skillport:

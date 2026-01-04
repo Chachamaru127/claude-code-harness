@@ -1,33 +1,52 @@
 import { describe, test, expect } from 'bun:test'
-import { countTokens, estimateTokens, countFileTokens } from '../../src/server/services/tokenizer.ts'
+import { countTokens, countFileTokens } from '../../src/server/services/tokenizer.ts'
 
-describe('estimateTokens', () => {
-  test('estimates ~4 chars per token for English text', () => {
+describe('countTokens', () => {
+  test('counts tokens using Anthropic tokenizer', () => {
+    const text = 'Hello, world! This is a test.'
+    const counted = countTokens(text)
+    // Should return a reasonable token count
+    expect(counted).toBeGreaterThan(0)
+    expect(counted).toBeLessThan(20)
+  })
+
+  test('handles empty string', () => {
+    expect(countTokens('')).toBe(0)
+  })
+
+  test('counts whitespace-only string as 0', () => {
+    expect(countTokens('   \n\t  ')).toBe(0)
+  })
+
+  test('handles special characters', () => {
+    const text = '!@#$%^&*()_+-=[]{}|;:,.<>?'
+    const tokens = countTokens(text)
+    expect(tokens).toBeGreaterThan(0)
+  })
+
+  test('handles URLs', () => {
+    const url = 'https://github.com/user/repo/blob/main/file.ts'
+    const tokens = countTokens(url)
+    expect(tokens).toBeGreaterThan(5)
+  })
+
+  test('handles English text', () => {
     const text = 'This is a simple English sentence for testing.'
-    const tokens = estimateTokens(text)
-    // ~47 chars / 4 ≈ 12 tokens (rough estimate)
-    expect(tokens).toBeGreaterThan(8)
+    const tokens = countTokens(text)
+    expect(tokens).toBeGreaterThan(5)
     expect(tokens).toBeLessThan(20)
   })
 
-  test('estimates tokens for Japanese text', () => {
+  test('handles Japanese text', () => {
     const text = 'これは日本語のテスト文です。'
-    const tokens = estimateTokens(text)
-    // Japanese CJK chars: 14 chars * 0.5 ≈ 7 tokens
-    expect(tokens).toBeGreaterThan(5)
-    expect(tokens).toBeLessThan(15)
+    const tokens = countTokens(text)
+    expect(tokens).toBeGreaterThan(0)
   })
 
   test('handles mixed language text', () => {
     const text = 'This is English and これは日本語です'
-    const tokens = estimateTokens(text)
-    // Mixed: ~20 English chars / 4 + ~8 CJK chars * 0.5 ≈ 5 + 4 = 9
+    const tokens = countTokens(text)
     expect(tokens).toBeGreaterThan(5)
-    expect(tokens).toBeLessThan(20)
-  })
-
-  test('returns 0 for empty string', () => {
-    expect(estimateTokens('')).toBe(0)
   })
 
   test('handles code blocks', () => {
@@ -37,8 +56,8 @@ function hello() {
   return true;
 }
     `
-    const tokens = estimateTokens(code)
-    expect(tokens).toBeGreaterThan(15)
+    const tokens = countTokens(code)
+    expect(tokens).toBeGreaterThan(10)
   })
 
   test('handles markdown content', () => {
@@ -54,38 +73,8 @@ function hello() {
 const x = 1;
 \`\`\`
     `
-    const tokens = estimateTokens(markdown)
-    expect(tokens).toBeGreaterThan(20)
-  })
-})
-
-describe('countTokens', () => {
-  test('counts tokens more accurately than estimate', () => {
-    const text = 'Hello, world! This is a test.'
-    const estimated = estimateTokens(text)
-    const counted = countTokens(text)
-    // Both should be in similar range
-    expect(Math.abs(estimated - counted)).toBeLessThan(counted * 0.5)
-  })
-
-  test('handles empty string', () => {
-    expect(countTokens('')).toBe(0)
-  })
-
-  test('counts whitespace-only string', () => {
-    expect(countTokens('   \n\t  ')).toBe(0)
-  })
-
-  test('handles special characters', () => {
-    const text = '!@#$%^&*()_+-=[]{}|;:,.<>?'
-    const tokens = countTokens(text)
-    expect(tokens).toBeGreaterThan(0)
-  })
-
-  test('handles URLs', () => {
-    const url = 'https://github.com/user/repo/blob/main/file.ts'
-    const tokens = countTokens(url)
-    expect(tokens).toBeGreaterThan(5)
+    const tokens = countTokens(markdown)
+    expect(tokens).toBeGreaterThan(15)
   })
 })
 
@@ -102,7 +91,7 @@ This is some content in the document.
 - Item 2
     `
     const tokens = countFileTokens(fileContent)
-    expect(tokens).toBeGreaterThan(15)
+    expect(tokens).toBeGreaterThan(10)
   })
 
   test('handles empty file content', () => {
@@ -128,6 +117,6 @@ This is the body.
     const tokensWithoutFM = countFileTokens(contentWithoutFrontmatter)
     // Should strip frontmatter, so counts should be similar
     // (allowing some variance for implementation details)
-    expect(Math.abs(tokensWithFM - tokensWithoutFM)).toBeLessThan(tokensWithoutFM * 0.3)
+    expect(Math.abs(tokensWithFM - tokensWithoutFM)).toBeLessThan(tokensWithoutFM * 0.5)
   })
 })

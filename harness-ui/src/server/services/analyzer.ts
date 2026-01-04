@@ -9,6 +9,8 @@ import type {
   KanbanResponse,
   Skill,
   SkillsResponse,
+  Command,
+  CommandsResponse,
   MemoryFile,
   MemoryResponse,
   Rule,
@@ -31,6 +33,22 @@ export function getProjectRoot(): string {
     return join(cwd, '..')
   }
   // Fallback: use import.meta.dir path
+  return join(import.meta.dir, '../../../../')
+}
+
+/**
+ * Get the harness plugin root directory
+ * Skills, commands, agents are defined in the plugin, not individual projects
+ */
+export function getHarnessPluginRoot(): string {
+  // harness-ui is at claude-code-harness/harness-ui
+  // So plugin root is at claude-code-harness/
+  const cwd = process.cwd()
+  if (cwd.endsWith('harness-ui')) {
+    return join(cwd, '..')
+  }
+  // Fallback: relative to this file (services/analyzer.ts -> harness-ui/src/server/services)
+  // Go up 4 levels to reach claude-code-harness
   return join(import.meta.dir, '../../../../')
 }
 
@@ -243,35 +261,58 @@ async function getSkillUsageFromClaudeMem(skillNames: string[]): Promise<{
  * Analyze skills
  * Note: Only description is loaded into Claude's initial context,
  * so we count description tokens only (not full file content)
+ *
+ * Shows BOTH harness plugin skills AND project-specific skills (if any).
  */
 export async function analyzeSkills(projectRoot?: string): Promise<SkillsResponse> {
   const root = projectRoot ?? getProjectRoot()
-  const skillsDir = join(root, 'skills')
+  const pluginRoot = getHarnessPluginRoot()
+  const projectSkillsDir = join(root, 'skills')
+  const pluginSkillsDir = join(pluginRoot, 'skills')
 
-  const skillFiles = await listFiles(skillsDir, { extension: '.md', recursive: true })
+  // Collect skill files from both plugin and project
+  const skillSources: Array<{ files: string[]; baseDir: string; source: 'plugin' | 'project' }> = []
+
+  // Always include harness plugin skills
+  const pluginSkillFiles = await listFiles(pluginSkillsDir, { extension: '.md', recursive: true })
+  if (pluginSkillFiles.length > 0) {
+    skillSources.push({ files: pluginSkillFiles, baseDir: pluginSkillsDir, source: 'plugin' })
+  }
+
+  // Include project-specific skills if they exist (and it's not the same as plugin)
+  if (projectSkillsDir !== pluginSkillsDir) {
+    const projectSkillFiles = await listFiles(projectSkillsDir, { extension: '.md', recursive: true })
+    if (projectSkillFiles.length > 0) {
+      skillSources.push({ files: projectSkillFiles, baseDir: projectSkillsDir, source: 'project' })
+    }
+  }
+
   const skills: Skill[] = []
   let totalTokens = 0
 
-  for (const filePath of skillFiles) {
-    const content = await readFileContent(filePath)
-    const { frontmatter } = parseFrontmatter(content)
-    const metadata = await getFileMetadata(filePath)
+  for (const { files, baseDir, source } of skillSources) {
+    for (const filePath of files) {
+      const content = await readFileContent(filePath)
+      const { frontmatter } = parseFrontmatter(content)
+      const metadata = await getFileMetadata(filePath)
 
-    // Only count description tokens (that's what Claude loads initially)
-    const description = frontmatter['description'] ?? ''
-    const descriptionEn = frontmatter['description-en'] ?? ''
-    const descriptionTokens = countTokens(description + ' ' + descriptionEn)
+      // Only count description tokens (that's what Claude loads initially)
+      const description = frontmatter['description'] ?? ''
+      const descriptionEn = frontmatter['description-en'] ?? ''
+      const descriptionTokens = countTokens(description + ' ' + descriptionEn)
 
-    totalTokens += descriptionTokens
+      totalTokens += descriptionTokens
 
-    skills.push({
-      name: filePath.replace(skillsDir + '/', '').replace(/\.md$/, ''),
-      path: filePath,
-      description,
-      descriptionEn,
-      tokenCount: descriptionTokens,
-      lastUsed: metadata?.lastModified
-    })
+      const baseName = filePath.replace(baseDir + '/', '').replace(/\.md$/, '')
+      skills.push({
+        name: source === 'project' ? `[local] ${baseName}` : baseName,
+        path: filePath,
+        description,
+        descriptionEn,
+        tokenCount: descriptionTokens,
+        lastUsed: metadata?.lastModified
+      })
+    }
   }
 
   // Try to get usage data from claude-mem or session logs
@@ -299,6 +340,41 @@ export async function analyzeSkills(projectRoot?: string): Promise<SkillsRespons
     usageTrackingAvailable: usageData.available,
     usageTrackingMessage: usageData.message
   }
+}
+
+/**
+ * Analyze commands
+ * Commands are defined in the harness plugin's commands/ directory.
+ */
+export async function analyzeCommands(): Promise<CommandsResponse> {
+  const pluginRoot = getHarnessPluginRoot()
+  const commands: Command[] = []
+
+  // Read from both core and optional command directories
+  const categories = ['core', 'optional'] as const
+  for (const category of categories) {
+    const commandsDir = join(pluginRoot, 'commands', category)
+    const commandFiles = await listFiles(commandsDir, { extension: '.md' })
+
+    for (const filePath of commandFiles) {
+      const content = await readFileContent(filePath)
+      const { frontmatter } = parseFrontmatter(content)
+
+      // Extract command name from filename (e.g., "plan-with-agent.md" -> "plan-with-agent")
+      const fileName = filePath.split('/').pop() ?? ''
+      const name = fileName.replace(/\.md$/, '')
+
+      commands.push({
+        name,
+        path: filePath,
+        description: frontmatter['description'] ?? '',
+        descriptionEn: frontmatter['description-en'],
+        category
+      })
+    }
+  }
+
+  return { commands }
 }
 
 /**
@@ -427,10 +503,13 @@ export async function analyzeRules(projectRoot?: string): Promise<RulesResponse>
 
 /**
  * Analyze hooks
+ * Hooks are defined at the plugin level (claude-code-harness/hooks/hooks.json),
+ * not at the project level. This is similar to how commands work.
  */
-export async function analyzeHooks(projectRoot?: string): Promise<HooksResponse> {
-  const root = projectRoot ?? getProjectRoot()
-  const hooksFile = join(root, 'hooks', 'hooks.json')
+export async function analyzeHooks(_projectRoot?: string): Promise<HooksResponse> {
+  // Hooks are always read from the harness plugin root, not the user project
+  const pluginRoot = getHarnessPluginRoot()
+  const hooksFile = join(pluginRoot, 'hooks', 'hooks.json')
 
   const parseHooksFile = (content: string): HooksResponse => {
     if (!content) return { hooks: [], count: 0 }
@@ -487,8 +566,8 @@ export async function analyzeHooks(projectRoot?: string): Promise<HooksResponse>
     return parseHooksFile(content)
   }
 
-  // Try alternative path
-  const altHooksFile = join(root, '.claude', 'hooks.json')
+  // Try alternative path at plugin root
+  const altHooksFile = join(pluginRoot, '.claude', 'hooks.json')
   const altContent = await readFileContent(altHooksFile)
   return parseHooksFile(altContent)
 }
@@ -502,10 +581,10 @@ export async function parsePlans(projectRoot?: string, mode?: 'solo' | '2agent')
   const root = projectRoot ?? getProjectRoot()
   const workflowMode = mode ?? 'solo'
 
-  // Try multiple possible locations
+  // Try multiple possible locations (root Plans.md first, then .claude/)
   const possiblePaths = [
-    join(root, '.claude', 'Plans.md'),
     join(root, 'Plans.md'),
+    join(root, '.claude', 'Plans.md'),
     join(root, '.claude', 'plans.md')
   ]
 

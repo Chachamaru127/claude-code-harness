@@ -1,6 +1,6 @@
 ---
 name: ci-analyze-failures
-description: "CI の失敗ログを解析し、原因を特定するCI/CDパイプラインでテストやビルドが失敗した場合に使用します。CI/CDパイプラインでテストやビルドが失敗した場合に使用します。"
+description: "CI の失敗ログを解析し、原因を特定する。CI/CDパイプラインでテストやビルドが失敗した場合に使用します。"
 allowed-tools: ["Read", "Grep", "Bash"]
 metadata:
   skillport:

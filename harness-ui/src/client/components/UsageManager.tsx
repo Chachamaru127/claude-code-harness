@@ -1,99 +1,189 @@
-import { useState, useEffect } from 'react'
-import { fetchUsage, fetchSkills } from '../lib/api.ts'
-import type { UsageResponse, UsageEntry, Skill } from '../../shared/types.ts'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { fetchUsage, fetchSkills, fetchCommands } from '../lib/api.ts'
+import { useProject } from '../App.tsx'
+import { LoadingState } from './shared/index.ts'
+import { formatRelativeTime, formatFullDate } from '../lib/dateUtils.ts'
+import type { UsageResponse, UsageEntry, Skill, Command } from '../../shared/types.ts'
 
-/**
- * Format date to relative time (e.g., "3日前")
- */
-function formatRelativeTime(dateStr: string | null): string {
-  if (!dateStr) return '未使用'
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+// ============================================================
+// Usage Metadata - タイプ情報
+// ============================================================
 
-  if (diffDays === 0) return '今日'
-  if (diffDays === 1) return '昨日'
-  if (diffDays < 7) return `${diffDays}日前`
-  if (diffDays < 30) return `${Math.floor(diffDays / 7)}週間前`
-  return `${Math.floor(diffDays / 30)}ヶ月前`
+type UsageType = 'skill' | 'command' | 'agent'
+
+interface TypeMetadata {
+  icon: string
+  label: string
+  description: string
+  color: string
+  bgColor: string
 }
 
-/**
- * Format date to full datetime
- */
-function formatFullDate(dateStr: string | null): string {
-  if (!dateStr) return '未使用'
-  return new Date(dateStr).toLocaleString('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+const typeMetadata: Record<UsageType, TypeMetadata> = {
+  skill: {
+    icon: '⚡',
+    label: 'スキル',
+    description: 'ワークフロートリガーで自動起動される機能モジュール',
+    color: '#2563eb',
+    bgColor: '#eff6ff'
+  },
+  command: {
+    icon: '🎯',
+    label: 'コマンド',
+    description: 'スラッシュコマンドで呼び出す機能',
+    color: '#16a34a',
+    bgColor: '#f0fdf4'
+  },
+  agent: {
+    icon: '🤖',
+    label: 'エージェント',
+    description: 'Task tool で起動される自律型サブエージェント',
+    color: '#9333ea',
+    bgColor: '#faf5ff'
+  }
 }
 
+const agentDescriptions: Record<string, string> = {
+  'Explore': 'コードベースを探索し、ファイルやパターンを検索するエージェント',
+  'Plan': 'ソフトウェアアーキテクト。実装計画を設計するエージェント',
+  'general-purpose': '複雑なマルチステップタスクを自律的に処理する汎用エージェント',
+  'project-analyzer': '新規/既存プロジェクト判定と技術スタック検出',
+  'project-scaffolder': '指定スタックでプロジェクトを自動生成',
+  'code-reviewer': 'セキュリティ/性能/品質を多角的にレビュー',
+  'ci-cd-fixer': 'CI失敗時の診断・修正を安全第一で支援',
+  'error-recovery': 'エラー復旧（原因切り分け→安全な修正→再検証）',
+  'project-state-updater': 'Plans.md とセッション状態の同期・ハンドオフ支援'
+}
+
+// ============================================================
+// Components
+// ============================================================
+
 /**
- * Detail modal for usage items
+ * Detail Modal (Hooks format)
  */
 interface DetailModalProps {
   isOpen: boolean
   onClose: () => void
-  type: 'skill' | 'command' | 'agent'
+  type: UsageType
   name: string
   entry: UsageEntry
   description?: string
-  loading?: boolean
 }
 
-function DetailModal({ isOpen, onClose, type, name, entry, description, loading }: DetailModalProps) {
+function DetailModal({ isOpen, onClose, type, name, entry, description }: DetailModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const previousActiveElement = useRef<HTMLElement | null>(null)
+  const metadata = typeMetadata[type]
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    previousActiveElement.current = document.activeElement as HTMLElement
+    closeButtonRef.current?.focus()
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+        return
+      }
+
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        )
+        const firstElement = focusableElements[0]
+        const lastElement = focusableElements[focusableElements.length - 1]
+
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault()
+          lastElement?.focus()
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault()
+          firstElement?.focus()
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
+
+  useEffect(() => {
+    if (!isOpen && previousActiveElement.current) {
+      previousActiveElement.current.focus()
+    }
+  }, [isOpen])
+
   if (!isOpen) return null
 
-  const typeLabels = {
-    skill: 'スキル',
-    command: 'コマンド',
-    agent: 'エージェント'
-  }
-
-  const typeIcons = {
-    skill: '⚡',
-    command: '🎯',
-    agent: '🤖'
-  }
-
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
+    <div className="modal-overlay" onClick={onClose} role="presentation">
+      <div
+        ref={modalRef}
+        className="modal-content"
+        onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="usage-modal-title"
+      >
         <div className="modal-header">
-          <div className="modal-title">
-            <span className="modal-icon">{typeIcons[type]}</span>
+          <div className="modal-title" id="usage-modal-title">
+            <span className="modal-icon" aria-hidden="true">{metadata.icon}</span>
             <span>{name}</span>
           </div>
-          <button className="modal-close" onClick={onClose}>×</button>
+          <button
+            ref={closeButtonRef}
+            className="modal-close"
+            onClick={onClose}
+            aria-label="閉じる"
+          >
+            ✕
+          </button>
         </div>
         <div className="modal-body">
-          <div className="modal-type-badge">{typeLabels[type]}</div>
-
-          <div className="modal-stats">
-            <div className="modal-stat">
-              <span className="modal-stat-label">使用回数</span>
-              <span className="modal-stat-value">{entry.count}回</span>
-            </div>
-            <div className="modal-stat">
-              <span className="modal-stat-label">最終使用</span>
-              <span className="modal-stat-value">{formatFullDate(entry.lastUsed)}</span>
-            </div>
+          {/* Type Badge */}
+          <div
+            className="hook-purpose-badge"
+            style={{ backgroundColor: metadata.bgColor, color: metadata.color }}
+          >
+            <span>{metadata.icon}</span>
+            <span>{metadata.label}</span>
           </div>
 
+          {/* Description */}
           <div className="modal-description">
             <h4>説明</h4>
-            {loading ? (
-              <div className="modal-loading">読み込み中...</div>
-            ) : description ? (
+            {description ? (
               <p>{description.replace(/^"|"$/g, '')}</p>
             ) : (
               <p className="modal-no-description">説明がありません</p>
             )}
+          </div>
+
+          {/* Type Info Box */}
+          <div className="hook-type-info-box">
+            <div className="hook-type-info-header">
+              <span>{metadata.icon}</span>
+              <span>{metadata.label}</span>
+            </div>
+            <p className="hook-type-info-desc">{metadata.description}</p>
+          </div>
+
+          {/* Usage Stats */}
+          <div className="modal-description">
+            <h4>使用統計</h4>
+            <div className="hook-type-info-box" style={{ marginTop: '0.5rem' }}>
+              <div className="hook-type-info-timing">
+                <span className="hook-timing-label">使用回数:</span>
+                <span className="hook-timing-value">{entry.count}回</span>
+              </div>
+              <div className="hook-type-info-timing">
+                <span className="hook-timing-label">最終使用:</span>
+                <span className="hook-timing-value">{entry.lastUsed ? formatFullDate(entry.lastUsed) : '未使用'}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -102,7 +192,7 @@ function DetailModal({ isOpen, onClose, type, name, entry, description, loading 
 }
 
 /**
- * Usage summary card
+ * Usage summary card (horizontal layout)
  */
 function UsageSummaryCard({ title, icon, total, unused, usedRecently }: {
   title: string
@@ -152,49 +242,72 @@ function UsageSummaryCard({ title, icon, total, unused, usedRecently }: {
 }
 
 /**
- * Top usage items table
+ * Top usage cards (card format for all types)
  */
-function TopUsageTable({ title, items, onItemClick }: {
+function TopUsageCards({ title, items, onItemClick, descriptions, type }: {
   title: string
   items: Array<[string, UsageEntry]>
   onItemClick: (name: string, entry: UsageEntry) => void
+  descriptions?: Map<string, string>
+  type: UsageType
 }) {
+  const metadata = typeMetadata[type]
+
   if (items.length === 0) {
     return (
-      <div className="usage-table-container">
-        <h3 className="usage-table-title">{title}</h3>
-        <div className="usage-table-empty">データがありません</div>
+      <div className="usage-cards-container">
+        <h3 className="usage-cards-title">{title}</h3>
+        <div className="usage-cards-empty">データがありません</div>
       </div>
     )
   }
 
   return (
-    <div className="usage-table-container">
-      <h3 className="usage-table-title">{title}</h3>
-      <table className="usage-table">
-        <thead>
-          <tr>
-            <th>名前</th>
-            <th>使用回数</th>
-            <th>最終使用</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map(([name, entry]) => (
-            <tr
+    <div className="usage-cards-container">
+      <h3 className="usage-cards-title">{title}</h3>
+      <div className="usage-cards-grid" role="list">
+        {items.map(([name, entry]) => {
+          const description = descriptions?.get(name.toLowerCase())
+          return (
+            <div
               key={name}
-              className="usage-table-row-clickable"
+              className="hook-card"
               onClick={() => onItemClick(name, entry)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  onItemClick(name, entry)
+                }
+              }}
+              role="listitem"
+              tabIndex={0}
+              aria-label={`${name} の詳細を表示`}
             >
-              <td className="usage-table-name">{name}</td>
-              <td className="usage-table-count">{entry.count}</td>
-              <td className="usage-table-date">
-                {formatRelativeTime(entry.lastUsed)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+              <div className="hook-card-header">
+                <div className="hook-card-title">
+                  <span className="hook-card-icon">{metadata.icon}</span>
+                  <span className="hook-card-name">{name}</span>
+                </div>
+                <span
+                  className="hook-card-purpose"
+                  style={{ backgroundColor: metadata.bgColor, color: metadata.color }}
+                >
+                  {entry.count}回
+                </span>
+              </div>
+              <p className="hook-card-desc">
+                {description || '説明なし'}
+              </p>
+              <div className="hook-card-footer">
+                <span className="hook-card-matcher">
+                  <span className="hook-card-matcher-label">最終:</span>
+                  <code>{entry.lastUsed ? formatRelativeTime(entry.lastUsed) : '未使用'}</code>
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -212,11 +325,11 @@ function CleanupSuggestions({ usage }: { usage: UsageResponse }) {
 
   if (!hasUnused) {
     return (
-      <div className="cleanup-panel cleanup-panel-good">
-        <span className="cleanup-icon">✓</span>
-        <div className="cleanup-content">
-          <div className="cleanup-title">すべてのコンポーネントが活用されています</div>
-          <div className="cleanup-desc">未使用または非アクティブなアイテムはありません</div>
+      <div className="alert alert-success">
+        <span className="alert-icon">✓</span>
+        <div className="alert-content">
+          <div className="alert-title">すべてのコンポーネントが活用されています</div>
+          <div className="alert-desc">未使用または非アクティブなアイテムはありません</div>
         </div>
       </div>
     )
@@ -229,100 +342,164 @@ function CleanupSuggestions({ usage }: { usage: UsageResponse }) {
   ].filter(Boolean)
 
   return (
-    <div className="cleanup-panel cleanup-panel-warning">
-      <span className="cleanup-icon">💡</span>
-      <div className="cleanup-content">
-        <div className="cleanup-title">クリーンアップ提案</div>
-        <div className="cleanup-desc">
-          以下のアイテムは30日以上使用されていません:
-        </div>
-        <ul className="cleanup-list">
-          {suggestions.map((s, i) => (
-            <li key={i}>{s}</li>
-          ))}
-        </ul>
-        <div className="cleanup-hint">
-          不要なアイテムを削除してコンテキスト使用量を最適化しましょう
+    <div className="alert alert-warning">
+      <span className="alert-icon">💡</span>
+      <div className="alert-content">
+        <div className="alert-title">クリーンアップ提案</div>
+        <div className="alert-desc">
+          以下のアイテムは30日以上使用されていません: {suggestions.join(', ')}
         </div>
       </div>
     </div>
   )
 }
 
-/**
- * Usage Manager Component
- * Displays usage statistics and cleanup suggestions
- */
+// ============================================================
+// Main Component
+// ============================================================
+
 export function UsageManager() {
   const [usage, setUsage] = useState<UsageResponse | null>(null)
   const [skills, setSkills] = useState<Skill[]>([])
+  const [commands, setCommands] = useState<Command[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'skills' | 'commands' | 'agents'>('skills')
+  const [activeTab, setActiveTab] = useState<UsageType>('skill')
+  const { activeProject } = useProject()
+  const projectPath = activeProject?.path
 
   // Modal state
   const [modalOpen, setModalOpen] = useState(false)
-  const [modalType, setModalType] = useState<'skill' | 'command' | 'agent'>('skill')
+  const [modalType, setModalType] = useState<UsageType>('skill')
   const [modalName, setModalName] = useState('')
   const [modalEntry, setModalEntry] = useState<UsageEntry>({ count: 0, lastUsed: null })
   const [modalDescription, setModalDescription] = useState<string | undefined>()
-  const [modalLoading, setModalLoading] = useState(false)
+
+  // Race Condition 対策
+  const requestIdRef = useRef(0)
 
   useEffect(() => {
+    const currentRequestId = ++requestIdRef.current
+    setLoading(true)
+
     Promise.all([
-      fetchUsage(),
-      fetchSkills()
-    ]).then(([usageData, skillsData]) => {
+      fetchUsage(projectPath),
+      fetchSkills(projectPath),
+      fetchCommands().catch(() => ({ commands: [] }))
+    ]).then(([usageData, skillsData, commandsData]) => {
+      if (currentRequestId !== requestIdRef.current) return
+
       setUsage(usageData)
       setSkills(skillsData.skills)
-    }).finally(() => setLoading(false))
+      setCommands(commandsData.commands ?? [])
+    }).finally(() => {
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false)
+      }
+    })
+  }, [projectPath])
+
+  // Build description maps
+  const skillDescriptions = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const skill of skills) {
+      if (skill.description) {
+        map.set(skill.name.toLowerCase(), skill.description)
+        const parts = skill.name.split('/')
+        const firstPart = parts[0]
+        if (firstPart) {
+          map.set(firstPart.toLowerCase(), skill.description)
+        }
+      }
+    }
+    for (const cmd of commands) {
+      if (cmd.description) {
+        map.set(cmd.name.toLowerCase(), cmd.description)
+      }
+    }
+    return map
+  }, [skills, commands])
+
+  const commandDescriptions = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const cmd of commands) {
+      if (cmd.description) {
+        map.set(cmd.name.toLowerCase(), cmd.description)
+      }
+    }
+    return map
+  }, [commands])
+
+  const agentDescriptionsMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const [name, desc] of Object.entries(agentDescriptions)) {
+      map.set(name.toLowerCase(), desc)
+    }
+    return map
   }, [])
 
-  const handleItemClick = (type: 'skill' | 'command' | 'agent', name: string, entry: UsageEntry) => {
+  const handleItemClick = useCallback((type: UsageType, name: string, entry: UsageEntry) => {
     setModalType(type)
     setModalName(name)
     setModalEntry(entry)
     setModalOpen(true)
-    setModalLoading(true)
 
-    // Find description based on type
     if (type === 'skill') {
-      // Look for the SKILL file matching the name (e.g., "impl/SKILL")
-      const matchingSkill = skills.find(s =>
-        s.name === `${name}/SKILL` ||
-        s.name.startsWith(`${name}/`) ||
-        s.name === name
-      )
-      setModalDescription(matchingSkill?.description)
+      setModalDescription(skillDescriptions.get(name.toLowerCase()))
     } else if (type === 'command') {
-      // Commands don't have descriptions in the current data
-      setModalDescription(`/${name} コマンド`)
+      setModalDescription(commandDescriptions.get(name.toLowerCase()) || `/${name} コマンド`)
     } else {
-      // Agents
-      const agentDescriptions: Record<string, string> = {
-        'Explore': 'コードベースを探索し、ファイルやパターンを検索するエージェント',
-        'Plan': 'ソフトウェアアーキテクト。実装計画を設計するエージェント',
-        'general-purpose': '複雑なマルチステップタスクを自律的に処理する汎用エージェント',
-        'project-analyzer': '新規/既存プロジェクト判定と技術スタック検出',
-        'project-scaffolder': '指定スタックでプロジェクトを自動生成',
-        'code-reviewer': 'セキュリティ/性能/品質を多角的にレビュー',
-        'ci-cd-fixer': 'CI失敗時の診断・修正を安全第一で支援',
-        'error-recovery': 'エラー復旧（原因切り分け→安全な修正→再検証）',
-        'project-state-updater': 'Plans.md とセッション状態の同期・ハンドオフ支援'
-      }
       setModalDescription(agentDescriptions[name] || 'エージェント')
     }
-    setModalLoading(false)
-  }
+  }, [skillDescriptions, commandDescriptions])
+
+  // タブキーボードナビゲーション
+  const handleTabKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    const tabs: UsageType[] = ['skill', 'command', 'agent']
+    const currentIndex = tabs.indexOf(activeTab)
+
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault()
+      const nextIndex = (currentIndex + 1) % tabs.length
+      const nextTab = tabs[nextIndex]
+      if (nextTab) {
+        setActiveTab(nextTab)
+        document.getElementById(`tab-${nextTab}`)?.focus()
+      }
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      const prevIndex = (currentIndex - 1 + tabs.length) % tabs.length
+      const prevTab = tabs[prevIndex]
+      if (prevTab) {
+        setActiveTab(prevTab)
+        document.getElementById(`tab-${prevTab}`)?.focus()
+      }
+    }
+  }, [activeTab])
+
+  // Calculate recently used stats
+  const recentlyUsedStats = useMemo(() => {
+    if (!usage?.data) {
+      return { skillsUsedRecently: 0, commandsUsedRecently: 0, agentsUsedRecently: 0 }
+    }
+    const data = usage.data
+
+    const calcRecent = (entries: Record<string, UsageEntry>) => {
+      return Object.values(entries).filter(e => {
+        if (!e.lastUsed) return false
+        const daysDiff = (Date.now() - new Date(e.lastUsed).getTime()) / (1000 * 60 * 60 * 24)
+        return daysDiff <= 7
+      }).length
+    }
+
+    return {
+      skillsUsedRecently: calcRecent(data.skills),
+      commandsUsedRecently: calcRecent(data.commands),
+      agentsUsedRecently: calcRecent(data.agents)
+    }
+  }, [usage?.data])
 
   if (loading) {
-    return (
-      <div className="page-container">
-        <div className="flex items-center gap-4">
-          <div className="spinner" />
-          <span>使用状況を読み込み中...</span>
-        </div>
-      </div>
-    )
+    return <LoadingState message="使用状況を読み込み中..." />
   }
 
   if (!usage || !usage.available) {
@@ -343,28 +520,6 @@ export function UsageManager() {
     )
   }
 
-  const data = usage.data!
-  const cleanup = usage.cleanup!
-
-  // Calculate summary stats
-  const skillsUsedRecently = Object.values(data.skills).filter(s => {
-    if (!s.lastUsed) return false
-    const daysDiff = (Date.now() - new Date(s.lastUsed).getTime()) / (1000 * 60 * 60 * 24)
-    return daysDiff <= 7
-  }).length
-
-  const commandsUsedRecently = Object.values(data.commands).filter(c => {
-    if (!c.lastUsed) return false
-    const daysDiff = (Date.now() - new Date(c.lastUsed).getTime()) / (1000 * 60 * 60 * 24)
-    return daysDiff <= 7
-  }).length
-
-  const agentsUsedRecently = Object.values(data.agents).filter(a => {
-    if (!a.lastUsed) return false
-    const daysDiff = (Date.now() - new Date(a.lastUsed).getTime()) / (1000 * 60 * 60 * 24)
-    return daysDiff <= 7
-  }).length
-
   return (
     <div className="page-container">
       {/* Page Header */}
@@ -375,85 +530,117 @@ export function UsageManager() {
         </p>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards (horizontal grid) */}
       <div className="usage-summary-grid">
         <UsageSummaryCard
           title="Skills"
           icon="⚡"
-          total={cleanup.summary.totalSkills}
-          unused={cleanup.summary.unusedSkillsCount}
-          usedRecently={skillsUsedRecently}
+          total={skills.length}
+          unused={Math.max(0, skills.length - Object.keys(usage.data?.skills || {}).length)}
+          usedRecently={recentlyUsedStats.skillsUsedRecently}
         />
         <UsageSummaryCard
           title="Commands"
           icon="🎯"
-          total={cleanup.summary.totalCommands}
-          unused={cleanup.summary.unusedCommandsCount}
-          usedRecently={commandsUsedRecently}
+          total={commands.length}
+          unused={Math.max(0, commands.length - Object.keys(usage.data?.commands || {}).length)}
+          usedRecently={recentlyUsedStats.commandsUsedRecently}
         />
         <UsageSummaryCard
           title="Agents"
           icon="🤖"
-          total={cleanup.summary.totalAgents}
-          unused={cleanup.summary.unusedAgentsCount}
-          usedRecently={agentsUsedRecently}
+          total={6}
+          unused={Math.max(0, 6 - Object.keys(usage.data?.agents || {}).length)}
+          usedRecently={recentlyUsedStats.agentsUsedRecently}
         />
       </div>
 
       {/* Cleanup Suggestions */}
       <CleanupSuggestions usage={usage} />
 
-      {/* Tab Navigation */}
-      <div className="usage-tabs">
+      {/* Tab Navigation (horizontal) */}
+      <div
+        className="usage-tabs"
+        role="tablist"
+        aria-label="使用状況カテゴリ"
+        onKeyDown={handleTabKeyDown}
+      >
         <button
-          className={`usage-tab ${activeTab === 'skills' ? 'usage-tab-active' : ''}`}
-          onClick={() => setActiveTab('skills')}
+          className={`usage-tab ${activeTab === 'skill' ? 'usage-tab-active' : ''}`}
+          onClick={() => setActiveTab('skill')}
+          role="tab"
+          id="tab-skill"
+          aria-selected={activeTab === 'skill'}
+          aria-controls="tabpanel-skill"
+          tabIndex={activeTab === 'skill' ? 0 : -1}
         >
-          ⚡ Skills ({usage.topSkills.length})
+          <span aria-hidden="true">⚡</span> Skills ({usage.topSkills.length})
         </button>
         <button
-          className={`usage-tab ${activeTab === 'commands' ? 'usage-tab-active' : ''}`}
-          onClick={() => setActiveTab('commands')}
+          className={`usage-tab ${activeTab === 'command' ? 'usage-tab-active' : ''}`}
+          onClick={() => setActiveTab('command')}
+          role="tab"
+          id="tab-command"
+          aria-selected={activeTab === 'command'}
+          aria-controls="tabpanel-command"
+          tabIndex={activeTab === 'command' ? 0 : -1}
         >
-          🎯 Commands ({usage.topCommands.length})
+          <span aria-hidden="true">🎯</span> Commands ({usage.topCommands.length})
         </button>
         <button
-          className={`usage-tab ${activeTab === 'agents' ? 'usage-tab-active' : ''}`}
-          onClick={() => setActiveTab('agents')}
+          className={`usage-tab ${activeTab === 'agent' ? 'usage-tab-active' : ''}`}
+          onClick={() => setActiveTab('agent')}
+          role="tab"
+          id="tab-agent"
+          aria-selected={activeTab === 'agent'}
+          aria-controls="tabpanel-agent"
+          tabIndex={activeTab === 'agent' ? 0 : -1}
         >
-          🤖 Agents ({usage.topAgents.length})
+          <span aria-hidden="true">🤖</span> Agents ({usage.topAgents.length})
         </button>
       </div>
 
       {/* Tab Content */}
       <div className="usage-tab-content">
-        {activeTab === 'skills' && (
-          <TopUsageTable
-            title="Top Skills"
-            items={usage.topSkills}
-            onItemClick={(name, entry) => handleItemClick('skill', name, entry)}
-          />
+        {activeTab === 'skill' && (
+          <div role="tabpanel" id="tabpanel-skill" aria-labelledby="tab-skill">
+            <TopUsageCards
+              title="Top Skills"
+              items={usage.topSkills}
+              onItemClick={(name, entry) => handleItemClick('skill', name, entry)}
+              descriptions={skillDescriptions}
+              type="skill"
+            />
+          </div>
         )}
-        {activeTab === 'commands' && (
-          <TopUsageTable
-            title="Top Commands"
-            items={usage.topCommands}
-            onItemClick={(name, entry) => handleItemClick('command', name, entry)}
-          />
+        {activeTab === 'command' && (
+          <div role="tabpanel" id="tabpanel-command" aria-labelledby="tab-command">
+            <TopUsageCards
+              title="Top Commands"
+              items={usage.topCommands}
+              onItemClick={(name, entry) => handleItemClick('command', name, entry)}
+              descriptions={commandDescriptions}
+              type="command"
+            />
+          </div>
         )}
-        {activeTab === 'agents' && (
-          <TopUsageTable
-            title="Top Agents"
-            items={usage.topAgents}
-            onItemClick={(name, entry) => handleItemClick('agent', name, entry)}
-          />
+        {activeTab === 'agent' && (
+          <div role="tabpanel" id="tabpanel-agent" aria-labelledby="tab-agent">
+            <TopUsageCards
+              title="Top Agents"
+              items={usage.topAgents}
+              onItemClick={(name, entry) => handleItemClick('agent', name, entry)}
+              descriptions={agentDescriptionsMap}
+              type="agent"
+            />
+          </div>
         )}
       </div>
 
       {/* Last Updated */}
-      {data.updatedAt && (
+      {usage.data?.updatedAt && (
         <div className="usage-footer">
-          最終更新: {new Date(data.updatedAt).toLocaleString('ja-JP')}
+          最終更新: {new Date(usage.data.updatedAt).toLocaleString('ja-JP')}
         </div>
       )}
 
@@ -465,7 +652,6 @@ export function UsageManager() {
         name={modalName}
         entry={modalEntry}
         description={modalDescription}
-        loading={modalLoading}
       />
     </div>
   )

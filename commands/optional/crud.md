@@ -27,13 +27,28 @@ description-en: "[Optional] Auto-generate CRUD (validation, auth, production-rea
 
 ---
 
-## 使用するスキル
+## 🔧 自動呼び出しスキル（必須）
 
-このコマンドは以下のスキルを活用します：
+**このコマンドは以下のスキルを Skill ツールで明示的に呼び出すこと**：
 
+| スキル | 用途 | 呼び出しタイミング |
+|-------|------|------------------|
+| `impl` | 実装（親スキル） | CRUD 機能実装時 |
+| `verify` | 検証（親スキル） | 実装後の検証時 |
+
+**呼び出し方法**:
+```
+Skill ツールを使用:
+  skill: "claude-code-harness:impl"      # CRUD 機能実装
+  skill: "claude-code-harness:verify"    # ビルド検証
+```
+
+**子スキル（自動ルーティング）**:
 - `work-impl-feature` - CRUD機能実装
 - `verify-build` - ビルド検証
 - `core-diff-aware-editing` - 差分を考慮した編集
+
+> ⚠️ **重要**: スキルを呼び出さずに進めると usage 統計に記録されません。必ず Skill ツールで呼び出してください。
 
 ---
 

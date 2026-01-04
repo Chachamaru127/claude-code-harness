@@ -1,16 +1,8 @@
-import { useState, useEffect } from 'react'
 import { fetchMemory } from '../lib/api.ts'
-import type { MemoryResponse } from '../../shared/types.ts'
-
-/**
- * 保存サイズのステータスを取得
- * Note: Memory は初期読み込みされないため、閾値は高め
- */
-function getStorageStatus(tokens: number): { label: string; color: string; hint: string } {
-  if (tokens > 50000) return { label: '過多', color: '#ef4444', hint: 'session-log のアーカイブを推奨' }
-  if (tokens > 30000) return { label: '多め', color: '#f59e0b', hint: '定期的な整理を検討' }
-  return { label: '適正', color: '#22c55e', hint: 'SSOT として良好な状態' }
-}
+import { useProject } from '../App.tsx'
+import { useProjectResource } from '../hooks/useProjectResource.ts'
+import { LoadingState, ErrorState } from './shared/index.ts'
+import { getMemoryTokenStatus } from '../lib/tokenStatus.ts'
 
 /**
  * ファイルタイプの説明
@@ -34,33 +26,24 @@ function getImportanceStyle(importance: 'high' | 'medium' | 'low'): string {
 }
 
 export function MemoryAnalyzer() {
-  const [memory, setMemory] = useState<MemoryResponse | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { activeProject } = useProject()
+  const projectPath = activeProject?.path
 
-  useEffect(() => {
-    fetchMemory().then(setMemory).finally(() => setLoading(false))
-  }, [])
+  // Race Condition 対策済みのフック
+  const { data: memory, loading, hasError } = useProjectResource(
+    fetchMemory,
+    projectPath
+  )
 
   if (loading) {
-    return (
-      <div className="page-container">
-        <div className="flex items-center gap-4">
-          <div className="spinner" />
-          <span>Memory を分析中...</span>
-        </div>
-      </div>
-    )
+    return <LoadingState message="Memory を分析中..." />
   }
 
-  if (!memory) {
-    return (
-      <div className="page-container">
-        <div className="health-error">Memory の取得に失敗しました</div>
-      </div>
-    )
+  if (!memory || hasError) {
+    return <ErrorState message="Memory の取得に失敗しました" />
   }
 
-  const storageStatus = getStorageStatus(memory.totalTokens)
+  const storageStatus = getMemoryTokenStatus(memory.totalTokens)
 
   // Sort files by importance and then by token count
   const sortedFiles = [...memory.files].sort((a, b) => {
@@ -155,13 +138,19 @@ export function MemoryAnalyzer() {
       )}
 
       {/* ファイル一覧 */}
-      <div className="memory-files">
+      <div className="memory-files" role="list" aria-label="メモリファイル一覧">
         {sortedFiles.map((file) => {
           const info = fileTypeInfo[file.name] || { icon: '📄', desc: 'メモリファイル', importance: 'low' as const }
           return (
-            <div key={file.path} className={`memory-file ${getImportanceStyle(info.importance)}`}>
+            <div
+              key={file.path}
+              className={`memory-file ${getImportanceStyle(info.importance)}`}
+              role="listitem"
+              tabIndex={0}
+              aria-label={`${file.name}: ${file.tokenCount.toLocaleString()} トークン`}
+            >
               <div className="memory-file-header">
-                <span className="memory-file-icon">{info.icon}</span>
+                <span className="memory-file-icon" aria-hidden="true">{info.icon}</span>
                 <div className="memory-file-info">
                   <span className="memory-file-name">{file.name}</span>
                   <span className="memory-file-desc">{info.desc}</span>

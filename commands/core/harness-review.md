@@ -23,15 +23,28 @@ description-en: Code review (multi-perspective security/performance/quality)
 
 ---
 
-## 使用するスキル
+## 🔧 自動呼び出しスキル（必須）
 
-このコマンドは以下のスキルを活用します：
+**このコマンドは以下のスキルを Skill ツールで明示的に呼び出すこと**：
 
+| スキル | 用途 | 呼び出しタイミング |
+|-------|------|------------------|
+| `review` | レビュー（親スキル） | レビュー開始時 |
+
+**呼び出し方法**:
+```
+Skill ツールを使用:
+  skill: "claude-code-harness:review"
+```
+
+**子スキル（自動ルーティング）**:
 - `review-security` - セキュリティレビュー
 - `review-performance` - パフォーマンスレビュー
 - `review-quality` - コード品質レビュー
 - `review-accessibility` - アクセシビリティレビュー
 - `review-aggregate` - レビュー結果の集約
+
+> ⚠️ **重要**: スキルを呼び出さずに進めると usage 統計に記録されません。必ず Skill ツールで呼び出してください。
 
 ---
 

@@ -12,6 +12,7 @@ import hooksRoutes from './routes/hooks.ts'
 import claudeMemRoutes from './routes/claude-mem.ts'
 import insightsRoutes from './routes/insights.ts'
 import usageRoutes from './routes/usage.ts'
+import projectsRoutes from './routes/projects.ts'
 
 // Import HTML for Bun's HTML imports feature
 import indexHtml from '../../public/index.html'
@@ -22,7 +23,7 @@ export const app = new Hono()
 app.use('*', logger())
 app.use('*', cors({
   origin: ['http://localhost:37778', 'http://127.0.0.1:37778'],
-  allowMethods: ['GET', 'POST', 'OPTIONS'],
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowHeaders: ['Content-Type']
 }))
 
@@ -36,6 +37,7 @@ app.route('/api/hooks', hooksRoutes)
 app.route('/api/claude-mem', claudeMemRoutes)
 app.route('/api/insights', insightsRoutes)
 app.route('/api/usage', usageRoutes)
+app.route('/api/projects', projectsRoutes)
 
 // API status endpoint
 app.get('/api/status', (c) => {
@@ -76,6 +78,8 @@ export function startHttpServer(port: number = DEFAULT_PORT, silent: boolean = f
       '/api/*': {
         GET: (req: Request) => app.fetch(req),
         POST: (req: Request) => app.fetch(req),
+        PUT: (req: Request) => app.fetch(req),
+        DELETE: (req: Request) => app.fetch(req),
         OPTIONS: (req: Request) => app.fetch(req),
       },
 

@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import type { Insight } from '../../shared/types.ts'
-import { analyzeHealth, analyzeSkills, analyzeMemory, analyzeRules } from '../services/analyzer.ts'
+import { analyzeHealth, analyzeSkills, analyzeMemory, analyzeRules, getProjectRoot } from '../services/analyzer.ts'
+import { validateProjectPath } from '../services/file-reader.ts'
 
 const app = new Hono()
 
@@ -10,11 +11,8 @@ const app = new Hono()
  * AI Insights は Claude CLI を内部で呼び出すことを想定していますが、
  * 現在の実装では静的分析に基づく提案を生成します。
  */
-async function generateProjectInsights(): Promise<Insight[]> {
+async function generateProjectInsights(projectRoot: string): Promise<Insight[]> {
   const insights: Insight[] = []
-
-  // プロジェクトルートを取得（harness-ui の親ディレクトリ = claude-code-harness）
-  const projectRoot = process.cwd().replace(/\/harness-ui$/, '')
 
   try {
     // 各コンポーネントを分析
@@ -166,13 +164,29 @@ async function generateProjectInsights(): Promise<Insight[]> {
 
 // POST /api/insights - 最適化提案を生成
 app.post('/', async (c) => {
-  const insights = await generateProjectInsights()
+  const userProject = c.req.query('project')
+  const defaultRoot = getProjectRoot()
+
+  // Validate project path to prevent path traversal attacks
+  const projectRoot = userProject
+    ? validateProjectPath(userProject, defaultRoot) ?? defaultRoot
+    : defaultRoot
+
+  const insights = await generateProjectInsights(projectRoot)
   return c.json({ insights })
 })
 
 // GET /api/insights - 現在の提案を取得（キャッシュなし、毎回生成）
 app.get('/', async (c) => {
-  const insights = await generateProjectInsights()
+  const userProject = c.req.query('project')
+  const defaultRoot = getProjectRoot()
+
+  // Validate project path to prevent path traversal attacks
+  const projectRoot = userProject
+    ? validateProjectPath(userProject, defaultRoot) ?? defaultRoot
+    : defaultRoot
+
+  const insights = await generateProjectInsights(projectRoot)
   return c.json({ insights })
 })
 

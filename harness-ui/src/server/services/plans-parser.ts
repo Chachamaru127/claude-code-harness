@@ -96,14 +96,21 @@ export function extractMarkerTasks(markdown: string, mode: WorkflowMode = 'solo'
       let status: Task['status']
 
       // Map markers to status based on workflow mode
+      // Support both new format (cc:, pm:) and old format (cursor:)
       if (parsed.marker.includes('TODO') || parsed.marker.includes('依頼中')) {
         status = 'plan'
-      } else if (parsed.marker.includes('WIP') || parsed.marker.includes('作業中')) {
+      } else if (parsed.marker.includes('WIP') || parsed.marker.includes('作業中') || parsed.marker.includes('WORK') || parsed.marker.includes('IN_PROGRESS')) {
         status = 'work'
-      } else if (parsed.marker.includes('完了')) {
+      } else if (parsed.marker.includes('完了') || parsed.marker.includes('DONE')) {
         // In solo mode, cc:完了 means done (no PM review needed)
         // In 2agent mode, cc:完了 means review (waiting for PM confirmation)
-        status = mode === 'solo' ? 'done' : 'review'
+        // Note: cursor:完了 (old format) is treated the same as pm:確認済 (PM approved)
+        if (parsed.marker.startsWith('cursor:')) {
+          // Old cursor:完了 means PM approved = done
+          status = 'done'
+        } else {
+          status = mode === 'solo' ? 'done' : 'review'
+        }
       } else if (parsed.marker.includes('確認済') || parsed.marker.includes('承認')) {
         status = 'done'
       } else {
@@ -143,12 +150,35 @@ export function parsePlansMarkdown(markdown: string, mode: WorkflowMode = 'solo'
     }
   }
 
-  // Define section patterns (English and Japanese)
+  // Define section patterns (English and Japanese, including legacy formats)
   const sectionPatterns: Record<Task['status'], RegExp[]> = {
-    plan: [/^##\s*Plan/i, /^##\s*計画/],
-    work: [/^##\s*Work/i, /^##\s*作業中/, /^##\s*In\s*Progress/i],
-    review: [/^##\s*Review/i, /^##\s*レビュー/],
-    done: [/^##\s*Done/i, /^##\s*完了/, /^##\s*Completed/i]
+    plan: [
+      /^##\s*Plan/i,
+      /^##\s*計画/,
+      /^##\s*未着手/,
+      /^##\s*🟡\s*未着手/,
+      /^##\s*次に着手/,
+      /^##\s*TODO/i
+    ],
+    work: [
+      /^##\s*Work/i,
+      /^##\s*作業中/,
+      /^##\s*In\s*Progress/i,
+      /^##\s*進行中/,
+      /^##\s*🔴\s*進行中/
+    ],
+    review: [
+      /^##\s*Review/i,
+      /^##\s*レビュー/,
+      /^##\s*確認待ち/
+    ],
+    done: [
+      /^##\s*Done/i,
+      /^##\s*完了/,
+      /^##\s*Completed/i,
+      /^##\s*直近完了/,
+      /^##\s*🟢\s*完了/
+    ]
   }
 
   // Split content by section headers

@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useProject } from '../App.tsx'
+import { formatRelativeTime } from '../lib/dateUtils.ts'
 import type { Insight } from '../../shared/types.ts'
 
 // Note: AI Insights uses Claude Agent SDK which calls Claude CLI
@@ -33,33 +35,25 @@ function getTypeInfo(type: Insight['type']): { icon: string; label: string } {
   }
 }
 
-/**
- * 相対時間を表示
- */
-function formatRelativeTime(dateStr: string): string {
-  const date = new Date(dateStr)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMins / 60)
-  const diffDays = Math.floor(diffHours / 24)
-
-  if (diffMins < 1) return 'たった今'
-  if (diffMins < 60) return `${diffMins}分前`
-  if (diffHours < 24) return `${diffHours}時間前`
-  return `${diffDays}日前`
-}
-
 export function InsightsPanel() {
   const [insights, setInsights] = useState<Insight[]>([])
   const [generatedAt, setGeneratedAt] = useState<string | null>(null)
   const [generating, setGenerating] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
+  const { activeProject } = useProject()
+  const projectPath = activeProject?.path
+
+  // プロジェクトが変わったらキャッシュをクリア
+  useEffect(() => {
+    setInsights([])
+    setGeneratedAt(null)
+  }, [projectPath])
 
   // 初回マウント時にキャッシュから読み込み
   useEffect(() => {
     try {
-      const cached = localStorage.getItem(STORAGE_KEY)
+      const cacheKey = projectPath ? `${STORAGE_KEY}-${projectPath}` : STORAGE_KEY
+      const cached = localStorage.getItem(cacheKey)
       if (cached) {
         const data: CachedInsights = JSON.parse(cached)
         setInsights(data.insights)
@@ -68,12 +62,18 @@ export function InsightsPanel() {
     } catch (e) {
       console.error('Failed to load cached insights:', e)
     }
-  }, [])
+  }, [projectPath])
 
   const generateInsights = async () => {
     setGenerating(true)
     try {
-      const response = await fetch('/api/insights', { method: 'POST' })
+      const url = projectPath
+        ? `/api/insights?project=${encodeURIComponent(projectPath)}`
+        : '/api/insights'
+      const response = await fetch(url, { method: 'POST' })
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`)
+      }
       const data = await response.json()
       const newInsights = data.insights ?? []
       const timestamp = new Date().toISOString()
@@ -81,12 +81,13 @@ export function InsightsPanel() {
       setInsights(newInsights)
       setGeneratedAt(timestamp)
 
-      // localStorage に保存
+      // localStorage に保存（プロジェクト固有のキー）
+      const cacheKey = projectPath ? `${STORAGE_KEY}-${projectPath}` : STORAGE_KEY
       const cacheData: CachedInsights = {
         insights: newInsights,
         generatedAt: timestamp
       }
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(cacheData))
+      localStorage.setItem(cacheKey, JSON.stringify(cacheData))
     } catch (error) {
       console.error('Failed to generate insights:', error)
     } finally {
@@ -94,31 +95,34 @@ export function InsightsPanel() {
     }
   }
 
-  const clearInsights = () => {
+  const clearInsights = useCallback(() => {
     setInsights([])
     setGeneratedAt(null)
-    localStorage.removeItem(STORAGE_KEY)
-  }
+    const cacheKey = projectPath ? `${STORAGE_KEY}-${projectPath}` : STORAGE_KEY
+    localStorage.removeItem(cacheKey)
+  }, [projectPath])
 
-  const copyCommand = (command: string) => {
+  const copyCommand = useCallback((command: string) => {
     navigator.clipboard.writeText(command)
     setCopied(command)
     setTimeout(() => setCopied(null), 2000)
-  }
+  }, [])
 
-  // インサイトを Impact 順にソート
-  const sortedInsights = [...insights].sort((a, b) => {
-    const order = { high: 0, medium: 1, low: 2 }
-    return order[a.impact] - order[b.impact]
-  })
+  // インサイトを Impact 順にソート（メモ化）
+  const sortedInsights = useMemo(() => {
+    return [...insights].sort((a, b) => {
+      const order = { high: 0, medium: 1, low: 2 }
+      return order[a.impact] - order[b.impact]
+    })
+  }, [insights])
 
-  // 統計情報
-  const stats = {
+  // 統計情報（メモ化）
+  const stats = useMemo(() => ({
     total: insights.length,
     high: insights.filter(i => i.impact === 'high').length,
     medium: insights.filter(i => i.impact === 'medium').length,
     low: insights.filter(i => i.impact === 'low').length
-  }
+  }), [insights])
 
   return (
     <div className="page-container">
@@ -235,20 +239,22 @@ export function InsightsPanel() {
 
       {/* インサイト一覧 */}
       {sortedInsights.length > 0 && (
-        <div className="insights-list">
+        <div className="insights-list" role="list" aria-label="最適化提案一覧">
           {sortedInsights.map((insight, i) => {
             const impactInfo = getImpactInfo(insight.impact)
             const typeInfo = getTypeInfo(insight.type)
 
             return (
-              <div
+              <article
                 key={i}
                 className="insight-card"
                 style={{ borderLeftColor: impactInfo.color }}
+                role="listitem"
+                aria-label={`${typeInfo.label}: ${insight.title}`}
               >
                 <div className="insight-header">
                   <div className="insight-type">
-                    <span className="insight-type-icon">{typeInfo.icon}</span>
+                    <span className="insight-type-icon" aria-hidden="true">{typeInfo.icon}</span>
                     <span className="insight-type-label">{typeInfo.label}</span>
                   </div>
                   <div className="insight-meta">
@@ -274,11 +280,12 @@ export function InsightsPanel() {
                   <button
                     onClick={() => copyCommand(insight.cliCommand)}
                     className="insight-copy-btn"
+                    aria-label={`コマンドをコピー: ${insight.cliCommand}`}
                   >
                     {copied === insight.cliCommand ? '✓ コピー済み' : '📋 コピー'}
                   </button>
                 </div>
-              </div>
+              </article>
             )
           })}
         </div>

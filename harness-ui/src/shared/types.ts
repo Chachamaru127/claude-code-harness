@@ -82,6 +82,19 @@ export interface SkillsResponse {
   usageTrackingMessage?: string
 }
 
+// Command Types
+export interface Command {
+  name: string
+  path: string
+  description: string
+  descriptionEn?: string
+  category: 'core' | 'optional'
+}
+
+export interface CommandsResponse {
+  commands: Command[]
+}
+
 // Memory Types
 export interface MemoryFile {
   name: string

@@ -2,6 +2,7 @@ import type {
   HealthResponse,
   KanbanResponse,
   SkillsResponse,
+  CommandsResponse,
   MemoryResponse,
   RulesResponse,
   HooksResponse,
@@ -45,6 +46,10 @@ export async function fetchPlans(mode: WorkflowMode = 'solo', projectPath?: stri
 
 export async function fetchSkills(projectPath?: string): Promise<SkillsResponse> {
   return fetchAPI<SkillsResponse>(`/skills${buildProjectQuery(projectPath)}`)
+}
+
+export async function fetchCommands(): Promise<CommandsResponse> {
+  return fetchAPI<CommandsResponse>('/commands')
 }
 
 export async function fetchMemory(projectPath?: string): Promise<MemoryResponse> {

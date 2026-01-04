@@ -1,6 +1,6 @@
 ---
 name: setup-2agent-files
-description: "2エージェント体制に必要なファイル（Cursorコマンド、メモリ構造、バージョンファイル）をセットアップするスキルCursor連携のセットアップファイルを生成する場合に使用します。Cursor連携のセットアップファイルを生成する場合に使用します。Cursor連携のセットアップファイルを生成する場合に使用します。"
+description: "2エージェント体制に必要なファイル（Cursorコマンド、メモリ構造、バージョンファイル）をセットアップするスキル。Cursor連携のセットアップファイルを生成する場合に使用します。"
 allowed-tools: ["Write"]
 metadata:
   skillport:
