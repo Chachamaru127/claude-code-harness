@@ -186,30 +186,25 @@ curl -s -X POST http://localhost:37778/api/projects \
 
 → エラーでも問題なし（既存プロジェクトが使用される）
 
-### Step 7: Plans.md フォーマット自動変換
+### Step 7: Plans.md フォーマット確認（必要に応じて）
 
-旧フォーマット（`cursor:WIP` 等）を新フォーマット（`cc:WIP` 等）に自動変換:
+Plans.md に旧フォーマット（`cursor:WIP` / `cursor:完了`）がある場合、**文脈に応じて**適切なマーカーに移行してください。
 
-```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/migrate-plans-format.sh
-```
+**移行の考え方:**
 
-**変換ルール:**
+| 旧マーカー | 文脈 | 新マーカー |
+|-----------|------|-----------|
+| `cursor:WIP` | Claude Code が作業中 | `cc:WIP` |
+| `cursor:WIP` | PM(Cursor) が作業中 | `pm:依頼中` または維持 |
+| `cursor:完了` | 実装が完了 | `cc:完了` |
+| `cursor:完了` | PM が確認済み | `pm:確認済` |
 
-| 旧フォーマット | 新フォーマット |
-|---------------|---------------|
-| `cursor:WIP` | `cc:WIP` |
-| `cursor:完了` | `cc:完了` |
+**2-Agent 運用の場合:**
+- `cursor:依頼中` / `cursor:確認済` はそのまま有効（`pm:*` と同義）
+- 無理に変換する必要はありません
 
-**出力例:**
-
-```
-🔄 旧フォーマットを検出: 3 箇所
-📁 バックアップ作成: Plans.md.bak.20260104213000
-✅ 変換完了！
-```
-
-→ 既に新フォーマットの場合は「変換不要」と表示されます。
+**移行が必要な場合:**
+Claude Code に「Plans.md の旧フォーマットを文脈に応じて新フォーマットに移行して」と依頼してください。
 
 ### Step 8: 完了メッセージ
 
@@ -221,7 +216,6 @@ bash ${CLAUDE_PLUGIN_ROOT}/scripts/migrate-plans-format.sh
 > - 環境変数: `HARNESS_BETA_CODE` を ~/.zshrc に追加
 > - 依存関係: インストール済み
 > - プロジェクト登録: 完了
-> - Plans.md フォーマット: 新フォーマットに変換済み
 >
 > **確認方法:**
 > 1. ブラウザで http://localhost:37778 にアクセス

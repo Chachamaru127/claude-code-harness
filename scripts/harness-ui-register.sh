@@ -48,7 +48,7 @@ is_harness_project() {
     # 旧フォーマット: cursor:WIP, cursor:完了（互換性のため登録は許可、警告表示）
     if grep -qE "cursor:(WIP|完了)" "Plans.md" 2>/dev/null; then
       FORMAT_STATUS="migration_needed"
-      FORMAT_WARNING="Plans.md に旧フォーマット(cursor:WIP/完了)を検出。pm:依頼中/pm:確認済 への移行を推奨。"
+      FORMAT_WARNING="Plans.md に旧フォーマット(cursor:WIP/完了)を検出。文脈に応じて cc:WIP/cc:完了 または pm:依頼中/pm:確認済 への移行を検討してください。"
       return 0
     fi
   fi
