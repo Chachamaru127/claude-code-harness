@@ -113,7 +113,51 @@ export HARNESS_BETA_CODE="ユーザーのライセンスキー"
 
 **注意**: プラグインの `.mcp.json` は編集不要（環境変数から自動取得）
 
-### Step 4: 完了メッセージ
+### Step 4: 依存関係のインストール
+
+harness-ui の依存関係をインストール:
+
+```bash
+cd ${CLAUDE_PLUGIN_ROOT}/harness-ui && bun install
+```
+
+**Bun がインストールされていない場合:**
+
+```bash
+# macOS / Linux
+curl -fsSL https://bun.sh/install | bash
+
+# Windows (PowerShell)
+powershell -c "irm bun.sh/install.ps1 | iex"
+```
+
+**インストール成功の確認:**
+
+```bash
+ls ${CLAUDE_PLUGIN_ROOT}/harness-ui/node_modules | head -5
+```
+
+→ パッケージ名が表示されれば成功
+
+### Step 5: 環境変数の反映とサーバー起動確認
+
+```bash
+# 環境変数を反映
+source ~/.zshrc  # または source ~/.bashrc
+
+# harness-ui サーバーを手動起動（確認用）
+cd ${CLAUDE_PLUGIN_ROOT}/harness-ui && bun run dev &
+```
+
+**起動確認:**
+
+```bash
+curl -s http://localhost:37778/api/status
+```
+
+→ `{"status":"ok"...}` が返れば成功
+
+### Step 6: 完了メッセージ
 
 > ✅ **harness-ui のセットアップが完了しました！**
 >
@@ -121,17 +165,41 @@ export HARNESS_BETA_CODE="ユーザーのライセンスキー"
 > - ライセンスキー: {キーの先頭8文字}...
 > - Customer ID: {顧客ID}
 > - 環境変数: `HARNESS_BETA_CODE` を ~/.zshrc に追加
+> - 依存関係: インストール済み
 >
 > **次にやること:**
-> 1. `source ~/.zshrc` を実行（または新しいターミナルを開く）
-> 2. Claude Code を再起動
-> 3. ブラウザで http://localhost:37778 にアクセス
+> 1. ブラウザで http://localhost:37778 にアクセス
+> 2. 次回以降は Claude Code 起動時に自動起動
 >
 > 💡 **ヒント**: MCP 一覧で `harness-ui` が表示されていれば成功です。
 
 ---
 
 ## トラブルシューティング
+
+### エラー: Cannot find module / node_modules が見つからない
+
+**原因**: 依存関係がインストールされていない
+
+**解決策**:
+```bash
+cd ${CLAUDE_PLUGIN_ROOT}/harness-ui
+bun install
+```
+
+### エラー: bun: command not found
+
+**原因**: Bun がインストールされていない
+
+**解決策**:
+```bash
+# macOS / Linux
+curl -fsSL https://bun.sh/install | bash
+source ~/.bashrc  # または source ~/.zshrc
+
+# 確認
+bun --version
+```
 
 ### エラー: ライセンスキーが無効
 
