@@ -78,7 +78,7 @@ if [ -n "$CWD" ] && [ -n "$FILE_PATH" ]; then
 
   if is_path_under "$NORM_FILE_PATH" "$NORM_CWD"; then
     # Remove the CWD prefix to get relative path
-    local cwd_with_slash="${NORM_CWD%/}/"
+    cwd_with_slash="${NORM_CWD%/}/"
     if [[ "$NORM_FILE_PATH" == "$cwd_with_slash"* ]]; then
       FILE_PATH="${NORM_FILE_PATH#$cwd_with_slash}"
     fi
@@ -116,17 +116,25 @@ fi
 # 変更を記録（jq があれば使用、なければスキップ）
 if command -v jq &> /dev/null; then
   # 新しい変更エントリを追加
-  TEMP_FILE=$(mktemp)
-  jq --arg file "$FILE_PATH" \
-     --arg action "$TOOL_NAME" \
-     --arg timestamp "$CURRENT_TIME" \
-     --arg important "$IS_IMPORTANT" \
-     '.changes_this_session += [{
-       "file": $file,
-       "action": $action,
-       "timestamp": $timestamp,
-       "important": ($important == "true")
-     }]' "$STATE_FILE" > "$TEMP_FILE" && mv "$TEMP_FILE" "$STATE_FILE"
+  TEMP_FILE=$(mktemp 2>/dev/null) || {
+    # mktemp 失敗時は静かにスキップ（PostToolUse hookなので中断しない）
+    exit 0
+  }
+  # クリーンアップを保証
+  trap 'rm -f "$TEMP_FILE"' EXIT
+
+  if jq --arg file "$FILE_PATH" \
+        --arg action "$TOOL_NAME" \
+        --arg timestamp "$CURRENT_TIME" \
+        --arg important "$IS_IMPORTANT" \
+        '.changes_this_session += [{
+          "file": $file,
+          "action": $action,
+          "timestamp": $timestamp,
+          "important": ($important == "true")
+        }]' "$STATE_FILE" > "$TEMP_FILE" 2>/dev/null; then
+    mv "$TEMP_FILE" "$STATE_FILE" 2>/dev/null || true
+  fi
 fi
 
 # 重要なファイルの変更時は通知

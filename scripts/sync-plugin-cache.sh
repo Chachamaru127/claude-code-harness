@@ -111,10 +111,11 @@ sync_file() {
 
 sync_critical_files() {
   local cache_dir="$1"
+  local plugin_source="$2"  # 明示的にソースディレクトリを受け取る
   local synced=0
-  
+
   # 同期対象ファイル（重要なスクリプト）
-  CRITICAL_FILES=(
+  local critical_files=(
     "scripts/pretooluse-guard.sh"
     "scripts/posttooluse-log-toolname.sh"
     "scripts/session-init.sh"
@@ -124,11 +125,11 @@ sync_critical_files() {
     "hooks/hooks.json"
     "VERSION"
   )
-  
-  for rel_path in "${CRITICAL_FILES[@]}"; do
-    local source_file="$PLUGIN_SOURCE/$rel_path"
+
+  for rel_path in "${critical_files[@]}"; do
+    local source_file="$plugin_source/$rel_path"
     local cache_file="$cache_dir/$rel_path"
-    
+
     if files_differ "$source_file" "$cache_file"; then
       mkdir -p "$(dirname "$cache_file")"
       cp "$source_file" "$cache_file"
@@ -136,7 +137,7 @@ sync_critical_files() {
       synced=$((synced + 1))
     fi
   done
-  
+
   printf "%d" "$synced"
 }
 
@@ -181,7 +182,7 @@ main() {
 
     if [ "$needs_sync" = true ]; then
       echo -e "${YELLOW}🔄 キャッシュ v$cache_version を同期中...${NC}" >&2
-      SYNCED=$(sync_critical_files "$CACHE_DIR")
+      SYNCED=$(sync_critical_files "$CACHE_DIR" "$PLUGIN_SOURCE")
       total_synced=$((total_synced + SYNCED))
     fi
   done

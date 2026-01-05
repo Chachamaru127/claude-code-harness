@@ -7,6 +7,19 @@
 
 ## [Unreleased]
 
+### Added
+
+- **テスト改ざん検出フック（posttooluse-tampering-detector.sh）**
+  - Write/Edit 後に改ざんパターンを検出し、Claude に警告を通知
+  - 操作はブロックせず、`additionalContext` で次のターンに警告を注入
+  - 検出パターン:
+    - `it.skip()` / `describe.skip()` / `test.skip()` 追加
+    - `it.only()` / `describe.only()` 追加
+    - `eslint-disable` / `@ts-ignore` / `@ts-nocheck` 追加
+    - アサーション（`expect()` / `assert`）の削除
+    - lint/CI 設定ファイルの緩和（`continue-on-error: true` など）
+  - `.claude/state/tampering.log` に検出履歴を記録
+
 ## [2.6.34] - 2026-01-05
 
 ### Changed

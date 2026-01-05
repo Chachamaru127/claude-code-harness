@@ -262,8 +262,9 @@ mkdir -p .claude/rules
 
 # テンプレートの簡易レンダリング（{{PROJECT_NAME}}/{{DATE}}/{{LANGUAGE}}）
 escape_sed_repl() {
-    # sed の置換文字列として安全にする（/ & | をエスケープ）
-    printf '%s' "$1" | sed -e 's/[\/&|]/\\&/g'
+    # sed の置換文字列として安全にする（\ / & | をエスケープ）
+    # バックスラッシュを先にエスケープしてから他の文字をエスケープ
+    printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/[\/&|]/\\&/g'
 }
 
 render_template_if_missing() {

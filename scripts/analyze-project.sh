@@ -57,45 +57,25 @@ detect_tech_stack() {
       techs+=("typescript")
     fi
 
-    # フレームワーク検出
-    if grep -q '"react"' package.json 2>/dev/null; then
-      frameworks+=("react")
-    fi
-    if grep -q '"next"' package.json 2>/dev/null; then
-      frameworks+=("nextjs")
-    fi
-    if grep -q '"vue"' package.json 2>/dev/null; then
-      frameworks+=("vue")
-    fi
-    if grep -q '"nuxt"' package.json 2>/dev/null; then
-      frameworks+=("nuxt")
-    fi
-    if grep -q '"express"' package.json 2>/dev/null; then
-      frameworks+=("express")
-    fi
-    if grep -q '"fastify"' package.json 2>/dev/null; then
-      frameworks+=("fastify")
-    fi
-    if grep -q '"svelte"' package.json 2>/dev/null; then
-      frameworks+=("svelte")
-    fi
+    # package.json を1回だけ読み込んでキャッシュ（I/O最適化: 12回→1回）
+    local pkg_content
+    pkg_content=$(cat package.json 2>/dev/null) || pkg_content=""
+
+    # フレームワーク検出（キャッシュした内容でパターンマッチ）
+    [[ "$pkg_content" == *'"react"'* ]] && frameworks+=("react")
+    [[ "$pkg_content" == *'"next"'* ]] && frameworks+=("nextjs")
+    [[ "$pkg_content" == *'"vue"'* ]] && frameworks+=("vue")
+    [[ "$pkg_content" == *'"nuxt"'* ]] && frameworks+=("nuxt")
+    [[ "$pkg_content" == *'"express"'* ]] && frameworks+=("express")
+    [[ "$pkg_content" == *'"fastify"'* ]] && frameworks+=("fastify")
+    [[ "$pkg_content" == *'"svelte"'* ]] && frameworks+=("svelte")
 
     # テストフレームワーク
-    if grep -q '"jest"' package.json 2>/dev/null; then
-      testing+=("jest")
-    fi
-    if grep -q '"vitest"' package.json 2>/dev/null; then
-      testing+=("vitest")
-    fi
-    if grep -q '"mocha"' package.json 2>/dev/null; then
-      testing+=("mocha")
-    fi
-    if grep -q '"playwright"' package.json 2>/dev/null; then
-      testing+=("playwright")
-    fi
-    if grep -q '"cypress"' package.json 2>/dev/null; then
-      testing+=("cypress")
-    fi
+    [[ "$pkg_content" == *'"jest"'* ]] && testing+=("jest")
+    [[ "$pkg_content" == *'"vitest"'* ]] && testing+=("vitest")
+    [[ "$pkg_content" == *'"mocha"'* ]] && testing+=("mocha")
+    [[ "$pkg_content" == *'"playwright"'* ]] && testing+=("playwright")
+    [[ "$pkg_content" == *'"cypress"'* ]] && testing+=("cypress")
   fi
 
   # Python
@@ -103,18 +83,14 @@ detect_tech_stack() {
     techs+=("python")
 
     if [ -f "pyproject.toml" ]; then
-      if grep -q "django" pyproject.toml 2>/dev/null; then
-        frameworks+=("django")
-      fi
-      if grep -q "fastapi" pyproject.toml 2>/dev/null; then
-        frameworks+=("fastapi")
-      fi
-      if grep -q "flask" pyproject.toml 2>/dev/null; then
-        frameworks+=("flask")
-      fi
-      if grep -q "pytest" pyproject.toml 2>/dev/null; then
-        testing+=("pytest")
-      fi
+      # pyproject.toml を1回だけ読み込んでキャッシュ
+      local pyproject_content
+      pyproject_content=$(cat pyproject.toml 2>/dev/null) || pyproject_content=""
+
+      [[ "$pyproject_content" == *"django"* ]] && frameworks+=("django")
+      [[ "$pyproject_content" == *"fastapi"* ]] && frameworks+=("fastapi")
+      [[ "$pyproject_content" == *"flask"* ]] && frameworks+=("flask")
+      [[ "$pyproject_content" == *"pytest"* ]] && testing+=("pytest")
     fi
   fi
 
