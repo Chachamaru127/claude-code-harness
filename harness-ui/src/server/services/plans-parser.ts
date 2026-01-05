@@ -132,6 +132,16 @@ export function extractMarkerTasks(markdown: string, mode: WorkflowMode = 'solo'
 
 /**
  * Parse Plans.md markdown content into KanbanResponse
+ *
+ * Parsing strategy (Marker-First Approach):
+ * 1. First, scan ALL lines and extract tasks with markers (cc:TODO, cc:WIP, cc:完了, etc.)
+ * 2. Then, for tasks WITHOUT markers inside known sections, apply section's default status
+ * 3. Merge results (marker-based takes precedence)
+ *
+ * This approach supports both:
+ * - Custom section names like "## フェーズ10: ..." with marker-based tasks
+ * - Standard section names like "## 🔴 進行中のタスク" with section-based status
+ *
  * @param markdown - The markdown content to parse
  * @param mode - Workflow mode: 'solo' (default) or '2agent'
  */
@@ -150,7 +160,21 @@ export function parsePlansMarkdown(markdown: string, mode: WorkflowMode = 'solo'
     }
   }
 
-  // Define section patterns (English and Japanese, including legacy formats)
+  // Step 1: Extract ALL marker-based tasks from the entire document
+  // This is the primary source of truth for task status
+  const markerResult = extractMarkerTasks(markdown, mode)
+  const markerTaskTitles = new Set<string>()
+
+  // Collect titles of marker-based tasks to avoid duplicates
+  for (const status of ['plan', 'work', 'review', 'done'] as const) {
+    for (const task of markerResult[status]) {
+      markerTaskTitles.add(task.title.toLowerCase().trim())
+      result[status].push(task)
+    }
+  }
+
+  // Step 2: Also extract section-based tasks WITHOUT markers
+  // These will use the section header to determine status
   const sectionPatterns: Record<Task['status'], RegExp[]> = {
     plan: [
       /^##\s*Plan/i,
@@ -181,28 +205,17 @@ export function parsePlansMarkdown(markdown: string, mode: WorkflowMode = 'solo'
     ]
   }
 
-  // Split content by section headers
   const lines = markdown.split('\n')
   let currentSection: Task['status'] | null = null
-  let sectionContent: string[] = []
-  let foundAnySection = false
-
-  const processSection = () => {
-    if (currentSection && sectionContent.length > 0) {
-      const tasks = extractTasks(sectionContent.join('\n'), currentSection)
-      result[currentSection].push(...tasks)
-    }
-  }
 
   for (const line of lines) {
-    // Check if this line is a section header
+    // Check if this line is a known section header
     let matchedSection: Task['status'] | null = null
 
     for (const [section, patterns] of Object.entries(sectionPatterns)) {
       for (const pattern of patterns) {
         if (pattern.test(line)) {
           matchedSection = section as Task['status']
-          foundAnySection = true
           break
         }
       }
@@ -210,39 +223,38 @@ export function parsePlansMarkdown(markdown: string, mode: WorkflowMode = 'solo'
     }
 
     if (matchedSection) {
-      // Process previous section before starting new one
-      processSection()
       currentSection = matchedSection
-      sectionContent = []
-    } else if (currentSection) {
-      sectionContent.push(line)
+      continue
+    }
+
+    // If we're in a known section, check for tasks WITHOUT markers
+    if (currentSection) {
+      const parsed = parseTaskLine(line)
+      if (parsed && !parsed.marker) {
+        // This task has no marker, so use section's status
+        const normalizedTitle = parsed.title.toLowerCase().trim()
+
+        // Skip if we already have this task from marker-based extraction
+        if (!markerTaskTitles.has(normalizedTitle)) {
+          result[currentSection].push({
+            id: generateId(),
+            title: parsed.title,
+            status: currentSection,
+            priority: parsed.priority
+          })
+          markerTaskTitles.add(normalizedTitle)
+        }
+      }
     }
   }
 
-  // Process the last section
-  processSection()
+  // Check if we found any tasks at all
+  const totalTaskCount = result.plan.length + result.work.length + result.review.length + result.done.length
 
-  // Check if section-based parsing yielded any tasks
-  const sectionTaskCount = result.plan.length + result.work.length + result.review.length + result.done.length
-
-  // If section-based parsing yielded no tasks, try marker-based parsing
-  if (sectionTaskCount === 0) {
-    const markerResult = extractMarkerTasks(markdown, mode)
-    const markerTaskCount = markerResult.plan.length +
-      markerResult.work.length +
-      markerResult.review.length +
-      markerResult.done.length
-
-    if (markerTaskCount > 0) {
-      return markerResult
-    }
-
-    // Only show error if we found no tasks at all
-    if (!foundAnySection) {
-      return {
-        ...result,
-        error: 'Plans.md のフォーマットが不正です。## Plan または ## Work セクション、またはマーカー（cc:TODO等）が必要です。'
-      }
+  if (totalTaskCount === 0) {
+    return {
+      ...result,
+      error: 'Plans.md にタスクが見つかりません。チェックボックス形式（- [ ] タスク名）でタスクを記載してください。マーカー（`cc:TODO`等）を付けると状態が明確になります。'
     }
   }
 
