@@ -116,12 +116,16 @@ sync_critical_files() {
 
   # 同期対象ファイル（重要なスクリプト）
   local critical_files=(
+    "scripts/path-utils.sh"
     "scripts/pretooluse-guard.sh"
     "scripts/posttooluse-log-toolname.sh"
     "scripts/session-init.sh"
     "scripts/session-monitor.sh"
     "scripts/userprompt-inject-policy.sh"
     "scripts/sync-plugin-cache.sh"
+    "scripts/track-changes.sh"
+    "scripts/analyze-project.sh"
+    "scripts/setup-existing-project.sh"
     "hooks/hooks.json"
     "VERSION"
   )
