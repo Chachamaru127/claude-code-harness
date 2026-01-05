@@ -15,6 +15,7 @@ harness-ui（ブラウザベースのダッシュボード）を有効化しま�
 
 ## できること（成果物）
 
+- **MCP 設定の有効化** - harness-ui MCP サーバーをプラグインに登録
 - ブラウザで http://localhost:37778 にアクセス可能
 - ヘルススコア、Usage、Skills の可視化
 - Claude Code 起動時に自動起動
@@ -111,7 +112,47 @@ Polar API でキーを検証:
 export HARNESS_BETA_CODE="ユーザーのライセンスキー"
 ```
 
-**注意**: プラグインの `.mcp.json` は編集不要（環境変数から自動取得）
+### Step 3.5: MCP 設定の追加（harness-ui を有効化）
+
+プラグインルートに `.mcp.json` を作成し、harness-ui MCP サーバーを有効化します。
+
+**このステップは harness-ui-setup でのみ実行されます**（harness-init では実行されません）。
+
+```bash
+PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
+TEMPLATE_PATH="$PLUGIN_ROOT/templates/mcp/harness-ui.mcp.json.template"
+TARGET_PATH="$PLUGIN_ROOT/.mcp.json"
+
+# テンプレートが存在するか確認
+if [ -f "$TEMPLATE_PATH" ]; then
+  # .mcp.json を作成（既存があれば上書き）
+  cp "$TEMPLATE_PATH" "$TARGET_PATH"
+  echo "✅ MCP 設定を作成しました: $TARGET_PATH"
+else
+  echo "⚠️ テンプレートが見つかりません: $TEMPLATE_PATH"
+  echo "手動で .mcp.json を作成してください"
+fi
+```
+
+**生成される `.mcp.json` の内容:**
+
+```json
+{
+  "harness-ui": {
+    "command": "bun",
+    "args": ["${CLAUDE_PLUGIN_ROOT}/harness-ui/src/mcp/server.ts"],
+    "env": {
+      "PROJECT_ROOT": "${CLAUDE_PLUGIN_ROOT}",
+      "HARNESS_BETA_CODE": "${HARNESS_BETA_CODE}"
+    }
+  }
+}
+```
+
+> 💡 **なぜこのステップが必要？**
+>
+> harness-ui はオプション機能のため、デフォルトでは MCP サーバーとして登録されません。
+> `/harness-ui-setup` を実行したユーザーのみが harness-ui MCP を利用できます。
 
 ### Step 4: 依存関係のインストール
 
@@ -214,13 +255,15 @@ Claude Code に「Plans.md の旧フォーマットを文脈に応じて新フ�
 > - ライセンスキー: {キーの先頭8文字}...
 > - Customer ID: {顧客ID}
 > - 環境変数: `HARNESS_BETA_CODE` を ~/.zshrc に追加
+> - **MCP 設定**: `.mcp.json` を作成済み
 > - 依存関係: インストール済み
 > - プロジェクト登録: 完了
 >
 > **確認方法:**
-> 1. ブラウザで http://localhost:37778 にアクセス
-> 2. 右上のドロップダウンに現在のプロジェクト名が表示されていることを確認
-> 3. 次回以降は Claude Code 起動時に自動起動＆自動登録
+> 1. **Claude Code を再起動**（MCP 設定を反映させるため）
+> 2. ブラウザで http://localhost:37778 にアクセス
+> 3. 右上のドロップダウンに現在のプロジェクト名が表示されていることを確認
+> 4. 次回以降は Claude Code 起動時に自動起動＆自動登録
 >
 > 💡 **ヒント**: ドロップダウンが「All Projects」のみの場合は、Step 6 のプロジェクト登録を再実行してください。
 

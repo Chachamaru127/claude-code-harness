@@ -7,6 +7,22 @@
 
 ## [Unreleased]
 
+## [2.6.34] - 2026-01-05
+
+### Changed
+
+- **`/harness-update` コマンドの内容ベース更新検出**
+  - バージョンが同一でもファイル内容が古い場合を検出（Step 2.5 追加）
+  - `template-tracker.sh check` で内容レベルの更新をチェック
+  - 更新対象リストベースの処理で全ファイル完了まで継続（Phase 2 Step 0）
+  - 処理後の再検証で残りを検出、再試行/手動対応/スキップを選択可能（Phase 3 Step 1）
+  - 進捗表示と完了レポートの改善
+
+- **harness-ui MCP 設定を `/harness-ui-setup` 時のみ有効化**
+  - `.mcp.json` をプラグインルートから `templates/mcp/harness-ui.mcp.json.template` に移動
+  - `/harness-ui-setup` 実行時に MCP 設定を作成するステップ（Step 3.5）を追加
+  - これにより、UI を使わないユーザーは MCP エラーに遭遇しなくなります
+
 ## [2.6.25] - 2025-01-04
 
 ### 🎯 あなたにとって何が変わるか
@@ -951,7 +967,8 @@ Observation recorded: 10946-10951 ✅
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.5...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.34...HEAD
+[2.6.34]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.33...v2.6.34
 [2.6.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.4...v2.6.5
 [2.6.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.3...v2.6.4
 [2.6.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.2...v2.6.3
