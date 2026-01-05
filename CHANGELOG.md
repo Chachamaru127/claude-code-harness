@@ -20,6 +20,26 @@
     - lint/CI 設定ファイルの緩和（`continue-on-error: true` など）
   - `.claude/state/tampering.log` に検出履歴を記録
 
+## [2.6.36] - 2026-01-05
+
+### Added
+
+- **クロスプラットフォームパス処理ユーティリティ（path-utils.sh）**
+  - Windows（Git Bash/MSYS2/Cygwin/WSL）、macOS、Linux に対応
+  - `detect_os()` - OS 検出とキャッシュ
+  - `is_absolute_path()` - Windows ドライブレター（`C:/`）、UNC パス（`//server`）対応
+  - `normalize_path()` - バックスラッシュ→スラッシュ変換、重複スラッシュ除去
+  - `paths_equal()` - クロスプラットフォームパス比較
+  - `is_path_under()` - 親子関係判定
+
+### Changed
+
+- **シェルスクリプトの I/O 最適化と堅牢性向上**
+  - `analyze-project.sh`: ファイル読み込み最適化（12回→1回のキャッシュ）
+  - `setup-existing-project.sh`: cd エラーハンドリング追加、sed エスケープ改善
+  - `sync-plugin-cache.sh`: グローバル変数を関数パラメータに変更
+  - `track-changes.sh`: mktemp エラーハンドリングと trap クリーンアップ追加
+
 ## [2.6.34] - 2026-01-05
 
 ### Changed
@@ -980,7 +1000,8 @@ Observation recorded: 10946-10951 ✅
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.34...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.36...HEAD
+[2.6.36]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.34...v2.6.36
 [2.6.34]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.33...v2.6.34
 [2.6.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.4...v2.6.5
 [2.6.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.3...v2.6.4
