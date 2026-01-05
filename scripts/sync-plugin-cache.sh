@@ -116,6 +116,7 @@ sync_critical_files() {
 
   # 同期対象ファイル（重要なスクリプト）
   local critical_files=(
+    "scripts/run-script.js"
     "scripts/path-utils.sh"
     "scripts/pretooluse-guard.sh"
     "scripts/posttooluse-log-toolname.sh"
