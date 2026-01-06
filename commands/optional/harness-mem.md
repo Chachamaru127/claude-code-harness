@@ -41,6 +41,63 @@ fi
 echo "検出された OS: $OS_TYPE"
 ```
 
+---
+
+### Step 0.5: Bun インストール確認
+
+Claude-mem v7.3.7 以降では Bun ベースのワーカーが使用されるため、Bun のインストールが必要です。
+
+```bash
+# Bun がインストールされているか確認
+if command -v bun &> /dev/null; then
+  echo "✅ Bun がインストールされています: $(bun --version)"
+else
+  echo "⚠️ Bun がインストールされていません"
+fi
+```
+
+**Bun がインストールされていない場合**:
+
+> ⚠️ **Bun がインストールされていません**
+>
+> Claude-mem の動作には Bun が必要です。
+>
+> インストールしますか？
+> 1. **はい** - 今すぐインストール（推奨）
+> 2. **いいえ** - 手動でインストールする
+
+**「はい」の場合** - OS に応じたインストール:
+
+**macOS / Linux / WSL**:
+
+```bash
+# 公式インストールスクリプト
+curl -fsSL https://bun.sh/install | bash
+
+# インストール後、パスを反映
+source ~/.bashrc  # または source ~/.zshrc
+
+# 確認
+bun --version
+```
+
+**Windows（PowerShell）**:
+
+```powershell
+# 公式インストールスクリプト
+powershell -c "irm bun.sh/install.ps1 | iex"
+
+# または npm 経由でインストール
+npm install -g bun
+
+# 確認
+bun --version
+```
+
+**インストール後**: Step 1 へ進む
+
+---
+
 **Windows が検出された場合**:
 
 ```bash
