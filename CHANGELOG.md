@@ -7,6 +7,15 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`/cc-cursor-cc` コマンド（計画検証ラウンドトリップ）**
+  - Claude Code で壁打ちした内容を Cursor (PM) に検証依頼
+  - 壁打ちコンテキストの自動抽出（やりたいこと、技術選択、決定事項、未決事項、懸念点）
+  - Plans.md への仮タスク追加（`pm:検証待ち` マーカー付き）
+  - Cursor 向けの検証依頼文を `/plan-with-cc` 形式で生成
+  - フロー: Claude Code (壁打ち) → Cursor (検証・Plans.md更新) → Claude Code (実装)
+
 ## [2.6.37] - 2026-01-05
 
 ### 🎯 あなたにとって何が変わるか
