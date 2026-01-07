@@ -7,6 +7,12 @@
 
 ## [Unreleased]
 
+## [2.6.44] - 2026-01-08
+
+### 🎯 あなたにとって何が変わるか
+
+**`/harness-init` の対話回数が最大11回→最大2回に大幅削減。「おまかせ」で質問1回、完了後は自動決定された設定の詳細サマリーを表示します。**
+
 ### Changed
 
 - **`/harness-init` 対話効率化（最大11回→最大2回）**
@@ -26,8 +32,6 @@
 | 言語選択→モード選択→詳細確認... | 統合質問1回で完了（おまかせ選択時） |
 | Skills Gate 設定で必ず質問 | 自動設定、後から調整可能 |
 
-### Changed
-
 - **エラーメッセージの日本語化**
   - `scripts/install-git-hooks.sh`: エラーと説明文を日本語化
   - `scripts/template-tracker.sh`: すべてのエラー・Usage・結果メッセージを日本語化
@@ -43,6 +47,10 @@
   - Plans.md への仮タスク追加（`pm:検証待ち` マーカー付き）
   - Cursor 向けの検証依頼文を `/plan-with-cc` 形式で生成
   - フロー: Claude Code (壁打ち) → Cursor (検証・Plans.md更新) → Claude Code (実装)
+
+- **`ask-project-type` スキル（曖昧ケース対応）**
+  - プロジェクト判定が曖昧な場合にユーザーに確認
+  - ワークフロー参照整合性テスト追加
 
 ## [2.6.37] - 2026-01-05
 
@@ -1044,7 +1052,8 @@ Observation recorded: 10946-10951 ✅
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.36...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.44...HEAD
+[2.6.44]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.37...v2.6.44
 [2.6.36]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.34...v2.6.36
 [2.6.34]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.33...v2.6.34
 [2.6.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.4...v2.6.5

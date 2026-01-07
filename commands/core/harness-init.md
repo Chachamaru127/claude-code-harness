@@ -251,24 +251,77 @@ command -v gh >/dev/null 2>&1 && echo "✅ gh" || echo "⚠️ gh"
 
 ---
 
-## Phase 5: 完了報告
+## Phase 5: 完了報告（詳細サマリー）
+
+作業完了後、**自動で決定された内容を明示**して透明性を確保:
 
 > ✅ **セットアップが完了しました！**
 >
-> **モード**: {{Solo / 2-Agent}}
-> **技術スタック**: {{選択されたスタック}}
+> ---
 >
-> **生成されたファイル**:
-> - AGENTS.md, CLAUDE.md, Plans.md
-> - .claude/settings.json
-> - .claude/memory/ (decisions.md, patterns.md)
-> - .claude/rules/ (品質保護ルール)
+> ### 📋 自動決定された設定
 >
-> **次にやること：**
+> | 項目 | 値 | 変更方法 |
+> |------|-----|---------|
+> | 言語 | **ja** | `claude-code-harness.config.json` で変更 |
+> | モード | **{{Solo / 2-Agent}}** | {{.cursor/ 検出結果}} |
+> | 技術スタック | **{{next-supabase など}}** | 再実行時に「詳細設定」を選択 |
+> | Skills Gate | **{{impl, review など}}** | `/skills-update` で調整 |
+> | プロジェクト名 | **{{my-app-XXXXXX}}** | `package.json` を編集 |
+>
+> ---
+>
+> ### 📁 生成されたファイル
+>
+> **ワークフロー**:
+> | ファイル | 用途 | サイズ |
+> |---------|------|--------|
+> | `AGENTS.md` | 開発フロー概要 | {{XX行}} |
+> | `CLAUDE.md` | Claude Code 設定 | {{XX行}} |
+> | `Plans.md` | タスク管理 | {{XX行}} |
+>
+> **設定**:
+> | ファイル | 用途 |
+> |---------|------|
+> | `.claude/settings.json` | 権限・安全設定 |
+> | `.claude/memory/decisions.md` | 意思決定記録 |
+> | `.claude/memory/patterns.md` | 再利用パターン |
+>
+> **品質保護ルール**:
+> | ファイル | 内容 |
+> |---------|------|
+> | `.claude/rules/test-quality.md` | テスト改ざん禁止 |
+> | `.claude/rules/implementation-quality.md` | 形骸化実装禁止 |
+>
+> {{2-Agent モードの場合}}
+> **Cursor コマンド**:
+> | ファイル | 用途 |
+> |---------|------|
+> | `.cursor/commands/start-session.md` | セッション開始 |
+> | `.cursor/commands/plan-with-cc.md` | 計画作成 |
+> | `.cursor/commands/handoff-to-claude.md` | タスク依頼 |
+> | `.cursor/commands/review-cc-work.md` | 実装レビュー |
+>
+> ---
+>
+> ### ⚙️ 後から変更するには
+>
+> | 変更したいこと | コマンド/方法 |
+> |--------------|--------------|
+> | Skills Gate のスキル追加/削除 | `/skills-update` |
+> | 2-Agent モードに切り替え | `/setup-cursor` |
+> | 技術スタック変更 | 手動でファイル編集 or プロジェクト再作成 |
+> | 言語設定変更 | `claude-code-harness.config.json` を編集 |
+>
+> ---
+>
+> ### 🚀 次にやること
+>
 > - 「`/plan-with-agent` 〇〇を作りたい」→ 計画を作成
 > - 「`/work`」→ Plans.md のタスクを実行
+> - 「`npm run dev`」→ 開発サーバー起動（該当する場合）
 >
-> 💡 Skills Gate は自動設定済み。調整は `/skills-update` で可能です。
+> 💡 **困ったら**「どうすればいい？」と聞いてください
 
 ---
 
