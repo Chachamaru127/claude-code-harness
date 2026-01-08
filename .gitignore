@@ -103,3 +103,4 @@ docs/images/image*.webp
 
 # マイグレーションスクリプト（一時的）
 scripts/migrate-usage-history.js
+.claude-plugin/CLAUDE.md
