@@ -7,6 +7,20 @@
 
 ## [Unreleased]
 
+## [2.7.2] - 2026-01-08
+
+### Fixed
+
+- **Claude Code 2.1.1 セキュリティ機能との互換性修正**
+  - Stop フックの `prompt` タイプが Claude Code 2.1.1 の新しいセキュリティルール（function result 内の instruction 検出）により拒否される問題を修正
+  - `prompt` タイプを `command` タイプに変換し、代替スクリプトを実装
+  - 新規スクリプト: `stop-cleanup-check.sh`（クリーンアップ推奨判定）
+  - 新規スクリプト: `stop-plans-reminder.sh`（Plans.md マーカー更新リマインダー）
+
+- **.claude-plugin/hooks.json の同期**
+  - `hooks/hooks.json` と `.claude-plugin/hooks.json` の不整合を解消
+  - 両ファイルを完全に同期（once:true, SubagentStart/Stop 対応など）
+
 ## [2.7.1] - 2026-01-08
 
 ### Fixed
@@ -1142,7 +1156,8 @@ Observation recorded: 10946-10951 ✅
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.1...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.2...HEAD
+[2.7.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.1...v2.7.2
 [2.7.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.0...v2.7.1
 [2.7.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.44...v2.7.0
 [2.6.44]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.37...v2.6.44

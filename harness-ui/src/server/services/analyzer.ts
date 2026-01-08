@@ -526,11 +526,20 @@ export async function analyzeHooks(_projectRoot?: string): Promise<HooksResponse
             for (const group of hookGroups as { matcher?: string; hooks?: { type: string; command?: string; prompt?: string }[] }[]) {
               if (group.hooks && Array.isArray(group.hooks)) {
                 for (const hook of group.hooks) {
-                  // Handle both command and prompt type hooks
-                  const hookCommand = hook.command ?? hook.prompt ?? ''
-                  const hookName = hook.command
-                    ? hook.command.split('/').pop()?.replace('.sh', '') ?? 'unknown'
-                    : hook.type === 'prompt' ? 'prompt-hook' : 'unknown'
+                  // Extract hook name from command
+                  // Format: node "path/run-script.js" script-name [args]
+                  const hookCommand = hook.command ?? ''
+                  let hookName = 'unknown'
+                  if (hook.command) {
+                    // Try to extract script name from run-script.js pattern
+                    const runScriptMatch = hook.command.match(/run-script\.js["\s]+(\S+)/)
+                    if (runScriptMatch?.[1]) {
+                      hookName = runScriptMatch[1].replace(/["']/g, '')
+                    } else {
+                      // Fallback: extract from path
+                      hookName = hook.command.split('/').pop()?.replace('.sh', '').replace(/["']/g, '') ?? 'unknown'
+                    }
+                  }
 
                   flatHooks.push({
                     name: hookName,

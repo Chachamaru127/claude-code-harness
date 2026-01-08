@@ -55,10 +55,20 @@ const hookMetadataMap: Record<string, HookMetadata> = {
     description: 'セッション終了時に作業内容の要約を生成します',
     purpose: 'session'
   },
-  'collect-cleanup-context': {
-    displayName: 'クリーンアップ情報収集',
-    description: '終了時にクリーンアップ提案のためのコンテキストを収集します',
+  'stop-check-pending': {
+    displayName: '未完了タスクチェック',
+    description: 'セッション終了時に未完了のタスクや保留中の作業をチェックします',
     purpose: 'session'
+  },
+  'stop-cleanup-check': {
+    displayName: 'クリーンアップ推奨判定',
+    description: 'Plans.md の肥大化やタスク蓄積を検出し、整理を推奨します',
+    purpose: 'workflow'
+  },
+  'stop-plans-reminder': {
+    displayName: 'Plans.md マーカーリマインダー',
+    description: '作業完了後のマーカー更新（cc:WIP → cc:完了 など）を促します',
+    purpose: 'workflow'
   },
 
   // Logging & Tracking
@@ -107,11 +117,26 @@ const hookMetadataMap: Record<string, HookMetadata> = {
     purpose: 'input'
   },
 
-  // Prompt Hooks (Stop type)
-  'prompt-hook': {
-    displayName: 'プロンプトフック',
-    description: 'セッション終了時にAIベースの分析・提案を行います',
+  // Subagent Tracking
+  'subagent-tracker': {
+    displayName: 'サブエージェント追跡',
+    description: 'サブエージェントの開始・終了を追跡し、履歴を記録します',
+    purpose: 'logging'
+  },
+  'posttooluse-clear-pending': {
+    displayName: '保留クリア',
+    description: 'スキル実行後に保留状態をクリアします',
     purpose: 'workflow'
+  },
+  'posttooluse-tampering-detector': {
+    displayName: 'テスト改ざん検出',
+    description: 'テストコードの不正な変更（skip追加など）を検出します',
+    purpose: 'security'
+  },
+  'userprompt-track-command': {
+    displayName: 'コマンド追跡',
+    description: 'ユーザーが入力したスラッシュコマンドを追跡します',
+    purpose: 'logging'
   }
 }
 
@@ -167,6 +192,18 @@ const hookTypeInfo: Record<string, HookTypeInfo> = {
     label: '通知',
     description: 'システムからの通知イベント時に呼び出されます',
     timing: '通知発生時'
+  },
+  SubagentStart: {
+    icon: '🚀',
+    label: 'サブエージェント開始',
+    description: 'Task ツールでサブエージェントが起動されたときに呼び出されます',
+    timing: 'サブエージェント開始時'
+  },
+  SubagentStop: {
+    icon: '🏁',
+    label: 'サブエージェント終了',
+    description: 'サブエージェントが完了または停止したときに呼び出されます',
+    timing: 'サブエージェント終了時'
   }
 }
 

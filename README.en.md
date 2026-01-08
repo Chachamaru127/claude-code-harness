@@ -9,7 +9,7 @@ English | [日本語](README.md)
 A development harness that runs Claude Code in an autonomous "Plan → Work → Review" cycle,
 systematically preventing **confusion, sloppiness, accidents, and forgetfulness**.
 
-[![Version: 2.6.44](https://img.shields.io/badge/version-2.6.44-blue.svg)](VERSION)
+[![Version: 2.7.2](https://img.shields.io/badge/version-2.7.2-blue.svg)](VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![Harness Score](https://img.shields.io/badge/harness_score-92%2F100-brightgreen.svg)](#scoring-criteria)
 
