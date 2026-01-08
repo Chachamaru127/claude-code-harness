@@ -1,3 +1,8 @@
+---
+description: Claude-mem 統合セットアップ（セッション跨ぎの記憶強化）
+description-en: Claude-mem integration setup for cross-session memory
+---
+
 # /harness-mem - Claude-mem 統合セットアップ
 
 Claude-mem をハーネス仕様にカスタマイズし、セッション跨ぎの品質・文脈維持を強化します。

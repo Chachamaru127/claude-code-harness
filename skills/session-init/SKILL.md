@@ -52,7 +52,7 @@ Session Init スキルは、Claude Code セッション開始時に自動的に�
 if [ -f "Plans.md" ]; then
   lines=$(wc -l < Plans.md)
   if [ "$lines" -gt 200 ]; then
-    echo "⚠️ Plans.md が ${lines} 行です。/cleanup で整理を推奨"
+    echo "⚠️ Plans.md が ${lines} 行です。「整理して」で整理を推奨"
   fi
 fi
 
@@ -60,7 +60,7 @@ fi
 if [ -f ".claude/memory/session-log.md" ]; then
   lines=$(wc -l < .claude/memory/session-log.md)
   if [ "$lines" -gt 500 ]; then
-    echo "⚠️ session-log.md が ${lines} 行です。/cleanup sessions で整理を推奨"
+    echo "⚠️ session-log.md が ${lines} 行です。「セッションログを整理して」で整理を推奨"
   fi
 fi
 ```

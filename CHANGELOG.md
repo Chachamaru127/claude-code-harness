@@ -56,17 +56,27 @@
 - **スキルホットリロード対応ドキュメント**
   - `/skill-list` コマンドにホットリロード対応の説明を追加
 
+### Removed
+
+- **4つの重複コマンドを削除（破壊的変更）**
+
+  以下のコマンドは同等のスキルに統合されました：
+
+  | 削除されたコマンド | 代替 | 使い方 |
+  |--------------------|------|--------|
+  | `/validate` | `verify` スキル | 「ビルドして」「検証して」と言う |
+  | `/cleanup` | `maintenance` スキル | 「整理して」「アーカイブして」と言う |
+  | `/remember` | `memory` スキル | 「覚えておいて」「記録して」と言う |
+  | `/refactor` | `impl` スキル | 「リファクタして」と言う |
+
+  > **移行方法**: スラッシュコマンドの代わりに、日本語で話しかけてください。スキルが自動的に起動します。
+
 ### Changed
 
 - **スラッシュメニュー最適化（48→36エントリ、25%削減）**
   - 8つの内部スキルに `user-invocable: false` を設定
     - setup, session-init, session-memory, parallel-workflows
     - principles, workflow-guide, vibecoder-guide, test-nested-agents
-  - 4つの重複コマンドを削除
-    - `/validate` → `verify` スキルへ
-    - `/cleanup` → `maintenance` スキルへ
-    - `/remember` → `memory` スキルへ
-    - `/refactor` → `impl` スキルへ
 
 #### Before/After
 

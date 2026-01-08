@@ -205,4 +205,4 @@ Claude Code:
 - **自動保存**: `hooks/Stop` により、セッション終了時に `session-log.md` へ要約を自動追記する運用を推奨（未導入の場合は手動運用でOK）
 - **プライバシー**: 機密情報は記録しない
 - **Git方針**: `decisions.md`/`patterns.md`は共有推奨、`session-log.md`/`context.json`/`.claude/state/`はローカル推奨（詳細: `docs/MEMORY_POLICY.md`）
-- **容量管理**: ログが大きくなったら `/cleanup sessions` を推奨
+- **容量管理**: ログが大きくなったら「セッションログを整理して」を推奨

@@ -9,7 +9,7 @@
 Claude Code を「Plan → Work → Review」の自律サイクルで運用し、
 **迷い・雑さ・事故・忘却** を仕組みで防ぐ開発ハーネスです。
 
-[![Version: 2.7.0](https://img.shields.io/badge/version-2.7.0-blue.svg)](VERSION)
+[![Version: 2.7.1](https://img.shields.io/badge/version-2.7.1-blue.svg)](VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![Harness Score](https://img.shields.io/badge/harness_score-92%2F100-brightgreen.svg)](#採点基準)
 
@@ -138,9 +138,6 @@ claude
 
 # 変更内容をレビューする
 /harness-review
-
-# （任意）ビルド・テストを一括検証
-/validate
 ```
 
 ### 困ったときは
@@ -149,7 +146,7 @@ claude
 |------|----------|
 | 何ができるか知りたい | `/skill-list` |
 | 進捗を確認したい | `/sync-status` |
-| Plans.md が長くなった | `/cleanup` |
+| Plans.md が長くなった | 「整理して」（maintenance スキル） |
 
 <details>
 <summary>ローカルクローン（開発者・コントリビューター向け）</summary>
@@ -223,16 +220,13 @@ claude --plugin-dir ~/claude-plugins/claude-code-harness
 
 | コマンド | 用途 |
 |----------|------|
-| `/validate` | ビルド・テスト一括検証 |
 | `/harness-update` | プラグイン更新 |
-| `/cleanup` | Plans.md 等の整理 |
 | `/sync-status` | 進捗確認 → 次アクション提案 |
 
 ### 知識・連携
 
 | コマンド | 用途 |
 |----------|------|
-| `/remember` | 学習事項を Rules/Commands/Skills に記録 |
 | `/harness-mem` | Claude-mem 統合セットアップ |
 | `/cursor-mem` | Cursor × Claude-mem 自動記録セットアップ |
 | `/handoff-to-cursor` | Cursor(PM) への完了報告 |

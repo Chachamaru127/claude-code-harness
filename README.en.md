@@ -172,16 +172,13 @@ claude --plugin-dir ~/claude-plugins/claude-code-harness
 
 | Command | Purpose |
 |---------|---------|
-| `/validate` | Batch verify build & tests |
 | `/harness-update` | Update plugin |
-| `/cleanup` | Organize Plans.md, etc. |
 | `/sync-status` | Check progress → Suggest next action |
 
 ### Knowledge & Collaboration
 
 | Command | Purpose |
 |---------|---------|
-| `/remember` | Record learnings to Rules/Commands/Skills |
 | `/harness-mem` | Claude-mem integration setup |
 | `/handoff-to-cursor` | Report completion to Cursor (PM) |
 
