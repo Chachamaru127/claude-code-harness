@@ -7,6 +7,15 @@
 
 ## [Unreleased]
 
+## [2.7.3] - 2026-01-08
+
+### Fixed
+
+- **2.6.x → 2.7.x 移行の互換性修正**
+  - `sync-plugin-cache.sh` に `.claude-plugin/hooks.json` と `.claude-plugin/plugin.json` を同期対象に追加
+  - 新規スクリプト（`stop-cleanup-check.sh`, `stop-plans-reminder.sh`）も同期対象に追加
+  - 古いキャッシュバージョンでも Stop フックが正常動作
+
 ## [2.7.2] - 2026-01-08
 
 ### Fixed
@@ -1156,7 +1165,8 @@ Observation recorded: 10946-10951 ✅
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.2...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.3...HEAD
+[2.7.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.2...v2.7.3
 [2.7.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.1...v2.7.2
 [2.7.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.0...v2.7.1
 [2.7.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.44...v2.7.0

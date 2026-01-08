@@ -127,7 +127,11 @@ sync_critical_files() {
     "scripts/track-changes.sh"
     "scripts/analyze-project.sh"
     "scripts/setup-existing-project.sh"
+    "scripts/stop-cleanup-check.sh"
+    "scripts/stop-plans-reminder.sh"
     "hooks/hooks.json"
+    ".claude-plugin/hooks.json"
+    ".claude-plugin/plugin.json"
     "VERSION"
   )
 
