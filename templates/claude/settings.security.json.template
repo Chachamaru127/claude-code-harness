@@ -1,9 +1,19 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "_harness_template": "claude/settings.security.json.template",
-  "_harness_version": "2.5.27",
+  "_harness_version": "2.6.45",
+  "language": "japanese",
   "permissions": {
-    "allow": [],
+    "allow": [
+      "Bash(npm *)",
+      "Bash(npx *)",
+      "Bash(bun *)",
+      "Bash(pnpm *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git branch *)"
+    ],
     "deny": [
       "Bash(sudo:*)",
       "Bash(psql:*)",
@@ -20,11 +30,11 @@
       "Read(**/.ssh/**)"
     ],
     "ask": [
-      "Bash(rm:*)",
-      "Bash(git push:*)",
-      "Bash(git reset:*)",
-      "Bash(git rebase:*)",
-      "Bash(git merge:*)"
+      "Bash(rm *)",
+      "Bash(git push *)",
+      "Bash(git reset *)",
+      "Bash(git rebase *)",
+      "Bash(git merge *)"
     ]
   }
 }

@@ -2,8 +2,12 @@
 name: project-state-updater
 description: Plans.md とセッション状態の同期・ハンドオフ支援
 tools: [Read, Write, Edit, Bash, Grep]
+disallowedTools: [Task]
 model: sonnet
 color: cyan
+skills:
+  - plans-management
+  - workflow
 ---
 
 # Project State Updater Agent

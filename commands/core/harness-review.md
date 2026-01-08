@@ -1,6 +1,7 @@
 ---
 description: コードレビュー（組み込み review との衝突回避）
 description-en: Code review (multi-perspective security/performance/quality)
+context: fork
 ---
 
 # /harness-review - コードレビュー（ソロモード）

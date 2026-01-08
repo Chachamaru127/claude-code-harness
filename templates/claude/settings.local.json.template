@@ -1,7 +1,8 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "_harness_template": "claude/settings.local.json.template",
-  "_harness_version": "2.5.27",
+  "_harness_version": "2.6.45",
+  "language": "japanese",
   "permissions": {
     "defaultMode": "bypassPermissions"
   }

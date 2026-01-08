@@ -2,8 +2,11 @@
 name: project-analyzer
 description: 新規/既存プロジェクト判定と技術スタック検出
 tools: [Read, Bash, Glob, Grep]
+disallowedTools: [Write, Edit, Task]
 model: sonnet
 color: green
+skills:
+  - setup
 ---
 
 # Project Analyzer Agent

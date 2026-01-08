@@ -2,8 +2,11 @@
 name: code-reviewer
 description: セキュリティ/性能/品質を多角的にレビュー
 tools: [Read, Grep, Glob, Bash]
+disallowedTools: [Write, Edit, Task]
 model: sonnet
 color: blue
+skills:
+  - review
 ---
 
 # Code Reviewer Agent

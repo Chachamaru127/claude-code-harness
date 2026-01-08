@@ -7,6 +7,8 @@ description-en: Show available skills with descriptions
 
 利用可能なスキルを一覧表示します。スキルは会話の中で自動的に呼び出されるため、明示的なコマンド実行は不要です。
 
+> **Claude Code 2.1.0+**: スキルはホットリロード対応。追加・変更は即座に反映されます（再起動不要）。
+
 ---
 
 ## 使い方

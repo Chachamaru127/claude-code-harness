@@ -2,8 +2,12 @@
 name: error-recovery
 description: エラー復旧（原因切り分け→安全な修正→再検証）
 tools: [Read, Write, Edit, Bash, Grep, Glob]
+disallowedTools: [Task]
 model: sonnet
 color: red
+skills:
+  - verify
+  - troubleshoot
 ---
 
 # Error Recovery Agent

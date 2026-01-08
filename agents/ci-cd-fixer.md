@@ -2,8 +2,16 @@
 name: ci-cd-fixer
 description: CI失敗時の診断・修正を安全第一で支援
 tools: [Read, Write, Bash, Grep, Glob]
+disallowedTools: [Task]
 model: sonnet
 color: orange
+skills:
+  - verify
+  - ci
+hooks:
+  PreToolUse:
+    - matcher: "Bash"
+      command: "echo '[CI-Fixer] Checking command safety...'"
 ---
 
 # CI/CD Fixer Agent

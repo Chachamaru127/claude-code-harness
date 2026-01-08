@@ -2,8 +2,12 @@
 name: project-scaffolder
 description: 指定スタックで動くプロジェクトを自動生成
 tools: [Write, Bash, Read, Glob]
+disallowedTools: [Task]
 model: sonnet
 color: purple
+skills:
+  - setup
+  - impl
 ---
 
 # Project Scaffolder Agent
