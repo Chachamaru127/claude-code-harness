@@ -51,8 +51,13 @@ docs/design/
 /test-sandbox/
 
 
-# Benchmarks (local testing only, not for distribution)
-/benchmarks/
+# Benchmarks - generated outputs only (scripts/tasks/docs are tracked)
+/benchmarks/results/
+/benchmarks/test-project/
+/benchmarks/versions/
+/benchmarks/**/*.trace.jsonl
+/benchmarks/**/*.output.txt
+/benchmarks/**/*.debug.log
 
 # docs (local-only / not for distribution)
 docs/FIX_PLAN_*.md
@@ -79,6 +84,7 @@ skills/x-promo/
 # /harness-ui/  ← 2.6.22+ で配布対象に変更
 
 # スライド中間ファイル
+docs/slides/
 docs/images/slides/
 docs/presentation/1.png
 docs/presentation/2.png
@@ -104,3 +110,6 @@ docs/images/image*.webp
 # マイグレーションスクリプト（一時的）
 scripts/migrate-usage-history.js
 .claude-plugin/CLAUDE.md
+
+# リリース告知資料（ローカルのみ）
+docs/releases/

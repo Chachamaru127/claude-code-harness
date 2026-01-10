@@ -1,0 +1,12 @@
+# ベンチマーク結果（ローカルのみ）
+results/*.json
+
+# テストプロジェクト（毎回再生成）
+test-project/
+
+# 過去バージョン（git archive で取得）
+versions/
+
+# 一時ファイル
+*.tmp
+*.log
