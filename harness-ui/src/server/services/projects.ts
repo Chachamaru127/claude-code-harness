@@ -7,7 +7,7 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { basename, join } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 import { validateProjectPath } from './file-reader.ts'
 
 // グローバル設定ディレクトリ
@@ -265,6 +265,42 @@ export function getConfigPath(): string {
 }
 
 /**
+ * プロジェクトルートとして不適切なディレクトリ名
+ * これらのディレクトリが指定された場合は親ディレクトリを使用する
+ */
+const INVALID_PROJECT_DIRS = new Set([
+  'harness-ui',
+  '.claude',
+  '.git',
+  'node_modules',
+  '.vscode',
+  '.idea',
+  'dist',
+  'build',
+  'out',
+])
+
+/**
+ * パスからプロジェクトルートを解決
+ * サブディレクトリ（.claude, node_modules など）が指定された場合は親ディレクトリを返す
+ */
+function resolveProjectRoot(inputPath: string): string {
+  // 絶対パスに正規化
+  let currentPath = resolve(inputPath)
+  let dirName = basename(currentPath)
+
+  // 無効なディレクトリの場合は親に遡る（最大3階層）
+  let depth = 0
+  while (INVALID_PROJECT_DIRS.has(dirName) && depth < 3) {
+    currentPath = resolve(currentPath, '..')
+    dirName = basename(currentPath)
+    depth++
+  }
+
+  return currentPath
+}
+
+/**
  * 現在のプロジェクトを自動登録
  * claude-mem のように、セッション開始時に自動的にプロジェクトを登録する
  *
@@ -273,11 +309,14 @@ export function getConfigPath(): string {
  */
 export function autoRegisterProject(projectPath?: string): Project | null {
   // プロジェクトパスを決定
-  const targetPath = projectPath ?? process.env['PROJECT_ROOT'] ?? process.cwd()
+  const rawPath = projectPath ?? process.env['PROJECT_ROOT'] ?? process.cwd()
 
-  // harness-ui 自身は登録しない（サブディレクトリなので）
+  // サブディレクトリが指定された場合は親ディレクトリに解決
+  const targetPath = resolveProjectRoot(rawPath)
+
+  // 解決後もまだ無効なディレクトリの場合は登録しない
   const dirName = basename(targetPath)
-  if (dirName === 'harness-ui') {
+  if (INVALID_PROJECT_DIRS.has(dirName)) {
     return null
   }
 
