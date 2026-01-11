@@ -26,6 +26,11 @@ on:
 permissions:
   contents: read
 
+# 同時実行を防止（結果の混入を防ぐ）
+concurrency:
+  group: benchmark-${{ github.repository }}
+  cancel-in-progress: false
+
 env:
   SUITE_TASKS: "plan-feature,impl-utility,impl-test,impl-refactor,review-security,review-quality,multi-file-refactor,skill-routing"
 
@@ -40,6 +45,21 @@ jobs:
       INPUT_MODE: ${{ inputs.mode }}
 
     steps:
+      - name: Validate API Key
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::ANTHROPIC_API_KEY is not set. Please configure the secret in repository settings."
+            echo ""
+            echo "To fix this:"
+            echo "1. Go to Settings → Secrets and variables → Actions"
+            echo "2. Add a new repository secret named 'ANTHROPIC_API_KEY'"
+            echo "3. Set the value to your Anthropic API key"
+            exit 1
+          fi
+          echo "✅ ANTHROPIC_API_KEY is configured"
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
