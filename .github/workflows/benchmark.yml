@@ -1,0 +1,170 @@
+name: benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      tasks:
+        description: "実行するタスク（カンマ区切り、または 'all'）"
+        required: false
+        default: "all"
+        type: string
+      trials:
+        description: "各タスクの試行回数"
+        required: false
+        default: "3"
+        type: string
+      mode:
+        description: "実行モード"
+        required: false
+        default: "both"
+        type: choice
+        options:
+          - both
+          - with-plugin
+          - no-plugin
+
+permissions:
+  contents: read
+
+env:
+  SUITE_TASKS: "plan-feature,impl-utility,impl-test,impl-refactor,review-security,review-quality,multi-file-refactor,skill-routing"
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    env:
+      INPUT_TASKS: ${{ inputs.tasks }}
+      INPUT_TRIALS: ${{ inputs.trials }}
+      INPUT_MODE: ${{ inputs.mode }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq bc
+
+      - name: Install Claude Code CLI
+        run: |
+          npm install -g @anthropic-ai/claude-code
+
+      - name: Determine tasks
+        id: tasks
+        run: |
+          if [ "$INPUT_TASKS" = "all" ]; then
+            echo "tasks=$SUITE_TASKS" >> "$GITHUB_OUTPUT"
+          else
+            echo "tasks=$INPUT_TASKS" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create results directory
+        run: |
+          mkdir -p benchmarks/results
+          mkdir -p benchmarks/test-project
+
+      - name: Setup test project
+        run: |
+          bash benchmarks/scripts/setup-test-project.sh
+
+      - name: Run benchmarks (with-plugin)
+        if: ${{ inputs.mode == 'both' || inputs.mode == 'with-plugin' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TASK_LIST: ${{ steps.tasks.outputs.tasks }}
+        run: |
+          IFS=',' read -ra TASKS <<< "$TASK_LIST"
+          for task in "${TASKS[@]}"; do
+            task=$(echo "$task" | xargs)  # trim whitespace
+            echo "=========================================="
+            echo "Running: $task (with-plugin)"
+            echo "=========================================="
+            for i in $(seq 1 "$INPUT_TRIALS"); do
+              echo "Trial $i/$INPUT_TRIALS"
+              bash benchmarks/scripts/run-isolated-benchmark.sh \
+                --task "$task" \
+                --with-plugin \
+                --iterations 1 \
+                || echo "Warning: Trial $i failed for $task (with-plugin)"
+            done
+          done
+
+      - name: Run benchmarks (no-plugin)
+        if: ${{ inputs.mode == 'both' || inputs.mode == 'no-plugin' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TASK_LIST: ${{ steps.tasks.outputs.tasks }}
+        run: |
+          IFS=',' read -ra TASKS <<< "$TASK_LIST"
+          for task in "${TASKS[@]}"; do
+            task=$(echo "$task" | xargs)  # trim whitespace
+            echo "=========================================="
+            echo "Running: $task (no-plugin)"
+            echo "=========================================="
+            for i in $(seq 1 "$INPUT_TRIALS"); do
+              echo "Trial $i/$INPUT_TRIALS"
+              bash benchmarks/scripts/run-isolated-benchmark.sh \
+                --task "$task" \
+                --iterations 1 \
+                || echo "Warning: Trial $i failed for $task (no-plugin)"
+            done
+          done
+
+      - name: Generate scorecard
+        run: |
+          bash benchmarks/scripts/generate-scorecard.sh --verbose
+
+      - name: Generate analysis report
+        run: |
+          bash benchmarks/scripts/analyze-results.sh || true
+
+      - name: Upload results artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.run_id }}
+          path: |
+            benchmarks/results/*.json
+            benchmarks/results/*.md
+            benchmarks/results/*.txt
+            benchmarks/results/*.trace.jsonl
+          retention-days: 90
+
+      - name: Upload scorecard artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: scorecard-${{ github.run_id }}
+          path: |
+            benchmarks/results/scorecard-*.json
+            benchmarks/results/scorecard-*.md
+          retention-days: 90
+
+      - name: Summary
+        run: |
+          echo "## Benchmark Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          # 最新の scorecard.md を表示
+          SCORECARD_MD=$(ls -t benchmarks/results/scorecard-*.md 2>/dev/null | head -1)
+          if [ -n "$SCORECARD_MD" ] && [ -f "$SCORECARD_MD" ]; then
+            cat "$SCORECARD_MD" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Scorecard が生成されませんでした。" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "---" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Artifacts" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "- benchmark-results-${{ github.run_id }}: 全結果（JSON, trace, output）" >> "$GITHUB_STEP_SUMMARY"
+          echo "- scorecard-${{ github.run_id }}: Scorecard（JSON, Markdown）" >> "$GITHUB_STEP_SUMMARY"
