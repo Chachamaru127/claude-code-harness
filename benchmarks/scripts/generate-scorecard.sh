@@ -527,6 +527,9 @@ def main():
     # Trial 詳細
     trials = extract_trials(results)
 
+    # 実際の試行数を計算（各タスクの最大イテレーション番号）
+    actual_trials = max([t.get("iteration", 1) for t in trials], default=1) if trials else 0
+
     # メタ情報
     os_name, os_version = get_os_info()
     meta = {
@@ -537,7 +540,7 @@ def main():
         "os": os_name,
         "os_version": os_version,
         "cost_assumption": "sonnet_3_5_input_3_per_mtok_output_15_per_mtok",
-        "trials": 3,
+        "trials": actual_trials,
         "filter": filter_pattern if filter_pattern else None
     }
 

@@ -43,9 +43,12 @@ Claude harness 評価スイート v1 の仕様を定義します。
 
 | 項目 | 値 | 理由 |
 |------|----|------|
-| 回数 | **3** | 非決定性を吸収する最小限 |
-| 実行順序 | 交互（no-plugin → with-plugin → ...） | バイアス回避 |
+| 回数 | **3**（デフォルト、可変） | 非決定性を吸収する最小限 |
+| 実行順序 | モード別一括 | CI 実装の簡素化（隔離環境でバイアス回避） |
 | 隔離 | HOME 分離（`run-isolated-benchmark.sh`） | 混入防止 |
+
+> **実行順序について**: 交互実行（no-plugin → with-plugin → ...）は理想的だが、CI 実装が複雑になる。
+> HOME 分離による環境隔離でバイアスは十分に回避可能なため、モード別一括実行を採用。
 
 ---
 
@@ -270,6 +273,37 @@ done
 # GitHub Actions workflow_dispatch で実行
 # → artifact として scorecard/report/trace を保存
 ```
+
+---
+
+## コミット時の注意事項
+
+### 混入事故の防止
+
+ベンチマーク関連の変更をコミットする際、他の作業中ファイル（harness-ui 等）が混入しないよう注意:
+
+```bash
+# 1. 対象ファイルのみをステージング（推奨）
+git add docs/SCORECARD_SPEC.md benchmarks/scripts/generate-scorecard.sh .github/workflows/benchmark.yml
+
+# 2. ステージング内容を確認
+git diff --cached --stat
+
+# 3. 問題なければコミット
+git commit -m "feat(eval): ..."
+```
+
+**禁止パターン**:
+- ❌ `git add .` や `git add -A`（作業中ファイルが混入する）
+- ❌ `git commit -a`（同上）
+
+### 生成物のコミット禁止
+
+以下は `.gitignore` で除外されており、コミットしてはならない:
+
+- `benchmarks/results/` - 結果ファイル（JSON, Markdown, trace）
+- `benchmarks/test-project/` - テスト用プロジェクト
+- `benchmarks/versions/` - バージョン別キャッシュ
 
 ---
 
