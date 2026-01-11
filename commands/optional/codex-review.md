@@ -70,11 +70,15 @@ claude mcp add --scope user codex -- codex mcp-server
 
 ## 実行フロー
 
-### Step 1: Codex 環境確認
+### Step 1: Codex 環境確認 & バージョンチェック
 
 ```bash
 # Codex が利用可能か確認
 which codex && codex login status
+
+# バージョン確認
+codex --version
+npm show @openai/codex version  # 最新バージョン
 ```
 
 **未設定の場合**:
@@ -87,6 +91,19 @@ which codex && codex login status
 3. `claude mcp add --scope user codex -- codex mcp-server` で登録
 
 詳細: `skills/codex-review/references/codex-mcp-setup.md`
+```
+
+**バージョンが古い場合**:
+```markdown
+⚠️ Codex CLI が古いバージョンです
+
+インストール済み: X.X.X
+最新バージョン: Y.Y.Y
+
+アップデートしますか？ (y/n)
+
+→ 承認された場合:
+npm update -g @openai/codex
 ```
 
 ### Step 2: 変更ファイルの特定
@@ -102,8 +119,19 @@ MCP 経由で Codex にレビューを依頼:
 ```
 📊 Codex レビュー開始...
 
+モデル: gpt-5.2-codex（設定ファイルで変更可能）
 対象ファイル: {changed_files}
 プロンプト: 日本語でコードレビューを行い、問題点と改善提案を出力してください
+```
+
+**モデル設定**:
+```yaml
+# .claude-code-harness.config.yaml
+review:
+  codex:
+    model: gpt-5.2-codex  # 推奨（最上位モデル）
+    # model: gpt-5.1-codex
+    # model: gpt-5-codex-mini  # 低コスト版
 ```
 
 ### Step 4: Claude による検証

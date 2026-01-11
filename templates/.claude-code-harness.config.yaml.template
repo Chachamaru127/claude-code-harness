@@ -30,6 +30,9 @@ review:
   codex:
     # Enable Codex as a second-opinion reviewer
     enabled: false
+    # Model to use for Codex review
+    # Options: gpt-5.2-codex (recommended), gpt-5.1-codex, gpt-5-codex-mini
+    model: gpt-5.2-codex
     # Auto-run Codex review (true) or ask each time (false)
     auto: false
     # Prompt sent to Codex for code review

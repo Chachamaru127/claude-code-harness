@@ -1,6 +1,8 @@
 #!/bin/bash
 # check-codex.sh - Codex 利用可能性チェック（once hook 用）
 # /harness-review 初回実行時に一度だけ実行される
+#
+# Usage: ./scripts/check-codex.sh
 
 set -euo pipefail
 
@@ -21,21 +23,61 @@ if ! command -v codex &> /dev/null; then
     exit 0
 fi
 
+# Codex のバージョンを取得
+CODEX_VERSION=$(codex --version 2>/dev/null | head -1 || echo "unknown")
+
+# 最新バージョンを npm から取得（タイムアウト 3秒）
+LATEST_VERSION=$(npm show @openai/codex version 2>/dev/null || echo "unknown")
+
+# バージョン比較用の関数
+version_lt() {
+    [ "$1" != "$2" ] && [ "$(printf '%s\n' "$1" "$2" | sort -V | head -n1)" = "$1" ]
+}
+
 # Codex が見つかった場合、ユーザーに通知
-cat << 'EOF'
+cat << EOF
 
 🤖 Codex が検出されました
 
-Codex（OpenAI CLI）を使ったセカンドオピニオンレビューが利用可能です。
+**インストール済みバージョン**: ${CODEX_VERSION}
+**最新バージョン**: ${LATEST_VERSION}
+EOF
 
-有効化するには、以下のいずれかを実行してください：
+# バージョンが古い場合は警告
+if [[ "$LATEST_VERSION" != "unknown" && "$CODEX_VERSION" != "unknown" ]]; then
+    # バージョン文字列から数字部分を抽出
+    CURRENT_NUM=$(echo "$CODEX_VERSION" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "0.0.0")
+    LATEST_NUM=$(echo "$LATEST_VERSION" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "0.0.0")
 
-1. 設定ファイルに追加:
-   review:
-     codex:
-       enabled: true
+    if version_lt "$CURRENT_NUM" "$LATEST_NUM"; then
+        cat << EOF
 
-2. または `/codex-review` で個別に Codex レビューを実行
+⚠️ **Codex CLI が古いバージョンです**
+
+アップデートするには:
+\`\`\`bash
+npm update -g @openai/codex
+\`\`\`
+
+または Claude に「Codex をアップデートして」と依頼してください。
+
+EOF
+    fi
+fi
+
+cat << 'EOF'
+
+セカンドオピニオンレビューを有効化するには:
+
+```yaml
+# .claude-code-harness.config.yaml
+review:
+  codex:
+    enabled: true
+    model: gpt-5.2-codex  # 推奨モデル
+```
+
+または `/codex-review` で個別に Codex レビューを実行
 
 詳細: skills/codex-review/SKILL.md
 

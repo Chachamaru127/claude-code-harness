@@ -7,6 +7,20 @@
 
 ## [Unreleased]
 
+## [2.7.12] - 2026-01-11
+
+### Added
+
+- **Codex CLI バージョンチェック**
+  - 初回実行時にインストール済みバージョンと最新バージョンを比較
+  - 古い場合はアップデート方法を案内
+  - ユーザー承認後に `npm update -g @openai/codex` を実行
+
+- **Codex モデル指定オプション**
+  - 設定ファイルで使用モデルを指定可能
+  - デフォルト: `gpt-5.2-codex`（最上位モデル）
+  - 利用可能: `gpt-5.2-codex`, `gpt-5.1-codex`, `gpt-5-codex-mini`
+
 ## [2.7.11] - 2026-01-11
 
 ### Changed
@@ -1280,7 +1294,8 @@ Observation recorded: 10946-10951 ✅
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.11...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.12...HEAD
+[2.7.12]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.11...v2.7.12
 [2.7.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.10...v2.7.11
 [2.7.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.9...v2.7.10
 [2.7.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.8...v2.7.9
