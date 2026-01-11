@@ -7,6 +7,20 @@
 
 ## [Unreleased]
 
+## [2.7.10] - 2026-01-11
+
+### Added
+
+- **`/codex-review` コマンド**
+  - Codex 単独でセカンドオピニオンレビューを実行するコマンド
+  - `commands/optional/codex-review.md` を新規追加
+
+- **`once: true` hook による初回 Codex 検出**
+  - `/harness-review` 初回実行時に Codex がインストールされているか自動検出
+  - Codex が見つかった場合、セカンドオピニオン機能の有効化方法を案内
+  - `scripts/check-codex.sh` を新規追加
+  - Claude Code 2.1.0+ の `once: true` hook 機能を活用
+
 ## [2.7.9] - 2026-01-11
 
 ### Added
@@ -1244,7 +1258,10 @@ Observation recorded: 10946-10951 ✅
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.7...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.10...HEAD
+[2.7.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.9...v2.7.10
+[2.7.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.8...v2.7.9
+[2.7.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.7...v2.7.8
 [2.7.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.4...v2.7.7
 [2.7.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.3...v2.7.4
 [2.7.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.2...v2.7.3
