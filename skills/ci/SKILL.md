@@ -1,6 +1,6 @@
 ---
 name: ci
-description: "Diagnoses and fixes CI/CD pipeline failures. Use when user mentions 'CI', 'GitHub Actions', 'GitLab CI', 'ビルドエラー', 'テスト失敗', 'パイプライン', 'CIが落ちた', or asks to analyze build/test failures. Do NOT load for: ローカルビルド, 通常の実装作業, レビュー, セットアップ."
+description: "Diagnoses and fixes CI/CD pipeline failures. Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
 allowed-tools: ["Read", "Grep", "Bash", "Task"]
 context: fork
 ---

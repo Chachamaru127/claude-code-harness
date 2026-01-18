@@ -1,6 +1,6 @@
 ---
 name: workflow
-description: "Manages workflow transitions including handoffs between PM and implementation roles, and auto-fixes review comments. Use when user mentions ハンドオフ, handoff, PMに報告, 実装役に渡して, レビュー指摘を自動修正, auto-fix. Triggers: ハンドオフ, handoff, PMに報告, 実装役に渡して, 完了報告, 自動修正, auto-fix. Do not use for 2-Agent setup - use 2agent skill instead."
+description: "Manages workflow transitions including handoffs between PM and implementation roles, and auto-fixes review comments. Use when user mentions handoffs, reporting to PM, handing off to implementation, completion reports, or auto-fix. Do not use for 2-Agent setup—use 2agent skill instead."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 ---
 

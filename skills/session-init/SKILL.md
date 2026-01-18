@@ -1,6 +1,6 @@
 ---
 name: session-init
-description: "Initializes session with environment check and task status overview. Use when user mentions セッション開始, 作業開始, 状況確認, what should I work on, start session. Do NOT load for: 実装作業, レビュー, セッション途中の作業."
+description: "Initializes session with environment checks and task status overview. Use when user mentions starting a session, beginning work, or status checks. Do NOT load for: implementation work, reviews, or mid-session tasks."
 allowed-tools: ["Read", "Write", "Bash"]
 user-invocable: false
 ---

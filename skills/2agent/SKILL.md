@@ -1,6 +1,6 @@
 ---
 name: 2agent
-description: "Configures 2-Agent workflow between PM and implementation roles. Use when user mentions 2-Agent, 2エージェント, PM連携設定, Cursor設定, Cursor連携, 2-agent運用. Do NOT load for: 単独運用, ワークフロー実行, ハンドオフ処理."
+description: "Configures 2-Agent workflow between PM and implementation roles. Use when user mentions 2-Agent setup, PM coordination, Cursor setup, or 2-agent operations. Do NOT load for: solo operation, workflow execution, or handoff processing."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 ---
 
