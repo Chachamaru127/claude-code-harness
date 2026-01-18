@@ -440,7 +440,7 @@ commit_guard: false
 
 ```typescript
 // ❌ Bad example
-const apiKey = "sk-1234567890"  // Hardcoded
+const apiKey = "sk-REDACTED"  // Hardcoded (example)
 
 // ✅ Good example
 const apiKey = process.env.API_KEY  // Environment variable

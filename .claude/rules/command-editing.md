@@ -10,7 +10,7 @@ SSOT (Single Source of Truth) rules for editing command files (`commands/core/` 
 
 ```yaml
 ---
-description: Brief description in Japanese
+description: Brief description
 description-en: English brief description
 ---
 ```
