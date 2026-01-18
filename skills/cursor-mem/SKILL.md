@@ -1,6 +1,6 @@
 ---
 name: cursor-mem
-description: "Cursorでclaude-memのMCPサーバーにアクセスし、過去のセッション記録を検索・新しい観測を記録。トリガー: 'メモリ検索', 'claude-mem', '過去の判断', '記録して', 'memory search', 'past decisions'. Do NOT load for: 通常のコーディング、一時的なメモ、実装作業。"
+description: "Accesses the claude-mem MCP server from Cursor to search session history and record observations. Triggers: memory search, claude-mem, past decisions, record this. Do NOT load for: normal coding, temporary notes, or implementation work."
 allowed-tools: ["Bash", "Read", "mcp__claude-mem__*"]
 ---
 

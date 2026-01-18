@@ -1,6 +1,6 @@
 ---
 name: maintenance
-description: "Cleans up and organizes project files. Use when user mentions '整理', 'cleanup', 'アーカイブ', 'archive', '肥大化', 'Plans.md', 'session-log', or asks to clean up old tasks, archive completed items, or organize files. Do NOT load for: 実装作業, レビュー, 新機能開発, デプロイ."
+description: "Cleans up and organizes project files. Use when user mentions cleanup, archive, file bloat, or organizing Plans.md/session logs. Do NOT load for: implementation work, reviews, new feature development, or deployment."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 ---
 

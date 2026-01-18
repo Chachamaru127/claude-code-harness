@@ -1,6 +1,6 @@
 ---
 name: memory
-description: "Manages memory, SSOT files, and Plans.md operations. Use when user mentions メモリ, memory, SSOT, decisions.md, patterns.md, マージ, merge, Plans.md, 移行, migrate. Do NOT load for: 実装作業, レビュー, 一時的なメモ, セッション中の作業記録."
+description: "Manages memory, SSOT files, and Plans.md operations. Use when user mentions memory, SSOT, decisions.md, patterns.md, merging, or migration. Do NOT load for: implementation work, reviews, ad-hoc notes, or in-session logging."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 ---
 
