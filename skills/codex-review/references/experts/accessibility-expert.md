@@ -25,9 +25,11 @@ Web アクセシビリティ（a11y）を分析し、WCAG 2.1 AA ガイドライ
 
 ### CONSTRAINTS
 
-- 日本語で回答
-- WCAG 2.1 AA を基準とする
-- フレームワーク固有のパターンを考慮（React/Vue/Svelte）
+- **English only, max 500 chars** (Claude integrates in Japanese)
+- Critical/High: report all, Medium/Low: max 3 each
+- No issues → `Score: A / No issues.`
+- WCAG 2.1 AA baseline
+- Consider framework-specific patterns (React/Vue/Svelte)
 
 ### MUST DO
 

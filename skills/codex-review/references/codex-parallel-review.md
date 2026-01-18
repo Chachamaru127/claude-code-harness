@@ -175,6 +175,10 @@ experts:
 
 ### Step 5: 並列 MCP 呼び出し
 
+**実行モード**: 並列エキスパートは **MCP 固定**（Claude 組み込み並列機能を活用）
+
+> 単発 `/codex-review` は exec だが、並列は mcp の方がシェル管理不要で効率的
+
 **重要**: Step 3 で決定した有効なエキスパートのみ呼び出し
 
 ```typescript
@@ -193,6 +197,19 @@ const results = await Promise.all(
   )
 );
 ```
+
+### Step 5.1: 出力制限ルール（Context 溢れ防止）
+
+各エキスパートの応答は以下の制約に従う（experts/*.md に埋め込み済み）:
+
+| 制約 | 内容 |
+|------|------|
+| 言語 | **English only**（トークン節約、Claude が統合時に日本語化） |
+| 最大文字数 | 500 文字 |
+| 件数制限 | Critical/High: 全件、Medium/Low: 各3件まで |
+| 問題なし | `Score: A / No issues.` のみ |
+
+> **理由**: 8エキスパート並列で Context 溢れを防止
 
 ### Step 6: 結果統合
 

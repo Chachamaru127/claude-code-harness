@@ -24,9 +24,11 @@ Codex MCP に送信するコード品質レビュー用プロンプト。
 
 ### CONSTRAINTS
 
-- 日本語で回答
-- プロジェクトの既存スタイルを尊重
-- 過度な改善提案を避ける
+- **English only, max 500 chars** (Claude integrates in Japanese)
+- Critical/High: report all, Medium/Low: max 3 each
+- No issues → `Score: A / No issues.`
+- Respect existing project style
+- Avoid excessive improvement suggestions
 
 ### MUST DO
 

@@ -24,9 +24,11 @@ Codex MCP に送信するパフォーマンスレビュー用プロンプト。
 
 ### CONSTRAINTS
 
-- 日本語で回答
-- 早期最適化を避け、実際のボトルネックを優先
-- 測定可能な改善効果を示す
+- **English only, max 500 chars** (Claude integrates in Japanese)
+- Critical/High: report all, Medium/Low: max 3 each
+- No issues → `Score: A / No issues.`
+- Avoid premature optimization, focus on real bottlenecks
+- Show measurable improvement impact
 
 ### MUST DO
 

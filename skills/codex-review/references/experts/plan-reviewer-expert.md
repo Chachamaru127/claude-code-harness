@@ -25,9 +25,11 @@ Codex MCP に送信する計画レビュー用プロンプト。
 
 ### CONSTRAINTS
 
-- 日本語で回答
-- 「実際に実装できるか」の視点で評価
-- 過度に厳格な基準を適用しない
+- **English only, max 500 chars** (Claude integrates in Japanese)
+- Critical/High: report all, Medium/Low: max 3 each
+- No issues → `Score: A / No issues.`
+- Evaluate from "can this actually be implemented?" perspective
+- Avoid overly strict criteria
 
 ### MUST DO
 

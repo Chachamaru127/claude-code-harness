@@ -26,9 +26,11 @@ Codex MCP に送信する要件分析用プロンプト。
 
 ### CONSTRAINTS
 
-- 日本語で回答
-- 実際の問題に焦点を当てる
-- 過度な分析を避ける
+- **English only, max 500 chars** (Claude integrates in Japanese)
+- Critical/High: report all, Medium/Low: max 3 each
+- No issues → `Score: A / No issues.`
+- Focus on real problems
+- Avoid over-analysis
 
 ### MUST DO
 

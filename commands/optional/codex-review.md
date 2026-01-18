@@ -120,24 +120,25 @@ git diff --name-only HEAD~1 2>/dev/null || git status --short
 
 ### Step 3: Execute Codex Review
 
-Request review from Codex via MCP:
+Execute Codex CLI directly (progress displayed in real-time on STDERR):
 
+```bash
+codex exec "Review the following code changes and output issues and improvement suggestions:
+
+Files: {changed_files}
+
+{file_contents}"
 ```
-📊 Starting Codex review...
 
-Model: gpt-5.2-codex (configurable in config file)
-Target files: {changed_files}
-Prompt: Perform code review and output issues and improvement suggestions
-```
+> **Legacy mode**: Set `execution_mode: mcp` to use MCP (no progress display)
 
-**Model configuration**:
+**Configuration**:
 ```yaml
 # .claude-code-harness.config.yaml
 review:
   codex:
-    model: gpt-5.2-codex  # Recommended (top-tier model)
-    # model: gpt-5.1-codex
-    # model: gpt-5-codex-mini  # Low-cost version
+    model: gpt-5.2-codex        # Recommended (top-tier model)
+    # execution_mode: mcp       # Legacy: MCP (no progress display)
 ```
 
 ### Step 4: Claude Verification

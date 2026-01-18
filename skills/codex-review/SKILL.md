@@ -142,7 +142,8 @@ review:
   codex:
     enabled: true           # Codex セカンドオピニオン有効化
     auto: false             # true: 自動実行 / false: 毎回確認
-    prompt: "日本語でコードレビューを行い、問題点と改善提案を出力してください"
+    prompt: "Review the code and output issues and improvement suggestions"
+    # execution_mode: mcp   # Legacy: MCP (no progress display)
 ```
 
 | 設定項目 | デフォルト | 説明 |
@@ -150,6 +151,9 @@ review:
 | `enabled` | `false` | Codex 統合の有効/無効 |
 | `auto` | `false` | 自動レビュー実行 |
 | `prompt` | (上記) | Codex へのレビュープロンプト |
+| `execution_mode` | `exec` | 実行モード（`exec`: CLI直接 / `mcp`: レガシー）|
+
+> **Note**: 単発 `/codex-review` は `exec` (進捗表示あり)、並列エキスパートは常に `mcp` (Claude 組み込み並列機能)
 
 ---
 

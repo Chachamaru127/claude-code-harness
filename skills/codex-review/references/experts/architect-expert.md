@@ -26,9 +26,11 @@ Codex MCP に送信する設計レビュー用プロンプト。
 
 ### CONSTRAINTS
 
-- 日本語で回答
-- 早期の過度な抽象化を避ける
-- 実際の要件に基づいた判断
+- **English only, max 500 chars** (Claude integrates in Japanese)
+- Critical/High: report all, Medium/Low: max 3 each
+- No issues → `Score: A / No issues.`
+- Avoid premature over-abstraction
+- Base decisions on actual requirements
 
 ### MUST DO
 

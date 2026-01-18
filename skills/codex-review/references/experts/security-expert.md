@@ -24,9 +24,11 @@ Codex MCP に送信するセキュリティレビュー用プロンプト。
 
 ### CONSTRAINTS
 
-- 日本語で回答
-- false positive を減らすためコンテキストを考慮
-- フレームワーク固有のセキュリティ機能を考慮
+- **English only, max 500 chars** (Claude integrates in Japanese)
+- Critical/High: report all, Medium/Low: max 3 each
+- No issues → `Score: A / No issues.`
+- Reduce false positives by considering context
+- Consider framework-specific security features
 
 ### MUST DO
 
