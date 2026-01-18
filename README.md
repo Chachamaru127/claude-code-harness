@@ -1,6 +1,6 @@
 # Claude harness
 
-English | [日本語](README.ja.md)
+English | [日本語](README_ja.md)
 
 ![Claude harness](docs/images/claude-harness-logo-with-text.png)
 
@@ -9,7 +9,7 @@ English | [日本語](README.ja.md)
 A development harness that runs Claude Code in an autonomous "Plan → Work → Review" cycle,
 systematically preventing **confusion, sloppiness, accidents, and forgetfulness**.
 
-[![Version: 2.9.12](https://img.shields.io/badge/version-2.9.12-blue.svg)](VERSION)
+[![Version: 2.9.13](https://img.shields.io/badge/version-2.9.13-blue.svg)](VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![Harness Score](https://img.shields.io/badge/harness_score-92%2F100-brightgreen.svg)](#scoring-criteria)
 
@@ -322,7 +322,7 @@ claude-code-harness/
 - [Memory Policy](docs/MEMORY_POLICY.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Cursor Integration](docs/CURSOR_INTEGRATION.md)
-- [Changelog](CHANGELOG.en.md) | [Japanese](CHANGELOG.md)
+- [Changelog](CHANGELOG.md) | [Japanese](CHANGELOG_ja.md)
 
 ---
 

@@ -1,0 +1,1791 @@
+# Changelog
+
+このプロジェクトのすべての注目すべき変更は、このファイルに記録されます。
+
+フォーマットは [Keep a Changelog](https://keepachangelog.com/ja/1.0.0/) に基づいており、
+このプロジェクトは [Semantic Versioning](https://semver.org/spec/v2.0.0.html) に準拠しています。
+
+## [Unreleased]
+
+## [2.9.11] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**Session Orchestration System の完全実装。状態機械、resume/fork UX、コスト制御・スキルガバナンスが統合。**
+
+### Added
+
+- **Session Orchestration System（Phase 0-3 完全実装）**
+  - `scripts/session-state.sh`: 10 状態システム、21 遷移ルール、lock 機構
+  - `skills/session-state/SKILL.md`: セッション状態管理スキル
+  - `scripts/pretooluse-guard.sh`: cost_control チェック（total/edit/bash limits）
+  - `.claude-code-harness.config.yaml`: orchestration + cost_control セクション追加
+  - `tests/validate-skills.sh`: SKILL.md frontmatter 検証、tool 名検証、dependency 解決
+  - `tests/test-session-control.sh`: 14 ユニットテスト
+
+### Changed
+
+- `posttooluse-log-toolname.sh`: current_state フィールド追加
+
+---
+
+## [2.9.10] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**`/work --resume` と `/work --fork` でセッション継続・分岐が可能に。harness-ui にセッションアーカイブ API 追加。**
+
+### Added
+
+- **Resume/Fork UX**
+  - `commands/core/work.md`: CLI ドキュメント（セッション一覧、再開、分岐コマンド）
+  - `harness-ui/src/shared/types.ts`: SessionArchive 型定義
+  - `harness-ui/src/server/index.ts`: `/api/session-archives` エンドポイント
+
+---
+
+## [2.9.9] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**状態機械によるセッション遷移の強制。イベントログに state フィールドを統一。**
+
+### Added
+
+- **State Machine Enforcement**
+  - `scripts/session-state.sh`: 状態遷移エンジン
+  - `skills/session-state/references/state-transition.md`: 状態遷移仕様書
+
+---
+
+## [2.9.8] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**UI スキルに明示的なガードレールとオプトイン美学を導入。制約優先度が明確に。**
+
+### Added
+
+- **UI スキル制約強化**
+  - 制約優先度（Constraint Priority）を定義
+  - UI スキルサマリー（`skills/ui/references/ui-skills.md`）を追加
+  - フロントエンドデザインサマリー（`skills/ui/references/frontend-design.md`）を追加
+  - UI 生成時の明示的ガードレールとオプトイン美学を導入
+
+---
+
+## [2.9.7] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**Codex レビュー前にコンパクトガードを追加。コンテキスト管理の改善。**
+
+### Added
+
+- **Codex レビュー前コンパクトガード**
+  - `/harness-review`、`/codex-review` にコンパクトガードを追加
+  - Codex 並列レビュー時のガードレール強化（`codex-parallel-review.md`）
+  - review SKILL.md にコンパクトモード対応を追加
+
+---
+
+## [2.9.6] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**セッション再開・フォーク機能: 中断した作業を継続、または既存セッションから分岐可能に。**
+
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| セッション中断で作業が失われる | `/work --resume <id>` で中断箇所から再開可能 |
+| セッションの分岐ができない | `/work --fork <id>` で既存セッションから分岐 |
+| 手動での状態管理が必要 | 自動セッションアーカイブで状態保存 |
+
+### Added
+
+- **セッション再開・フォーク機能**
+  - `/work --resume <session-id>`: 中断したセッションを再開
+  - `/work --fork <session-id>`: 既存セッションから分岐して新規作業
+  - `scripts/session-control.sh`: セッション制御スクリプト追加
+  - セッションアーカイブ機能（再開用の状態保存）
+  - `tests/test-session-control.sh`: セッション制御のテスト追加
+
+### Changed
+
+- **SESSION_ORCHESTRATION.md**: セッション再開・フォークの仕様を追加
+
+---
+
+## [2.9.5] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**セッションライフサイクルイベントが永続化。デバッグと分析が容易に。**
+
+### Added
+
+- **セッションライフサイクルイベント永続化**
+  - セッション開始/再開/停止イベントを状態ファイルに記録
+  - ツール使用イベントをログに記録（`posttooluse-log-toolname.sh`）
+  - `session-monitor.sh` を拡張し、イベント追跡を強化
+  - `session-summary.sh` にライフサイクルサマリーを追加
+
+### Changed
+
+- **CLAUDE.md**: frontmatter 警告を修正
+- **commands/core/CLAUDE.md**, **commands/optional/CLAUDE.md**: ドキュメント整備
+
+---
+
+## [2.9.4] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**決定論的セッションオーケストレーション仕様を策定。再現可能なセッション実行のためのガイドライン。**
+
+### Added
+
+- **決定論的セッションオーケストレーション仕様**
+  - `docs/SESSION_ORCHESTRATION.md`: セッション制御の設計仕様を新規作成
+  - 再現可能なセッション実行のためのガイドライン策定
+
+---
+
+## [2.9.3] - 2026-01-17
+
+### 🎯 あなたにとって何が変わるか
+
+**`/work --full` ワークフローオーケストレーション実装（Phase 34）。フルサイクル自動化をサポート。**
+
+### Added
+
+- **`/work --full` ワークフローオーケストレーション実装**（Phase 34）
+  - parse-work-flags.md: フラグ解析ロジック拡張
+  - work.yaml ワークフロー更新
+  - `/work --full` サンドボックステスト追加
+
+### Changed
+
+- **harness-ui セッション状態ファイル削除**: 不要な状態ファイルをクリーンアップ
+
+---
+
+## [2.9.2] - 2026-01-16
+
+### Added
+
+- **Phase 33 完全実装**
+  - **SESSION_ID 活用（33.2）**: `${CLAUDE_SESSION_ID}` を session-log.md に統合、セッション追跡強化
+  - **plansDirectory 設定（33.4）**: Plans.md の配置場所をカスタマイズ可能に（デフォルト: ルート）
+  - **context_window 表示（33.8）**: `/sync-status` にコンテキスト使用率ガイドライン追加（70%超過警告）
+  - **Nested Skills 設計文書（33.9）**: `docs/NESTED_SKILLS_DESIGN.md` で将来のスキル階層整理を設計
+  - **code-reviewer LSP パターン**: `agents/code-reviewer.md` に LSP ベースの影響分析ステップ追加
+
+### Changed
+
+- **README 更新**: Claude Code v2.1.6+ 要件を明記、互換性ドキュメントへのリンク追加
+- **hooks-editing.md 更新**: Hook timeout 延長ガイドラインを追加
+
+## [2.9.1] - 2026-01-16
+
+### Added
+
+- **Claude Code 2.1.x 互換性対応（フェーズ 33）**
+  - **PreToolUse additionalContext 活用**: ファイル編集時に品質ガイドラインを動的注入
+    - テストファイル編集時: `test-quality.md` の改ざん禁止ルール
+    - 実装ファイル編集時: `implementation-quality.md` の品質ルール
+  - **SessionStart agent_type 対応**: サブエージェントを軽量初期化
+    - メインエージェント: フル初期化（Plans.md 状態表示、claude-mem コンテキスト）
+    - サブエージェント: 軽量初期化（タスク固有情報のみ）
+  - **LSP 活用ガイドライン**: impl/review スキルに LSP ベースのコード解析手順を追加
+    - `goToDefinition`: 実装パターンの把握
+    - `findReferences`: 影響範囲の完全把握
+    - `hover`: 型情報・ドキュメントの確認
+  - **互換性ドキュメント**: `docs/CLAUDE_CODE_COMPATIBILITY.md` を新規作成
+    - Harness と Claude Code のバージョン対応表
+
+### Changed
+
+- **Hook タイムアウト延長**（Claude Code v2.1.3 の 10 分延長に対応）:
+  - `usage-tracker`: 10秒 → 30秒
+  - `auto-test-runner`: 30秒 → 120秒
+  - `session-summary`: 30秒 → 60秒
+  - `auto-cleanup-hook`: 30秒 → 60秒
+
+- **MCP auto mode 対応**（v2.1.7+）: cursor-mem スキルから MCPSearch 明示呼び出しを削除
+
+## [2.9.0] - 2026-01-16
+
+### Added
+
+- **task-worker 統合（フェーズ 32）** - `/work --full` で「実装→セルフレビュー→改善→commit」のフルサイクルを並列自動化
+  - 新規エージェント `agents/task-worker.md`: 単一タスクの実装→セルフレビュー→検証を自己完結で回す
+    - 4 観点セルフレビュー（品質/セキュリティ/パフォーマンス/互換性）
+    - 最大 3 回の自己修正ループ
+    - `commit_ready` / `needs_escalation` / `failed` のステータス返却
+  - `/work` コマンド拡張（7 つの新オプション）:
+    - `--full`: フルサイクル実行モード
+    - `--parallel N`: 並列数指定（デフォルト 1、上限 5）
+    - `--isolation lock|worktree`: ファイルロック or git worktree 分離
+    - `--commit-strategy task|phase|all`: commit タイミング戦略
+    - `--deploy`: commit 後に本番デプロイ（安全ゲート付き）
+    - `--max-iterations`: 改善ループ上限（デフォルト 3）
+    - `--skip-cross-review`: Phase 2 スキップ
+
+- **4 フェーズ並列実行アーキテクチャ**:
+  - **Phase 1**: 依存グラフ構築 → task-worker 並列起動 → セルフレビュー
+  - **Phase 2**: Codex 8 並列クロスレビュー（Critical/Major 検出時は Phase 1 へフィードバック）
+  - **Phase 3**: コンフリクト検出・解消 → 最終ビルド検証 → Conventional Commit
+  - **Phase 4**: Deploy（オプション、安全ゲート付き）
+
+- **commit_ready 基準の明文化**:
+  - セルフレビュー全観点で Critical/Major 指摘なし
+  - ビルドコマンド成功（exit code 0）
+  - 該当テスト成功（または該当テストなし）
+  - 既存テストの回帰なし
+  - 品質ガードレール違反なし
+
+- **出力スキーマの拡充**（Codex レビュー反映）:
+  - `build_log`: ビルド失敗時のエラーメッセージ
+  - `test_log`: テスト失敗時の詳細（テスト名、アサーションエラー）
+  - `escalation_reason` に `test_failed_3x`, `review_failed_3x` 追加
+
+- **files: "auto" 判定ルールの明文化**:
+  - Plans.md からのパス抽出 → キーワード検索 → ディレクトリ推定
+  - 安全制限: 最大10ファイル、機密ファイル除外
+
+- **worktree + pnpm 統合オプション**:
+  - `--isolation=worktree` で git worktree 分離
+  - pnpm 使用時はシンボリックリンクで容量節約（+54MB/worktree）
+  - 並列ビルド/テストが可能（完全分離）
+
+### Changed
+
+- **エスカレーション戦略の改善**:
+  - 並列実行時のエスカレーションを親に集約
+  - ユーザーへの一括確認プロンプト
+
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| `/work` で1タスクずつ順次実行 | `/work --full --parallel 3` で並列フルサイクル |
+| レビューは別コマンドで手動実行 | 各 task-worker がセルフレビューを自律実行 |
+| commit は手動 | `commit_ready` 判定後に自動 commit |
+| 同一ワークスペースでの競合リスク | `--isolation=worktree` で完全分離可能 |
+
+## [2.8.2] - 2026-01-14
+
+### Fixed
+
+- **Codex 並列レビューの導線強化**
+  - MCP ツール名を `mcp__codex__codex` に統一（不整合を修正）
+  - 「8 エキスパート」を「最大 8 エキスパート」に表記統一（フィルタリング仕様を明確化）
+  - ドキュメントのみ変更時の優先エキスパートルールを統一（Quality, Architect, Plan Reviewer, Scope Analyst）
+  - 並列呼び出し必須ルール（MANDATORY セクション）を追加し、複数エキスパートの1回 MCP 呼び出しを明示的に禁止
+
+### Changed
+
+- **エキスパートフィルタリング仕様の明確化**
+  - 設定ベースフィルタリング（`enabled: false` → 除外）
+  - プロジェクト種別フィルタリング（CLI/バックエンド → Accessibility, SEO 除外）
+  - 変更内容フィルタリング（ドキュメントのみ → Security, Performance 除外可）
+
+## [2.8.1] - 2026-01-13
+
+### Changed
+
+- **CI専用コマンドを `/` 一覧から非表示に**
+  - `harness-review-ci`, `plan-with-agent-ci`, `work-ci` に `user-invocable: false` を追加
+  - ベンチマーク専用コマンドがユーザーの `/` 補完に表示されなくなった
+
+## [2.8.0] - 2026-01-13
+
+### Added
+
+- **Commit Guard（コミット前レビュー必須化）** - レビュー完了前の git commit をブロック
+  - PreToolUse フック: `git commit` 検出時にレビュー完了状態をチェック
+  - PostToolUse フック: コミット成功後にレビュー承認状態をクリア
+  - `/harness-review` で APPROVE 判定後に `.claude/state/review-approved.json` を生成
+  - 設定で無効化可能: `.claude-code-harness.config.yaml` に `commit_guard: false`
+
+- **Codex モード統合（フェーズ 27）** - Codex MCP を活用した PM 役の品質ゲート機能
+  - `/codex-mode` コマンド: Codex モードの ON/OFF 切り替え、エキスパート個別設定
+  - 8 つの専門エキスパートによる並列レビュー:
+    - Security Expert: OWASP Top 10、認証、インジェクション検出
+    - Accessibility Expert: WCAG 2.1 AA 準拠チェック
+    - Performance Expert: N+1 クエリ、レンダリング最適化
+    - Quality Expert: 可読性、保守性、ベストプラクティス
+    - SEO Expert: メタタグ、OGP、サイトマップ検証
+    - Architect Expert: 設計、トレードオフ、スケーラビリティ分析
+    - Plan Reviewer Expert: 計画の完全性、明確性、検証可能性
+    - Scope Analyst Expert: 要件分析、曖昧さ検出、リスク評価
+
+- **コミット判定ロジック** (`commit-judgment-logic.md`)
+  - APPROVE: Critical/High: 0、Medium ≤ 3
+  - REQUEST CHANGES: Critical: 0、High または Medium 複数
+  - REJECT: Critical ≥ 1
+  - 自動修正ループ: REQUEST CHANGES 時に Claude が修正 → 再レビュー（最大 3 回）
+
+- **7-Section エキスパートプロンプト形式**
+  - TASK, EXPECTED OUTCOME, CONTEXT, CONSTRAINTS, MUST DO, MUST NOT DO, OUTPUT FORMAT
+  - claude-delegator の設計パターンを参考に統一
+
+- **設定ファイルテンプレート拡張** (`.claude-code-harness.config.yaml.template`)
+  - `review.mode`: default / codex 切り替え
+  - `review.judgment`: 判定機能の ON/OFF、自動修正、リトライ回数
+  - `review.codex.experts`: 8 エキスパートの個別有効化/無効化
+
+- **Commit Guard テスト** (`tests/test-commit-guard.sh`)
+  - 10 項目のテストで Commit Guard 機能を検証
+  - PreToolUse ガード、PostToolUse クリーンアップ、フック統合、設定を網羅
+
+### Changed
+
+- **review スキル** (`skills/review/SKILL.md`)
+  - レビューモード選択セクション追加（Default / Codex）
+  - Codex モード時の 8 エキスパート並列呼び出しフロー説明
+  - コミット判定リファレンスリンク追加
+
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| `/harness-review` は Claude 単体でレビュー | Codex モード時は 8 エキスパートが並列レビュー |
+| レビュー結果は人間が判断 | APPROVE/REQUEST CHANGES/REJECT の自動判定 |
+| 指摘事項は手動で修正 | REQUEST CHANGES 時は自動修正ループ |
+
+## [2.7.16] - 2026-01-13
+
+### Added
+
+- **agent-browser 優先使用の仕組み（Phase 26）**
+  - `vercel-labs/agent-browser` を UI デバッグの第一選択肢として位置づけ
+  - AI 向けスナップショット（`@e1`, `@e2` 要素参照）による効率的なブラウザ操作
+
+- **dev-browser スキル新規追加** (`skills/dev-browser/`)
+  - ブラウザ自動化に特化したスキル
+  - 「ページを開いて」「クリックして」「スクリーンショット」などのトリガーで自動起動
+  - 詳細リファレンス: `browser-automation.md`, `ai-snapshot-workflow.md`
+
+- **PreToolUse フック: MCP ブラウザツール使用時の提案**
+  - Chrome DevTools MCP / Playwright MCP 使用時に agent-browser を推奨
+  - `hookSpecificOutput` 形式で追加コンテキストを提供
+  - ブロックなし（情報提供のみ）
+
+- **ui-debugging-agent-browser.md ルールテンプレート**
+  - 旧 `ui-debugging-dev-browser.md` を置き換え
+  - agent-browser の使用ガイドを含む
+
+### Changed
+
+- **docs/OPTIONAL_PLUGINS.md**: dev-browser から agent-browser に更新
+- **skills/troubleshoot/SKILL.md**: UI デバッグセクションを agent-browser 中心に更新
+- **hooks.json**: Playwright matcher を両パターン対応（`mcp__playwright__*` / `mcp__plugin_playwright_playwright__*`）
+
+### Removed
+
+- `templates/rules/ui-debugging-dev-browser.md.template`（agent-browser 版に置き換え）
+
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| dev-browser ルールテンプレート（実際は未使用） | agent-browser を第一選択肢として明確化 |
+| MCP ブラウザツールをそのまま使用 | PreToolUse フックで agent-browser を推奨 |
+
+## [2.7.14] - 2026-01-13
+
+### Added
+
+- **Review チェックリスト大幅強化（catnose チェックリスト準拠）**
+  - [catnose氏のWeb App Pre-Launch Checklist](https://catnose.me/notes/web-checklist) を参考に、ローンチ前レビューの網羅性を向上
+
+- **セキュリティレビュー拡張** (`security-review.md`)
+  - Cookie セキュリティ: HttpOnly, SameSite, Secure, Domain チェック
+  - レスポンスヘッダー: HSTS, X-Content-Type-Options, CSP, X-Frame-Options
+  - オープンリダイレクト防止: 未検証リダイレクトの検出
+  - ファイルアップロード検証: MIME, 拡張子, サイズ, パストラバーサル
+  - 決済セキュリティ: 冪等性キー, Webhook署名検証, 金額改ざん防止
+
+- **SEO/OGP レビュー新規追加** (`seo-review.md`)
+  - 基本メタタグ: title, description, canonical, viewport
+  - OGP: og:title, og:description, og:image, og:url
+  - Twitter Card: card, title, description, image
+  - クローラビリティ: robots.txt, sitemap.xml, noindex残存チェック
+  - HTTP ステータス: エラーページの正しいステータス返却
+
+- **品質レビュー拡張** (`quality-review.md`)
+  - クロスプラットフォーム: レスポンシブ, スクロールバー問題, 長文入力対応
+  - Web基盤: favicon, apple-touch-icon, lang属性, charset
+  - LocalStorage/Cookie管理: 有効期限, サードパーティCookie依存
+
+### Changed
+
+- **品質判定ゲート更新** (`SKILL.md`)
+  - SEO/OGP 重点レビュー条件を追加（src/pages/, public/, layout.tsx）
+  - クロスプラットフォーム重点レビュー条件を追加（*.css, tailwind）
+
+## [2.7.12] - 2026-01-11
+
+### Added
+
+- **Codex CLI バージョンチェック**
+  - 初回実行時にインストール済みバージョンと最新バージョンを比較
+  - 古い場合はアップデート方法を案内
+  - ユーザー承認後に `npm update -g @openai/codex` を実行
+
+- **Codex モデル指定オプション**
+  - 設定ファイルで使用モデルを指定可能
+  - デフォルト: `gpt-5.2-codex`（最上位モデル）
+  - 利用可能: `gpt-5.2-codex`, `gpt-5.1-codex`, `gpt-5-codex-mini`
+
+## [2.7.11] - 2026-01-11
+
+### Changed
+
+- **Codex を並列レビューに統合**
+  - `/harness-review` で Codex を5つ目の並列サブエージェントとして実行
+  - Codex 有効時は 4+1=5 つのレビューが同時並列実行
+  - Codex 逐次実行時より約 30 秒短縮
+
+- **Codex レビュー結果の検証フローを追加**
+  - Codex の指摘を Claude が検証し、修正が必要かどうかを判断
+  - 検証済みの修正提案をユーザーに提示
+  - 承認後は Plans.md に反映して `/work` で自動実行
+
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| Codex は Claude レビュー完了後に逐次実行 | Codex も並列サブエージェントとして同時実行 |
+| Codex の結果をそのまま表示 | Claude が検証した上で修正提案 |
+| レビュー結果は表示のみ | 承認後 Plans.md に反映→`/work` 実行 |
+
+## [2.7.10] - 2026-01-11
+
+### Added
+
+- **`/codex-review` コマンド**
+  - Codex 単独でセカンドオピニオンレビューを実行するコマンド
+  - `commands/optional/codex-review.md` を新規追加
+
+- **`once: true` hook による初回 Codex 検出**
+  - `/harness-review` 初回実行時に Codex がインストールされているか自動検出
+  - Codex が見つかった場合、セカンドオピニオン機能の有効化方法を案内
+  - `scripts/check-codex.sh` を新規追加
+  - Claude Code 2.1.0+ の `once: true` hook 機能を活用
+
+## [2.7.9] - 2026-01-11
+
+### Added
+
+- **Codex MCP 統合（セカンドオピニオンレビュー）**
+  - OpenAI Codex CLI を MCP サーバーとして Claude Code に統合
+  - `/harness-review` 実行時に Codex からセカンドオピニオンを取得可能
+  - Solo / 2-Agent どちらのモードでも使用可能
+  - 新規スキル `codex-review` を追加:
+    - `skills/codex-review/SKILL.md` - Codex 統合スキル
+    - `skills/codex-review/references/codex-mcp-setup.md` - MCP セットアップ手順
+    - `skills/codex-review/references/codex-review-integration.md` - レビュー実行手順
+  - 既存 `review` スキルに Codex 統合を追加:
+    - `skills/review/references/codex-integration.md` - レビューへの統合手順
+  - 設定ファイルに `review.codex` セクションを追加:
+    ```yaml
+    review:
+      codex:
+        enabled: false  # 有効化フラグ
+        auto: false     # 自動実行 or 毎回確認
+        prompt: "..."   # Codex へのプロンプト
+    ```
+
+## [2.7.8] - 2026-01-11
+
+### Fixed
+
+- **`/plan-with-agent` のスキル参照エラーを修正**
+  - v2.7.7 の Progressive Disclosure 移行で、古いスキルパス `setup:adaptive-setup` が残っていた問題を修正
+  - `claude-code-harness:setup:adaptive-setup` → `claude-code-harness:setup` に変更
+
+## [2.7.7] - 2026-01-11
+
+### Changed
+
+- **Skills 公式仕様準拠（Progressive Disclosure パターン導入）**
+  - `doc.md` → `references/*.md` への移行（43ファイル）
+  - 親 SKILL.md を Progressive Disclosure パターンに更新（14スキル）
+  - 説明的なファイル名に変更（例: `implementing-features.md`, `security-review.md`）
+  - 非公式フィールド `metadata.skillport` を全スキルから削除（63ファイル）
+
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| `skills/impl/work-impl-feature/doc.md` | `skills/impl/references/implementing-features.md` |
+| `## ルーティング` + 手動パス指定 | `## 機能詳細` + Progressive Disclosure テーブル |
+| `metadata.skillport` 付き frontmatter | 公式フィールドのみ（name, description, allowed-tools） |
+
+### Fixed
+
+- `vibecoder-guide/SKILL.md` の `name` を `vibecoder-guide-legacy` から `vibecoder-guide` に修正
+
+## [2.7.4] - 2026-01-10
+
+### Changed
+
+- **Intelligent Stop Hook 導入**
+  - 既存の3つの Stop スクリプト（check-pending, cleanup-check, plans-reminder）を1つの `type: "prompt"` フックに統合
+  - `model: "haiku"` でコスト最適化
+  - LLM がセッション終了時に5つの観点（タスク完了度、エラー有無、フォローアップ、Plans.md更新、整理推奨）を評価
+  - `session-summary.sh`（command 型）は維持
+
+- **`context: fork` を ci/troubleshoot スキルに追加**
+  - 診断結果を独立コンテキストで返すことでコンテキスト汚染を防止
+  - review スキルと合わせて3スキルが `context: fork` 対応
+
+### Added
+
+- **TDD テストファイル**
+  - `tests/test-intelligent-stop-hook.sh` - Intelligent Stop Hook の検証（6テスト）
+  - `tests/test-hooks-sync.sh` - hooks.json 同期検証（5テスト）
+
+### Fixed
+
+- **Claude Code 2.1.x 機能活用の検証・強化**
+  - `type: "prompt"` は Stop/SubagentStop で公式サポートされていることを確認
+  - `model` パラメータ、`context: fork`、wildcard Bash permissions、`language` setting の活用状況を検証
+
+## [2.7.3] - 2026-01-08
+
+### Fixed
+
+- **2.6.x → 2.7.x 移行の互換性修正**
+  - `sync-plugin-cache.sh` に `.claude-plugin/hooks.json` と `.claude-plugin/plugin.json` を同期対象に追加
+  - 新規スクリプト（`stop-cleanup-check.sh`, `stop-plans-reminder.sh`）も同期対象に追加
+  - 古いキャッシュバージョンでも Stop フックが正常動作
+
+## [2.7.2] - 2026-01-08
+
+### Fixed
+
+- **Claude Code 2.1.1 セキュリティ機能との互換性修正**
+  - Stop フックの `prompt` タイプが Claude Code 2.1.1 の新しいセキュリティルール（function result 内の instruction 検出）により拒否される問題を修正
+  - `prompt` タイプを `command` タイプに変換し、代替スクリプトを実装
+  - 新規スクリプト: `stop-cleanup-check.sh`（クリーンアップ推奨判定）
+  - 新規スクリプト: `stop-plans-reminder.sh`（Plans.md マーカー更新リマインダー）
+
+- **.claude-plugin/hooks.json の同期**
+  - `hooks/hooks.json` と `.claude-plugin/hooks.json` の不整合を解消
+  - 両ファイルを完全に同期（once:true, SubagentStart/Stop 対応など）
+
+## [2.7.1] - 2026-01-08
+
+### Fixed
+
+- **削除済みコマンド参照の撤去（移行導線の修正）**
+  - README / skills / hooks 内の `/validate` `/cleanup` `/remember` `/refactor` 参照を撤去し、スキル誘導（例: 「整理して」）へ統一
+  - `CHANGELOG.md` に移行テーブル（削除コマンド → 代替スキル）を追記
+- **メタデータの補完**
+  - `commands/optional/harness-mem.md` に frontmatter `description` / `description-en` を追加
+
+## [2.7.0] - 2026-01-08
+
+### 🎯 あなたにとって何が変わるか
+
+**Claude Code 2.1.0 対応アップデート。スラッシュメニューが整理され（48→36エントリ）、新機能が多数追加されました。**
+
+### Added
+
+- **SubagentStart/SubagentStop フック対応**
+  - サブエージェントのライフサイクルを追跡
+  - `agent_id` と `agent_transcript_path` をログに記録
+  - `.claude/logs/subagent-history.jsonl` に履歴保存
+
+- **`once: true` フック設定**
+  - SessionStart フックに適用（session-init, session-monitor, harness-ui-register）
+  - セッション中の重複実行を防止
+
+- **`context: fork` 対応**
+  - `review` スキルと `/harness-review` コマンドに適用
+  - 重い処理を分離コンテキストで実行
+
+- **エージェントへの `skills` フィールド追加**
+  - 6つのエージェントに関連スキルを自動読み込み設定
+  - ci-cd-fixer: verify, ci
+  - code-reviewer: review
+  - error-recovery: verify, troubleshoot
+  - project-analyzer: setup
+  - project-scaffolder: setup, impl
+  - project-state-updater: plans-management, workflow
+
+- **エージェントへの `disallowedTools` フィールド追加**
+  - 安全性強化のため各エージェントに禁止ツールを設定
+  - code-reviewer: Write, Edit, Task を禁止（読み取り専用）
+  - その他: Task を禁止（再帰的なサブエージェント起動を防止）
+
+- **エージェントへのインラインフック対応**
+  - ci-cd-fixer に PreToolUse フック追加（Bash コマンドの安全性チェック）
+
+- **`language` 設定テンプレート**
+  - settings.local.json.template と settings.security.json.template に追加
+  - デフォルト: `"language": "japanese"`
+
+- **ワイルドカード権限パターン**
+  - settings.security.json.template に `Bash(npm *)`, `Bash(git diff *)` などを追加
+  - Claude Code 2.1.0 の新しいワイルドカード構文に対応
+
+- **スキルホットリロード対応ドキュメント**
+  - `/skill-list` コマンドにホットリロード対応の説明を追加
+
+### Removed
+
+- **4つの重複コマンドを削除（破壊的変更）**
+
+  以下のコマンドは同等のスキルに統合されました：
+
+  | 削除されたコマンド | 代替 | 使い方 |
+  |--------------------|------|--------|
+  | `/validate` | `verify` スキル | 「ビルドして」「検証して」と言う |
+  | `/cleanup` | `maintenance` スキル | 「整理して」「アーカイブして」と言う |
+  | `/remember` | `memory` スキル | 「覚えておいて」「記録して」と言う |
+  | `/refactor` | `impl` スキル | 「リファクタして」と言う |
+
+  > **移行方法**: スラッシュコマンドの代わりに、日本語で話しかけてください。スキルが自動的に起動します。
+
+### Changed
+
+- **スラッシュメニュー最適化（48→36エントリ、25%削減）**
+  - 8つの内部スキルに `user-invocable: false` を設定
+    - setup, session-init, session-memory, parallel-workflows
+    - principles, workflow-guide, vibecoder-guide, test-nested-agents
+
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| 24 コマンド + 24 スキル = 48 エントリ | 20 コマンド + 16 スキル = 36 エントリ |
+| スキルに `user-invocable` 設定なし | 内部スキル8個を非表示 |
+| エージェントに安全性設定なし | `disallowedTools` で禁止ツール設定 |
+| フックは毎回実行 | `once: true` で重複防止 |
+
+## [2.6.44] - 2026-01-08
+
+### 🎯 あなたにとって何が変わるか
+
+**`/harness-init` の対話回数が最大11回→最大2回に大幅削減。「おまかせ」で質問1回、完了後は自動決定された設定の詳細サマリーを表示します。**
+
+### Changed
+
+- **`/harness-init` 対話効率化（最大11回→最大2回）**
+  - 質問統合: AskUserQuestion で「何を作る」「誰が使う」「おまかせ/詳細」を1回で質問
+  - スマートデフォルト導入: 言語=ja、モード=.cursor/ 検出で自動判定、Skills Gate=自動設定
+  - ファストトラック: 「おまかせ」「さくっと」で質問なし・確認1回で完了
+  - 引数サポート: `/harness-init "ブログ" --mode=solo --stack=next-supabase`
+  - 並列処理: 質問中にバックグラウンドでプロジェクト分析
+  - Skills Gate 後回し: 初期負担軽減、`/skills-update` で後から調整可能
+  - **完了報告の強化**: 自動決定された設定・生成ファイル・変更方法を詳細サマリーで提示
+
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| 最大11回の対話ラウンド | 最小1回、最大2回の対話ラウンド |
+| 言語選択→モード選択→詳細確認... | 統合質問1回で完了（おまかせ選択時） |
+| Skills Gate 設定で必ず質問 | 自動設定、後から調整可能 |
+
+- **エラーメッセージの日本語化**
+  - `scripts/install-git-hooks.sh`: エラーと説明文を日本語化
+  - `scripts/template-tracker.sh`: すべてのエラー・Usage・結果メッセージを日本語化
+  - `scripts/claude-mem-mcp`: MCP 起動関連メッセージを日本語化
+  - `tests/test-path-compatibility.sh`: テストサマリーを日本語化
+  - `tests/test-frontmatter-integration.sh`: エラーメッセージとサマリーを日本語化
+
+### Added
+
+- **`/cc-cursor-cc` コマンド（計画検証ラウンドトリップ）**
+  - Claude Code で壁打ちした内容を Cursor (PM) に検証依頼
+  - 壁打ちコンテキストの自動抽出（やりたいこと、技術選択、決定事項、未決事項、懸念点）
+  - Plans.md への仮タスク追加（`pm:検証待ち` マーカー付き）
+  - Cursor 向けの検証依頼文を `/plan-with-cc` 形式で生成
+  - フロー: Claude Code (壁打ち) → Cursor (検証・Plans.md更新) → Claude Code (実装)
+
+- **`ask-project-type` スキル（曖昧ケース対応）**
+  - プロジェクト判定が曖昧な場合にユーザーに確認
+  - ワークフロー参照整合性テスト追加
+
+## [2.6.37] - 2026-01-05
+
+### 🎯 あなたにとって何が変わるか
+
+**Claude がテストを改ざんした場合、次のターンで警告が表示されるようになりました。操作はブロックせず、Claude に「見られている」という認識を持たせることで報酬詐欺を抑止します。**
+
+### Added
+
+- **テスト改ざん検出フック（posttooluse-tampering-detector.sh）**
+  - Write/Edit 後に改ざんパターンを検出し、Claude に警告を通知
+  - 操作はブロックせず、`additionalContext` で次のターンに警告を注入
+  - 検出パターン:
+    - `it.skip()` / `describe.skip()` / `test.skip()` 追加
+    - `it.only()` / `describe.only()` 追加（他テスト無効化）
+    - `eslint-disable` / `@ts-ignore` / `@ts-nocheck` 追加
+    - アサーション（`expect()` / `assert`）の削除
+    - lint/CI 設定ファイルの緩和（`continue-on-error: true` など）
+  - `.claude/state/tampering.log` に検出履歴を記録
+  - 第3層防御（Hooks）の実装として CLAUDE.md を更新
+
+## [2.6.36] - 2026-01-05
+
+### Added
+
+- **クロスプラットフォームパス処理ユーティリティ（path-utils.sh）**
+  - Windows（Git Bash/MSYS2/Cygwin/WSL）、macOS、Linux に対応
+  - `detect_os()` - OS 検出とキャッシュ
+  - `is_absolute_path()` - Windows ドライブレター（`C:/`）、UNC パス（`//server`）対応
+  - `normalize_path()` - バックスラッシュ→スラッシュ変換、重複スラッシュ除去
+  - `paths_equal()` - クロスプラットフォームパス比較
+  - `is_path_under()` - 親子関係判定
+
+### Changed
+
+- **シェルスクリプトの I/O 最適化と堅牢性向上**
+  - `analyze-project.sh`: ファイル読み込み最適化（12回→1回のキャッシュ）
+  - `setup-existing-project.sh`: cd エラーハンドリング追加、sed エスケープ改善
+  - `sync-plugin-cache.sh`: グローバル変数を関数パラメータに変更
+  - `track-changes.sh`: mktemp エラーハンドリングと trap クリーンアップ追加
+
+## [2.6.34] - 2026-01-05
+
+### Changed
+
+- **`/harness-update` コマンドの内容ベース更新検出**
+  - バージョンが同一でもファイル内容が古い場合を検出（Step 2.5 追加）
+  - `template-tracker.sh check` で内容レベルの更新をチェック
+  - 更新対象リストベースの処理で全ファイル完了まで継続（Phase 2 Step 0）
+  - 処理後の再検証で残りを検出、再試行/手動対応/スキップを選択可能（Phase 3 Step 1）
+  - 進捗表示と完了レポートの改善
+
+- **harness-ui MCP 設定を `/harness-ui-setup` 時のみ有効化**
+  - `.mcp.json` をプラグインルートから `templates/mcp/harness-ui.mcp.json.template` に移動
+  - `/harness-ui-setup` 実行時に MCP 設定を作成するステップ（Step 3.5）を追加
+  - これにより、UI を使わないユーザーは MCP エラーに遭遇しなくなります
+
+## [2.6.25] - 2025-01-04
+
+### 🎯 あなたにとって何が変わるか
+
+**`/plan-with-agent` コマンドにTDD採用判定と意図深掘り質問を追加。計画段階でテストケースを設計し、「動くけど違う」問題を防止します**
+
+### Added
+
+- **Step 5.5: TDD採用判定** - 6つの条件で自動判定
+  - ビジネスロジック、データ変換、外部API、複数分岐、金銭/認証、曖昧な言葉
+  - 条件に1つでも該当すればTDD採用
+
+- **意図深掘り質問** - AskUserQuestion で必ず確認
+  - 正常系: 一番よくある使われ方
+  - 境界条件: ギリギリOK/NGの境目
+  - エラー時: ユーザーへの見せ方
+  - 暗黙の期待: 言語化されていないルール
+
+- **暗黙知抽出テンプレート** - データ型別の追加質問
+  - 数値: 0や負の値、小数点桁数
+  - 日時: タイムゾーン、過去日許可
+  - 文字列: 空文字、最大長、絵文字
+  - リスト: 空リスト、上限、重複
+  - 状態遷移: 戻れる、途中キャンセル、タイムアウト
+  - ユーザー操作: 連打、途中離脱
+
+- **Plans.md テンプレート更新** - テストケース設計テーブルを含む構造
+  - 実装タスクの前にテストケースを明記
+  - 正常系/境界/異常系/エッジケースの4分類
+
+### Changed
+
+- **マーカー判定ロジック強化**
+  - `[feature:tdd]` マーカーは Step 5.5 通過必須
+  - 「計算」「変換」「バリデーション」も TDD 対象に追加
+  - 「決済」「金額」「課金」は security + TDD 両方適用
+
+## [2.6.18] - 2025-12-30
+
+### 🎯 あなたにとって何が変わるか
+
+**Cursor × claude-mem 統合を公式実装に移行。ハーネス独自の `/cursor-mem` コマンドを廃止し、claude-mem v8.5.0+ の公式 Cursor サポートを使用します**
+
+#### Before（v2.6.17）
+- ハーネス独自の `/cursor-mem` コマンドでセットアップ
+- `scripts/cursor-hooks/*.js` で記録処理
+- 手動コンテキスト検索が必要
+
+#### After（v2.6.18）
+- **公式コマンド**: `bun run cursor:install` で一発セットアップ
+- **自動コンテキスト注入**: `.cursor/rules/claude-mem-context.mdc` で自動
+- **6種類のフック**: session-init, context-inject, save-observation, save-file-edit, session-summary
+- **無料AI対応**: Gemini, OpenRouter サポート
+
+### Removed
+
+- **`/cursor-mem` コマンド**: `commands/optional/cursor-mem.md` を削除
+  - 公式 `cursor:install` コマンドに移行
+- **カスタムフックスクリプト**: `scripts/cursor-hooks/` を削除
+  - `record-prompt.js`, `record-edit.js`, `record-stop.js`, `run-hook.sh`, `utils.js`
+- **ドキュメント**: `docs/guides/cursor-mem-integration.md` を削除
+- **テンプレート**: `.cursor/rules/claude-mem.md.template` を削除
+- **サンプル**: `.cursor/hooks.json.example` を削除
+
+### Changed
+
+- **.gitignore**: 公式 Cursor フック用に更新
+  - `/.cursor/hooks/` を追加（公式スクリプト）
+  - `/.cursor/rules/claude-mem*.mdc` を追加（自動生成コンテキスト）
+
+### Migration
+
+claude-mem v8.5.0+ の公式 Cursor サポートを使用してください：
+
+```bash
+# リポジトリをクローン
+git clone https://github.com/thedotmack/claude-mem.git
+cd claude-mem
+bun install
+
+# Cursor フックをインストール
+bun run cursor:install
+
+# ステータス確認
+bun run cursor:status
+```
+
+## [2.6.17] - 2025-12-30
+
+### 🎯 あなたにとって何が変わるか
+
+**Cursor Rules サポートを追加。Cursor 公式推奨の `.cursor/rules/` フォーマットで claude-mem 統合ルールを自動セットアップできます**
+
+### Added
+
+- **Cursor Rules 対応**: `/cursor-mem` コマンドで Cursor Rules を自動生成
+  - **公式フォーマット**: `.cursor/rules/claude-mem.md` ([Cursor 公式ドキュメント](https://cursor.com/ja/docs/context/rules) 準拠)
+  - **YAML frontmatter**: `description`, `alwaysApply` フィールドでメタデータ管理
+  - **テンプレート方式**: `.cursor/rules/claude-mem.md.template` から自動コピー
+  - **複数ルール対応**: 他の Rules ファイルと組み合わせ可能
+
+- **セットアップスクリプト強化**: `scripts/setup-cursor-mem.sh`
+  - Step 4 で Cursor Rules を自動生成
+  - `.cursor/rules/` ディレクトリを自動作成
+  - テンプレートからコピー処理を実装
+
+- **検証スクリプト強化**: `scripts/validate-cursor-mem.sh`
+  - Phase 5 で Cursor Rules を検証
+  - テンプレートファイル存在確認
+  - YAML frontmatter 構造チェック
+  - `description`, `alwaysApply` フィールド検証
+
+- **ドキュメント**: `commands/optional/cursor-mem.md`
+  - Cursor Rules フォーマット説明セクション
+  - 新フォーマットの特徴とメリット
+  - バージョン管理ポリシー（テンプレート方式）
+
+### Changed
+
+- **.gitignore**: `.cursor/rules/` の管理方針を明確化
+  - `.cursor/rules/claude-mem.md` を除外（ユーザー固有）
+  - `.cursor/rules/*.template` を追跡（テンプレート）
+
+## [2.6.16] - 2025-12-30
+
+### 🎯 あなたにとって何が変わるか
+
+**コマンドファイル編集時の SSOT（Single Source of Truth）ルールが明確化され、一貫性のあるコマンド開発が保証されます**
+
+#### Before（v2.6.15）
+- コマンドファイルのフォーマットが統一されていなかった
+- `cursor-mem.md` に独自の `name:` フィールドが存在
+- 命名規則やフォーマットルールが暗黙的
+
+#### After（v2.6.16）
+- **明文化されたルール**: `.claude/rules/command-editing.md` に全ルールを集約
+- **標準フォーマット**: すべてのコマンドが `description` + `description-en` を使用
+- **命名規則の明確化**: `harness-` プレフィックス、`{機能}-setup` パターン等を文書化
+- **チェックリスト完備**: 編集時の確認項目を明示
+
+### Added
+
+- **コマンド編集ルール**: `.claude/rules/command-editing.md`
+  - YAML frontmatter の標準フォーマット定義
+  - ファイル命名規則（`harness-` プレフィックス、`{機能}-setup` パターン等）
+  - 完全修飾名生成ルール（`{plugin}:{category}:{name}` 形式）
+  - コマンドファイル構造テンプレート
+  - 編集チェックリスト
+  - 既知の例外の文書化（`harness-mem.md`）
+
+### Changed
+
+- **.gitignore**: `.claude/rules/` をバージョン管理対象に追加
+  - ルールファイルは SSOT として Git で管理
+  - プロジェクト全体で共有される基準
+
+### Fixed
+
+- **cursor-mem コマンド**: YAML frontmatter を標準フォーマットに修正
+  - `name:` フィールドを削除（ファイル名から自動決定）
+  - `description-en:` フィールドを追加
+  - 他のコマンドと統一された形式に統一
+
+### Benefits
+
+- **一貫性保証**: すべてのコマンドが同じフォーマットに従う
+- **新規コマンド作成が容易**: テンプレートとチェックリストを提供
+- **SSOT 原則**: ルールが一箇所に集約され、メンテナンス性向上
+- **プラグインシステム互換性**: 正しい完全修飾名が生成される
+
+## [2.6.15] - 2025-12-30
+
+### 🎯 あなたにとって何が変わるか
+
+**Cursor でのタスク実行時に、claude-mem を自動的に活用するガイダンスが追加されました（レベル2：条件付き自動検索）**
+
+#### Before（v2.6.14）
+- セッション開始時のみ claude-mem を検索
+- タスク実行中は手動で記録を検索する必要があった
+- 過去の実装パターンや決定事項を見落とすリスク
+
+#### After（v2.6.15）
+- **タスクレベルのガイダンス**: 実装/バグ修正/レビュー時に自動で検索を推奨
+- **条件付き検索**: 複雑なタスクのみ検索、単純な編集はスキップ
+- **具体例付き**: クエリ例とワークフロー例を提供
+- **パフォーマンス配慮**: 検索コストと価値のバランスを明記
+
+### Added
+
+- **タスクレベル検索ガイダンス**: `.cursorrules.example` に追加
+  - **実装タスク**: 類似実装、アーキテクチャ決定、確立パターンを検索
+    - 例: `query="[feature name] implementation", obs_type="feature"`
+  - **バグ修正**: 関連バグ、過去の修正、根本原因分析を検索
+    - 例: `query="[component] bug", obs_type="bugfix"`
+  - **コードレビュー**: コーディング規約、過去のレビュー、品質ガイドラインを検索
+    - 例: `query="code review", obs_type="decision"`
+  - **単純な編集**: 検索をスキップ（タイポ修正、フォーマット、コメント更新）
+
+- **検索戦略**: 効率的な検索のための4ステップガイド
+  1. `get_recent_context` で最近の作業を確認
+  2. タスク固有のキーワードで検索
+  3. `obs_type` で観察タイプをフィルタ
+  4. `limit=5-10` で結果を制限
+
+- **ワークフロー例**: JWT認証実装時の検索フローを図示
+
+- **パフォーマンス考慮事項**: 検索コストと価値のバランス、バッチ検索、キャッシング戦略
+
+### Benefits
+
+- **一貫性向上**: 過去の決定やパターンに従った実装が容易に
+- **学習の再利用**: チーム内の知見を自動的に活用
+- **バグ削減**: 過去の失敗から学び、同じミスを回避
+- **効率化**: オーバーヘッドを最小限に抑えつつ、高価値な検索を実行
+- **オプトイン**: 強制ではなくガイダンス形式で、柔軟に運用可能
+
+## [2.6.14] - 2025-12-29
+
+### 🎯 あなたにとって何が変わるか
+
+**`/cursor-mem` コマンドが正式なハーネスコマンドとして確立され、セットアップの信頼性と再現性が大幅に向上しました**
+
+#### Before（v2.6.13）
+- セットアップの検証が手動で煩雑
+- 設定の正確性を確認する方法が不明確
+- ハーネスの他のコマンドとの連携が不明確
+
+#### After（v2.6.14）
+- **自動検証スクリプト**: `./scripts/validate-cursor-mem.sh` で全設定を一括チェック
+- **SSOT 保証**: 検証スクリプトが設定の唯一の信頼できる情報源
+- **ハーネス統合**: `/validate`, `/work`, `/sync-status` との連携が明確化
+- **完全な再現性**: 冪等性、依存関係、バージョン管理が文書化
+
+### Added
+
+- **検証スクリプト**: `scripts/validate-cursor-mem.sh`
+  - 7つのフェーズで包括的検証
+    - Phase 1: Worker 起動確認
+    - Phase 2: MCP 設定確認（グローバル/ローカル両対応）
+    - Phase 3: フックスクリプト確認（存在 + 実行権限）
+    - Phase 4: Hooks 設定確認（hooks.json の構造検証）
+    - Phase 5: .cursorrules 確認
+    - Phase 6: Claude-mem データベース確認（テーブル + 記録数）
+    - Phase 7: ドキュメント確認
+  - 色分けされた出力（✅ 成功、⚠️ 警告、❌ 失敗）
+  - 詳細な検証結果サマリー
+  - 問題発生時の修正方法を自動提示
+
+### Changed
+
+- **コマンドドキュメント**: `commands/optional/cursor-mem.md` を大幅強化
+  - **セットアップ後の確認セクション**: 自動検証を推奨（SSOT として明記）
+  - **ハーネスワークフローとの統合セクション**: 追加
+    - セットアップフロー（/cursor-mem → validate-cursor-mem.sh → /validate）
+    - 開発フロー（Cursor → claude-mem → Claude Code → Cursor のサイクル）
+    - メモリ管理（claude-mem vs SSOT の使い分け）
+  - **再現性の保証セクション**: 追加
+    - 冪等性の保証（複数回実行しても安全）
+    - 検証メカニズム（3段階のスクリプト）
+    - バージョン管理（Git 管理対象の明確化）
+    - 依存関係の明確化（Worker, DB, Node.js, Bash のバージョン要件）
+  - **ハーネスコマンドセクション**: 関連コマンドへの参照を追加
+
+- **検証スクリプトの修正**: `scripts/validate-cursor-mem.sh`
+  - 算術展開のバグ修正（`((TOTAL_CHECKS++))` → `TOTAL_CHECKS=$((TOTAL_CHECKS + 1))`）
+  - `set -e` 環境下での安全な動作を保証
+
+### Fixed
+
+- **Bash 算術展開の互換性問題**: `set -e` を使用時に `((var++))` がゼロ評価で終了する問題を修正
+
+### Benefits
+
+- **信頼性向上**: 全設定を自動検証し、問題を即座に検出
+- **SSOT 確立**: 検証ロジックが一箇所に集約され、ドキュメントの重複を排除
+- **再現性保証**: 冪等性と依存関係の明確化により、どの環境でも同じ結果
+- **ハーネス統合**: 他のコマンドとの連携が明確になり、ワークフローが洗練
+- **開発者体験向上**: 問題発生時の修正方法が自動提示され、トラブルシューティングが容易に
+
+## [2.6.13] - 2025-12-27
+
+### 🎯 あなたにとって何が変わるか
+
+**Cursor での作業が自動的に claude-mem に記録され、Claude Code との間で作業履歴を完全に共有できるようになりました**
+
+#### Before（v2.6.12）
+- Cursor から claude-mem の記録を読み取ることは可能
+- Cursor での作業は手動で記録する必要があった
+- Claude Code ⇆ Cursor のデータ共有が片方向
+
+#### After（v2.6.13）
+- **Cursor での作業を自動記録**: プロンプト、ファイル編集、セッション完了
+- **完全な双方向共有**: Claude Code ⇄ claude-mem ⇄ Cursor
+- **ワンコマンドセットアップ**: `/cursor-mem` で全自動設定
+
+### Added
+
+- **Cursor Hooks 統合**: Cursor での作業を自動記録
+  - `scripts/cursor-hooks/utils.js` - 共通ユーティリティ（Worker API 通信、プロジェクト検出、エラーハンドリング）
+  - `scripts/cursor-hooks/record-prompt.js` - beforeSubmitPrompt フック（プロンプト記録）
+  - `scripts/cursor-hooks/record-edit.js` - afterFileEdit フック（ファイル編集記録）
+  - `scripts/cursor-hooks/record-stop.js` - stop フック（セッション完了記録）
+
+- **設定テンプレート**:
+  - `.cursor/hooks.json.example` - Cursor フック設定テンプレート
+  - `.cursorrules.example` - セッション開始時の自動指示テンプレート
+
+- **テストスイート**:
+  - `tests/cursor-mem/test-plan.md` - 10個の詳細テストケース
+    - TC1: プロジェクト検出テスト
+    - TC2-4: 書き込みテスト（全フック）
+    - TC5-6: 双方向読み取りテスト
+    - TC7-8: エラーハンドリングテスト
+    - TC9: パフォーマンステスト
+    - TC10: 並行書き込みテスト
+  - `tests/cursor-mem/verify-records.sh` - 記録検証スクリプト（統計表示、検索、詳細表示）
+
+- **コマンド**:
+  - `/cursor-mem` - Cursor × Claude-mem 統合のワンコマンドセットアップ
+    - Worker 起動確認
+    - MCP 設定スコープ選択（グローバル/ローカル）
+    - hooks.json 自動生成
+    - .cursorrules 自動生成
+    - 動作確認テスト
+
+- **セットアップスクリプト**:
+  - `scripts/setup-cursor-mem.sh` - 対話的セットアップ（`--global`/`--local`/`--skip-test`/`--force` オプション対応）
+
+### Changed
+
+- **ドキュメント更新**:
+  - `docs/guides/cursor-mem-integration.md` に「自動記録の設定」セクション追加
+    - セットアップ手順（5ステップ）
+    - 制限事項の明記（自動コンテキスト注入不可、カバレッジ 60-70%）
+    - カバレッジ比較表
+    - トラブルシューティング
+  - `README.md` に「Cursor × Claude-mem 自動記録（v2.6.13）」セクション追加
+  - `README.md` の `/cursor-mem` コマンドを知識・連携セクションに追加
+
+- `.gitignore` の Cursor セクションを整理
+  - `/.cursor/` （全体無視）→ `.cursor/hooks.json`（ユーザー固有）のみ無視に変更
+  - `.cursor/hooks.json.example` をバージョン管理対象に
+
+### Benefits
+
+- **自動記録**: Cursor での全作業が claude-mem に自動保存（プロンプト、編集、完了）
+- **双方向共有**: Claude Code と Cursor 間で作業履歴が完全に同期
+- **2-Agent 強化**: PM（Cursor）と実装役（Claude Code）の連携が大幅改善
+- **ワンコマンドセットアップ**: `/cursor-mem` で数十秒でセットアップ完了
+- **厳格なテスト**: 10個のテストケースで品質保証
+
+### Technical Details
+
+**自動記録の仕組み**:
+```
+Cursor → Hooks → Worker API → claude-mem DB ← Claude Code
+```
+
+**記録内容**:
+- UserPrompt: ユーザープロンプト + 添付ファイル
+- Edit: ファイルパス + 編集内容（diff）
+- SessionStop: セッション状態 + ループ回数
+
+**エラーハンドリング**:
+- Worker 未起動時も Cursor の動作をブロックしない
+- 10秒タイムアウトでネットワークハングを防止
+- グレースフルな失敗（stderr にエラー出力、Cursor は継続）
+
+**プロジェクト検出**:
+1. `workspace_roots[0]`（Cursor フックから取得）
+2. `CLAUDE_MEM_PROJECT_CWD` 環境変数
+3. `process.cwd()` フォールバック
+
+### Fixed
+
+- **Worker API "private" 判定問題を解決**:
+  - 根本原因: セッション未初期化により全 observation が "private" でスキップされていた
+  - 解決策: `record-prompt.js` で `/api/sessions/init` を呼び出してセッションを事前初期化
+  - `utils.js` に `initSession()` 関数を追加（セッション作成 + プロンプト保存）
+  - `utils.js` に `getProjectName()` 関数を追加（プロジェクト名抽出）
+  - `recordObservation()` にレスポンスステータス確認を追加（"skipped" の検出）
+
+- **Node.js v24 stdin 評価問題を wrapper スクリプトで解決**:
+  - 問題: Node.js v24.10.0+ が stdin を TypeScript として評価し、JSON データで構文エラー
+  - 影響: Cursor Hooks が `SyntaxError: Unexpected token ':'` で失敗
+  - 解決策: `scripts/cursor-hooks/run-hook.sh` wrapper を作成して stdin を Node.js に直接渡す
+  - `.cursor/hooks.json` をプロジェクトルートからの相対パスに修正（`../scripts/` → `scripts/`）
+  - 動作確認: `exit code: 0` で正常完了、claude-mem に記録が保存される
+
+- **ドキュメントの動作確認クエリを修正**:
+  - 存在しない `tool_name` カラムへの参照を修正
+  - 正しいスキーマ（`type`, `title`, `narrative`）を使用するように更新
+  - 「自動記録の仕組み」セクションを追加（セッション初期化フローの説明）
+  - Node.js v24 問題のトラブルシューティングセクションを追加
+
+**技術詳細**:
+- Worker API は `/api/sessions/observations` に送られた observation を "private" として拒否
+- 原因: `user_prompts` テーブルに該当プロンプトが存在しないため
+- 修正: beforeSubmitPrompt フックで事前に `/api/sessions/init` を呼び出し、プロンプトを登録
+- 結果: 後続の observation が正常に記録されるようになった
+
+**動作確認**:
+```bash
+# テスト実行結果
+Session 15461, prompt #1 initialized ✅
+Observation recorded: 10946-10951 ✅
+  - 10946: discovery - Claude-Mem観測ツールの初期化
+  - 10947: change - テストファイルの内容編集
+  - 10948: change - セッション終了
+```
+
+### Limitations
+
+- **自動コンテキスト注入不可**: Cursor の `beforeSubmitPrompt` フックがレスポンスを尊重しないため
+- **エージェント応答は記録されない**: `afterAgentResponse` フックが存在しないため
+- **カバレッジ**: Claude Code の 60-70% 程度（フック制限による）
+
+## [2.6.12] - 2025-12-27
+
+### Added
+
+- **Cursor × Claude-mem MCP統合**: CursorからClaude-memにアクセス可能に
+  - MCPラッパースクリプト (`scripts/claude-mem-mcp`)
+    - ワーカー自動起動・ヘルスチェック
+    - 最新バージョン動的検出
+    - stdio モードでMCPサーバー実行
+  - `cursor-mem` スキル追加 (`skills/cursor-mem/`)
+    - Cursor Composerからclaude-memツールにアクセス
+    - 検索・書き込み両対応
+    - 日英トリガーワード対応
+  - 統合ガイド (`docs/guides/cursor-mem-integration.md`)
+  - 使用例集 (`skills/cursor-mem/examples.md`)
+  - テスト手順書 (`TEST_CURSOR_INTEGRATION.md`)
+  - `.cursor/mcp.json.example` サンプル提供
+
+### Changed
+
+- `commands/optional/harness-mem.md` にCursor統合セクション追加
+- `.gitignore` に `.cursor/mcp.json` を追加
+
+### Benefits
+
+- **PM（Cursor）と実装（Claude Code）の役割分担**: 設計判断はCursorで記録、実装はClaude Codeが過去の判断を参照
+- **双方向のデータ共有**: 同じメモリデータベースを共有（WALモードで並行書き込み対応）
+- **クロスツール検索**: Cursorで記録した内容をClaude Codeで検索、その逆も可能
+
+## [2.6.5] - 2025-12-26
+
+### Added
+
+- 英語版 README の追加
+  - 日本語版との言語切り替えナビゲーション
+
+### Changed
+
+- `/release` コマンドの改善
+  - README.md の更新確認を必須化
+  - GitHub Releases 作成ステップを追加
+
+## [2.6.4] - 2025-12-26
+
+### Changed
+
+- README.md に品質判定ゲートシステム（v2.6.2）のドキュメントを追加
+
+## [2.6.3] - 2025-12-26
+
+### Changed
+
+- `/release` コマンドに GitHub Releases 作成ステップを追加
+
+## [2.6.2] - 2025-12-26
+
+### 🎯 あなたにとって何が変わるか
+
+**品質判定ゲートシステムが導入され、適切な場面で適切な品質基準（TDD/Security/a11y）が自動提案されるようになりました**
+
+#### Before
+- テスト改ざん防止（守り）のみ
+- TDD/セキュリティ/a11y の提案がなかった
+- 全タスクに同じ基準を適用
+
+#### After
+- タスク種別・ファイルパスに応じて品質基準を自動提案
+- 強制ではなく提案（VibeCoder にも優しい）
+- TDD/Security/a11y/Performance の4軸で判定
+
+### Added
+
+- 品質判定ゲートシステム（Phase 10）
+  - `tdd-guidelines.md.template` - TDD 適用基準ルール
+  - `security-guidelines.md.template` - セキュリティ注意パターン（OWASP Top 10 対応）
+  - `quality-gates.md.template` - 総合判定マトリクス
+- スキルに Step 0（品質判定ゲート）を追加
+  - `impl`: TDD 推奨判定 + セキュリティチェック
+  - `review`: カバレッジ/セキュリティ/a11y/パフォーマンス重点領域判定
+  - `verify`: 再現テスト提案 + テスト vs 実装判定
+  - `auth`: セキュリティチェックリスト自動表示
+  - `ui`: a11y チェックリスト自動表示
+  - `ci`: テスト改ざん防止（禁止パターン明示）
+- `/plan-with-agent` に品質マーカー自動付与機能
+  - 認証関連 → `[feature:security]`
+  - UI → `[feature:a11y]`
+  - ビジネスロジック → `[feature:tdd]`
+  - バグ修正 → `[bugfix:reproduce-first]`
+- `tdd-order-check.sh` PostToolUse Hook
+  - TDD 推奨タスクで本体ファイルを先に編集 → 警告表示
+  - ブロックはせず提案のみ
+- VibeCoder 向け説明セクションを追加
+  - `auth`, `review`, `ci` スキルに平易な説明を追加
+
+### Changed
+
+- スキルの Step 0 タイトルを「品質判定ゲート（〜）」形式に統一
+- `tdd-order-check.sh` を macOS/Linux 両対応（jq 優先、sed フォールバック）
+
+## [2.6.1] - 2025-12-25
+
+### Added
+
+- Skill 階層構造の自動リマインダー機能
+  - `skill-child-reminder.sh` PostToolUse Hook
+    - Skill ツール使用後に子スキル一覧を自動表示
+    - 該当する doc.md の読み込みを促進
+  - `skill-hierarchy.md` Rules テンプレート
+    - セッション開始時に階層構造のガイドラインを提供
+    - 親スキル → 子スキルの読み込みルールを明文化
+
+### Changed
+
+- `.claude-plugin/hooks.json` に Skill 用 PostToolUse Hook を追加
+
+## [2.6.0] - 2025-12-25
+
+### 🎯 あなたにとって何が変わるか
+
+**Claude-mem を入れると、セッション跨ぎで「過去の学び」を活用できるようになりました**
+
+#### Before
+- 毎回ゼロからコンテキストを構築
+- 同じミス（テスト改ざん等）を繰り返す可能性
+- 過去のレビュー指摘・バグ修正パターンが引き継がれない
+
+#### After
+- `/harness-mem` で Claude-mem を統合
+- 過去のガードレール発動履歴が表示される
+- `impl`, `review`, `verify` スキルが過去の知見を自動参照
+- 重要な観測は SSOT（decisions.md/patterns.md）に昇格可能
+
+### Added
+
+- `/harness-mem` コマンド - Claude-mem 統合セットアップ
+  - インストール検出・インストール支援
+  - 日本語化オプション
+  - `harness` / `harness--ja` モードを自動設定
+- `/sync-ssot-from-memory` コマンド - メモリから SSOT への昇格
+  - Claude-mem と Serena 両対応
+  - 重複防止のための観測ID追跡
+- `memory-integration.md` Rules テンプレート
+  - Claude-mem 有効時のスキル活用ガイド
+- `harness.json` / `harness--ja.json` モードファイル
+  - ハーネス特化の observation_types（10種）
+  - ハーネス特化の observation_concepts（12種）
+  - ユーザー意図（user-intent）の記録を強化
+- Memory-Enhanced Skills 機能
+  - `impl`: 過去の実装パターン・gotcha を自動参照
+  - `review`: 過去の類似レビュー指摘を参照
+  - `verify`: 過去のビルドエラー解決策・ガードレール履歴を参照
+  - `session-init`: 過去のガードレール発動履歴・作業サマリーを表示
+
+### Changed
+
+- `skills-gate.md` に Memory-Enhanced Skills セクションを追加
+- `template-registry.json` に `memory-integration.md` を登録
+
+### Removed
+
+- `/sync-ssot-from-serena` コマンド（`/sync-ssot-from-memory` に統合）
+
+## [2.5.41] - 2025-12-25
+
+### 🎯 あなたにとって何が変わるか
+
+**Skills Gate が Rules + Hooks の2層構造になり、よりスムーズに動作するようになりました**
+
+#### Before
+- Skills Gate は Hook のみで強制（ブロックメッセージが毎回表示される可能性）
+- ユーザーカスタムの Rules と ハーネス由来の Rules の区別がなかった
+
+#### After
+- **Rules（第1層）**: Claude が自発的に「スキルを使うべき」と認識
+- **Hooks（第2層）**: 忘れた場合の最終防衛線としてのみ発動
+- ユーザーカスタムの Rules は**自動保護**（上書きされない）
+
+### Added
+
+- `skills-gate.md` Rules テンプレートを追加
+  - Skills Gate が有効な場合のみ自動展開
+  - スキル使用の意義と使い方を Claude に認識させる
+- Rules のマーカー + ハッシュ方式による管理
+  - ハーネス由来: `_harness_template`, `_harness_version` で識別
+  - ユーザーカスタム: マーカーなし → 自動保護
+- 条件付きテンプレート機能
+  - `template-registry.json` の `condition` フィールドで制御
+  - 条件を満たす場合のみ展開・更新
+
+### Changed
+
+- `/harness-init`: Skills Gate 有効時のみ `skills-gate.md` を追加
+- `/harness-update`: マーカー検出でユーザーカスタム Rules を保護
+- Skills Gate の設計思想を明確化
+  - Rules: ガイダンス・自発的行動誘導
+  - Hooks: セキュリティ・最終防衛線
+
+## [2.5.38] - 2025-12-24
+
+### 🎯 あなたにとって何が変わるか
+
+**`/harness-update` だけで、新しいスキルも自動的に追加されるようになりました**
+
+#### Before
+- プラグイン更新 (`/harness-update`) と Skills 設定更新 (`/skills-update`) は別々
+- 新しいスキルが追加されても、既存プロジェクトには手動で追加が必要だった
+
+#### After
+- `/harness-update` 実行時に、新しいスキルを自動検出・提案
+- 「yes」で一括追加、「選択」で個別選択が可能
+- 削除されたスキルも検出して設定からクリーンアップ
+
+### Added
+
+- `/harness-update` に Skills 差分検出機能を統合
+  - プラグイン側の利用可能スキル一覧を取得
+  - プロジェクト側の `skills-config.json` と比較
+  - 新規スキル・削除済みスキルを検出して提案
+
+## [2.5.37] - 2025-12-24
+
+### 🎯 あなたにとって何が変わるか
+
+**壁打ちで話した内容を、そのまま計画にできるようになりました**
+
+#### Before
+- `/plan-with-agent` は受託開発向け（提案書が必須）
+- 壁打ち後も最初からヒアリングをやり直す必要があった
+
+#### After
+- Step 0 で「今までの会話を踏まえる」を選択可能
+- 会話から要件を自動抽出 → 確認 → 計画化
+- 提案書はオプション（受託開発時のみ）
+
+### Changed
+
+- `/plan-with-agent` を汎用プラン構築コマンドに刷新
+  - Step 0「会話コンテキスト確認」を追加
+  - 受託開発特化から汎用ツールへ転換
+  - ヒアリング文言を簡素化
+
+## [2.5.35] - 2025-12-24
+
+### 🎯 あなたにとって何が変わるか
+
+**自分で作ったカスタムフックを消すことなく、安全にアップデートできるようになりました**
+
+#### Before
+- `/harness-update` はすべてのフック設定を削除対象としていた
+
+#### After
+- コマンドパスに `claude-code-harness` を含むフックのみを検出・削除
+- ユーザー独自のカスタムフック（例: `/my-project/scripts/my-guard.sh`）はそのまま保持
+
+### Changed
+
+- フック検出ロジックをコマンドパスで判別するように改善
+  - ハーネス由来のフックのみ警告・削除対象
+  - ユーザー独自フックは保護
+
+## [2.5.33] - 2025-12-24
+
+### Added
+
+- **既存ユーザー向けアップデート通知の強化**
+  - セッション開始時に未導入の品質保護ルールを通知
+  - 古いフック設定（`.claude/settings.json` の `hooks`）を検出・警告
+  - `template-tracker.sh` が新規追加ファイルも `installsCount` として報告
+
+### Fixed
+
+- 新規追加されたルールファイルが既存ユーザーに通知されない問題を修正
+- `/harness-update` で古いフック設定が検出・削除されない問題を修正
+
+## [2.5.32] - 2025-12-24
+
+### Added
+
+- **テスト改ざん防止機能（3層防御戦略）**の統合
+  - 第1層: Rules テンプレート（`test-quality.md`, `implementation-quality.md`）
+  - 第2層: Skills 品質ガードレール（`impl`, `verify` スキルに統合）
+  - 第3層: Hooks 設計書（オプション機能として文書化）
+- `/harness-init` に品質保護ルール自動展開機能
+- 品質ガードレール検証テスト（`test-quality-guardrails.sh`）
+
+### Changed
+
+- README.md に品質保証セクションを追加
+- CLAUDE.md にテスト改ざん防止戦略を追加
+
+## [2.5.30] - 2025-12-23
+
+### Added
+
+- フロントマターベースのメタデータ統合システム
+  - テンプレートファイルに `_harness_template` と `_harness_version` を追加
+  - `/harness-update` でバージョン差分検出が可能に
+
+## [2.5.28] - 2025-12-23
+
+### Added
+
+- `handoff-to-claude` コマンドに `/work` と `ultrathink` オプションを追加
+
+### Changed
+
+- CHANGELOG を [Keep a Changelog](https://keepachangelog.com/) フォーマットに統一
+
+## [2.5.27] - 2025-12-23
+
+### Fixed
+
+- `/release` コマンドが表示されない問題を修正
+  - `.gitignore` から除外を解除し、プラグインユーザーも使用可能に
+
+## [2.5.26] - 2025-12-23
+
+### Added
+
+- プラグイン更新時のテンプレート追跡機能
+  - セッション開始時に「テンプレート更新あり」を自動通知
+  - `/harness-update` でファイルごとに上書き or マージを選択可能
+
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| テンプレート更新されても既存ファイルは古いまま | 更新を自動検出し、安全にマージ支援 |
+
+## [2.5.22] - 2025-12-23
+
+### Fixed
+
+- プラグイン更新が反映されない問題を修正
+  - 新しいセッションを開始するだけで最新版が自動反映されるように
+
+## [2.5.14] - 2025-12-22
+
+### Changed
+
+- `/review-cc-work` がレビュー後のハンドオフを自動生成するように改善
+  - 承認時: 次タスクを自動分析して依頼文を生成
+  - 修正依頼時: 指示を含む依頼文を生成
+
+## [2.5.13] - 2025-12-21
+
+### Added
+
+- コード変更時の LSP 分析自動推奨機能
+  - LSP 導入済みプロジェクトで、変更前の影響分析を自動で推奨
+  - 公式 LSP プラグイン全10種をサポート
+
+## [2.5.10] - 2025-12-21
+
+### Added
+
+- `/lsp-setup` コマンドで公式プラグインを自動検出・提案
+  - 3ステップでセットアップ完了
+
+## [2.5.9] - 2025-12-20
+
+### Added
+
+- 既存プロジェクトへの LSP 一括導入機能
+- 言語別インストールコマンド一覧
+
+## [2.5.8] - 2025-12-20
+
+### Added
+
+- LSP によるコード定義元・使用箇所の即時確認機能
+  - 関数定義へのジャンプ
+  - 変数の使用箇所一覧表示
+  - ビルド前の型エラー検出
+
+## [2.5.7] - 2025-12-20
+
+### Fixed
+
+- 2-Agent モードで Cursor コマンドが生成されないことがある問題を修正
+  - セットアップ完了時に必須ファイルを自動チェック・再生成
+
+## [2.5.6] - 2025-12-20
+
+### Added
+
+- `/harness-update` が破壊的変更を検出して自動修正を提案する機能
+
+## [2.5.5] - 2025-12-20
+
+### Added
+
+- `/harness-update` コマンドで既存プロジェクトを安全にアップデート
+  - 自動バックアップ、非破壊更新
+
+## [2.5.4] - 2025-12-20
+
+### Fixed
+
+- settings.json の間違った構文が生成されるバグを修正
+
+## [2.5.3] - 2025-12-20
+
+### Changed
+
+- スキル名をシンプルに変更（例: `ccp-work-impl-feature` → `impl-feature`）
+
+## [2.5.2] - 2025-12-19
+
+### Changed
+
+- 各スキルに「いつ使う / いつ使わない」を明示してスキルの誤起動を軽減
+
+### Added
+
+- MCP ワイルドカード許可の設定例
+
+## [2.5.1] - 2025-12-19
+
+### Changed
+
+- bypassPermissions で Edit/Write の確認を減らしつつ、危険操作はガード
+
+## [2.5.0] - 2025-12-19
+
+### Added
+
+- Plans.md で依存関係記法 `[depends:X]`, `[parallel:A,B]` をサポート
+
+### Removed
+
+- `/start-task` コマンドを廃止（`/work` に統合）
+
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| `/start-task` と `/work` の使い分けが必要 | `/work` だけでOK |
+| タスクの依存関係を表現できない | 記法で依存関係を表現可能 |
+
+## [2.4.1] - 2025-12-17
+
+### Changed
+
+- プラグイン名を「Claude harness」に変更
+- 新しいロゴとヒーロー画像
+
+## [2.4.0] - 2025-12-17
+
+### Changed
+
+- レビューや CI 修正を並列実行で高速化（最大75%の時間短縮）
+  - 4つのサブエージェント（セキュリティ/パフォーマンス/品質/アクセシビリティ）を同時起動
+
+## [2.3.4] - 2025-12-17
+
+### Added
+
+- pre-commit フックでコード変更時にパッチバージョンを自動バンプ
+- Windows 対応
+
+## [2.3.3] - 2025-12-17
+
+### Changed
+
+- スキルを14カテゴリに整理（impl, review, verify, setup, 2agent, memory, principles, auth, deploy, ui, workflow, docs, ci, maintenance）
+
+## [2.3.2] - 2025-12-16
+
+### Fixed
+
+- スキルがより確実に起動するように改善
+
+## [2.3.1] - 2025-12-16
+
+### Added
+
+- `/harness-init` で言語選択（日本語/英語）
+
+## [2.3.0] - 2025-12-16
+
+### Changed
+
+- ライセンスを MIT に変更（公式リポジトリへの貢献が可能に）
+
+## [2.2.1] - 2025-12-16
+
+### Changed
+
+- 各エージェントが使えるツールを明示
+- 並列実行時に色で識別しやすく
+
+## [2.2.0] - 2025-12-15
+
+### Changed
+
+- ライセンスを独自ライセンスに変更（後に MIT に戻りました）
+
+## [2.1.2] - 2025-12-15
+
+### Changed
+
+- `/parallel-tasks` を `/work` に統合
+
+## [2.1.1] - 2025-12-15
+
+### Changed
+
+- コマンド数を27個から16個に削減（残りはスキル化して会話で自動起動）
+
+## [2.0.0] - 2025-12-13
+
+### Added
+
+- PreToolUse/PermissionRequest hooks によるガードレール機能
+- `/handoff-to-cursor` コマンドで Cursor 連携
+
+## 過去の履歴（v0.x - v1.x）
+
+詳細は [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases) を参照してください。
+
+### 主なマイルストーン
+
+- **v0.5.0**: 適応型セットアップ（技術スタック自動検出）
+- **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
+- **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
+
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.11...HEAD
+[2.9.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.10...v2.9.11
+[2.9.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.9...v2.9.10
+[2.9.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.8...v2.9.9
+[2.9.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.7...v2.9.8
+[2.9.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.6...v2.9.7
+[2.9.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.5...v2.9.6
+[2.9.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.4...v2.9.5
+[2.9.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.3...v2.9.4
+[2.9.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.2...v2.9.3
+[2.9.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.1...v2.9.2
+[2.9.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.0...v2.9.1
+[2.9.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.8.2...v2.9.0
+[2.8.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.8.1...v2.8.2
+[2.8.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.8.0...v2.8.1
+[2.8.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.16...v2.8.0
+[2.7.12]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.11...v2.7.12
+[2.7.16]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.15...v2.7.16
+[2.7.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.10...v2.7.11
+[2.7.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.9...v2.7.10
+[2.7.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.8...v2.7.9
+[2.7.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.7...v2.7.8
+[2.7.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.4...v2.7.7
+[2.7.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.3...v2.7.4
+[2.7.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.2...v2.7.3
+[2.7.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.1...v2.7.2
+[2.7.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.0...v2.7.1
+[2.7.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.44...v2.7.0
+[2.6.44]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.37...v2.6.44
+[2.6.36]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.34...v2.6.36
+[2.6.34]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.33...v2.6.34
+[2.6.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.4...v2.6.5
+[2.6.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.3...v2.6.4
+[2.6.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.2...v2.6.3
+[2.6.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.1...v2.6.2
+[2.6.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.0...v2.6.1
+[2.6.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.41...v2.6.0
+[2.5.41]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.37...v2.5.41
+[2.5.37]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.35...v2.5.37
+[2.5.35]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.33...v2.5.35
+[2.5.33]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.32...v2.5.33
+[2.5.32]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.30...v2.5.32
+[2.5.30]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.28...v2.5.30
+[2.5.28]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.27...v2.5.28
+[2.5.27]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.26...v2.5.27
+[2.5.26]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.22...v2.5.26
+[2.5.22]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.14...v2.5.22
+[2.5.14]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.13...v2.5.14
+[2.5.13]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.10...v2.5.13
+[2.5.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.9...v2.5.10
+[2.5.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.8...v2.5.9
+[2.5.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.7...v2.5.8
+[2.5.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.6...v2.5.7
+[2.5.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.5...v2.5.6
+[2.5.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.4...v2.5.5
+[2.5.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.3...v2.5.4
+[2.5.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.2...v2.5.3
+[2.5.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.1...v2.5.2
+[2.5.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.0...v2.5.1
+[2.5.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.4.1...v2.5.0
+[2.4.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.4.0...v2.4.1
+[2.4.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.3.4...v2.4.0
+[2.3.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.3.3...v2.3.4
+[2.3.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.3.2...v2.3.3
+[2.3.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.3.1...v2.3.2
+[2.3.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.3.0...v2.3.1
+[2.3.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.2.1...v2.3.0
+[2.2.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.2.0...v2.2.1
+[2.2.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.1.2...v2.2.0
+[2.1.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.1.1...v2.1.2
+[2.1.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.0.0...v2.1.1
+[2.6.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.6.0...v2.6.1
+[2.6.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.5.41...v2.6.0
+[2.0.0]: https://github.com/Chachamaru127/claude-code-harness/releases/tag/v2.0.0
