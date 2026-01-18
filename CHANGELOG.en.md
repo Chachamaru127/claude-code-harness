@@ -13,6 +13,114 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.9.8] - 2026-01-18
+
+### 🎯 What's Changed for You
+
+**UI skill constraints tightened with explicit guardrails and opt-in aesthetics.**
+
+### Added
+
+- **UI skill constraint priority**: Define explicit constraint ordering
+- **UI skills summary**: `skills/ui/references/ui-skills.md` for quick reference
+- **Frontend design summary**: `skills/ui/references/frontend-design.md` with design guidelines
+- **Opt-in aesthetics**: UI generation now follows explicit guardrails
+
+---
+
+## [2.9.7] - 2026-01-18
+
+### 🎯 What's Changed for You
+
+**Compact guard added before Codex reviews for better context management.**
+
+### Added
+
+- **Compact guard**: `/harness-review` and `/codex-review` now include compact guards
+- **Codex parallel review guardrails**: Enhanced `codex-parallel-review.md`
+- **Review SKILL.md**: Compact mode support added
+
+---
+
+## [2.9.6] - 2026-01-18
+
+### 🎯 What's Changed for You
+
+**Session resume and fork controls: continue interrupted work or branch from existing sessions.**
+
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| Sessions lost on interruption | `/work --resume <id>` to continue |
+| No branching from sessions | `/work --fork <id>` to branch |
+| Manual state management | Automatic session archiving |
+
+### Added
+
+- **Session resume**: `/work --resume <session-id>` continues interrupted sessions
+- **Session fork**: `/work --fork <session-id>` branches from existing sessions
+- **session-control.sh**: New script for session state management
+- **Session archiving**: Auto-save state for resume capability
+- **test-session-control.sh**: Tests for session control features
+
+### Changed
+
+- **SESSION_ORCHESTRATION.md**: Resume/fork specifications added
+
+---
+
+## [2.9.5] - 2026-01-18
+
+### 🎯 What's Changed for You
+
+**Session lifecycle events now persisted for debugging and analysis.**
+
+### Added
+
+- **Lifecycle event persistence**: Session start/resume/stop events recorded in state files
+- **Tool event logging**: `posttooluse-log-toolname.sh` tracks tool usage
+- **Enhanced session-monitor.sh**: Expanded event tracking
+- **Lifecycle summary**: `session-summary.sh` now includes lifecycle overview
+
+### Changed
+
+- **CLAUDE.md**: Fixed frontmatter warnings
+- **commands/core/CLAUDE.md**, **commands/optional/CLAUDE.md**: Documentation improvements
+
+---
+
+## [2.9.4] - 2026-01-18
+
+### 🎯 What's Changed for You
+
+**Deterministic session orchestration spec for reproducible execution.**
+
+### Added
+
+- **SESSION_ORCHESTRATION.md**: New design specification for session control
+- **Reproducible sessions**: Guidelines for deterministic session execution
+
+---
+
+## [2.9.3] - 2026-01-17
+
+### 🎯 What's Changed for You
+
+**`/work --full` workflow orchestration implementation (Phase 34).**
+
+### Added
+
+- **parse-work-flags.md**: Extended flag parsing logic
+- **work.yaml workflow**: Updated for full-cycle support
+- **Sandbox test**: `/work --full` sandbox test added
+
+### Changed
+
+- **harness-ui session state files**: Cleaned up unnecessary state files
+
+---
+
 ## [2.9.2] - 2026-01-16
 
 ### 🎯 What's Changed for You

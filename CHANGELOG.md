@@ -7,6 +7,76 @@
 
 ## [Unreleased]
 
+## [2.9.8] - 2026-01-18
+
+### Added
+
+- **UI スキル制約強化**
+  - 制約優先度（Constraint Priority）を定義
+  - UI スキルサマリー（`skills/ui/references/ui-skills.md`）を追加
+  - フロントエンドデザインサマリー（`skills/ui/references/frontend-design.md`）を追加
+  - UI 生成時の明示的ガードレールとオプトイン美学を導入
+
+## [2.9.7] - 2026-01-18
+
+### Added
+
+- **Codex レビュー前コンパクトガード**
+  - `/harness-review`、`/codex-review` にコンパクトガードを追加
+  - Codex 並列レビュー時のガードレール強化（`codex-parallel-review.md`）
+  - review SKILL.md にコンパクトモード対応を追加
+
+## [2.9.6] - 2026-01-18
+
+### Added
+
+- **セッション再開・フォーク機能**
+  - `/work --resume <session-id>`: 中断したセッションを再開
+  - `/work --fork <session-id>`: 既存セッションから分岐して新規作業
+  - `scripts/session-control.sh`: セッション制御スクリプト追加
+  - セッションアーカイブ機能（再開用の状態保存）
+  - `tests/test-session-control.sh`: セッション制御のテスト追加
+
+### Changed
+
+- **SESSION_ORCHESTRATION.md**: セッション再開・フォークの仕様を追加
+
+## [2.9.5] - 2026-01-18
+
+### Added
+
+- **セッションライフサイクルイベント永続化**
+  - セッション開始/再開/停止イベントを状態ファイルに記録
+  - ツール使用イベントをログに記録（`posttooluse-log-toolname.sh`）
+  - `session-monitor.sh` を拡張し、イベント追跡を強化
+  - `session-summary.sh` にライフサイクルサマリーを追加
+
+### Changed
+
+- **CLAUDE.md**: frontmatter 警告を修正
+- **commands/core/CLAUDE.md**, **commands/optional/CLAUDE.md**: ドキュメント整備
+
+## [2.9.4] - 2026-01-18
+
+### Added
+
+- **決定論的セッションオーケストレーション仕様**
+  - `docs/SESSION_ORCHESTRATION.md`: セッション制御の設計仕様を新規作成
+  - 再現可能なセッション実行のためのガイドライン策定
+
+## [2.9.3] - 2026-01-17
+
+### Added
+
+- **`/work --full` ワークフローオーケストレーション実装**（Phase 34）
+  - parse-work-flags.md: フラグ解析ロジック拡張
+  - work.yaml ワークフロー更新
+  - `/work --full` サンドボックステスト追加
+
+### Changed
+
+- **harness-ui セッション状態ファイル削除**: 不要な状態ファイルをクリーンアップ
+
 ## [2.9.2] - 2026-01-16
 
 ### Added
