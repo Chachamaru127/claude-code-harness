@@ -42,6 +42,36 @@ export interface PlansData {
   };
 }
 
+// Session Archive Types (for resume/fork)
+export type SessionState =
+  | 'idle'
+  | 'initialized'
+  | 'planning'
+  | 'executing'
+  | 'reviewing'
+  | 'verifying'
+  | 'escalated'
+  | 'completed'
+  | 'failed'
+  | 'stopped';
+
+export interface SessionArchive {
+  session_id: string;
+  parent_session_id: string | null;
+  state: SessionState;
+  started_at: string;
+  ended_at?: string;
+  updated_at: string;
+  duration_minutes?: number;
+  project_name?: string;
+  git_branch?: string;
+}
+
+export interface SessionArchivesData {
+  archives: SessionArchive[];
+  current: SessionArchive | null;
+}
+
 // WebSocket Message Types
 export type WSMessageType =
   | 'sessions_list'
@@ -51,7 +81,8 @@ export type WSMessageType =
   | 'create_session'
   | 'destroy_session'
   | 'resize_terminal'
-  | 'plans_update';
+  | 'plans_update'
+  | 'session_archives';
 
 export interface WSMessage<T = unknown> {
   type: WSMessageType;

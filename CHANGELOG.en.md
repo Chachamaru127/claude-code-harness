@@ -13,6 +13,165 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.9.11] - 2026-01-18
+
+### 🎯 What's Changed for You
+
+**Session Orchestration System complete: state machine, resume/fork UX, cost control & skill governance.**
+
+### Added
+
+- **Session Orchestration System (Phase 0-3 complete)**
+  - `scripts/session-state.sh`: 10-state system, 21 transition rules, lock mechanism
+  - `skills/session-state/SKILL.md`: Session state management skill
+  - `scripts/pretooluse-guard.sh`: cost_control checks (total/edit/bash limits)
+  - `.claude-code-harness.config.yaml`: orchestration + cost_control sections
+  - `tests/validate-skills.sh`: SKILL.md frontmatter validation, tool name checks
+  - `tests/test-session-control.sh`: 14 unit tests
+
+### Changed
+
+- `posttooluse-log-toolname.sh`: Added current_state field
+
+---
+
+## [2.9.10] - 2026-01-18
+
+### 🎯 What's Changed for You
+
+**`/work --resume` and `/work --fork` enable session continuation and branching. harness-ui session archives API added.**
+
+### Added
+
+- **Resume/Fork UX**
+  - `commands/core/work.md`: CLI documentation (session list, resume, fork commands)
+  - `harness-ui/src/shared/types.ts`: SessionArchive type definitions
+  - `harness-ui/src/server/index.ts`: `/api/session-archives` endpoint
+
+---
+
+## [2.9.9] - 2026-01-18
+
+### 🎯 What's Changed for You
+
+**State machine enforcement for session transitions. Unified state field in event logs.**
+
+### Added
+
+- **State Machine Enforcement**
+  - `scripts/session-state.sh`: State transition engine
+  - `skills/session-state/references/state-transition.md`: Transition specification
+
+---
+
+## [2.9.8] - 2026-01-18
+
+### 🎯 What's Changed for You
+
+**UI skill constraints tightened with explicit guardrails and opt-in aesthetics.**
+
+### Added
+
+- **UI skill constraint priority**: Define explicit constraint ordering
+- **UI skills summary**: `skills/ui/references/ui-skills.md` for quick reference
+- **Frontend design summary**: `skills/ui/references/frontend-design.md` with design guidelines
+- **Opt-in aesthetics**: UI generation now follows explicit guardrails
+
+---
+
+## [2.9.7] - 2026-01-18
+
+### 🎯 What's Changed for You
+
+**Compact guard added before Codex reviews for better context management.**
+
+### Added
+
+- **Compact guard**: `/harness-review` and `/codex-review` now include compact guards
+- **Codex parallel review guardrails**: Enhanced `codex-parallel-review.md`
+- **Review SKILL.md**: Compact mode support added
+
+---
+
+## [2.9.6] - 2026-01-18
+
+### 🎯 What's Changed for You
+
+**Session resume and fork controls: continue interrupted work or branch from existing sessions.**
+
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| Sessions lost on interruption | `/work --resume <id>` to continue |
+| No branching from sessions | `/work --fork <id>` to branch |
+| Manual state management | Automatic session archiving |
+
+### Added
+
+- **Session resume**: `/work --resume <session-id>` continues interrupted sessions
+- **Session fork**: `/work --fork <session-id>` branches from existing sessions
+- **session-control.sh**: New script for session state management
+- **Session archiving**: Auto-save state for resume capability
+- **test-session-control.sh**: Tests for session control features
+
+### Changed
+
+- **SESSION_ORCHESTRATION.md**: Resume/fork specifications added
+
+---
+
+## [2.9.5] - 2026-01-18
+
+### 🎯 What's Changed for You
+
+**Session lifecycle events now persisted for debugging and analysis.**
+
+### Added
+
+- **Lifecycle event persistence**: Session start/resume/stop events recorded in state files
+- **Tool event logging**: `posttooluse-log-toolname.sh` tracks tool usage
+- **Enhanced session-monitor.sh**: Expanded event tracking
+- **Lifecycle summary**: `session-summary.sh` now includes lifecycle overview
+
+### Changed
+
+- **CLAUDE.md**: Fixed frontmatter warnings
+- **commands/core/CLAUDE.md**, **commands/optional/CLAUDE.md**: Documentation improvements
+
+---
+
+## [2.9.4] - 2026-01-18
+
+### 🎯 What's Changed for You
+
+**Deterministic session orchestration spec for reproducible execution.**
+
+### Added
+
+- **SESSION_ORCHESTRATION.md**: New design specification for session control
+- **Reproducible sessions**: Guidelines for deterministic session execution
+
+---
+
+## [2.9.3] - 2026-01-17
+
+### 🎯 What's Changed for You
+
+**`/work --full` workflow orchestration implementation (Phase 34).**
+
+### Added
+
+- **parse-work-flags.md**: Extended flag parsing logic
+- **work.yaml workflow**: Updated for full-cycle support
+- **Sandbox test**: `/work --full` sandbox test added
+
+### Changed
+
+- **harness-ui session state files**: Cleaned up unnecessary state files
+
+---
+
 ## [2.9.2] - 2026-01-16
 
 ### 🎯 What's Changed for You
@@ -677,3 +836,21 @@ Key milestones:
 - **v0.5.0**: Adaptive setup (auto tech stack detection)
 - **v0.4.0**: Claude Rules, Plugin Hooks, Named Sessions support
 - **v0.3.0**: Initial release (Plan → Work → Review cycle)
+
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.11...HEAD
+[2.9.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.10...v2.9.11
+[2.9.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.9...v2.9.10
+[2.9.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.8...v2.9.9
+[2.9.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.7...v2.9.8
+[2.9.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.6...v2.9.7
+[2.9.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.5...v2.9.6
+[2.9.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.4...v2.9.5
+[2.9.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.3...v2.9.4
+[2.9.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.2...v2.9.3
+[2.9.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.1...v2.9.2
+[2.9.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.0...v2.9.1
+[2.9.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.8.2...v2.9.0
+[2.8.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.8.1...v2.8.2
+[2.8.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.8.0...v2.8.1
+[2.8.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.7.16...v2.8.0
+[2.0.0]: https://github.com/Chachamaru127/claude-code-harness/releases/tag/v2.0.0

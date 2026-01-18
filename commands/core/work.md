@@ -55,6 +55,16 @@ Executes the plan in Plans.md and generates actual code.
 
 ### Session Resume/Fork
 
+**セッション一覧の確認**:
+```bash
+# CLI: アーカイブディレクトリを確認
+ls -la .claude/state/sessions/
+
+# UI: harness-ui のWorkページでセッション一覧を確認
+# → Session Archives テーブルから resume/fork コマンドをコピー可能
+```
+
+**再開/分岐コマンド**:
 ```bash
 # Resume latest stopped session
 /work --resume latest
@@ -64,6 +74,18 @@ Executes the plan in Plans.md and generates actual code.
 
 # Fork from current session
 /work --fork current --reason "Proceed with trial version separately"
+
+# Fork from specific session
+/work --fork session-1700000000 --reason "Try different approach"
+```
+
+**Check session state**:
+```bash
+# Current session state
+cat .claude/state/session.json | jq '.state, .session_id'
+
+# Event history
+tail -20 .claude/state/session.events.jsonl
 ```
 
 ### --full Mode Flow

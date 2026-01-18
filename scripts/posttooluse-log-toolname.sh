@@ -263,9 +263,11 @@ append_session_event() {
   if command -v jq >/dev/null 2>&1; then
     local seq
     local event_id
+    local current_state
     seq=$(jq -r '.event_seq // 0' "$SESSION_FILE" 2>/dev/null)
     seq=$((seq + 1))
     event_id=$(printf "event-%06d" "$seq")
+    current_state=$(jq -r '.state // "executing"' "$SESSION_FILE" 2>/dev/null)
 
     # session.json を更新
     tmp_file=$(mktemp)
@@ -275,11 +277,11 @@ append_session_event() {
        '.updated_at = $updated_at | .last_event_id = $event_id | .event_seq = $event_seq' \
        "$SESSION_FILE" > "$tmp_file" && mv "$tmp_file" "$SESSION_FILE"
 
-    # event log 追記
+    # event log 追記（SESSION_ORCHESTRATION.md 統一スキーマ）
     if [ -n "$data_json" ]; then
-      echo "{\"id\":\"$event_id\",\"type\":\"tool.$tool\",\"ts\":\"$timestamp\",\"data\":$data_json}" >> "$EVENT_LOG_FILE"
+      echo "{\"id\":\"$event_id\",\"type\":\"tool.$tool\",\"ts\":\"$timestamp\",\"state\":\"$current_state\",\"data\":$data_json}" >> "$EVENT_LOG_FILE"
     else
-      echo "{\"id\":\"$event_id\",\"type\":\"tool.$tool\",\"ts\":\"$timestamp\"}" >> "$EVENT_LOG_FILE"
+      echo "{\"id\":\"$event_id\",\"type\":\"tool.$tool\",\"ts\":\"$timestamp\",\"state\":\"$current_state\"}" >> "$EVENT_LOG_FILE"
     fi
   fi
 

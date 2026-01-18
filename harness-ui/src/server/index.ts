@@ -1,4 +1,4 @@
-import { readFile } from 'fs/promises';
+import { readFile, readdir } from 'fs/promises';
 import { homedir } from 'os';
 import { join } from 'path';
 import { ptyManager } from './services/pty-manager';
@@ -17,6 +17,8 @@ import type {
   PlansData,
   Project,
   ProjectsData,
+  SessionArchive,
+  SessionArchivesData,
 } from '@shared/types';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -345,6 +347,71 @@ const server = Bun.serve({
       }
       const data = await parser.parse();
       return Response.json(data);
+    }
+
+    // Session archives API for resume/fork UX
+    if (url.pathname === '/api/session-archives') {
+      const projectPath = url.searchParams.get('projectPath');
+      const basePath = projectPath || join(process.cwd(), '..');
+      const stateDir = join(basePath, '.claude', 'state');
+      const archiveDir = join(stateDir, 'sessions');
+      const currentFile = join(stateDir, 'session.json');
+
+      const result: SessionArchivesData = { archives: [], current: null };
+
+      // Read current session
+      try {
+        const currentContent = await readFile(currentFile, 'utf-8');
+        const currentData = JSON.parse(currentContent);
+        result.current = {
+          session_id: currentData.session_id,
+          parent_session_id: currentData.parent_session_id,
+          state: currentData.state,
+          started_at: currentData.started_at,
+          ended_at: currentData.ended_at,
+          updated_at: currentData.updated_at,
+          duration_minutes: currentData.duration_minutes,
+          project_name: currentData.project_name,
+          git_branch: currentData.git?.branch,
+        };
+      } catch {
+        // Current session file doesn't exist
+      }
+
+      // Read archived sessions
+      try {
+        const files = await readdir(archiveDir);
+        const jsonFiles = files.filter(f => f.endsWith('.json'));
+
+        for (const file of jsonFiles) {
+          try {
+            const content = await readFile(join(archiveDir, file), 'utf-8');
+            const data = JSON.parse(content);
+            result.archives.push({
+              session_id: data.session_id,
+              parent_session_id: data.parent_session_id,
+              state: data.state,
+              started_at: data.started_at,
+              ended_at: data.ended_at,
+              updated_at: data.updated_at,
+              duration_minutes: data.duration_minutes,
+              project_name: data.project_name,
+              git_branch: data.git?.branch,
+            });
+          } catch {
+            // Skip invalid files
+          }
+        }
+
+        // Sort by updated_at descending
+        result.archives.sort((a, b) =>
+          new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        );
+      } catch {
+        // Archive directory doesn't exist
+      }
+
+      return Response.json(result);
     }
 
     if (url.pathname === '/api/settings') {

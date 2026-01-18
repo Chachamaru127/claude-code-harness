@@ -7,6 +7,171 @@
 
 ## [Unreleased]
 
+## [2.9.11] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**Session Orchestration System の完全実装。状態機械、resume/fork UX、コスト制御・スキルガバナンスが統合。**
+
+### Added
+
+- **Session Orchestration System（Phase 0-3 完全実装）**
+  - `scripts/session-state.sh`: 10 状態システム、21 遷移ルール、lock 機構
+  - `skills/session-state/SKILL.md`: セッション状態管理スキル
+  - `scripts/pretooluse-guard.sh`: cost_control チェック（total/edit/bash limits）
+  - `.claude-code-harness.config.yaml`: orchestration + cost_control セクション追加
+  - `tests/validate-skills.sh`: SKILL.md frontmatter 検証、tool 名検証、dependency 解決
+  - `tests/test-session-control.sh`: 14 ユニットテスト
+
+### Changed
+
+- `posttooluse-log-toolname.sh`: current_state フィールド追加
+
+---
+
+## [2.9.10] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**`/work --resume` と `/work --fork` でセッション継続・分岐が可能に。harness-ui にセッションアーカイブ API 追加。**
+
+### Added
+
+- **Resume/Fork UX**
+  - `commands/core/work.md`: CLI ドキュメント（セッション一覧、再開、分岐コマンド）
+  - `harness-ui/src/shared/types.ts`: SessionArchive 型定義
+  - `harness-ui/src/server/index.ts`: `/api/session-archives` エンドポイント
+
+---
+
+## [2.9.9] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**状態機械によるセッション遷移の強制。イベントログに state フィールドを統一。**
+
+### Added
+
+- **State Machine Enforcement**
+  - `scripts/session-state.sh`: 状態遷移エンジン
+  - `skills/session-state/references/state-transition.md`: 状態遷移仕様書
+
+---
+
+## [2.9.8] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**UI スキルに明示的なガードレールとオプトイン美学を導入。制約優先度が明確に。**
+
+### Added
+
+- **UI スキル制約強化**
+  - 制約優先度（Constraint Priority）を定義
+  - UI スキルサマリー（`skills/ui/references/ui-skills.md`）を追加
+  - フロントエンドデザインサマリー（`skills/ui/references/frontend-design.md`）を追加
+  - UI 生成時の明示的ガードレールとオプトイン美学を導入
+
+---
+
+## [2.9.7] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**Codex レビュー前にコンパクトガードを追加。コンテキスト管理の改善。**
+
+### Added
+
+- **Codex レビュー前コンパクトガード**
+  - `/harness-review`、`/codex-review` にコンパクトガードを追加
+  - Codex 並列レビュー時のガードレール強化（`codex-parallel-review.md`）
+  - review SKILL.md にコンパクトモード対応を追加
+
+---
+
+## [2.9.6] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**セッション再開・フォーク機能: 中断した作業を継続、または既存セッションから分岐可能に。**
+
+#### Before/After
+
+| Before | After |
+|--------|-------|
+| セッション中断で作業が失われる | `/work --resume <id>` で中断箇所から再開可能 |
+| セッションの分岐ができない | `/work --fork <id>` で既存セッションから分岐 |
+| 手動での状態管理が必要 | 自動セッションアーカイブで状態保存 |
+
+### Added
+
+- **セッション再開・フォーク機能**
+  - `/work --resume <session-id>`: 中断したセッションを再開
+  - `/work --fork <session-id>`: 既存セッションから分岐して新規作業
+  - `scripts/session-control.sh`: セッション制御スクリプト追加
+  - セッションアーカイブ機能（再開用の状態保存）
+  - `tests/test-session-control.sh`: セッション制御のテスト追加
+
+### Changed
+
+- **SESSION_ORCHESTRATION.md**: セッション再開・フォークの仕様を追加
+
+---
+
+## [2.9.5] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**セッションライフサイクルイベントが永続化。デバッグと分析が容易に。**
+
+### Added
+
+- **セッションライフサイクルイベント永続化**
+  - セッション開始/再開/停止イベントを状態ファイルに記録
+  - ツール使用イベントをログに記録（`posttooluse-log-toolname.sh`）
+  - `session-monitor.sh` を拡張し、イベント追跡を強化
+  - `session-summary.sh` にライフサイクルサマリーを追加
+
+### Changed
+
+- **CLAUDE.md**: frontmatter 警告を修正
+- **commands/core/CLAUDE.md**, **commands/optional/CLAUDE.md**: ドキュメント整備
+
+---
+
+## [2.9.4] - 2026-01-18
+
+### 🎯 あなたにとって何が変わるか
+
+**決定論的セッションオーケストレーション仕様を策定。再現可能なセッション実行のためのガイドライン。**
+
+### Added
+
+- **決定論的セッションオーケストレーション仕様**
+  - `docs/SESSION_ORCHESTRATION.md`: セッション制御の設計仕様を新規作成
+  - 再現可能なセッション実行のためのガイドライン策定
+
+---
+
+## [2.9.3] - 2026-01-17
+
+### 🎯 あなたにとって何が変わるか
+
+**`/work --full` ワークフローオーケストレーション実装（Phase 34）。フルサイクル自動化をサポート。**
+
+### Added
+
+- **`/work --full` ワークフローオーケストレーション実装**（Phase 34）
+  - parse-work-flags.md: フラグ解析ロジック拡張
+  - work.yaml ワークフロー更新
+  - `/work --full` サンドボックステスト追加
+
+### Changed
+
+- **harness-ui セッション状態ファイル削除**: 不要な状態ファイルをクリーンアップ
+
+---
+
 ## [2.9.2] - 2026-01-16
 
 ### Added
@@ -1550,7 +1715,16 @@ Observation recorded: 10946-10951 ✅
 - **v0.4.0**: Claude Rules、Plugin Hooks、Named Sessions 対応
 - **v0.3.0**: 初期リリース（Plan → Work → Review サイクル）
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.2...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.11...HEAD
+[2.9.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.10...v2.9.11
+[2.9.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.9...v2.9.10
+[2.9.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.8...v2.9.9
+[2.9.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.7...v2.9.8
+[2.9.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.6...v2.9.7
+[2.9.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.5...v2.9.6
+[2.9.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.4...v2.9.5
+[2.9.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.3...v2.9.4
+[2.9.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.2...v2.9.3
 [2.9.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.1...v2.9.2
 [2.9.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.9.0...v2.9.1
 [2.9.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v2.8.2...v2.9.0

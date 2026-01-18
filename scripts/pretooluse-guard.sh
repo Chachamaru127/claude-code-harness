@@ -123,6 +123,111 @@ fi
 
 [ -z "$TOOL_NAME" ] && exit 0
 
+# ===== Cost Control: セッション単位でツール呼び出し数を追跡 =====
+CONFIG_FILE=".claude-code-harness.config.yaml"
+STATE_DIR=".claude/state"
+COST_STATE_FILE="$STATE_DIR/cost-state.json"
+
+check_cost_control() {
+  local tool="$1"
+
+  # cost_control.enabled チェック
+  if [ ! -f "$CONFIG_FILE" ]; then
+    return 0
+  fi
+
+  local cost_enabled
+  cost_enabled=$(grep -E "^  enabled:" "$CONFIG_FILE" 2>/dev/null | head -n 1 | awk '{print $2}' || echo "false")
+  if [ "$cost_enabled" != "true" ]; then
+    return 0
+  fi
+
+  # cost-state.json がなければ初期化
+  if [ ! -f "$COST_STATE_FILE" ]; then
+    mkdir -p "$STATE_DIR" 2>/dev/null || true
+    echo '{"total_tool_calls":0,"edit_calls":0,"bash_calls":0}' > "$COST_STATE_FILE"
+  fi
+
+  if command -v jq >/dev/null 2>&1; then
+    # 現在のカウントを取得
+    local total_calls edit_calls bash_calls
+    total_calls=$(jq -r '.total_tool_calls // 0' "$COST_STATE_FILE" 2>/dev/null || echo 0)
+    edit_calls=$(jq -r '.edit_calls // 0' "$COST_STATE_FILE" 2>/dev/null || echo 0)
+    bash_calls=$(jq -r '.bash_calls // 0' "$COST_STATE_FILE" 2>/dev/null || echo 0)
+
+    # 設定から上限を取得
+    local total_limit edit_limit bash_limit warn_percent
+    total_limit=$(grep -A5 "session_limits:" "$CONFIG_FILE" 2>/dev/null | grep "total_tool_calls:" | awk '{print $2}' || echo 500)
+    edit_limit=$(grep -A5 "session_limits:" "$CONFIG_FILE" 2>/dev/null | grep "edit_calls:" | awk '{print $2}' || echo 100)
+    bash_limit=$(grep -A5 "session_limits:" "$CONFIG_FILE" 2>/dev/null | grep "bash_calls:" | awk '{print $2}' || echo 200)
+    warn_percent=$(grep "warn_threshold_percent:" "$CONFIG_FILE" 2>/dev/null | awk '{print $2}' || echo 80)
+
+    # カウントをインクリメント
+    total_calls=$((total_calls + 1))
+    case "$tool" in
+      Write|Edit) edit_calls=$((edit_calls + 1)) ;;
+      Bash) bash_calls=$((bash_calls + 1)) ;;
+    esac
+
+    # cost-state.json を更新
+    jq --argjson t "$total_calls" --argjson e "$edit_calls" --argjson b "$bash_calls" \
+      '.total_tool_calls = $t | .edit_calls = $e | .bash_calls = $b' \
+      "$COST_STATE_FILE" > "${COST_STATE_FILE}.tmp" && mv "${COST_STATE_FILE}.tmp" "$COST_STATE_FILE"
+
+    # 上限チェック
+    if [ "$total_calls" -ge "$total_limit" ]; then
+      echo "[Cost Control] セッションのツール呼び出し上限 ($total_limit) に達しました。新しいセッションを開始してください。"
+      return 1
+    fi
+
+    case "$tool" in
+      Write|Edit)
+        if [ "$edit_calls" -ge "$edit_limit" ]; then
+          echo "[Cost Control] Edit/Write 呼び出し上限 ($edit_limit) に達しました。"
+          return 1
+        fi
+        ;;
+      Bash)
+        if [ "$bash_calls" -ge "$bash_limit" ]; then
+          echo "[Cost Control] Bash 呼び出し上限 ($bash_limit) に達しました。"
+          return 1
+        fi
+        ;;
+    esac
+
+    # 警告閾値チェック（additionalContext で警告）
+    local warn_total=$((total_limit * warn_percent / 100))
+    local warn_edit=$((edit_limit * warn_percent / 100))
+    local warn_bash=$((bash_limit * warn_percent / 100))
+
+    local warnings=""
+    if [ "$total_calls" -ge "$warn_total" ] && [ "$total_calls" -lt "$total_limit" ]; then
+      warnings="${warnings}[Cost Warning] 総ツール呼び出し: ${total_calls}/${total_limit} (${warn_percent}%超過)\n"
+    fi
+    case "$tool" in
+      Write|Edit)
+        if [ "$edit_calls" -ge "$warn_edit" ] && [ "$edit_calls" -lt "$edit_limit" ]; then
+          warnings="${warnings}[Cost Warning] Edit/Write: ${edit_calls}/${edit_limit}\n"
+        fi
+        ;;
+      Bash)
+        if [ "$bash_calls" -ge "$warn_bash" ] && [ "$bash_calls" -lt "$bash_limit" ]; then
+          warnings="${warnings}[Cost Warning] Bash: ${bash_calls}/${bash_limit}\n"
+        fi
+        ;;
+    esac
+
+    if [ -n "$warnings" ]; then
+      echo -e "$warnings"
+      return 2  # 警告あり（ブロックではない）
+    fi
+  fi
+
+  return 0
+}
+
+# コスト制御チェックは emit_deny 定義後に実行（後方で実行）
+
 emit_decision() {
   local decision="$1"
   local reason="$2"
@@ -170,6 +275,18 @@ emit_deny() {
   emit_decision "deny" "$1"
 }
 emit_ask() { emit_decision "ask" "$1"; }
+
+# ===== コスト制御チェック実行 =====
+COST_CHECK_MSG=""
+COST_CHECK_MSG=$(check_cost_control "$TOOL_NAME")
+COST_CHECK_RESULT=$?
+
+if [ "$COST_CHECK_RESULT" -eq 1 ]; then
+  # 上限到達 → deny
+  emit_deny "$COST_CHECK_MSG"
+  exit 0
+fi
+# 警告 (result=2) の場合は後続処理で additionalContext に含める
 
 # ===== additionalContext ガイドライン生成 (Claude Code v2.1.9+) =====
 # Write/Edit 操作時にファイルパスに応じたガイドラインを返す

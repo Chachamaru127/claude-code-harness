@@ -1,0 +1,69 @@
+# .claude-code-harness.config.yaml
+# claude-code-harness settings file
+
+cleanup:
+  plans:
+    archive_after_days: 7
+    max_lines: 200
+    archive_max_items: 50
+    split_to_monthly: true
+
+  session_log:
+    archive_after_days: 30
+    max_lines: 500
+    archive_path: ".claude/memory/archive/sessions/"
+
+  claude_md:
+    max_lines: 100
+    warn_only: true
+
+  auto_run: hook
+
+# Session orchestration (SESSION_ORCHESTRATION.md spec)
+orchestration:
+  state_machine_version: "1.0"
+  max_state_retries: 3
+  retry_backoff_seconds: [5, 15, 30]
+
+# Cost control (PreToolUse gating)
+cost_control:
+  enabled: false  # true にするとツール呼び出し制限を有効化
+  session_limits:
+    total_tool_calls: 500       # セッション全体のツール呼び出し上限
+    edit_calls: 100             # Edit/Write 呼び出し上限
+    bash_calls: 200             # Bash 呼び出し上限
+  warn_threshold_percent: 80    # 警告を出す閾値（%）
+
+# Commit guard: require /harness-review before git commit
+commit_guard: true
+
+# Review settings (commit judgment + Codex mode)
+review:
+  # Review mode: default (Claude only) or codex (GPT experts delegation)
+  mode: codex
+
+  # Commit judgment settings
+  judgment:
+    enabled: true
+    auto_fix: true
+    max_retries: 3
+
+  # Codex integration for parallel expert reviews
+  codex:
+    enabled: true
+    auto: true
+    experts:
+      security: true
+      accessibility: true
+      performance: true
+      quality: true
+      seo: true
+      architect: true
+      plan_reviewer: true
+      scope_analyst: true
+
+hooks:
+  enabled: true
+  post_tool_use:
+    - matcher: "Edit|Write"
+      script: "~/.claude/scripts/auto-cleanup-hook.sh"
