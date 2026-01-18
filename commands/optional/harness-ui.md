@@ -1,127 +1,127 @@
 ---
-description: harness-ui ダッシュボードを開く・状態確認
+description: Open harness-ui dashboard and check status
 description-en: Open harness-ui dashboard and check status
 ---
 
-# /harness-ui - ダッシュボード表示
+# /harness-ui - Dashboard Display
 
-harness-ui ダッシュボードを開き、プロジェクト状態を確認します。
+Open harness-ui dashboard and check project status.
 
-## バイブコーダー向け（こう言えばOK）
+## VibeCoder Phrases
 
-- 「**ダッシュボードを開いて**」→ このコマンド
-- 「**harness-ui を見たい**」→ このコマンド
-- 「**UIで状態確認**」→ このコマンド
+- "**Open the dashboard**" → this command
+- "**I want to see harness-ui**" → this command
+- "**Check status in UI**" → this command
 
-## できること
+## Deliverables
 
-- ブラウザで harness-ui を開く
-- サーバー状態の確認
-- 登録プロジェクト一覧の表示
+- Open harness-ui in browser
+- Check server status
+- Display registered projects list
 
 ---
 
-## 実行フロー
+## Execution Flow
 
-### Step 1: ライセンスキーの確認
+### Step 1: License Key Check
 
 ```bash
-# 環境変数を確認
+# Check environment variable
 echo $HARNESS_BETA_CODE
 ```
 
-**キーが設定されている場合（空でない）:**
-→ Step 2 へ進む
+**If key is set (not empty):**
+→ Proceed to Step 2
 
-**キーが未設定または空の場合:**
+**If key is not set or empty:**
 
-> 🔑 **harness-ui を利用するにはライセンスキーが必要です**
+> 🔑 **License key required to use harness-ui**
 >
-> `/harness-ui-setup YOUR-LICENSE-KEY` を実行してセットアップしてください。
+> Run `/harness-ui-setup YOUR-LICENSE-KEY` to set up.
 >
-> ライセンスキーをお持ちでない場合は、管理者にお問い合わせください。
+> If you don't have a license key, please contact administrator.
 
-**処理終了**
+**End processing**
 
-### Step 2: サーバー状態の確認
+### Step 2: Server Status Check
 
 ```bash
-# harness-ui サーバーの状態確認
+# Check harness-ui server status
 curl -s --connect-timeout 2 http://localhost:37778/api/status
 ```
 
-**サーバーが起動している場合:**
-→ Step 3 へ進む
+**If server is running:**
+→ Proceed to Step 3
 
-**サーバーが起動していない場合:**
+**If server is not running:**
 
-> ⚠️ **harness-ui サーバーが起動していません**
+> ⚠️ **harness-ui server is not running**
 >
-> Claude Code を再起動すると自動的に起動します。
+> Restart Claude Code to auto-start.
 >
-> または手動で起動する場合:
+> Or to start manually:
 > ```bash
-> cd {プラグインディレクトリ}/harness-ui && npm run dev
+> cd {plugin directory}/harness-ui && npm run dev
 > ```
 
-**処理終了**
+**End processing**
 
-### Step 3: プロジェクト情報の取得
+### Step 3: Get Project Information
 
 ```bash
-# 登録プロジェクト一覧を取得
+# Get registered projects list
 curl -s http://localhost:37778/api/projects
 ```
 
-### Step 4: 情報表示
+### Step 4: Display Information
 
-以下の情報を表示:
+Display the following information:
 
-> 📊 **harness-ui ダッシュボード**
+> 📊 **harness-ui Dashboard**
 >
 > **URL**: http://localhost:37778
 >
-> **サーバー状態**: ✅ 稼働中
+> **Server Status**: ✅ Running
 >
-> **登録プロジェクト**:
-> | プロジェクト | パス |
-> |-------------|------|
+> **Registered Projects**:
+> | Project | Path |
+> |---------|------|
 > | {name1} | {path1} |
 > | {name2} | {path2} |
 >
-> 💡 ブラウザで http://localhost:37778 を開いてダッシュボードを確認してください。
+> 💡 Open http://localhost:37778 in your browser to view the dashboard.
 
-### Step 5: ブラウザで開く（オプション）
+### Step 5: Open in Browser (Optional)
 
-ユーザーに確認:
+Ask user:
 
-> ブラウザでダッシュボードを開きますか？ (Y/n)
+> Open dashboard in browser? (Y/n)
 
-**Y の場合:**
+**If Y:**
 ```bash
 open http://localhost:37778  # macOS
-# または
+# or
 xdg-open http://localhost:37778  # Linux
 ```
 
 ---
 
-## 関連コマンド
+## Related Commands
 
-- `/harness-ui-setup` - 初回セットアップ（ライセンスキー設定）
-- `/validate` - プラグイン検証
+- `/harness-ui-setup` - Initial setup (license key configuration)
+- `/validate` - Plugin validation
 
 ---
 
-## トラブルシューティング
+## Troubleshooting
 
-### サーバーが起動しない
+### Server won't start
 
-1. Claude Code を再起動
-2. ポート 37778 が使用中でないか確認: `lsof -i :37778`
-3. 環境変数 `HARNESS_BETA_CODE` が設定されているか確認
+1. Restart Claude Code
+2. Check if port 37778 is in use: `lsof -i :37778`
+3. Check if environment variable `HARNESS_BETA_CODE` is set
 
-### ライセンスキーを再設定したい
+### Want to reset license key
 
 ```
 /harness-ui-setup NEW-LICENSE-KEY

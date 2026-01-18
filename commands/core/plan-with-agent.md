@@ -1,407 +1,407 @@
 ---
-description: 実装計画の作成（アイデア→Plans.md→/workで開始）
+description: Create implementation plan (idea → Plans.md → ready for /work)
 description-en: Create implementation plan (idea → Plans.md → ready for /work)
 ---
 
-# /plan-with-agent - 実装計画の作成
+# /plan-with-agent - Create Implementation Plan
 
-アイデアや要望を整理し、Plans.md に実行可能なタスクとして落とし込みます。
-完了後は `/work` ですぐに作業を開始できます。
+Organizes ideas and requirements, and converts them into executable tasks in Plans.md.
+After completion, you can immediately start work with `/work`.
 
-## こう言えばOK
+## Quick Reference
 
-- 「**計画を作って**」→ このコマンド
-- 「**今話してた内容を計画にして**」→ 会話から要件を抽出して計画化
-- 「**何を作るか整理したい**」→ ヒアリングから始めて計画化
-- 「**機能を洗い出して**」→ 機能リスト→優先度→Plans.md
-- 「**TDDで計画して**」→ TDD採用を強制、テストケース設計を先行
-- 「**テスト設計から始めて**」→ 各機能のテストケースを先に設計
+- "**Create a plan**" → this command
+- "**Turn what we talked about into a plan**" → extract requirements from conversation and create plan
+- "**Want to organize what to build**" → start with hearing and create plan
+- "**List out features**" → feature list → priority → Plans.md
+- "**Plan with TDD**" → force TDD adoption, prioritize test case design
+- "**Start with test design**" → design test cases for each feature first
 
-## できること（成果物）
+## Deliverables
 
-- **Plans.md** - `/work` で実行可能なタスク一覧（必須）
-- **機能優先度マトリクス** - 必須/推奨/オプションの分類
-
----
-
-## ⚠️ モード別の使い分け
-
-| モード | 推奨コマンド | 説明 |
-|--------|-------------|------|
-| **ソロモード** | `/plan-with-agent` (このコマンド) | Claude Code だけで計画→実行→レビュー |
-| **2エージェントモード** | `/plan-with-cc` (Cursor側) | Cursor で計画 → Claude Code で実行 |
+- **Plans.md** - Task list executable with `/work` (required)
+- **Feature priority matrix** - Classification into required/recommended/optional
 
 ---
 
-## 🔧 必須スキル（最初に呼び出すこと）
+## ⚠️ Mode-specific Usage
 
-> ⛔ **このコマンドを実行したら、最初に必ず Skill ツールを呼び出すこと**
+| Mode | Recommended Command | Description |
+|------|---------------------|-------------|
+| **Solo mode** | `/plan-with-agent` (this command) | Claude Code alone: plan → execute → review |
+| **2-agent mode** | `/plan-with-cc` (Cursor side) | Plan with Cursor → Execute with Claude Code |
+
+---
+
+## 🔧 Required Skills (Call First)
+
+> ⛔ **When executing this command, you must call the Skill tool first**
 >
-> Skill ツールを呼び出さずに進めることは禁止です。
+> Proceeding without calling the Skill tool is prohibited.
 
-**呼び出し必須のスキル**：
+**Required skills to call**:
 
-| スキル | 完全修飾名 | 呼び出しタイミング |
-|-------|-----------|------------------|
-| `setup` | `claude-code-harness:setup` | **最初に必ず呼び出す**（適応的セットアップを実行） |
-| `vibecoder-guide` | `claude-code-harness:vibecoder-guide` | ユーザーが非技術者の場合 |
+| Skill | Fully Qualified Name | When to Call |
+|-------|---------------------|--------------|
+| `setup` | `claude-code-harness:setup` | **Call first** (executes adaptive setup) |
+| `vibecoder-guide` | `claude-code-harness:vibecoder-guide` | When user is non-technical |
 
-**呼び出し方法（必須）**:
+**How to call (required)**:
 ```
-Skill ツールを使用:
+Use Skill tool:
   skill: "claude-code-harness:setup"
 ```
 
-**なぜ Skill 呼び出しが必須か**:
-1. Usage 統計に記録される（品質追跡）
-2. スキル内のガードレールが適用される
-3. プロジェクト状態の正確な把握ができる
+**Why Skill call is required**:
+1. Recorded in usage statistics (quality tracking)
+2. Guardrails in skill are applied
+3. Accurate grasp of project state
 
-> ❌ **禁止**: コマンドドキュメントを読んで直接実行フローに進むこと
-> ✅ **正解**: 最初に Skill ツールで `setup` を呼び出してから進むこと
-
----
-
-## 実行フロー
-
-### Step 0: 会話コンテキストの確認（Skill 呼び出し後に実行）
-
-**AskUserQuestion ツールで確認**:
-
-> 📝 **計画の作り方を選んでください**
->
-> 1. **今までの会話を踏まえる** - 壁打ちで話した内容から計画を作成
-> 2. **新しく始める** - ゼロからヒアリングして計画を作成
-
-**「今までの会話を踏まえる」が選択された場合**:
-- 直近の会話から要件・アイデア・決定事項を抽出
-- 抽出した内容をユーザーに確認
-- 確認後、Step 3（技術調査）へスキップ
-
-**「新しく始める」が選択された場合**:
-- Step 1 からヒアリングを開始
+> ❌ **Prohibited**: Reading command document and proceeding directly to execution flow
+> ✅ **Correct**: Call `setup` with Skill tool first, then proceed
 
 ---
 
-### Step 1: やりたいことのヒアリング
+## Execution Flow
 
-ユーザーの入力を確認。入力がない場合は質問：
+### Step 0: Check Conversation Context (Execute after Skill call)
 
-> 🎯 **何を作りたいですか？**
+**Confirm with AskUserQuestion tool**:
+
+> 📝 **Choose how to create the plan**
 >
-> 例：
-> - 「予約管理システム」
-> - 「ブログサイト」
-> - 「タスク管理アプリ」
-> - 「API サーバー」
->
-> ざっくりで大丈夫です！
+> 1. **Based on previous conversation** - Create plan from brainstormed content
+> 2. **Start fresh** - Create plan from scratch with hearing
 
-**回答を待つ**
+**If "Based on previous conversation" is selected**:
+- Extract requirements, ideas, and decisions from recent conversation
+- Confirm extracted content with user
+- After confirmation, skip to Step 3 (technical research)
 
-### Step 2: 解像度を上げる（最大3問）
-
-> 📋 **もう少し教えてください：**
->
-> 1. **誰が使いますか？**（自分だけ？チーム？一般公開？）
-> 2. **似ているサービスはありますか？**（参考になるもの）
-> 3. **どこまで作りたいですか？**（MVP？フル機能？）
-
-**回答を待つ**
-
-### Step 3: 技術調査（WebSearch）
-
-**ユーザーには聞かない。Claude Code が調査して提案。**
-
-```
-WebSearch で調査:
-- "{{プロジェクトタイプ}} tech stack 2025"
-- "{{類似サービス}} architecture"
-```
-
-### Step 4: 機能リストの抽出
-
-要望から、具体的な機能リストを抽出します。
-
-**例**: 「予約管理システム」の場合
-- ユーザー登録・ログイン
-- 予約カレンダー表示
-- 予約の作成・編集・キャンセル
-- 管理者ダッシュボード
-- メール通知
-- 決済機能
-- レビュー機能
-
-### Step 5: 機能優先度マトリクスの作成
-
-各機能を以下の3つに分類します：
-
-| 優先度 | 説明 | 基準 |
-|--------|------|------|
-| **必須** | MVP（最小限の製品）に必要 | これがないと動かない |
-| **推奨** | ユーザー体験を大幅に向上 | あると嬉しいが、なくても動く |
-| **オプション** | 将来的に追加検討 | 時間に余裕があれば |
-
-**例**: 予約管理システムの場合
-
-| 機能 | 優先度 | 理由 |
-|------|--------|------|
-| ユーザー登録・ログイン | 必須 | 予約には認証が必要 |
-| 予約カレンダー表示 | 必須 | コア機能 |
-| 予約の作成・編集・キャンセル | 必須 | コア機能 |
-| 管理者ダッシュボード | 推奨 | 運用効率が向上 |
-| メール通知 | 推奨 | ユーザー体験が向上 |
-| 決済機能 | オプション | 後から追加可能 |
-| レビュー機能 | オプション | 後から追加可能 |
+**If "Start fresh" is selected**:
+- Start hearing from Step 1
 
 ---
 
-### Step 5.5: TDD採用判定と厳格なテスト設計（重要）
+### Step 1: Hearing What You Want to Build
 
-**目的**: 厳しいTDD ＝ ユーザーの意図を正確に理解すること。テストは「仕様の明文化」であり、実装前に合意形成する。
+Check user input. If no input, ask:
 
-#### TDD採用判定
-
-**以下の条件に1つでも該当すれば TDD を採用**:
-
-| 判定条件 | 理由 |
-|---------|------|
-| ビジネスロジックが含まれる | 計算・判定・状態遷移は仕様の明文化が必須 |
-| データ変換・加工がある | 入力→出力の変換は境界条件が多い |
-| 外部API連携がある | モック設計で仕様を明確化 |
-| 複数の分岐・条件がある | エッジケースの洗い出しが必要 |
-| 金銭・認証・権限に関わる | ミスが許されない（セキュリティ＋TDD） |
-| ユーザーの言葉が曖昧 | テストケースで認識合わせ |
-
-**判定結果の記録**:
-```
-機能「{{機能名}}」→ TDD採用理由: {{該当条件}}
-```
-
-#### 意図深掘り質問（AskUserQuestion ツールで確認）
-
-TDD採用が決まった機能について、**必ず以下を質問**:
-
-> 🎯 **「{{機能名}}」について、テストを書く前に確認させてください**
+> 🎯 **What do you want to build?**
 >
-> 1. **正常系**: 一番よくある使われ方は？（具体的なシナリオ）
-> 2. **境界条件**: 「ギリギリOK」と「ギリギリNG」の境目は？
-> 3. **エラー時**: エラーの場合、ユーザーにどう見せたい？
-> 4. **暗黙の期待**: 「当たり前」だと思っていることは？（言語化されていないルール）
+> Examples:
+> - "Reservation management system"
+> - "Blog site"
+> - "Task management app"
+> - "API server"
+>
+> Rough ideas are fine!
 
-**暗黙知を引き出す追加質問**（必要に応じて）:
+**Wait for response**
 
-| 状況 | 追加質問 |
-|------|---------|
-| 数値を扱う | 「0や負の値は許可？」「小数点は何桁まで？」 |
-| 日時を扱う | 「タイムゾーンは？」「過去日は許可？」 |
-| 文字列を扱う | 「空文字は？」「最大文字数は？」「絵文字は？」 |
-| リストを扱う | 「空リストは？」「上限は？」「重複は？」 |
-| 状態遷移がある | 「戻れる？」「途中キャンセルは？」「タイムアウトは？」 |
-| ユーザー操作 | 「連打されたら？」「途中で離脱したら？」 |
+### Step 2: Increase Resolution (Max 3 questions)
 
-#### テストケース設計（Plans.md に含める）
+> 📋 **Tell me a bit more:**
+>
+> 1. **Who will use it?** (yourself only? team? public?)
+> 2. **Any similar services?** (references)
+> 3. **How far do you want to build?** (MVP? full features?)
 
-**TDD採用機能には、実装タスクの前にテスト設計を含める**:
+**Wait for response**
+
+### Step 3: Technical Research (WebSearch)
+
+**Don't ask the user. Claude Code researches and suggests.**
+
+```
+WebSearch for:
+- "{{project type}} tech stack 2025"
+- "{{similar service}} architecture"
+```
+
+### Step 4: Extract Feature List
+
+Extract concrete feature list from requirements.
+
+**Example**: For "Reservation management system"
+- User registration/login
+- Reservation calendar display
+- Create/edit/cancel reservations
+- Admin dashboard
+- Email notifications
+- Payment feature
+- Review feature
+
+### Step 5: Create Feature Priority Matrix
+
+Classify each feature into these 3 categories:
+
+| Priority | Description | Criteria |
+|----------|-------------|----------|
+| **Required** | Needed for MVP (minimum viable product) | Won't work without this |
+| **Recommended** | Greatly improves user experience | Nice to have, but works without |
+| **Optional** | Consider for future addition | If there's time |
+
+**Example**: For reservation management system
+
+| Feature | Priority | Reason |
+|---------|----------|--------|
+| User registration/login | Required | Need authentication for reservations |
+| Reservation calendar display | Required | Core feature |
+| Create/edit/cancel reservations | Required | Core feature |
+| Admin dashboard | Recommended | Improves operational efficiency |
+| Email notifications | Recommended | Improves user experience |
+| Payment feature | Optional | Can add later |
+| Review feature | Optional | Can add later |
+
+---
+
+### Step 5.5: TDD Adoption Judgment and Strict Test Design (Important)
+
+**Purpose**: Strict TDD = accurately understanding user intent. Tests are "specification documentation", agreeing before implementation.
+
+#### TDD Adoption Judgment
+
+**Adopt TDD if any of the following conditions apply**:
+
+| Judgment Condition | Reason |
+|-------------------|--------|
+| Contains business logic | Calculation, judgment, state transition require specification documentation |
+| Has data transformation/processing | Many boundary conditions in input→output conversion |
+| Has external API integration | Clarify specifications through mock design |
+| Has multiple branches/conditions | Need to identify edge cases |
+| Involves money/auth/permissions | No room for error (security + TDD) |
+| User's words are vague | Align understanding through test cases |
+
+**Record judgment result**:
+```
+Feature "{{feature name}}" → TDD adoption reason: {{matching condition}}
+```
+
+#### Deep Intent Questions (Confirm with AskUserQuestion tool)
+
+For features with TDD adoption decision, **always ask the following**:
+
+> 🎯 **Let me confirm about "{{feature name}}" before writing tests**
+>
+> 1. **Normal case**: What's the most common usage? (specific scenario)
+> 2. **Boundary conditions**: Where's the line between "barely OK" and "barely NG"?
+> 3. **On error**: How do you want to show errors to users?
+> 4. **Implicit expectations**: What do you consider "obvious"? (unspoken rules)
+
+**Additional questions to draw out tacit knowledge** (as needed):
+
+| Situation | Additional Question |
+|-----------|---------------------|
+| Handling numbers | "Allow 0 or negative?" "Decimal places?" |
+| Handling dates | "Timezone?" "Allow past dates?" |
+| Handling strings | "Empty string?" "Max length?" "Emojis?" |
+| Handling lists | "Empty list?" "Upper limit?" "Duplicates?" |
+| State transitions | "Can go back?" "Cancel midway?" "Timeout?" |
+| User operations | "What if spammed?" "What if they leave midway?" |
+
+#### Test Case Design (Include in Plans.md)
+
+**TDD-adopted features include test design before implementation tasks**:
 
 ```markdown
-### {{機能名}} `[feature:tdd]`
+### {{Feature Name}} `[feature:tdd]`
 
-#### テストケース設計（実装前に合意）
+#### Test Case Design (Agree before implementation)
 
-| テストケース | 入力 | 期待出力 | 備考 |
-|-------------|------|---------|------|
-| 正常系: 基本 | {{具体例}} | {{期待値}} | 最も一般的なケース |
-| 正常系: 境界下限 | {{ギリギリOK}} | {{成功}} | 下限値テスト |
-| 正常系: 境界上限 | {{ギリギリOK}} | {{成功}} | 上限値テスト |
-| 異常系: 境界超え | {{ギリギリNG}} | {{エラー}} | バリデーション確認 |
-| 異常系: null/空 | null, "", [] | {{エラー}} | 防御的プログラミング |
-| エッジケース | {{特殊ケース}} | {{期待動作}} | 暗黙知の明文化 |
+| Test Case | Input | Expected Output | Notes |
+|-----------|-------|-----------------|-------|
+| Normal: basic | {{example}} | {{expected}} | Most common case |
+| Normal: boundary lower | {{barely OK}} | {{success}} | Lower limit test |
+| Normal: boundary upper | {{barely OK}} | {{success}} | Upper limit test |
+| Error: boundary exceeded | {{barely NG}} | {{error}} | Validation check |
+| Error: null/empty | null, "", [] | {{error}} | Defensive programming |
+| Edge case | {{special case}} | {{expected behavior}} | Tacit knowledge documentation |
 
-#### 実装タスク
-- [ ] テストファイル作成（上記ケースを実装）
-- [ ] 実装コード作成（テストが通るまで）
-- [ ] リファクタリング（テストを維持しながら）
+#### Implementation Tasks
+- [ ] Create test file (implement above cases)
+- [ ] Create implementation code (until tests pass)
+- [ ] Refactor (while maintaining tests)
 ```
 
-#### TDD非採用の場合
+#### When TDD Not Adopted
 
-TDD判定条件に該当しない単純な機能（静的UI、設定ファイル生成など）は、通常の実装フローで進める。ただし、ユーザーから「テストも書いて」と依頼された場合は TDD を採用。
+Simple features not matching TDD judgment conditions (static UI, config file generation, etc.) proceed with normal implementation flow. However, if user requests "also write tests", adopt TDD.
 
 ---
 
-### Step 6: 工数の見積もり（参考）
+### Step 6: Effort Estimation (Reference)
 
-各機能の実装工数を参考として算出します。
+Calculate implementation effort for each feature as reference.
 
-**見積もり基準**（Claude Code 活用時）:
+**Estimation standards** (with Claude Code):
 
-| 機能タイプ | 工数（人日） |
-|-----------|------------|
-| 認証（Clerk使用） | 0.5-1 |
-| CRUD（1テーブル） | 1-2 |
-| 管理画面（基本） | 2-3 |
-| 決済（Stripe使用） | 2-3 |
-| メール通知 | 1-2 |
-| CI/CD構築 | 1 |
-| デプロイ設定 | 0.5 |
+| Feature Type | Effort (person-days) |
+|--------------|---------------------|
+| Auth (using Clerk) | 0.5-1 |
+| CRUD (1 table) | 1-2 |
+| Admin panel (basic) | 2-3 |
+| Payment (using Stripe) | 2-3 |
+| Email notifications | 1-2 |
+| CI/CD setup | 1 |
+| Deploy setup | 0.5 |
 
-### Step 7: Plans.md の生成（品質判定マーカー自動付与）
+### Step 7: Generate Plans.md (Auto-assign Quality Judgment Markers)
 
-実装用の `Plans.md` を生成します。
+Generate `Plans.md` for implementation.
 
-**品質判定マーカーの自動付与**:
+**Auto-assign quality judgment markers**:
 
-各タスクの内容を分析し、適切な品質マーカーを自動で付与：
+Analyze each task's content and auto-assign appropriate quality markers:
 
-| タスク内容 | マーカー | 効果 |
-|-----------|---------|------|
-| 認証/ログイン機能 | `[feature:security]` | セキュリティチェックリスト表示 |
-| UI コンポーネント | `[feature:a11y]` | a11y チェック推奨 |
-| ビジネスロジック | `[feature:tdd]` | TDD 推奨 |
-| API エンドポイント | `[feature:security]` | 入力検証チェック |
-| バグ修正 | `[bugfix:reproduce-first]` | 再現テスト先行推奨 |
+| Task Content | Marker | Effect |
+|--------------|--------|--------|
+| Auth/login feature | `[feature:security]` | Show security checklist |
+| UI component | `[feature:a11y]` | Recommend a11y check |
+| Business logic | `[feature:tdd]` | Recommend TDD |
+| API endpoint | `[feature:security]` | Input validation check |
+| Bug fix | `[bugfix:reproduce-first]` | Recommend reproduction test first |
 
 ```markdown
-## 🎯 プロジェクト: {{プロジェクト名}}
+## 🎯 Project: {{Project Name}}
 
-### 概要
-- **目的**: {{やりたいこと}}
-- **対象**: {{誰が使うか}}
-- **参考**: {{類似サービス}}
-- **スコープ**: {{MVPか全機能か}}
+### Overview
+- **Purpose**: {{what you want to do}}
+- **Target**: {{who will use it}}
+- **Reference**: {{similar service}}
+- **Scope**: {{MVP or full features}}
 
-### 技術スタック
-- フロントエンド: {{技術}}
-- バックエンド: {{技術}}
-- データベース: {{技術}}
-- デプロイ: {{技術}}
+### Tech Stack
+- Frontend: {{tech}}
+- Backend: {{tech}}
+- Database: {{tech}}
+- Deploy: {{tech}}
 
 ---
 
-## 🔴 フェーズ1: 基盤構築 `cc:TODO`
+## 🔴 Phase 1: Foundation Setup `cc:TODO`
 
-- [ ] プロジェクト初期化
-- [ ] 基本セットアップ（linter, formatter）
-- [ ] データベース設計
-- [ ] 環境変数の設定
-- [ ] Git初期化 & 初回コミット
+- [ ] Project initialization
+- [ ] Basic setup (linter, formatter)
+- [ ] Database design
+- [ ] Environment variable setup
+- [ ] Git init & initial commit
 
-## 🟡 フェーズ2: コア機能（必須） `cc:TODO`
+## 🟡 Phase 2: Core Features (Required) `cc:TODO`
 
-### {{必須機能1}} `[feature:tdd]`
+### {{Required Feature 1}} `[feature:tdd]`
 
-#### テストケース設計（実装前に合意済み）
-| テストケース | 入力 | 期待出力 | 備考 |
-|-------------|------|---------|------|
-| 正常系: 基本 | {{具体例}} | {{期待値}} | ユーザーヒアリング結果 |
-| 境界条件 | {{境界値}} | {{期待動作}} | Step 5.5 で確認済み |
-| 異常系 | {{異常入力}} | {{エラー}} | 暗黙知の明文化 |
+#### Test Case Design (Agreed before implementation)
+| Test Case | Input | Expected Output | Notes |
+|-----------|-------|-----------------|-------|
+| Normal: basic | {{example}} | {{expected}} | From user hearing |
+| Boundary | {{boundary value}} | {{expected behavior}} | Confirmed in Step 5.5 |
+| Error | {{error input}} | {{error}} | Tacit knowledge documentation |
 
-#### 実装タスク
-- [ ] テストファイル作成
-- [ ] 実装コード作成
-- [ ] リファクタリング
+#### Implementation Tasks
+- [ ] Create test file
+- [ ] Create implementation code
+- [ ] Refactor
 
-### {{必須機能2}} `[feature:tdd]`
-（同様のテストケース設計）
+### {{Required Feature 2}} `[feature:tdd]`
+(Same test case design)
 
-### {{認証機能}} `[feature:security]`
+### {{Auth Feature}} `[feature:security]`
 
-## 🟢 フェーズ3: 推奨機能 `cc:TODO`
+## 🟢 Phase 3: Recommended Features `cc:TODO`
 
-- [ ] {{UI機能}} `[feature:a11y]`
-- [ ] {{推奨機能}}
+- [ ] {{UI feature}} `[feature:a11y]`
+- [ ] {{recommended feature}}
 
-## 🔵 フェーズ4: 仕上げ `cc:TODO`
+## 🔵 Phase 4: Finishing `cc:TODO`
 
-- [ ] レビュー（`/harness-review`）
-- [ ] デプロイ設定
-- [ ] 動作確認
+- [ ] Review (`/harness-review`)
+- [ ] Deploy setup
+- [ ] Operation check
 ```
 
-**マーカー判定ロジック**:
+**Marker judgment logic**:
 
 ```
-タスク内容を分析
+Analyze task content
     ↓
-├── "認証" "ログイン" "auth" "API" → [feature:security] + TDD採用判定へ
-├── "コンポーネント" "UI" "画面" → [feature:a11y]
-├── "修正" "バグ" "fix" → [bugfix:reproduce-first]
-├── "サービス" "ロジック" "core" → [feature:tdd] + Step 5.5 へ
-├── "計算" "変換" "バリデーション" → [feature:tdd] + Step 5.5 へ
-├── "決済" "金額" "課金" → [feature:security] + [feature:tdd] + Step 5.5 へ
-└── その他 → マーカーなし
+├── "auth" "login" "API" → [feature:security] + go to TDD judgment
+├── "component" "UI" "screen" → [feature:a11y]
+├── "fix" "bug" → [bugfix:reproduce-first]
+├── "service" "logic" "core" → [feature:tdd] + go to Step 5.5
+├── "calculation" "transform" "validation" → [feature:tdd] + go to Step 5.5
+├── "payment" "amount" "billing" → [feature:security] + [feature:tdd] + go to Step 5.5
+└── Other → no marker
 ```
 
-**重要**: `[feature:tdd]` マーカーが付いた機能は、必ず Step 5.5 のTDD採用判定フローを通過し、ユーザーへの意図深掘り質問とテストケース設計を行うこと。
+**Important**: Features with `[feature:tdd]` marker must go through TDD adoption judgment flow in Step 5.5, including deep intent questions to user and test case design.
 
-### Step 8: 次のアクションを案内
+### Step 8: Guide Next Actions
 
-> ✅ **計画が完成しました！**
+> ✅ **Plan complete!**
 >
-> 📄 **生成したファイル**:
-> - `Plans.md` - 実装タスク一覧
+> 📄 **Generated files**:
+> - `Plans.md` - Implementation task list
 >
-> **次にやること：**
-> - 「`/work`」で実装を開始
-> - 「フェーズ1から始めて」と言ってもOK
+> **Next steps:**
+> - Start implementation with "`/work`"
+> - Or say "start from Phase 1"
 >
-> 💡 **ヒント**: 計画を調整したい場合は「{{機能名}}を追加して」「{{機能名}}は後回しにして」と言ってください。
+> 💡 **Hint**: To adjust the plan, say "add {{feature}}" or "postpone {{feature}}".
 
 ---
 
-## 出力例
+## Output Examples
 
-### 例1: 壁打ちからの計画化
+### Example 1: Plan from Brainstorming
 
 ```
-ユーザー: （壁打ちで「タスク管理アプリ作りたい、Notionみたいな」と話していた）
-ユーザー: /plan-with-agent
+User: (Was brainstorming "want to make a task management app, like Notion")
+User: /plan-with-agent
 
 Claude Code:
-> 📝 計画の作り方を選んでください
-> 1. 今までの会話を踏まえる
-> 2. 新しく始める
+> 📝 Choose how to create the plan
+> 1. Based on previous conversation
+> 2. Start fresh
 
-ユーザー: 1
+User: 1
 
 Claude Code:
-> 会話から以下を抽出しました：
-> - 作りたいもの: タスク管理アプリ
-> - 参考: Notion
-> - 機能候補: タスクCRUD, カンバン表示, タグ機能
+> Extracted the following from conversation:
+> - What to build: Task management app
+> - Reference: Notion
+> - Feature candidates: Task CRUD, kanban view, tag feature
 >
-> これで計画を進めてよいですか？
+> Proceed with this plan?
 
-ユーザー: OK
+User: OK
 
-→ Plans.md 生成
+→ Generate Plans.md
 ```
 
-### 例2: 新規からの計画化
+### Example 2: Plan from Scratch
 
 ```
-ユーザー: /plan-with-agent
+User: /plan-with-agent
 
 Claude Code:
-> 📝 計画の作り方を選んでください
+> 📝 Choose how to create the plan
 
-ユーザー: 新しく始める
+User: Start fresh
 
 Claude Code:
-> 🎯 何を作りたいですか？
+> 🎯 What do you want to build?
 
-ユーザー: ブログサイト
+User: Blog site
 
-（ヒアリング継続）
-→ Plans.md 生成
+(Continue hearing)
+→ Generate Plans.md
 ```
 
 ---
 
-## 注意事項
+## Notes
 
-- **Plans.md が最優先**: `/work` で実行できる状態にすることが目的
-- **柔軟に調整可能**: 計画後も「〇〇を追加」「〇〇は削除」で変更可能
-- **壁打ちの文脈を活用**: Step 0 で「会話を踏まえる」を選べば、議論した内容を反映
+- **Plans.md is the priority**: Purpose is to get to a state executable with `/work`
+- **Flexibly adjustable**: Can change with "add XXX" or "remove XXX" after planning
+- **Use brainstorming context**: Select "Based on conversation" in Step 0 to reflect discussed content

@@ -1,238 +1,238 @@
 ---
-description: "[オプション] メモリシステム（Claude-mem/Serena）からSSOT（decisions/patterns）へ重要な観測を昇格"
+description: "[Optional] Promote important observations from memory systems (Claude-mem/Serena) to SSOT"
 description-en: "[Optional] Promote important observations from memory systems (Claude-mem/Serena) to SSOT"
 ---
 
-# /sync-ssot-from-memory - メモリ→SSOT昇格
+# /sync-ssot-from-memory - Memory → SSOT Promotion
 
-メモリシステム（Claude-mem または Serena）に記録された重要な観測を、プロジェクトの SSOT である
-`.claude/memory/decisions.md` と `.claude/memory/patterns.md` に昇格させます。
-
----
-
-## こう言えばOK
-
-- 「**今回分かったことを次回も使えるように残して**」→ このコマンド
-- 「**重要な決定を SSOT に昇格して**」→ このコマンド
-- 「**決定事項（なぜ）と、やり方（どうやる）を分けて整理して**」→ decisions/patterns に分離して反映
-- 「**どれを残すべきか分からない**」→ 重要度で選別し、SSOT に入れる候補だけ提案
+Promote important observations recorded in memory systems (Claude-mem or Serena) to the project's SSOT:
+`.claude/memory/decisions.md` and `.claude/memory/patterns.md`.
 
 ---
 
-## 対応メモリシステム
+## VibeCoder Phrases
 
-| システム | 検出方法 | 観測の取得方法 |
-|---------|---------|---------------|
-| **Claude-mem** | `~/.claude-mem/settings.json` の存在 | `mem-search` スキル |
-| **Serena** | `.serena/memories/` の存在 | `mcp__serena__read_memory` |
-
-コマンド実行時に自動検出し、利用可能なシステムを使用します。
+- "**Save what we learned for next time**" → this command
+- "**Promote important decisions to SSOT**" → this command
+- "**Organize decisions (why) and methods (how) separately**" → Reflect in decisions/patterns separately
+- "**I don't know what to keep**" → Filter by importance and propose only candidates for SSOT
 
 ---
 
-## 手順
+## Supported Memory Systems
 
-### Step 0: メモリシステム検出
+| System | Detection Method | How to Get Observations |
+|--------|------------------|------------------------|
+| **Claude-mem** | Existence of `~/.claude-mem/settings.json` | `mem-search` skill |
+| **Serena** | Existence of `.serena/memories/` | `mcp__serena__read_memory` |
+
+Auto-detected at command execution, using available system.
+
+---
+
+## Steps
+
+### Step 0: Memory System Detection
 
 ```bash
-# Claude-mem チェック
+# Claude-mem check
 if [ -f "$HOME/.claude-mem/settings.json" ]; then
-  echo "📚 Claude-mem を検出"
+  echo "📚 Claude-mem detected"
   MEMORY_SYSTEM="claude-mem"
 fi
 
-# Serena チェック
+# Serena check
 if [ -d ".serena/memories" ]; then
-  echo "📚 Serena を検出"
+  echo "📚 Serena detected"
   MEMORY_SYSTEM="serena"
 fi
 
-# 両方ある場合は Claude-mem を優先
+# Prefer Claude-mem if both exist
 ```
 
-**どちらもない場合**:
-- 手動入力モードに切り替え
-- ユーザーに観測内容を貼り付けてもらう
+**If neither exists**:
+- Switch to manual input mode
+- Ask user to paste observation content
 
 ---
 
-### Step 1: SSOT 昇格候補の抽出
+### Step 1: Extract SSOT Promotion Candidates
 
-**Claude-mem の場合**:
+**For Claude-mem**:
 
 ```
-# mem-search で重要な観測を検索
+# Search important observations with mem-search
 mem-search: type:decision
 mem-search: type:discovery concepts:pattern
 mem-search: type:bugfix concepts:gotcha
 ```
 
-**Serena の場合**:
+**For Serena**:
 
 ```
-# Serena メモリ一覧を取得
+# Get Serena memory list
 mcp__serena__list_memories
 
-# 対象メモリを読み込み
-# 例: *_decisions_*, *_investigation_*
+# Read target memories
+# e.g.: *_decisions_*, *_investigation_*
 ```
 
 ---
 
-### Step 2: 昇格基準による選別
+### Step 2: Filter by Promotion Criteria
 
-#### Decisions候補（Why）→ `decisions.md`
+#### Decisions Candidates (Why) → `decisions.md`
 
-| 観測タイプ | コンセプト | 昇格基準 |
-|-----------|-----------|---------|
-| `decision` | `why-it-exists`, `trade-off` | 技術選定、採用/不採用の理由 |
-| `guard` | `test-quality`, `implementation-quality` | ガードレール発動理由 |
-| `discovery` | `user-intent` | ユーザー要件・制約 |
+| Observation Type | Concept | Promotion Criteria |
+|------------------|---------|-------------------|
+| `decision` | `why-it-exists`, `trade-off` | Technology selection, adoption/rejection reasons |
+| `guard` | `test-quality`, `implementation-quality` | Guardrail activation reasons |
+| `discovery` | `user-intent` | User requirements/constraints |
 
-#### Patterns候補（How）→ `patterns.md`
+#### Patterns Candidates (How) → `patterns.md`
 
-| 観測タイプ | コンセプト | 昇格基準 |
-|-----------|-----------|---------|
-| `bugfix` | `problem-solution` | 再発防止パターン |
-| `discovery` | `pattern`, `how-it-works` | 再利用可能な解法 |
-| `feature`, `refactor` | `pattern` | 実装パターン |
+| Observation Type | Concept | Promotion Criteria |
+|------------------|---------|-------------------|
+| `bugfix` | `problem-solution` | Recurrence prevention patterns |
+| `discovery` | `pattern`, `how-it-works` | Reusable solutions |
+| `feature`, `refactor` | `pattern` | Implementation patterns |
 
-#### 除外対象
+#### Exclusions
 
-- 途中経過の雑メモ（確度が低い）
-- 個人情報/機密
-- 一度きりの作業（再利用性なし）
+- Work-in-progress rough notes (low confidence)
+- Personal/confidential information
+- One-time tasks (not reusable)
 
 ---
 
-### Step 3: SSOT への反映（重複排除）
+### Step 3: Reflect to SSOT (Deduplicate)
 
-#### decisions.md フォーマット
+#### decisions.md Format
 
 ```markdown
-## D{N}: {タイトル}
+## D{N}: {Title}
 
-**日付**: YYYY-MM-DD
-**タグ**: #decision #{関連キーワード}
-**観測ID**: #{元の観測ID}（重複防止用）
+**Date**: YYYY-MM-DD
+**Tags**: #decision #{related keywords}
+**Observation ID**: #{original observation ID} (for duplicate prevention)
 
-### 結論
+### Conclusion
 
-{採用した結論}
+{Adopted conclusion}
 
-### 背景
+### Background
 
-{この決定が必要になった背景}
+{Background that necessitated this decision}
 
-### 選択肢
+### Options
 
-1. {選択肢A}: {pros/cons}
-2. {選択肢B}: {pros/cons}
+1. {Option A}: {pros/cons}
+2. {Option B}: {pros/cons}
 
-### 採用理由
+### Adoption Reason
 
-{なぜこの選択肢を選んだか}
+{Why this option was chosen}
 
-### 影響
+### Impact
 
-{この決定の影響範囲}
+{Scope of this decision's impact}
 
-### 見直し条件
+### Review Conditions
 
-{この決定を見直すべき状況}
+{Situations when this decision should be reconsidered}
 ```
 
-#### patterns.md フォーマット
+#### patterns.md Format
 
 ```markdown
-## P{N}: {タイトル}
+## P{N}: {Title}
 
-**日付**: YYYY-MM-DD
-**タグ**: #pattern #{関連キーワード}
-**観測ID**: #{元の観測ID}（重複防止用）
+**Date**: YYYY-MM-DD
+**Tags**: #pattern #{related keywords}
+**Observation ID**: #{original observation ID} (for duplicate prevention)
 
-### 問題
+### Problem
 
-{どんな問題を解決するか}
+{What problem does this solve}
 
-### 解法
+### Solution
 
-{どうやって解決するか}
+{How to solve it}
 
-### 適用条件
+### Application Conditions
 
-{このパターンを使うべき状況}
+{When to use this pattern}
 
-### 非適用条件
+### Non-Application Conditions
 
-{このパターンを使うべきでない状況}
+{When not to use this pattern}
 
-### 例
+### Example
 
-{コード例や具体的な手順}
+{Code examples or specific steps}
 
-### 注意点
+### Notes
 
-{落とし穴や注意すべきこと}
+{Pitfalls and things to watch out for}
 ```
 
 ---
 
-### Step 4: 変更サマリー
+### Step 4: Change Summary
 
 ```markdown
-## 📚 SSOT 昇格結果
+## 📚 SSOT Promotion Results
 
-### 追加/更新
+### Added/Updated
 
-| ファイル | 項目 | 元の観測ID |
-|---------|------|-----------|
-| decisions.md | D12: RBAC採用 | #9602 |
-| patterns.md | P8: CORS対応 | #9584 |
+| File | Item | Original Observation ID |
+|------|------|------------------------|
+| decisions.md | D12: RBAC Adoption | #9602 |
+| patterns.md | P8: CORS Handling | #9584 |
 
-### 保留（要検討）
+### Pending (Needs Review)
 
-| 観測ID | タイトル | 保留理由 |
-|-------|---------|---------|
-| #9590 | API設計案 | まだ確定していない |
+| Observation ID | Title | Pending Reason |
+|----------------|-------|----------------|
+| #9590 | API Design Draft | Not finalized yet |
 
-### 除外
+### Excluded
 
-- 途中経過のメモ: 5件
-- 重複: 2件
+- Work-in-progress notes: 5 items
+- Duplicates: 2 items
 ```
 
 ---
 
-## 重複防止
+## Duplicate Prevention
 
-観測ID を SSOT エントリに記録することで、同じ観測が複数回昇格されることを防ぎます。
+Recording observation ID in SSOT entries prevents the same observation from being promoted multiple times.
 
 ```markdown
-## D12: RBAC採用
+## D12: RBAC Adoption
 
-**観測ID**: #9602  ← これで重複を検出
+**Observation ID**: #9602  ← This detects duplicates
 ```
 
 ---
 
-## 失敗時のフォールバック
+## Fallback on Failure
 
-メモリシステムにアクセスできない場合：
+If memory system is inaccessible:
 
-1. ユーザーに観測内容を貼り付けてもらう
-2. 同じ手順で SSOT へ反映
+1. Ask user to paste observation content
+2. Apply same procedure to reflect to SSOT
 
 ```
-> メモリシステムにアクセスできません。
-> 昇格したい情報を貼り付けてください。
+> Cannot access memory system.
+> Please paste the information you want to promote.
 ```
 
 ---
 
-## 関連
+## Related
 
-- `/harness-mem` - Claude-mem 統合セットアップ
-- `mem-search` スキル - 過去の記憶検索
-- `.claude/memory/decisions.md` - 決定事項（SSOT）
-- `.claude/memory/patterns.md` - 再利用パターン（SSOT）
+- `/harness-mem` - Claude-mem integration setup
+- `mem-search` skill - Search past memories
+- `.claude/memory/decisions.md` - Decisions (SSOT)
+- `.claude/memory/patterns.md` - Reusable patterns (SSOT)

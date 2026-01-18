@@ -1,183 +1,183 @@
 ---
-description: 進捗確認→Plans.md更新→次アクション提案（状況把握の起点）
+description: Check progress → update Plans.md → suggest next action
 description-en: Check progress → update Plans.md → suggest next action
 ---
 
-# /sync-status - 状況把握・Plans.md同期・次アクション提案
+# /sync-status - Status Check, Plans.md Sync, Next Action Suggestion
 
-**現在の実装状況を確認し、Plans.md との差分を検出・更新した上で、次にやるべきことを提案します。**
+**Checks current implementation status, detects and updates differences with Plans.md, then suggests what to do next.**
 
-作業の区切りや「今どこまで進んだっけ？」と思った時に実行してください。
+Run this at work milestones or when you think "where am I at?"
 
-## バイブコーダー向け（こう言えばOK）
+## VibeCoder Quick Reference
 
-- 「**今どこまで進んだ？**」→ このコマンド
-- 「**次に何をやればいい？**」→ 状況を整理して次のアクションを提案します
-- 「**Plans.md と実際の進捗が合ってるか確認して**」→ 差分を検出して更新します
+- "**How far have we progressed?**" → this command
+- "**What should I do next?**" → organize status and suggest next action
+- "**Check if Plans.md matches actual progress**" → detect differences and update
 
-## できること（成果物）
+## Deliverables
 
-1. **進捗確認**: 実装状況とPlans.mdの整合性をチェック
-2. **差分更新**: Plans.md のマーカーを実態に合わせて更新
-3. **次アクション提案**: 優先度を考慮して次にやるべきことを提示
+1. **Progress check**: Check consistency between implementation status and Plans.md
+2. **Difference update**: Update Plans.md markers to match reality
+3. **Next action suggestion**: Present what to do next considering priority
 
 ---
 
-## 実行フロー
+## Execution Flow
 
-### Step 1: 現状の収集
+### Step 1: Gather Current Status
 
 ```bash
-# Plans.md の現在のタスク状態
+# Current task state in Plans.md
 cat Plans.md
 
-# Git の変更状況（実際に何が変わったか）
+# Git change status (what actually changed)
 git status
-git diff --stat HEAD~3  # 直近3コミットの変更
+git diff --stat HEAD~3  # Changes in last 3 commits
 
-# 最近のコミット履歴
+# Recent commit history
 git log --oneline -10
 ```
 
-### Step 2: 実装状況と Plans.md の差分検出
+### Step 2: Detect Differences Between Implementation and Plans.md
 
-以下を確認：
+Check the following:
 
-| チェック項目 | 検出方法 |
-|-------------|---------|
-| 完了しているのに `cc:WIP` のまま | コミット履歴 vs マーカー |
-| 着手済みなのに `cc:TODO` のまま | 変更ファイル vs マーカー |
-| Plans.md にないタスクを実装済み | コミットメッセージ vs タスク一覧 |
-| `cc:完了` だが未コミット | git status vs マーカー |
+| Check Item | Detection Method |
+|------------|------------------|
+| Done but still `cc:WIP` | Commit history vs marker |
+| Started but still `cc:TODO` | Changed files vs marker |
+| Implemented task not in Plans.md | Commit messages vs task list |
+| `cc:done` but not committed | git status vs marker |
 
-### Step 3: Plans.md の更新（差分があれば）
+### Step 3: Update Plans.md (if differences exist)
 
-差分を検出したら、以下のように更新を提案・実行：
+If differences detected, suggest and execute updates:
 
-> 📝 **Plans.md の更新が必要です**
+> 📝 **Plans.md update needed**
 >
-> | タスク | 現在 | 更新後 | 理由 |
-> |-------|------|--------|------|
-> | 〇〇の実装 | `cc:WIP` | `cc:完了` | コミット済み |
-> | △△の追加 | `cc:TODO` | `cc:WIP` | 変更中のファイルあり |
+> | Task | Current | After Update | Reason |
+> |------|---------|--------------|--------|
+> | Implement XX | `cc:WIP` | `cc:done` | Committed |
+> | Add YY | `cc:TODO` | `cc:WIP` | Files being changed |
 >
-> **更新しますか？** （はい / いいえ）
+> **Update?** (yes / no)
 
-「はい」の場合は Plans.md を更新。
+If "yes", update Plans.md.
 
-### Step 4: 進捗サマリーの出力
+### Step 4: Output Progress Summary
 
 ```markdown
-## 📊 進捗サマリー
+## 📊 Progress Summary
 
-**更新日時**: {{YYYY-MM-DD HH:MM}}
-**ブランチ**: {{現在のブランチ}}
+**Updated**: {{YYYY-MM-DD HH:MM}}
+**Branch**: {{current branch}}
 
 ---
 
-### タスク状況
+### Task Status
 
-| ステータス | 件数 |
-|-----------|------|
-| 🔴 未着手 (`cc:TODO`) | {{件数}} |
-| 🟡 作業中 (`cc:WIP`) | {{件数}} |
-| 🟢 完了 (`cc:完了`) | {{件数}} |
-| ✅ 確認済 (`pm:確認済`) | {{件数}} |
-| ⏳ 依頼中 (`pm:依頼中`) | {{件数}} |
-| 🚫 ブロック (`blocked`) | {{件数}} |
+| Status | Count |
+|--------|-------|
+| 🔴 Not started (`cc:TODO`) | {{count}} |
+| 🟡 In progress (`cc:WIP`) | {{count}} |
+| 🟢 Done (`cc:done`) | {{count}} |
+| ✅ Verified (`pm:verified`) | {{count}} |
+| ⏳ Requested (`pm:requested`) | {{count}} |
+| 🚫 Blocked (`blocked`) | {{count}} |
 
-**進捗率**: {{完了 + 確認済}} / {{全タスク数}} ({{パーセント}}%)
+**Progress rate**: {{done + verified}} / {{total tasks}} ({{percent}}%)
 
-### コンテキスト使用状況
+### Context Usage
 
-> 💡 **ステータスライン（Claude Code v2.1.6+）で確認可能**:
-> - `context_window.used_percentage`: 使用率
-> - `context_window.remaining_percentage`: 残り
+> 💡 **Check via status line (Claude Code v2.1.6+)**:
+> - `context_window.used_percentage`: Usage rate
+> - `context_window.remaining_percentage`: Remaining
 
-**警告閾値**:
-- 🟢 0-50%: 余裕あり
-- 🟡 50-70%: 注意
-- 🔴 70%以上: セッション終了を推奨
+**Warning thresholds**:
+- 🟢 0-50%: Plenty of room
+- 🟡 50-70%: Caution
+- 🔴 70%+: Recommend ending session
 ```
 
-### Step 5: 次アクションの提案
+### Step 5: Suggest Next Action
 
-状況に応じて最適な次のアクションを提案：
+Suggest optimal next action based on status:
 
-> 🎯 **次にやるべきこと**
+> 🎯 **What to do next**
 >
-> **優先度1**: {{最優先タスク}}
-> - 理由: {{依頼中 / ブロック解消 / 依存関係など}}
+> **Priority 1**: {{highest priority task}}
+> - Reason: {{requested / unblock / dependency, etc.}}
 >
-> **優先度2**: {{次点タスク}}
+> **Priority 2**: {{next task}}
 >
 > ---
 >
-> **推奨コマンド**:
-> - `/work` - 次のタスクに着手
-> - `/handoff-to-pm-claude` - PM に完了報告（完了タスクがある場合）
-> - `/harness-review` - レビュー依頼（一区切りついた場合）
+> **Recommended commands**:
+> - `/work` - Start next task
+> - `/handoff-to-pm-claude` - Report completion to PM (if tasks are done)
+> - `/harness-review` - Request review (if at a milestone)
 >
-> ⚠️ コンテキスト使用率が高いです。セッションを終了して新規開始を検討してください。
-> （コンテキスト使用率が70%以上の場合に表示）
+> ⚠️ Context usage is high. Consider ending session and starting new.
+> (Shown when context usage is 70%+)
 
 ---
 
-## 異常検知
+## Anomaly Detection
 
-以下の状況を検知した場合は警告：
+Warn when the following situations are detected:
 
-| 状況 | 警告 |
-|------|------|
-| `cc:WIP` が複数存在 | ⚠️ 同時に複数タスクを作業中 |
-| `blocked` が長期間放置 | ⚠️ ブロック解消を優先 |
-| `pm:依頼中` が未処理 | ⚠️ PM からの依頼を先に処理 |
-| Plans.md と実装の乖離大 | ⚠️ タスク管理が追いついていない |
-
----
-
-## 注意事項
-
-- **更新前に確認**: Plans.md を更新する前に差分を表示して確認を求める
-- **コミット履歴を参照**: 実際の作業内容はコミット履歴から判断
-- **次アクションは具体的に**: 「何をすればいいか」を明確に提示
+| Situation | Warning |
+|-----------|---------|
+| Multiple `cc:WIP` exist | ⚠️ Working on multiple tasks simultaneously |
+| `blocked` left for long time | ⚠️ Prioritize unblocking |
+| `pm:requested` not processed | ⚠️ Process PM's request first |
+| Large gap between Plans.md and implementation | ⚠️ Task management not keeping up |
 
 ---
 
-## ⚡ 並列実行の判断ポイント
+## Notes
 
-このコマンドでは**情報収集フェーズ**で並列実行が有効です。
+- **Confirm before update**: Show differences and ask for confirmation before updating Plans.md
+- **Reference commit history**: Judge actual work content from commit history
+- **Be specific about next action**: Clearly present "what to do"
 
-### 並列実行すべき場合 ✅
+---
 
-| 処理 | 並列化 |
-|------|--------|
-| Plans.md の読み込み | ✅ 独立 |
-| git status の確認 | ✅ 独立 |
-| git log の確認 | ✅ 独立 |
-| git diff の確認 | ✅ 独立 |
+## ⚡ Parallel Execution Decision Points
 
-**並列実行の効果**:
+**Information gathering phase** benefits from parallel execution in this command.
+
+### When to Execute in Parallel ✅
+
+| Process | Parallelize |
+|---------|-------------|
+| Read Plans.md | ✅ Independent |
+| Check git status | ✅ Independent |
+| Check git log | ✅ Independent |
+| Check git diff | ✅ Independent |
+
+**Parallel execution effect**:
 ```
-🚀 情報収集開始...
-├── [Plans.md] 読み込み中... ⏳
-├── [git status] 確認中... ⏳
-├── [git log] 取得中... ⏳
-└── [git diff] 分析中... ⏳
+🚀 Starting information gathering...
+├── [Plans.md] Reading... ⏳
+├── [git status] Checking... ⏳
+├── [git log] Getting... ⏳
+└── [git diff] Analyzing... ⏳
 
-→ 4つの情報を同時に取得 → 時間短縮
+→ Get 4 pieces of info simultaneously → time saved
 ```
 
-### 直列実行される処理
+### Sequential Processing
 
-以下は依存関係があるため直列実行：
+The following run sequentially due to dependencies:
 
 ```
-情報収集（並列）→ 差分検出（直列）→ 更新提案（直列）→ 次アクション（直列）
+Information gathering (parallel) → Difference detection (sequential) → Update proposal (sequential) → Next action (sequential)
 ```
 
-### 自動判断
+### Auto-optimization
 
-このコマンドは**自動的に最適化**されます：
-- 情報収集: 並列実行
-- 分析・更新: 直列実行（依存関係のため）
+This command is **automatically optimized**:
+- Information gathering: Parallel execution
+- Analysis/update: Sequential execution (due to dependencies)

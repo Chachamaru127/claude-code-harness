@@ -1,112 +1,112 @@
 ---
-description: プロジェクトセットアップ（環境診断→ファイル生成→SSOT同期→検証まで一括）
+description: Project setup (environment check → file generation → SSOT sync → validation)
 description-en: Project setup (environment check → file generation → SSOT sync → validation)
 ---
 
-# /harness-init - プロジェクトセットアップ
+# /harness-init - Project Setup
 
-VibeCoder が自然言語だけで開発を始められるよう、プロジェクトをセットアップします。
-**最小1回の質問で完了**し、すぐに開発を始められる状態にします。
+Sets up a project so VibeCoder can start development with natural language only.
+**Completes with minimum 1 question**, ready to start development immediately.
 
-## バイブコーダー向け（こう言えばOK）
+## VibeCoder Quick Reference
 
-- 「**新規プロジェクトを最速で立ち上げたい**」→ このコマンド
-- 「**おまかせで**」「**さくっと**」→ 質問なしでデフォルト設定で進行
-- 「**Next.js + Supabase で**」→ 技術指定も可能
-- 「**既存プロジェクトにハーネスを導入**」→ 既存コードを分析してワークフロー追加
+- "**Want to launch a new project fastest**" → this command
+- "**Leave it to you**" "**Quickly**" → proceed with defaults, no questions
+- "**With Next.js + Supabase**" → technology specification is also possible
+- "**Introduce harness to existing project**" → analyze existing code and add workflow
 
-## できること（成果物）
+## Deliverables
 
-- 実プロジェクト生成（例: create-next-app 等）＋初期セットアップ
-- `Plans.md` / `AGENTS.md` / `CLAUDE.md` / `.claude/` 等を整備
-- **環境診断** → **SSOT 初期化** → **最終検証** まで一括
-- → **Plan→Work→Review をすぐに回せる状態**にする
-
----
-
-## 🚀 効率化されたフロー
-
-**Before**: 最大11回の対話ラウンド
-**After**: 最小1回、最大2回の対話ラウンド
-
-```
-Step 1: 統合質問（1回）
-  ├─ 何を作る？
-  ├─ 誰が使う？
-  └─ おまかせ or 詳細設定？
-
-Step 2: 確認（おまかせなら省略）
-  └─ 技術スタック + プロジェクト名
-
-→ セットアップ実行（バックグラウンド分析含む）
-
-Step 3: 完了報告
-```
+- Real project generation (e.g., create-next-app) + initial setup
+- Prepare `Plans.md` / `AGENTS.md` / `CLAUDE.md` / `.claude/` etc.
+- **Environment diagnosis** → **SSOT initialization** → **Final validation** all at once
+- → **Ready to run Plan→Work→Review immediately**
 
 ---
 
-## 実行フロー
+## 🚀 Optimized Flow
 
-### Step 0: 引数チェックとファストトラック判定
+**Before**: Up to 11 dialogue rounds
+**After**: Minimum 1, maximum 2 dialogue rounds
 
-**引数またはトリガーワードで判定**:
+```
+Step 1: Unified question (1 time)
+  ├─ What are you building?
+  ├─ Who will use it?
+  └─ Leave it to me or detailed settings?
 
-| 入力 | 動作 |
-|------|------|
-| `おまかせ` `さくっと` `全部デフォルト` | → ファストトラック（Step 1 スキップ） |
-| `/harness-init ブログ --mode=solo` | → 引数解析、指定項目は質問スキップ |
-| 引数なし | → Step 1 へ |
+Step 2: Confirmation (skip if "leave it to me")
+  └─ Tech stack + project name
 
-**ファストトラック時のデフォルト**:
-- 言語: ja
-- モード: Solo（.cursor/ なければ）、2-Agent（.cursor/ あれば）
-- 技術: auto（next-supabase ベース）
-- Skills Gate: プロジェクトタイプから自動判定
+→ Execute setup (includes background analysis)
 
-### Step 1: 統合質問（1回で完了）
+Step 3: Completion report
+```
 
-**バックグラウンドでプロジェクト分析を開始**しながら、質問を表示:
+---
+
+## Execution Flow
+
+### Step 0: Argument Check and Fast Track Judgment
+
+**Determine by arguments or trigger words**:
+
+| Input | Action |
+|-------|--------|
+| `leave it to me` `quickly` `all defaults` | → Fast track (skip Step 1) |
+| `/harness-init blog --mode=solo` | → Parse arguments, skip specified items |
+| No arguments | → Go to Step 1 |
+
+**Fast track defaults**:
+- Language: ja
+- Mode: Solo (if no .cursor/), 2-Agent (if .cursor/ exists)
+- Tech: auto (next-supabase base)
+- Skills Gate: Auto-determine from project type
+
+### Step 1: Unified Question (Complete in 1 time)
+
+**Start project analysis in background** while showing questions:
 
 ```bash
-# バックグラウンド分析（並列実行）
+# Background analysis (parallel execution)
 CODE_COUNT=$(find . -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.py" \) \
   ! -path "*/node_modules/*" ! -path "*/.venv/*" 2>/dev/null | wc -l | tr -d ' ')
 HAS_CURSOR=$([ -d .cursor ] && echo "true" || echo "false")
 HAS_PACKAGE=$([ -f package.json ] && echo "true" || echo "false")
 ```
 
-**AskUserQuestion で3つの質問を同時に提示**:
+**Present 3 questions simultaneously with AskUserQuestion**:
 
 ```json
 {
   "questions": [
     {
-      "question": "何を作りますか？（既存プロジェクトなら「既存に導入」を選択）",
-      "header": "プロジェクト",
+      "question": "What are you building? (Select 'Existing project' for existing projects)",
+      "header": "Project",
       "options": [
-        {"label": "Webアプリ（ブログ、ECなど）", "description": "Next.js + Supabase で構築"},
-        {"label": "API / バックエンド", "description": "Express / FastAPI で構築"},
-        {"label": "既存プロジェクトに導入", "description": "ワークフローファイルのみ追加"},
-        {"label": "その他", "description": "自由に指定"}
+        {"label": "Web app (blog, EC, etc.)", "description": "Build with Next.js + Supabase"},
+        {"label": "API / Backend", "description": "Build with Express / FastAPI"},
+        {"label": "Introduce to existing project", "description": "Add workflow files only"},
+        {"label": "Other", "description": "Specify freely"}
       ],
       "multiSelect": false
     },
     {
-      "question": "誰が使いますか？",
-      "header": "対象ユーザー",
+      "question": "Who will use it?",
+      "header": "Target Users",
       "options": [
-        {"label": "自分だけ", "description": "個人プロジェクト"},
-        {"label": "チーム", "description": "社内ツール・共同開発"},
-        {"label": "一般公開", "description": "公開サービス"}
+        {"label": "Myself only", "description": "Personal project"},
+        {"label": "Team", "description": "Internal tools / collaborative development"},
+        {"label": "Public", "description": "Public service"}
       ],
       "multiSelect": false
     },
     {
-      "question": "セットアップ方法を選んでください",
-      "header": "モード",
+      "question": "Choose setup method",
+      "header": "Mode",
       "options": [
-        {"label": "おまかせ（推奨）", "description": "最適なデフォルトで自動設定"},
-        {"label": "詳細設定", "description": "技術スタックやプロジェクト名を指定"}
+        {"label": "Leave it to me (Recommended)", "description": "Auto-configure with optimal defaults"},
+        {"label": "Detailed settings", "description": "Specify tech stack and project name"}
       ],
       "multiSelect": false
     }
@@ -114,33 +114,33 @@ HAS_PACKAGE=$([ -f package.json ] && echo "true" || echo "false")
 }
 ```
 
-**回答を待つ**（1回のみ）
+**Wait for response** (only once)
 
-### Step 2: 追加質問（詳細設定の場合のみ）
+### Step 2: Additional Questions (Only for Detailed Settings)
 
-「おまかせ」選択時は**このステップをスキップ**。
+**Skip this step** when "Leave it to me" is selected.
 
-「詳細設定」選択時のみ:
+Only when "Detailed settings" is selected:
 
 ```json
 {
   "questions": [
     {
-      "question": "技術スタックはどれにしますか？",
-      "header": "技術",
+      "question": "Which tech stack?",
+      "header": "Tech",
       "options": [
-        {"label": "Next.js + Supabase（推奨）", "description": "フルスタック、無料で始められる"},
-        {"label": "Next.js + FastAPI", "description": "より柔軟なバックエンド"},
-        {"label": "その他", "description": "Rails, Django など指定"}
+        {"label": "Next.js + Supabase (Recommended)", "description": "Full-stack, free to start"},
+        {"label": "Next.js + FastAPI", "description": "More flexible backend"},
+        {"label": "Other", "description": "Specify Rails, Django, etc."}
       ],
       "multiSelect": false
     },
     {
-      "question": "プロジェクト名を入力してください",
-      "header": "名前",
+      "question": "Enter project name",
+      "header": "Name",
       "options": [
-        {"label": "自動生成", "description": "my-app-XXXXXX 形式で生成"},
-        {"label": "指定する", "description": "好きな名前を入力"}
+        {"label": "Auto-generate", "description": "Generate in my-app-XXXXXX format"},
+        {"label": "Specify", "description": "Enter your preferred name"}
       ],
       "multiSelect": false
     }
@@ -148,22 +148,22 @@ HAS_PACKAGE=$([ -f package.json ] && echo "true" || echo "false")
 }
 ```
 
-**回答を待つ**
+**Wait for response**
 
 ---
 
-## スマートデフォルト
+## Smart Defaults
 
-質問を減らすために、以下の項目は自動判定またはデフォルト値を使用:
+To reduce questions, use auto-determination or default values for the following:
 
-| 項目 | デフォルト | 自動判定条件 |
-|------|-----------|------------|
-| 言語 | ja | 設定ファイルで変更可 |
-| モード | Solo | .cursor/ があれば 2-Agent |
-| 技術スタック | next-supabase | auto モード時 |
-| Skills Gate | 自動設定 | 後から `/skills-update` で調整 |
+| Item | Default | Auto-determination Condition |
+|------|---------|----------------------------|
+| Language | ja | Can change in config file |
+| Mode | Solo | 2-Agent if .cursor/ exists |
+| Tech stack | next-supabase | In auto mode |
+| Skills Gate | Auto-configured | Adjust later with `/skills-update` |
 
-**設定で上書き可能**（`claude-code-harness.config.json`）:
+**Overridable in config** (`claude-code-harness.config.json`):
 ```json
 {
   "i18n": { "language": "en" },
@@ -176,214 +176,214 @@ HAS_PACKAGE=$([ -f package.json ] && echo "true" || echo "false")
 
 ---
 
-## Phase 2: プロジェクト分析と分岐
+## Phase 2: Project Analysis and Branching
 
-### プロジェクト判定（3値）
+### Project Determination (3 values)
 
 ```
-Step 1 の回答 + バックグラウンド分析結果を統合
+Combine Step 1 response + background analysis result
 
-「既存に導入」選択 → project_type: "existing"
-「Webアプリ」「API」選択 → ディレクトリ分析:
-  ├── 空 or .git のみ → project_type: "new"
-  ├── コード 10+ → project_type: "existing"（警告表示）
-  └── コード 1-9 → project_type: "ambiguous"
+"Introduce to existing" selected → project_type: "existing"
+"Web app" or "API" selected → directory analysis:
+  ├── Empty or .git only → project_type: "new"
+  ├── Code 10+ → project_type: "existing" (show warning)
+  └── Code 1-9 → project_type: "ambiguous"
 ```
 
-**曖昧ケースの確認**（ambiguous のみ）:
+**Ambiguous case confirmation** (only for ambiguous):
 
-> ⚠️ ディレクトリにファイルが存在します（{{CODE_COUNT}}件）
+> ⚠️ Files exist in directory ({{CODE_COUNT}} files)
 >
-> 🅰️ **新規として続ける**（既存ファイルを保持しつつセットアップ）
-> 🅱️ **既存として扱う**（ワークフローファイルのみ追加）
+> 🅰️ **Continue as new** (keep existing files while setting up)
+> 🅱️ **Treat as existing** (add workflow files only)
 
 ---
 
-## Phase 3: セットアップ実行
+## Phase 3: Setup Execution
 
-### 新規プロジェクト（project_type: "new"）
+### New Project (project_type: "new")
 
-1. **プロジェクト生成**（Task ツールで並列可能）
+1. **Project generation** (can parallelize with Task tool)
    ```bash
    npx create-next-app@latest {{PROJECT_NAME}} --typescript --tailwind --eslint --app --src-dir
    cd {{PROJECT_NAME}}
    npm install @supabase/supabase-js lucide-react
    ```
 
-2. **ワークフローファイル生成**
+2. **Workflow file generation**
    - AGENTS.md, CLAUDE.md, Plans.md
-   - .claude/settings.json（非破壊マージ）
-   - .claude/memory/（decisions.md, patterns.md）
+   - .claude/settings.json (non-destructive merge)
+   - .claude/memory/ (decisions.md, patterns.md)
 
-3. **品質保護ルール展開**
+3. **Quality protection rules deployment**
    - .claude/rules/test-quality.md
    - .claude/rules/implementation-quality.md
 
-### 既存プロジェクト（project_type: "existing"）
+### Existing Project (project_type: "existing")
 
-1. **既存ファイル確認**
+1. **Check existing files**
    ```bash
-   [ -f AGENTS.md ] && echo "AGENTS.md: あり" || echo "なし"
-   [ -f CLAUDE.md ] && echo "CLAUDE.md: あり" || echo "なし"
-   [ -f Plans.md ] && echo "Plans.md: あり" || echo "なし"
+   [ -f AGENTS.md ] && echo "AGENTS.md: exists" || echo "missing"
+   [ -f CLAUDE.md ] && echo "CLAUDE.md: exists" || echo "missing"
+   [ -f Plans.md ] && echo "Plans.md: exists" || echo "missing"
    ```
 
-2. **不足ファイルのみ追加**（既存は触らない）
+2. **Add only missing files** (don't touch existing)
 
-3. **.claude/settings.json は非破壊マージ**
+3. **.claude/settings.json is non-destructive merge**
 
 ---
 
-## Phase 4: 環境診断（自動実行）
+## Phase 4: Environment Diagnosis (Auto-execute)
 
 ```bash
 # Git
 command -v git >/dev/null 2>&1 && echo "✅ git" || echo "❌ git"
 
-# Node.js（該当する場合）
+# Node.js (if applicable)
 command -v node >/dev/null 2>&1 && echo "✅ node $(node -v)" || echo "⚠️ node"
 
-# GitHub CLI（オプション）
+# GitHub CLI (optional)
 command -v gh >/dev/null 2>&1 && echo "✅ gh" || echo "⚠️ gh"
 ```
 
-問題があれば警告表示。**質問はしない**（情報提供のみ）。
+Show warning if issues exist. **No questions** (information only).
 
 ---
 
-## Phase 5: 完了報告（詳細サマリー）
+## Phase 5: Completion Report (Detailed Summary)
 
-作業完了後、**自動で決定された内容を明示**して透明性を確保:
+After work completion, **explicitly show auto-determined content** for transparency:
 
-> ✅ **セットアップが完了しました！**
+> ✅ **Setup complete!**
 >
 > ---
 >
-> ### 📋 自動決定された設定
+> ### 📋 Auto-determined Settings
 >
-> | 項目 | 値 | 変更方法 |
-> |------|-----|---------|
-> | 言語 | **ja** | `claude-code-harness.config.json` で変更 |
-> | モード | **{{Solo / 2-Agent}}** | {{.cursor/ 検出結果}} |
-> | 技術スタック | **{{next-supabase など}}** | 再実行時に「詳細設定」を選択 |
-> | Skills Gate | **{{impl, review など}}** | `/skills-update` で調整 |
-> | プロジェクト名 | **{{my-app-XXXXXX}}** | `package.json` を編集 |
->
-> ---
->
-> ### 📁 生成されたファイル
->
-> **ワークフロー**:
-> | ファイル | 用途 | サイズ |
-> |---------|------|--------|
-> | `AGENTS.md` | 開発フロー概要 | {{XX行}} |
-> | `CLAUDE.md` | Claude Code 設定 | {{XX行}} |
-> | `Plans.md` | タスク管理 | {{XX行}} |
->
-> **設定**:
-> | ファイル | 用途 |
-> |---------|------|
-> | `.claude/settings.json` | 権限・安全設定 |
-> | `.claude/memory/decisions.md` | 意思決定記録 |
-> | `.claude/memory/patterns.md` | 再利用パターン |
->
-> **品質保護ルール**:
-> | ファイル | 内容 |
-> |---------|------|
-> | `.claude/rules/test-quality.md` | テスト改ざん禁止 |
-> | `.claude/rules/implementation-quality.md` | 形骸化実装禁止 |
->
-> {{2-Agent モードの場合}}
-> **Cursor コマンド**:
-> | ファイル | 用途 |
-> |---------|------|
-> | `.cursor/commands/start-session.md` | セッション開始 |
-> | `.cursor/commands/plan-with-cc.md` | 計画作成 |
-> | `.cursor/commands/handoff-to-claude.md` | タスク依頼 |
-> | `.cursor/commands/review-cc-work.md` | 実装レビュー |
+> | Item | Value | How to Change |
+> |------|-------|---------------|
+> | Language | **ja** | Change in `claude-code-harness.config.json` |
+> | Mode | **{{Solo / 2-Agent}}** | {{.cursor/ detection result}} |
+> | Tech stack | **{{next-supabase etc.}}** | Select "Detailed settings" when re-running |
+> | Skills Gate | **{{impl, review etc.}}** | Adjust with `/skills-update` |
+> | Project name | **{{my-app-XXXXXX}}** | Edit `package.json` |
 >
 > ---
 >
-> ### ⚙️ 後から変更するには
+> ### 📁 Generated Files
 >
-> | 変更したいこと | コマンド/方法 |
-> |--------------|--------------|
-> | Skills Gate のスキル追加/削除 | `/skills-update` |
-> | 2-Agent モードに切り替え | `/harness-init --mode=2agent`（または「2-agent運用を始めたい」） |
-> | 技術スタック変更 | 手動でファイル編集 or プロジェクト再作成 |
-> | 言語設定変更 | `claude-code-harness.config.json` を編集 |
+> **Workflow**:
+> | File | Purpose | Size |
+> |------|---------|------|
+> | `AGENTS.md` | Development flow overview | {{XX lines}} |
+> | `CLAUDE.md` | Claude Code settings | {{XX lines}} |
+> | `Plans.md` | Task management | {{XX lines}} |
+>
+> **Settings**:
+> | File | Purpose |
+> |------|---------|
+> | `.claude/settings.json` | Permission & safety settings |
+> | `.claude/memory/decisions.md` | Decision records |
+> | `.claude/memory/patterns.md` | Reusable patterns |
+>
+> **Quality protection rules**:
+> | File | Content |
+> |------|---------|
+> | `.claude/rules/test-quality.md` | Test tampering prohibition |
+> | `.claude/rules/implementation-quality.md` | Hollow implementation prohibition |
+>
+> {{If 2-Agent mode}}
+> **Cursor commands**:
+> | File | Purpose |
+> |------|---------|
+> | `.cursor/commands/start-session.md` | Start session |
+> | `.cursor/commands/plan-with-cc.md` | Create plan |
+> | `.cursor/commands/handoff-to-claude.md` | Task request |
+> | `.cursor/commands/review-cc-work.md` | Implementation review |
 >
 > ---
 >
-> ### 🚀 次にやること
+> ### ⚙️ To Change Later
 >
-> - 「`/plan-with-agent` 〇〇を作りたい」→ 計画を作成
-> - 「`/work`」→ Plans.md のタスクを実行
-> - 「`npm run dev`」→ 開発サーバー起動（該当する場合）
+> | What to Change | Command/Method |
+> |----------------|----------------|
+> | Add/remove Skills Gate skills | `/skills-update` |
+> | Switch to 2-Agent mode | `/harness-init --mode=2agent` (or say "want to start 2-agent operation") |
+> | Change tech stack | Manual file edit or recreate project |
+> | Change language setting | Edit `claude-code-harness.config.json` |
 >
-> 💡 **困ったら**「どうすればいい？」と聞いてください
+> ---
+>
+> ### 🚀 Next Steps
+>
+> - "`/plan-with-agent` I want to create XXX" → Create plan
+> - "`/work`" → Execute tasks in Plans.md
+> - "`npm run dev`" → Start dev server (if applicable)
+>
+> 💡 **If stuck** ask "what should I do?"
 
 ---
 
-## モード別の追加設定
+## Mode-specific Additional Settings
 
-### Solo モード
+### Solo Mode
 
-追加設定なし。そのまま完了。
+No additional settings. Complete as is.
 
-### 2-Agent モード（.cursor/ 検出時）
+### 2-Agent Mode (when .cursor/ detected)
 
-自動で以下を追加:
-- .cursor/commands/ (5ファイル)
+Automatically add:
+- .cursor/commands/ (5 files)
 - .claude/rules/workflow.md
 
-> 💡 **2-Agent の使い方**:
-> 1. Cursor で「〇〇を作りたい」と相談
-> 2. `/handoff-to-claude` で Claude Code にタスク依頼
-> 3. Claude Code で実装 → `/handoff-to-cursor` で報告
+> 💡 **How to use 2-Agent**:
+> 1. Consult with Cursor "want to create XXX"
+> 2. Request task to Claude Code with `/handoff-to-claude`
+> 3. Implement in Claude Code → Report with `/handoff-to-cursor`
 
 ---
 
-## 引数サポート
+## Argument Support
 
 ```bash
-# フル指定（質問なし）
-/harness-init "ブログ" --mode=solo --stack=next-supabase --name=my-blog
+# Full specification (no questions)
+/harness-init "blog" --mode=solo --stack=next-supabase --name=my-blog
 
-# 一部指定（不足分のみ質問）
+# Partial specification (only ask for missing)
 /harness-init --stack=rails-postgres
 
-# ヘルプ
+# Help
 /harness-init --help
 ```
 
-| 引数 | 説明 | 例 |
-|------|------|-----|
-| `[プロジェクト説明]` | 何を作るか | `"ECサイト"` |
+| Argument | Description | Example |
+|----------|-------------|---------|
+| `[project description]` | What to build | `"EC site"` |
 | `--mode` | solo / 2agent | `--mode=solo` |
-| `--stack` | 技術スタック | `--stack=next-supabase` |
-| `--name` | プロジェクト名 | `--name=my-app` |
-| `--lang` | 言語 | `--lang=en` |
+| `--stack` | Tech stack | `--stack=next-supabase` |
+| `--name` | Project name | `--name=my-app` |
+| `--lang` | Language | `--lang=en` |
 
 ---
 
-## VibeCoder 向けヒント
+## VibeCoder Hints
 
-セットアップ後、いつでも使えるフレーズ：
+Phrases available anytime after setup:
 
-| やりたいこと | 言い方 |
-|-------------|--------|
-| 続きをやる | 「続けて」「次」 |
-| 動作確認 | 「動かして」「見せて」 |
-| 機能追加 | 「〇〇を追加して」 |
-| 困った | 「どうすればいい？」 |
-| 全部任せる | 「全部やって」 |
+| What You Want | How to Say |
+|---------------|------------|
+| Continue | "continue" "next" |
+| Check operation | "run it" "show me" |
+| Add feature | "add XXX" |
+| Stuck | "what should I do?" |
+| Leave everything | "do everything" |
 
 ---
 
-## 注意事項
+## Notes
 
-- **質問は最小限**: おまかせなら1回、詳細設定でも2回で完了
-- **技術選択は自動提案**: VibeCoder が迷わないようにデフォルト推奨
-- **既存ファイルは保護**: 上書きせず非破壊マージ
-- **Skills Gate は後から調整可能**: 初期負担を軽減
+- **Minimum questions**: 1 for "leave it to me", 2 for "detailed settings"
+- **Tech choices are auto-suggested**: Recommend defaults so VibeCoder doesn't get confused
+- **Existing files are protected**: Non-destructive merge, no overwriting
+- **Skills Gate adjustable later**: Reduce initial burden

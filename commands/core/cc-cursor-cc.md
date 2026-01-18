@@ -1,258 +1,258 @@
 ---
-description: 壁打ち内容をCursorで検証→Plans.md更新→Claude Codeへハンドオフする一連フロー
+description: Validate brainstormed ideas with Cursor, update Plans.md, then handoff back to Claude Code
 description-en: Validate brainstormed ideas with Cursor, update Plans.md, then handoff back to Claude Code
 ---
 
-# /cc-cursor-cc - 計画検証ラウンドトリップ
+# /cc-cursor-cc - Plan Validation Round Trip
 
-Claude Code で壁打ちした内容を **Cursor (PM)** に送って計画の実現可能性を検証し、Cursor が Plans.md を更新した後、Claude Code に戻ってくるまでの一連のフローを支援します。
+Supports the entire flow of sending brainstormed content from Claude Code to **Cursor (PM)** for feasibility validation, then returning to Claude Code after Cursor updates Plans.md.
 
-## こう言えばOK
+## Quick Reference
 
-- 「**壁打ちした内容をCursorで検証して**」→ このコマンド
-- 「**計画が現実的か確認したい**」→ Cursorで実現可能性チェック
-- 「**PM（Cursor）にレビューしてもらいたい**」→ 検証依頼文を生成
+- "**Validate the brainstormed content with Cursor**" → this command
+- "**Want to check if the plan is realistic**" → feasibility check with Cursor
+- "**Want PM (Cursor) to review**" → generate validation request
 
-## できること（成果物）
+## Deliverables
 
-- **Cursor向け検証依頼文** - `/plan-with-cc` で使える形式で出力
-- **Plans.md の事前準備** - 壁打ち内容を仮タスクとして整理
-- **ハンドオフ待ち状態の明示** - Claude Code が何を待っているか明確化
-
----
-
-## ⚠️ 前提条件
-
-このコマンドは **2エージェント運用** を前提としています。
-
-| 役割 | 担当 | 説明 |
-|------|------|------|
-| **PM** | Cursor | 計画の検証、Plans.md の更新 |
-| **Impl** | Claude Code | 壁打ち、実装 |
-
-**2エージェント設定がまだの場合**: まず `/2agent` を実行してセットアップしてください。
+- **Validation request for Cursor** - Output in format usable with `/plan-with-cc`
+- **Plans.md preparation** - Organize brainstormed content as provisional tasks
+- **Explicit handoff waiting state** - Clarify what Claude Code is waiting for
 
 ---
 
-## 実行フロー
+## ⚠️ Prerequisites
 
-### Step 1: 壁打ちコンテキストの抽出
+This command assumes **2-agent operation**.
 
-**直近の会話から以下を抽出**:
+| Role | Agent | Description |
+|------|-------|-------------|
+| **PM** | Cursor | Validate plans, update Plans.md |
+| **Impl** | Claude Code | Brainstorming, implementation |
 
-1. **やりたいこと**（機能・目的）
-2. **話し合った技術選択**（言語、フレームワーク、ライブラリ）
-3. **決まったこと**（合意事項）
-4. **未決事項**（まだ決まっていないこと）
-5. **懸念点**（リスク、課題）
+**If 2-agent setup is not done yet**: First run `/2agent` to set up.
 
-**抽出結果をユーザーに確認**:
+---
 
-> 📝 **壁打ちの内容をまとめました**
+## Execution Flow
+
+### Step 1: Extract Brainstorming Context
+
+**Extract the following from recent conversation**:
+
+1. **Goal** (feature/purpose)
+2. **Discussed technology choices** (language, framework, libraries)
+3. **Decisions made** (agreements)
+4. **Undecided items** (not yet decided)
+5. **Concerns** (risks, issues)
+
+**Confirm extracted content with user**:
+
+> 📝 **Summarized the brainstorming content**
 >
-> **やりたいこと**: {{要約}}
-> **技術選択**: {{技術スタック}}
-> **決まったこと**:
-> - {{合意1}}
-> - {{合意2}}
-> **未決事項**:
-> - {{未決1}}
-> **懸念点**:
-> - {{懸念1}}
+> **Goal**: {{summary}}
+> **Technology choices**: {{tech stack}}
+> **Decisions made**:
+> - {{agreement1}}
+> - {{agreement2}}
+> **Undecided items**:
+> - {{undecided1}}
+> **Concerns**:
+> - {{concern1}}
 >
-> この内容で Cursor に送りますか？
+> Send this content to Cursor?
 
-**回答を待つ**
+**Wait for response**
 
 ---
 
-### Step 2: Plans.md への仮タスク追加
+### Step 2: Add Provisional Tasks to Plans.md
 
-壁打ち内容を **仮タスク** として Plans.md に追加します。
+Add brainstormed content as **provisional tasks** to Plans.md.
 
 ```markdown
-## 🟠 検証中: {{プロジェクト名}} `pm:検証待ち`
+## 🟠 Under Validation: {{Project Name}} `pm:awaiting-validation`
 
-> ⚠️ このセクションは Claude Code での壁打ち内容です。
-> Cursor (PM) で実現可能性を検証し、タスク分解してください。
+> ⚠️ This section contains brainstormed content from Claude Code.
+> Please validate feasibility and break down tasks with Cursor (PM).
 
-### 背景
-- （壁打ちで話した背景・目的）
+### Background
+- (Background/purpose discussed in brainstorming)
 
-### 仮タスク（検証対象）
-- [ ] {{仮タスク1}} `検証待ち`
-- [ ] {{仮タスク2}} `検証待ち`
-- [ ] {{仮タスク3}} `検証待ち`
+### Provisional Tasks (To Validate)
+- [ ] {{provisional-task1}} `awaiting-validation`
+- [ ] {{provisional-task2}} `awaiting-validation`
+- [ ] {{provisional-task3}} `awaiting-validation`
 
-### 技術選択（案）
-- {{技術1}}: （選定理由）
-- {{技術2}}: （選定理由）
+### Technology Choices (Draft)
+- {{tech1}}: (selection reason)
+- {{tech2}}: (selection reason)
 
-### 未決事項
-- {{未決1}} → **PM判断を求める**
-- {{未決2}} → **PM判断を求める**
+### Undecided Items
+- {{undecided1}} → **Requesting PM decision**
+- {{undecided2}} → **Requesting PM decision**
 
-### 懸念点
-- {{懸念1}}
+### Concerns
+- {{concern1}}
 ```
 
 ---
 
-### Step 3: Cursor向け検証依頼文の生成
+### Step 3: Generate Validation Request for Cursor
 
-以下のフォーマットで **Cursor にコピペする依頼文** を生成します：
+Generate **request text to copy-paste to Cursor** in the following format:
 
 ```markdown
 ---
-## 📋 計画検証依頼（Claude Code → Cursor）
+## 📋 Plan Validation Request (Claude Code → Cursor)
 
-Claude Code で壁打ちした内容の実現可能性を検証してください。
+Please validate the feasibility of content brainstormed in Claude Code.
 
-### 検証依頼内容
+### Validation Request Content
 
-**やりたいこと**:
-{{要約}}
+**Goal**:
+{{summary}}
 
-**壁打ちで出た仮タスク**:
-1. {{仮タスク1}}
-2. {{仮タスク2}}
-3. {{仮タスク3}}
+**Provisional tasks from brainstorming**:
+1. {{provisional-task1}}
+2. {{provisional-task2}}
+3. {{provisional-task3}}
 
-**技術選択（案）**:
-- {{技術スタック}}
+**Technology choices (draft)**:
+- {{tech stack}}
 
-**未決事項（PM判断を求める）**:
-- {{未決1}}
-- {{未決2}}
+**Undecided items (requesting PM decision)**:
+- {{undecided1}}
+- {{undecided2}}
 
-**懸念点**:
-- {{懸念1}}
-
----
-
-### ✅ Cursor (PM) に依頼すること
-
-1. **実現可能性の検証**
-   - 仮タスクが技術的に実現可能か
-   - 見落としている前提条件がないか
-
-2. **タスク分解**
-   - 仮タスクを実装可能な粒度に分解
-   - 依存関係・順序を整理
-
-3. **未決事項の判断**
-   - 上記の未決事項について決定
-
-4. **Plans.md の更新**
-   - `pm:検証待ち` → `cc:TODO` に変更
-   - 分解したタスクを追記
+**Concerns**:
+- {{concern1}}
 
 ---
 
-### 📤 検証完了後
+### ✅ Requesting Cursor (PM) to:
 
-Plans.md の更新が完了したら、`/handoff-to-claude` を実行して
-Claude Code への依頼文を生成してください。
+1. **Validate feasibility**
+   - Are provisional tasks technically feasible?
+   - Are there any overlooked prerequisites?
+
+2. **Break down tasks**
+   - Break down provisional tasks into implementable granularity
+   - Organize dependencies and order
+
+3. **Decide on undecided items**
+   - Make decisions on the above undecided items
+
+4. **Update Plans.md**
+   - Change `pm:awaiting-validation` → `cc:TODO`
+   - Add broken down tasks
+
+---
+
+### 📤 After Validation Complete
+
+Once Plans.md update is complete, run `/handoff-to-claude` to
+generate the request for Claude Code.
 
 ---
 ```
 
 ---
 
-### Step 4: ユーザーへの次のアクション案内
+### Step 4: Guide User to Next Action
 
-> ✅ **検証依頼文を生成しました！**
+> ✅ **Generated validation request!**
 >
-> **次にやること**:
+> **Next steps**:
 >
-> 1. 上の依頼文を **Cursor** にコピー＆ペースト
-> 2. Cursor で `/plan-with-cc` を実行（または直接レビュー）
-> 3. Cursor が Plans.md を更新
-> 4. Cursor が `/handoff-to-claude` を実行
-> 5. 生成された依頼文を **Claude Code** にコピー＆ペースト
+> 1. Copy & paste the above request to **Cursor**
+> 2. Run `/plan-with-cc` in Cursor (or review directly)
+> 3. Cursor updates Plans.md
+> 4. Cursor runs `/handoff-to-claude`
+> 5. Copy & paste the generated request to **Claude Code**
 >
-> **待機状態**: Claude Code は Cursor からのハンドオフを待っています。
+> **Waiting state**: Claude Code is waiting for handoff from Cursor.
 >
-> 💡 **ヒント**: Cursor での検証が終わったら「検証終わったよ」と言ってください。
+> 💡 **Hint**: When validation in Cursor is complete, say "validation is done".
 
 ---
 
-## 出力例
+## Output Example
 
-### 例: タスク管理アプリの壁打ち後
+### Example: After brainstorming task management app
 
 ```
-ユーザー: /cc-cursor-cc
+User: /cc-cursor-cc
 
 Claude Code:
-> 📝 壁打ちの内容をまとめました
+> 📝 Summarized the brainstorming content
 >
-> **やりたいこと**: Notion風のタスク管理アプリ
-> **技術選択**: Next.js + Supabase + TailwindCSS
-> **決まったこと**:
-> - カンバン表示が必須
-> - タグ機能も欲しい
-> **未決事項**:
-> - リアルタイム同期は必要か？
-> **懸念点**:
-> - ドラッグ&ドロップの実装が複雑かも
+> **Goal**: Notion-like task management app
+> **Technology choices**: Next.js + Supabase + TailwindCSS
+> **Decisions made**:
+> - Kanban view is required
+> - Tag feature is also needed
+> **Undecided items**:
+> - Is real-time sync needed?
+> **Concerns**:
+> - Drag & drop implementation might be complex
 
-ユーザー: OK
+User: OK
 
 Claude Code:
-（Plans.md に仮タスクを追加）
-（Cursor向け検証依頼文を生成）
+(Added provisional tasks to Plans.md)
+(Generated validation request for Cursor)
 
-> ✅ 検証依頼文を生成しました！
-> 次にやること: Cursor に貼り付けてください...
+> ✅ Generated validation request!
+> Next steps: Paste to Cursor...
 ```
 
 ---
 
-## フロー全体図
+## Overall Flow Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                      Claude Code                            │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
-│  │   壁打ち    │ →  │ /cc-cursor-cc│ →  │  依頼文生成  │     │
+│  │ Brainstorm  │ →  │/cc-cursor-cc│ →  │Gen Request  │     │
 │  └─────────────┘    └─────────────┘    └──────┬──────┘     │
-│                                               │ コピペ     │
+│                                               │ Copy-paste │
 └───────────────────────────────────────────────┼─────────────┘
                                                 ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                        Cursor (PM)                          │
 │  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
-│  │ /plan-with-cc│ →  │ Plans.md更新 │ →  │/handoff-to- │     │
-│  │   で検証     │    │ (タスク分解) │    │   claude    │     │
+│  │/plan-with-cc│ →  │Update       │ →  │/handoff-to- │     │
+│  │  validate   │    │Plans.md     │    │   claude    │     │
 │  └─────────────┘    └─────────────┘    └──────┬──────┘     │
-│                                               │ コピペ     │
+│                                               │ Copy-paste │
 └───────────────────────────────────────────────┼─────────────┘
                                                 ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                      Claude Code                            │
 │  ┌─────────────┐    ┌─────────────┐                        │
-│  │   /work     │ →  │    実装     │                        │
+│  │   /work     │ →  │ Implement   │                        │
 │  └─────────────┘    └─────────────┘                        │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 関連コマンド
+## Related Commands
 
-| コマンド | 役割 | 担当 |
-|---------|------|------|
-| `/plan-with-agent` | ソロモードでの計画作成 | Claude Code |
-| `/plan-with-cc` | 計画の検証・分解 | Cursor |
-| `/handoff-to-claude` | Claude Code への依頼文生成 | Cursor |
-| `/handoff-to-cursor` | Cursor への完了報告 | Claude Code |
-| `/work` | タスク実装 | Claude Code |
+| Command | Role | Agent |
+|---------|------|-------|
+| `/plan-with-agent` | Create plan in solo mode | Claude Code |
+| `/plan-with-cc` | Validate and break down plan | Cursor |
+| `/handoff-to-claude` | Generate request for Claude Code | Cursor |
+| `/handoff-to-cursor` | Completion report to Cursor | Claude Code |
+| `/work` | Task implementation | Claude Code |
 
 ---
 
-## 注意事項
+## Notes
 
-- **2エージェント運用専用**: ソロモードでは `/plan-with-agent` を使用してください
-- **コピペが必要**: 現状、Claude Code と Cursor は直接連携できないため、手動でのコピペが必要です
-- **Plans.md の同期**: 両方が同じ Plans.md を参照していることを確認してください
+- **2-agent operation only**: Use `/plan-with-agent` for solo mode
+- **Copy-paste required**: Currently, Claude Code and Cursor cannot directly connect, so manual copy-paste is required
+- **Plans.md sync**: Ensure both are referencing the same Plans.md

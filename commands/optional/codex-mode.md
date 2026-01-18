@@ -1,69 +1,69 @@
 ---
-description: Codex モードのオン/オフを切り替え
+description: Toggle Codex mode on/off for reviews
 description-en: Toggle Codex mode on/off for reviews
 ---
 
-# /codex-mode - Codex モード切り替え
+# /codex-mode - Toggle Codex Mode
 
-レビュー時の Codex モード（GPT エキスパートへの並列委譲）を切り替えます。
+Toggles Codex mode (parallel delegation to GPT experts) during reviews.
 
-## 使用方法
+## Usage
 
 ```bash
-/codex-mode           # 現在の状態を表示
-/codex-mode on        # Codex モードを有効化
-/codex-mode off       # Codex モードを無効化
-/codex-mode status    # 詳細設定を表示
+/codex-mode           # Show current state
+/codex-mode on        # Enable Codex mode
+/codex-mode off       # Disable Codex mode
+/codex-mode status    # Show detailed settings
 ```
 
-## 前提条件
+## Prerequisites
 
-- Codex MCP サーバーが設定済みであること
-- `/codex-review` または `/harness-review` でセットアップ済み
+- Codex MCP server is configured
+- Setup completed with `/codex-review` or `/harness-review`
 
-## Codex モードとは
+## What is Codex Mode
 
-| モード | レビュー実行者 | 特徴 |
-|-------|--------------|------|
-| **デフォルト** | Claude 単体 | 高速、Codex 不要 |
-| **Codex モード** | Codex（GPT） | 9 エキスパートに並列委譲 |
+| Mode | Reviewer | Characteristics |
+|------|----------|-----------------|
+| **Default** | Claude alone | Fast, no Codex required |
+| **Codex mode** | Codex (GPT) | Parallel delegation to 9 experts |
 
-### Codex モードの 9 エキスパート
+### Codex Mode's 9 Experts
 
-| エキスパート | 役割 | 観点 |
-|-------------|------|------|
-| Security | セキュリティ分析 | OWASP Top 10、認証・認可 |
-| Accessibility | a11y チェック | WCAG 2.1 AA 準拠 |
-| Performance | パフォーマンス分析 | レンダリング、DB クエリ |
-| Quality | コード品質 | 可読性、保守性 |
-| SEO | SEO/OGP チェック | メタタグ、構造化データ |
-| Architect | 設計レビュー | アーキテクチャ判断 |
-| Plan Reviewer | 計画検証 | 完全性、リスク分析 |
-| Scope Analyst | 要件分析 | 曖昧さ、欠落の検出 |
+| Expert | Role | Perspective |
+|--------|------|-------------|
+| Security | Security analysis | OWASP Top 10, authentication/authorization |
+| Accessibility | a11y check | WCAG 2.1 AA compliance |
+| Performance | Performance analysis | Rendering, DB queries |
+| Quality | Code quality | Readability, maintainability |
+| SEO | SEO/OGP check | Meta tags, structured data |
+| Architect | Design review | Architectural decisions |
+| Plan Reviewer | Plan verification | Completeness, risk analysis |
+| Scope Analyst | Requirements analysis | Ambiguity, gap detection |
 
-## 実行フロー
+## Execution Flow
 
-### 1. 状態表示 (`/codex-mode`)
+### 1. Show State (`/codex-mode`)
 
 ```markdown
-## Codex モード設定
+## Codex Mode Settings
 
-現在: **OFF** (デフォルトモード)
+Current: **OFF** (default mode)
 
-レビュー実行者: Claude 単体
-Codex MCP: ✅ 設定済み
+Reviewer: Claude alone
+Codex MCP: ✅ Configured
 
-切り替え: `/codex-mode on` で有効化
+Toggle: `/codex-mode on` to enable
 ```
 
-### 2. 有効化 (`/codex-mode on`)
+### 2. Enable (`/codex-mode on`)
 
 ```markdown
-## Codex モード: ON
+## Codex Mode: ON
 
-✅ Codex モードを有効化しました
+✅ Codex mode enabled
 
-有効なエキスパート:
+Active experts:
 - ✅ Security
 - ✅ Accessibility
 - ✅ Performance
@@ -73,35 +73,35 @@ Codex MCP: ✅ 設定済み
 - ✅ Plan Reviewer
 - ✅ Scope Analyst
 
-次回の `/harness-review` から Codex に並列委譲されます。
+Next `/harness-review` will delegate to Codex in parallel.
 ```
 
-### 3. 無効化 (`/codex-mode off`)
+### 3. Disable (`/codex-mode off`)
 
 ```markdown
-## Codex モード: OFF
+## Codex Mode: OFF
 
-✅ デフォルトモードに戻しました
+✅ Returned to default mode
 
-次回の `/harness-review` は Claude 単体で実行されます。
+Next `/harness-review` will run with Claude alone.
 ```
 
-### 4. 詳細表示 (`/codex-mode status`)
+### 4. Show Details (`/codex-mode status`)
 
 ```markdown
-## Codex モード詳細設定
+## Codex Mode Detailed Settings
 
-| 設定項目 | 現在値 |
-|---------|--------|
-| モード | codex |
-| 判定出力 | enabled |
-| 自動修正 | enabled |
-| 最大リトライ | 3 |
+| Setting | Current Value |
+|---------|---------------|
+| Mode | codex |
+| Judgment output | enabled |
+| Auto-fix | enabled |
+| Max retries | 3 |
 
-### エキスパート設定
+### Expert Settings
 
-| エキスパート | 状態 |
-|-------------|------|
+| Expert | State |
+|--------|-------|
 | security | ✅ ON |
 | accessibility | ✅ ON |
 | performance | ✅ ON |
@@ -111,17 +111,17 @@ Codex MCP: ✅ 設定済み
 | plan_reviewer | ✅ ON |
 | scope_analyst | ✅ ON |
 
-### 個別切り替え
+### Individual Toggle
 
 ```bash
-/codex-mode experts security off   # Security のみ無効化
-/codex-mode experts architect on   # Architect のみ有効化
+/codex-mode experts security off   # Disable Security only
+/codex-mode experts architect on   # Enable Architect only
 ```
 ```
 
-## 設定ファイルの更新
+## Config File Update
 
-このコマンドは `.claude-code-harness.config.yaml` を更新します。
+This command updates `.claude-code-harness.config.yaml`.
 
 ```yaml
 review:
@@ -144,29 +144,29 @@ review:
       scope_analyst: true
 ```
 
-## エキスパート個別設定
+## Individual Expert Settings
 
-特定のエキスパートだけを有効/無効にできます。
+You can enable/disable specific experts only.
 
 ```bash
-# Security のみ無効化（他は維持）
+# Disable Security only (keep others)
 /codex-mode experts security off
 
-# Architect と Plan Reviewer のみ有効化
+# Enable only Architect and Plan Reviewer
 /codex-mode experts architect on
 /codex-mode experts plan_reviewer on
 ```
 
-## VibeCoder 向け
+## VibeCoder Phrases
 
-| やりたいこと | 言い方 |
-|-------------|--------|
-| Codex を使いたい | 「Codex モードにして」 |
-| 通常に戻したい | 「デフォルトに戻して」 |
-| 設定を確認したい | 「Codex の設定を見せて」 |
-| セキュリティだけ無効 | 「セキュリティチェックはいらない」 |
+| What You Want | How to Say |
+|---------------|------------|
+| Want to use Codex | "Switch to Codex mode" |
+| Return to normal | "Return to default" |
+| Check settings | "Show Codex settings" |
+| Disable security only | "I don't need the security check" |
 
-## 関連コマンド
+## Related Commands
 
-- `/harness-review` - レビュー実行（Codex モード対応）
-- `/codex-review` - Codex MCP セットアップ
+- `/harness-review` - Run review (Codex mode supported)
+- `/codex-review` - Codex MCP setup

@@ -1,5 +1,5 @@
 ---
-description: コードレビュー（組み込み review との衝突回避）
+description: Code review (multi-perspective security/performance/quality)
 description-en: Code review (multi-perspective security/performance/quality)
 context: fork
 hooks:
@@ -9,128 +9,128 @@ hooks:
     once: true
 ---
 
-# /harness-review - コードレビュー（ソロモード）
+# /harness-review - Code Review (Solo Mode)
 
-作成したコードの品質をチェックします。
-複数の観点から分析し、改善点を提案します。
-
----
-
-## 💡 バイブコーダー向けの使い方
-
-**このコマンドは、技術的な知識がなくても高品質なコードレビューを受けられるように設計されています。**
-
-- ✅ セキュリティの問題を自動検出
-- ✅ パフォーマンスの改善点を提案
-- ✅ コード品質を自動チェック
-- ✅ アクセシビリティ対応を確認
-
-**受託開発で重要**: クライアントに安心してもらうため、レビュー結果をレポートとして提出できます
+Checks the quality of created code.
+Analyzes from multiple perspectives and suggests improvements.
 
 ---
 
-## 🔧 自動呼び出しスキル（必須）
+## 💡 VibeCoder Usage Guide
 
-**このコマンドは以下のスキルを Skill ツールで明示的に呼び出すこと**：
+**This command is designed so you can receive high-quality code review without technical knowledge.**
 
-| スキル | 用途 | 呼び出しタイミング |
-|-------|------|------------------|
-| `review` | レビュー（親スキル） | レビュー開始時 |
-| `codex-review` | Codex セカンドオピニオン | Codex 有効時（オプション） |
+- ✅ Auto-detect security issues
+- ✅ Suggest performance improvements
+- ✅ Auto-check code quality
+- ✅ Verify accessibility compliance
 
-**呼び出し方法**:
+**Important for contract development**: You can submit review results as a report to reassure clients
+
+---
+
+## 🔧 Auto-invoke Skills (Required)
+
+**This command must explicitly invoke the following skills with the Skill tool**:
+
+| Skill | Purpose | When to Call |
+|-------|---------|--------------|
+| `review` | Review (parent skill) | At review start |
+| `codex-review` | Codex second opinion | When Codex is enabled (optional) |
+
+**How to call**:
 ```
-Skill ツールを使用:
+Use Skill tool:
   skill: "claude-code-harness:review"
 ```
 
-**子スキル（自動ルーティング）**:
-- `review-security` - セキュリティレビュー
-- `review-performance` - パフォーマンスレビュー
-- `review-quality` - コード品質レビュー
-- `review-accessibility` - アクセシビリティレビュー
-- `review-aggregate` - レビュー結果の集約
+**Child skills (auto-routing)**:
+- `review-security` - Security review
+- `review-performance` - Performance review
+- `review-quality` - Code quality review
+- `review-accessibility` - Accessibility review
+- `review-aggregate` - Aggregate review results
 
-> ⚠️ **重要**: スキルを呼び出さずに進めると usage 統計に記録されません。必ず Skill ツールで呼び出してください。
+> ⚠️ **Important**: Proceeding without calling skills won't record in usage statistics. Always call with Skill tool.
 
 ---
 
-## 🔧 LSP 機能の活用
+## 🔧 LSP Feature Utilization
 
-レビューでは LSP（Language Server Protocol）を活用して、より精度の高い分析を行います。
+Reviews utilize LSP (Language Server Protocol) for more accurate analysis.
 
-### LSP Diagnostics によるコード品質チェック
-
-```
-📊 LSP 診断結果
-
-ファイル: src/components/UserForm.tsx
-
-| 行 | 重要度 | メッセージ |
-|----|--------|-----------|
-| 15 | Error | 型 'string' を型 'number' に割り当てることはできません |
-| 23 | Warning | 'tempData' は宣言されていますが、使用されていません |
-| 42 | Info | この async 関数には await がありません |
-
-→ 型エラー・未使用変数を自動検出
-```
-
-### LSP Find-references による影響範囲分析
-
-変更されたコードがどこで使われているかを LSP で分析：
+### Code Quality Check with LSP Diagnostics
 
 ```
-🔍 変更の影響範囲
+📊 LSP Diagnostic Results
 
-変更: src/utils/formatDate.ts
+File: src/components/UserForm.tsx
 
-参照箇所:
+| Line | Severity | Message |
+|------|----------|---------|
+| 15 | Error | Type 'string' cannot be assigned to type 'number' |
+| 23 | Warning | 'tempData' is declared but not used |
+| 42 | Info | This async function has no await |
+
+→ Auto-detect type errors and unused variables
+```
+
+### Impact Analysis with LSP Find-references
+
+Analyze where changed code is used with LSP:
+
+```
+🔍 Change Impact Scope
+
+Changed: src/utils/formatDate.ts
+
+Reference locations:
 ├── src/components/DateDisplay.tsx:12
 ├── src/components/EventCard.tsx:45
 ├── src/pages/Dashboard.tsx:78
 └── tests/utils/formatDate.test.ts:5
 
-→ 4ファイルに影響
-→ テストでカバーされていることを確認 ✅
+→ Impacts 4 files
+→ Confirmed covered by tests ✅
 ```
 
-### レビュー観点への統合
+### Integration with Review Perspectives
 
-| レビュー観点 | LSP 活用 |
-|-------------|---------|
-| **品質** | Diagnostics で型エラー・未使用コードを検出 |
-| **セキュリティ** | 参照分析で機密データの流れを追跡 |
-| **パフォーマンス** | 定義ジャンプで重い処理の実装を確認 |
+| Review Perspective | LSP Usage |
+|-------------------|-----------|
+| **Quality** | Detect type errors and unused code with Diagnostics |
+| **Security** | Track sensitive data flow with reference analysis |
+| **Performance** | Confirm heavy processing implementation with definition jump |
 
-### VibeCoder 向けの言い方
+### VibeCoder Phrases
 
-| やりたいこと | 言い方 |
-|-------------|--------|
-| 型エラーをチェック | 「LSP診断を含めてレビューして」 |
-| 変更の影響を知りたい | 「この変更がどこに影響するか調べて」 |
+| What You Want | How to Say |
+|---------------|------------|
+| Check type errors | "Review including LSP diagnostics" |
+| Know change impact | "Check where this change affects" |
 
-詳細: [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md)
-
----
-
-## このコマンドの目的
-
-**受託開発の品質保証**を自動化します。
-
-- クライアントに提出するコードの品質を担保
-- セキュリティリスクを事前に検出
-- パフォーマンス問題を早期発見
-- アクセシビリティ対応を確認
+Details: [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md)
 
 ---
 
-## 実行フロー
+## Purpose of This Command
 
-### Step 0: Codex セカンドオピニオン確認（once hook で自動実行）
+**Automates quality assurance for contract development**.
 
-**初回実行時に `once: true` hook により Codex の有無を自動確認します。**
+- Ensure quality of code submitted to clients
+- Detect security risks in advance
+- Find performance issues early
+- Verify accessibility compliance
 
-このコマンドの frontmatter に定義された hook:
+---
+
+## Execution Flow
+
+### Step 0: Codex Second Opinion Check (auto-execute with once hook)
+
+**Automatically checks Codex availability with `once: true` hook on first execution.**
+
+Hook defined in this command's frontmatter:
 ```yaml
 hooks:
   - event: PreCommandInvoke
@@ -139,85 +139,85 @@ hooks:
     once: true
 ```
 
-**動作**:
-- セッション内で最初の `/harness-review` 実行時のみ `check-codex.sh` が実行される
-- Codex がインストールされていれば、有効化方法を案内
-- 2回目以降は自動スキップ（`once: true` の効果）
+**Behavior**:
+- `check-codex.sh` runs only on first `/harness-review` execution in session
+- If Codex is installed, guides how to enable
+- Auto-skips on subsequent runs (`once: true` effect)
 
-**Codex を有効化する場合**:
+**To enable Codex**:
 
-プロジェクト設定ファイル（`.claude-code-harness.config.yaml`）に以下を追加:
+Add the following to project config (`.claude-code-harness.config.yaml`):
 ```yaml
 review:
   codex:
     enabled: true
 ```
 
-> 💡 **手動で Codex レビューのみ実行したい場合**: `/codex-review` コマンドを使用してください
+> 💡 **To run Codex review only manually**: Use `/codex-review` command
 
 ---
 
-### Step 0.5: 残コンテキスト確認（Codex モード時）
+### Step 0.5: Remaining Context Check (Codex mode)
 
-Codex 並列レビューの前に**残コンテキストが 30%以下なら /compact を実行してから続行**してください。
+Before Codex parallel review, **run /compact first if remaining context is 30% or less**.
 
-> **注意**: /compact 後も余裕が少ない場合でも、Codex 並列レビューは継続します。
+> **Note**: Continue with Codex parallel review even if space is still tight after /compact.
 
 ---
 
-### Step 1: 変更ファイルの特定
+### Step 1: Identify Changed Files
 
 ```bash
-# 直近の変更を確認
+# Check recent changes
 git diff --name-only HEAD~5 2>/dev/null || find . -name "*.ts" -o -name "*.tsx" -o -name "*.py" | head -20
 ```
 
-### Step 2: 並列レビューの実行
+### Step 2: Execute Parallel Reviews
 
-以下の観点で並列レビューを実行します。**Task tool**を使用して複数のサブエージェントを同時に起動し、レビュー時間を短縮します。
+Execute parallel reviews from the following perspectives. Use **Task tool** to launch multiple subagents simultaneously and reduce review time.
 
-**💡 非同期サブエージェントによる真の並列実行**:
-各レビューを個別に実行し、`Ctrl+B`でバックグラウンドに送ることで、完全に並列で実行できます。詳細は[非同期サブエージェントガイド](../docs/ASYNC_SUBAGENTS.md)を参照してください。
+**💡 True parallel execution with async subagents**:
+Run each review individually and send to background with `Ctrl+B` for fully parallel execution. See [Async Subagents Guide](../docs/ASYNC_SUBAGENTS.md) for details.
 
-**手動並列実行の手順**:
-1. `/harness-review security` を実行 → `Ctrl+B` でバックグラウンドへ
-2. `/harness-review performance` を実行 → `Ctrl+B` でバックグラウンドへ
-3. `/harness-review quality` を実行 → `Ctrl+B` でバックグラウンドへ
-4. `/harness-review accessibility` を実行 → `Ctrl+B` でバックグラウンドへ
-5. 各サブエージェントが完了すると自動的に通知されます
+**Manual parallel execution steps**:
+1. Run `/harness-review security` → `Ctrl+B` to background
+2. Run `/harness-review performance` → `Ctrl+B` to background
+3. Run `/harness-review quality` → `Ctrl+B` to background
+4. Run `/harness-review accessibility` → `Ctrl+B` to background
+5. Auto-notification when each subagent completes
 
-**モード別の並列実行:**
+**Mode-specific parallel execution:**
 
-#### Default モード（`review.mode: default`）- Task tool で code-reviewer を4並列起動
-
-```
-🔍 並列レビュー開始...
-
-Task tool #1: subagent_type="code-reviewer" → セキュリティ観点
-Task tool #2: subagent_type="code-reviewer" → パフォーマンス観点
-Task tool #3: subagent_type="code-reviewer" → 品質観点
-Task tool #4: subagent_type="code-reviewer" → アクセシビリティ観点
-
-→ 4つのサブエージェントが並列実行
-→ 結果を統合して総合評価を出力
-```
-
-#### Codex モード（`review.mode: codex`）- 必要なエキスパートのみ MCP 並列実行
-
-**⚠️ 重要: 1回の呼び出しで複数エキスパートをまとめないこと**
+#### Default Mode (`review.mode: default`) - Launch 4 parallel code-reviewers with Task tool
 
 ```
-🔍 Codex 並列レビュー開始...
+🔍 Starting parallel review...
 
-1. 呼び出すエキスパートを判定（全部ではなく必要なもののみ）:
-   - 設定で enabled: false → 除外
-   - CLI/バックエンド → Accessibility, SEO 除外
-   - ドキュメントのみ変更 → Quality, Architect, Plan Reviewer, Scope Analyst を優先
+Task tool #1: subagent_type="code-reviewer" → Security perspective
+Task tool #2: subagent_type="code-reviewer" → Performance perspective
+Task tool #3: subagent_type="code-reviewer" → Quality perspective
+Task tool #4: subagent_type="code-reviewer" → Accessibility perspective
 
-2. 有効なエキスパートの experts/*.md からプロンプトを個別に読み込む
+→ 4 subagents execute in parallel
+→ Integrate results and output overall evaluation
+```
 
-3. 有効なエキスパートのみ mcp__codex__codex を1レスポンス内で並列実行:
-   例: Webフロントエンドでコード変更あり → 6エキスパート並列
+#### Codex Mode (`review.mode: codex`) - MCP parallel execution with only needed experts
+
+**⚠️ Important: Do not combine multiple experts in one call**
+
+```
+🔍 Starting Codex parallel review...
+
+1. Determine which experts to call (only needed ones, not all):
+   - enabled: false in config → exclude
+   - CLI/backend → exclude Accessibility, SEO
+   - Document only changes → prioritize Quality, Architect, Plan Reviewer, Scope Analyst
+
+2. Load prompts individually from enabled experts' experts/*.md
+
+3. Execute mcp__codex__codex in parallel within 1 response for enabled experts only:
+   Example: Web frontend with code changes → 6 experts in parallel
    mcp__codex__codex({prompt: security-expert.md})
    mcp__codex__codex({prompt: accessibility-expert.md})
    mcp__codex__codex({prompt: performance-expert.md})
@@ -225,193 +225,193 @@ Task tool #4: subagent_type="code-reviewer" → アクセシビリティ観点
    mcp__codex__codex({prompt: seo-expert.md})
    mcp__codex__codex({prompt: architect-expert.md})
 
-→ 必要なエキスパートのみ並列実行（コスト最適化）
-→ 各エキスパートの結果を統合して判定
+→ Only needed experts execute in parallel (cost optimization)
+→ Integrate each expert's results for judgment
 ```
 
-**詳細**: `skills/codex-review/references/codex-parallel-review.md`
+**Details**: `skills/codex-review/references/codex-parallel-review.md`
 
-レビュー観点：
+Review perspectives:
 
-#### 🔒 セキュリティチェック
+#### 🔒 Security Check
 
-- [ ] 環境変数の適切な管理
-- [ ] 入力のバリデーション
-- [ ] SQLインジェクション対策
-- [ ] XSS対策
-- [ ] 認証・認可の実装
+- [ ] Proper environment variable management
+- [ ] Input validation
+- [ ] SQL injection protection
+- [ ] XSS protection
+- [ ] Authentication/authorization implementation
 
-#### ⚡ パフォーマンスチェック
+#### ⚡ Performance Check
 
-- [ ] 不要な再レンダリング
-- [ ] N+1クエリ
-- [ ] 重い計算の最適化
-- [ ] 画像・アセットの最適化
+- [ ] Unnecessary re-renders
+- [ ] N+1 queries
+- [ ] Heavy computation optimization
+- [ ] Image/asset optimization
 
-#### 📐 コード品質チェック
+#### 📐 Code Quality Check
 
-- [ ] TypeScript型の適切な使用
-- [ ] エラーハンドリング
-- [ ] 命名規則の一貫性
-- [ ] ファイル構成の適切さ
+- [ ] Proper TypeScript type usage
+- [ ] Error handling
+- [ ] Naming convention consistency
+- [ ] Appropriate file structure
 
-#### ♿ アクセシビリティチェック（Webの場合）
+#### ♿ Accessibility Check (for Web)
 
-- [ ] セマンティックHTML
-- [ ] altテキスト
-- [ ] キーボード操作
-- [ ] カラーコントラスト
+- [ ] Semantic HTML
+- [ ] Alt text
+- [ ] Keyboard navigation
+- [ ] Color contrast
 
-### Step 2.5: 結果統合と Codex 検証（Codex 有効時）
+### Step 2.5: Result Integration and Codex Verification (when Codex enabled)
 
-**`codex.enabled: true` の場合、Claude が Codex のレビュー結果を検証し、修正が必要かどうかを判断します。**
+**When `codex.enabled: true`, Claude verifies Codex review results and determines if fixes are needed.**
 
 ```
-📊 レビュー結果統合中...
+📊 Integrating review results...
 
-1. Claude 4観点レビュー結果を集約
-2. Codex レビュー結果を取得
-3. Claude が Codex の指摘を検証
-   - 妥当な指摘か？
-   - 修正が必要か？
-   - 優先度は？
+1. Aggregate Claude 4-perspective review results
+2. Get Codex review results
+3. Claude verifies Codex findings
+   - Is the finding valid?
+   - Is a fix needed?
+   - What's the priority?
 ```
 
-**結果の統合と検証**:
+**Result integration and verification**:
 
 ```markdown
-## 📊 レビュー結果比較
+## 📊 Review Result Comparison
 
-| 観点 | Claude | Codex | 一致 |
-|------|--------|-------|------|
-| セキュリティ | 2件 | 1件 | 1件共通 |
-| パフォーマンス | 1件 | 2件 | 1件共通 |
+| Perspective | Claude | Codex | Match |
+|-------------|--------|-------|-------|
+| Security | 2 issues | 1 issue | 1 common |
+| Performance | 1 issue | 2 issues | 1 common |
 
-### 🔴 両者が指摘（優先度高・修正推奨）
-- SQL インジェクションの可能性（src/api/users.ts:45）
-  → **Claude 検証**: 妥当。パラメータ化クエリに修正が必要
+### 🔴 Both Flagged (High Priority - Fix Recommended)
+- Possible SQL injection (src/api/users.ts:45)
+  → **Claude verification**: Valid. Need to fix with parameterized queries
 
-### 🟡 Claude のみ指摘
-- 未使用変数（src/utils/helpers.ts:12）
-  → **修正推奨**: 削除または使用
+### 🟡 Claude Only Flagged
+- Unused variable (src/utils/helpers.ts:12)
+  → **Fix recommended**: Delete or use
 
-### 🟢 Codex のみ指摘（Claude 検証済み）
-- N+1 クエリの可能性（src/api/posts.ts:30）
-  → **Claude 検証**: 妥当。prefetch を追加すべき
+### 🟢 Codex Only Flagged (Claude Verified)
+- Possible N+1 query (src/api/posts.ts:30)
+  → **Claude verification**: Valid. Should add prefetch
 ```
 
-**修正提案と承認フロー**:
+**Fix proposal and approval flow**:
 
 ```markdown
-## 🔧 修正が必要な項目
+## 🔧 Items Requiring Fixes
 
-以下の修正を Plans.md に追加して `/work` で実行しますか？
+Add the following fixes to Plans.md and execute with `/work`?
 
-| # | 修正内容 | ファイル | 優先度 |
-|---|---------|----------|--------|
-| 1 | SQL インジェクション対策 | src/api/users.ts:45 | 高 |
-| 2 | N+1 クエリ修正 | src/api/posts.ts:30 | 中 |
-| 3 | 未使用変数削除 | src/utils/helpers.ts:12 | 低 |
+| # | Fix Content | File | Priority |
+|---|-------------|------|----------|
+| 1 | SQL injection protection | src/api/users.ts:45 | High |
+| 2 | N+1 query fix | src/api/posts.ts:30 | Medium |
+| 3 | Delete unused variable | src/utils/helpers.ts:12 | Low |
 
-**選択肢:**
-1. すべて承認 → Plans.md に追加して `/work` 実行
-2. 選択して承認 → 番号を指定（例: 1,2）
-3. 今は修正しない → レポートのみ保存
+**Options:**
+1. Approve all → Add to Plans.md and run `/work`
+2. Approve selected → Specify numbers (e.g., 1,2)
+3. Don't fix now → Save report only
 ```
 
-**承認後のフロー**:
+**Flow after approval**:
 
 ```
-ユーザー承認
+User approval
     ↓
-Plans.md に修正タスクを追加
+Add fix tasks to Plans.md
     ↓
-/work を自動実行（または実行を提案）
+Auto-run /work (or suggest execution)
     ↓
-修正完了後に再レビュー（オプション）
+Re-review after fix completion (optional)
 ```
 
-> 💡 **Codex レビューのみを実行したい場合**: `/codex-review` コマンドを使用してください
+> 💡 **To run Codex review only**: Use `/codex-review` command
 
 ---
 
-### Step 3: レビュー結果の出力
+### Step 3: Output Review Results
 
-> 📊 **コードレビュー結果**
+> 📊 **Code Review Results**
 >
-> **総合評価**: {{A / B / C / D}}
+> **Overall Rating**: {{A / B / C / D}}
 >
 > ---
 >
-> ### 🔒 セキュリティ: {{評価}}
-> {{問題点または「問題なし」}}
+> ### 🔒 Security: {{Rating}}
+> {{Issues or "No issues"}}
 >
-> ### ⚡ パフォーマンス: {{評価}}
-> {{問題点または「問題なし」}}
+> ### ⚡ Performance: {{Rating}}
+> {{Issues or "No issues"}}
 >
-> ### 📐 コード品質: {{評価}}
-> {{問題点または「問題なし」}}
+> ### 📐 Code Quality: {{Rating}}
+> {{Issues or "No issues"}}
 >
-> ### ♿ アクセシビリティ: {{評価}}
-> {{問題点または「問題なし」}}
+> ### ♿ Accessibility: {{Rating}}
+> {{Issues or "No issues"}}
 >
 > ---
 >
-> ### 🔧 改善提案
+> ### 🔧 Improvement Suggestions
 >
-> 1. {{具体的な改善点1}}
-> 2. {{具体的な改善点2}}
+> 1. {{Specific improvement 1}}
+> 2. {{Specific improvement 2}}
 >
-> **自動で修正しますか？** (y / n / 選択)
+> **Fix automatically?** (y / n / select)
 
-### Step 4: 改善の実行（ユーザー承認後）
+### Step 4: Execute Improvements (after user approval)
 
-承認された改善を自動で実行：
+Automatically execute approved improvements:
 
 ```bash
-# 例: ESLint自動修正
+# Example: ESLint auto-fix
 npx eslint --fix src/
 
-# 例: Prettier適用
+# Example: Apply Prettier
 npx prettier --write src/
 ```
 
-### Step 5: 完了報告
+### Step 5: Completion Report
 
-> ✅ **レビュー完了**
+> ✅ **Review Complete**
 >
-> **修正した項目:**
-> - {{修正1}}
-> - {{修正2}}
+> **Fixed items:**
+> - {{fix1}}
+> - {{fix2}}
 >
-> **次にやること:**
-> 「コミットして」または「次のフェーズへ」と言ってください。
+> **Next steps:**
+> Say "commit" or "proceed to next phase".
 
-### Step 6: コミットガード連携（コミット前レビュー必須化）
+### Step 6: Commit Guard Integration (Require review before commit)
 
-**レビュー結果が APPROVE の場合、コミットを許可する状態ファイルを生成します。**
+**If review result is APPROVE, generate state file to allow commit.**
 
-この機能により、レビューなしでコミットしようとするとブロックされます。
+This feature blocks commit attempts without review.
 
-**動作フロー**:
+**Operation flow**:
 ```
-/harness-review 実行
+/harness-review execution
     ↓
-レビュー結果が APPROVE
+Review result is APPROVE
     ↓
-.claude/state/review-approved.json を生成
+Generate .claude/state/review-approved.json
     ↓
-git commit が許可される
+git commit is allowed
     ↓
-コミット成功後、review-approved.json をクリア
+Clear review-approved.json after successful commit
     ↓
-次回のコミット前に再度レビューが必要
+Review required again before next commit
 ```
 
-**状態ファイルの生成（APPROVE 時に自動実行）**:
+**State file generation (auto-execute on APPROVE)**:
 
 ```bash
-# レビュー結果が APPROVE の場合、以下を実行
+# If review result is APPROVE, execute:
 mkdir -p .claude/state
 cat > .claude/state/review-approved.json << 'EOF'
 {
@@ -423,52 +423,52 @@ cat > .claude/state/review-approved.json << 'EOF'
 EOF
 ```
 
-**コミットガードを無効化したい場合**:
+**To disable commit guard**:
 
-`.claude-code-harness.config.yaml` に以下を追加:
+Add to `.claude-code-harness.config.yaml`:
 ```yaml
 commit_guard: false
 ```
 
-> 💡 **注意**: コミットガードを無効化すると、レビューなしでコミットできるようになります。品質保証のため、本番プロジェクトでは有効のままにすることを推奨します。
+> 💡 **Note**: Disabling commit guard allows commits without review. Recommended to keep enabled for production projects.
 
 ---
 
-## レビュー観点の詳細
+## Review Perspective Details
 
-### セキュリティ
+### Security
 
 ```typescript
-// ❌ 悪い例
-const apiKey = "sk-1234567890"  // ハードコード
+// ❌ Bad example
+const apiKey = "sk-1234567890"  // Hardcoded
 
-// ✅ 良い例
-const apiKey = process.env.API_KEY  // 環境変数
+// ✅ Good example
+const apiKey = process.env.API_KEY  // Environment variable
 ```
 
-### パフォーマンス
+### Performance
 
 ```typescript
-// ❌ 悪い例
+// ❌ Bad example
 const Component = () => {
-  const data = heavyCalculation()  // 毎回計算
+  const data = heavyCalculation()  // Calculates every time
   return <div>{data}</div>
 }
 
-// ✅ 良い例
+// ✅ Good example
 const Component = () => {
   const data = useMemo(() => heavyCalculation(), [])
   return <div>{data}</div>
 }
 ```
 
-### コード品質
+### Code Quality
 
 ```typescript
-// ❌ 悪い例
-function f(x: any) { return x.y.z }  // any型、エラーハンドリングなし
+// ❌ Bad example
+function f(x: any) { return x.y.z }  // any type, no error handling
 
-// ✅ 良い例
+// ✅ Good example
 function getNestedValue(obj: NestedObject): string | null {
   return obj?.y?.z ?? null
 }
@@ -476,79 +476,79 @@ function getNestedValue(obj: NestedObject): string | null {
 
 ---
 
-## VibeCoder 向け簡易版
+## VibeCoder Simplified Version
 
-技術的な詳細が不要な場合：
+When technical details are not needed:
 
-> 📊 **チェック結果**
+> 📊 **Check Results**
 >
-> - セキュリティ: ✅ OK
-> - 速度: ✅ OK
-> - コード品質: ⚠️ 2件の改善点
+> - Security: ✅ OK
+> - Speed: ✅ OK
+> - Code quality: ⚠️ 2 improvements
 >
-> 「直して」と言えば自動で修正します。
+> Say "fix it" to auto-fix.
 
 ---
 
-## オプション
+## Options
 
 ```
-/harness-review              # 全てチェック
-/harness-review security     # セキュリティのみ
-/harness-review performance  # パフォーマンスのみ
-/harness-review quick        # 簡易チェック
+/harness-review              # Check all
+/harness-review security     # Security only
+/harness-review performance  # Performance only
+/harness-review quick        # Quick check
 ```
 
 ---
 
-## ⚡ 並列実行の判断ポイント
+## ⚡ Parallel Execution Decision Points
 
-レビュー観点（セキュリティ/パフォーマンス/品質/アクセシビリティ/Codex）は**互いに独立**しているため、並列実行が効果的です。
+Review perspectives (Security/Performance/Quality/Accessibility/Codex) are **independent of each other**, so parallel execution is effective.
 
-### 並列実行すべき場合 ✅
+### When to Execute in Parallel ✅
 
-| 条件 | 理由 |
-|------|------|
-| フルレビュー（4観点すべて） | 時間短縮効果が最大 |
-| Codex 有効時（5観点） | Codex も並列で実行 |
-| 変更ファイルが 5 つ以上 | 各観点の処理時間が長くなる |
-| 急いで結果を知りたい | PR マージ前など |
+| Condition | Reason |
+|-----------|--------|
+| Full review (all 4 perspectives) | Maximum time savings |
+| Codex enabled (5 perspectives) | Codex also runs in parallel |
+| 5+ changed files | Each perspective takes longer |
+| Need results quickly | Before PR merge, etc. |
 
-**並列実行の効果（Codex 有効時）**:
+**Parallel execution effect (Codex enabled)**:
 ```
-🚀 並列レビュー開始...
-├── [Security] 分析中... ⏳
-├── [Performance] 分析中... ⏳
-├── [Quality] 分析中... ⏳
-├── [Accessibility] 分析中... ⏳
-└── [Codex] セカンドオピニオン取得中... ⏳
+🚀 Starting parallel review...
+├── [Security] Analyzing... ⏳
+├── [Performance] Analyzing... ⏳
+├── [Quality] Analyzing... ⏳
+├── [Accessibility] Analyzing... ⏳
+└── [Codex] Getting second opinion... ⏳
 
-⏱️ 所要時間: 35秒（Codex 逐次実行なら+30秒）
-```
-
-### 直列実行すべき場合 ⚠️
-
-| 条件 | 理由 |
-|------|------|
-| 単一観点のみ（`/harness-review security`） | 並列化不要 |
-| 変更ファイルが 1-2 つ | 各観点の処理が短い |
-| 1つずつ問題を確認したい | 対話的に修正を進めたい |
-
-### 自動判断ロジック
-
-```
-レビュー観点 >= 3 かつ 変更ファイル >= 5 → 並列実行（Task tool）
-レビュー観点 < 3 または 変更ファイル < 5 → 直列実行
+⏱️ Time: 35s (would be +30s if sequential Codex)
 ```
 
-### 手動で並列実行する方法
+### When to Execute Sequentially ⚠️
+
+| Condition | Reason |
+|-----------|--------|
+| Single perspective only (`/harness-review security`) | No parallelization needed |
+| 1-2 changed files | Each perspective is quick |
+| Want to check issues one by one | Progress interactively |
+
+### Auto-decision Logic
+
+```
+Review perspectives >= 3 AND changed files >= 5 → Parallel execution (Task tool)
+Review perspectives < 3 OR changed files < 5 → Sequential execution
+```
+
+### Manual Parallel Execution
 
 ```bash
-# バックグラウンドで並列実行
-/harness-review security     # → Ctrl+B でバックグラウンドへ
-/harness-review performance  # → Ctrl+B でバックグラウンドへ
-/harness-review quality      # → Ctrl+B でバックグラウンドへ
-/harness-review accessibility # 最後は待機
+# Execute in parallel in background
+/harness-review security     # → Ctrl+B to background
+/harness-review performance  # → Ctrl+B to background
+/harness-review quality      # → Ctrl+B to background
+/harness-review accessibility # Last one waits
 
-# 結果を統合して報告
+# Integrate results and report
 ```

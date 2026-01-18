@@ -1,50 +1,50 @@
 ---
-description: "[オプション] LSP設定（言語サーバーの導入と設定）"
+description: "[Optional] LSP setup (Language Server installation and configuration)"
 description-en: "[Optional] LSP setup (Language Server installation and configuration)"
 ---
 
-# /lsp-setup - LSP 設定
+# /lsp-setup - LSP Setup
 
-既存プロジェクトに LSP（Language Server Protocol）機能を導入・設定します。
+Introduce and configure LSP (Language Server Protocol) functionality to existing projects.
 
-## バイブコーダー向け（こう言えばOK）
+## VibeCoder Phrases
 
-- 「**LSPを使えるようにして**」→ このコマンド
-- 「**コードジャンプできるようにして**」→ Go-to-definition を有効化
-- 「**型エラーを事前に検出したい**」→ LSP Diagnostics を設定
+- "**Enable LSP**" → this command
+- "**Enable code jumping**" → Enable Go-to-definition
+- "**I want to detect type errors beforehand**" → Configure LSP Diagnostics
 
-## できること（成果物）
+## Deliverables
 
-1. プロジェクトの言語を自動検出
-2. 必要な言語サーバーのインストール確認・実行
-3. **公式 LSP プラグインのインストール**
-4. 動作確認テスト
+1. Auto-detect project languages
+2. Check and install required language servers
+3. **Install official LSP plugins**
+4. Run verification tests
 
 ---
 
-## 公式 LSP プラグイン（推奨）
+## Official LSP Plugins (Recommended)
 
-Claude Code マーケットプレイスで提供されている公式 LSP プラグイン:
+Official LSP plugins available in Claude Code marketplace:
 
-| プラグイン | 言語 | 必要な言語サーバー |
-|-----------|------|-------------------|
+| Plugin | Language | Required Language Server |
+|--------|----------|-------------------------|
 | `typescript-lsp` | TypeScript/JavaScript | typescript-language-server |
 | `pyright-lsp` | Python | pyright |
 | `rust-analyzer-lsp` | Rust | rust-analyzer |
 
-> **重要**: プラグインは言語サーバーのバイナリを**含みません**。
-> 別途インストールが必要です。
+> **Important**: Plugins do **not include** language server binaries.
+> Separate installation is required.
 
 ---
 
-## セットアップフロー
+## Setup Flow
 
-### Phase 1: 言語検出
+### Phase 1: Language Detection
 
 ```
-🔍 プロジェクト言語の検出
+🔍 Detecting Project Languages
 
-検出ファイル:
+Detection files:
 ├── tsconfig.json → TypeScript ✅
 ├── package.json → JavaScript/TypeScript ✅
 ├── requirements.txt → Python ✅
@@ -52,159 +52,159 @@ Claude Code マーケットプレイスで提供されている公式 LSP プラ
 ├── Cargo.toml → Rust
 └── go.mod → Go
 
-検出結果:
+Detection results:
 ├── TypeScript ✅
 └── Python ✅
 ```
 
-### Phase 2: 言語サーバーの確認とインストール
+### Phase 2: Language Server Check and Installation
 
 ```
-🔧 言語サーバーの状態
+🔧 Language Server Status
 
-| 言語 | Language Server | 状態 |
-|------|-----------------|------|
-| TypeScript | typescript-language-server | ❌ 未インストール |
-| Python | pyright | ❌ 未インストール |
+| Language | Language Server | Status |
+|----------|-----------------|--------|
+| TypeScript | typescript-language-server | ❌ Not installed |
+| Python | pyright | ❌ Not installed |
 
-❌ 未インストールの言語サーバーがあります。
+❌ Some language servers are not installed.
 ```
 
-> **インストールしますか？**
+> **Install them?**
 >
-> - **yes** - 自動インストール（推奨）
-> - **手動** - コマンドを表示のみ
-> - **スキップ** - LSP なしで続行
+> - **yes** - Auto install (Recommended)
+> - **manual** - Show commands only
+> - **skip** - Continue without LSP
 
-**回答を待つ**
+**Wait for response**
 
-#### 「yes」を選択した場合: 自動インストール
+#### If "yes" selected: Auto Installation
 
 ```bash
-echo "📦 言語サーバーをインストール中..."
+echo "📦 Installing language servers..."
 
 # TypeScript
 npm install -g typescript typescript-language-server
-echo "✅ typescript-language-server インストール完了"
+echo "✅ typescript-language-server installation complete"
 
 # Python
 pip install pyright
-# または npm install -g pyright
-echo "✅ pyright インストール完了"
+# or npm install -g pyright
+echo "✅ pyright installation complete"
 
-# インストール確認
+# Verify installation
 which typescript-language-server && echo "✅ TypeScript LSP: OK"
 which pyright && echo "✅ Python LSP: OK"
 ```
 
-#### 「手動」を選択した場合: コマンド表示
+#### If "manual" selected: Display Commands
 
 ```
-📋 以下のコマンドを実行してください:
+📋 Please run the following commands:
 
 # TypeScript/JavaScript
 npm install -g typescript typescript-language-server
 
 # Python
 pip install pyright
-# または
+# or
 npm install -g pyright
 
 # Rust
-# rust-analyzer 公式インストール手順: https://rust-analyzer.github.io/manual.html#installation
+# rust-analyzer official installation: https://rust-analyzer.github.io/manual.html#installation
 
-インストール完了後、もう一度 /lsp-setup を実行してください。
+After installation, run /lsp-setup again.
 ```
 
-### Phase 3: 公式プラグインのインストール
+### Phase 3: Official Plugin Installation
 
 ```
-📦 公式 LSP プラグインをインストール中...
+📦 Installing official LSP plugins...
 ```
 
 ```bash
-# 検出した言語に対応するプラグインをインストール
+# Install plugins for detected languages
 claude plugin install typescript-lsp
 claude plugin install pyright-lsp
 
-echo "✅ LSP プラグインのインストール完了"
+echo "✅ LSP plugin installation complete"
 ```
 
 ```
-✅ インストール済みプラグイン:
+✅ Installed plugins:
 
-| プラグイン | 状態 |
-|-----------|------|
-| typescript-lsp | ✅ インストール済み |
-| pyright-lsp | ✅ インストール済み |
+| Plugin | Status |
+|--------|--------|
+| typescript-lsp | ✅ Installed |
+| pyright-lsp | ✅ Installed |
 ```
 
-### Phase 4: 動作確認
+### Phase 4: Verification
 
 ```
-✅ LSP 動作確認
+✅ LSP Verification
 
-テスト: Go-to-definition
-  → src/index.ts:15 の 'handleSubmit' → src/handlers.ts:42 ✅
+Test: Go-to-definition
+  → src/index.ts:15 'handleSubmit' → src/handlers.ts:42 ✅
 
-テスト: Find-references
-  → 'userId' の参照: 8件検出 ✅
+Test: Find-references
+  → 'userId' references: 8 found ✅
 
-テスト: Diagnostics
-  → エラー: 0件 / 警告: 2件 ✅
+Test: Diagnostics
+  → Errors: 0 / Warnings: 2 ✅
 
-🎉 LSP セットアップ完了！
+🎉 LSP Setup Complete!
 ```
 
 ---
 
-## 言語サーバーとプラグインの対応表
+## Language Server and Plugin Reference Table
 
-| 言語 | 言語サーバー | インストールコマンド | 公式プラグイン |
-|------|------------|-------------------|---------------|
+| Language | Language Server | Install Command | Official Plugin |
+|----------|-----------------|-----------------|-----------------|
 | **TypeScript/JS** | typescript-language-server | `npm install -g typescript typescript-language-server` | `typescript-lsp` |
-| **Python** | pyright | `pip install pyright` または `npm install -g pyright` | `pyright-lsp` |
-| **Rust** | rust-analyzer | [公式手順](https://rust-analyzer.github.io/manual.html#installation) | `rust-analyzer-lsp` |
+| **Python** | pyright | `pip install pyright` or `npm install -g pyright` | `pyright-lsp` |
+| **Rust** | rust-analyzer | [Official guide](https://rust-analyzer.github.io/manual.html#installation) | `rust-analyzer-lsp` |
 | **Go** | gopls | `go install golang.org/x/tools/gopls@latest` | `gopls-lsp` |
 | **C/C++** | clangd | macOS: `brew install llvm` / Ubuntu: `apt install clangd` | `clangd-lsp` |
-| **Java** | jdtls | [公式手順](https://github.com/eclipse/eclipse.jdt.ls) | `jdtls-lsp` |
-| **Swift** | sourcekit-lsp | Xcode 付属 | `swift-lsp` |
-| **Lua** | lua-language-server | [公式手順](https://github.com/LuaLS/lua-language-server) | `lua-lsp` |
+| **Java** | jdtls | [Official guide](https://github.com/eclipse/eclipse.jdt.ls) | `jdtls-lsp` |
+| **Swift** | sourcekit-lsp | Included with Xcode | `swift-lsp` |
+| **Lua** | lua-language-server | [Official guide](https://github.com/LuaLS/lua-language-server) | `lua-lsp` |
 | **PHP** | intelephense | `npm install -g intelephense` | `php-lsp` |
-| **C#** | omnisharp | [公式手順](https://github.com/OmniSharp/omnisharp-roslyn) | `csharp-lsp` |
+| **C#** | omnisharp | [Official guide](https://github.com/OmniSharp/omnisharp-roslyn) | `csharp-lsp` |
 
 ---
 
-## ゼロからのセットアップ手順（まとめ）
+## Zero to Setup Guide (Summary)
 
-完全に未設定の状態から LSP を使えるようにする手順:
+Steps to enable LSP from a completely unconfigured state:
 
 ```bash
-# Step 1: 言語サーバーをインストール
+# Step 1: Install language servers
 npm install -g typescript typescript-language-server  # TypeScript
 pip install pyright                                    # Python
 
-# Step 2: 公式プラグインをインストール
+# Step 2: Install official plugins
 claude plugin install typescript-lsp
 claude plugin install pyright-lsp
 
-# Step 3: Claude Code を起動（LSP 自動有効化）
+# Step 3: Start Claude Code (LSP auto-enabled)
 claude
 ```
 
-これで Go-to-definition、Find-references、Diagnostics が使えるようになります。
+Now Go-to-definition, Find-references, and Diagnostics are available.
 
 ---
 
-## カスタム LSP プラグインの作成
+## Creating Custom LSP Plugins
 
-公式プラグインがマーケットプレイスに存在しない言語や、独自のLSPサーバー設定が必要な場合、カスタムプラグイン（`.lsp.json`）を作成できます。
+If official plugins don't exist in the marketplace for your language, or if you need custom LSP server configuration, you can create custom plugins (`.lsp.json`).
 
-> **注**: TypeScript/JS, Python, Rust, Go, C/C++, Java, Swift, Lua, PHP, C# は公式プラグインが提供されています。まず `/plugin` で "lsp" を検索してください。
+> **Note**: TypeScript/JS, Python, Rust, Go, C/C++, Java, Swift, Lua, PHP, C# have official plugins. First search "lsp" with `/plugin`.
 
-### `.lsp.json` フォーマット
+### `.lsp.json` Format
 
-**例**: カスタム設定でGoのLSPサーバーを起動する場合
+**Example**: Starting Go LSP server with custom settings
 
 ```json
 {
@@ -218,27 +218,27 @@ claude
 }
 ```
 
-### 必須フィールド
+### Required Fields
 
-| フィールド | 説明 |
-|-----------|------|
-| `command` | LSP サーバーのバイナリ名（PATH 内に存在する必要がある） |
-| `extensionToLanguage` | ファイル拡張子 → 言語識別子のマッピング |
+| Field | Description |
+|-------|-------------|
+| `command` | LSP server binary name (must exist in PATH) |
+| `extensionToLanguage` | File extension → language identifier mapping |
 
-### オプションフィールド
+### Optional Fields
 
-| フィールド | 説明 |
-|-----------|------|
-| `args` | コマンドライン引数 |
-| `env` | 環境変数 |
-| `initializationOptions` | 初期化オプション |
-| `startupTimeout` | 起動タイムアウト（ミリ秒） |
-| `restartOnCrash` | クラッシュ時の自動再起動 |
+| Field | Description |
+|-------|-------------|
+| `args` | Command line arguments |
+| `env` | Environment variables |
+| `initializationOptions` | Initialization options |
+| `startupTimeout` | Startup timeout (milliseconds) |
+| `restartOnCrash` | Auto-restart on crash |
 
-### カスタムプラグインの作成例
+### Custom Plugin Creation Example
 
 ```bash
-# ディレクトリ作成
+# Create directory
 mkdir my-go-lsp
 mkdir my-go-lsp/.claude-plugin
 
@@ -266,41 +266,41 @@ cat > my-go-lsp/.lsp.json << 'EOF'
 }
 EOF
 
-# インストール
+# Install
 claude plugin install ./my-go-lsp
 ```
 
 ---
 
-## トラブルシューティング
+## Troubleshooting
 
-### 「Executable not found in $PATH」エラー
+### "Executable not found in $PATH" Error
 
-言語サーバーがインストールされていないか、PATH に含まれていません。
+Language server is not installed or not in PATH.
 
 ```bash
-# パスを確認
+# Check path
 echo $PATH
 
-# npm グローバルパスを確認・追加
+# Check and add npm global path
 export PATH="$PATH:$(npm config get prefix)/bin"
 ```
 
-### プラグインのエラーを確認
+### Check Plugin Errors
 
 ```
-/plugin コマンドで "Errors" タブを確認
+Check "Errors" tab with /plugin command
 ```
 
-### LSP が応答しない場合
+### LSP Not Responding
 
-1. Claude Code を再起動
-2. 言語サーバーが正しくインストールされているか確認
-3. `/plugin` でプラグインのステータスを確認
+1. Restart Claude Code
+2. Verify language server is correctly installed
+3. Check plugin status with `/plugin`
 
 ---
 
-## 関連ドキュメント
+## Related Documentation
 
-- [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md) - LSP 活用ガイド
-- [Claude Code Plugins Reference](https://code.claude.com/docs/en/plugins-reference) - 公式プラグインリファレンス
+- [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md) - LSP Usage Guide
+- [Claude Code Plugins Reference](https://code.claude.com/docs/en/plugins-reference) - Official Plugin Reference

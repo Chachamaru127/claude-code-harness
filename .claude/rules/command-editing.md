@@ -1,142 +1,142 @@
 # Command File Editing Rules
 
-コマンドファイル（`commands/core/` および `commands/optional/`）を編集する際の SSOT（Single Source of Truth）ルール。
+SSOT (Single Source of Truth) rules for editing command files (`commands/core/` and `commands/optional/`).
 
-## SSOT 原則
+## SSOT Principles
 
-### 1. YAML Frontmatter フォーマット（必須）
+### 1. YAML Frontmatter Format (Required)
 
-**すべてのコマンドファイルは統一された YAML frontmatter を使用する**：
+**All command files must use unified YAML frontmatter**:
 
 ```yaml
 ---
-description: 日本語での簡潔な説明
+description: Brief description in Japanese
 description-en: English brief description
 ---
 ```
 
-**禁止事項**：
-- ❌ `name:` フィールドの追加（ファイル名から自動決定される）
-- ❌ 独自のカスタムフィールドの追加（description と description-en のみ）
-- ❌ frontmatter の省略
+**Prohibited**:
+- ❌ Adding `name:` field (automatically determined from filename)
+- ❌ Adding custom fields (only description and description-en allowed)
+- ❌ Omitting frontmatter
 
-**例外**：
-- `harness-mem.md` のみ歴史的理由で frontmatter なし（将来的に統一予定）
+**Exceptions**:
+- Only `harness-mem.md` has no frontmatter for historical reasons (planned for future unification)
 
-### 2. ファイル命名規則
+### 2. File Naming Conventions
 
-**コアコマンド** (`commands/core/`):
-- `harness-` プレフィックスを推奨（例: `harness-init.md`, `harness-review.md`）
-- プラグイン固有機能を示す命名
+**Core Commands** (`commands/core/`):
+- `harness-` prefix recommended (e.g., `harness-init.md`, `harness-review.md`)
+- Naming that indicates plugin-specific functionality
 
-**オプショナルコマンド** (`commands/optional/`):
-- **ハーネス統合系**: `harness-` プレフィックス（例: `harness-mem.md`, `harness-update.md`）
-- **機能セットアップ系**: `{機能}-setup` パターン（例: `ci-setup.md`, `lsp-setup.md`）
-- **操作系**: `{動作}-{対象}` パターン（例: `sync-status.md`, `sync-ssot-from-memory.md`）
+**Optional Commands** (`commands/optional/`):
+- **Harness integration**: `harness-` prefix (e.g., `harness-mem.md`, `harness-update.md`)
+- **Feature setup**: `{feature}-setup` pattern (e.g., `ci-setup.md`, `lsp-setup.md`)
+- **Operations**: `{action}-{target}` pattern (e.g., `sync-status.md`, `sync-ssot-from-memory.md`)
 
-### 3. 完全修飾名の生成
+### 3. Fully Qualified Name Generation
 
-プラグインシステムは以下の形式で完全修飾名を生成：
+The plugin system generates fully qualified names in the following format:
 
 ```
 {plugin-name}:{category}:{command-name}
 ```
 
-**例**：
+**Examples**:
 - `commands/core/harness-init.md` → `claude-code-harness:core:harness-init`
 - `commands/optional/cursor-mem.md` → `claude-code-harness:optional:cursor-mem`
 - `commands/optional/ci-setup.md` → `claude-code-harness:optional:ci-setup`
 
-## コマンドファイル構造テンプレート
+## Command File Structure Template
 
-### 標準テンプレート
+### Standard Template
 
 ```markdown
 ---
-description: 日本語での説明（1行、簡潔に）
+description: Japanese description (one line, concise)
 description-en: English description (one line, concise)
 ---
 
 # {Command Name}
 
-コマンドの概要説明。
+Overview description of the command.
 
-## こう言えばOK（オプション）
+## Quick Reference (Optional)
 
-- 「{キーワード1}」→ このコマンド
-- 「{キーワード2}」→ このコマンド
+- "{keyword1}" → this command
+- "{keyword2}" → this command
 
-## できること（成果物）
+## Deliverables
 
-- 成果物1の説明
-- 成果物2の説明
+- Description of deliverable 1
+- Description of deliverable 2
 
-## 使用方法
+## Usage
 
-### 基本的な使い方
+### Basic Usage
 
 ```bash
 /{command-name}
 ```
 
-### オプション付き実行
+### Execution with Options
 
 ```bash
 /{command-name} --option1
 /{command-name} --option2
 ```
 
-## オプション
+## Options
 
-| オプション | 説明 | デフォルト |
-|-----------|------|-----------|
-| `--option1` | オプション1の説明 | デフォルト値 |
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--option1` | Description of option 1 | Default value |
 
-## 実行内容
+## Execution Details
 
-このコマンドは以下を実行します：
+This command executes the following:
 
-1. ステップ1
-2. ステップ2
-3. ステップ3
+1. Step 1
+2. Step 2
+3. Step 3
 
-## 関連コマンド
+## Related Commands
 
-- `/related-command1` - 関連コマンドの説明
-- `/related-command2` - 関連コマンドの説明
+- `/related-command1` - Description of related command
+- `/related-command2` - Description of related command
 ```
 
-## 編集チェックリスト
+## Editing Checklist
 
-コマンドファイルを新規作成・編集する際のチェックリスト：
+Checklist when creating or editing command files:
 
-- [ ] YAML frontmatter が標準フォーマット（`description` + `description-en`）
-- [ ] `name:` フィールドがない
-- [ ] ファイル名が命名規則に準拠
-- [ ] 完全修飾名が正しく生成される（`{plugin}:{category}:{name}`）
-- [ ] 既存のコマンドと一貫性がある
-- [ ] CHANGELOG.md にエントリを追加（新規コマンドの場合）
-- [ ] VERSION をバンプ（自動または手動）
+- [ ] YAML frontmatter in standard format (`description` + `description-en`)
+- [ ] No `name:` field
+- [ ] Filename follows naming conventions
+- [ ] Fully qualified name generates correctly (`{plugin}:{category}:{name}`)
+- [ ] Consistent with existing commands
+- [ ] Add entry to CHANGELOG.md (for new commands)
+- [ ] Bump VERSION (automatic or manual)
 
-## 既知の例外
+## Known Exceptions
 
 ### harness-mem.md
 
-**現状**：
+**Current State**:
 ```markdown
-# /harness-mem - Claude-mem 統合セットアップ
+# /harness-mem - Claude-mem Integration Setup
 
-Claude-mem をハーネス仕様にカスタマイズし...
+Customize Claude-mem to harness specifications...
 
 ---
 ```
 
-**理由**：歴史的理由で frontmatter なし
+**Reason**: No frontmatter for historical reasons
 
-**今後の対応**：将来的に標準フォーマットに統一予定
+**Future Plans**: Planned for unification to standard format
 
-## 関連ドキュメント
+## Related Documentation
 
-- [CLAUDE.md](../../CLAUDE.md) - プロジェクト開発ガイド
-- [.claude/memory/decisions.md](../memory/decisions.md) - アーキテクチャ決定記録
-- [.claude/memory/patterns.md](../memory/patterns.md) - 再利用パターン
+- [CLAUDE.md](../../CLAUDE.md) - Project Development Guide
+- [.claude/memory/decisions.md](../memory/decisions.md) - Architecture Decision Records
+- [.claude/memory/patterns.md](../memory/patterns.md) - Reusable Patterns

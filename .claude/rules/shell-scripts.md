@@ -1,72 +1,72 @@
 ---
-description: シェルスクリプト編集時のルール
+description: Rules for editing shell scripts
 paths: "scripts/**/*.sh"
 ---
 
 # Shell Scripts Rules
 
-`scripts/` ディレクトリのシェルスクリプト編集時に適用されるルール。
+Rules applied when editing shell scripts in the `scripts/` directory.
 
-## 必須パターン
+## Required Patterns
 
-### 1. ヘッダー形式
+### 1. Header Format
 
 ```bash
 #!/bin/bash
-# スクリプト名.sh
-# スクリプトの目的を1行で説明
+# script-name.sh
+# One-line description of the script's purpose
 #
-# Usage: ./scripts/スクリプト名.sh [引数]
+# Usage: ./scripts/script-name.sh [arguments]
 
 set -euo pipefail
 ```
 
-### 2. フック用 JSON 出力形式
+### 2. JSON Output Format for Hook Scripts
 
-フックスクリプト（`*-hook.sh`, `stop-*.sh` など）は JSON で結果を返す:
+Hook scripts (`*-hook.sh`, `stop-*.sh`, etc.) return results in JSON:
 
 ```bash
-# 成功時
-echo '{"decision": "approve", "reason": "説明"}'
+# On success
+echo '{"decision": "approve", "reason": "explanation"}'
 
-# 警告時
-echo '{"decision": "approve", "reason": "説明", "systemMessage": "ユーザーへの通知"}'
+# On warning
+echo '{"decision": "approve", "reason": "explanation", "systemMessage": "notification to user"}'
 
-# 拒否時
-echo '{"decision": "deny", "reason": "理由"}'
+# On rejection
+echo '{"decision": "deny", "reason": "reason"}'
 ```
 
-### 3. 環境変数の扱い
+### 3. Handling Environment Variables
 
 ```bash
-# CLAUDE_PLUGIN_ROOT は必ず存在確認
+# CLAUDE_PLUGIN_ROOT must always be verified
 if [ -z "${CLAUDE_PLUGIN_ROOT:-}" ]; then
   echo "Error: CLAUDE_PLUGIN_ROOT not set" >&2
   exit 1
 fi
 
-# PROJECT_ROOT のフォールバック
+# PROJECT_ROOT fallback
 PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
 ```
 
-## 禁止事項
+## Prohibited
 
-- ❌ `set -e` なしでの実行
-- ❌ 未クォートの変数展開（`$VAR` → `"$VAR"`）
-- ❌ 絶対パスのハードコード
-- ❌ `cd` での作業ディレクトリ変更（相対パスを使用）
+- ❌ Execution without `set -e`
+- ❌ Unquoted variable expansion (`$VAR` → `"$VAR"`)
+- ❌ Hardcoded absolute paths
+- ❌ Changing working directory with `cd` (use relative paths)
 
-## Windows 互換性
+## Windows Compatibility
 
-Git Bash / MSYS2 環境を考慮:
+Consider Git Bash / MSYS2 environments:
 
 ```bash
-# パス区切りは / を使用
+# Use / for path separators
 local file_path="${dir}/${filename}"
 
-# run-script.js 経由の場合は自動で対応済み
+# Automatically handled when going through run-script.js
 ```
 
-## テスト
+## Testing
 
-新規スクリプトは `tests/validate-plugin.sh` で参照確認されることを保証。
+New scripts should be reference-verified by `tests/validate-plugin.sh`.

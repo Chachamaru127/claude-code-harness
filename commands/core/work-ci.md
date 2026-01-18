@@ -1,60 +1,60 @@
 ---
-description: CI用・非対話の実装実行（ベンチマーク専用）
+description: CI-only non-interactive implementation (benchmark use)
 description-en: CI-only non-interactive implementation (benchmark use)
 user-invocable: false
 ---
 
-# /work-ci - CI専用実装実行
+# /work-ci - CI-only Implementation Execution
 
-**ベンチマーク専用**: Plans.md のタスクを非対話で実装します。
+**Benchmark only**: Implements tasks from Plans.md non-interactively.
 
-## 制約（CI用）
+## Constraints (CI use)
 
-- **AskUserQuestion 禁止**: 質問せずに進める
-- **WebSearch 禁止**: 外部検索なしで進める
-- **確認プロンプト禁止**: 自動で完了まで進める
-- **ビルド検証**: 可能なら `npm test` / `npm run build` を実行
+- **AskUserQuestion prohibited**: Proceed without asking questions
+- **WebSearch prohibited**: Proceed without external search
+- **Confirmation prompts prohibited**: Proceed automatically to completion
+- **Build verification**: Run `npm test` / `npm run build` if possible
 
-## 入力
+## Input
 
-`benchmarks/test-project/Plans.md` を読み込む。
+Read `benchmarks/test-project/Plans.md`.
 
-## 実行手順
+## Execution Steps
 
-1. **Plans.md 読み込み**: `cc:TODO` マーカーのタスクを抽出
-2. **順次実装**: 各タスクを実装
-   - ファイル作成/編集
-   - 必要に応じてテスト作成
-3. **マーカー更新**: 完了したタスクを `cc:完了` に変更
-4. **ビルド検証**: `npm test` または `npm run build` を実行（可能な場合）
-5. **完了出力**: 実装結果のサマリーを報告
+1. **Read Plans.md**: Extract tasks with `cc:TODO` marker
+2. **Implement sequentially**: Implement each task
+   - Create/edit files
+   - Create tests as needed
+3. **Update markers**: Change completed tasks to `cc:done`
+4. **Build verification**: Run `npm test` or `npm run build` (if possible)
+5. **Completion output**: Report implementation result summary
 
-## 出力形式
+## Output Format
 
 ```
-## 実装結果
+## Implementation Result
 
-### 完了タスク
-- [x] タスク1 `cc:完了`
-- [x] タスク2 `cc:完了`
+### Completed Tasks
+- [x] Task 1 `cc:done`
+- [x] Task 2 `cc:done`
 
-### 作成/変更ファイル
-- src/utils/helper.ts (新規)
-- src/index.ts (変更)
+### Created/Changed Files
+- src/utils/helper.ts (new)
+- src/index.ts (modified)
 
-### ビルド結果
-- テスト: 5/5 passed
-- ビルド: success
+### Build Result
+- Tests: 5/5 passed
+- Build: success
 ```
 
-## 成功基準
+## Success Criteria
 
-- 1つ以上のタスクが `cc:完了` になっている
-- 実装したファイルが存在する
-- ビルド/テストが通る（該当する場合）
+- 1 or more tasks are `cc:done`
+- Implemented files exist
+- Build/tests pass (if applicable)
 
-## 失敗時
+## On Failure
 
-- エラーをログに出力して続行（途中で止まらない）
-- 失敗したタスクは `cc:TODO` のまま残す
-- 最終的な成功/失敗数を報告
+- Output error to log and continue (don't stop midway)
+- Leave failed tasks as `cc:TODO`
+- Report final success/failure counts

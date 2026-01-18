@@ -1,221 +1,221 @@
 ---
-description: Codex MCP を使ったセカンドオピニオンレビュー
+description: Second-opinion code review using Codex MCP
 description-en: Second-opinion code review using Codex MCP
 ---
 
-# /codex-review - Codex セカンドオピニオンレビュー
+# /codex-review - Codex Second Opinion Review
 
-OpenAI Codex を使って、コードのセカンドオピニオンレビューを取得します。
-
----
-
-## 🎯 こう言えばOK
-
-- 「`/codex-review`」→ Codex にレビューを依頼
-- 「Codex にも見てもらって」→ このコマンド
-- 「別の AI の意見がほしい」→ このコマンド
+Get a second opinion code review using OpenAI Codex.
 
 ---
 
-## できること
+## 🎯 Quick Reference
 
-- Claude のレビューに加えて、Codex からセカンドオピニオンを取得
-- 複数 AI モデルの得意分野を活用（論理推論 vs 実装パターン知識）
-- レビュー結果を統合して表示
+- "`/codex-review`" → Request review from Codex
+- "Have Codex take a look too" → this command
+- "Want another AI's opinion" → this command
 
 ---
 
-## 🔧 自動呼び出しスキル（必須）
+## Deliverables
 
-**このコマンドは以下のスキルを Skill ツールで明示的に呼び出すこと**：
+- Get a second opinion from Codex in addition to Claude's review
+- Leverage different AI models' strengths (logical reasoning vs implementation pattern knowledge)
+- Display integrated review results
 
-| スキル | 用途 | 呼び出しタイミング |
-|-------|------|------------------|
-| `codex-review` | Codex 統合（親スキル） | コマンド開始時 |
+---
 
-**呼び出し方法**:
+## 🔧 Auto-invoke Skills (Required)
+
+**This command must explicitly invoke the following skills with the Skill tool**:
+
+| Skill | Purpose | When to Call |
+|-------|---------|--------------|
+| `codex-review` | Codex integration (parent skill) | At command start |
+
+**How to call**:
 ```
-Skill ツールを使用:
+Use Skill tool:
   skill: "claude-code-harness:codex-review"
 ```
 
 ---
 
-## 前提条件
+## Prerequisites
 
-### 1. Codex CLI がインストール済み
-
-```bash
-which codex  # パスが表示されること
-```
-
-### 2. Codex にログイン済み
+### 1. Codex CLI is Installed
 
 ```bash
-codex login status  # 認証済みであること
+which codex  # Path should be displayed
 ```
 
-### 3. MCP サーバーとして登録済み
+### 2. Logged into Codex
 
 ```bash
-claude mcp list  # codex が表示されること
+codex login status  # Should be authenticated
 ```
 
-**未設定の場合**:
+### 3. Registered as MCP Server
+
+```bash
+claude mcp list  # codex should be displayed
+```
+
+**If not configured**:
 ```bash
 claude mcp add --scope user codex -- codex mcp-server
 ```
 
 ---
 
-## 実行フロー
+## Execution Flow
 
-### Step 0: 残コンテキスト確認
+### Step 0: Check Remaining Context
 
-Codex レビューの前に**残コンテキストが 30%以下なら /compact を実行してから続行**してください。
+Before Codex review, **run /compact first if remaining context is 30% or less**.
 
-> **注意**: /compact 後も余裕が少ない場合はそのまま続行します。
+> **Note**: Continue with Codex review even if space is still tight after /compact.
 
-### Step 1: Codex 環境確認 & バージョンチェック
+### Step 1: Check Codex Environment & Version
 
 ```bash
-# Codex が利用可能か確認
+# Check if Codex is available
 which codex && codex login status
 
-# バージョン確認
+# Check version
 codex --version
-npm show @openai/codex version  # 最新バージョン
+npm show @openai/codex version  # Latest version
 ```
 
-**未設定の場合**:
+**If not configured**:
 ```markdown
-⚠️ Codex が設定されていません
+⚠️ Codex is not configured
 
-セットアップ方法:
-1. Codex CLI をインストール
-2. `codex login` で認証
-3. `claude mcp add --scope user codex -- codex mcp-server` で登録
+Setup instructions:
+1. Install Codex CLI
+2. Authenticate with `codex login`
+3. Register with `claude mcp add --scope user codex -- codex mcp-server`
 
-詳細: `skills/codex-review/references/codex-mcp-setup.md`
+Details: `skills/codex-review/references/codex-mcp-setup.md`
 ```
 
-**バージョンが古い場合**:
+**If version is outdated**:
 ```markdown
-⚠️ Codex CLI が古いバージョンです
+⚠️ Codex CLI is outdated
 
-インストール済み: X.X.X
-最新バージョン: Y.Y.Y
+Installed: X.X.X
+Latest version: Y.Y.Y
 
-アップデートしますか？ (y/n)
+Update? (y/n)
 
-→ 承認された場合:
+→ If approved:
 npm update -g @openai/codex
 ```
 
-### Step 2: 変更ファイルの特定
+### Step 2: Identify Changed Files
 
 ```bash
 git diff --name-only HEAD~1 2>/dev/null || git status --short
 ```
 
-### Step 3: Codex レビュー実行
+### Step 3: Execute Codex Review
 
-MCP 経由で Codex にレビューを依頼:
+Request review from Codex via MCP:
 
 ```
-📊 Codex レビュー開始...
+📊 Starting Codex review...
 
-モデル: gpt-5.2-codex（設定ファイルで変更可能）
-対象ファイル: {changed_files}
-プロンプト: 日本語でコードレビューを行い、問題点と改善提案を出力してください
+Model: gpt-5.2-codex (configurable in config file)
+Target files: {changed_files}
+Prompt: Perform code review and output issues and improvement suggestions
 ```
 
-**モデル設定**:
+**Model configuration**:
 ```yaml
 # .claude-code-harness.config.yaml
 review:
   codex:
-    model: gpt-5.2-codex  # 推奨（最上位モデル）
+    model: gpt-5.2-codex  # Recommended (top-tier model)
     # model: gpt-5.1-codex
-    # model: gpt-5-codex-mini  # 低コスト版
+    # model: gpt-5-codex-mini  # Low-cost version
 ```
 
-### Step 4: Claude による検証
+### Step 4: Claude Verification
 
-**Codex の指摘を Claude が検証し、修正が必要かどうかを判断します。**
+**Claude verifies Codex's findings and determines if fixes are needed.**
 
 ```markdown
-## 🤖 Codex レビュー結果（Claude 検証済み）
+## 🤖 Codex Review Results (Claude Verified)
 
-### 問題点
+### Issues
 
-| ファイル | 行 | 重要度 | 内容 | Claude 検証 |
-|---------|-----|--------|------|------------|
-| src/api/users.ts | 45 | 高 | SQL インジェクションの可能性 | ✅ 妥当 |
-| src/utils/calc.ts | 12 | 中 | 計算精度の問題 | ⚠️ 要確認 |
+| File | Line | Severity | Content | Claude Verification |
+|------|------|----------|---------|---------------------|
+| src/api/users.ts | 45 | High | Possible SQL injection | ✅ Valid |
+| src/utils/calc.ts | 12 | Medium | Calculation precision issue | ⚠️ Needs confirmation |
 
-### 改善提案（検証済み）
+### Improvement Suggestions (Verified)
 
-1. パラメータ化クエリの使用を推奨 → **修正推奨**
-2. 入力バリデーションの追加 → **修正推奨**
+1. Recommend using parameterized queries → **Fix recommended**
+2. Add input validation → **Fix recommended**
 ```
 
-### Step 5: 修正提案と承認
+### Step 5: Fix Proposal and Approval
 
 ```markdown
-## 🔧 修正が必要な項目
+## 🔧 Items Requiring Fixes
 
-以下の修正を Plans.md に追加して `/work` で実行しますか？
+Add the following fixes to Plans.md and execute with `/work`?
 
-| # | 修正内容 | ファイル | 優先度 |
-|---|---------|----------|--------|
-| 1 | SQL インジェクション対策 | src/api/users.ts:45 | 高 |
-| 2 | 入力バリデーション追加 | src/api/users.ts | 中 |
+| # | Fix Content | File | Priority |
+|---|-------------|------|----------|
+| 1 | SQL injection protection | src/api/users.ts:45 | High |
+| 2 | Add input validation | src/api/users.ts | Medium |
 
-**選択肢:**
-1. すべて承認 → Plans.md に追加して `/work` 実行
-2. 選択して承認 → 番号を指定（例: 1）
-3. 今は修正しない → レポートのみ
+**Options:**
+1. Approve all → Add to Plans.md and run `/work`
+2. Approve selected → Specify numbers (e.g., 1)
+3. Don't fix now → Report only
 ```
 
-### Step 6: Plans.md 反映と実行（承認時）
+### Step 6: Apply to Plans.md and Execute (On Approval)
 
 ```
-ユーザー承認
+User approval
     ↓
-Plans.md に修正タスクを追加:
-  - [ ] [bugfix] SQL インジェクション対策（src/api/users.ts:45）
-  - [ ] [feature] 入力バリデーション追加
+Add fix tasks to Plans.md:
+  - [ ] [bugfix] SQL injection protection (src/api/users.ts:45)
+  - [ ] [feature] Add input validation
     ↓
-/work を実行（または実行を提案）
+Run /work (or suggest execution)
     ↓
-修正完了
+Fix complete
 ```
 
 ---
 
-## オプション
+## Options
 
 ```
-/codex-review              # 全変更ファイルをレビュー
-/codex-review src/         # 特定ディレクトリのみ
-/codex-review --security   # セキュリティ観点に特化
+/codex-review              # Review all changed files
+/codex-review src/         # Specific directory only
+/codex-review --security   # Focus on security perspective
 ```
 
 ---
 
-## /harness-review との違い
+## Difference from /harness-review
 
-| コマンド | 内容 |
-|---------|------|
-| `/harness-review` | Claude によるフルレビュー（+ Codex オプション） |
-| `/codex-review` | Codex 単独のレビュー |
+| Command | Content |
+|---------|---------|
+| `/harness-review` | Full review by Claude (+ optional Codex) |
+| `/codex-review` | Codex standalone review |
 
-**推奨**: 通常は `/harness-review` を使用し、追加でセカンドオピニオンが必要な場合に `/codex-review` を使用
+**Recommendation**: Normally use `/harness-review`, use `/codex-review` when additional second opinion is needed
 
 ---
 
-## 関連コマンド
+## Related Commands
 
-- `/harness-review` - フルレビュー（Claude + オプションで Codex）
-- `/harness-init` - プロジェクト初期化（Codex 設定含む）
+- `/harness-review` - Full review (Claude + optional Codex)
+- `/harness-init` - Project initialization (includes Codex setup)

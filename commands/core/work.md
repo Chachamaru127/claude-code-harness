@@ -1,289 +1,289 @@
 ---
-description: Plans.mdのタスクを実行（Solo/2-Agent両対応、並列実行を積極活用）
+description: Execute Plans.md tasks (Solo/2-Agent, parallel execution enabled)
 description-en: Execute Plans.md tasks (Solo/2-Agent, parallel execution enabled)
 ---
 
-# /work - 計画の実行
+# /work - Execute Plan
 
-Plans.md の計画を実行し、実際のコードを生成します。
-**並列実行を積極的に活用**し、効率的にタスクを完了します。
+Executes the plan in Plans.md and generates actual code.
+**Actively utilizes parallel execution** to efficiently complete tasks.
 
-## バイブコーダー向け（こう言えばOK）
+## VibeCoder Quick Reference
 
-- 「**Plans.md のタスクを進めて**」→ このコマンド
-- 「**まず動くところまで作って**」→ 最小の動作確認までを先に通します
-- 「**全部まとめてやって**」→ 並列実行で一気に処理します
-- 「**途中から再開したい**」→ 進行中（cc:WIP）や依頼中（pm:依頼中）を拾って再開
-- 「**フルサイクルで**」→ `--full` モード（実装→レビュー→commit）
-- 「**セッションを再開**」→ `--resume <id|latest>`（履歴セッションを復元）
-- 「**セッションを分岐**」→ `--fork <id|current> --reason "<text>"`
+- "**Progress tasks in Plans.md**" → this command
+- "**Build to where it works first**" → get to minimum working state first
+- "**Do everything at once**" → process all at once with parallel execution
+- "**Want to resume from where I left off**" → resume from in-progress (cc:WIP) or requested (pm:requested)
+- "**Full cycle**" → `--full` mode (implement → review → commit)
+- "**Resume session**" → `--resume <id|latest>` (restore history session)
+- "**Fork session**" → `--fork <id|current> --reason "<text>"`
 
-## できること（成果物）
+## Deliverables
 
-- Plans.md のタスクを**並列実行で効率的に**実装
-- 途中で詰まったら原因切り分け→修正→再検証まで回す
-- **2-Agent の場合**: pm:依頼中 のタスクを優先的に処理
-- **--full モード**: 実装→セルフレビュー→クロスレビュー→commit の完全自動化
+- Implement Plans.md tasks **efficiently with parallel execution**
+- When stuck, isolate cause → fix → re-verify loop
+- **2-Agent mode**: Prioritize processing pm:requested tasks
+- **--full mode**: Full automation of implement → self-review → cross-review → commit
 
 ---
 
-## 🚀 --full モード（フルサイクル自動化）
+## 🚀 --full Mode (Full Cycle Automation)
 
-`/work --full` で「実装→セルフレビュー→改善→commit」を自動で回します。
+`/work --full` automatically runs "implement → self-review → improve → commit".
 
-### オプション一覧
+### Option List
 
-| オプション | 説明 | デフォルト |
-|-----------|------|-----------|
-| `--full` | フルサイクル実行 | false |
-| `--parallel N` | 並列数指定 | 1 |
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--full` | Full cycle execution | false |
+| `--parallel N` | Parallel count | 1 |
 | `--isolation` | lock / worktree | lock |
 | `--commit-strategy` | task / phase / all | task |
-| `--deploy` | commit 後に deploy | false |
-| `--max-iterations` | 改善ループ上限 | 3 |
-| `--skip-cross-review` | Phase 2 スキップ | false |
-| `--resume <id|latest>` | セッション再開 | - |
-| `--fork <id|current>` | セッション分岐 | - |
-| `--reason "<text>"` | 分岐理由（--fork時） | - |
+| `--deploy` | Deploy after commit | false |
+| `--max-iterations` | Improvement loop limit | 3 |
+| `--skip-cross-review` | Skip Phase 2 | false |
+| `--resume <id|latest>` | Resume session | - |
+| `--fork <id|current>` | Fork session | - |
+| `--reason "<text>"` | Fork reason (with --fork) | - |
 
-### --isolation オプション
+### --isolation Option
 
-| 値 | 動作 | 推奨 |
-|-----|------|------|
-| `lock` | 同一worktree + ファイルロック | 小〜中規模タスク |
-| `worktree` | git worktree分離 + pnpmで容量節約 | 大規模タスク、真の並列ビルド |
+| Value | Behavior | Recommended |
+|-------|----------|-------------|
+| `lock` | Same worktree + file lock | Small-medium tasks |
+| `worktree` | git worktree isolation + pnpm space saving | Large tasks, true parallel builds |
 
-### セッション再開/分岐
+### Session Resume/Fork
 
 ```bash
-# 最新の停止セッションを再開
+# Resume latest stopped session
 /work --resume latest
 
-# 特定セッションIDを再開
+# Resume specific session ID
 /work --resume session-1700000000
 
-# 現在セッションから分岐
-/work --fork current --reason "試行版を別で進める"
+# Fork from current session
+/work --fork current --reason "Proceed with trial version separately"
 ```
 
-### --full モードのフロー
+### --full Mode Flow
 
 ```
 /work --full --parallel 3
     ↓
 ┌─────────────────────────────────────────────────────────┐
-│ Phase 1: 並列実装 + セルフレビュー                       │
+│ Phase 1: Parallel Implementation + Self-review          │
 ├─────────────────────────────────────────────────────────┤
-│  [task-worker A] 実装→セルフレビュー→修正（最大3回）    │
-│  [task-worker B] 実装→セルフレビュー→修正              │
-│  [task-worker C] 実装→セルフレビュー→修正              │
+│  [task-worker A] Implement→Self-review→Fix (max 3x)    │
+│  [task-worker B] Implement→Self-review→Fix             │
+│  [task-worker C] Implement→Self-review→Fix             │
 │                                                         │
-│  各ワーカーが commit_ready を返すまで自律的にループ     │
+│  Each worker loops autonomously until commit_ready      │
 └─────────────────────────────────────────────────────────┘
-    ↓ 全員「commit_ready」を待つ
+    ↓ Wait for all "commit_ready"
 ┌─────────────────────────────────────────────────────────┐
-│ Phase 2: クロスレビュー                                │
+│ Phase 2: Cross-review                                   │
 ├─────────────────────────────────────────────────────────┤
-│  Codex利用可: Codex 8並列エキスパートレビュー          │
-│  Codex未設定: 通常レビュー（reviewスキル）にフォールバック │
-│  ※セルフレビューでは見落とす問題を検出                 │
-│  ※追加指摘あり → 該当タスクを Phase 1 へ戻す           │
+│  Codex available: Codex 8-parallel expert review       │
+│  Codex not set: Fall back to normal review (review skill) │
+│  ※Detects issues missed by self-review                 │
+│  ※Additional issues → Return that task to Phase 1      │
 └─────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────┐
-│ Phase 3: 統合 Commit                                    │
+│ Phase 3: Integrated Commit                              │
 ├─────────────────────────────────────────────────────────┤
-│  ├── コンフリクト検出・解消                             │
-│  ├── 最終ビルド検証                                     │
-│  └── Conventional Commit で commit                      │
+│  ├── Conflict detection & resolution                    │
+│  ├── Final build verification                           │
+│  └── Conventional Commit                                │
 └─────────────────────────────────────────────────────────┘
     ↓
 ┌─────────────────────────────────────────────────────────┐
-│ Phase 4: Deploy（--deploy 指定時のみ）                  │
+│ Phase 4: Deploy (--deploy only)                         │
 └─────────────────────────────────────────────────────────┘
 ```
 
-### --commit-strategy の動作
+### --commit-strategy Behavior
 
-| 値 | 動作 |
-|-----|------|
-| `task` | 各タスク完了時に個別 commit |
-| `phase` | フェーズ完了時にまとめて commit |
-| `all` | 全タスク + クロスレビュー完了後に 1 commit |
+| Value | Behavior |
+|-------|----------|
+| `task` | Individual commit on each task completion |
+| `phase` | Batch commit on phase completion |
+| `all` | 1 commit after all tasks + cross-review complete |
 
-### エスカレーション
+### Escalation
 
-task-worker が 3回修正しても問題が解決しない場合、親に集約してユーザーに一括確認します。
+When task-worker can't resolve after 3 fixes, aggregate to parent and bulk confirm with user.
 
 ```
-⚠️ エスカレーション（2件）
+⚠️ Escalation (2 items)
 
-タスクA: 型 'unknown' を 'User' に変換できません
-  → 提案: User 型の定義を確認するか、型ガードを追加
+Task A: Cannot convert type 'unknown' to 'User'
+  → Suggestion: Check User type definition or add type guard
 
-タスクB: テスト 'should validate email' が失敗
-  → 提案: 正規表現パターンを修正
+Task B: Test 'should validate email' failing
+  → Suggestion: Fix regex pattern
 
-どう対応しますか？
-1. 提案を適用して続行
-2. スキップして次へ
-3. 手動で修正する
+How to proceed?
+1. Apply suggestions and continue
+2. Skip and move on
+3. Fix manually
 ```
 
 ---
 
-## 📐 --full モード詳細実装
+## 📐 --full Mode Detailed Implementation
 
-### Phase 1: 依存グラフ構築と並列起動
+### Phase 1: Dependency Graph Construction and Parallel Launch
 
-**依存グラフ構築ロジック**:
-
-```
-Plans.md のタスクを解析:
-    ↓
-1. タスクごとに対象ファイルを抽出
-    ↓
-2. ファイル依存関係を判定
-   ├── 同一ファイル編集 → 直列
-   ├── import 依存あり → 直列
-   └── 独立 → 並列可能
-    ↓
-3. 依存グラフを構築
-    ↓
-4. 並列実行グループを決定
-```
-
-**判定ルール**:
-
-| 条件 | 判定 | 処理 |
-|------|------|------|
-| 同一ファイルを複数タスクが編集 | 競合 | 直列実行 |
-| タスクAの出力がタスクBの入力 | 依存 | A→B 順序で実行 |
-| 互いに独立 | 並列可能 | 同一グループ |
-
-**task-worker 起動**:
+**Dependency graph construction logic**:
 
 ```
-並列グループごとに:
+Parse tasks from Plans.md:
     ↓
-Task tool で task-worker を起動:
+1. Extract target files per task
+    ↓
+2. Determine file dependencies
+   ├── Same file edits → sequential
+   ├── Has import dependency → sequential
+   └── Independent → parallelizable
+    ↓
+3. Build dependency graph
+    ↓
+4. Determine parallel execution groups
+```
+
+**Judgment rules**:
+
+| Condition | Judgment | Processing |
+|-----------|----------|------------|
+| Multiple tasks edit same file | Conflict | Sequential |
+| Task A's output is Task B's input | Dependency | Execute A→B in order |
+| Mutually independent | Parallelizable | Same group |
+
+**task-worker launch**:
+
+```
+For each parallel group:
+    ↓
+Launch task-worker with Task tool:
   - subagent_type: "task-worker"
   - run_in_background: true
   - prompt: {
-      task: "タスク説明",
-      files: ["対象ファイル"],
+      task: "task description",
+      files: ["target files"],
       max_iterations: 3,
       review_depth: "standard"
     }
     ↓
-起動したタスクIDを収集
+Collect launched task IDs
 ```
 
-**結果収集**:
+**Result collection**:
 
 ```
-全 task-worker の完了を待機:
+Wait for all task-worker completion:
     ↓
-TaskOutput で結果を収集:
+Collect results with TaskOutput:
   - status: commit_ready | needs_escalation | failed
   - changes: [{file, action}]
   - self_review: {quality, security, performance, compatibility}
     ↓
-needs_escalation があれば集約 → ユーザーに一括確認
+If needs_escalation, aggregate → bulk confirm with user
 ```
 
-**進捗表示**:
+**Progress display**:
 
 ```
-📊 Phase 1 進捗: 2/5 完了
+📊 Phase 1 Progress: 2/5 complete
 
-├── [worker-1] Header.tsx ✅ commit_ready (35秒)
-├── [worker-2] Footer.tsx ✅ commit_ready (28秒)
-├── [worker-3] Sidebar.tsx ⏳ セルフレビュー中...
-├── [worker-4] Utils.ts ⏳ 実装中...
-└── [worker-5] Types.ts 🔜 待機中（依存: Utils.ts）
+├── [worker-1] Header.tsx ✅ commit_ready (35s)
+├── [worker-2] Footer.tsx ✅ commit_ready (28s)
+├── [worker-3] Sidebar.tsx ⏳ Self-reviewing...
+├── [worker-4] Utils.ts ⏳ Implementing...
+└── [worker-5] Types.ts 🔜 Waiting (depends: Utils.ts)
 ```
 
-### Phase 2: クロスレビュー実行
+### Phase 2: Cross-review Execution
 
-**前提条件**:
-- Phase 1 の全タスクが `commit_ready` を返した
-- `--skip-cross-review` が指定されていない
+**Prerequisites**:
+- All Phase 1 tasks returned `commit_ready`
+- `--skip-cross-review` not specified
 
-**実行フロー**:
+**Execution flow**:
 
 ```
-Phase 1 完了判定:
+Phase 1 completion judgment:
     ↓
-レビューモードの決定:
-  - .claude-code-harness.config.yaml を確認
-  - review.mode=codex かつ review.codex.enabled=true → Codexモード
-  - それ以外 → 通常レビュー（default）にフォールバック
+Determine review mode:
+  - Check .claude-code-harness.config.yaml
+  - review.mode=codex AND review.codex.enabled=true → Codex mode
+  - Otherwise → Fall back to normal review (default)
     ↓
-Codexモードの場合:
-  - Codex 8並列エキスパートレビュー
-  - 8つのエキスパート観点で同時レビュー
+Codex mode:
+  - Codex 8-parallel expert review
+  - Simultaneous review from 8 expert perspectives
     ↓
-通常レビューモードの場合:
-  - reviewスキルを実行
-  - セキュリティ/パフォーマンス/品質/アクセシビリティをチェック
+Normal review mode:
+  - Execute review skill
+  - Check security/performance/quality/accessibility
     ↓
-追加指摘の抽出:
-  - Critical/Major の問題があれば該当タスクを Phase 1 へ戻す
-  - Minor は記録のみ（commit 可能）
+Extract additional issues:
+  - Return tasks with Critical/Major issues to Phase 1
+  - Minor issues recorded only (can commit)
     ↓
-問題なし → Phase 3 へ
+No issues → Phase 3
 ```
 
-**Codexモード時のレビュー観点（8並列）**:
+**Review perspectives in Codex mode (8 parallel)**:
 
-| # | エキスパート | 観点 |
-|---|-------------|------|
-| 1 | Security | 脆弱性、認証、入力検証 |
-| 2 | Performance | N+1、メモリリーク、レンダリング |
-| 3 | Maintainability | 可読性、命名、構造 |
-| 4 | Compatibility | API互換性、回帰リスク |
-| 5 | Accessibility | a11y、キーボード操作 |
-| 6 | Type Safety | 型定義、any回避 |
-| 7 | Error Handling | エラー処理、フォールバック |
-| 8 | Best Practices | フレームワーク規約、パターン |
+| # | Expert | Perspective |
+|---|--------|-------------|
+| 1 | Security | Vulnerabilities, auth, input validation |
+| 2 | Performance | N+1, memory leaks, rendering |
+| 3 | Maintainability | Readability, naming, structure |
+| 4 | Compatibility | API compatibility, regression risk |
+| 5 | Accessibility | a11y, keyboard navigation |
+| 6 | Type Safety | Type definitions, any avoidance |
+| 7 | Error Handling | Error handling, fallbacks |
+| 8 | Best Practices | Framework conventions, patterns |
 
-### Phase 3: 統合 Commit
+### Phase 3: Integrated Commit
 
-**コンフリクト検出・解消**:
-
-```
---isolation=lock の場合:
-  - git diff でファイル変更を確認
-  - 同一行への競合があれば警告 → ユーザー確認
-
---isolation=worktree の場合:
-  - 各 worktree のブランチをマージ
-  - 3-way merge で自動解消を試行
-  - 解消不可なら手動介入を依頼
-```
-
-**最終ビルド検証**:
+**Conflict detection & resolution**:
 
 ```
-pnpm build（または npm run build）
+For --isolation=lock:
+  - Check file changes with git diff
+  - If conflicts on same lines → warn → user confirmation
+
+For --isolation=worktree:
+  - Merge branches from each worktree
+  - Try auto-resolution with 3-way merge
+  - If unresolvable, request manual intervention
+```
+
+**Final build verification**:
+
+```
+pnpm build (or npm run build)
     ↓
-成功 → commit へ
-失敗 → エラー分析 → 自動修正試行（最大3回）
+Success → proceed to commit
+Failure → Error analysis → Try auto-fix (max 3 times)
 ```
 
-**Conventional Commit 生成**:
+**Conventional Commit generation**:
 
 ```
-変更内容を分析:
+Analyze change content:
     ↓
-適切なプレフィックスを選択:
-  - feat: 新機能
-  - fix: バグ修正
-  - refactor: リファクタリング
-  - docs: ドキュメント
+Select appropriate prefix:
+  - feat: new feature
+  - fix: bug fix
+  - refactor: refactoring
+  - docs: documentation
     ↓
-commit メッセージ生成:
+Generate commit message:
   feat(components): add Header, Footer, Sidebar components
 
   - Add responsive Header with navigation
@@ -293,418 +293,418 @@ commit メッセージ生成:
   Co-Authored-By: Claude <noreply@anthropic.com>
 ```
 
-**戦略別の commit 実行**:
+**Commit execution by strategy**:
 
-| 戦略 | 動作 | 適切なケース |
-|------|------|-------------|
-| `task` | タスクごとに個別 commit | 変更履歴を細かく残したい |
-| `phase` | フェーズごとにまとめて commit | 論理的な単位でまとめたい |
-| `all` | 全完了後に 1 commit | 機能単位で 1 commit にしたい |
+| Strategy | Behavior | Good for |
+|----------|----------|----------|
+| `task` | Individual commit per task | Want fine-grained history |
+| `phase` | Batch commit per phase | Want logical grouping |
+| `all` | 1 commit after all complete | Want 1 commit per feature |
 
-### Phase 4: Deploy（オプション）
+### Phase 4: Deploy (Optional)
 
-**前提条件**:
-- `--deploy` フラグが指定されている
-- Phase 3 の commit が成功している
+**Prerequisites**:
+- `--deploy` flag specified
+- Phase 3 commit succeeded
 
-**安全ゲート**:
+**Safety gate**:
 
 ```
-Deploy 前チェック:
+Pre-deploy checks:
     ↓
-1. 本番環境の検出
+1. Detect production environment
    ├── Vercel: VERCEL_ENV=production
    ├── Netlify: CONTEXT=production
-   └── カスタム: DEPLOY_ENV=production
+   └── Custom: DEPLOY_ENV=production
     ↓
-2. 安全確認プロンプト
-   ⚠️ 本番環境へのデプロイを実行しますか？
-   - ブランチ: main
-   - 変更ファイル: 5件
-   - 最終テスト: ✅ 通過
+2. Safety confirmation prompt
+   ⚠️ Execute deploy to production?
+   - Branch: main
+   - Changed files: 5
+   - Final test: ✅ Passed
 
    [y/N]
     ↓
-3. デプロイ実行
-   └── deploy スキルを呼び出し
+3. Execute deploy
+   └── Call deploy skill
 ```
 
-**デプロイ実行**:
+**Deploy execution**:
 
 ```
-Skill tool で deploy スキルを起動:
+Launch deploy skill with Skill tool:
   - skill: "claude-code-harness:deploy"
     ↓
-デプロイコマンド実行:
+Execute deploy command:
   ├── Vercel: vercel --prod
   ├── Netlify: netlify deploy --prod
-  └── カスタム: npm run deploy
+  └── Custom: npm run deploy
     ↓
-結果確認:
-  - デプロイURL
-  - ビルド時間
-  - ステータス
+Verify result:
+  - Deploy URL
+  - Build time
+  - Status
 ```
 
-**結果レポート**:
+**Result report**:
 
 ```
-🚀 Deploy 完了
+🚀 Deploy Complete
 
-| 項目 | 値 |
-|------|-----|
-| 環境 | production |
+| Item | Value |
+|------|-------|
+| Environment | production |
 | URL | https://my-app.vercel.app |
-| ビルド時間 | 45秒 |
-| ステータス | ✅ 成功 |
+| Build time | 45s |
+| Status | ✅ Success |
 
-変更内容:
+Changes:
 - feat(components): add Header, Footer, Sidebar
 - 5 files changed, 320 insertions(+)
 ```
 
 ---
 
-## ⚡ 並列実行ファースト
+## ⚡ Parallel Execution First
 
-このコマンドは**並列実行を積極的に活用**します。
+This command **actively utilizes parallel execution**.
 
-### 基本方針
-
-```
-独立タスクが2つ以上 → 並列実行（デフォルト）
-依存関係あり → 直列実行
-```
-
-### 並列実行の判断基準
-
-| 条件 | 判断 | 例 |
-|------|------|-----|
-| 別ファイルを編集 | ✅ 並列 | Header.tsx と Footer.tsx |
-| 同じファイルを編集 | ⚠️ 直列 | 同じ index.tsx に追記 |
-| A の出力が B の入力 | ⚠️ 直列 | API作成 → それを使うページ |
-| 独立したチェック | ✅ 並列 | lint, test, type-check |
-
-### 実行イメージ
+### Basic Policy
 
 ```
-📋 Plans.md から 5 タスクを検出
+2+ independent tasks → Parallel execution (default)
+Has dependencies → Sequential execution
+```
 
-依存関係分析:
-├── [独立] Header 作成
-├── [独立] Footer 作成
-├── [独立] Sidebar 作成
-├── [依存] Layout 作成 ← Header, Footer, Sidebar に依存
-└── [依存] Page 作成 ← Layout に依存
+### Parallel Execution Criteria
 
-実行計画:
-🚀 並列グループ1: Header, Footer, Sidebar (同時実行)
+| Condition | Judgment | Example |
+|-----------|----------|---------|
+| Edit different files | ✅ Parallel | Header.tsx and Footer.tsx |
+| Edit same file | ⚠️ Sequential | Append to same index.tsx |
+| A's output is B's input | ⚠️ Sequential | Create API → Page using it |
+| Independent checks | ✅ Parallel | lint, test, type-check |
+
+### Execution Image
+
+```
+📋 Detected 5 tasks from Plans.md
+
+Dependency analysis:
+├── [Independent] Create Header
+├── [Independent] Create Footer
+├── [Independent] Create Sidebar
+├── [Dependent] Create Layout ← Depends on Header, Footer, Sidebar
+└── [Dependent] Create Page ← Depends on Layout
+
+Execution plan:
+🚀 Parallel group 1: Header, Footer, Sidebar (simultaneous)
    ↓
-🔧 直列: Layout 作成
+🔧 Sequential: Create Layout
    ↓
-🔧 直列: Page 作成
+🔧 Sequential: Create Page
 
-推定時間: 直列 5分 → 並列活用 2分30秒 (50%短縮)
+Estimated time: Sequential 5min → With parallel 2min30s (50% reduction)
 ```
 
 ---
 
-## 自動判断ロジック
+## Auto-judgment Logic
 
-Plans.md のマーカーを確認し、適切なモードで動作：
+Check Plans.md markers and operate in appropriate mode:
 
-| 検出マーカー | 動作モード |
-|-------------|-----------|
-| `pm:依頼中` / `cursor:依頼中` あり | 2-Agent（PM からの依頼を優先処理） |
-| `cc:TODO` / `cc:WIP` のみ | Solo（自律実行） |
+| Detected Marker | Operation Mode |
+|-----------------|----------------|
+| `pm:requested` / `cursor:requested` exists | 2-Agent (prioritize PM's request) |
+| `cc:TODO` / `cc:WIP` only | Solo (autonomous) |
 
-**優先度**: `pm:依頼中` > `cc:WIP`（継続） > `cc:TODO`（新規）
+**Priority**: `pm:requested` > `cc:WIP` (continue) > `cc:TODO` (new)
 
-### タスク着手時のマーカー自動更新
+### Auto-update Markers on Task Start
 
-`/work` は着手時に自動的に **`cc:WIP`** へ遷移します：
+`/work` automatically transitions to **`cc:WIP`** on start:
 
 ```
-pm:依頼中 / cursor:依頼中 / cc:TODO → cc:WIP（着手時に自動更新）
+pm:requested / cursor:requested / cc:TODO → cc:WIP (auto-update on start)
 ```
 
-これにより、従来の `/start-task` 相当の「タスク開始→マーカー更新」が `/work` に統合されています。
+This integrates the "start task → update marker" equivalent of `/start-task` into `/work`.
 
 ---
 
-## 🔧 自動呼び出しスキル（必須）
+## 🔧 Auto-invoke Skills (Required)
 
-**このコマンドは以下のスキルを Skill ツールで明示的に呼び出すこと**：
+**This command must explicitly invoke the following skills with the Skill tool**:
 
-| スキル | 用途 | 呼び出しタイミング |
-|-------|------|------------------|
-| `impl` | 機能実装（親スキル） | タスク実装時 |
-| `verify` | ビルド検証・エラー復旧（親スキル） | 実装後の検証時 |
+| Skill | Purpose | When to Call |
+|-------|---------|--------------|
+| `impl` | Feature implementation (parent skill) | On task implementation |
+| `verify` | Build verification & error recovery (parent skill) | On post-implementation verification |
 
-**呼び出し方法**:
+**How to call**:
 ```
-Skill ツールを使用:
-  skill: "claude-code-harness:impl"      # 機能実装
-  skill: "claude-code-harness:verify"    # ビルド検証
+Use Skill tool:
+  skill: "claude-code-harness:impl"      # Feature implementation
+  skill: "claude-code-harness:verify"    # Build verification
 ```
 
-**子スキル（自動ルーティング）**:
-- `work-impl-feature` - 機能実装
-- `work-write-tests` - テスト作成
-- `verify-build` - ビルド検証
-- `error-recovery` - エラー復旧
+**Child skills (auto-routing)**:
+- `work-impl-feature` - Feature implementation
+- `work-write-tests` - Test creation
+- `verify-build` - Build verification
+- `error-recovery` - Error recovery
 
-> ⚠️ **重要**: スキルを呼び出さずに進めると usage 統計に記録されません。必ず Skill ツールで呼び出してください。
+> ⚠️ **Important**: Proceeding without calling skills won't record in usage statistics. Always call with Skill tool.
 
 ---
 
-## 🔧 LSP 機能の活用
+## 🔧 LSP Feature Utilization
 
-実装作業では LSP（Language Server Protocol）を積極的に活用します。
+Implementation work actively utilizes LSP (Language Server Protocol).
 
-### 実装前: コード理解
+### Before Implementation: Code Understanding
 
-| LSP 機能 | 活用場面 | 効果 |
-|---------|---------|------|
-| **Go-to-definition** | 既存関数の中身を確認 | 実装パターンを素早く把握 |
-| **Find-references** | 影響範囲の事前調査 | 意図しない破壊的変更を防止 |
-| **Hover** | 型情報・ドキュメント確認 | 正しいインターフェースで実装 |
+| LSP Feature | Use Case | Effect |
+|-------------|----------|--------|
+| **Go-to-definition** | Check existing function internals | Quickly grasp implementation patterns |
+| **Find-references** | Pre-survey impact scope | Prevent unintended breaking changes |
+| **Hover** | Check type info & docs | Implement with correct interfaces |
 
-### 実装中: リアルタイム検証
+### During Implementation: Real-time Verification
 
-| LSP 機能 | 活用場面 | 効果 |
-|---------|---------|------|
-| **Diagnostics** | 型エラー・構文エラーの即座検出 | ビルド前に問題を発見 |
-| **Completions** | 正しい API の使用 | タイポ・間違った引数を防止 |
+| LSP Feature | Use Case | Effect |
+|-------------|----------|--------|
+| **Diagnostics** | Instant type/syntax error detection | Find issues before build |
+| **Completions** | Correct API usage | Prevent typos & wrong arguments |
 
-### 実装後: 品質確認
+### After Implementation: Quality Check
 
 ```
-実装完了後に LSP Diagnostics を実行:
-→ 型エラーがないことを確認
-→ 未使用変数・import を検出
-→ 潜在的な問題を早期発見
+Run LSP Diagnostics after implementation:
+→ Verify no type errors
+→ Detect unused variables & imports
+→ Early detection of potential issues
 ```
 
-### VibeCoder 向けの言い方
+### VibeCoder Phrases
 
-| やりたいこと | 言い方 |
-|-------------|--------|
-| 関数の中身を知りたい | 「この関数の定義を見せて」 |
-| どこで使われてるか調べたい | 「この変数の参照箇所を探して」 |
-| エラーをチェックしたい | 「LSP診断を実行して」 |
+| What You Want | How to Say |
+|---------------|------------|
+| Know function internals | "Show this function's definition" |
+| Check where it's used | "Find references to this variable" |
+| Run error check | "Run LSP diagnostics" |
 
-詳細: [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md)
+Details: [docs/LSP_INTEGRATION.md](../../docs/LSP_INTEGRATION.md)
 
 ---
 
-## 実行フロー
+## Execution Flow
 
-### Step 1: Plans.md の確認と並列化分析
+### Step 1: Check Plans.md and Parallelization Analysis
 
 ```bash
 cat Plans.md
 ```
 
-現在の `cc:TODO` タスクを抽出し、**並列実行可能かを分析**。
+Extract current `cc:TODO` tasks and **analyze parallelization possibility**.
 
-### Step 2: 実行計画の提示
+### Step 2: Present Execution Plan
 
-> 🔧 **実行計画**
+> 🔧 **Execution Plan**
 >
-> **並列実行グループ**:
-> | タスク | 対象ファイル | 推定時間 |
-> |-------|-------------|---------|
-> | Header作成 | src/components/Header.tsx | ~30秒 |
-> | Footer作成 | src/components/Footer.tsx | ~30秒 |
-> | Sidebar作成 | src/components/Sidebar.tsx | ~30秒 |
+> **Parallel Execution Group**:
+> | Task | Target File | Estimated Time |
+> |------|-------------|----------------|
+> | Create Header | src/components/Header.tsx | ~30s |
+> | Create Footer | src/components/Footer.tsx | ~30s |
+> | Create Sidebar | src/components/Sidebar.tsx | ~30s |
 >
-> **直列実行（依存あり）**:
-> | タスク | 依存先 | 推定時間 |
-> |-------|--------|---------|
-> | Layout作成 | Header, Footer, Sidebar | ~45秒 |
+> **Sequential Execution (has dependencies)**:
+> | Task | Depends On | Estimated Time |
+> |------|------------|----------------|
+> | Create Layout | Header, Footer, Sidebar | ~45s |
 >
-> **合計推定時間**: 直列 2分15秒 → 並列活用 1分15秒
+> **Total Estimated**: Sequential 2m15s → With parallel 1m15s
 >
-> 実行しますか？
+> Execute?
 
-### Step 3: Task ツールで並列実行
+### Step 3: Parallel Execution with Task Tool
 
-Claude Code の Task ツールを使用して**バックグラウンドで並列実行**。
+Use Claude Code's Task tool to **execute in background in parallel**.
 
 ```
-🚀 並列実行開始...
+🚀 Starting parallel execution...
 
-├── [Agent 1] Header作成中... ⏳
-├── [Agent 2] Footer作成中... ⏳
-└── [Agent 3] Sidebar作成中... ⏳
+├── [Agent 1] Creating Header... ⏳
+├── [Agent 2] Creating Footer... ⏳
+└── [Agent 3] Creating Sidebar... ⏳
 ```
 
-**重要**:
-- Task ツールは `run_in_background: true` で起動
-- `TaskOutput` で結果を収集
-- 最大10タスクまで同時実行可能
+**Important**:
+- Launch Task tool with `run_in_background: true`
+- Collect results with `TaskOutput`
+- Up to 10 tasks simultaneously
 
-### Step 4: 結果の収集と統合レポート
+### Step 4: Collect Results and Integration Report
 
 ```
-📊 並列実行完了
+📊 Parallel Execution Complete
 
-├── [Agent 1] Header作成 ✅ (25秒)
-│   └── src/components/Header.tsx 作成
-├── [Agent 2] Footer作成 ✅ (28秒)
-│   └── src/components/Footer.tsx 作成
-└── [Agent 3] Sidebar作成 ✅ (22秒)
-    └── src/components/Sidebar.tsx 作成
+├── [Agent 1] Create Header ✅ (25s)
+│   └── src/components/Header.tsx created
+├── [Agent 2] Create Footer ✅ (28s)
+│   └── src/components/Footer.tsx created
+└── [Agent 3] Create Sidebar ✅ (22s)
+    └── src/components/Sidebar.tsx created
 
-⏱️ 所要時間: 28秒（直列なら75秒、63%短縮）
+⏱️ Time: 28s (would be 75s sequential, 63% reduction)
 ```
 
-### Step 5: 直列タスクの実行
+### Step 5: Execute Sequential Tasks
 
-依存関係のあるタスクを順番に実行。
+Execute tasks with dependencies in order.
 
-### Step 6: Plans.md の更新と完了報告
+### Step 6: Update Plans.md and Completion Report
 
 ```markdown
-# Plans.md 更新
-- [x] Header 作成 `cc:完了`
-- [x] Footer 作成 `cc:完了`
-- [x] Sidebar 作成 `cc:完了`
-- [x] Layout 作成 `cc:完了`
+# Plans.md Update
+- [x] Create Header `cc:done`
+- [x] Create Footer `cc:done`
+- [x] Create Sidebar `cc:done`
+- [x] Create Layout `cc:done`
 ```
 
 ---
 
-## 統合レポート形式
+## Integration Report Format
 
 ```markdown
-## 📊 タスク実行レポート
+## 📊 Task Execution Report
 
-**実行日時**: 2025-12-15 10:30:00
-**タスク数**: 5件（並列3 + 直列2）
-**所要時間**: 1分15秒（直列なら2分15秒、44%短縮）
+**Execution time**: 2025-12-15 10:30:00
+**Task count**: 5 (3 parallel + 2 sequential)
+**Duration**: 1m15s (would be 2m15s sequential, 44% reduction)
 
-### 実行結果
+### Execution Results
 
-| # | タスク | 実行方式 | ステータス | 所要時間 |
-|---|-------|---------|----------|---------|
-| 1 | Header作成 | 並列 | ✅ 成功 | 25秒 |
-| 2 | Footer作成 | 並列 | ✅ 成功 | 28秒 |
-| 3 | Sidebar作成 | 並列 | ✅ 成功 | 22秒 |
-| 4 | Layout作成 | 直列 | ✅ 成功 | 45秒 |
-| 5 | Page作成 | 直列 | ✅ 成功 | 30秒 |
+| # | Task | Execution Type | Status | Duration |
+|---|------|----------------|--------|----------|
+| 1 | Create Header | Parallel | ✅ Success | 25s |
+| 2 | Create Footer | Parallel | ✅ Success | 28s |
+| 3 | Create Sidebar | Parallel | ✅ Success | 22s |
+| 4 | Create Layout | Sequential | ✅ Success | 45s |
+| 5 | Create Page | Sequential | ✅ Success | 30s |
 
-### 変更ファイル一覧
+### Changed Files
 
-- `src/components/Header.tsx` (新規)
-- `src/components/Footer.tsx` (新規)
-- `src/components/Sidebar.tsx` (新規)
-- `src/components/Layout.tsx` (新規)
-- `src/app/page.tsx` (更新)
+- `src/components/Header.tsx` (new)
+- `src/components/Footer.tsx` (new)
+- `src/components/Sidebar.tsx` (new)
+- `src/components/Layout.tsx` (new)
+- `src/app/page.tsx` (modified)
 
-### 次のアクション
+### Next Actions
 
-- [ ] 動作確認 (`npm run dev`)
-- [ ] テスト実行 (`npm test`)
-- [ ] コードレビュー
+- [ ] Verify operation (`npm run dev`)
+- [ ] Run tests (`npm test`)
+- [ ] Code review
 ```
 
 ---
 
-## エラーハンドリング
+## Error Handling
 
-### 並列実行で一部失敗時
-
-```
-📊 並列実行完了（一部エラー）
-
-├── [Agent 1] Header作成 ✅ (25秒)
-├── [Agent 2] Footer作成 ❌ エラー
-│   └── 原因: Import パスが見つからない
-└── [Agent 3] Sidebar作成 ✅ (22秒)
-
-⚠️ 1件のタスクが失敗しました。
-
-対応オプション:
-1. 失敗タスクのみ再実行
-2. エラー内容を確認して手動修正
-3. 全体をロールバック
-```
-
-**対応**:
-1. 成功したタスクの結果は保持
-2. 失敗タスクのエラー詳細を表示
-3. `error-recovery` スキルで自動修正を試行（最大3回）
-
-### 全タスク失敗時
+### Partial Failure in Parallel Execution
 
 ```
-❌ 並列実行失敗
+📊 Parallel Execution Complete (partial error)
 
-全てのタスクでエラーが発生しました。
-共通の原因がある可能性があります。
+├── [Agent 1] Create Header ✅ (25s)
+├── [Agent 2] Create Footer ❌ Error
+│   └── Cause: Import path not found
+└── [Agent 3] Create Sidebar ✅ (22s)
 
-エラー分析:
-- 全タスクで `@/lib/supabase` の import エラー
-- 原因: supabase.ts が未作成
+⚠️ 1 task failed.
 
-推奨アクション:
-1. 先に依存ファイルを作成
-2. 実行順序を見直し
+Options:
+1. Retry failed task only
+2. Check error details and fix manually
+3. Rollback everything
 ```
 
----
+**Response**:
+1. Keep successful task results
+2. Show failed task error details
+3. Try auto-fix with `error-recovery` skill (max 3 times)
 
-## 実行パターン集
-
-### パターン1: 複数コンポーネント（並列）
-
-```
-入力: Header, Footer, Sidebar を作成
-
-→ 3タスクとも独立 → 並列実行
-→ Task ツールで3エージェント起動
-→ 結果を統合レポートにまとめ
-```
-
-### パターン2: 品質チェック（並列）
+### All Tasks Failed
 
 ```
-入力: lint, test, type-check を実行
+❌ Parallel Execution Failed
 
-→ 全て独立 → 並列実行
-→ 結果:
-  ├── [Lint] ✅ 警告: 2件
-  ├── [Test] ✅ 15/15 通過
-  └── [Type] ✅ エラーなし
-```
+All tasks encountered errors.
+There may be a common cause.
 
-### パターン3: 依存チェーン（混合）
+Error analysis:
+- All tasks have `@/lib/supabase` import error
+- Cause: supabase.ts not created
 
-```
-入力: API → ページ → テスト を作成
-
-→ 依存関係あり → 直列実行
-→ ただしテストは API テスト、ページテストを並列化可能
+Recommended action:
+1. Create dependency file first
+2. Review execution order
 ```
 
 ---
 
-## VibeCoder 向けヒント
+## Execution Pattern Collection
 
-| 言いたいこと | 言い方 |
-|-------------|--------|
-| 全部並列でやって | 「まとめてやって」「一気に片付けて」 |
-| 進捗を知りたい | 「今どこまで進んだ？」 |
-| 動作確認したい | 「動かしてみて」 |
-| 次に進みたい | 「次のタスク」 |
-| 一つずつやって | 「順番に一つずつ」 |
+### Pattern 1: Multiple Components (Parallel)
+
+```
+Input: Create Header, Footer, Sidebar
+
+→ All 3 tasks independent → Parallel execution
+→ Launch 3 agents with Task tool
+→ Summarize results in integration report
+```
+
+### Pattern 2: Quality Checks (Parallel)
+
+```
+Input: Run lint, test, type-check
+
+→ All independent → Parallel execution
+→ Results:
+  ├── [Lint] ✅ Warnings: 2
+  ├── [Test] ✅ 15/15 passed
+  └── [Type] ✅ No errors
+```
+
+### Pattern 3: Dependency Chain (Mixed)
+
+```
+Input: Create API → Page → Tests
+
+→ Has dependencies → Sequential execution
+→ But API tests and page tests can be parallelized
+```
 
 ---
 
-## 注意事項
+## VibeCoder Hints
 
-- **同一ファイルへの同時書き込みは自動回避**されます
-- **10タスク超**の場合はバッチ分割して実行
-- 長時間タスクは `Ctrl+B` でバックグラウンド化可能
+| What You Want | How to Say |
+|---------------|------------|
+| Do all in parallel | "do everything at once" "finish it quickly" |
+| Know progress | "how far are we?" |
+| Verify operation | "run it" |
+| Move to next | "next task" |
+| Do one at a time | "one at a time in order" |
+
+---
+
+## Notes
+
+- **Simultaneous writes to same file are auto-avoided**
+- **Over 10 tasks** are batch-split and executed
+- Long-running tasks can be backgrounded with `Ctrl+B`

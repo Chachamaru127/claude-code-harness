@@ -1,27 +1,27 @@
 ---
-description: CI用・非対話のレビュー実行（ベンチマーク専用）
+description: CI-only non-interactive review (benchmark use)
 description-en: CI-only non-interactive review (benchmark use)
 user-invocable: false
 ---
 
-# /harness-review-ci - CI専用レビュー実行
+# /harness-review-ci - CI-only Review Execution
 
-**ベンチマーク専用**: 変更内容を非対話でレビューし、機械採点可能な形式で出力します。
+**Benchmark only**: Reviews changes non-interactively and outputs in machine-gradable format.
 
-## 制約（CI用）
+## Constraints (CI use)
 
-- **AskUserQuestion 禁止**: 質問せずに進める
-- **WebSearch 禁止**: 外部検索なしで進める
-- **確認プロンプト禁止**: 自動で完了まで進める
-- **修正適用禁止**: レビュー結果の報告のみ（修正は行わない）
+- **AskUserQuestion prohibited**: Proceed without asking questions
+- **WebSearch prohibited**: Proceed without external search
+- **Confirmation prompts prohibited**: Proceed automatically to completion
+- **Fix application prohibited**: Report review results only (do not apply fixes)
 
-## 入力
+## Input
 
-`benchmarks/test-project/` 配下の変更ファイルを検出。
+Detect changed files under `benchmarks/test-project/`.
 
-## 出力形式（機械採点用）
+## Output Format (for machine grading)
 
-**必須**: 各指摘に `Severity:` 行を含める。
+**Required**: Include `Severity:` line for each issue.
 
 ```
 ## Review Result
@@ -65,28 +65,28 @@ user-invocable: false
 - Reason: No critical issues found
 ```
 
-## Severity 定義
+## Severity Definitions
 
-| Severity | 基準 |
-|----------|------|
-| Critical | セキュリティ脆弱性、データ損失リスク |
-| High | 重大なバグ、パフォーマンス問題 |
-| Medium | コード品質、ベストプラクティス違反 |
-| Low | スタイル、軽微な改善点 |
+| Severity | Criteria |
+|----------|----------|
+| Critical | Security vulnerabilities, data loss risk |
+| High | Serious bugs, performance issues |
+| Medium | Code quality, best practice violations |
+| Low | Style, minor improvements |
 
-## 成功基準
+## Success Criteria
 
-- レビュー結果が出力されている
-- 各指摘に Severity が付与されている
-- Summary セクションに集計がある
-- Pass/Fail 判定がある
+- Review results are output
+- Each issue has Severity assigned
+- Summary section has aggregation
+- Pass/Fail judgment exists
 
-## 採点ロジック
+## Grading Logic
 
-- **PASS**: Critical が 0 かつ High が 2 以下
-- **FAIL**: Critical が 1 以上、または High が 3 以上
+- **PASS**: Critical is 0 AND High is 2 or less
+- **FAIL**: Critical is 1 or more, OR High is 3 or more
 
-## 失敗時
+## On Failure
 
-- エラーをログに出力して終了
-- レビュー対象がない場合は「No files to review」と報告
+- Output error to log and exit
+- Report "No files to review" if no review targets

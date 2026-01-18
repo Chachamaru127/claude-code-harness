@@ -1,71 +1,71 @@
 ---
-description: harness-ui (TypeScript/React) 開発ルール
+description: harness-ui (TypeScript/React) development rules
 paths: "harness-ui/**/*.{ts,tsx,js,jsx}"
 ---
 
 # harness-ui Development Rules
 
-`harness-ui/` ディレクトリの TypeScript/React コード編集時に適用されるルール。
+Rules applied when editing TypeScript/React code in the `harness-ui/` directory.
 
-## アーキテクチャ
+## Architecture
 
 ```
 harness-ui/
 ├── src/
-│   ├── client/          # React フロントエンド
-│   │   ├── components/  # UI コンポーネント
-│   │   └── main.tsx     # エントリポイント
-│   ├── server/          # Hono バックエンド
-│   │   ├── routes/      # API エンドポイント
-│   │   └── services/    # ビジネスロジック
-│   ├── mcp/             # MCP サーバー
-│   └── shared/          # 共有型定義
+│   ├── client/          # React frontend
+│   │   ├── components/  # UI components
+│   │   └── main.tsx     # Entry point
+│   ├── server/          # Hono backend
+│   │   ├── routes/      # API endpoints
+│   │   └── services/    # Business logic
+│   ├── mcp/             # MCP server
+│   └── shared/          # Shared type definitions
 ├── tests/
-│   ├── unit/            # ユニットテスト
-│   └── integration/     # 統合テスト
-└── e2e/                 # Playwright E2E テスト
+│   ├── unit/            # Unit tests
+│   └── integration/     # Integration tests
+└── e2e/                 # Playwright E2E tests
 ```
 
-## TypeScript 規約
+## TypeScript Conventions
 
-### 型定義
+### Type Definitions
 
 ```typescript
-// ✅ 明示的な型定義
+// ✅ Explicit type definitions
 interface HookMetadata {
   name: string
   description: string
   timing: string
 }
 
-// ❌ any の使用禁止
+// ❌ No use of any
 function process(data: any) { ... }  // NG
 function process(data: unknown) { ... }  // OK
 ```
 
-### エラーハンドリング
+### Error Handling
 
 ```typescript
-// ✅ 適切なエラーハンドリング
+// ✅ Proper error handling
 try {
   const result = await fetchData()
   return result
 } catch (error) {
   console.error('Failed to fetch:', error)
-  return null  // または throw new CustomError()
+  return null  // or throw new CustomError()
 }
 
-// ❌ 空の catch
+// ❌ Empty catch
 catch {}  // NG
-catch { return false }  // 理由なしは NG
+catch { return false }  // NG without reason
 ```
 
-## React 規約
+## React Conventions
 
-### コンポーネント
+### Components
 
 ```typescript
-// ✅ 関数コンポーネント + 明示的な Props 型
+// ✅ Function components + explicit Props type
 interface DashboardProps {
   projectPath: string
   onRefresh?: () => void
@@ -76,16 +76,16 @@ export function Dashboard({ projectPath, onRefresh }: DashboardProps) {
 }
 ```
 
-### フック
+### Hooks
 
-- カスタムフックは `use` プレフィックス
-- `useMemo`, `useCallback` で不要な再計算を防止
-- `useEffect` の依存配列を正確に指定
+- Custom hooks use `use` prefix
+- Prevent unnecessary recalculations with `useMemo`, `useCallback`
+- Specify `useEffect` dependency arrays accurately
 
-## API エンドポイント (Hono)
+## API Endpoints (Hono)
 
 ```typescript
-// routes/ のパターン
+// routes/ pattern
 import { Hono } from 'hono'
 
 const app = new Hono()
@@ -100,9 +100,9 @@ app.get('/api/resource', async (c) => {
 })
 ```
 
-## テスト
+## Testing
 
-### ユニットテスト
+### Unit Tests
 
 ```typescript
 // tests/unit/*.test.ts
@@ -117,15 +117,15 @@ describe('ServiceName', () => {
 })
 ```
 
-### ビルド確認
+### Build Verification
 
-変更後は必ず:
+After changes, always run:
 ```bash
 cd harness-ui && npm run build
 ```
 
-## 禁止事項
+## Prohibited
 
-- ❌ `console.log` のコミット（`console.debug` または削除）
-- ❌ ハードコードされた URL/パス
-- ❌ `// @ts-ignore` の使用（型を修正する）
+- ❌ Committing `console.log` (use `console.debug` or remove)
+- ❌ Hardcoded URLs/paths
+- ❌ Use of `// @ts-ignore` (fix the types instead)

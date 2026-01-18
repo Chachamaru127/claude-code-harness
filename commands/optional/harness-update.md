@@ -1,238 +1,238 @@
 ---
-description: ハーネス導入済みプロジェクトを最新版に安全アップデート（バージョン検出→バックアップ→非破壊更新）
+description: Safely update harness-enabled projects to latest version (version detection → backup → non-destructive update)
 description-en: Safely update harness-enabled projects to latest version (version detection → backup → non-destructive update)
 ---
 
-# /harness-update - ハーネスアップデート
+# /harness-update - Harness Update
 
-既にハーネスが導入されているプロジェクトを、最新バージョンのハーネスに安全にアップデートします。
-**バージョン検出→バックアップ→非破壊更新**の流れで、既存の設定やタスクを保持しながら最新機能を導入できます。
+Safely update projects with existing harness to the latest harness version.
+**Version detection → Backup → Non-destructive update** flow preserves existing settings and tasks while introducing latest features.
 
-## こんなときに使う
+## When to Use
 
-- 「ハーネスを最新版にアップデートしたい」
-- 「新機能を既存プロジェクトに追加したい」
-- 「設定ファイルのフォーマットを最新版に合わせたい」
-- 「間違ったパーミッション構文を修正したい」
-- 「テンプレート更新があると通知された」
+- "I want to update harness to the latest version"
+- "I want to add new features to existing project"
+- "I want to update config file format to latest version"
+- "I want to fix incorrect permission syntax"
+- "I was notified of template updates"
 
-## できること
+## Deliverables
 
-- `.claude-code-harness-version` でバージョン検出
-- **テンプレート更新の検出とローカライズ判定**
-- 更新が必要なファイルの特定
-- 自動バックアップ作成
-- 非破壊で設定・ワークフローファイルを更新
-- **ローカライズなし → 上書き / ローカライズあり → マージ支援**
-- **Skills 差分検出** - 新しいスキルの自動検出・追加提案
-- アップデート後の検証
+- Version detection via `.claude-code-harness-version`
+- **Template update detection and localization judgment**
+- Identify files needing update
+- Auto-backup creation
+- Non-destructive settings/workflow file updates
+- **No localization → overwrite / Localized → merge support**
+- **Skills diff detection** - Auto-detect and propose new skills
+- Post-update verification
 
 ---
 
-## 実行フロー
+## Execution Flow
 
-### Phase 1: バージョン検出と確認
+### Phase 1: Version Detection and Confirmation
 
-#### Step 1: ハーネス導入状況の確認
+#### Step 1: Check Harness Installation Status
 
-`.claude-code-harness-version` ファイルを確認：
+Check `.claude-code-harness-version` file:
 
 ```bash
 if [ -f .claude-code-harness-version ]; then
   CURRENT_VERSION=$(grep "^version:" .claude-code-harness-version | cut -d' ' -f2)
-  echo "検出されたバージョン: $CURRENT_VERSION"
+  echo "Detected version: $CURRENT_VERSION"
 else
-  echo "⚠️ ハーネス未導入のプロジェクトです"
-  echo "→ /harness-init を使用してください"
+  echo "⚠️ Harness not installed in this project"
+  echo "→ Use /harness-init instead"
   exit 1
 fi
 ```
 
-**ハーネス未導入の場合:**
-> ⚠️ **このプロジェクトにはハーネスが導入されていません**
+**If harness not installed:**
+> ⚠️ **Harness is not installed in this project**
 >
-> `/harness-update` は既にハーネス導入済みのプロジェクト用です。
-> 新規導入には `/harness-init` を使用してください。
+> `/harness-update` is for projects with existing harness.
+> Use `/harness-init` for new installation.
 
-**導入済みの場合:** → Step 2 へ
+**If installed:** → Step 2
 
-#### Step 2: バージョン比較
+#### Step 2: Version Comparison
 
-プラグインの最新バージョンと比較：
+Compare with plugin's latest version:
 
 ```bash
 PLUGIN_VERSION=$(cat "$CLAUDE_PLUGIN_ROOT/claude-code-harness/VERSION" 2>/dev/null || echo "unknown")
 
 if [ "$CURRENT_VERSION" = "$PLUGIN_VERSION" ]; then
-  echo "ℹ️ バージョンは最新です (v$PLUGIN_VERSION)"
-  echo "→ ファイル内容のチェックを実行します..."
+  echo "ℹ️ Version is latest (v$PLUGIN_VERSION)"
+  echo "→ Running file content check..."
 else
-  echo "📦 アップデート可能: v$CURRENT_VERSION → v$PLUGIN_VERSION"
+  echo "📦 Update available: v$CURRENT_VERSION → v$PLUGIN_VERSION"
 fi
 ```
 
-**バージョンが異なる場合:** → Step 3 へ
+**If versions differ:** → Step 3
 
-**バージョンが同一の場合:** → Step 2.5 へ（内容チェック）
+**If versions same:** → Step 2.5 (content check)
 
-> ⚠️ **重要**: バージョンが同一でも、個別ファイルの内容が古い場合があります。
-> Step 2.5 で `template-tracker.sh check` を実行し、内容レベルでの更新を検出します。
+> ⚠️ **Important**: Even if versions match, individual file content may be outdated.
+> Step 2.5 runs `template-tracker.sh check` to detect content-level updates.
 
-#### Step 2.5: ファイル内容チェック（バージョン同一時）
+#### Step 2.5: File Content Check (When Version Same)
 
-バージョンは同じでも、ファイル内容が古い可能性をチェック：
+Check for outdated file content even with same version:
 
 ```bash
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
 
-# template-tracker.sh check で内容ベースの更新チェック
+# Content-based update check with template-tracker.sh check
 CHECK_RESULT=$(bash "$PLUGIN_ROOT/scripts/template-tracker.sh" check 2>/dev/null)
 
-# JSON から更新件数を取得
+# Get update counts from JSON
 NEEDS_CHECK=$(echo "$CHECK_RESULT" | jq -r '.needsCheck // false')
 UPDATES_COUNT=$(echo "$CHECK_RESULT" | jq -r '.updatesCount // 0')
 INSTALLS_COUNT=$(echo "$CHECK_RESULT" | jq -r '.installsCount // 0')
 
 if [ "$NEEDS_CHECK" = "true" ]; then
-  echo "📦 ファイル内容の更新が必要です"
-  echo "   - 更新対象: ${UPDATES_COUNT}件"
-  echo "   - 新規作成: ${INSTALLS_COUNT}件"
+  echo "📦 File content updates needed"
+  echo "   - Updates: ${UPDATES_COUNT} files"
+  echo "   - New: ${INSTALLS_COUNT} files"
 else
-  echo "✅ 全てのファイルが最新です"
+  echo "✅ All files are up to date"
 fi
 ```
 
-**更新が必要なファイルがある場合:**
+**If files need updates:**
 
-> 📦 **ファイル内容の更新が検出されました**
+> 📦 **File content updates detected**
 >
-> バージョンは v{{VERSION}} で同一ですが、以下のファイル内容が古くなっています：
+> Version is v{{VERSION}} (same), but the following file content is outdated:
 >
-> | ファイル | 状態 | 対応 |
-> |---------|------|------|
-> {{更新対象リスト}}
+> | File | Status | Action |
+> |------|--------|--------|
+> {{update target list}}
 >
-> 更新を続行しますか？ (yes / no / 詳細を表示)
+> Continue with update? (yes / no / show details)
 
-**回答を待つ**
+**Wait for response**
 
-- **yes** → Step 3 へ（更新対象リストを引き継ぎ）
-- **no** → 終了
-- **詳細を表示** → `template-tracker.sh status` の詳細表示後、再度確認
+- **yes** → Step 3 (carry over update target list)
+- **no** → End
+- **show details** → Show `template-tracker.sh status` details, then confirm again
 
-**全ファイルが最新の場合:**
+**If all files up to date:**
 
-> ✅ **プロジェクトは完全に最新です**
+> ✅ **Project is completely up to date**
 >
-> - バージョン: v{{VERSION}}
-> - 全ファイルの内容: 最新
+> - Version: v{{VERSION}}
+> - All file content: Up to date
 >
-> 更新の必要はありません。
+> No update needed.
 
-#### Step 3: テンプレート更新チェック
+#### Step 3: Template Update Check
 
-`template-tracker.sh status` を実行して、テンプレート更新状況を表示：
+Run `template-tracker.sh status` to show template update status:
 
 ```bash
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
 bash "$PLUGIN_ROOT/scripts/template-tracker.sh" status
 ```
 
-**出力例:**
+**Example output:**
 
 ```
-=== テンプレート追跡状況 ===
+=== Template Tracking Status ===
 
-プラグインバージョン: 2.5.25
-最終チェック時: 2.5.20
+Plugin version: 2.5.25
+Last checked at: 2.5.20
 
-ファイル                                  記録版       最新版       状態
---------                                  ------       ------       ----
-CLAUDE.md                                 2.5.20       2.5.25       🔄 上書き可
-AGENTS.md                                 unknown      2.5.25       ⚠️ 要確認
-Plans.md                                  2.5.20       2.5.25       🔧 マージ要
-.claude/rules/workflow.md                 2.5.20       2.5.25       ✅ 最新
+File                                      Recorded     Latest       Status
+----                                      --------     ------       ------
+CLAUDE.md                                 2.5.20       2.5.25       🔄 Overwrite OK
+AGENTS.md                                 unknown      2.5.25       ⚠️ Needs check
+Plans.md                                  2.5.20       2.5.25       🔧 Merge needed
+.claude/rules/workflow.md                 2.5.20       2.5.25       ✅ Latest
 
-凡例:
-  ✅ 最新     : 更新不要
-  🔄 上書き可 : ローカライズなし、上書きで更新可能
-  🔧 マージ要 : ローカライズあり、マージが必要
-  ⚠️ 要確認   : バージョン不明、確認推奨
+Legend:
+  ✅ Latest      : No update needed
+  🔄 Overwrite OK: Not localized, can overwrite
+  🔧 Merge needed: Localized, requires merge
+  ⚠️ Needs check : Unknown version, check recommended
 ```
 
-#### Step 4: 更新範囲の確認
+#### Step 4: Confirm Update Scope
 
-更新対象ファイルを特定してユーザーに確認：
+Identify target files and confirm with user:
 
-> 📦 **アップデート: v{{CURRENT}} → v{{LATEST}}**
+> 📦 **Update: v{{CURRENT}} → v{{LATEST}}**
 >
-> **更新されるファイル:**
-> - `.claude/settings.json` - セキュリティポリシーと最新構文に更新
-> - `AGENTS.md` / `CLAUDE.md` / `Plans.md` - 最新フォーマットに更新（既存タスクは保持）
-> - `.claude/rules/` - 最新ルールテンプレートに更新
-> - `.cursor/commands/` - Cursor コマンド更新（2-Agent モードの場合）
-> - `.claude-code-harness-version` - バージョン情報更新
+> **Files to update:**
+> - `.claude/settings.json` - Update security policy and latest syntax
+> - `AGENTS.md` / `CLAUDE.md` / `Plans.md` - Update to latest format (existing tasks preserved)
+> - `.claude/rules/` - Update to latest rule templates
+> - `.cursor/commands/` - Update Cursor commands (for 2-Agent mode)
+> - `.claude-code-harness-version` - Update version info
 >
-> **既存データは保持されます:**
-> - ✅ Plans.md の未完了タスク
-> - ✅ .claude/settings.json のカスタム設定（hooks, env, model など）
-> - ✅ .claude/memory/ の SSOT データ
+> **Existing data preserved:**
+> - ✅ Incomplete tasks in Plans.md
+> - ✅ Custom settings in .claude/settings.json (hooks, env, model, etc.)
+> - ✅ SSOT data in .claude/memory/
 >
-> **バックアップ:**
-> - 変更前のファイルは `.claude-code-harness/backups/{{TIMESTAMP}}/` に保存されます
+> **Backup:**
+> - Pre-change files saved to `.claude-code-harness/backups/{{TIMESTAMP}}/`
 >
-> アップデートを実行しますか？ (yes / no / カスタム)
+> Execute update? (yes / no / custom)
 >
-> **カスタム**: 特定のファイルだけ更新したい場合は「カスタム」を選択
+> **Custom**: Select "custom" to update only specific files
 
-**回答を待つ**
+**Wait for response**
 
-- **yes** → Phase 1.5 (破壊的変更の確認)
-- **no** → 終了
-- **カスタム** → Phase 2A (選択的アップデート)
+- **yes** → Phase 1.5 (breaking changes check)
+- **no** → End
+- **custom** → Phase 2A (selective update)
 
 ---
 
-## Phase 1.5: 破壊的変更の検出と確認
+## Phase 1.5: Breaking Changes Detection and Confirmation
 
-**重要**: アップデート実行前に、既存設定の問題を検出してユーザーに確認します。
+**Important**: Detect existing settings issues and confirm with user before update.
 
-### Step 1: .claude/settings.json の検査
+### Step 1: Inspect .claude/settings.json
 
-既存の `.claude/settings.json` を読み込み、以下をチェック：
+Load existing `.claude/settings.json` and check:
 
 ```bash
-# settings.json が存在するか確認
+# Check if settings.json exists
 if [ ! -f .claude/settings.json ]; then
-  echo "ℹ️ .claude/settings.json が存在しません（新規作成されます）"
-  # → Phase 2 へ（破壊的変更なし）
+  echo "ℹ️ .claude/settings.json doesn't exist (will be created)"
+  # → Phase 2 (no breaking changes)
 fi
 
-# JSON パーサーで読み込み（jq または python）
+# Load with JSON parser (jq or python)
 if command -v jq >/dev/null 2>&1; then
   SETTINGS_CONTENT=$(cat .claude/settings.json)
 else
-  echo "⚠️ jq が見つかりません。手動確認が必要です"
+  echo "⚠️ jq not found. Manual check needed"
 fi
 ```
 
-### Step 2: 問題の検出
+### Step 2: Detect Issues
 
-以下の問題を検出：
+Detect the following issues:
 
-#### 🔴 問題1: 間違ったパーミッション構文
+#### 🔴 Issue 1: Incorrect Permission Syntax
 
 ```bash
-# 間違った構文のパターンを検索
+# Search for incorrect syntax patterns
 WRONG_PATTERNS=(
-  'Bash\([^:)]+\s\*\)'     # "Bash(npm run *)" のようなパターン
-  'Bash\([^:)]+\*\)'       # "Bash(git diff*)" のようなパターン（:なし）
-  'Bash\(\*[^:][^)]*\*\)'  # "Bash(*credentials*)" のようなパターン
+  'Bash\([^:)]+\s\*\)'     # "Bash(npm run *)" pattern
+  'Bash\([^:)]+\*\)'       # "Bash(git diff*)" pattern (no colon)
+  'Bash\(\*[^:][^)]*\*\)'  # "Bash(*credentials*)" pattern
 )
 
 FOUND_ISSUES=()
 
-# 各パターンをチェック
+# Check each pattern
 if echo "$SETTINGS_CONTENT" | grep -E 'Bash\([^:)]+\s\*\)'; then
   FOUND_ISSUES+=("incorrect_prefix_syntax_with_space")
 fi
@@ -246,27 +246,27 @@ if echo "$SETTINGS_CONTENT" | grep -E 'Bash\(\*[^:][^)]*\*\)'; then
 fi
 ```
 
-#### 🔴 問題2: 非推奨設定
+#### 🔴 Issue 2: Deprecated Settings
 
 ```bash
-# disableBypassPermissionsMode の存在確認
+# Check for disableBypassPermissionsMode
 if echo "$SETTINGS_CONTENT" | grep -q '"disableBypassPermissionsMode"'; then
   FOUND_ISSUES+=("deprecated_disable_bypass_permissions")
 fi
 ```
 
-#### 🔴 問題3: 古いフック設定（ハーネス由来のもののみ）
+#### 🔴 Issue 3: Old Hook Settings (Harness-originated only)
 
 ```bash
-# コマンドパスに "claude-code-harness" を含むフックのみを検出
-# ユーザー独自のカスタムフック（パスが異なる）は対象外
+# Detect only hooks with commands containing "claude-code-harness"
+# User's custom hooks (different paths) are excluded
 PLUGIN_EVENTS=("PreToolUse" "SessionStart" "UserPromptSubmit" "PermissionRequest")
 OLD_HARNESS_EVENTS=()
 
 if command -v jq >/dev/null 2>&1; then
   for event in "${PLUGIN_EVENTS[@]}"; do
     if jq -e ".hooks.${event}" "$SETTINGS_FILE" >/dev/null 2>&1; then
-      # コマンドパスを抽出して "claude-code-harness" を含むかチェック
+      # Extract command paths and check for "claude-code-harness"
       COMMANDS=$(jq -r ".hooks.${event}[]?.hooks[]?.command // .hooks.${event}[]?.command // empty" "$SETTINGS_FILE" 2>/dev/null)
       if echo "$COMMANDS" | grep -q "claude-code-harness"; then
         OLD_HARNESS_EVENTS+=("$event")
@@ -276,131 +276,131 @@ if command -v jq >/dev/null 2>&1; then
 
   if [ ${#OLD_HARNESS_EVENTS[@]} -gt 0 ]; then
     FOUND_ISSUES+=("legacy_hooks_in_settings")
-    echo "古いハーネスフック設定: ${OLD_HARNESS_EVENTS[*]}"
+    echo "Old harness hook settings: ${OLD_HARNESS_EVENTS[*]}"
   fi
 fi
 ```
 
-### Step 3: 検出結果の表示
+### Step 3: Display Detection Results
 
-問題が見つかった場合、ユーザーに詳細を表示：
+If issues found, show details to user:
 
-> ⚠️ **既存設定に問題が見つかりました**
+> ⚠️ **Issues found in existing settings**
 >
-> **🔴 問題1: 間違ったパーミッション構文 (3件)**
+> **🔴 Issue 1: Incorrect Permission Syntax (3 items)**
 >
 > ```diff
-> - "Bash(npm run *)"      ❌ 間違い（スペース+アスタリスク）
-> + "Bash(npm run:*)"      ✅ 正しい（コロン+アスタリスク）
+> - "Bash(npm run *)"      ❌ Wrong (space+asterisk)
+> + "Bash(npm run:*)"      ✅ Correct (colon+asterisk)
 >
-> - "Bash(pnpm *)"         ❌ 間違い
-> + "Bash(pnpm:*)"         ✅ 正しい
+> - "Bash(pnpm *)"         ❌ Wrong
+> + "Bash(pnpm:*)"         ✅ Correct
 >
-> - "Bash(git diff*)"      ❌ 間違い（コロンなし）
-> + "Bash(git diff:*)"     ✅ 正しい
+> - "Bash(git diff*)"      ❌ Wrong (no colon)
+> + "Bash(git diff:*)"     ✅ Correct
 > ```
 >
-> **影響**: 現在のパーミッション設定が正しく動作していません。
-> Claude Code がこれらのコマンドを実行できない可能性があります。
+> **Impact**: Current permission settings are not working correctly.
+> Claude Code may not be able to execute these commands.
 >
 > ---
 >
-> **🔴 問題2: 非推奨設定 (1件)**
+> **🔴 Issue 2: Deprecated Settings (1 item)**
 >
 > ```diff
-> - "disableBypassPermissionsMode": "disable"   ❌ 非推奨（v2.5.0以降）
-> （この設定を削除）
+> - "disableBypassPermissionsMode": "disable"   ❌ Deprecated (since v2.5.0)
+> (Remove this setting)
 > ```
 >
-> **理由**: ハーネスは v2.5.0 以降、bypassPermissions を許可する運用に変更されました。
-> 危険な操作のみを `permissions.deny` / `permissions.ask` で制御します。
+> **Reason**: Harness changed to allow bypassPermissions since v2.5.0.
+> Only dangerous operations are controlled via `permissions.deny` / `permissions.ask`.
 >
-> **影響**: 現在の設定では、Edit/Write の度に確認が出て生産性が低下します。
+> **Impact**: With current settings, confirmation prompts appear for every Edit/Write, reducing productivity.
 >
 > ---
 >
-> **🔴 問題3: 古いフック設定 (N件)**
+> **🔴 Issue 3: Old Hook Settings (N items)**
 >
 > ```diff
-> - "hooks": { ... }   ❌ プラグイン側 hooks.json と重複
-> （この設定を削除）
+> - "hooks": { ... }   ❌ Duplicates plugin hooks.json
+> (Remove this setting)
 > ```
 >
-> **理由**: claude-code-harness プラグインは `hooks/hooks.json` でフックを管理します。
-> プロジェクト側の `.claude/settings.json` に `hooks` があると、意図しない重複動作が発生する可能性があります。
+> **Reason**: claude-code-harness plugin manages hooks via `hooks/hooks.json`.
+> Having `hooks` in project's `.claude/settings.json` may cause unintended duplicate behavior.
 >
-> **推奨**: プロジェクト側の `hooks` セクションを削除し、プラグイン側のフックのみを使用してください。
+> **Recommendation**: Remove `hooks` section from project and use only plugin hooks.
 >
 > ---
 >
-> **これらの問題を自動修正しますか？**
+> **Auto-fix these issues?**
 >
-> - **yes** - 上記の問題をすべて自動修正してアップデート続行
-> - **確認する** - 各問題を個別に確認してから修正
-> - **スキップ** - 問題を修正せずにアップデート続行（非推奨）
-> - **キャンセル** - アップデートを中止
+> - **yes** - Auto-fix all issues above and continue update
+> - **review** - Review each issue individually before fixing
+> - **skip** - Continue update without fixing (not recommended)
+> - **cancel** - Abort update
 
-**回答を待つ**
+**Wait for response**
 
-#### 選択肢の処理
+#### Choice Processing
 
-- **yes** → 全ての問題を自動修正 → Phase 2 へ
-- **確認する** → Step 4 (個別確認) へ
-- **スキップ** → Phase 2 へ（問題を修正せずに続行、警告表示）
-- **キャンセル** → アップデート中止
+- **yes** → Auto-fix all issues → Phase 2
+- **review** → Step 4 (individual review)
+- **skip** → Phase 2 (continue without fixing, show warning)
+- **cancel** → Abort update
 
-### Step 4: 個別確認（「確認する」選択時）
+### Step 4: Individual Review (When "review" selected)
 
-各問題について個別に確認：
+Review each issue individually:
 
-> **問題1/2: 間違ったパーミッション構文**
+> **Issue 1/2: Incorrect Permission Syntax**
 >
-> 以下の3件を修正しますか？
+> Fix these 3 items?
 > - `"Bash(npm run *)"` → `"Bash(npm run:*)"`
 > - `"Bash(pnpm *)"` → `"Bash(pnpm:*)"`
 > - `"Bash(git diff*)"` → `"Bash(git diff:*)"`
 >
 > (yes / no)
 
-**回答を待つ** → yes なら修正リストに追加
+**Wait for response** → Add to fix list if yes
 
-> **問題2/2: 非推奨設定**
+> **Issue 2/2: Deprecated Settings**
 >
-> `disableBypassPermissionsMode` を削除しますか？
+> Remove `disableBypassPermissionsMode`?
 >
 > (yes / no)
 
-**回答を待つ** → yes なら削除リストに追加
+**Wait for response** → Add to delete list if yes
 
-すべての確認が完了したら → Phase 2 へ
+After all confirmations → Phase 2
 
 ---
 
-## Phase 2: バックアップと更新
+## Phase 2: Backup and Update
 
-> **設計方針**: 更新対象リストを先に作成し、全ファイル処理完了まで継続。途中終了しない。
+> **Design principle**: Create update target list first, continue until all files processed. No early termination.
 
-### Step 0: 更新対象リストの作成（Phase 2 開始時に実行）
+### Step 0: Create Update Target List (At Phase 2 start)
 
-Phase 1 または Step 2.5 で検出した更新対象を**リストとして管理**し、全て処理するまで継続します：
+**Manage files detected in Phase 1 or Step 2.5 as list** and continue until all processed:
 
 ```bash
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
 
-# template-tracker.sh check の結果を取得
+# Get template-tracker.sh check results
 CHECK_RESULT=$(bash "$PLUGIN_ROOT/scripts/template-tracker.sh" check 2>/dev/null)
 
-# 更新対象リストを作成
+# Create update target lists
 UPDATE_LIST=()
 INSTALL_LIST=()
 
 if command -v jq >/dev/null 2>&1; then
-  # 更新が必要なファイル
+  # Files needing update
   while IFS= read -r line; do
     [ -n "$line" ] && UPDATE_LIST+=("$line")
   done < <(echo "$CHECK_RESULT" | jq -r '.updates[]?.path // empty')
 
-  # 新規作成が必要なファイル
+  # Files needing creation
   while IFS= read -r line; do
     [ -n "$line" ] && INSTALL_LIST+=("$line")
   done < <(echo "$CHECK_RESULT" | jq -r '.installs[]?.path // empty')
@@ -409,30 +409,30 @@ fi
 TOTAL_COUNT=$((${#UPDATE_LIST[@]} + ${#INSTALL_LIST[@]}))
 COMPLETED_COUNT=0
 
-echo "📋 更新対象リスト: ${TOTAL_COUNT}件"
-echo "   - 更新: ${#UPDATE_LIST[@]}件"
-echo "   - 新規: ${#INSTALL_LIST[@]}件"
+echo "📋 Update target list: ${TOTAL_COUNT} files"
+echo "   - Updates: ${#UPDATE_LIST[@]} files"
+echo "   - New: ${#INSTALL_LIST[@]} files"
 ```
 
-**進捗管理**:
+**Progress tracking**:
 
 ```
-更新対象リスト (5件)
-├── [1/5] ⏳ CLAUDE.md - 待機中
-├── [2/5] ⏳ AGENTS.md - 待機中
-├── [3/5] ⏳ .claude/rules/workflow.md - 待機中
-├── [4/5] ⏳ .claude/settings.json - 待機中
-└── [5/5] ⏳ Plans.md - 待機中
+Update target list (5 files)
+├── [1/5] ⏳ CLAUDE.md - Waiting
+├── [2/5] ⏳ AGENTS.md - Waiting
+├── [3/5] ⏳ .claude/rules/workflow.md - Waiting
+├── [4/5] ⏳ .claude/settings.json - Waiting
+└── [5/5] ⏳ Plans.md - Waiting
 ```
 
-### Step 1: バックアップディレクトリ作成
+### Step 1: Create Backup Directory
 
 ```bash
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR=".claude-code-harness/backups/$TIMESTAMP"
 mkdir -p "$BACKUP_DIR"
 
-# バックアップ対象ファイルをコピー
+# Copy backup target files
 [ -f .claude/settings.json ] && cp .claude/settings.json "$BACKUP_DIR/"
 [ -f AGENTS.md ] && cp AGENTS.md "$BACKUP_DIR/"
 [ -f CLAUDE.md ] && cp CLAUDE.md "$BACKUP_DIR/"
@@ -440,50 +440,50 @@ mkdir -p "$BACKUP_DIR"
 [ -d .claude/rules ] && cp -r .claude/rules "$BACKUP_DIR/"
 [ -d .cursor/commands ] && cp -r .cursor/commands "$BACKUP_DIR/"
 
-echo "✅ バックアップ作成: $BACKUP_DIR"
+echo "✅ Backup created: $BACKUP_DIR"
 ```
 
-### Step 2: 設定ファイルの更新
+### Step 2: Update Settings File
 
-**`.claude/settings.json` の更新**
+**`.claude/settings.json` update**
 
-Phase 1.5 で検出した問題を修正してから、`generate-claude-settings` スキルを実行します。
+Fix issues detected in Phase 1.5 before running `generate-claude-settings` skill.
 
-#### Step 2.1: 破壊的変更の適用（Phase 1.5 で承認された場合）
+#### Step 2.1: Apply Breaking Changes (If approved in Phase 1.5)
 
-ユーザーが承認した修正を適用：
+Apply user-approved fixes:
 
 ```bash
-# settings.json を読み込み
+# Load settings.json
 SETTINGS_FILE=".claude/settings.json"
 
-# 問題1: パーミッション構文の修正
+# Issue 1: Fix permission syntax
 if [ -f "$SETTINGS_FILE" ]; then
-  # スペース+アスタリスクをコロン+アスタリスクに置換
-  # 例: "Bash(npm run *)" → "Bash(npm run:*)"
+  # Replace space+asterisk with colon+asterisk
+  # e.g.: "Bash(npm run *)" → "Bash(npm run:*)"
   sed -i.bak 's/Bash(\([^:)]*\) \*)/Bash(\1:*)/g' "$SETTINGS_FILE"
 
-  # コロンなしアスタリスクをコロン+アスタリスクに置換
-  # 例: "Bash(git diff*)" → "Bash(git diff:*)"
-  # （ただし既に : がある場合はスキップ）
+  # Replace colon-less asterisk with colon+asterisk
+  # e.g.: "Bash(git diff*)" → "Bash(git diff:*)"
+  # (skip if already has :)
   sed -i.bak 's/Bash(\([^:)]*\)\*)/Bash(\1:*)/g' "$SETTINGS_FILE"
 
-  # 部分文字列マッチの修正
-  # 例: "Bash(*credentials*)" → "Bash(:*credentials:*)"
+  # Fix substring matching
+  # e.g.: "Bash(*credentials*)" → "Bash(:*credentials:*)"
   sed -i.bak 's/Bash(\*\([^:][^)]*\)\*)/Bash(:*\1:*)/g' "$SETTINGS_FILE"
 
-  echo "✅ パーミッション構文を修正しました"
+  echo "✅ Fixed permission syntax"
 fi
 
-# 問題2: 非推奨設定の削除
+# Issue 2: Remove deprecated settings
 if [ -f "$SETTINGS_FILE" ]; then
-  # disableBypassPermissionsMode を削除（jq を使用）
+  # Remove disableBypassPermissionsMode (using jq)
   if command -v jq >/dev/null 2>&1; then
     jq 'del(.permissions.disableBypassPermissionsMode)' "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp"
     mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
-    echo "✅ disableBypassPermissionsMode を削除しました"
+    echo "✅ Removed disableBypassPermissionsMode"
   else
-    # jq がない場合は Python で削除
+    # Use Python if jq not available
     python3 -c "
 import json
 with open('$SETTINGS_FILE', 'r') as f:
@@ -492,12 +492,12 @@ if 'permissions' in data and 'disableBypassPermissionsMode' in data['permissions
     del data['permissions']['disableBypassPermissionsMode']
 with open('$SETTINGS_FILE', 'w') as f:
     json.dump(data, f, indent=2)
-" && echo "✅ disableBypassPermissionsMode を削除しました"
+" && echo "✅ Removed disableBypassPermissionsMode"
   fi
 fi
 
-# 問題3: ハーネス由来のフック設定のみ削除（パスで判別）
-# ユーザー独自のカスタムフックは保持
+# Issue 3: Remove only harness-originated hook settings (identify by path)
+# Preserve user's custom hooks
 if [ -f "$SETTINGS_FILE" ]; then
   PLUGIN_EVENTS=("PreToolUse" "SessionStart" "UserPromptSubmit" "PermissionRequest")
   DELETED_EVENTS=()
@@ -505,7 +505,7 @@ if [ -f "$SETTINGS_FILE" ]; then
   if command -v jq >/dev/null 2>&1; then
     for event in "${PLUGIN_EVENTS[@]}"; do
       if jq -e ".hooks.${event}" "$SETTINGS_FILE" >/dev/null 2>&1; then
-        # コマンドパスに "claude-code-harness" が含まれる場合のみ削除
+        # Delete only if command path contains "claude-code-harness"
         COMMANDS=$(jq -r ".hooks.${event}[]?.hooks[]?.command // .hooks.${event}[]?.command // empty" "$SETTINGS_FILE" 2>/dev/null)
         if echo "$COMMANDS" | grep -q "claude-code-harness"; then
           jq "del(.hooks.${event})" "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp"
@@ -515,17 +515,17 @@ if [ -f "$SETTINGS_FILE" ]; then
       fi
     done
 
-    # .hooks が空になった場合は .hooks 自体を削除
+    # Delete .hooks itself if empty
     if jq -e '.hooks | length == 0' "$SETTINGS_FILE" >/dev/null 2>&1; then
       jq 'del(.hooks)' "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp"
       mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE"
     fi
 
     if [ ${#DELETED_EVENTS[@]} -gt 0 ]; then
-      echo "✅ 古いハーネスフック設定を削除: ${DELETED_EVENTS[*]}（プラグイン側 hooks.json を使用）"
+      echo "✅ Removed old harness hook settings: ${DELETED_EVENTS[*]} (using plugin hooks.json)"
     fi
   else
-    # jq がない場合は Python で削除
+    # Use Python if jq not available
     python3 -c "
 import json
 with open('$SETTINGS_FILE', 'r') as f:
@@ -535,7 +535,7 @@ if 'hooks' in data:
     deleted = []
     for event in plugin_events:
         if event in data['hooks']:
-            # コマンドパスに 'claude-code-harness' が含まれるかチェック
+            # Check if command path contains 'claude-code-harness'
             hooks_list = data['hooks'][event]
             is_harness = any('claude-code-harness' in str(h) for h in hooks_list)
             if is_harness:
@@ -544,7 +544,7 @@ if 'hooks' in data:
     if not data['hooks']:
         del data['hooks']
     if deleted:
-        print(f'✅ 古いハーネスフック設定を削除: {\" \".join(deleted)}')
+        print(f'✅ Removed old harness hook settings: {\" \".join(deleted)}')
 with open('$SETTINGS_FILE', 'w') as f:
     json.dump(data, f, indent=2)
 "
@@ -552,87 +552,87 @@ with open('$SETTINGS_FILE', 'w') as f:
 fi
 ```
 
-#### Step 2.2: generate-claude-settings スキルの実行
+#### Step 2.2: Run generate-claude-settings Skill
 
-- `env`, `model`, `enabledPlugins` は保持（`hooks` は削除済み）
-- `permissions.allow|ask|deny` は最新ポリシーとマージ + 重複排除
-- Phase 1.5 で修正済みの正しい構文を保持
-- 新しい推奨設定を追加
+- Preserve `env`, `model`, `enabledPlugins` (`hooks` already removed)
+- Merge `permissions.allow|ask|deny` with latest policy + deduplicate
+- Preserve correct syntax fixed in Phase 1.5
+- Add new recommended settings
 
-### Step 3: ワークフローファイルの更新（テンプレート追跡対応）
+### Step 3: Update Workflow Files (Template Tracking Support)
 
-**テンプレート追跡状況に応じた更新処理**:
+**Update processing based on template tracking status**:
 
-各ファイルの状態に応じて処理を分岐：
+Branch processing based on each file's status:
 
 ```bash
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
 
-# テンプレート追跡のチェック結果を取得
+# Get template tracking check results
 CHECK_RESULT=$(bash "$PLUGIN_ROOT/scripts/template-tracker.sh" check 2>/dev/null)
 
-# jq で更新が必要なファイルを処理
+# Process files needing update using jq
 if command -v jq >/dev/null 2>&1; then
   echo "$CHECK_RESULT" | jq -r '.updates[]? | "\(.path)|\(.localized)"' | while IFS='|' read -r path localized; do
     if [ "$localized" = "false" ]; then
-      # ローカライズなし → 上書き
-      echo "🔄 上書き: $path"
-      # テンプレートから生成して上書き
-      # → generate-* スキルを実行
+      # Not localized → overwrite
+      echo "🔄 Overwriting: $path"
+      # Generate from template and overwrite
+      # → Run generate-* skill
     else
-      # ローカライズあり → マージ支援
-      echo "🔧 マージ支援: $path"
-      # 差分を表示してユーザーに確認
+      # Localized → merge support
+      echo "🔧 Merge support: $path"
+      # Show diff and confirm with user
     fi
   done
 fi
 ```
 
-**ローカライズなし（🔄 上書き可）の場合:**
+**For not localized (🔄 Overwrite OK)**:
 
-自動で最新テンプレートに置き換え：
-- `AGENTS.md` / `CLAUDE.md`: 最新テンプレートで上書き
-- `.claude/rules/*.md`: 最新ルールテンプレートで上書き
+Auto-replace with latest template:
+- `AGENTS.md` / `CLAUDE.md`: Overwrite with latest template
+- `.claude/rules/*.md`: Overwrite with latest rule templates
 
-**ローカライズあり（🔧 マージ要）の場合:**
+**For localized (🔧 Merge needed)**:
 
-> 🔧 **`Plans.md` はローカライズされています**
+> 🔧 **`Plans.md` is localized**
 >
-> このファイルにはプロジェクト固有の変更が含まれています。
+> This file contains project-specific changes.
 >
-> **オプション:**
-> 1. **差分を表示** - テンプレートとの差分を確認
-> 2. **マージ支援** - Claude がマージを提案
-> 3. **スキップ** - このファイルはスキップ
+> **Options:**
+> 1. **Show diff** - View differences from template
+> 2. **Merge support** - Claude suggests merge
+> 3. **Skip** - Skip this file
 >
-> 選択してください:
+> Select:
 
-**回答を待つ**
+**Wait for response**
 
-マージ支援を選択した場合:
-- 最新テンプレートの構造を維持
-- ユーザーのカスタム部分（タスク、設定）を適切な位置に再配置
-- 差分を表示して最終確認
+If merge support selected:
+- Maintain latest template structure
+- Re-position user's custom parts (tasks, settings) appropriately
+- Show diff and get final confirmation
 
-**更新後の記録:**
+**After update recording:**
 
 ```bash
-# 更新したファイルを generated-files.json に記録
+# Record updated files in generated-files.json
 bash "$PLUGIN_ROOT/scripts/template-tracker.sh" record "$path"
 ```
 
-### Step 4: ルールファイルの更新
+### Step 4: Update Rule Files
 
-`.claude/rules/` の更新:
+`.claude/rules/` update:
 
-**マーカー + ハッシュ方式でローカライズ検出を行い、安全に更新します。**
+**Safely update using marker + hash method for localization detection.**
 
 ```bash
 PLUGIN_PATH="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
 PLUGIN_VERSION=$(cat "$PLUGIN_PATH/VERSION" 2>/dev/null || echo "unknown")
 SKILLS_CONFIG=".claude/state/skills-config.json"
 
-# Skills Gate の状態を確認
+# Check Skills Gate status
 SKILLS_GATE_ENABLED="false"
 if [ -f "$SKILLS_CONFIG" ]; then
   if command -v jq >/dev/null 2>&1; then
@@ -640,30 +640,30 @@ if [ -f "$SKILLS_CONFIG" ]; then
   fi
 fi
 
-# 各ルールテンプレートを処理
+# Process each rule template
 for template in "$PLUGIN_PATH/templates/rules"/*.template; do
   [ -f "$template" ] || continue
 
   rule_name=$(basename "$template" .template)
   output_file=".claude/rules/$rule_name"
 
-  # 条件付きテンプレートのチェック（template-registry.json から condition を取得）
+  # Check conditional template (get condition from template-registry.json)
   TEMPLATE_KEY="rules/$(basename "$template")"
   CONDITION=""
   if command -v jq >/dev/null 2>&1; then
     CONDITION=$(jq -r ".templates[\"$TEMPLATE_KEY\"].condition // \"\"" "$PLUGIN_PATH/templates/template-registry.json" 2>/dev/null)
   fi
 
-  # 条件付きテンプレートの評価
+  # Evaluate conditional templates
   if [ -n "$CONDITION" ]; then
     case "$CONDITION" in
       "skills_gate.enabled")
         if [ "$SKILLS_GATE_ENABLED" != "true" ]; then
-          # 条件を満たさない場合
+          # Condition not met
           if [ -f "$output_file" ]; then
-            echo "🗑️ 削除提案: $output_file（Skills Gate 無効）"
+            echo "🗑️ Suggest deletion: $output_file (Skills Gate disabled)"
           else
-            echo "⏭️ スキップ: $rule_name（Skills Gate 無効）"
+            echo "⏭️ Skip: $rule_name (Skills Gate disabled)"
           fi
           continue
         fi
@@ -671,76 +671,76 @@ for template in "$PLUGIN_PATH/templates/rules"/*.template; do
     esac
   fi
 
-  # ファイルが存在しない場合は新規作成
+  # Create new if file doesn't exist
   if [ ! -f "$output_file" ]; then
     cp "$template" "$output_file"
     sed -i '' "s/{{VERSION}}/$PLUGIN_VERSION/g" "$output_file" 2>/dev/null || \
     sed -i "s/{{VERSION}}/$PLUGIN_VERSION/g" "$output_file"
-    echo "🆕 作成: $output_file"
+    echo "🆕 Created: $output_file"
     continue
   fi
 
-  # マーカーをチェック（ハーネス由来かどうか）
+  # Check marker (is it harness-originated)
   if grep -q "^_harness_template:" "$output_file" 2>/dev/null; then
-    # ハーネス由来 → ローカライズ検出して更新
-    # フロントマター以降の内容のハッシュを比較
+    # Harness-originated → detect localization and update
+    # Compare hash of content after frontmatter
     INSTALLED_VERSION=$(grep "^_harness_version:" "$output_file" | sed 's/_harness_version: "//;s/"//')
 
     if [ "$INSTALLED_VERSION" != "$PLUGIN_VERSION" ]; then
-      # バージョンが異なる → 更新対象
-      # （ローカライズ検出は template-tracker.sh に任せる）
-      echo "🔄 更新: $output_file（$INSTALLED_VERSION → $PLUGIN_VERSION）"
+      # Different version → update target
+      # (Localization detection delegated to template-tracker.sh)
+      echo "🔄 Updating: $output_file ($INSTALLED_VERSION → $PLUGIN_VERSION)"
       cp "$template" "$output_file"
       sed -i '' "s/{{VERSION}}/$PLUGIN_VERSION/g" "$output_file" 2>/dev/null || \
       sed -i "s/{{VERSION}}/$PLUGIN_VERSION/g" "$output_file"
     else
-      echo "✅ 最新: $output_file"
+      echo "✅ Latest: $output_file"
     fi
   else
-    # マーカーなし → ユーザーカスタム、保護
-    echo "🛡️ 保護: $output_file（ユーザーカスタム）"
+    # No marker → user custom, protect
+    echo "🛡️ Protected: $output_file (user custom)"
   fi
 done
 ```
 
-**判定ロジック:**
+**Decision logic:**
 
-| マーカー | 条件 | 処理 |
-|---------|------|------|
-| あり | 条件なし / 条件満たす | 更新（ローカライズ検出） |
-| あり | 条件満たさない | 削除提案 |
-| なし | - | 保護（ユーザーカスタム） |
+| Marker | Condition | Action |
+|--------|-----------|--------|
+| Yes | No condition / condition met | Update (localization detection) |
+| Yes | Condition not met | Suggest deletion |
+| No | - | Protect (user custom) |
 
-#### Skills Gate 有効化の提案
+#### Skills Gate Enablement Proposal
 
-Skills Gate が無効で、`skills-gate.md` が存在しない場合、有効化を提案します。
+If Skills Gate is disabled and `skills-gate.md` doesn't exist, propose enablement.
 
 ```bash
-# Skills Gate が無効な場合、有効化を提案
+# If Skills Gate disabled, propose enablement
 if [ "$SKILLS_GATE_ENABLED" != "true" ]; then
   echo ""
-  echo "💡 Skills Gate を有効にしますか？"
+  echo "💡 Enable Skills Gate?"
   echo ""
-  echo "Skills Gate は、コード編集前にスキルの使用を促す機能です。"
-  echo "- Rules: Claude に「スキルを使うべき」と認識させる"
-  echo "- Hooks: 忘れた場合の最終防衛線"
+  echo "Skills Gate prompts skill usage before code editing."
+  echo "- Rules: Make Claude recognize 'should use skills'"
+  echo "- Hooks: Last line of defense if forgotten"
   echo ""
-  echo "有効にすると:"
-  echo "- skills-gate.md ルールが追加されます"
-  echo "- スキル使用が習慣化され、作業品質が向上します"
+  echo "If enabled:"
+  echo "- skills-gate.md rule will be added"
+  echo "- Skill usage becomes habitual, improving work quality"
   echo ""
 fi
 ```
 
-**回答を待つ**
+**Wait for response**
 
-- **yes** → Skills Gate を有効化し、`skills-gate.md` を追加
-- **no** → スキップ
+- **yes** → Enable Skills Gate and add `skills-gate.md`
+- **no** → Skip
 
 ```bash
-# ユーザーが yes を選択した場合
+# If user selected yes
 if [ "$USER_CHOICE" = "yes" ]; then
-  # skills-config.json を有効化
+  # Enable skills-config.json
   if [ -f "$SKILLS_CONFIG" ]; then
     jq '.enabled = true' "$SKILLS_CONFIG" > tmp.json && mv tmp.json "$SKILLS_CONFIG"
   else
@@ -755,27 +755,27 @@ if [ "$USER_CHOICE" = "yes" ]; then
 EOF
   fi
 
-  # skills-gate.md を追加
+  # Add skills-gate.md
   cp "$PLUGIN_PATH/templates/rules/skills-gate.md.template" ".claude/rules/skills-gate.md"
   sed -i '' "s/{{VERSION}}/$PLUGIN_VERSION/g" ".claude/rules/skills-gate.md" 2>/dev/null || \
   sed -i "s/{{VERSION}}/$PLUGIN_VERSION/g" ".claude/rules/skills-gate.md"
-  echo "✅ Skills Gate を有効化しました"
-  echo "✅ 作成: .claude/rules/skills-gate.md"
+  echo "✅ Skills Gate enabled"
+  echo "✅ Created: .claude/rules/skills-gate.md"
 fi
 ```
 
-### Step 4.5: Skills 設定の差分検出と更新
+### Step 4.5: Skills Settings Diff Detection and Update
 
-プラグイン側のスキルと、プロジェクト側の設定を比較して差分を検出・提案します。
+Compare plugin skills with project settings to detect and propose diffs.
 
-#### Step 4.5.1: プラグイン側のスキル一覧を取得
+#### Step 4.5.1: Get Plugin Skills List
 
 ```bash
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
 SKILLS_CONFIG=".claude/state/skills-config.json"
 mkdir -p .claude/state
 
-# プラグイン側の利用可能スキル一覧を取得
+# Get available skills list from plugin
 AVAILABLE_SKILLS=()
 if [ -d "$PLUGIN_ROOT/skills" ]; then
   for skill_dir in "$PLUGIN_ROOT/skills"/*/; do
@@ -786,40 +786,40 @@ if [ -d "$PLUGIN_ROOT/skills" ]; then
   done
 fi
 
-echo "📦 プラグイン側の利用可能スキル: ${AVAILABLE_SKILLS[*]}"
+echo "📦 Plugin available skills: ${AVAILABLE_SKILLS[*]}"
 ```
 
-#### Step 4.5.2: プロジェクト側の設定を取得
+#### Step 4.5.2: Get Project Settings
 
 ```bash
 if [ -f "$SKILLS_CONFIG" ]; then
-  # 既存設定からスキル一覧を取得
+  # Get skills list from existing settings
   if command -v jq >/dev/null 2>&1; then
     CURRENT_SKILLS=$(jq -r '.skills[]?' "$SKILLS_CONFIG" 2>/dev/null | tr '\n' ' ')
   else
     CURRENT_SKILLS=""
   fi
-  echo "📋 プロジェクト側の登録スキル: $CURRENT_SKILLS"
+  echo "📋 Project registered skills: $CURRENT_SKILLS"
 else
   CURRENT_SKILLS=""
-  echo "📋 プロジェクト側の登録スキル: (未設定)"
+  echo "📋 Project registered skills: (not configured)"
 fi
 ```
 
-#### Step 4.5.3: 差分を検出
+#### Step 4.5.3: Detect Diffs
 
 ```bash
 NEW_SKILLS=()
 REMOVED_SKILLS=()
 
-# プラグインにあってプロジェクトにないスキル（新規追加候補）
+# Skills in plugin but not in project (new candidates)
 for skill in "${AVAILABLE_SKILLS[@]}"; do
   if ! echo "$CURRENT_SKILLS" | grep -qw "$skill"; then
     NEW_SKILLS+=("$skill")
   fi
 done
 
-# プロジェクトにあってプラグインにないスキル（削除候補）
+# Skills in project but not in plugin (removal candidates)
 for skill in $CURRENT_SKILLS; do
   found=false
   for avail in "${AVAILABLE_SKILLS[@]}"; do
@@ -834,64 +834,64 @@ for skill in $CURRENT_SKILLS; do
 done
 ```
 
-#### Step 4.5.4: 差分があれば提案
+#### Step 4.5.4: Propose If Diffs Found
 
-**新しいスキルが検出された場合:**
+**If new skills detected:**
 
-> 🆕 **新しいスキルが利用可能です**
+> 🆕 **New skills available**
 >
-> 以下のスキルが追加されました：
-> {{NEW_SKILLS のリストと説明}}
+> The following skills have been added:
+> {{NEW_SKILLS list and descriptions}}
 >
-> **追加しますか？**
-> - **yes** - すべて追加
-> - **選択** - 個別に選択
-> - **スキップ** - 今回は追加しない
+> **Add them?**
+> - **yes** - Add all
+> - **select** - Select individually
+> - **skip** - Don't add now
 
-**回答を待つ**
+**Wait for response**
 
-- **yes** → すべての新スキルを skills-config.json に追加
-- **選択** → 各スキルを個別に確認
-- **スキップ** → skills-config.json は更新しない
+- **yes** → Add all new skills to skills-config.json
+- **select** → Review each skill individually
+- **skip** → Don't update skills-config.json
 
-**削除されたスキルが検出された場合:**
+**If removed skills detected:**
 
-> ⚠️ **以下のスキルはプラグインから削除されました**
+> ⚠️ **The following skills have been removed from plugin**
 >
-> {{REMOVED_SKILLS のリスト}}
+> {{REMOVED_SKILLS list}}
 >
-> 設定から削除しますか？ (yes / no)
+> Remove from settings? (yes / no)
 
-**回答を待つ**
+**Wait for response**
 
-#### Step 4.5.5: skills-config.json を更新
+#### Step 4.5.5: Update skills-config.json
 
 ```bash
 if [ -f "$SKILLS_CONFIG" ]; then
-  # 既存設定を保持しつつ、新スキルを追加
+  # Preserve existing settings while adding new skills
   if command -v jq >/dev/null 2>&1; then
-    # 承認された新スキルを追加
+    # Add approved new skills
     for skill in "${APPROVED_NEW_SKILLS[@]}"; do
       jq --arg s "$skill" '.skills += [$s] | .skills |= unique' "$SKILLS_CONFIG" > tmp.json
       mv tmp.json "$SKILLS_CONFIG"
     done
 
-    # 削除されたスキルを除去
+    # Remove deleted skills
     for skill in "${APPROVED_REMOVED_SKILLS[@]}"; do
       jq --arg s "$skill" '.skills -= [$s]' "$SKILLS_CONFIG" > tmp.json
       mv tmp.json "$SKILLS_CONFIG"
     done
 
-    # バージョンとタイムスタンプを更新
+    # Update version and timestamp
     jq '.version = "1.0" | .updated_at = "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"' "$SKILLS_CONFIG" > tmp.json
     mv tmp.json "$SKILLS_CONFIG"
-    echo "✅ skills-config.json: 更新"
+    echo "✅ skills-config.json: Updated"
   else
-    echo "⚠️ jq が見つかりません。Skills 設定の自動更新はスキップされます"
-    echo "   手動で /skills-update を実行するか、jq をインストールしてください"
+    echo "⚠️ jq not found. Skills settings auto-update skipped"
+    echo "   Run /skills-update manually or install jq"
   fi
 else
-  # 新規作成（デフォルトスキル + 承認された新スキル）
+  # Create new (default skills + approved new skills)
   DEFAULT_SKILLS='["impl", "review"]'
   cat > "$SKILLS_CONFIG" << SKILLSEOF
 {
@@ -901,36 +901,36 @@ else
   "updated_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 SKILLSEOF
-  echo "✅ skills-config.json: 新規作成"
+  echo "✅ skills-config.json: Created"
 fi
 ```
 
-> 💡 **Skills 差分検出について**
-> - プラグイン更新で新しいスキルが追加された場合、自動的に検出・提案されます
-> - 既存のスキル設定は保持されます
-> - 個別のスキル追加/削除は `/skills-update` コマンドでも行えます
+> 💡 **About Skills Diff Detection**
+> - When plugin update adds new skills, auto-detected and proposed
+> - Existing skill settings preserved
+> - Individual skill add/remove also available with `/skills-update` command
 
-### Step 5: Cursor コマンドの更新（2-Agent モードの場合）
+### Step 5: Update Cursor Commands (For 2-Agent mode)
 
-`.cursor/commands/` が存在する場合のみ更新:
+Update only if `.cursor/commands/` exists:
 
 ```bash
 if [ -d .cursor/commands ]; then
   PLUGIN_PATH="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
 
-  # 最新のコマンドテンプレートをコピー
+  # Copy latest command templates
   for cmd in "$PLUGIN_PATH/templates/cursor/commands"/*.md; do
     if [ -f "$cmd" ]; then
       cp "$cmd" .cursor/commands/
-      echo "✅ 更新: $(basename $cmd)"
+      echo "✅ Updated: $(basename $cmd)"
     fi
   done
 fi
 ```
 
-### Step 6: バージョンファイルの更新
+### Step 6: Update Version File
 
-`.claude-code-harness-version` を最新版に更新:
+Update `.claude-code-harness-version` to latest:
 
 ```bash
 cat > .claude-code-harness-version <<EOF
@@ -944,39 +944,39 @@ updated_at: $(date +%Y-%m-%d)
 last_setup_command: harness-update
 EOF
 
-echo "✅ バージョン更新: v$CURRENT_VERSION → v$PLUGIN_VERSION"
+echo "✅ Version updated: v$CURRENT_VERSION → v$PLUGIN_VERSION"
 ```
 
 ---
 
-## Phase 2A: 選択的アップデート（カスタム選択時）
+## Phase 2A: Selective Update (Custom selection)
 
-> 📋 **どのファイルを更新しますか？**
+> 📋 **Which files to update?**
 >
-> 1. `.claude/settings.json` - セキュリティポリシーとパーミッション構文
-> 2. `AGENTS.md` / `CLAUDE.md` / `Plans.md` - ワークフローファイル
-> 3. `.claude/rules/` - ルールテンプレート
-> 4. `.cursor/commands/` - Cursor コマンド（2-Agent モード）
-> 5. すべて
+> 1. `.claude/settings.json` - Security policy and permission syntax
+> 2. `AGENTS.md` / `CLAUDE.md` / `Plans.md` - Workflow files
+> 3. `.claude/rules/` - Rule templates
+> 4. `.cursor/commands/` - Cursor commands (2-Agent mode)
+> 5. All
 >
-> 番号で選択してください（複数可、カンマ区切り）:
+> Select by number (multiple ok, comma-separated):
 
-**回答を待つ**
+**Wait for response**
 
-選択されたファイルのみ Phase 2 の該当 Step を実行。
+Execute only selected files' Phase 2 steps.
 
 ---
 
-## Phase 3: 検証と完了
+## Phase 3: Verification and Completion
 
-### Step 1: 更新後の再検証（全ファイル最新確認）
+### Step 1: Post-Update Re-verification (Confirm All Files Latest)
 
-**重要**: 更新処理後に再度 `template-tracker.sh check` を実行し、**全ファイルが最新になったことを確認**します。
+**Important**: Run `template-tracker.sh check` again after update to **confirm all files are now latest**.
 
 ```bash
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
 
-# 再検証
+# Re-verify
 VERIFY_RESULT=$(bash "$PLUGIN_ROOT/scripts/template-tracker.sh" check 2>/dev/null)
 
 REMAINING_UPDATES=$(echo "$VERIFY_RESULT" | jq -r '.updatesCount // 0')
@@ -984,129 +984,129 @@ REMAINING_INSTALLS=$(echo "$VERIFY_RESULT" | jq -r '.installsCount // 0')
 REMAINING_TOTAL=$((REMAINING_UPDATES + REMAINING_INSTALLS))
 
 if [ "$REMAINING_TOTAL" -gt 0 ]; then
-  echo "⚠️ 更新が完了していないファイルがあります: ${REMAINING_TOTAL}件"
-  echo "   再度更新を試行するか、手動対応が必要です"
+  echo "⚠️ Some files not yet updated: ${REMAINING_TOTAL} files"
+  echo "   Retry update or manual intervention needed"
 else
-  echo "✅ 全ファイルが最新に更新されました"
+  echo "✅ All files updated to latest"
 fi
 ```
 
-**残りがある場合:**
+**If remaining:**
 
-> ⚠️ **一部のファイルが更新されていません**
+> ⚠️ **Some files not updated**
 >
-> | ファイル | 状態 | 理由 |
-> |---------|------|------|
-> {{残りのファイルリスト}}
+> | File | Status | Reason |
+> |------|--------|--------|
+> {{remaining files list}}
 >
-> **対応オプション:**
-> 1. **再試行** - 更新処理を再実行
-> 2. **手動対応** - ローカライズされたファイルを手動マージ
-> 3. **スキップ** - 現状のまま終了（次回 `/harness-update` で再検出）
+> **Options:**
+> 1. **Retry** - Re-run update process
+> 2. **Manual** - Manually merge localized files
+> 3. **Skip** - End as-is (re-detected on next `/harness-update`)
 
-**回答を待つ**
+**Wait for response**
 
-- **再試行** → Phase 2 に戻り、残りのファイルを処理
-- **手動対応** → 手動対応が必要なファイルの一覧と手順を表示
-- **スキップ** → Step 2 へ（完了レポートに警告を含める）
+- **Retry** → Return to Phase 2, process remaining files
+- **Manual** → Show list and instructions for manual intervention files
+- **Skip** → Step 2 (include warning in completion report)
 
-### Step 2: 構文チェック
+### Step 2: Syntax Check
 
 ```bash
-# settings.json の構文チェック
+# settings.json syntax check
 if command -v jq >/dev/null 2>&1; then
-  jq empty .claude/settings.json 2>/dev/null && echo "✅ settings.json: 有効" || echo "⚠️ settings.json: 構文エラー"
+  jq empty .claude/settings.json 2>/dev/null && echo "✅ settings.json: Valid" || echo "⚠️ settings.json: Syntax error"
 fi
 
-# バージョンファイルの確認
-[ -f .claude-code-harness-version ] && echo "✅ version file: 存在" || echo "⚠️ version file: なし"
+# Verify version file
+[ -f .claude-code-harness-version ] && echo "✅ version file: Exists" || echo "⚠️ version file: Missing"
 ```
 
-### Step 3: アップデート完了レポート
+### Step 3: Update Completion Report
 
-**処理結果のサマリー**:
+**Processing results summary**:
 
 ```
-📊 更新レポート
+📊 Update Report
 
-処理結果:
-├── 更新完了: N件
-├── 新規作成: N件
-├── スキップ: N件（理由付き）
-└── 手動対応: N件
+Processing results:
+├── Updated: N files
+├── Created: N files
+├── Skipped: N files (with reasons)
+└── Manual: N files
 
-ファイル別結果:
-├── [1/5] ✅ CLAUDE.md - 上書き完了
-├── [2/5] ✅ AGENTS.md - 上書き完了
-├── [3/5] ✅ .claude/rules/workflow.md - 上書き完了
-├── [4/5] ✅ .claude/settings.json - マージ完了
-└── [5/5] 🔧 Plans.md - 手動マージ推奨
+File-by-file results:
+├── [1/5] ✅ CLAUDE.md - Overwrite complete
+├── [2/5] ✅ AGENTS.md - Overwrite complete
+├── [3/5] ✅ .claude/rules/workflow.md - Overwrite complete
+├── [4/5] ✅ .claude/settings.json - Merge complete
+└── [5/5] 🔧 Plans.md - Manual merge recommended
 ```
 
-> ✅ **アップデートが完了しました！**
+> ✅ **Update complete!**
 >
-> **更新内容:**
-> - バージョン: v{{CURRENT}} → v{{LATEST}}
-> - 処理ファイル: {{処理件数}}/{{対象件数}}件
-> - 更新方法: 上書き {{N}}件 / マージ {{N}}件 / 手動 {{N}}件
-> - バックアップ: `.claude-code-harness/backups/{{TIMESTAMP}}/`
+> **Update summary:**
+> - Version: v{{CURRENT}} → v{{LATEST}}
+> - Files processed: {{processed}}/{{total}} files
+> - Update method: Overwrite {{N}} / Merge {{N}} / Manual {{N}}
+> - Backup: `.claude-code-harness/backups/{{TIMESTAMP}}/`
 >
-> **ファイル別結果:**
+> **File-by-file results:**
 >
-> | ファイル | 結果 | 方法 |
-> |---------|------|------|
-> {{ファイル別結果リスト}}
+> | File | Result | Method |
+> |------|--------|--------|
+> {{file-by-file results list}}
 >
-> **次のステップ:**
-> - 「`/sync-status`」→ 現在の状態を確認
-> - 「`/plan-with-agent` 〇〇を作りたい」→ 新しいタスクを追加
-> - 「`/work`」→ Plans.md のタスクを実行
+> **Next steps:**
+> - "`/sync-status`" → Check current status
+> - "`/plan-with-agent` I want to build XXX" → Add new tasks
+> - "`/work`" → Execute Plans.md tasks
 >
-> **問題が発生した場合:**
+> **If issues occur:**
 > ```bash
-> # バックアップから復元
+> # Restore from backup
 > cp -r .claude-code-harness/backups/{{TIMESTAMP}}/* .
 > ```
 
 ---
 
-## Phase 2B: 選択的アップデート（カスタム選択時）
+## Phase 2B: Selective Update (Custom selection)
 
-ユーザーが選択したファイルのみ更新します。
-
----
-
-## 注意事項
-
-- **バックアップは必須**: 更新前に必ずバックアップを作成
-- **既存データは保持**: Plans.md のタスク、settings.json のカスタム設定は保持
-- **非破壊マージ**: 既存ファイルは上書きせず、マージして更新
-- **検証を忘れずに**: アップデート後は `/sync-status` で状態確認
+Update only user-selected files.
 
 ---
 
-## トラブルシューティング
+## Notes
 
-### Q: アップデート後に設定が消えた
+- **Backup required**: Always create backup before update
+- **Existing data preserved**: Plans.md tasks, settings.json custom settings preserved
+- **Non-destructive merge**: Existing files merged, not overwritten
+- **Don't forget verification**: Check status with `/sync-status` after update
 
-A: バックアップから復元してください：
+---
+
+## Troubleshooting
+
+### Q: Settings disappeared after update
+
+A: Restore from backup:
 ```bash
 cp -r .claude-code-harness/backups/{{TIMESTAMP}}/* .
 ```
 
-### Q: パーミッション構文エラーが出る
+### Q: Permission syntax error occurs
 
-A: `.claude/settings.json` を手動で修正するか、再度 `/harness-update` を実行してください。
-正しい構文: `"Bash(npm run:*)"` / 間違い: `"Bash(npm run *)"`
+A: Manually fix `.claude/settings.json` or run `/harness-update` again.
+Correct syntax: `"Bash(npm run:*)"` / Wrong: `"Bash(npm run *)"`
 
-### Q: 特定のファイルだけ更新したい
+### Q: I want to update only specific files
 
-A: 「カスタム」を選択して、必要なファイルだけ選択してください。
+A: Select "custom" and choose only needed files.
 
 ---
 
-## 関連コマンド
+## Related Commands
 
-- `/harness-init` - 新規プロジェクトのセットアップ
-- `/sync-status` - 現在のプロジェクト状態確認
-- `/validate` - プロジェクト構造の検証
+- `/harness-init` - New project setup
+- `/sync-status` - Check current project status
+- `/validate` - Validate project structure

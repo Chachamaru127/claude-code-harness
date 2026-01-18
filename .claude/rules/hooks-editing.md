@@ -1,37 +1,37 @@
 ---
-description: フック設定 (hooks.json) 編集時のルール
+description: Rules for editing hook configuration (hooks.json)
 paths: "**/hooks.json"
 ---
 
 # Hooks Editing Rules
 
-`hooks.json` ファイル編集時に適用されるルール。
+Rules applied when editing `hooks.json` files.
 
-## 重要: Dual hooks.json 同期（必須）
+## Important: Dual hooks.json Sync (Required)
 
-**2つの hooks.json が存在し、常に同期が必要:**
+**Two hooks.json files exist and must always be in sync:**
 
 ```
-hooks/hooks.json           ← ソースファイル（開発用）
-.claude-plugin/hooks.json  ← プラグイン配布用（同期必須）
+hooks/hooks.json           ← Source file (for development)
+.claude-plugin/hooks.json  ← For plugin distribution (sync required)
 ```
 
-### 編集フロー
+### Editing Flow
 
-1. `hooks/hooks.json` を編集
-2. `.claude-plugin/hooks.json` にも同じ変更を適用
-3. `./scripts/sync-plugin-cache.sh` でキャッシュを同期
+1. Edit `hooks/hooks.json`
+2. Apply the same changes to `.claude-plugin/hooks.json`
+3. Sync cache with `./scripts/sync-plugin-cache.sh`
 
 ```bash
-# 変更後は必ず実行
+# Always run after changes
 ./scripts/sync-plugin-cache.sh
 ```
 
-## フックタイプ
+## Hook Types
 
-### command タイプ（汎用）
+### command Type (General Purpose)
 
-すべてのイベントで使用可能:
+Available for all events:
 
 ```json
 {
@@ -41,29 +41,29 @@ hooks/hooks.json           ← ソースファイル（開発用）
 }
 ```
 
-### prompt タイプ（Stop/SubagentStop 専用）
+### prompt Type (Stop/SubagentStop Only)
 
-**公式サポート**: Stop と SubagentStop イベントでのみ使用可能
+**Official Support**: Only available for Stop and SubagentStop events
 
 ```json
 {
   "type": "prompt",
-  "prompt": "評価の指示...\n\n【重要】必ず以下のJSON形式で回答:\n{\"ok\": true} または {\"ok\": false, \"reason\": \"理由\"}",
+  "prompt": "Evaluation instructions...\n\n[IMPORTANT] Always respond in this JSON format:\n{\"ok\": true} or {\"ok\": false, \"reason\": \"reason\"}",
   "timeout": 30
 }
 ```
 
-**レスポンススキーマ（必須）**:
+**Response Schema (Required)**:
 ```json
-{"ok": true}                          // アクション許可
-{"ok": false, "reason": "説明文"}     // アクション阻止
+{"ok": true}                          // Allow action
+{"ok": false, "reason": "explanation"}  // Block action
 ```
 
-⚠️ **注意**: プロンプトで JSON 形式を明示的に指示しないと、LLM が自然言語を返して `JSON validation failed` エラーになる
+⚠️ **Note**: If you don't explicitly instruct JSON format in the prompt, the LLM may return natural language and cause a `JSON validation failed` error
 
-### 推奨パターン
+### Recommended Pattern
 
-command タイプは `run-script.js` 経由で実行:
+Execute command type via `run-script.js`:
 
 ```json
 {
@@ -73,95 +73,95 @@ command タイプは `run-script.js` 経由で実行:
 }
 ```
 
-## タイムアウト設定ガイドライン
+## Timeout Setting Guidelines
 
-> **Claude Code v2.1.3+**: ツールフックの最大タイムアウトが 60秒 → 10分 に延長
+> **Claude Code v2.1.3+**: Maximum timeout for tool hooks extended from 60 seconds → 10 minutes
 
-### 処理の性質別ガイドライン
+### Guidelines by Processing Nature
 
-| フック種別 | 推奨タイムアウト | 備考 |
-|-----------|----------------|------|
-| 軽量チェック（guard） | 5-10秒 | ファイル存在確認等 |
-| 通常処理（cleanup） | 30-60秒 | ファイル操作、git操作 |
-| 重い処理（test） | 60-120秒 | テスト実行、ビルド |
-| 外部API連携 | 60-180秒 | Codex レビュー等 |
+| Hook Type | Recommended Timeout | Notes |
+|-----------|-------------------|-------|
+| Lightweight check (guard) | 5-10s | File existence checks, etc. |
+| Normal processing (cleanup) | 30-60s | File operations, git operations |
+| Heavy processing (test) | 60-120s | Test execution, builds |
+| External API integration | 60-180s | Codex reviews, etc. |
 
-**注意**: タイムアウトは処理の性質に合わせて設定。不必要に長くしない。
+**Note**: Set timeouts according to processing nature. Don't make them unnecessarily long.
 
-### イベントタイプ別推奨値
+### Recommended Values by Event Type
 
-| フックタイプ | 推奨値 | 理由 |
-|-------------|--------|------|
-| SessionStart | 30s | 初期化処理に時間がかかる場合あり |
-| SubagentStart/Stop | 10s | トラッキングのみ、軽量処理 |
-| PreToolUse | 30s | ガード処理、ファイル検証 |
-| PostToolUse | 5-30s | 処理内容による |
-| Stop | 20s | 終了処理は確実に完了させる |
-| UserPromptSubmit | 10-30s | ポリシー注入、トラッキング |
+| Hook Type | Recommended | Reason |
+|-----------|-------------|--------|
+| SessionStart | 30s | Initialization may take time |
+| SubagentStart/Stop | 10s | Tracking only, lightweight processing |
+| PreToolUse | 30s | Guard processing, file validation |
+| PostToolUse | 5-30s | Depends on processing content |
+| Stop | 20s | Ensure completion of termination processing |
+| UserPromptSubmit | 10-30s | Policy injection, tracking |
 
-### Stop フックの特別な考慮
+### Special Considerations for Stop Hooks
 
-Stop フックはセッション終了時に実行されるため:
-- タイムアウトが短すぎると処理が中断される
-- 20秒以上を推奨（D14 決定事項）
+Stop hooks execute at session termination, so:
+- Too short timeouts may interrupt processing
+- 20 seconds or more recommended (D14 decision)
 
-## フック構造
+## Hook Structure
 
-### イベントタイプ
+### Event Types
 
 ```json
 {
   "hooks": {
-    "PreToolUse": [],      // ツール実行前
-    "PostToolUse": [],     // ツール実行後
-    "SessionStart": [],    // セッション開始時
-    "Stop": [],            // セッション終了時
-    "SubagentStart": [],   // サブエージェント開始
-    "SubagentStop": [],    // サブエージェント終了
-    "UserPromptSubmit": [],// ユーザー入力時
-    "PermissionRequest": [] // 権限要求時
+    "PreToolUse": [],      // Before tool execution
+    "PostToolUse": [],     // After tool execution
+    "SessionStart": [],    // At session start
+    "Stop": [],            // At session end
+    "SubagentStart": [],   // Subagent start
+    "SubagentStop": [],    // Subagent end
+    "UserPromptSubmit": [],// On user input
+    "PermissionRequest": [] // On permission request
   }
 }
 ```
 
-### matcher パターン
+### matcher Patterns
 
 ```json
-// 特定ツールにマッチ
+// Match specific tool
 { "matcher": "Write|Edit|Bash" }
 
-// すべてにマッチ
+// Match all
 { "matcher": "*" }
 
-// 複数ツール
+// Multiple tools
 { "matcher": "Skill|Task|SlashCommand" }
 ```
 
-### once オプション
+### once Option
 
-セッションで1回だけ実行:
+Execute only once per session:
 
 ```json
 {
   "type": "command",
   "command": "...",
   "timeout": 30,
-  "once": true  // SessionStart で推奨
+  "once": true  // Recommended for SessionStart
 }
 ```
 
-## 禁止事項
+## Prohibited
 
-- ❌ 片方の hooks.json だけを編集
-- ❌ Stop/SubagentStop 以外での `type: "prompt"` 使用
-- ❌ prompt タイプで `{ok, reason}` スキーマを指示しない
-- ❌ タイムアウトなしのフック
-- ❌ `${CLAUDE_PLUGIN_ROOT}` 以外の絶対パス
-- ❌ sync-plugin-cache.sh を実行しないコミット
+- ❌ Editing only one hooks.json
+- ❌ Using `type: "prompt"` for events other than Stop/SubagentStop
+- ❌ Not instructing `{ok, reason}` schema for prompt type
+- ❌ Hooks without timeout
+- ❌ Absolute paths other than `${CLAUDE_PLUGIN_ROOT}`
+- ❌ Commits without running sync-plugin-cache.sh
 
-## 関連決定事項
+## Related Decisions
 
-- **D14**: フックタイムアウト最適化
-- **D15**: Stop フック prompt タイプの正式仕様対応（`{ok, reason}` スキーマ）
+- **D14**: Hook timeout optimization
+- **D15**: Stop hook prompt type official spec compliance (`{ok, reason}` schema)
 
-詳細: [.claude/memory/decisions.md](../memory/decisions.md)
+Details: [.claude/memory/decisions.md](../memory/decisions.md)

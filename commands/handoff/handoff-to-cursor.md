@@ -1,49 +1,47 @@
 ---
-description: Cursor(PM)向けの完了報告を生成
+description: Generate completion report for Cursor (PM)
 description-en: Generate completion report for Cursor (PM)
 ---
 
-# /handoff-to-cursor - 完了報告（PMへ貼り付け / 互換）
+# /handoff-to-cursor - Completion Report (Paste to PM / Compatibility)
 
-このコマンドは、PM（Cursor など）へ貼り付けるための **作業サマリー** を生成します。
-ソロ 2-Claude 運用では、より明確な **`/handoff-to-pm-claude`** を推奨します（本コマンドは互換として維持）。
+This command generates a **work summary** to paste to PM (Cursor, etc.).
+For solo 2-Claude operation, the more explicit **`/handoff-to-pm-claude`** is recommended (this command is maintained for compatibility).
 
-## バイブコーダー向け（こう言えばOK）
+## VibeCoder Quick Reference
 
-- 「**Cursorに完了報告を書いて**」→ そのままこのコマンドを実行
-- 「**変更点とテスト結果も入れて**」→ `git diff` や実行したコマンドを元に追記して生成
-- 「**何を書けばいいか分からない**」→ こちらから必要事項（何をした/どこが変わった/どう確認した）を質問します
+- "**Write a completion report for Cursor**" → Execute this command as is
+- "**Include changes and test results**" → Generate with additions based on `git diff` and executed commands
+- "**Don't know what to write**" → We'll ask for necessary items (what you did / what changed / how you verified)
 
-## できること
+## Deliverables
 
-- **PMに伝わる形**で「概要/変更ファイル/確認/リスク/次のアクション」を1枚にまとめる
-- Plans.md の `cc:完了` と矛盾しないように整理する
+- Summarize "overview / changed files / verification / risks / next actions" in one document **in a format that conveys to PM**
+- Organize so it doesn't contradict `cc:done` in Plans.md
 
-## 手順
+## Steps
 
-1. 変更内容を把握する（可能なら `git status -sb` / `git diff --name-only`）
-2. Plans.md の対象タスクを `cc:完了` にできているか確認
-3. 以下フォーマットで報告を作る
+1. Understand changes (if possible, use `git status -sb` / `git diff --name-only`)
+2. Verify target tasks in Plans.md are marked `cc:done`
+3. Create report in the format below
 
-## 出力フォーマット（そのままCursorへ貼る）
+## Output Format (Paste directly to Cursor)
 
 ```markdown
-## 完了報告
+## Completion Report
 
-### 概要
-- （何をしたか 1〜3行）
+### Overview
+- (What was done, 1-3 lines)
 
-### 変更ファイル
-- （ファイル一覧）
+### Changed Files
+- (File list)
 
-### 動作確認 / テスト
-- （実施した確認、推奨コマンド）
+### Verification / Tests
+- (Verification performed, recommended commands)
 
-### リスク / 注意点
-- （あれば）
+### Risks / Notes
+- (If any)
 
-### 次のアクション提案
-- （PMが選べるように 1〜3個）
+### Next Action Suggestions
+- (1-3 options for PM to choose from)
 ```
-
-

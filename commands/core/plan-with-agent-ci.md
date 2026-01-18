@@ -1,53 +1,53 @@
 ---
-description: CI用・非対話の計画作成（ベンチマーク専用）
+description: CI-only non-interactive planning (benchmark use)
 description-en: CI-only non-interactive planning (benchmark use)
 user-invocable: false
 ---
 
-# /plan-with-agent-ci - CI専用計画作成
+# /plan-with-agent-ci - CI-only Plan Creation
 
-**ベンチマーク専用**: 非対話で Plans.md を生成します。
+**Benchmark only**: Generates Plans.md non-interactively.
 
-## 制約（CI用）
+## Constraints (CI use)
 
-- **AskUserQuestion 禁止**: 質問せずに進める
-- **WebSearch 禁止**: 外部検索なしで進める
-- **確認プロンプト禁止**: 自動で完了まで進める
+- **AskUserQuestion prohibited**: Proceed without asking questions
+- **WebSearch prohibited**: Proceed without external search
+- **Confirmation prompts prohibited**: Proceed automatically to completion
 
-## 入力
+## Input
 
-コマンド引数として要件（タスクプロンプト）を受け取る:
+Receive requirements (task prompt) as command arguments:
 
 ```
-/plan-with-agent-ci <要件テキスト>
+/plan-with-agent-ci <requirements text>
 ```
 
-## 出力
+## Output
 
-`benchmarks/test-project/Plans.md` を生成/更新:
+Generate/update `benchmarks/test-project/Plans.md`:
 
 ```markdown
-## タスク一覧
+## Task List
 
-- [ ] タスク1の説明 `cc:TODO`
-- [ ] タスク2の説明 `cc:TODO`
-- [ ] タスク3の説明 `cc:TODO`
+- [ ] Task 1 description `cc:TODO`
+- [ ] Task 2 description `cc:TODO`
+- [ ] Task 3 description `cc:TODO`
 ```
 
-## 実行手順
+## Execution Steps
 
-1. **要件の解析**: 引数から要件を抽出
-2. **タスク分解**: 実装可能な単位に分解（3-7個程度）
-3. **Plans.md 生成**: `benchmarks/test-project/Plans.md` に書き込み
-4. **完了出力**: 生成したタスク数を報告
+1. **Parse requirements**: Extract requirements from arguments
+2. **Task decomposition**: Break down into implementable units (around 3-7)
+3. **Generate Plans.md**: Write to `benchmarks/test-project/Plans.md`
+4. **Completion output**: Report number of generated tasks
 
-## 成功基準
+## Success Criteria
 
-- Plans.md が存在する
-- 3つ以上のタスクが `cc:TODO` マーカー付きで記載されている
-- 各タスクが実装可能な具体的な内容である
+- Plans.md exists
+- 3 or more tasks are listed with `cc:TODO` marker
+- Each task has concrete implementable content
 
-## 失敗時
+## On Failure
 
-- エラーをログに出力して終了（途中で止まらない）
-- Plans.md が生成できなかった理由を明記
+- Output error to log and exit (don't stop midway)
+- Clearly state why Plans.md could not be generated

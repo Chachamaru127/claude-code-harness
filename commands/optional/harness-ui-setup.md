@@ -1,140 +1,140 @@
 ---
-description: "[オプション] harness-ui ダッシュボードのセットアップ"
+description: "[Optional] Set up harness-ui dashboard"
 description-en: "[Optional] Set up harness-ui dashboard"
 ---
 
-# /harness-ui-setup - harness-ui ダッシュボードセットアップ
+# /harness-ui-setup - harness-ui Dashboard Setup
 
-harness-ui（ブラウザベースのダッシュボード）を有効化します。
+Enable harness-ui (browser-based dashboard).
 
-## バイブコーダー向け（こう言えばOK）
+## VibeCoder Phrases
 
-- 「**harness-ui を有効にして**」→ このコマンド
-- 「**ダッシュボードを使いたい**」→ このコマンド
-- 「**UIでヘルススコアを見たい**」→ このコマンド
+- "**Enable harness-ui**" → this command
+- "**I want to use the dashboard**" → this command
+- "**I want to see health score in UI**" → this command
 
-## できること（成果物）
+## Deliverables
 
-- **MCP 設定の有効化** - harness-ui MCP サーバーをプラグインに登録
-- ブラウザで http://localhost:37778 にアクセス可能
-- ヘルススコア、Usage、Skills の可視化
-- Claude Code 起動時に自動起動
+- **Enable MCP settings** - Register harness-ui MCP server to plugin
+- Access via browser at http://localhost:37778
+- Visualize health score, usage, and skills
+- Auto-start when Claude Code launches
 
 ---
 
-## 使い方
+## Usage
 
-### 引数付き（推奨）
+### With argument (Recommended)
 
 ```
 /harness-ui-setup YOUR-LICENSE-KEY
 ```
 
-→ ライセンスキーを環境変数に自動設定
+→ Auto-set license key to environment variable
 
-### 引数なし
+### Without argument
 
 ```
 /harness-ui-setup
 ```
 
-→ ライセンスキーの入力を求められます
+→ You will be prompted to enter the license key
 
 ---
 
-## 実行フロー
+## Execution Flow
 
-### Step 0: 既存設定の確認
+### Step 0: Check Existing Settings
 
-**最初に環境変数 `HARNESS_BETA_CODE` をチェック:**
+**First check environment variable `HARNESS_BETA_CODE`:**
 
 ```bash
 echo $HARNESS_BETA_CODE
 ```
 
-**設定済みの場合（値が存在する）:**
+**If already set (value exists):**
 
-> ✅ **ライセンスキーは既に設定されています**
+> ✅ **License key is already set**
 >
-> 現在のキー: {先頭8文字}...
+> Current key: {first 8 characters}...
 >
-> harness-ui は既に利用可能です。http://localhost:37778 にアクセスしてください。
+> harness-ui is already available. Access http://localhost:37778.
 >
-> キーを再設定する場合は `/harness-ui-setup --force` を実行してください。
+> To reset the key, run `/harness-ui-setup --force`.
 
-**処理終了**（`--force` オプションがない場合）
+**End processing** (unless `--force` option is present)
 
-### Step 1: ライセンスキーの確認
+### Step 1: License Key Confirmation
 
-**引数でキーが渡された場合:**
-→ Step 2 へ進む
+**If key is passed as argument:**
+→ Proceed to Step 2
 
-**引数がない場合:**
+**If no argument:**
 
-> 🔑 **Polar ライセンスキーを入力してください**
+> 🔑 **Please enter your Polar license key**
 >
-> ライセンスキーをお持ちでない場合は、ベータ版のため管理者からライセンスキーをリクエストしてください。
+> If you don't have a license key, please request one from the administrator as this is a beta version.
 >
-> キーを入力:
+> Enter key:
 
-**回答を待つ**
+**Wait for response**
 
-### Step 2: ライセンスキーの検証
+### Step 2: License Key Validation
 
-Polar API でキーを検証:
+Validate key with Polar API:
 
 ```typescript
 // POST https://api.polar.sh/v1/customer-portal/license-keys/validate
 {
-  "key": "ユーザーのキー",
+  "key": "user's key",
   "organization_id": "54443411-11a2-45b0-9473-7aa37f96a677"
 }
 ```
 
-**検証成功の場合:**
-→ Step 3 へ進む
+**If validation succeeds:**
+→ Proceed to Step 3
 
-**検証失敗の場合:**
+**If validation fails:**
 
-> ❌ **ライセンスキーが無効です**
+> ❌ **Invalid license key**
 >
-> 理由: {エラー理由}
+> Reason: {error reason}
 >
-> 正しいキーを確認するか、管理者にお問い合わせください。
+> Please verify the correct key or contact administrator.
 
-**処理終了**
+**End processing**
 
-### Step 3: 環境変数の設定
+### Step 3: Set Environment Variable
 
-ユーザーのシェル設定ファイル（`~/.zshrc` または `~/.bashrc`）に環境変数を追加:
+Add environment variable to user's shell config file (`~/.zshrc` or `~/.bashrc`):
 
 ```bash
-export HARNESS_BETA_CODE="ユーザーのライセンスキー"
+export HARNESS_BETA_CODE="user's license key"
 ```
 
-### Step 3.5: MCP 設定の追加（harness-ui を有効化）
+### Step 3.5: Add MCP Settings (Enable harness-ui)
 
-プラグインルートに `.mcp.json` を作成し、harness-ui MCP サーバーを有効化します。
+Create `.mcp.json` in plugin root to enable harness-ui MCP server.
 
-**このステップは harness-ui-setup でのみ実行されます**（harness-init では実行されません）。
+**This step is only executed in harness-ui-setup** (not in harness-init).
 
 ```bash
 PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-$HOME/.claude/plugins/claude-code-harness}"
 TEMPLATE_PATH="$PLUGIN_ROOT/templates/mcp/harness-ui.mcp.json.template"
 TARGET_PATH="$PLUGIN_ROOT/.mcp.json"
 
-# テンプレートが存在するか確認
+# Check if template exists
 if [ -f "$TEMPLATE_PATH" ]; then
-  # .mcp.json を作成（既存があれば上書き）
+  # Create .mcp.json (overwrite if exists)
   cp "$TEMPLATE_PATH" "$TARGET_PATH"
-  echo "✅ MCP 設定を作成しました: $TARGET_PATH"
+  echo "✅ MCP settings created: $TARGET_PATH"
 else
-  echo "⚠️ テンプレートが見つかりません: $TEMPLATE_PATH"
-  echo "手動で .mcp.json を作成してください"
+  echo "⚠️ Template not found: $TEMPLATE_PATH"
+  echo "Please create .mcp.json manually"
 fi
 ```
 
-**生成される `.mcp.json` の内容:**
+**Generated `.mcp.json` content:**
 
 ```json
 {
@@ -149,20 +149,20 @@ fi
 }
 ```
 
-> 💡 **なぜこのステップが必要？**
+> 💡 **Why is this step necessary?**
 >
-> harness-ui はオプション機能のため、デフォルトでは MCP サーバーとして登録されません。
-> `/harness-ui-setup` を実行したユーザーのみが harness-ui MCP を利用できます。
+> harness-ui is an optional feature, so it's not registered as an MCP server by default.
+> Only users who run `/harness-ui-setup` can use the harness-ui MCP.
 
-### Step 4: 依存関係のインストール
+### Step 4: Install Dependencies
 
-harness-ui の依存関係をインストール:
+Install harness-ui dependencies:
 
 ```bash
 cd ${CLAUDE_PLUGIN_ROOT}/harness-ui && bun install
 ```
 
-**Bun がインストールされていない場合:**
+**If Bun is not installed:**
 
 ```bash
 # macOS / Linux
@@ -172,250 +172,250 @@ curl -fsSL https://bun.sh/install | bash
 powershell -c "irm bun.sh/install.ps1 | iex"
 ```
 
-**インストール成功の確認:**
+**Verify successful installation:**
 
 ```bash
 ls ${CLAUDE_PLUGIN_ROOT}/harness-ui/node_modules | head -5
 ```
 
-→ パッケージ名が表示されれば成功
+→ Success if package names are displayed
 
-### Step 5: 環境変数の反映とサーバー起動確認
+### Step 5: Apply Environment Variables and Verify Server Startup
 
 ```bash
-# 環境変数を反映
-source ~/.zshrc  # または source ~/.bashrc
+# Apply environment variables
+source ~/.zshrc  # or source ~/.bashrc
 
-# harness-ui サーバーを手動起動（確認用）
+# Manually start harness-ui server (for verification)
 cd ${CLAUDE_PLUGIN_ROOT}/harness-ui && bun run dev &
 ```
 
-**起動確認:**
+**Verify startup:**
 
 ```bash
 curl -s http://localhost:37778/api/status
 ```
 
-→ `{"status":"ok"...}` が返れば成功
+→ Success if `{"status":"ok"...}` is returned
 
-### Step 6: 現在のプロジェクトを登録
+### Step 6: Register Current Project
 
-サーバー起動後、現在のプロジェクトをドロップダウンに登録:
+After server starts, register current project to dropdown:
 
 ```bash
-# 現在のプロジェクトを取得
+# Get current project
 PROJECT_PATH=$(pwd)
 PROJECT_NAME=$(basename "$PROJECT_PATH")
 
-# プロジェクトを登録
+# Register project
 curl -s -X POST http://localhost:37778/api/projects \
   -H "Content-Type: application/json" \
   -d "{\"name\": \"$PROJECT_NAME\", \"path\": \"$PROJECT_PATH\"}"
 ```
 
-**成功時のレスポンス:**
+**Success response:**
 
 ```json
 {"project":{"id":"proj_xxx","name":"your-project","path":"/path/to/project"}}
 ```
 
-**既に登録済みの場合:**
+**If already registered:**
 
 ```json
 {"error":"Project with path \"/path/to/project\" already exists"}
 ```
 
-→ エラーでも問題なし（既存プロジェクトが使用される）
+→ No problem even with error (existing project will be used)
 
-### Step 7: Plans.md フォーマット確認（必要に応じて）
+### Step 7: Plans.md Format Check (If needed)
 
-Plans.md に旧フォーマット（`cursor:WIP` / `cursor:完了`）がある場合、**文脈に応じて**適切なマーカーに移行してください。
+If Plans.md has old format (`cursor:WIP` / `cursor:completed`), migrate to appropriate markers **based on context**.
 
-**移行の考え方:**
+**Migration approach:**
 
-| 旧マーカー | 文脈 | 新マーカー |
-|-----------|------|-----------|
-| `cursor:WIP` | Claude Code が作業中 | `cc:WIP` |
-| `cursor:WIP` | PM(Cursor) が作業中 | `pm:依頼中` または維持 |
-| `cursor:完了` | 実装が完了 | `cc:完了` |
-| `cursor:完了` | PM が確認済み | `pm:確認済` |
+| Old Marker | Context | New Marker |
+|------------|---------|------------|
+| `cursor:WIP` | Claude Code is working | `cc:WIP` |
+| `cursor:WIP` | PM (Cursor) is working | `pm:requested` or keep |
+| `cursor:completed` | Implementation complete | `cc:done` |
+| `cursor:completed` | PM confirmed | `pm:confirmed` |
 
-**2-Agent 運用の場合:**
-- `cursor:依頼中` / `cursor:確認済` はそのまま有効（`pm:*` と同義）
-- 無理に変換する必要はありません
+**For 2-Agent operation:**
+- `cursor:requested` / `cursor:confirmed` remain valid (same as `pm:*`)
+- No need to force conversion
 
-**移行が必要な場合:**
-Claude Code に「Plans.md の旧フォーマットを文脈に応じて新フォーマットに移行して」と依頼してください。
+**If migration is needed:**
+Ask Claude Code to "migrate old format markers in Plans.md to new format based on context".
 
-### Step 8: 完了メッセージ
+### Step 8: Completion Message
 
-> ✅ **harness-ui のセットアップが完了しました！**
+> ✅ **harness-ui setup complete!**
 >
-> 📋 **設定内容**:
-> - ライセンスキー: {キーの先頭8文字}...
-> - Customer ID: {顧客ID}
-> - 環境変数: `HARNESS_BETA_CODE` を ~/.zshrc に追加
-> - **MCP 設定**: `.mcp.json` を作成済み
-> - 依存関係: インストール済み
-> - プロジェクト登録: 完了
+> 📋 **Settings:**
+> - License key: {first 8 characters of key}...
+> - Customer ID: {customer ID}
+> - Environment variable: Added `HARNESS_BETA_CODE` to ~/.zshrc
+> - **MCP settings**: `.mcp.json` created
+> - Dependencies: Installed
+> - Project registration: Complete
 >
-> **確認方法:**
-> 1. **Claude Code を再起動**（MCP 設定を反映させるため）
-> 2. ブラウザで http://localhost:37778 にアクセス
-> 3. 右上のドロップダウンに現在のプロジェクト名が表示されていることを確認
-> 4. 次回以降は Claude Code 起動時に自動起動＆自動登録
+> **Verification:**
+> 1. **Restart Claude Code** (to apply MCP settings)
+> 2. Access http://localhost:37778 in browser
+> 3. Verify current project name appears in top-right dropdown
+> 4. From next time, auto-start & auto-register when Claude Code launches
 >
-> 💡 **ヒント**: ドロップダウンが「All Projects」のみの場合は、Step 6 のプロジェクト登録を再実行してください。
+> 💡 **Hint**: If dropdown shows only "All Projects", re-run project registration from Step 6.
 
 ---
 
-## トラブルシューティング
+## Troubleshooting
 
-### エラー: Cannot find module / node_modules が見つからない
+### Error: Cannot find module / node_modules not found
 
-**原因**: 依存関係がインストールされていない
+**Cause**: Dependencies not installed
 
-**解決策**:
+**Solution**:
 ```bash
 cd ${CLAUDE_PLUGIN_ROOT}/harness-ui
 bun install
 ```
 
-### エラー: bun: command not found
+### Error: bun: command not found
 
-**原因**: Bun がインストールされていない
+**Cause**: Bun is not installed
 
-**解決策**:
+**Solution**:
 ```bash
 # macOS / Linux
 curl -fsSL https://bun.sh/install | bash
-source ~/.bashrc  # または source ~/.zshrc
+source ~/.bashrc  # or source ~/.zshrc
 
-# 確認
+# Verify
 bun --version
 ```
 
-### エラー: ライセンスキーが無効
+### Error: Invalid license key
 
-**原因**: キーが間違っているか、期限切れ
+**Cause**: Key is incorrect or expired
 
-**解決策**:
-1. 受け取ったキーを再確認
-2. 再度 `/harness-ui-setup YOUR-KEY` を実行
+**Solution**:
+1. Re-verify the received key
+2. Re-run `/harness-ui-setup YOUR-KEY`
 
-### エラー: harness-ui が起動しない
+### Error: harness-ui won't start
 
-**原因**: 環境変数が設定されていない、または Claude Code を再起動していない
+**Cause**: Environment variable not set, or Claude Code not restarted
 
-**解決策**:
+**Solution**:
 ```bash
-# 環境変数を確認
+# Check environment variable
 echo $HARNESS_BETA_CODE
 
-# 設定されていない場合
+# If not set
 source ~/.zshrc
 
-# Claude Code を再起動
-Ctrl+C で終了 → claude で再起動
+# Restart Claude Code
+Ctrl+C to exit → restart with claude
 ```
 
-### エラー: ポート 37778 が使用中
+### Error: Port 37778 in use
 
-**原因**: 別のプロセスがポートを使用
+**Cause**: Another process is using the port
 
-**解決策**:
+**Solution**:
 ```bash
 lsof -i :37778
 kill -9 {PID}
 ```
 
-### プロジェクトがドロップダウンに表示されない
+### Project not showing in dropdown
 
-**原因**: プロジェクト登録がされていない
+**Cause**: Project not registered
 
-**解決策**:
+**Solution**:
 ```bash
-# サーバーが起動していることを確認
+# Verify server is running
 curl -s http://localhost:37778/api/status
 
-# プロジェクトを手動登録
+# Manually register project
 PROJECT_PATH=$(pwd)
 PROJECT_NAME=$(basename "$PROJECT_PATH")
 curl -s -X POST http://localhost:37778/api/projects \
   -H "Content-Type: application/json" \
   -d "{\"name\": \"$PROJECT_NAME\", \"path\": \"$PROJECT_PATH\"}"
 
-# 登録済みプロジェクト一覧を確認
+# Check registered projects list
 curl -s http://localhost:37778/api/projects | jq
 ```
 
 ---
 
-## Plans.md フォーマット要件
+## Plans.md Format Requirements
 
-harness-ui の自動プロジェクト登録には、以下のいずれかが必要です:
+harness-ui auto project registration requires one of the following:
 
-### 方法1: `/harness-init` を実行（推奨）
+### Method 1: Run `/harness-init` (Recommended)
 
 ```bash
 /harness-init
 ```
 
-→ `.claude-code-harness-version` マーカーファイルが作成され、自動認識されます。
+→ `.claude-code-harness-version` marker file is created and auto-recognized.
 
-### 方法2: Plans.md に正しいマーカーを含める
+### Method 2: Include correct markers in Plans.md
 
-Plans.md に以下のマーカーを含めてください:
+Include the following markers in Plans.md:
 
-**新フォーマット（推奨）:**
+**New format (Recommended):**
 
-| マーカー | 意味 |
-|---------|------|
-| `cc:TODO` | 未着手タスク |
-| `cc:WIP` | 作業中タスク |
-| `cc:完了` | 完了タスク |
-| `cc:blocked` | ブロック中 |
-| `pm:依頼中` | PM から依頼 |
-| `pm:確認済` | PM 確認済 |
+| Marker | Meaning |
+|--------|---------|
+| `cc:TODO` | Pending task |
+| `cc:WIP` | In-progress task |
+| `cc:done` | Completed task |
+| `cc:blocked` | Blocked |
+| `pm:requested` | Requested by PM |
+| `pm:confirmed` | Confirmed by PM |
 
-**旧フォーマット（互換、非推奨）:**
+**Old format (compatible, deprecated):**
 
-| マーカー | 移行先 |
-|---------|-------|
+| Marker | Migration target |
+|--------|------------------|
 | `cursor:WIP` → | `cc:WIP` |
-| `cursor:完了` → | `cc:完了` |
+| `cursor:completed` → | `cc:done` |
 
-**テンプレート:**
+**Template:**
 
 ```markdown
 # Plans.md
 
-## タスク一覧
+## Task List
 
-- [ ] タスク1 `cc:TODO`
-- [x] タスク2 `cc:完了`
+- [ ] Task 1 `cc:TODO`
+- [x] Task 2 `cc:done`
 ```
 
 ---
 
-## 関連コマンド
+## Related Commands
 
-- `/validate` - プラグイン検証
-- `/harness-update` - プラグイン更新
-- `/harness-init` - プロジェクト初期化（Plans.md 自動生成）
+- `/validate` - Plugin validation
+- `/harness-update` - Plugin update
+- `/harness-init` - Project initialization (auto Plans.md generation)
 
 ---
 
-## 注意事項
+## Notes
 
-- ライセンスキーは Polar API でオンライン検証されます
-- 無効なキーでは harness-ui は起動しません
-- 開発者は `HARNESS_UI_DEV=true` でバイパス可能
+- License key is validated online via Polar API
+- harness-ui won't start with invalid key
+- Developers can bypass with `HARNESS_UI_DEV=true`
 
-## セキュリティ
+## Security
 
-ライセンスキーは環境変数（`HARNESS_BETA_CODE`）で管理されます。
+License key is managed via environment variable (`HARNESS_BETA_CODE`).
 
-- **リポジトリに含めない**: `.env` ファイルは `.gitignore` に追加
-- **シェル設定ファイル**: `~/.zshrc` は通常 Git 管理外なので安全
-- **チーム開発時**: 各メンバーが個別のライセンスキーを取得することを推奨
+- **Do not include in repository**: Add `.env` file to `.gitignore`
+- **Shell config file**: `~/.zshrc` is normally outside Git management, so it's safe
+- **For team development**: Recommend each member obtains individual license key
