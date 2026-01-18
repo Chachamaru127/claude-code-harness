@@ -1,6 +1,6 @@
 # Claude harness
 
-English | [日本語](README.ja.md)
+English | [日本語](README_ja.md)
 
 ![Claude harness](docs/images/claude-harness-logo-with-text.png)
 
@@ -322,7 +322,7 @@ claude-code-harness/
 - [Memory Policy](docs/MEMORY_POLICY.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Cursor Integration](docs/CURSOR_INTEGRATION.md)
-- [Changelog](CHANGELOG.en.md) | [Japanese](CHANGELOG.md)
+- [Changelog](CHANGELOG.md) | [日本語](CHANGELOG_ja.md)
 
 ---
 

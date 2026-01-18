@@ -11,7 +11,7 @@ set -euo pipefail
 VERSION_FILE="VERSION"
 PLUGIN_JSON=".claude-plugin/plugin.json"
 MARKETPLACE_JSON=".claude-plugin/marketplace.json"
-README_FILES=("README.md" "README.ja.md")
+README_FILES=("README.md" "README_ja.md")
 
 # 現在のバージョンを取得
 get_version() {
@@ -74,7 +74,7 @@ sync_optional_files() {
         fi
     fi
 
-    # README badge (README.md + README.ja.md)
+    # README badge (README.md + README_ja.md)
     for readme in "${README_FILES[@]}"; do
         if [ -f "$readme" ]; then
             if [[ "$OSTYPE" == "darwin"* ]]; then

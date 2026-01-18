@@ -37,7 +37,7 @@ cat VERSION
 
 > ⚠️ **注意**: CHANGELOG 作成後、Step 3.5 で README 更新が必要か必ず確認すること（JP/EN 両方）
 
-`CHANGELOG.md`（日本語）と `CHANGELOG.en.md`（英語）の **両方** で、`## [Unreleased]` の直後に新バージョンのエントリを追加。
+`CHANGELOG_ja.md`（日本語）と `CHANGELOG.md`（英語）の **両方** で、`## [Unreleased]` の直後に新バージョンのエントリを追加。
 
 #### フォーマット
 
@@ -103,11 +103,11 @@ CHANGELOG.md 末尾のリンクセクションに追加：
 [Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/vX.Y.Z...HEAD
 ```
 
-#### CHANGELOG.en.md（英語）の書き方
+#### CHANGELOG.md（英語）の書き方
 
 - 目的は **ユーザーが理解できる変更点** を伝えること（コミットログの翻訳ではない）
 - `### 🎯 What's Changed for You` を基本にし、必要なら `#### Before/After` を追加
-- 日本語版（CHANGELOG.md）と **同じバージョン番号が存在** する状態を維持する
+- 日本語版（CHANGELOG_ja.md）と **同じバージョン番号が存在** する状態を維持する
 
 ### Step 4: バージョン更新
 
@@ -124,7 +124,7 @@ echo "X.Y.Z" > VERSION
 
 ```bash
 # ステージング
-git add VERSION .claude-plugin/plugin.json .claude-plugin/marketplace.json CHANGELOG.md CHANGELOG.en.md README.md README.ja.md [変更されたファイル]
+git add VERSION .claude-plugin/plugin.json .claude-plugin/marketplace.json CHANGELOG.md CHANGELOG_ja.md README.md README_ja.md [変更されたファイル]
 
 # コミット
 git commit -m "chore: release vX.Y.Z - 一言説明
@@ -209,11 +209,11 @@ cat ~/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/
 
 ### Step 3.5: README 更新（必須確認）
 
-> 🔴 **必ず確認**: 以下に該当する場合は **README.md と README.ja.md の両方** を更新すること
+> 🔴 **必ず確認**: 以下に該当する場合は **README.md と README_ja.md の両方** を更新すること
 
 **対象ファイル**:
 - `README.md` - 英語版（デフォルト）
-- `README.ja.md` - 日本語版
+- `README_ja.md` - 日本語版
 
 **更新が必要なケース**:
 - ✅ 新機能追加（Added セクションに項目がある）
@@ -232,7 +232,7 @@ cat ~/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/
    - `## What's New in vX.Y` を更新（存在しない場合は追加）
    - 関連するコマンド/スキルの説明を更新
 
-2. **README.ja.md（日本語）** を同期
+2. **README_ja.md（日本語）** を同期
    - `## vX.Y の新機能 | What's New in vX.Y` を更新（存在しない場合は追加）
    - 関連するコマンド/スキルの説明を更新
 
@@ -253,7 +253,7 @@ README.md:
 - Feature 2
 ```
 
-README.ja.md:
+README_ja.md:
 ```markdown
 ### 機能名（vX.Y.Z）| Feature Name
 
@@ -265,7 +265,7 @@ README.ja.md:
 ```
 
 **更新対象セクション例**:
-| README.md | README.ja.md |
+| README.md | README_ja.md |
 |-----------|--------------|
 | "What's New in vX.Y" | 「vX.Y の新機能 \| What's New in vX.Y」 |
 | 「3行でわかる」 | "In 3 Lines" |
