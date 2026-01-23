@@ -43,6 +43,12 @@ Change history for claude-code-harness.
 - **MCP Configuration Guide**: New `docs/MCP_CONFIGURATION.md`
   - Documents `auto:N` syntax for threshold-based auto-approval
   - Examples for different server trust levels
+- **Related files verification** (`verify-related-files`) - Automatically checks for missed file updates after implementation
+  - Detects function signature changes → warns about unchecked callers
+  - Detects interface/type changes → warns about implementation inconsistencies
+  - Detects export changes → warns about broken imports
+  - Detects config changes → warns about unsynchronized related configs
+  - Integrated into `/work` flow (Phase 1 self-review and Phase 3 pre-commit)
 
 ### Changed
 
