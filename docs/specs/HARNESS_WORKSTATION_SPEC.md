@@ -12,6 +12,7 @@
 現状: CLIベースの断片的な操作
       ↓
 目標: UIからPlan→Work→Review→Evaluate全てを完結
+      + Gateway制御プレーンで複数クライアント統合
 ```
 
 ### 価値提案
@@ -20,10 +21,34 @@
 2. **評価の可視化**: Scorecard/メトリクスをリアルタイムで確認
 3. **ナレッジの一元管理**: SSOT（decisions.md, patterns.md）の閲覧・編集
 4. **セッション管理**: 複数プロジェクト・複数ターミナルの並列管理
+5. **Gateway統合**: 複数クライアント（CLI/Web/Slack/Discord）からの統一アクセス
+6. **Canvas UI**: エージェント駆動のビジュアルワークスペース
 
 ---
 
 ## アーキテクチャ
+
+### Gateway 制御プレーン（Clawdbot inspired）
+
+```
+                    ┌─────────────────────────────────────┐
+                    │     Harness Gateway (port 37778)    │
+                    │     WebSocket Control Plane         │
+                    └──────────────┬──────────────────────┘
+                                   │
+        ┌──────────────┬───────────┼───────────┬──────────────┐
+        │              │           │           │              │
+   ┌────▼────┐   ┌─────▼────┐ ┌────▼────┐ ┌────▼────┐  ┌──────▼─────┐
+   │   CLI   │   │  Web UI  │ │  Slack  │ │ Discord │  │  Webhook   │
+   │ (claude)│   │(harness) │ │   Bot   │ │   Bot   │  │  (CI/CD)   │
+   └─────────┘   └──────────┘ └─────────┘ └─────────┘  └────────────┘
+```
+
+**Gateway の役割**:
+- セッション管理（複数クライアント間で共有）
+- イベント配信（ログ、状態変更、通知）
+- 認証・認可（APIキー、ペアリング）
+- ツール実行の中継
 
 ### 現状 → 拡張後
 
@@ -33,14 +58,15 @@
 │  Dashboard │ Work │ Settings            │
 └─────────────────────────────────────────┘
 
-拡張後 (6 pages + サイドパネル):
-┌─────────────────────────────────────────────────────────────┐
-│  Dashboard │ Work │ Evals │ Memory │ Skills │ Settings     │
-└─────────────────────────────────────────────────────────────┘
-       │         │       │       │         │
-       │         │       │       │         └── スキル一覧・状態
-       │         │       │       └── SSOT 閲覧・編集
-       │         │       └── 評価実行・Scorecard
+拡張後 (7 pages + サイドパネル):
+┌─────────────────────────────────────────────────────────────────────┐
+│  Dashboard │ Work │ Canvas │ Evals │ Memory │ Skills │ Settings    │
+└─────────────────────────────────────────────────────────────────────┘
+       │         │       │       │       │         │
+       │         │       │       │       │         └── スキル一覧 + レジストリ
+       │         │       │       │       └── SSOT 閲覧・編集
+       │         │       │       └── 評価実行・Scorecard
+       │         │       └── ビジュアルワークスペース（NEW）
        │         └── ターミナル作業（既存）
        └── 概要・Plans・クイックアクション（既存拡張）
 ```
@@ -136,7 +162,60 @@ harness-ui/src/client/
 - フルスクリーンターミナルモード
 - 複数ターミナルのタブ切り替え
 
-### 3. Evals（新規）
+### 3. Canvas（新規 - Clawdbot A2UI inspired）
+
+**目的**: エージェント駆動のビジュアルワークスペース
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Canvas                              [Layers ▼] [Export 📤] │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │                                                     │   │
+│  │     ┌──────────┐      ┌──────────┐                 │   │
+│  │     │ Plans.md │─────▶│ src/     │                 │   │
+│  │     │ ████████ │      │ auth.ts  │                 │   │
+│  │     └──────────┘      └────┬─────┘                 │   │
+│  │                            │                        │   │
+│  │                       ┌────▼─────┐                 │   │
+│  │                       │ tests/   │                 │   │
+│  │                       │ auth.test│                 │   │
+│  │                       └──────────┘                 │   │
+│  │                                                     │   │
+│  │  [+ Add Node]  [🔗 Connect]  [📝 Annotate]         │   │
+│  └─────────────────────────────────────────────────────┘   │
+│                                                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │ Agent Log                                            │   │
+│  │ 10:30 Created node: Plans.md                         │   │
+│  │ 10:31 Connected: Plans.md → src/auth.ts              │   │
+│  │ 10:32 Agent suggestion: "Add test coverage node"     │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**機能**:
+1. **ノードベースビュー**: ファイル、タスク、依存関係をノードとして可視化
+2. **エージェント駆動**: Claudeが自動でノード追加・接続を提案
+3. **リアルタイム同期**: ファイル変更がCanvasに即反映
+4. **エクスポート**: SVG/PNG/Mermaid形式で出力
+
+**ユースケース**:
+- アーキテクチャの可視化
+- タスク依存関係のマッピング
+- コードフローの理解
+
+**API エンドポイント**:
+```typescript
+// GET /api/canvas/:projectId - Canvas 状態取得
+// PUT /api/canvas/:projectId - Canvas 状態更新
+// POST /api/canvas/:projectId/nodes - ノード追加
+// POST /api/canvas/:projectId/edges - エッジ追加
+// GET /api/canvas/:projectId/export?format=svg - エクスポート
+```
+
+### 4. Evals（新規）
 
 **目的**: 評価の実行と結果の可視化
 
@@ -243,35 +322,41 @@ harness-ui/src/client/
 // GET /api/memory/history/:file - 変更履歴
 ```
 
-### 5. Skills（新規）
+### 6. Skills（新規 - Registry拡張）
 
-**目的**: スキルの一覧と状態確認
+**目的**: スキルの一覧・管理 + レジストリからのインストール
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ Skills                     [All ▼] [Filter: planning ✕]    │
+│ Skills                [Installed] [Registry] [Filter ▼]    │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐│
-│  │ planning       │  │ reviewing      │  │ testing        ││
-│  │ ───────────────│  │ ───────────────│  │ ───────────────││
-│  │ 📝 plan        │  │ 🔍 code-review │  │ 🧪 tdd         ││
-│  │ 📋 decompose   │  │ 🔒 security    │  │ ✅ test-first  ││
-│  │ 🎯 scope       │  │ 📊 quality     │  │ 🔄 regression  ││
-│  └────────────────┘  └────────────────┘  └────────────────┘│
+│  ┌─ Installed ──────────────────────────────────────────┐  │
+│  │ ┌────────────────┐  ┌────────────────┐  ┌───────────┐│  │
+│  │ │ planning    ✓  │  │ reviewing   ✓  │  │ testing ✓ ││  │
+│  │ │ ───────────────│  │ ───────────────│  │ ──────────││  │
+│  │ │ 📝 plan        │  │ 🔍 code-review │  │ 🧪 tdd    ││  │
+│  │ │ 📋 decompose   │  │ 🔒 security    │  │ ✅ test   ││  │
+│  │ └────────────────┘  └────────────────┘  └───────────┘│  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌─ Registry (HarnessHub) ──────────────────────────────┐  │
+│  │ ┌────────────────────────────────────────────────────┐│  │
+│  │ │ 🌐 api-design          by @community    [Install] ││  │
+│  │ │ 🔐 owasp-security      by @official     [Install] ││  │
+│  │ │ 📊 metrics-dashboard   by @community    [Install] ││  │
+│  │ └────────────────────────────────────────────────────┘│  │
+│  └──────────────────────────────────────────────────────┘  │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │ Skill Detail: code-review                            │   │
+│  │ Skill Detail: code-review                 [Disable]  │   │
 │  │ ─────────────────────────────────────────────────── │   │
 │  │ Description: コードレビューを実行する                │   │
 │  │ Allowed Tools: Read, Grep, Edit, Bash                │   │
 │  │ Triggers: /harness-review, explicit request          │   │
+│  │ Version: 1.2.0  |  Author: @official                 │   │
 │  │                                                       │   │
-│  │ Content:                                              │   │
-│  │ ```markdown                                          │   │
-│  │ # Code Review Skill                                  │   │
-│  │ レビュー時は以下の観点で確認...                      │   │
-│  │ ```                                                  │   │
+│  │ [View Source] [Update Available: 1.3.0]              │   │
 │  └─────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -281,20 +366,85 @@ harness-ui/src/client/
 2. **フィルタリング**: カテゴリ、キーワードでフィルタ
 3. **詳細表示**: スキルの内容、許可ツール、トリガー
 4. **状態表示**: アクティブ/非アクティブ
+5. **レジストリ連携**: HarnessHub からスキルをブラウズ・インストール（NEW）
+6. **バージョン管理**: スキルの更新通知・アップグレード（NEW）
+7. **有効/無効切替**: プロジェクト単位でスキルを制御（NEW）
 
 **API エンドポイント**:
 ```typescript
-// GET /api/skills - スキル一覧
+// GET /api/skills - インストール済みスキル一覧
 // GET /api/skills/:id - スキル詳細
 // GET /api/skills/categories - カテゴリ一覧
+// POST /api/skills/:id/enable - スキル有効化
+// POST /api/skills/:id/disable - スキル無効化
+// GET /api/registry/skills - レジストリからスキル検索
+// POST /api/registry/skills/:id/install - スキルインストール
+// POST /api/skills/:id/upgrade - スキルアップグレード
 ```
 
-### 6. Settings（既存拡張）
+### 7. Settings（既存拡張 + 統合設定）
 
 **追加項目**:
 - 評価設定（trials 数、タイムアウト）
 - UI テーマ
 - キーボードショートカット設定
+- **通知連携**（NEW）
+- **Gateway 設定**（NEW）
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Settings                                                    │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌─ General ────────────────────────────────────────────┐  │
+│  │ Theme:        [Dark ▼]                               │  │
+│  │ Language:     [日本語 ▼]                              │  │
+│  │ Shortcuts:    [Customize...]                         │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌─ Integrations（Clawdbot inspired）───────────────────┐  │
+│  │                                                       │  │
+│  │ Slack         [Connect]     ○ Disconnected           │  │
+│  │ Discord       [Connect]     ○ Disconnected           │  │
+│  │ Webhook       [Configure]   ● 2 endpoints active     │  │
+│  │                                                       │  │
+│  │ ─────────────────────────────────────────────────── │  │
+│  │ Notification Rules:                                  │  │
+│  │ ┌────────────────────────────────────────────────┐  │  │
+│  │ │ On: Task Complete  → Slack #dev-notifications │  │  │
+│  │ │ On: Review Fail    → Discord @maintainers     │  │  │
+│  │ │ On: Eval Complete  → Webhook (CI)             │  │  │
+│  │ └────────────────────────────────────────────────┘  │  │
+│  │ [+ Add Rule]                                         │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌─ Gateway ────────────────────────────────────────────┐  │
+│  │ Port:         37778                                  │  │
+│  │ API Key:      [Regenerate]   hns_****...****         │  │
+│  │ Paired:       3 clients (CLI, Web, Slack)            │  │
+│  │                                                       │  │
+│  │ Security:                                            │  │
+│  │ ☑ Require pairing for new clients                   │  │
+│  │ ☑ Auto-approve local connections                    │  │
+│  │ ☐ Allow remote access (Tailscale)                   │  │
+│  └──────────────────────────────────────────────────────┘  │
+│                                                             │
+│  ┌─ Evals ──────────────────────────────────────────────┐  │
+│  │ Default trials:    [3 ▼]                             │  │
+│  │ Timeout (seconds): [300]                             │  │
+│  │ Model:             [claude-sonnet-4-20250514 ▼]           │  │
+│  └──────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**通知連携の仕組み**:
+```
+イベント発生 → Gateway → 通知ルール評価 → 配信
+                              │
+            ┌─────────────────┼─────────────────┐
+            ▼                 ▼                 ▼
+         Slack API      Discord API       Webhook POST
+```
 
 ---
 
@@ -438,10 +588,12 @@ export interface Skill {
 
 ## 実装フェーズ
 
-### Phase 1: 基盤整備
+### Phase 1: 基盤整備 + Gateway
 - [ ] Page 型拡張、ナビゲーション更新
 - [ ] 共通コンポーネント（CommandPalette, StatusBar）
 - [ ] API ルート基盤
+- [ ] **Gateway 制御プレーン基盤**（NEW）
+- [ ] **WebSocket イベント配信システム**（NEW）
 
 ### Phase 2: Evals ページ
 - [ ] Scorecard 表示
@@ -454,15 +606,35 @@ export interface Skill {
 - [ ] インライン編集
 - [ ] 履歴表示
 
-### Phase 4: Skills ページ
+### Phase 4: Skills ページ + Registry
 - [ ] スキル一覧
 - [ ] フィルタリング
 - [ ] 詳細表示
+- [ ] **HarnessHub レジストリ連携**（NEW）
+- [ ] **スキルインストール/更新**（NEW）
 
 ### Phase 5: Dashboard 拡張
 - [ ] HealthScore
 - [ ] QuickActions
 - [ ] 統合ビュー
+
+### Phase 6: Canvas（NEW）
+- [ ] ノードベースビュー基盤
+- [ ] ファイル/タスクノード表示
+- [ ] エッジ（依存関係）管理
+- [ ] エージェント提案機能
+- [ ] エクスポート（SVG/Mermaid）
+
+### Phase 7: Integrations（NEW）
+- [ ] Slack 連携（OAuth + Bot）
+- [ ] Discord 連携（Bot）
+- [ ] Webhook 配信
+- [ ] 通知ルールエンジン
+
+### Phase 8: Advanced（Future）
+- [ ] 音声統合（Voice Wake）
+- [ ] モバイルアプリ連携
+- [ ] リモートアクセス（Tailscale）
 
 ---
 
@@ -479,9 +651,36 @@ export interface Skill {
 
 ---
 
+## 競合分析・参考
+
+### Clawdbot（参考）
+
+| 機能 | Clawdbot | Harness Workstation | 取り入れ方 |
+|------|----------|---------------------|-----------|
+| Gateway | ✅ ws://127.0.0.1:18789 | ✅ ws://127.0.0.1:37778 | 制御プレーンとして採用 |
+| マルチチャンネル | ✅ 11+ (WhatsApp等) | ✅ 3 (Slack/Discord/Webhook) | 開発者向けに絞って実装 |
+| Canvas/A2UI | ✅ エージェント駆動UI | ✅ ノードベースビュー | 簡易版として実装 |
+| 音声統合 | ✅ Voice Wake | △ Future | Phase 8 で検討 |
+| スキルレジストリ | ✅ ClawdHub | ✅ HarnessHub | 同等機能として実装 |
+| デバイス統合 | ✅ macOS/iOS/Android | ✗ 対象外 | 開発ワークステーション特化 |
+
+### 差別化ポイント
+
+```
+Clawdbot:     パーソナルAIアシスタント（汎用）
+              ↓
+Harness:      開発者向けワークステーション（特化）
+              + 評価機構（Scorecard）
+              + SSOT管理（Memory）
+              + Plan→Work→Reviewワークフロー
+```
+
+---
+
 ## 関連ドキュメント
 
 - [harness-ui ルール](../../.claude/rules/harness-ui.md)
 - [UI スキル制約](../../skills/ui/references/ui-skills.md)
 - [Scorecard 仕様](../SCORECARD_SPEC.md)
 - [評価 Playbook](../EVALS_PLAYBOOK.md)
+- [Terminal 仕様](./TERMINAL_SPEC.md)
