@@ -96,10 +96,11 @@ tail -20 .claude/state/session.events.jsonl
 ┌─────────────────────────────────────────────────────────┐
 │ Phase 1: Parallel Implementation + Self-review          │
 ├─────────────────────────────────────────────────────────┤
-│  [task-worker A] Implement→Self-review→Fix (max 3x)    │
-│  [task-worker B] Implement→Self-review→Fix             │
-│  [task-worker C] Implement→Self-review→Fix             │
+│  [task-worker A] Implement→Related-check→Self-review→Fix│
+│  [task-worker B] Implement→Related-check→Self-review→Fix│
+│  [task-worker C] Implement→Related-check→Self-review→Fix│
 │                                                         │
+│  ※Related-check: Verify no missed file updates         │
 │  Each worker loops autonomously until commit_ready      │
 └─────────────────────────────────────────────────────────┘
     ↓ Wait for all "commit_ready"
@@ -116,6 +117,7 @@ tail -20 .claude/state/session.events.jsonl
 │ Phase 3: Integrated Commit                              │
 ├─────────────────────────────────────────────────────────┤
 │  ├── Conflict detection & resolution                    │
+│  ├── Final related files verification                   │
 │  ├── Final build verification                           │
 │  └── Conventional Commit                                │
 └─────────────────────────────────────────────────────────┘
@@ -473,6 +475,7 @@ Use Skill tool:
 **Child skills (auto-routing)**:
 - `work-impl-feature` - Feature implementation
 - `work-write-tests` - Test creation
+- `verify-related-files` - Related files check (prevents missed updates)
 - `verify-build` - Build verification
 - `error-recovery` - Error recovery
 
@@ -506,6 +509,30 @@ Run LSP Diagnostics after implementation:
 → Verify no type errors
 → Detect unused variables & imports
 → Early detection of potential issues
+```
+
+### After Implementation: Related Files Check
+
+```
+Run related files verification:
+→ Detect function signature changes → check callers
+→ Detect interface/type changes → check implementations
+→ Detect export changes → check importers
+→ Detect config changes → check related configs
+```
+
+**Example output**:
+```
+📋 Related Files Verification
+
+⚠️ Files to check:
+├─ src/api/auth.ts:45 (calls modified function)
+├─ tests/user.test.ts:28 (test for modified code)
+└─ docs/api.md (documentation may need update)
+
+1. Confirmed, proceed
+2. Check each file
+3. Show LSP find-references
 ```
 
 ### VibeCoder Phrases
