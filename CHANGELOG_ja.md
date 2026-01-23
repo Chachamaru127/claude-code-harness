@@ -7,6 +7,18 @@
 
 ## [Unreleased]
 
+### 🎯 あなたにとって何が変わるか
+
+**セッション間でリアルタイムにメッセージを共有でき、Codex や Cursor からも Harness が使えるようになりました。**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| セッションは独立して動作 | `/session-broadcast` で他セッションに通知 |
+| Claude Code 専用 | MCP サーバーで Codex、Cursor からも利用可能 |
+| PR レビューは手動 | `/webhook-setup` で GitHub Actions 自動レビュー |
+
 ### Added
 
 - **関連ファイル検証** (`verify-related-files`) - 実装後に修正漏れを自動チェック
@@ -15,6 +27,22 @@
   - export変更 → import文の壊れを警告
   - 設定変更 → 関連設定ファイルの非同期を警告
   - `/work` フローに統合（Phase 1 セルフレビュー、Phase 3 コミット前）
+- **セッション間通信** - リアルタイムメッセージング（Clawdbot にインスパイア）
+  - `/session-broadcast`: 全セッションにメッセージ送信
+  - `/session-inbox`: 他セッションからのメッセージ確認
+  - `/session-list`: アクティブセッション一覧
+  - 自動 inbox チェック: Write/Edit 前に未読通知
+  - 自動 broadcast: API/型ファイル変更時に自動通知
+- **MCP サーバー** (`mcp-server/`) - クロスクライアント連携
+  - Claude Code、Codex、Cursor 間でセッション共有
+  - セッションツール: `harness_session_list`, `harness_session_broadcast`, `harness_session_inbox`
+  - ワークフローツール: `harness_workflow_plan`, `harness_workflow_work`, `harness_workflow_review`
+  - ステータスツール: `harness_status`
+  - `/mcp-setup`: クライアント別設定コマンド
+- **Webhook 自動化** (`/webhook-setup`) - GitHub Actions 連携
+  - PR 作成時に `/harness-review` を自動実行
+  - Plans.md ステータスを PR にコメント
+- **E2E 検証設計** (`docs/E2E_VERIFICATION_DESIGN.md`) - 将来の CDP/Playwright 連携
 
 ---
 

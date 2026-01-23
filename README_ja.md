@@ -238,6 +238,18 @@ claude --plugin-dir ~/claude-plugins/claude-code-harness
 | **patterns.md** | 再利用パターン（How）を蓄積 |
 | **Claude-mem 統合** | セッション跨ぎで過去の学びを活用 |
 
+### セッション間通信 & マルチクライアント
+
+| 機能 | 説明 |
+|------|------|
+| **`/session-broadcast`** | 全セッションにメッセージ送信 |
+| **`/session-inbox`** | 他セッションからのメッセージ確認 |
+| **`/session-list`** | アクティブセッション一覧 |
+| **MCP サーバー** | Codex、Cursor からも Harness を利用可能 |
+| **`/mcp-setup`** | クライアント別の MCP 設定 |
+
+**ユースケース**: セッションA で API を変更 → セッションB に自動通知 → 競合を事前回避
+
 ### 品質保証（3層防御）
 
 | 層 | 仕組み | 強制力 |

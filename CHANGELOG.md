@@ -24,6 +24,9 @@ Change history for claude-code-harness.
 | No context usage visibility | Visual indicator with color-coded thresholds in harness-ui |
 | TodoWrite and Plans.md disconnected | TodoWrite changes logged and tracked |
 | No MCP auto:N documentation | Comprehensive MCP configuration guide |
+| Sessions work in isolation | `/session-broadcast` enables cross-session messaging |
+| Claude Code only | MCP Server supports Codex, Cursor via standard protocol |
+| Manual PR reviews | `/webhook-setup` automates GitHub Actions reviews |
 
 ### Added
 
@@ -49,6 +52,22 @@ Change history for claude-code-harness.
   - Detects export changes → warns about broken imports
   - Detects config changes → warns about unsynchronized related configs
   - Integrated into `/work` flow (Phase 1 self-review and Phase 3 pre-commit)
+- **Inter-session communication** - Real-time messaging between sessions (inspired by Clawdbot)
+  - `/session-broadcast`: Send messages to all active sessions
+  - `/session-inbox`: Check for messages from other sessions
+  - `/session-list`: View active sessions
+  - Auto inbox check hook: Notifies unread messages before Write/Edit
+  - Auto broadcast hook: Notifies API/type file changes automatically
+- **MCP Server** (`mcp-server/`) - Cross-client session communication
+  - Enables Claude Code, Codex, and Cursor to share sessions via MCP protocol
+  - Session tools: `harness_session_list`, `harness_session_broadcast`, `harness_session_inbox`
+  - Workflow tools: `harness_workflow_plan`, `harness_workflow_work`, `harness_workflow_review`
+  - Status tools: `harness_status`
+  - `/mcp-setup`: Configure MCP for different clients
+- **Webhook automation** (`/webhook-setup`) - GitHub Actions integration
+  - Auto-review PRs with `/harness-review`
+  - Plans.md status comments on PRs
+- **E2E verification design** (`docs/E2E_VERIFICATION_DESIGN.md`) - Future CDP/Playwright integration
 
 ### Changed
 

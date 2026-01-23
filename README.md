@@ -104,6 +104,23 @@ Security, performance, accessibility, maintainability—8 specialists review you
 - **Claude-mem integration**: Past learnings persist across sessions
 - **Session resume**: `/resume` restores your exact work state
 
+### Cross-Session Communication
+
+```bash
+/session-broadcast "API changed: userId → user"
+/session-inbox   # Check messages from other sessions
+```
+
+Real-time messaging between sessions. When you change an API in Session A, Session B gets notified automatically.
+
+### MCP Server (Multi-Client Support)
+
+```bash
+/mcp-setup   # Configure for Claude Code, Codex, or Cursor
+```
+
+Use Harness from **Codex**, **Cursor**, or any MCP-compatible client. Share sessions across different AI tools working on the same project.
+
 ---
 
 ## Who Is This For?
@@ -136,6 +153,16 @@ Security, performance, accessibility, maintainability—8 specialists review you
 | `/harness-update` | Update plugin files |
 | `/codex-review` | Codex-only second opinion |
 | `/skill-list` | Show all 67 skills |
+
+### Session & Multi-Client
+
+| Command | Purpose |
+|---------|---------|
+| `/session-broadcast` | Send message to all sessions |
+| `/session-inbox` | Check messages from other sessions |
+| `/session-list` | List active sessions |
+| `/mcp-setup` | Configure MCP for Codex/Cursor |
+| `/webhook-setup` | Setup GitHub Actions automation |
 
 ### 2-Agent Workflow (Cursor)
 
