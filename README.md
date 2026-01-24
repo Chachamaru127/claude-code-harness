@@ -9,7 +9,7 @@ English | [日本語](README_ja.md)
 Claude Harness runs Claude Code in an autonomous **Plan → Work → Review** cycle,
 catching mistakes before they ship.
 
-[![Version: 2.9.23](https://img.shields.io/badge/version-2.9.23-blue.svg)](VERSION)
+[![Version: 2.9.24](https://img.shields.io/badge/version-2.9.24-blue.svg)](VERSION)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-v2.1.6+-purple.svg)](docs/CLAUDE_CODE_COMPATIBILITY.md)
 

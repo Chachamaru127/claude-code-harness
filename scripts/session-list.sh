@@ -11,6 +11,15 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# ===== Cleanup trap for temp files =====
+TEMP_FILES=()
+cleanup() {
+  for f in "${TEMP_FILES[@]:-}"; do
+    [ -f "$f" ] && rm -f "$f"
+  done
+}
+trap cleanup EXIT
+
 # ===== 設定 =====
 SESSIONS_DIR=".claude/sessions"
 ACTIVE_FILE="${SESSIONS_DIR}/active.json"
@@ -48,6 +57,7 @@ main() {
     if command -v jq >/dev/null 2>&1; then
       local short_id="${current_session:0:12}"
       local tmp_file=$(mktemp)
+      TEMP_FILES+=("$tmp_file")
 
       echo "$session_data" | jq \
         --arg id "$current_session" \
@@ -80,7 +90,6 @@ main() {
   # 古いセッションをクリーンアップしながら表示
   local active_count=0
   local stale_count=0
-  local tmp_file=$(mktemp)
 
   echo "| セッションID | 最終アクティブ | 状態 |"
   echo "|-------------|---------------|------|"

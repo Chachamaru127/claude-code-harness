@@ -1,5 +1,5 @@
 {
-  "name": "@anthropic-ai/harness-mcp-server",
+  "name": "@claude-code-harness/mcp-server",
   "version": "1.0.0",
   "description": "MCP Server for Claude Code Harness - enables cross-client session communication",
   "main": "dist/index.js",

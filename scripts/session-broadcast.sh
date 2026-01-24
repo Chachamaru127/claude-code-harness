@@ -12,6 +12,15 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# ===== Cleanup trap for temp files =====
+TEMP_FILES=()
+cleanup() {
+  for f in "${TEMP_FILES[@]:-}"; do
+    [ -f "$f" ] && rm -f "$f"
+  done
+}
+trap cleanup EXIT
+
 # ===== 設定 =====
 SESSIONS_DIR=".claude/sessions"
 BROADCAST_FILE="${SESSIONS_DIR}/broadcast.md"
@@ -100,6 +109,7 @@ main() {
     if [ "$msg_count" -gt "$MAX_MESSAGES" ]; then
       # 最新の MAX_MESSAGES 件のみ保持
       local temp_file=$(mktemp)
+      TEMP_FILES+=("$temp_file")
       local skip_count=$((msg_count - MAX_MESSAGES))
       awk -v skip="$skip_count" '
         /^## / { count++ }

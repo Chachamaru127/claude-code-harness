@@ -6,9 +6,12 @@
  */
 
 import { type Tool } from "@modelcontextprotocol/sdk/types.js";
-import { execSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
+import {
+  getProjectRoot,
+  getRecentChangesAsync,
+} from "../utils.js";
 
 // Tool definitions
 export const workflowTools: Tool[] = [
@@ -82,24 +85,7 @@ export const workflowTools: Tool[] = [
   },
 ];
 
-// Helper functions
-function getProjectRoot(): string {
-  // Try to find project root by looking for common markers
-  const markers = [".git", "package.json", "Plans.md", ".claude"];
-  let current = process.cwd();
-
-  while (current !== "/") {
-    for (const marker of markers) {
-      if (fs.existsSync(path.join(current, marker))) {
-        return current;
-      }
-    }
-    current = path.dirname(current);
-  }
-
-  return process.cwd();
-}
-
+// Helper functions using shared utilities
 function readPlans(): string | null {
   const plansPath = path.join(getProjectRoot(), "Plans.md");
   if (fs.existsSync(plansPath)) {
@@ -108,17 +94,43 @@ function readPlans(): string | null {
   return null;
 }
 
-function getRecentChanges(): string[] {
-  try {
-    const output = execSync("git diff --name-only HEAD~1", {
-      encoding: "utf-8",
-      cwd: getProjectRoot(),
-    });
-    return output.trim().split("\n").filter(Boolean);
-  } catch {
-    return [];
-  }
+/**
+ * Generate a plan template for the given task
+ */
+function generatePlanTemplate(task: string, mode: string): string {
+  return `
+## Plan: ${task}
+
+### Tasks
+
+- [ ] **Task 1**: Analyze requirements <!-- cc:TODO -->
+- [ ] **Task 2**: Implement core functionality <!-- cc:TODO -->
+- [ ] **Task 3**: Add tests <!-- cc:TODO -->
+- [ ] **Task 4**: Documentation <!-- cc:TODO -->
+
+### Notes
+
+- Created via MCP: harness_workflow_plan
+- Mode: ${mode}
+- Created at: ${new Date().toISOString()}
+
+---
+
+💡 **Next Step**: Use \`harness_workflow_work\` to start implementation
+`;
 }
+
+// Review perspectives configuration
+const REVIEW_PERSPECTIVES = [
+  { name: "Security", emoji: "🔒", focus: "vulnerabilities, auth, injection" },
+  { name: "Performance", emoji: "⚡", focus: "bottlenecks, memory, complexity" },
+  { name: "Accessibility", emoji: "♿", focus: "WCAG, screen readers, keyboard" },
+  { name: "Maintainability", emoji: "🧹", focus: "readability, coupling, DRY" },
+  { name: "Testing", emoji: "🧪", focus: "coverage, edge cases, mocking" },
+  { name: "Error Handling", emoji: "⚠️", focus: "exceptions, validation, recovery" },
+  { name: "Documentation", emoji: "📚", focus: "comments, README, API docs" },
+  { name: "Best Practices", emoji: "✨", focus: "patterns, conventions, idioms" },
+] as const;
 
 // Tool handlers
 export async function handleWorkflowTool(
@@ -135,7 +147,7 @@ export async function handleWorkflowTool(
       );
 
     case "harness_workflow_review":
-      return handleReview(
+      return await handleReview(
         args as { files?: string[]; focus?: string[]; ci?: boolean }
       );
 
@@ -159,27 +171,8 @@ function handlePlan(args: { task: string; mode?: string }): {
     } as { content: Array<{ type: string; text: string }>; isError: boolean };
   }
 
-  // Generate plan structure
-  const planTemplate = `
-## Plan: ${task}
-
-### Tasks
-
-- [ ] **Task 1**: Analyze requirements <!-- cc:TODO -->
-- [ ] **Task 2**: Implement core functionality <!-- cc:TODO -->
-- [ ] **Task 3**: Add tests <!-- cc:TODO -->
-- [ ] **Task 4**: Documentation <!-- cc:TODO -->
-
-### Notes
-
-- Created via MCP: harness_workflow_plan
-- Mode: ${mode}
-- Created at: ${new Date().toISOString()}
-
----
-
-💡 **Next Step**: Use \`harness_workflow_work\` to start implementation
-`;
+  // Generate plan using template function
+  const planTemplate = generatePlanTemplate(task, mode);
 
   // Append to Plans.md
   const plansPath = path.join(getProjectRoot(), "Plans.md");
@@ -263,15 +256,15 @@ ${taskId ? `🎯 Targeting task: ${taskId}` : "🎯 Will process next available 
   };
 }
 
-function handleReview(args: {
+async function handleReview(args: {
   files?: string[];
   focus?: string[];
   ci?: boolean;
-}): { content: Array<{ type: string; text: string }> } {
+}): Promise<{ content: Array<{ type: string; text: string }> }> {
   const { files, focus = [], ci = false } = args;
 
-  // Get files to review
-  const targetFiles = files || getRecentChanges();
+  // Get files to review (now async)
+  const targetFiles = files || (await getRecentChangesAsync());
 
   if (targetFiles.length === 0) {
     return {
@@ -284,24 +277,12 @@ function handleReview(args: {
     };
   }
 
-  // Define review perspectives
-  const perspectives = [
-    { name: "Security", emoji: "🔒", focus: "vulnerabilities, auth, injection" },
-    { name: "Performance", emoji: "⚡", focus: "bottlenecks, memory, complexity" },
-    { name: "Accessibility", emoji: "♿", focus: "WCAG, screen readers, keyboard" },
-    { name: "Maintainability", emoji: "🧹", focus: "readability, coupling, DRY" },
-    { name: "Testing", emoji: "🧪", focus: "coverage, edge cases, mocking" },
-    { name: "Error Handling", emoji: "⚠️", focus: "exceptions, validation, recovery" },
-    { name: "Documentation", emoji: "📚", focus: "comments, README, API docs" },
-    { name: "Best Practices", emoji: "✨", focus: "patterns, conventions, idioms" },
-  ];
-
   const activePerps =
     focus.length > 0
-      ? perspectives.filter((p) =>
+      ? REVIEW_PERSPECTIVES.filter((p) =>
           focus.some((f) => p.name.toLowerCase().includes(f.toLowerCase()))
         )
-      : perspectives;
+      : REVIEW_PERSPECTIVES;
 
   const reviewInstructions = activePerps
     .map((p) => `${p.emoji} **${p.name}**: Check for ${p.focus}`)

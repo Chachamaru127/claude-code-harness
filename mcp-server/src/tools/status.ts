@@ -7,6 +7,27 @@
 import { type Tool } from "@modelcontextprotocol/sdk/types.js";
 import * as fs from "fs";
 import * as path from "path";
+import {
+  getProjectRoot,
+  ACTIVE_SESSIONS_FILE,
+  BROADCAST_FILE,
+  STALE_THRESHOLD_SECONDS,
+  safeReadJSON,
+} from "../utils.js";
+
+// Types for session and message data
+interface SessionData {
+  lastSeen: number;
+  [key: string]: unknown;
+}
+
+interface BroadcastMessage {
+  timestamp: string;
+  [key: string]: unknown;
+}
+
+/** Default message window: 1 hour in milliseconds */
+const MESSAGE_WINDOW_MS = 3600000;
 
 // Tool definitions
 export const statusTools: Tool[] = [
@@ -27,23 +48,7 @@ export const statusTools: Tool[] = [
   },
 ];
 
-// Helper functions
-function getProjectRoot(): string {
-  const markers = [".git", "package.json", "Plans.md", ".claude"];
-  let current = process.cwd();
-
-  while (current !== "/") {
-    for (const marker of markers) {
-      if (fs.existsSync(path.join(current, marker))) {
-        return current;
-      }
-    }
-    current = path.dirname(current);
-  }
-
-  return process.cwd();
-}
-
+// Helper functions using shared utilities
 function getPlansStatus(): { todo: number; wip: number; done: number } | null {
   const plansPath = path.join(getProjectRoot(), "Plans.md");
   if (!fs.existsSync(plansPath)) {
@@ -59,42 +64,21 @@ function getPlansStatus(): { todo: number; wip: number; done: number } | null {
 }
 
 function getSessionCount(): number {
-  const activeFile = path.join(getProjectRoot(), ".claude/sessions/active.json");
-  if (!fs.existsSync(activeFile)) {
-    return 0;
-  }
+  const sessions = safeReadJSON<Record<string, SessionData>>(ACTIVE_SESSIONS_FILE, {});
+  const now = Date.now() / 1000;
 
-  try {
-    const sessions = JSON.parse(fs.readFileSync(activeFile, "utf-8"));
-    const now = Date.now() / 1000;
-    const staleThreshold = 3600; // 1 hour
-
-    return Object.values(sessions).filter(
-      (s: any) => now - s.lastSeen < staleThreshold
-    ).length;
-  } catch {
-    return 0;
-  }
+  return Object.values(sessions).filter(
+    (s) => now - s.lastSeen < STALE_THRESHOLD_SECONDS
+  ).length;
 }
 
 function getUnreadMessageCount(): number {
-  const broadcastFile = path.join(
-    getProjectRoot(),
-    ".claude/sessions/broadcast.json"
-  );
-  if (!fs.existsSync(broadcastFile)) {
-    return 0;
-  }
+  const messages = safeReadJSON<BroadcastMessage[]>(BROADCAST_FILE, []);
+  const cutoff = Date.now() - MESSAGE_WINDOW_MS;
 
-  try {
-    const messages = JSON.parse(fs.readFileSync(broadcastFile, "utf-8"));
-    const oneHourAgo = Date.now() - 3600000;
-    return messages.filter(
-      (m: any) => new Date(m.timestamp).getTime() > oneHourAgo
-    ).length;
-  } catch {
-    return 0;
-  }
+  return messages.filter(
+    (m) => new Date(m.timestamp).getTime() > cutoff
+  ).length;
 }
 
 function getHarnessVersion(): string | null {
@@ -104,6 +88,14 @@ function getHarnessVersion(): string | null {
   }
   return null;
 }
+
+// SSOT files to check for project health
+const SSOT_FILES = [
+  ".claude/memory/decisions.md",
+  ".claude/memory/patterns.md",
+  "AGENTS.md",
+  "CLAUDE.md",
+] as const;
 
 // Tool handlers
 export async function handleStatusTool(
@@ -166,16 +158,8 @@ function handleStatus(args: { verbose?: boolean }): {
   if (verbose) {
     status += `📍 **Project Root**: ${projectRoot}\n`;
 
-    // Check for SSOT files
-    const ssotFiles = [
-      ".claude/memory/decisions.md",
-      ".claude/memory/patterns.md",
-      "AGENTS.md",
-      "CLAUDE.md",
-    ];
-
     status += `\n📄 **SSOT Files**:\n`;
-    for (const file of ssotFiles) {
+    for (const file of SSOT_FILES) {
       const exists = fs.existsSync(path.join(projectRoot, file));
       status += `${exists ? "✅" : "❌"} ${file}\n`;
     }

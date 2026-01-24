@@ -6,8 +6,17 @@
  */
 
 import { type Tool } from "@modelcontextprotocol/sdk/types.js";
-import * as fs from "fs";
-import * as path from "path";
+import {
+  SESSIONS_DIR,
+  ACTIVE_SESSIONS_FILE,
+  BROADCAST_FILE,
+  STALE_THRESHOLD_SECONDS,
+  MAX_BROADCAST_MESSAGES,
+  ensureDir,
+  safeReadJSON,
+  safeWriteJSON,
+  formatTimeAgo,
+} from "../utils.js";
 
 // Session state storage
 interface Session {
@@ -23,12 +32,6 @@ interface BroadcastMessage {
   client: string;
   message: string;
 }
-
-// Configuration
-const SESSIONS_DIR = ".claude/sessions";
-const ACTIVE_FILE = `${SESSIONS_DIR}/active.json`;
-const BROADCAST_FILE = `${SESSIONS_DIR}/broadcast.json`;
-const STALE_THRESHOLD = 3600; // 1 hour
 
 // Tool definitions
 export const sessionTools: Tool[] = [
@@ -93,47 +96,27 @@ export const sessionTools: Tool[] = [
   },
 ];
 
-// Helper functions
-function ensureSessionsDir(): void {
-  if (!fs.existsSync(SESSIONS_DIR)) {
-    fs.mkdirSync(SESSIONS_DIR, { recursive: true });
-  }
-}
-
+// Helper functions using shared utilities
 function loadSessions(): Record<string, Session> {
-  ensureSessionsDir();
-  if (fs.existsSync(ACTIVE_FILE)) {
-    try {
-      return JSON.parse(fs.readFileSync(ACTIVE_FILE, "utf-8"));
-    } catch {
-      return {};
-    }
-  }
-  return {};
+  ensureDir(SESSIONS_DIR);
+  return safeReadJSON<Record<string, Session>>(ACTIVE_SESSIONS_FILE, {});
 }
 
 function saveSessions(sessions: Record<string, Session>): void {
-  ensureSessionsDir();
-  fs.writeFileSync(ACTIVE_FILE, JSON.stringify(sessions, null, 2));
+  ensureDir(SESSIONS_DIR);
+  safeWriteJSON(ACTIVE_SESSIONS_FILE, sessions);
 }
 
 function loadBroadcasts(): BroadcastMessage[] {
-  ensureSessionsDir();
-  if (fs.existsSync(BROADCAST_FILE)) {
-    try {
-      return JSON.parse(fs.readFileSync(BROADCAST_FILE, "utf-8"));
-    } catch {
-      return [];
-    }
-  }
-  return [];
+  ensureDir(SESSIONS_DIR);
+  return safeReadJSON<BroadcastMessage[]>(BROADCAST_FILE, []);
 }
 
 function saveBroadcasts(messages: BroadcastMessage[]): void {
-  ensureSessionsDir();
-  // Keep only last 100 messages
-  const trimmed = messages.slice(-100);
-  fs.writeFileSync(BROADCAST_FILE, JSON.stringify(trimmed, null, 2));
+  ensureDir(SESSIONS_DIR);
+  // Keep only last N messages
+  const trimmed = messages.slice(-MAX_BROADCAST_MESSAGES);
+  safeWriteJSON(BROADCAST_FILE, trimmed);
 }
 
 // Tool handlers
@@ -169,17 +152,10 @@ function handleListSessions(): {
   const now = Date.now() / 1000;
 
   const activeSessions = Object.entries(sessions)
-    .filter(([_, session]) => now - session.lastSeen < STALE_THRESHOLD)
-    .map(([id, session]) => {
+    .filter(([_, session]) => now - session.lastSeen < STALE_THRESHOLD_SECONDS)
+    .map(([_id, session]) => {
       const age = Math.floor(now - session.lastSeen);
-      const timeAgo =
-        age < 60
-          ? `${age}s ago`
-          : age < 3600
-            ? `${Math.floor(age / 60)}m ago`
-            : `${Math.floor(age / 3600)}h ago`;
-
-      return `- ${session.id.slice(0, 12)} (${session.client}) - ${timeAgo}`;
+      return `- ${session.id.slice(0, 12)} (${session.client}) - ${formatTimeAgo(age)}`;
     });
 
   const text =
@@ -223,11 +199,16 @@ function handleBroadcast(args: { message: string }): {
   };
 }
 
+/** Default inbox window: 1 hour in milliseconds */
+const DEFAULT_INBOX_WINDOW_MS = 3600000;
+
 function handleInbox(args: { since?: string }): {
   content: Array<{ type: string; text: string }>;
 } {
   const broadcasts = loadBroadcasts();
-  const since = args.since ? new Date(args.since).getTime() : Date.now() - 3600000; // Default: last hour
+  const since = args.since
+    ? new Date(args.since).getTime()
+    : Date.now() - DEFAULT_INBOX_WINDOW_MS;
 
   const unread = broadcasts.filter(
     (msg) => new Date(msg.timestamp).getTime() > since
