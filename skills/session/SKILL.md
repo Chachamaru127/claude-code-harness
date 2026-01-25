@@ -106,6 +106,6 @@ Handles `--resume` and `--fork` flags from `/work`:
 
 ## Related Commands
 
-- `/status` - Progress overview
+- `/sync-status` - Progress overview
 - `/session list` - Active sessions
 - `/session inbox` - Inter-session messages

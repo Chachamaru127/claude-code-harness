@@ -1,9 +1,8 @@
 ---
 description: Project setup (environment check → file generation → SSOT sync → validation)
-description-en: Project setup (environment check → file generation → SSOT sync → validation)
 ---
 
-# /init - Project Setup
+# /harness-init - Project Setup
 
 Sets up a project so VibeCoder can start development with natural language only.
 **Completes with minimum 1 question**, ready to start development immediately.
@@ -54,7 +53,7 @@ Step 3: Completion report
 | Input | Action |
 |-------|--------|
 | `leave it to me` `quickly` `all defaults` | → Fast track (skip Step 1) |
-| `/init blog --mode=solo` | → Parse arguments, skip specified items |
+| `/harness-init blog --mode=solo` | → Parse arguments, skip specified items |
 | No arguments | → Go to Step 1 |
 
 **Fast track defaults**:
@@ -333,7 +332,7 @@ After work completion, **explicitly show auto-determined content** for transpare
 > | What to Change | Command/Method |
 > |----------------|----------------|
 > | Add/remove Skills Gate skills | `/skills-update` |
-> | Switch to 2-Agent mode | `/init --mode=2agent` (or say "want to start 2-agent operation") |
+> | Switch to 2-Agent mode | `/harness-init --mode=2agent` (or say "want to start 2-agent operation") |
 > | Change tech stack | Manual file edit or recreate project |
 > | Change language setting | Edit `claude-code-harness.config.json` |
 >
@@ -341,7 +340,7 @@ After work completion, **explicitly show auto-determined content** for transpare
 >
 > ### 🚀 Next Steps
 >
-> - "`/plan` I want to create XXX" → Create plan
+> - "`/plan-with-agent` I want to create XXX" → Create plan
 > - "`/work`" → Execute tasks in Plans.md
 > - "`npm run dev`" → Start dev server (if applicable)
 >
@@ -372,13 +371,13 @@ Automatically add:
 
 ```bash
 # Full specification (no questions)
-/init "blog" --mode=solo --stack=next-supabase --name=my-blog
+/harness-init "blog" --mode=solo --stack=next-supabase --name=my-blog
 
 # Partial specification (only ask for missing)
-/init --stack=rails-postgres
+/harness-init --stack=rails-postgres
 
 # Help
-/init --help
+/harness-init --help
 ```
 
 | Argument | Description | Example |

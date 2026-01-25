@@ -2,7 +2,7 @@
 description: Check progress → update Plans.md → suggest next action
 ---
 
-# /status - Status Check, Plans.md Sync, Next Action Suggestion
+# /sync-status - Status Check, Plans.md Sync, Next Action Suggestion
 
 **Checks current implementation status, detects and updates differences with Plans.md, then suggests what to do next.**
 
@@ -115,7 +115,7 @@ Suggest optimal next action based on status:
 > **Recommended commands**:
 > - `/work` - Start next task
 > - `/handoff-to-pm-claude` - Report completion to PM (if tasks are done)
-> - `/review` - Request review (if at a milestone)
+> - `/harness-review` - Request review (if at a milestone)
 >
 > ⚠️ Context usage is high. Consider ending session and starting new.
 > (Shown when context usage is 70%+)

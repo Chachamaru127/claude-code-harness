@@ -58,7 +58,7 @@ Setup AST-Grep and LSP for advanced code intelligence.
 
 **Why MCP?**
 - Claude can use `harness_ast_search` for structural code search
-- `/review` automatically uses code smell detection
+- `/harness-review` automatically uses code smell detection
 - Better refactoring impact analysis
 
 **Tools enabled**:
@@ -95,7 +95,7 @@ Setup project for [opencode.ai](https://opencode.ai/) compatibility.
 
 **Enables**:
 - Use Harness workflow with GPT, Gemini, Grok, DeepSeek
-- All core commands work: `/init`, `/plan`, `/work`, `/review`
+- All core commands work: `/harness-init`, `/plan-with-agent`, `/work`, `/harness-review`
 
 ---
 
@@ -134,6 +134,6 @@ Route to the appropriate setup logic based on subcommand.
 
 ## Notes
 
-- **dev-tools is recommended**: Enables advanced code intelligence in `/review`
+- **dev-tools is recommended**: Enables advanced code intelligence in `/harness-review`
 - **mcp is optional**: Only needed for multi-client workflows
 - **ci is project-specific**: Analyzes your project to suggest appropriate checks

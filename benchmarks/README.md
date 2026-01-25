@@ -17,7 +17,7 @@
 
 ### 1. 計画タスク（Plan）
 - `plan-feature.md` - 新機能の計画を Plans.md に作成
-- プラグインの `/plan` コマンドの効果を測定
+- プラグインの `/plan-with-agent` コマンドの効果を測定
 
 ### 2. 実装タスク（Work）
 - `impl-utility.md` - ユーティリティ関数の実装
@@ -28,7 +28,7 @@
 ### 3. レビュータスク（Review）
 - `review-security.md` - セキュリティレビュー
 - `review-quality.md` - コード品質レビュー
-- プラグインの `/review` と並列サブエージェントの効果を測定
+- プラグインの `/harness-review` と並列サブエージェントの効果を測定
 
 ## 比較対象バージョン
 

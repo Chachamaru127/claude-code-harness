@@ -358,7 +358,7 @@ class EvalRunner:
         return "\n".join(labels)
 
     def _manual_harness_init(self, work_dir: Path):
-        """/init の代替（最小限のワークフロー/SSOTファイルを生成）"""
+        """/harness-init の代替（最小限のワークフロー/SSOTファイルを生成）"""
         plans_path = work_dir / "Plans.md"
         if not plans_path.exists():
             plans_path.write_text(

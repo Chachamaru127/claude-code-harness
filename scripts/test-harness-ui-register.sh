@@ -34,7 +34,7 @@ setup() {
 cleanup() {
   rm -rf "$TEST_BASE"
   # harness-ui からテストプロジェクトを削除
-  if curl -s --connect-timeout 1 http://localhost:37778/api/status >/dev/null 2>&1; then
+  if curl -s --connect-timeout 1 http://localhost:37778/api/sync-status >/dev/null 2>&1; then
     for id in $(curl -s http://localhost:37778/api/projects 2>/dev/null | jq -r '.projects[]? | select(.path | startswith("'"$TEST_BASE"'")) | .id' 2>/dev/null); do
       curl -s -X DELETE "http://localhost:37778/api/projects/$id" >/dev/null 2>&1 || true
     done

@@ -180,10 +180,10 @@ Before submitting:
 
 3. Verify commands work as expected (`/help`), and the core loop runs:
 
-   - `/init`
-   - `/plan`
+   - `/harness-init`
+   - `/plan-with-agent`
    - `/work`
-   - `/review`
+   - `/harness-review`
 
 ## Questions?
 

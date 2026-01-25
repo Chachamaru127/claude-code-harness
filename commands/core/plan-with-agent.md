@@ -3,7 +3,7 @@ description: Create implementation plan (idea → Plans.md → ready for /work)
 description-en: Create implementation plan (idea → Plans.md → ready for /work)
 ---
 
-# /plan - Create Implementation Plan
+# /plan-with-agent - Create Implementation Plan
 
 Organizes ideas and requirements, and converts them into executable tasks in Plans.md.
 After completion, you can immediately start work with `/work`.
@@ -16,7 +16,7 @@ After completion, you can immediately start work with `/work`.
 - "**List out features**" → feature list → priority → Plans.md
 - "**Plan with TDD**" → force TDD adoption, prioritize test case design
 - "**Start with test design**" → design test cases for each feature first
-- "**CI/benchmark**" → `/plan --ci`
+- "**CI/benchmark**" → `/plan-with-agent --ci`
 
 ## Deliverables
 
@@ -39,7 +39,7 @@ CI/benchmark mode:
 
 | Mode | Recommended Command | Description |
 |------|---------------------|-------------|
-| **Solo mode** | `/plan` (this command) | Claude Code alone: plan → execute → review |
+| **Solo mode** | `/plan-with-agent` (this command) | Claude Code alone: plan → execute → review |
 | **2-agent mode** | `/plan-with-cc` (Cursor side) | Plan with Cursor → Execute with Claude Code |
 
 ---
@@ -326,7 +326,7 @@ Analyze each task's content and auto-assign appropriate quality markers:
 
 ## 🔵 Phase 4: Finishing `cc:TODO`
 
-- [ ] Review (`/review`)
+- [ ] Review (`/harness-review`)
 - [ ] Deploy setup
 - [ ] Operation check
 ```

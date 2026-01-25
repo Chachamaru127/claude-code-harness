@@ -1,4 +1,4 @@
-# /plan ワークフロー定義
+# /plan-with-agent ワークフロー定義
 # 機能要望を構造化されたタスクリストに変換
 
 phase: plan

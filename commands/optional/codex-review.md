@@ -209,14 +209,14 @@ Fix complete
 
 | Command | Content |
 |---------|---------|
-| `/review` | Full review by Claude (+ optional Codex) |
+| `/harness-review` | Full review by Claude (+ optional Codex) |
 | `/codex-review` | Codex standalone review |
 
-**Recommendation**: Normally use `/review`, use `/codex-review` when additional second opinion is needed
+**Recommendation**: Normally use `/harness-review`, use `/codex-review` when additional second opinion is needed
 
 ---
 
 ## Related Commands
 
-- `/review` - Full review (Claude + optional Codex)
-- `/init` - Project initialization (includes Codex setup)
+- `/harness-review` - Full review (Claude + optional Codex)
+- `/harness-init` - Project initialization (includes Codex setup)

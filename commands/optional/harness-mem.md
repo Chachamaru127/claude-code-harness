@@ -461,7 +461,7 @@ Set `"harness--ja"` if Japanese is selected.
 >
 > **Verification:**
 > - Claude-mem starts in harness mode at next session start
-> - Check Claude-mem status with `/status`
+> - Check Claude-mem status with `/sync-status`
 >
 > **Usage:**
 > - Search past work history with `mem-search` skill
@@ -777,4 +777,4 @@ To disable harness mode in Claude-mem:
 | `/sync-ssot-from-memory` | Promote important Claude-mem observations to SSOT |
 | `mem-search` | Search past work history |
 | `session-init` | Display past context at session start (with Claude-mem integration) |
-| `/init` | Project initialization (Claude-mem integration is separate via `/harness-mem`) |
+| `/harness-init` | Project initialization (Claude-mem integration is separate via `/harness-mem`) |

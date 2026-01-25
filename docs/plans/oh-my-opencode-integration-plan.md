@@ -249,7 +249,7 @@ description-en: Setup development tools (AST-Grep, LSP) in one command
 
 ---
 
-## Phase 4: `/review` への統合
+## Phase 4: `/harness-review` への統合
 
 ### 工数: 低
 

@@ -20,7 +20,7 @@ AST-Grep や LSP を「ただインストールするだけ」では、Claude �
 | スキルから呼び出せない | MCP ツールとしてスキル内で参照可能 |
 | 使い方が不明確 | ツール説明に用途・パターンを記載 |
 
-**結果**: `/review` や review スキルが自動的に `harness_ast_search` を使用し、コードスメル検出の精度が向上します。
+**結果**: `/harness-review` や review スキルが自動的に `harness_ast_search` を使用し、コードスメル検出の精度が向上します。
 
 ---
 
@@ -249,7 +249,7 @@ harness_lsp_diagnostics file="src/components/App.tsx"
 
 ## Integration with /review
 
-When AST-Grep is installed, `/review` automatically:
+When AST-Grep is installed, `/harness-review` automatically:
 
 1. Detects code smells:
    - `console.log` remnants
@@ -306,6 +306,6 @@ ls tsconfig.json
 
 ## Related Commands
 
-- `/review` - Code review (uses AST-Grep when available)
+- `/harness-review` - Code review (uses AST-Grep when available)
 - `/lsp-setup` - LSP-only setup (legacy)
 - `/mcp-setup` - MCP server configuration

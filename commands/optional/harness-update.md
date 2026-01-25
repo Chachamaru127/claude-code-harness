@@ -43,7 +43,7 @@ if [ -f .claude-code-harness-version ]; then
   echo "Detected version: $CURRENT_VERSION"
 else
   echo "⚠️ Harness not installed in this project"
-  echo "→ Use /init instead"
+  echo "→ Use /harness-init instead"
   exit 1
 fi
 ```
@@ -52,7 +52,7 @@ fi
 > ⚠️ **Harness is not installed in this project**
 >
 > `/harness-update` is for projects with existing harness.
-> Use `/init` for new installation.
+> Use `/harness-init` for new installation.
 
 **If installed:** → Step 2
 
@@ -1104,8 +1104,8 @@ File-by-file results:
 > {{file-by-file results list}}
 >
 > **Next steps:**
-> - "`/status`" → Check current status
-> - "`/plan` I want to build XXX" → Add new tasks
+> - "`/sync-status`" → Check current status
+> - "`/plan-with-agent` I want to build XXX" → Add new tasks
 > - "`/work`" → Execute Plans.md tasks
 >
 > **If issues occur:**
@@ -1127,7 +1127,7 @@ Update only user-selected files.
 - **Backup required**: Always create backup before update
 - **Existing data preserved**: Plans.md tasks, settings.json custom settings preserved
 - **Non-destructive merge**: Existing files merged, not overwritten
-- **Don't forget verification**: Check status with `/status` after update
+- **Don't forget verification**: Check status with `/sync-status` after update
 
 ---
 
@@ -1153,6 +1153,6 @@ A: Select "custom" and choose only needed files.
 
 ## Related Commands
 
-- `/init` - New project setup
-- `/status` - Check current project status
+- `/harness-init` - New project setup
+- `/sync-status` - Check current project status
 - `/validate` - Validate project structure

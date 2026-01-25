@@ -151,7 +151,7 @@ test('ログインフロー', async ({ page }) => {
 ### harness-review との連携
 
 ```bash
-/review --include-e2e
+/harness-review --include-e2e
 
 # レビュー項目に E2E 結果を含める
 ```

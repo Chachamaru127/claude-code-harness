@@ -48,7 +48,7 @@ quality_pack:
   tsc: true
   console_log: true
 
-# Commit guard: require /review before git commit
+# Commit guard: require /harness-review before git commit
 commit_guard: true
 
 # Review settings (commit judgment + Codex mode)

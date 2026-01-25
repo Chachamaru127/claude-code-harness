@@ -64,7 +64,7 @@
 
 ### 🎯 あなたにとって何が変わるか
 
-**OpenCode 版の `/review` から Codex モードを削除しました。レビューは Claude の多角的分析（Task tool 並列実行）に集中します。**
+**OpenCode 版の `/harness-review` から Codex モードを削除しました。レビューは Claude の多角的分析（Task tool 並列実行）に集中します。**
 
 #### Before → After
 
@@ -84,7 +84,7 @@
   - Parallel Execution セクションを 4 観点に更新
 
 - **`/codex-review` への誘導を追加**
-  - 明確な役割分担: `/review` = Claude 分析、`/codex-review` = Codex 意見
+  - 明確な役割分担: `/harness-review` = Claude 分析、`/codex-review` = Codex 意見
   - Codex を使うタイミングをユーザーが明示的に選択可能
 
 ---
@@ -283,7 +283,7 @@
 ### Added
 
 - **OpenCode.ai 互換レイヤー** - Claude 以外の LLM でもハーネスワークフローを実行
-  - 全コアコマンドを移植: `/init`, `/plan`, `/work`, `/review`
+  - 全コアコマンドを移植: `/harness-init`, `/plan-with-agent`, `/work`, `/harness-review`
   - `/opencode-setup`: ワンコマンドで導入・設定
   - `opencode/` ディレクトリに変換済みコマンド
   - GitHub Actions で自動同期
@@ -372,7 +372,7 @@
   - ステータスツール: `harness_status`
   - `/mcp-setup`: クライアント別設定コマンド
 - **Webhook 自動化** (`/webhook-setup`) - GitHub Actions 連携
-  - PR 作成時に `/review` を自動実行
+  - PR 作成時に `/harness-review` を自動実行
   - Plans.md ステータスを PR にコメント
 - **E2E 検証設計** (`docs/E2E_VERIFICATION_DESIGN.md`) - 将来の CDP/Playwright 連携
 
@@ -527,12 +527,12 @@
 
 | Before | After |
 |--------|-------|
-| `.claude/hooks/` 内のシェルスクリプトが `chmod +x` 未設定で静かに失敗 | `/init` と `/harness-update` で自動修正 |
+| `.claude/hooks/` 内のシェルスクリプトが `chmod +x` 未設定で静かに失敗 | `/harness-init` と `/harness-update` で自動修正 |
 | `/harness-update` が旧 Cursor コマンドをマージすることがあった | Cursor コマンドはテンプレートから明示的に上書き |
 
 ### Added
 
-- **hooks 権限自動修正**（`/init`, `/harness-update`）
+- **hooks 権限自動修正**（`/harness-init`, `/harness-update`）
   - Phase 4.5 / Step 6: `.claude/hooks/*.sh` に自動 `chmod +x`
   - 権限問題による hooks の静かな失敗を防止
 - **`hooks/BEST_PRACTICES.md`**: シェルスクリプト hooks のドキュメント
@@ -655,7 +655,7 @@
 ### Added
 
 - **Codex レビュー前コンパクトガード**
-  - `/review`、`/codex-review` にコンパクトガードを追加
+  - `/harness-review`、`/codex-review` にコンパクトガードを追加
   - Codex 並列レビュー時のガードレール強化（`codex-parallel-review.md`）
   - review SKILL.md にコンパクトモード対応を追加
 
@@ -751,7 +751,7 @@
 - **Phase 33 完全実装**
   - **SESSION_ID 活用（33.2）**: `${CLAUDE_SESSION_ID}` を session-log.md に統合、セッション追跡強化
   - **plansDirectory 設定（33.4）**: Plans.md の配置場所をカスタマイズ可能に（デフォルト: ルート）
-  - **context_window 表示（33.8）**: `/status` にコンテキスト使用率ガイドライン追加（70%超過警告）
+  - **context_window 表示（33.8）**: `/sync-status` にコンテキスト使用率ガイドライン追加（70%超過警告）
   - **Nested Skills 設計文書（33.9）**: `docs/NESTED_SKILLS_DESIGN.md` で将来のスキル階層整理を設計
   - **code-reviewer LSP パターン**: `agents/code-reviewer.md` に LSP ベースの影響分析ステップ追加
 
@@ -771,7 +771,7 @@
   - **SessionStart agent_type 対応**: サブエージェントを軽量初期化
     - メインエージェント: フル初期化（Plans.md 状態表示、claude-mem コンテキスト）
     - サブエージェント: 軽量初期化（タスク固有情報のみ）
-  - **LSP 活用ガイドライン**: impl/review スキルに LSP ベースのコード解析手順を追加
+  - **LSP 活用ガイドライン**: impl/harness-review スキルに LSP ベースのコード解析手順を追加
     - `goToDefinition`: 実装パターンの把握
     - `findReferences`: 影響範囲の完全把握
     - `hover`: 型情報・ドキュメントの確認
@@ -880,7 +880,7 @@
 - **Commit Guard（コミット前レビュー必須化）** - レビュー完了前の git commit をブロック
   - PreToolUse フック: `git commit` 検出時にレビュー完了状態をチェック
   - PostToolUse フック: コミット成功後にレビュー承認状態をクリア
-  - `/review` で APPROVE 判定後に `.claude/state/review-approved.json` を生成
+  - `/harness-review` で APPROVE 判定後に `.claude/state/review-approved.json` を生成
   - 設定で無効化可能: `.claude-code-harness.config.yaml` に `commit_guard: false`
 
 - **Codex モード統合（フェーズ 27）** - Codex MCP を活用した PM 役の品質ゲート機能
@@ -925,7 +925,7 @@
 
 | Before | After |
 |--------|-------|
-| `/review` は Claude 単体でレビュー | Codex モード時は 8 エキスパートが並列レビュー |
+| `/harness-review` は Claude 単体でレビュー | Codex モード時は 8 エキスパートが並列レビュー |
 | レビュー結果は人間が判断 | APPROVE/REQUEST CHANGES/REJECT の自動判定 |
 | 指摘事項は手動で修正 | REQUEST CHANGES 時は自動修正ループ |
 
@@ -1019,7 +1019,7 @@
 ### Changed
 
 - **Codex を並列レビューに統合**
-  - `/review` で Codex を5つ目の並列サブエージェントとして実行
+  - `/harness-review` で Codex を5つ目の並列サブエージェントとして実行
   - Codex 有効時は 4+1=5 つのレビューが同時並列実行
   - Codex 逐次実行時より約 30 秒短縮
 
@@ -1045,7 +1045,7 @@
   - `commands/optional/codex-review.md` を新規追加
 
 - **`once: true` hook による初回 Codex 検出**
-  - `/review` 初回実行時に Codex がインストールされているか自動検出
+  - `/harness-review` 初回実行時に Codex がインストールされているか自動検出
   - Codex が見つかった場合、セカンドオピニオン機能の有効化方法を案内
   - `scripts/check-codex.sh` を新規追加
   - Claude Code 2.1.0+ の `once: true` hook 機能を活用
@@ -1056,7 +1056,7 @@
 
 - **Codex MCP 統合（セカンドオピニオンレビュー）**
   - OpenAI Codex CLI を MCP サーバーとして Claude Code に統合
-  - `/review` 実行時に Codex からセカンドオピニオンを取得可能
+  - `/harness-review` 実行時に Codex からセカンドオピニオンを取得可能
   - Solo / 2-Agent どちらのモードでも使用可能
   - 新規スキル `codex-review` を追加:
     - `skills/codex-review/SKILL.md` - Codex 統合スキル
@@ -1077,7 +1077,7 @@
 
 ### Fixed
 
-- **`/plan` のスキル参照エラーを修正**
+- **`/plan-with-agent` のスキル参照エラーを修正**
   - v2.7.7 の Progressive Disclosure 移行で、古いスキルパス `setup:adaptive-setup` が残っていた問題を修正
   - `claude-code-harness:setup:adaptive-setup` → `claude-code-harness:setup` に変更
 
@@ -1180,7 +1180,7 @@
   - セッション中の重複実行を防止
 
 - **`context: fork` 対応**
-  - `review` スキルと `/review` コマンドに適用
+  - `review` スキルと `/harness-review` コマンドに適用
   - 重い処理を分離コンテキストで実行
 
 - **エージェントへの `skills` フィールド追加**
@@ -1246,15 +1246,15 @@
 
 ### 🎯 あなたにとって何が変わるか
 
-**`/init` の対話回数が最大11回→最大2回に大幅削減。「おまかせ」で質問1回、完了後は自動決定された設定の詳細サマリーを表示します。**
+**`/harness-init` の対話回数が最大11回→最大2回に大幅削減。「おまかせ」で質問1回、完了後は自動決定された設定の詳細サマリーを表示します。**
 
 ### Changed
 
-- **`/init` 対話効率化（最大11回→最大2回）**
+- **`/harness-init` 対話効率化（最大11回→最大2回）**
   - 質問統合: AskUserQuestion で「何を作る」「誰が使う」「おまかせ/詳細」を1回で質問
   - スマートデフォルト導入: 言語=ja、モード=.cursor/ 検出で自動判定、Skills Gate=自動設定
   - ファストトラック: 「おまかせ」「さくっと」で質問なし・確認1回で完了
-  - 引数サポート: `/init "ブログ" --mode=solo --stack=next-supabase`
+  - 引数サポート: `/harness-init "ブログ" --mode=solo --stack=next-supabase`
   - 並列処理: 質問中にバックグラウンドでプロジェクト分析
   - Skills Gate 後回し: 初期負担軽減、`/skills-update` で後から調整可能
   - **完了報告の強化**: 自動決定された設定・生成ファイル・変更方法を詳細サマリーで提示
@@ -1347,7 +1347,7 @@
 
 ### 🎯 あなたにとって何が変わるか
 
-**`/plan` コマンドにTDD採用判定と意図深掘り質問を追加。計画段階でテストケースを設計し、「動くけど違う」問題を防止します**
+**`/plan-with-agent` コマンドにTDD採用判定と意図深掘り質問を追加。計画段階でテストケースを設計し、「動くけど違う」問題を防止します**
 
 ### Added
 
@@ -1573,7 +1573,7 @@ bun run cursor:status
 #### After（v2.6.14）
 - **自動検証スクリプト**: `./scripts/validate-cursor-mem.sh` で全設定を一括チェック
 - **SSOT 保証**: 検証スクリプトが設定の唯一の信頼できる情報源
-- **ハーネス統合**: `/validate`, `/work`, `/status` との連携が明確化
+- **ハーネス統合**: `/validate`, `/work`, `/sync-status` との連携が明確化
 - **完全な再現性**: 冪等性、依存関係、バージョン管理が文書化
 
 ### Added
@@ -1843,7 +1843,7 @@ Observation recorded: 10946-10951 ✅
   - `auth`: セキュリティチェックリスト自動表示
   - `ui`: a11y チェックリスト自動表示
   - `ci`: テスト改ざん防止（禁止パターン明示）
-- `/plan` に品質マーカー自動付与機能
+- `/plan-with-agent` に品質マーカー自動付与機能
   - 認証関連 → `[feature:security]`
   - UI → `[feature:a11y]`
   - ビジネスロジック → `[feature:tdd]`
@@ -1951,7 +1951,7 @@ Observation recorded: 10946-10951 ✅
 
 ### Changed
 
-- `/init`: Skills Gate 有効時のみ `skills-gate.md` を追加
+- `/harness-init`: Skills Gate 有効時のみ `skills-gate.md` を追加
 - `/harness-update`: マーカー検出でユーザーカスタム Rules を保護
 - Skills Gate の設計思想を明確化
   - Rules: ガイダンス・自発的行動誘導
@@ -1986,7 +1986,7 @@ Observation recorded: 10946-10951 ✅
 **壁打ちで話した内容を、そのまま計画にできるようになりました**
 
 #### Before
-- `/plan` は受託開発向け（提案書が必須）
+- `/plan-with-agent` は受託開発向け（提案書が必須）
 - 壁打ち後も最初からヒアリングをやり直す必要があった
 
 #### After
@@ -1996,7 +1996,7 @@ Observation recorded: 10946-10951 ✅
 
 ### Changed
 
-- `/plan` を汎用プラン構築コマンドに刷新
+- `/plan-with-agent` を汎用プラン構築コマンドに刷新
   - Step 0「会話コンテキスト確認」を追加
   - 受託開発特化から汎用ツールへ転換
   - ヒアリング文言を簡素化
@@ -2042,7 +2042,7 @@ Observation recorded: 10946-10951 ✅
   - 第1層: Rules テンプレート（`test-quality.md`, `implementation-quality.md`）
   - 第2層: Skills 品質ガードレール（`impl`, `verify` スキルに統合）
   - 第3層: Hooks 設計書（オプション機能として文書化）
-- `/init` に品質保護ルール自動展開機能
+- `/harness-init` に品質保護ルール自動展開機能
 - 品質ガードレール検証テスト（`test-quality-guardrails.sh`）
 
 ### Changed
@@ -2237,7 +2237,7 @@ Observation recorded: 10946-10951 ✅
 
 ### Added
 
-- `/init` で言語選択（日本語/英語）
+- `/harness-init` で言語選択（日本語/英語）
 
 ## [2.3.0] - 2025-12-16
 

@@ -8,18 +8,18 @@
 Plan → Work → Review
 ```
 
-1. **Plan**: `/plan` でタスクを計画し Plans.md に記録
+1. **Plan**: `/plan-with-agent` でタスクを計画し Plans.md に記録
 2. **Work**: `/work` で Plans.md のタスクを実行
-3. **Review**: `/review` で品質チェック
+3. **Review**: `/harness-review` で品質チェック
 
 ## 主要コマンド
 
 | コマンド | 用途 |
 |---------|------|
-| `/plan` | タスクを Plans.md に追加 |
+| `/plan-with-agent` | タスクを Plans.md に追加 |
 | `/work` | タスクを実装（並列実行対応） |
-| `/review` | 変更内容をレビュー |
-| `/status` | 進捗確認と Plans.md 更新 |
+| `/harness-review` | 変更内容をレビュー |
+| `/sync-status` | 進捗確認と Plans.md 更新 |
 
 ## プロジェクト構成
 

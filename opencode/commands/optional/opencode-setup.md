@@ -177,5 +177,5 @@ cp "$PLUGIN_DIR/opencode/AGENTS.md" AGENTS.md
 ## Related Commands
 
 - `/mcp-setup` - MCP サーバーセットアップ
-- `/init` - Harness プロジェクト初期化
+- `/harness-init` - Harness プロジェクト初期化
 - `/harness-update` - Harness 更新

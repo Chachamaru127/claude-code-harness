@@ -244,7 +244,7 @@ Claude Code:
 
 | Command | Role | Agent |
 |---------|------|-------|
-| `/plan` | Create plan in solo mode | Claude Code |
+| `/plan-with-agent` | Create plan in solo mode | Claude Code |
 | `/plan-with-cc` | Validate and break down plan | Cursor |
 | `/handoff-to-claude` | Generate request for Claude Code | Cursor |
 | `/handoff-to-cursor` | Completion report to Cursor | Claude Code |
@@ -254,6 +254,6 @@ Claude Code:
 
 ## Notes
 
-- **2-agent operation only**: Use `/plan` for solo mode
+- **2-agent operation only**: Use `/plan-with-agent` for solo mode
 - **Copy-paste required**: Currently, Claude Code and Cursor cannot directly connect, so manual copy-paste is required
 - **Plans.md sync**: Ensure both are referencing the same Plans.md

@@ -15,7 +15,7 @@ allowed-tools: ["Read", "Bash"]
 Codex MCP が有効な場合、Claude のレビューに加えて Codex からもレビューを取得し、結果を統合して表示します。
 
 ```
-/review 実行
+/harness-review 実行
     ↓
 設定確認: review.codex.enabled
     │

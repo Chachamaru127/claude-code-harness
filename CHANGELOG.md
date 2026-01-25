@@ -64,7 +64,7 @@ Change history for claude-code-harness.
 
 ### 🎯 What's Changed for You
 
-**OpenCode version of `/review` no longer includes Codex mode. Review focuses on Claude's multi-perspective analysis with Task tool parallel execution.**
+**OpenCode version of `/harness-review` no longer includes Codex mode. Review focuses on Claude's multi-perspective analysis with Task tool parallel execution.**
 
 #### Before → After
 
@@ -84,7 +84,7 @@ Change history for claude-code-harness.
   - Parallel Execution section updated for 4 perspectives
 
 - **Added guidance to use `/codex-review` for second opinions**
-  - Clear separation: `/review` = Claude analysis, `/codex-review` = Codex opinion
+  - Clear separation: `/harness-review` = Claude analysis, `/codex-review` = Codex opinion
   - Users can explicitly choose when to invoke Codex
 
 ---
@@ -283,7 +283,7 @@ Change history for claude-code-harness.
 ### Added
 
 - **OpenCode.ai compatibility layer** - Full harness workflow for non-Claude LLMs
-  - All core commands ported: `/init`, `/plan`, `/work`, `/review`
+  - All core commands ported: `/harness-init`, `/plan-with-agent`, `/work`, `/harness-review`
   - `/opencode-setup`: One-command installation and configuration
   - `opencode/` directory with translated commands
   - GitHub Actions workflow for automatic sync
@@ -372,7 +372,7 @@ Change history for claude-code-harness.
   - Status tools: `harness_status`
   - `/mcp-setup`: Configure MCP for different clients
 - **Webhook automation** (`/webhook-setup`) - GitHub Actions integration
-  - Auto-review PRs with `/review`
+  - Auto-review PRs with `/harness-review`
   - Plans.md status comments on PRs
 - **E2E verification design** (`docs/E2E_VERIFICATION_DESIGN.md`) - Future CDP/Playwright integration
 
@@ -527,12 +527,12 @@ Change history for claude-code-harness.
 
 | Before | After |
 |--------|-------|
-| Shell scripts in `.claude/hooks/` fail silently if missing `chmod +x` | `/init` and `/harness-update` auto-fix permissions |
+| Shell scripts in `.claude/hooks/` fail silently if missing `chmod +x` | `/harness-init` and `/harness-update` auto-fix permissions |
 | `/harness-update` may merge old Cursor commands | Cursor commands are explicitly overwritten from templates |
 
 ### Added
 
-- **Hooks permission auto-fix** (`/init`, `/harness-update`)
+- **Hooks permission auto-fix** (`/harness-init`, `/harness-update`)
   - Phase 4.5 / Step 6: Auto `chmod +x` for `.claude/hooks/*.sh`
   - Prevents silent hook failures from permission issues
 - **`hooks/BEST_PRACTICES.md`**: Documentation for shell script hooks
@@ -653,7 +653,7 @@ Change history for claude-code-harness.
 
 ### Added
 
-- **Compact guard**: `/review` and `/codex-review` now include compact guards
+- **Compact guard**: `/harness-review` and `/codex-review` now include compact guards
 - **Codex parallel review guardrails**: Enhanced `codex-parallel-review.md`
 - **Review SKILL.md**: Compact mode support added
 
@@ -750,14 +750,14 @@ Change history for claude-code-harness.
 |--------|-------|
 | No session tracking in logs | `${CLAUDE_SESSION_ID}` integrated into session-log.md |
 | Plans.md fixed at project root | Customizable via `plansDirectory` setting |
-| No context usage visibility | `/status` shows usage with 70% warning threshold |
+| No context usage visibility | `/sync-status` shows usage with 70% warning threshold |
 | LSP patterns only in skills | `agents/code-reviewer.md` includes LSP impact analysis |
 
 ### Added
 
 - **SESSION_ID integration**: Track sessions across logs for better debugging
 - **plansDirectory setting**: Move Plans.md to `.claude/memory/` if desired
-- **context_window guidance**: Clear thresholds (green/yellow/red) in `/status`
+- **context_window guidance**: Clear thresholds (green/yellow/red) in `/sync-status`
 - **Nested Skills design doc**: `docs/NESTED_SKILLS_DESIGN.md` for future restructuring
 - **code-reviewer LSP**: Step 2.5 with `findReferences`, `goToDefinition`, `hover`
 
@@ -780,7 +780,7 @@ Change history for claude-code-harness.
 |--------|-------|
 | Quality rules only checked at review time | Quality guidelines injected during file edits via `additionalContext` |
 | Subagents had same init overhead as main agent | Subagents get lightweight init (faster task-worker execution) |
-| Manual code navigation for impact analysis | LSP guidance in impl/review skills (findReferences, goToDefinition) |
+| Manual code navigation for impact analysis | LSP guidance in impl/harness-review skills (findReferences, goToDefinition) |
 | Short hook timeouts caused failures | Extended timeouts for long-running hooks (up to 120s) |
 
 ### Added
@@ -789,7 +789,7 @@ Change history for claude-code-harness.
   - Test files → test-quality.md rules (no test tampering)
   - Source files → implementation-quality.md rules
 - **SessionStart agent_type**: Subagents skip full initialization
-- **LSP guidance**: impl/review skills now recommend LSP for code analysis
+- **LSP guidance**: impl/harness-review skills now recommend LSP for code analysis
 - **Compatibility docs**: `docs/CLAUDE_CODE_COMPATIBILITY.md` with version matrix
 
 ### Changed
@@ -897,7 +897,7 @@ Change history for claude-code-harness.
 
 ### 🎯 What's Changed for You
 
-**Codex is now a true parallel reviewer inside `/review` — and its suggestions can be verified and turned into executable Plans.md tasks.**
+**Codex is now a true parallel reviewer inside `/harness-review` — and its suggestions can be verified and turned into executable Plans.md tasks.**
 
 #### Before/After
 
@@ -913,10 +913,10 @@ Change history for claude-code-harness.
 
 ### 🎯 What's Changed for You
 
-**You can run Codex as a standalone reviewer with `/codex-review`, and `/review` can auto-detect Codex on first run.**
+**You can run Codex as a standalone reviewer with `/codex-review`, and `/harness-review` can auto-detect Codex on first run.**
 
 - **New `/codex-review` command**: Runs a Codex-only second-opinion review.
-- **First-run Codex detection (`once: true` hook)**: `/review` checks whether Codex is installed and guides enablement when found.
+- **First-run Codex detection (`once: true` hook)**: `/harness-review` checks whether Codex is installed and guides enablement when found.
 - Added `scripts/check-codex.sh`.
 
 ---
@@ -925,7 +925,7 @@ Change history for claude-code-harness.
 
 ### 🎯 What's Changed for You
 
-**Codex MCP integration: get a second-opinion review from Codex during `/review`.**
+**Codex MCP integration: get a second-opinion review from Codex during `/harness-review`.**
 
 - Integrates OpenAI Codex CLI as an MCP server for Claude Code.
 - Works in both Solo and 2-Agent workflows.
@@ -950,7 +950,7 @@ Change history for claude-code-harness.
 
 ### 🎯 What's Changed for You
 
-**Fixed a broken skill reference in `/plan`.**
+**Fixed a broken skill reference in `/plan-with-agent`.**
 
 - After the Progressive Disclosure migration in v2.7.7, an old skill path remained.
 - Updated `claude-code-harness:setup:adaptive-setup` → `claude-code-harness:setup`.
@@ -1038,7 +1038,7 @@ Change history for claude-code-harness.
 
 - Added SubagentStart/SubagentStop hooks (with history logging).
 - Added `once: true` hooks to prevent duplicate runs in a session.
-- Added `context: fork` support for heavy operations (e.g. `review` / `/review`).
+- Added `context: fork` support for heavy operations (e.g. `review` / `/harness-review`).
 - Added `skills` and `disallowedTools` fields to agents for safer execution.
 - Added templates for `language` setting and wildcard Bash permissions.
 - Removed 4 duplicate commands in favor of skills: `/validate`, `/cleanup`, `/remember`, `/refactor`.
@@ -1329,7 +1329,7 @@ Change history for claude-code-harness.
 
 **Choose Japanese or English.**
 
-- Language selection (JA/EN) in `/init`
+- Language selection (JA/EN) in `/harness-init`
 
 ---
 

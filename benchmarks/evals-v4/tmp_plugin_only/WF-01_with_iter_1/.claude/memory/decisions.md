@@ -11,7 +11,7 @@
 
 ### 決定内容
 - Solo モードで運用（.cursor/ なし）
-- `/plan` → `/work` → `/review` のフロー
+- `/plan-with-agent` → `/work` → `/harness-review` のフロー
 
 ### 理由
 - シンプルな運用で十分

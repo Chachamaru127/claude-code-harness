@@ -1,6 +1,6 @@
 #!/bin/bash
 # test-project-detection.sh
-# /init のプロジェクト判定ロジック（3値判定）の検証スクリプト
+# /harness-init のプロジェクト判定ロジック（3値判定）の検証スクリプト
 #
 # Usage: ./tests/test-project-detection.sh
 #

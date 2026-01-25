@@ -50,7 +50,7 @@ no-plugin:    同じ曖昧なプロンプトのみ
 ```
 Trial N:
   1. テストプロジェクトをクリーンセットアップ
-  2. with-plugin: /plan {曖昧なプロンプト}
+  2. with-plugin: /plan-with-agent {曖昧なプロンプト}
   3. テストプロジェクトをリセット
   4. no-plugin: {同じ曖昧なプロンプト}
   5. 両方の結果を比較

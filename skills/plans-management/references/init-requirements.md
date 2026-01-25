@@ -1,6 +1,6 @@
 ---
 name: init-requirements
-description: "ユーザーの要望を短い質問で明確化し、feature_request を作成する。/plan で user_prompt が空のときに使用。"
+description: "ユーザーの要望を短い質問で明確化し、feature_request を作成する。/plan-with-agent で user_prompt が空のときに使用。"
 allowed-tools: ["Read"]
 ---
 

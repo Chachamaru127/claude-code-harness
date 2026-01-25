@@ -34,7 +34,7 @@ GitHub Actions から Harness コマンドを自動実行するための設定�
 
 > 🔧 **どの自動化を設定しますか？**
 >
-> 1. PR自動レビュー（`/review` をPR作成時に実行）
+> 1. PR自動レビュー（`/harness-review` をPR作成時に実行）
 > 2. Plans.md 整合性チェック（PRにタスク完了状況をコメント）
 > 3. 両方
 >
@@ -88,7 +88,7 @@ jobs:
 
           # レビュー実行（非対話モード）
           claude --non-interactive << 'EOF'
-          /review --ci --files "$CHANGED_FILES"
+          /harness-review --ci --files "$CHANGED_FILES"
 
           レビュー結果を以下の形式でまとめてください：
           1. 重大な問題（あれば）
@@ -260,7 +260,7 @@ on:
 - name: Run Harness Review
   run: |
     claude --non-interactive << 'EOF'
-    /review --ci --focus security,performance
+    /harness-review --ci --focus security,performance
     EOF
 ```
 
@@ -305,7 +305,7 @@ permissions:
 
 ## Related Commands
 
-- `/review` - 手動コードレビュー
+- `/harness-review` - 手動コードレビュー
 - `/ci-setup` - 一般的なCI/CD設定
 - `/session-broadcast` - セッション間通知
 

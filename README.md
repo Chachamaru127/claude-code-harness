@@ -18,9 +18,9 @@ catching mistakes before they ship.
 ## See It In Action
 
 ```bash
-/plan   # Brainstorm → Create a plan
+/plan-with-agent   # Brainstorm → Create a plan
 /work              # Execute the plan (with parallel workers)
-/review    # Multi-perspective code review
+/harness-review    # Multi-perspective code review
 ```
 
 **That's it.** Three commands turn a rough idea into reviewed, production-ready code.
@@ -33,8 +33,8 @@ Solo developers face 4 recurring problems. Claude Harness solves all of them:
 
 | Problem | What Happens | How Harness Fixes It |
 |---------|--------------|---------------------|
-| **Confusion** | "Where do I start?" | `/plan` breaks ideas into actionable tasks |
-| **Sloppiness** | Code quality drops under pressure | `/review` runs 8 expert reviewers in parallel |
+| **Confusion** | "Where do I start?" | `/plan-with-agent` breaks ideas into actionable tasks |
+| **Sloppiness** | Code quality drops under pressure | `/harness-review` runs 8 expert reviewers in parallel |
 | **Accidents** | Dangerous commands slip through | Hooks auto-block `rm -rf`, protect `.env`, guard secrets |
 | **Forgetfulness** | Past decisions lost between sessions | SSOT files + Claude-mem preserve context forever |
 
@@ -66,10 +66,10 @@ cd /path/to/your-project && claude
 /plugin install claude-code-harness@claude-code-harness-marketplace
 
 # 3. Initialize
-/init
+/harness-init
 ```
 
-**Done.** Start with `/plan` to create your first plan.
+**Done.** Start with `/plan-with-agent` to create your first plan.
 
 <details>
 <summary>Alternative: Local Clone</summary>
@@ -121,10 +121,10 @@ claude --plugin-dir ~/claude-plugins/claude-code-harness
 ```
 
 All core commands work in OpenCode.ai:
-- `/init` → Project initialization
-- `/plan` → Task planning
+- `/harness-init` → Project initialization
+- `/plan-with-agent` → Task planning
 - `/work` → Parallel task execution
-- `/review` → Multi-perspective review
+- `/harness-review` → Multi-perspective review
 
 See [OpenCode Compatibility Guide](docs/OPENCODE_COMPATIBILITY.md) for details.
 
@@ -225,16 +225,16 @@ See [opencode/README.md](opencode/README.md) for full setup instructions.
 
 | Command | Purpose |
 |---------|---------|
-| `/plan` | Turn ideas into plans |
+| `/plan-with-agent` | Turn ideas into plans |
 | `/work` | Execute tasks from Plans.md |
-| `/review` | Multi-expert code review |
-| `/status` | Check progress, get next action |
+| `/harness-review` | Multi-expert code review |
+| `/sync-status` | Check progress, get next action |
 
 ### Setup & Operations
 
 | Command | Purpose |
 |---------|---------|
-| `/init` | Initialize project |
+| `/harness-init` | Initialize project |
 | `/setup` | Setup optional tools (ci, lsp, mcp, dev-tools, opencode, webhook) |
 | `/harness-update` | Update plugin files |
 | `/codex-review` | Codex-only second opinion |

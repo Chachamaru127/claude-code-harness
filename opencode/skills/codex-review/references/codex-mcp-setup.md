@@ -142,7 +142,7 @@ review:
 | 項目 | 型 | デフォルト | 説明 |
 |-----|-----|-----------|------|
 | `enabled` | boolean | `false` | Codex 統合を有効化 |
-| `auto` | boolean | `false` | `/review` 時に自動で Codex を呼び出すか |
+| `auto` | boolean | `false` | `/harness-review` 時に自動で Codex を呼び出すか |
 | `prompt` | string | (上記) | Codex へ送信するレビュープロンプト |
 
 ---
@@ -184,12 +184,12 @@ codex exec --json "Hello, this is a test" 2>/dev/null | head -1
 - プロンプト言語: 日本語
 
 **使い方**:
-- `/review` 実行時に「Codex にもレビューさせますか？」と確認
+- `/harness-review` 実行時に「Codex にもレビューさせますか？」と確認
 - `codex.auto: true` で自動実行に変更可能
 
 **次のアクション**:
 - `codex.enabled: true` を設定ファイルで確認
-- `/review` でセカンドオピニオンを試す
+- `/harness-review` でセカンドオピニオンを試す
 ```
 
 ---
