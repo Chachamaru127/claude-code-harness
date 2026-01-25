@@ -204,18 +204,18 @@ Fix complete
 
 ---
 
-## Difference from /harness-review
+## Difference from /review
 
 | Command | Content |
 |---------|---------|
-| `/harness-review` | Full review by Claude (+ optional Codex) |
+| `/review` | Full review by Claude (+ optional Codex) |
 | `/codex-review` | Codex standalone review |
 
-**Recommendation**: Normally use `/harness-review`, use `/codex-review` when additional second opinion is needed
+**Recommendation**: Normally use `/review`, use `/codex-review` when additional second opinion is needed
 
 ---
 
 ## Related Commands
 
-- `/harness-review` - Full review (Claude + optional Codex)
-- `/harness-init` - Project initialization (includes Codex setup)
+- `/review` - Full review (Claude + optional Codex)
+- `/init` - Project initialization (includes Codex setup)

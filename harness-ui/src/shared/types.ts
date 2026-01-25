@@ -157,7 +157,7 @@ export interface CoreCommand {
   id: string;
   name: string;
   description: string;
-  template: string; // e.g., "/plan-with-agent {input}"
+  template: string; // e.g., "/plan {input}"
 }
 
 // Multi-project Support

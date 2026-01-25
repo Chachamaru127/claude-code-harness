@@ -183,9 +183,9 @@ skills/
 
 ## 開発フロー
 
-1. **計画**: `/plan-with-agent` でタスクを Plans.md に落とす
+1. **計画**: `/plan` でタスクを Plans.md に落とす
 2. **実装**: `/work` で Plans.md のタスクを実行
-3. **レビュー**: `/harness-review` で品質チェック
+3. **レビュー**: `/review` で品質チェック
 4. **検証**: `./tests/validate-plugin.sh` で構造検証
 
 ## テスト方法
@@ -210,9 +210,9 @@ claude --plugin-dir /path/to/claude-code-harness
 
 | コマンド | 用途 |
 |---------|------|
-| `/plan-with-agent` | 改善タスクを Plans.md に追加 |
+| `/plan` | 改善タスクを Plans.md に追加 |
 | `/work` | タスクを実装（並列実行対応） |
-| `/harness-review` | 変更内容をレビュー |
+| `/review` | 変更内容をレビュー |
 | `/validate` | プラグイン検証 |
 | `/remember` | 学習事項を記録 |
 

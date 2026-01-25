@@ -57,7 +57,7 @@ handoff:
   # 作業完了を Cursor に報告するコマンド
   to_pm: "/handoff-to-pm-claude"
   # PM からタスクを受け取り状況を確認するコマンド
-  from_pm: "/sync-status"
+  from_pm: "/status"
 
 # セーフティ設定（claude-code-harness.config.json の設定を優先）
 safety:

@@ -5,7 +5,7 @@
 Plan → Work → Review の完全なワークフローをテスト。
 
 ## テスト対象機能
-- `/plan-with-agent` → `/work` → `/harness-review` の連携
+- `/plan` → `/work` → `/review` の連携
 - 複数ファイル生成
 - スキル評価フロー
 

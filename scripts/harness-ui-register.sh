@@ -26,7 +26,7 @@ FORMAT_STATUS=""
 FORMAT_WARNING=""
 
 # ハーネス初期化済みかチェック
-# 条件: .claude-code-harness-version が存在（/harness-init で作成される公式マーカー）
+# 条件: .claude-code-harness-version が存在（/init で作成される公式マーカー）
 #       または Plans.md にハーネス固有マーカーが含まれる（旧フォーマット含む）
 is_harness_project() {
   FORMAT_STATUS="ok"

@@ -43,7 +43,7 @@ The plugin system generates fully qualified names in the following format:
 ```
 
 **Examples**:
-- `commands/core/harness-init.md` → `claude-code-harness:core:harness-init`
+- `commands/core/init.md` → `claude-code-harness:core:harness-init`
 - `commands/optional/cursor-mem.md` → `claude-code-harness:optional:cursor-mem`
 - `commands/optional/ci-setup.md` → `claude-code-harness:optional:ci-setup`
 

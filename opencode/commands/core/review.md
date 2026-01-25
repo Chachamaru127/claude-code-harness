@@ -1,14 +1,9 @@
 ---
 description: Code review (multi-perspective security/performance/quality)
 context: fork
-hooks: 
-- event: PreCommandInvoke
-type: command
-command: "${CLAUDE_PLUGIN_ROOT}/scripts/check-codex.sh"
-once: true
 ---
 
-# /harness-review - Code Review (Solo Mode)
+# /review - Code Review (Solo Mode)
 
 Checks the quality of created code.
 Analyzes from multiple perspectives and suggests improvements.
@@ -44,7 +39,8 @@ CI/benchmark mode:
 | Skill | Purpose | When to Call |
 |-------|---------|--------------|
 | `review` | Review (parent skill) | At review start |
-| `codex-review` | Codex second opinion | When Codex is enabled (optional) |
+
+> **Codex でセカンドオピニオンが欲しい場合**: `/codex-review` コマンドを使用してください。
 
 **How to call**:
 ```
@@ -181,45 +177,6 @@ After setup, code intelligence is automatically used in reviews.
 
 ## Execution Flow
 
-### Step 0: Codex Second Opinion Check (auto-execute with once hook)
-
-**Automatically checks Codex availability with `once: true` hook on first execution.**
-
-Hook defined in this command's frontmatter:
-```yaml
-hooks:
-  - event: PreCommandInvoke
-    type: command
-    command: "${CLAUDE_PLUGIN_ROOT}/scripts/check-codex.sh"
-    once: true
-```
-
-**Behavior**:
-- `check-codex.sh` runs only on first `/harness-review` execution in session
-- If Codex is installed, guides how to enable
-- Auto-skips on subsequent runs (`once: true` effect)
-
-**To enable Codex**:
-
-Add the following to project config (`.claude-code-harness.config.yaml`):
-```yaml
-review:
-  codex:
-    enabled: true
-```
-
-> 💡 **To run Codex review only manually**: Use `/codex-review` command
-
----
-
-### Step 0.5: Remaining Context Check (Codex mode)
-
-Before Codex parallel review, **run /compact first if remaining context is 30% or less**.
-
-> **Note**: Continue with Codex parallel review even if space is still tight after /compact.
-
----
-
 ### Step 1: Identify Changed Files
 
 ```bash
@@ -235,10 +192,10 @@ Execute parallel reviews from the following perspectives. Use **Task tool** to l
 Run each review individually and send to background with `Ctrl+B` for fully parallel execution. See [Async Subagents Guide](../docs/ASYNC_SUBAGENTS.md) for details.
 
 **Manual parallel execution steps**:
-1. Run `/harness-review security` → `Ctrl+B` to background
-2. Run `/harness-review performance` → `Ctrl+B` to background
-3. Run `/harness-review quality` → `Ctrl+B` to background
-4. Run `/harness-review accessibility` → `Ctrl+B` to background
+1. Run `/review security` → `Ctrl+B` to background
+2. Run `/review performance` → `Ctrl+B` to background
+3. Run `/review quality` → `Ctrl+B` to background
+4. Run `/review accessibility` → `Ctrl+B` to background
 5. Auto-notification when each subagent completes
 
 **Mode-specific parallel execution:**
@@ -257,34 +214,10 @@ Task tool #4: subagent_type="code-reviewer" → Accessibility perspective
 → Integrate results and output overall evaluation
 ```
 
-#### Codex Mode (`review.mode: codex`) - MCP parallel execution with only needed experts
-
-**⚠️ Important: Do not combine multiple experts in one call**
-
-```
-🔍 Starting Codex parallel review...
-
-1. Determine which experts to call (only needed ones, not all):
-   - enabled: false in config → exclude
-   - CLI/backend → exclude Accessibility, SEO
-   - Document only changes → prioritize Quality, Architect, Plan Reviewer, Scope Analyst
-
-2. Load prompts individually from enabled experts' experts/*.md
-
-3. Execute mcp__codex__codex in parallel within 1 response for enabled experts only:
-   Example: Web frontend with code changes → 6 experts in parallel
-   mcp__codex__codex({prompt: security-expert.md})
-   mcp__codex__codex({prompt: accessibility-expert.md})
-   mcp__codex__codex({prompt: performance-expert.md})
-   mcp__codex__codex({prompt: quality-expert.md})
-   mcp__codex__codex({prompt: seo-expert.md})
-   mcp__codex__codex({prompt: architect-expert.md})
-
-→ Only needed experts execute in parallel (cost optimization)
-→ Integrate each expert's results for judgment
-```
-
-**Details**: `skills/codex-review/references/codex-parallel-review.md`
+> **Codex でセカンドオピニオンが欲しい場合**
+>
+> `/codex-review` コマンドを使用してください。
+> `/review` は Claude の多角的分析に集中し、Codex の呼び出しタイミングは明示的に制御できます。
 
 Review perspectives:
 
@@ -316,79 +249,6 @@ Review perspectives:
 - [ ] Alt text
 - [ ] Keyboard navigation
 - [ ] Color contrast
-
-### Step 2.5: Result Integration and Codex Verification (when Codex enabled)
-
-**When `codex.enabled: true`, Claude verifies Codex review results and determines if fixes are needed.**
-
-```
-📊 Integrating review results...
-
-1. Aggregate Claude 4-perspective review results
-2. Get Codex review results
-3. Claude verifies Codex findings
-   - Is the finding valid?
-   - Is a fix needed?
-   - What's the priority?
-```
-
-**Result integration and verification**:
-
-```markdown
-## 📊 Review Result Comparison
-
-| Perspective | Claude | Codex | Match |
-|-------------|--------|-------|-------|
-| Security | 2 issues | 1 issue | 1 common |
-| Performance | 1 issue | 2 issues | 1 common |
-
-### 🔴 Both Flagged (High Priority - Fix Recommended)
-- Possible SQL injection (src/api/users.ts:45)
-  → **Claude verification**: Valid. Need to fix with parameterized queries
-
-### 🟡 Claude Only Flagged
-- Unused variable (src/utils/helpers.ts:12)
-  → **Fix recommended**: Delete or use
-
-### 🟢 Codex Only Flagged (Claude Verified)
-- Possible N+1 query (src/api/posts.ts:30)
-  → **Claude verification**: Valid. Should add prefetch
-```
-
-**Fix proposal and approval flow**:
-
-```markdown
-## 🔧 Items Requiring Fixes
-
-Add the following fixes to Plans.md and execute with `/work`?
-
-| # | Fix Content | File | Priority |
-|---|-------------|------|----------|
-| 1 | SQL injection protection | src/api/users.ts:45 | High |
-| 2 | N+1 query fix | src/api/posts.ts:30 | Medium |
-| 3 | Delete unused variable | src/utils/helpers.ts:12 | Low |
-
-**Options:**
-1. Approve all → Add to Plans.md and run `/work`
-2. Approve selected → Specify numbers (e.g., 1,2)
-3. Don't fix now → Save report only
-```
-
-**Flow after approval**:
-
-```
-User approval
-    ↓
-Add fix tasks to Plans.md
-    ↓
-Auto-run /work (or suggest execution)
-    ↓
-Re-review after fix completion (optional)
-```
-
-> 💡 **To run Codex review only**: Use `/codex-review` command
-
----
 
 ### Step 3: Output Review Results
 
@@ -450,7 +310,7 @@ This feature blocks commit attempts without review.
 
 **Operation flow**:
 ```
-/harness-review execution
+/review execution
     ↓
 Review result is APPROVE
     ↓
@@ -548,44 +408,42 @@ When technical details are not needed:
 ## Options
 
 ```
-/harness-review              # Check all
-/harness-review security     # Security only
-/harness-review performance  # Performance only
-/harness-review quick        # Quick check
+/review              # Check all
+/review security     # Security only
+/review performance  # Performance only
+/review quick        # Quick check
 ```
 
 ---
 
 ## ⚡ Parallel Execution Decision Points
 
-Review perspectives (Security/Performance/Quality/Accessibility/Codex) are **independent of each other**, so parallel execution is effective.
+Review perspectives (Security/Performance/Quality/Accessibility) are **independent of each other**, so parallel execution is effective.
 
 ### When to Execute in Parallel ✅
 
 | Condition | Reason |
 |-----------|--------|
 | Full review (all 4 perspectives) | Maximum time savings |
-| Codex enabled (5 perspectives) | Codex also runs in parallel |
 | 5+ changed files | Each perspective takes longer |
 | Need results quickly | Before PR merge, etc. |
 
-**Parallel execution effect (Codex enabled)**:
+**Parallel execution effect**:
 ```
 🚀 Starting parallel review...
 ├── [Security] Analyzing... ⏳
 ├── [Performance] Analyzing... ⏳
 ├── [Quality] Analyzing... ⏳
-├── [Accessibility] Analyzing... ⏳
-└── [Codex] Getting second opinion... ⏳
+└── [Accessibility] Analyzing... ⏳
 
-⏱️ Time: 35s (would be +30s if sequential Codex)
+⏱️ Time: ~30s (4 perspectives in parallel)
 ```
 
 ### When to Execute Sequentially ⚠️
 
 | Condition | Reason |
 |-----------|--------|
-| Single perspective only (`/harness-review security`) | No parallelization needed |
+| Single perspective only (`/review security`) | No parallelization needed |
 | 1-2 changed files | Each perspective is quick |
 | Want to check issues one by one | Progress interactively |
 
@@ -600,10 +458,10 @@ Review perspectives < 3 OR changed files < 5 → Sequential execution
 
 ```bash
 # Execute in parallel in background
-/harness-review security     # → Ctrl+B to background
-/harness-review performance  # → Ctrl+B to background
-/harness-review quality      # → Ctrl+B to background
-/harness-review accessibility # Last one waits
+/review security     # → Ctrl+B to background
+/review performance  # → Ctrl+B to background
+/review quality      # → Ctrl+B to background
+/review accessibility # Last one waits
 
 # Integrate results and report
 ```

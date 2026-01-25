@@ -21,7 +21,7 @@ permission denied: .claude/hooks/your-script.sh
 
 ### Auto-fix by Harness
 
-`/harness-init` and `/harness-update` automatically fix permissions for `.claude/hooks/*.sh` files. However, if you manually add scripts between these commands, you must set permissions yourself.
+`/init` and `/harness-update` automatically fix permissions for `.claude/hooks/*.sh` files. However, if you manually add scripts between these commands, you must set permissions yourself.
 
 ### Checklist for Custom Hooks
 
@@ -64,5 +64,5 @@ cat .claude/hooks.json | jq .
 
 ## Related
 
-- `/harness-init` - Auto-fixes permissions on new projects
+- `/init` - Auto-fixes permissions on new projects
 - `/harness-update` - Auto-fixes permissions during updates

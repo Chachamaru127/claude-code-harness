@@ -1,6 +1,6 @@
 ---
 name: generate-claude-settings
-description: "Claude Code の `.claude/settings.json` を安全ポリシー込みで作成/更新する（既存設定は非破壊マージ）。/harness-init や /setup-cursor から呼び出して、権限ガードをチーム運用できる形に整備する。"
+description: "Claude Code の `.claude/settings.json` を安全ポリシー込みで作成/更新する（既存設定は非破壊マージ）。/init や /setup-cursor から呼び出して、権限ガードをチーム運用できる形に整備する。"
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 ---
 

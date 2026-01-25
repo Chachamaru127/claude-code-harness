@@ -14,17 +14,17 @@ Codex MCP を使用してコードレビューを実行する手順。
 
 Codex MCP が設定済みの場合、以下の方法でレビューを実行できます：
 
-1. **`/harness-review` 経由**: 自動的に Codex 統合
+1. **`/review` 経由**: 自動的に Codex 統合
 2. **直接呼び出し**: MCP ツールを直接使用
 
 ---
 
 ## 実行方法
 
-### 方法1: /harness-review 経由（推奨）
+### 方法1: /review 経由（推奨）
 
 ```
-ユーザー: /harness-review
+ユーザー: /review
     ↓
 review スキル起動
     ↓

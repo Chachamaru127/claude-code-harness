@@ -19,7 +19,7 @@ Toggles Codex mode (parallel delegation to GPT experts) during reviews.
 ## Prerequisites
 
 - Codex MCP server is configured
-- Setup completed with `/codex-review` or `/harness-review`
+- Setup completed with `/codex-review` or `/review`
 
 ## What is Codex Mode
 
@@ -73,7 +73,7 @@ Active experts:
 - ✅ Plan Reviewer
 - ✅ Scope Analyst
 
-Next `/harness-review` will delegate to Codex in parallel.
+Next `/review` will delegate to Codex in parallel.
 ```
 
 ### 3. Disable (`/codex-mode off`)
@@ -83,7 +83,7 @@ Next `/harness-review` will delegate to Codex in parallel.
 
 ✅ Returned to default mode
 
-Next `/harness-review` will run with Claude alone.
+Next `/review` will run with Claude alone.
 ```
 
 ### 4. Show Details (`/codex-mode status`)
@@ -168,5 +168,5 @@ You can enable/disable specific experts only.
 
 ## Related Commands
 
-- `/harness-review` - Run review (Codex mode supported)
+- `/review` - Run review (Codex mode supported)
 - `/codex-review` - Codex MCP setup

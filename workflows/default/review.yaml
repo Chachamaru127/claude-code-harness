@@ -1,4 +1,4 @@
-# /harness-review ワークフロー定義（旧名: review）
+# /review ワークフロー定義（旧名: review）
 # 作成したコードの品質をチェック
 
 phase: review

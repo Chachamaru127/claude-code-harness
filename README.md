@@ -18,9 +18,9 @@ catching mistakes before they ship.
 ## See It In Action
 
 ```bash
-/plan-with-agent   # Brainstorm → Create a plan
+/plan   # Brainstorm → Create a plan
 /work              # Execute the plan (with parallel workers)
-/harness-review    # Multi-perspective code review
+/review    # Multi-perspective code review
 ```
 
 **That's it.** Three commands turn a rough idea into reviewed, production-ready code.
@@ -33,8 +33,8 @@ Solo developers face 4 recurring problems. Claude Harness solves all of them:
 
 | Problem | What Happens | How Harness Fixes It |
 |---------|--------------|---------------------|
-| **Confusion** | "Where do I start?" | `/plan-with-agent` breaks ideas into actionable tasks |
-| **Sloppiness** | Code quality drops under pressure | `/harness-review` runs 8 expert reviewers in parallel |
+| **Confusion** | "Where do I start?" | `/plan` breaks ideas into actionable tasks |
+| **Sloppiness** | Code quality drops under pressure | `/review` runs 8 expert reviewers in parallel |
 | **Accidents** | Dangerous commands slip through | Hooks auto-block `rm -rf`, protect `.env`, guard secrets |
 | **Forgetfulness** | Past decisions lost between sessions | SSOT files + Claude-mem preserve context forever |
 
@@ -66,10 +66,10 @@ cd /path/to/your-project && claude
 /plugin install claude-code-harness@claude-code-harness-marketplace
 
 # 3. Initialize
-/harness-init
+/init
 ```
 
-**Done.** Start with `/plan-with-agent` to create your first plan.
+**Done.** Start with `/plan` to create your first plan.
 
 <details>
 <summary>Alternative: Local Clone</summary>
@@ -117,14 +117,14 @@ claude --plugin-dir ~/claude-plugins/claude-code-harness
 **Use the Harness workflow with any LLM: o3, Gemini, Grok, DeepSeek, and more.**
 
 ```bash
-/opencode-setup   # One-command installation
+/setup opencode   # One-command installation
 ```
 
 All core commands work in OpenCode.ai:
-- `/harness-init` → Project initialization
-- `/plan-with-agent` → Task planning
+- `/init` → Project initialization
+- `/plan` → Task planning
 - `/work` → Parallel task execution
-- `/harness-review` → Multi-perspective review
+- `/review` → Multi-perspective review
 
 See [OpenCode Compatibility Guide](docs/OPENCODE_COMPATIBILITY.md) for details.
 
@@ -145,7 +145,7 @@ Each worker reviews its own code before marking done.
 ### Code Intelligence (AST-Grep + LSP)
 
 ```bash
-/dev-tools-setup   # One-time setup
+/setup dev-tools   # One-time setup
 ```
 
 Enables structural code search and semantic analysis:
@@ -156,7 +156,7 @@ Enables structural code search and semantic analysis:
 ### 8-Expert Code Review
 
 ```bash
-/harness-review
+/review
 ```
 
 Security, performance, accessibility, maintainability—8 specialists review your code simultaneously. Optionally add [Codex](https://github.com/openai/codex) for a second opinion.
@@ -178,8 +178,8 @@ Security, performance, accessibility, maintainability—8 specialists review you
 ### Cross-Session Communication
 
 ```bash
-/session-broadcast "API changed: userId → user"
-/session-inbox   # Check messages from other sessions
+/session broadcast "API changed: userId → user"
+/session inbox   # Check messages from other sessions
 ```
 
 Real-time messaging between sessions. When you change an API in Session A, Session B gets notified automatically.
@@ -187,7 +187,7 @@ Real-time messaging between sessions. When you change an API in Session A, Sessi
 ### MCP Server (Multi-Client Support)
 
 ```bash
-/mcp-setup   # Configure for Claude Code, Codex, or Cursor
+/setup mcp   # Configure for Claude Code, Codex, or Cursor
 ```
 
 Use Harness from **Codex**, **Cursor**, or any MCP-compatible client. Share sessions across different AI tools working on the same project.
@@ -201,7 +201,7 @@ Harness works with [opencode.ai](https://opencode.ai/) too. Use the same workflo
 curl -fsSL https://raw.githubusercontent.com/Chachamaru127/claude-code-harness/main/scripts/setup-opencode.sh | bash
 
 # Or from Claude Code
-/opencode-setup
+/setup opencode
 ```
 
 See [opencode/README.md](opencode/README.md) for full setup instructions.
@@ -225,30 +225,27 @@ See [opencode/README.md](opencode/README.md) for full setup instructions.
 
 | Command | Purpose |
 |---------|---------|
-| `/plan-with-agent` | Turn ideas into plans |
+| `/plan` | Turn ideas into plans |
 | `/work` | Execute tasks from Plans.md |
-| `/harness-review` | Multi-expert code review |
-| `/sync-status` | Check progress, get next action |
+| `/review` | Multi-expert code review |
+| `/status` | Check progress, get next action |
 
-### Operations
+### Setup & Operations
 
 | Command | Purpose |
 |---------|---------|
-| `/harness-init` | Initialize project |
+| `/init` | Initialize project |
+| `/setup` | Setup optional tools (ci, lsp, mcp, dev-tools, opencode, webhook) |
 | `/harness-update` | Update plugin files |
-| `/dev-tools-setup` | Setup AST-Grep + LSP |
 | `/codex-review` | Codex-only second opinion |
-| `/skill-list` | Show all 67 skills |
 
-### Session & Multi-Client
+### Session (Inter-session Communication)
 
 | Command | Purpose |
 |---------|---------|
-| `/session-broadcast` | Send message to all sessions |
-| `/session-inbox` | Check messages from other sessions |
-| `/session-list` | List active sessions |
-| `/mcp-setup` | Configure MCP for Codex/Cursor |
-| `/webhook-setup` | Setup GitHub Actions automation |
+| `/session list` | List active sessions |
+| `/session inbox` | Check messages from other sessions |
+| `/session broadcast` | Send message to all sessions |
 
 ### 2-Agent Workflow (Cursor)
 
@@ -273,7 +270,7 @@ Skills auto-trigger based on your request:
 | `deploy` | "deploy", "Vercel", "production" |
 | `ui` | "hero section", "component", "form" |
 
-**67 skills across 22 categories.** Run `/skill-list` to see all.
+Skills auto-trigger based on context. Run `/skill-list` to see all available skills.
 
 ---
 
@@ -281,9 +278,9 @@ Skills auto-trigger based on your request:
 
 ```
 claude-code-harness/
-├── commands/     # 21 slash commands
-├── skills/       # 67 skills (22 categories)
-├── agents/       # 6 sub-agents (parallel workers)
+├── commands/     # Slash commands (core + optional)
+├── skills/       # Auto-triggered skills
+├── agents/       # Sub-agents (parallel workers)
 ├── hooks/        # Safety & automation hooks
 ├── scripts/      # Guard scripts
 └── templates/    # Generation templates

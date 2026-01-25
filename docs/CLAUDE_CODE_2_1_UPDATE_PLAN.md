@@ -26,7 +26,7 @@ Claude Code 2.1.0 から、スキルがスラッシュメニューに表示さ�
 
 | 種別 | 用途 | 例 |
 |------|------|-----|
-| **Commands** | ワークフロー、複数ステップの操作 | `/harness-init`, `/work`, `/plan-with-agent` |
+| **Commands** | ワークフロー、複数ステップの操作 | `/init`, `/work`, `/plan` |
 | **Skills** | 単一機能、会話で自動起動 | `impl`, `review`, `verify` |
 
 **原則**:
@@ -42,7 +42,7 @@ Claude Code 2.1.0 から、スキルがスラッシュメニューに表示さ�
 
 | スキル | 理由 |
 |--------|------|
-| `setup` | `/harness-init` から内部的に呼び出される |
+| `setup` | `/init` から内部的に呼び出される |
 | `session-init` | `SessionStart` フックから自動起動 |
 | `session-memory` | 内部メモリ管理用 |
 | `parallel-workflows` | `/work` から内部的に使用 |
@@ -92,7 +92,7 @@ Claude Code 2.1.0 から、スキルがスラッシュメニューに表示さ�
 | `disallowedTools` | agent定義 | エージェント固有の禁止ツール | [CHANGELOG 2.0.30](https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md) - "Added `disallowedTools` field to custom agent definitions" | ✅ 確認済み |
 | `permissionMode` | agent定義 | エージェントの権限モード | [CHANGELOG 2.0.43](https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md) - "Added `permissionMode` field for custom agents" | ✅ 確認済み |
 
-- [ ] cc:TODO `/harness-init`で生成するテンプレートに新フィールドを追加
+- [ ] cc:TODO `/init`で生成するテンプレートに新フィールドを追加
 - [ ] cc:TODO 既存エージェント（6個）に `skills` フィールド追加を検討
 - [ ] cc:TODO 既存エージェントに `disallowedTools` フィールド追加（安全性強化）
 - [ ] cc:TODO 内部専用スキルに `user-invocable: false` を設定
@@ -212,7 +212,7 @@ hooks:
 ```
 
 - [ ] cc:TODO `templates/claude/settings.local.json.template` に `language` 設定追加
-- [ ] cc:TODO `/harness-init` で言語設定を自動検出（ja/en）
+- [ ] cc:TODO `/init` で言語設定を自動検出（ja/en）
 
 #### 3.2 ワイルドカード権限パターンの活用
 
@@ -271,13 +271,13 @@ hooks:
 
 **根拠**: [CHANGELOG 2.0.17](https://raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md) - "Introducing the Explore subagent. Powered by Haiku it'll search through your codebase efficiently to save context!"
 
-- [ ] cc:TODO `/sync-status` コマンドで Explore エージェント活用を検討
+- [ ] cc:TODO `/status` コマンドで Explore エージェント活用を検討
 - [ ] cc:TODO プロジェクト分析スキルで Explore 活用
 
 #### 5.2 context: fork の活用
 
 - [ ] cc:TODO 重い処理を行うスキル（例：code-reviewer呼び出し）に `context: fork` を適用
-- [ ] cc:TODO `/harness-review` コマンドを fork コンテキストで実行
+- [ ] cc:TODO `/review` コマンドを fork コンテキストで実行
 
 ---
 

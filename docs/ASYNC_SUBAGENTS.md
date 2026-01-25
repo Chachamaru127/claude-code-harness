@@ -25,14 +25,14 @@
 **手順**:
 1.  **最初のレビューを開始**
     ```
-    > /harness-review security ./src
+    > /review security ./src
     ```
 2.  **バックグラウンドへ送る**
     - サブエージェントがレビューを開始したら、すぐにキーボードで `Ctrl + B` を押します。
     - メインエージェントのプロンプトが再び表示されます。
 3.  **次のレビューを開始**
     ```
-    > /harness-review performance ./src
+    > /review performance ./src
     ```
 4.  **バックグラウンドへ送る**
     - 同様に `Ctrl + B` を押します。

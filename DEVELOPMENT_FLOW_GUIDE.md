@@ -237,7 +237,7 @@ cat docs/proposal.md
 #### 5-1. コードレビュー
 
 ```
-/harness-review
+/review
 ```
 
 **Claude Codeがチェックすること：**
@@ -568,20 +568,20 @@ A: 既存のAPIをそのまま使う
 ```
 /work（機能A実装）
 ↓
-/harness-review（機能Aレビュー）
+/review（機能Aレビュー）
 ↓
 /auto-fix（問題修正）
 ↓
 /work（機能B実装）
 ↓
-/harness-review（機能Bレビュー）
+/review（機能Bレビュー）
 ```
 
 **非推奨：** 全実装後に1回だけ
 ```
 /work（全機能実装）
 ↓
-/harness-review（大量の問題発見）
+/review（大量の問題発見）
 ↓
 修正が大変...
 ```
@@ -629,7 +629,7 @@ claude --plugin-dir /path/to/claude-code-harness
 > タスク一覧画面を実装
 
 # 7. レビュー
-/harness-review
+/review
 /auto-fix
 
 # 8. デプロイ
@@ -680,7 +680,7 @@ claude --plugin-dir /path/to/claude-code-harness
 > 商品詳細ページにレビュー表示エリアを追加
 
 # 7. レビュー
-/harness-review
+/review
 
 # 8. データモデル追加
 /crud reviews
@@ -699,11 +699,11 @@ git commit -m "feat: レビュー機能追加"
 ## 🎯 まとめ
 
 ### 新規プロジェクト
-1. `/plan-with-agent` で計画
+1. `/plan` で計画
 2. `/auth` で認証
 3. `/crud` でデータ
 4. `/work` で実装
-5. `/harness-review` でチェック
+5. `/review` でチェック
 6. `/deploy-setup` でデプロイ
 7. `/validate` で検証
 
@@ -711,7 +711,7 @@ git commit -m "feat: レビュー機能追加"
 1. **コミット必須**
 2. `setup-existing-project.sh` 実行
 3. **既存ドキュメント確認**
-4. `/plan-with-agent` で計画更新（既存を尊重）
+4. `/plan` で計画更新（既存を尊重）
 5. **小さく実装**
 6. **こまめに確認**
 

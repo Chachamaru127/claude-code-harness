@@ -319,7 +319,7 @@ After setup completion, automatically proceed to **Dashboard Mode (Step 2)** to 
 
 - `/validate` - Plugin validation
 - `/harness-update` - Plugin update
-- `/harness-init` - Project initialization (auto Plans.md generation)
+- `/init` - Project initialization (auto Plans.md generation)
 
 ---
 
@@ -419,10 +419,10 @@ curl -s http://localhost:37778/api/projects | jq
 
 harness-ui auto project registration requires one of the following:
 
-### Method 1: Run `/harness-init` (Recommended)
+### Method 1: Run `/init` (Recommended)
 
 ```bash
-/harness-init
+/init
 ```
 
 → `.claude-code-harness-version` marker file is created and auto-recognized.

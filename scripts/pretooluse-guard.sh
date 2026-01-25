@@ -65,7 +65,7 @@ msg() {
       deny_sudo) echo "Blocked: sudo is not allowed via Claude Code hooks" ;;
       ask_git_push) echo "Confirm: git push requested ($arg)" ;;
       ask_rm_rf) echo "Confirm: rm -rf requested ($arg)" ;;
-      deny_git_commit_no_review) echo "Blocked: Run /harness-review before committing. After review approval, run git commit again." ;;
+      deny_git_commit_no_review) echo "Blocked: Run /review before committing. After review approval, run git commit again." ;;
       *) echo "$key $arg" ;;
     esac
     return 0
@@ -79,7 +79,7 @@ msg() {
     deny_sudo) echo "ブロック: sudo はフック経由では許可していません" ;;
     ask_git_push) echo "確認: git push を実行しようとしています（command: $arg）" ;;
     ask_rm_rf) echo "確認: rm -rf を実行しようとしています（command: $arg）" ;;
-    deny_git_commit_no_review) echo "ブロック: コミット前に /harness-review を実行してください。レビュー後、再度 git commit を実行できます。" ;;
+    deny_git_commit_no_review) echo "ブロック: コミット前に /review を実行してください。レビュー後、再度 git commit を実行できます。" ;;
     *) echo "$key $arg" ;;
   esac
 }

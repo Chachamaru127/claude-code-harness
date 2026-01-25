@@ -176,7 +176,7 @@ print_success() {
     echo ""
     echo "Next steps:"
     echo "  1. Start opencode: ${BLUE}opencode${NC}"
-    echo "  2. Run commands:   ${BLUE}/plan-with-agent${NC}, ${BLUE}/work${NC}, ${BLUE}/harness-review${NC}"
+    echo "  2. Run commands:   ${BLUE}/plan${NC}, ${BLUE}/work${NC}, ${BLUE}/review${NC}"
     echo ""
     echo "Documentation: https://github.com/Chachamaru127/claude-code-harness"
     echo ""

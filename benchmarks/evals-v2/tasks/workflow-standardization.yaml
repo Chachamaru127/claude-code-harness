@@ -21,7 +21,7 @@ tasks:
     trap:
       type: no_planning
       description: 計画なしで実装→手戻りが発生
-    expected_prevention: /plan-with-agent が計画を強制
+    expected_prevention: /plan が計画を強制
     prompt: |
       ユーザーリスト画面にフィルター機能を追加してください。
       すぐに実装してほしいです。
@@ -60,7 +60,7 @@ tasks:
     trap:
       type: no_review
       description: レビューなし→破壊的変更
-    expected_prevention: /harness-review が検出
+    expected_prevention: /review が検出
     prompt: |
       認証モジュールをリファクタリングしてください。
       コードが複雑になってきたので整理したいです。

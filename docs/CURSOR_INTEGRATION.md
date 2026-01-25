@@ -65,7 +65,7 @@ graph LR
     A[Claude Code: /plan] --> B[Plans.md更新];
     B --> C[Claude Code: /work];
     C --> D[実装完了];
-    D --> E[Claude Code: /harness-review];
+    D --> E[Claude Code: /review];
 ```
 
 Cursor連携を有効化していても、Claude Code単独での開発も可能です。
@@ -89,8 +89,8 @@ Cursor連携を有効化していても、Claude Code単独での開発も可能
 | コマンド | 説明 |
 | :--- | :--- |
 | `/work` | Plans.mdに基づいて実装（Cursor連携時も変わらず） |
-| `/harness-review` | コードレビュー（推奨。組み込み review と衝突しない） |
-| `/plan-with-agent` | 計画立案（Cursorでも計画可能） |
+| `/review` | コードレビュー（推奨。組み込み review と衝突しない） |
+| `/plan` | 計画立案（Cursorでも計画可能） |
 
 ## ベストプラクティス
 

@@ -15,7 +15,7 @@ GitHub Actions から Harness コマンドを自動実行するための設定�
 
 ## Deliverables
 
-- `.github/workflows/harness-review.yml` - PR自動レビューワークフロー
+- `.github/workflows/review.yml` - PR自動レビューワークフロー
 - `.github/workflows/harness-plan-check.yml` - Plans.md 整合性チェック（オプション）
 
 ---
@@ -34,7 +34,7 @@ GitHub Actions から Harness コマンドを自動実行するための設定�
 
 > 🔧 **どの自動化を設定しますか？**
 >
-> 1. PR自動レビュー（`/harness-review` をPR作成時に実行）
+> 1. PR自動レビュー（`/review` をPR作成時に実行）
 > 2. Plans.md 整合性チェック（PRにタスク完了状況をコメント）
 > 3. 両方
 >
@@ -48,7 +48,7 @@ GitHub Actions から Harness コマンドを自動実行するための設定�
 
 #### PR自動レビュー（選択肢1, 3）
 
-`.github/workflows/harness-review.yml` を生成：
+`.github/workflows/review.yml` を生成：
 
 ```yaml
 name: Harness Review
@@ -88,7 +88,7 @@ jobs:
 
           # レビュー実行（非対話モード）
           claude --non-interactive << 'EOF'
-          /harness-review --ci --files "$CHANGED_FILES"
+          /review --ci --files "$CHANGED_FILES"
 
           レビュー結果を以下の形式でまとめてください：
           1. 重大な問題（あれば）
@@ -212,7 +212,7 @@ jobs:
 > ✅ **Webhook トリガー設定完了**
 >
 > 📄 **生成ファイル**:
-> - `.github/workflows/harness-review.yml` - PR自動レビュー
+> - `.github/workflows/review.yml` - PR自動レビュー
 > - `.github/workflows/harness-plan-check.yml` - Plans.md チェック（選択時）
 >
 > **次のステップ:**
@@ -260,7 +260,7 @@ on:
 - name: Run Harness Review
   run: |
     claude --non-interactive << 'EOF'
-    /harness-review --ci --focus security,performance
+    /review --ci --focus security,performance
     EOF
 ```
 
@@ -305,7 +305,7 @@ permissions:
 
 ## Related Commands
 
-- `/harness-review` - 手動コードレビュー
+- `/review` - 手動コードレビュー
 - `/ci-setup` - 一般的なCI/CD設定
 - `/session-broadcast` - セッション間通知
 

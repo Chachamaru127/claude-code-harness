@@ -210,17 +210,17 @@ echo ""
 
 # harness-init での品質ルール展開設定
 assert_file_contains \
-  "commands/core/harness-init.md" \
+  "commands/core/init.md" \
   "test-quality.md" \
   "harness-init に test-quality.md 展開が含まれる"
 
 assert_file_contains \
-  "commands/core/harness-init.md" \
+  "commands/core/init.md" \
   "implementation-quality.md" \
   "harness-init に implementation-quality.md 展開が含まれる"
 
 assert_file_contains \
-  "commands/core/harness-init.md" \
+  "commands/core/init.md" \
   "品質保護ルール\|Quality Protection" \
   "harness-init に品質保護ルールセクションがある"
 

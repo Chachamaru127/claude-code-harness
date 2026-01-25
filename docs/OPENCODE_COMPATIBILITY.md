@@ -221,7 +221,7 @@ npm install && npm run build
          ↓
 [opencode + GPT] に切り替え
          ↓
-  /work, /plan-with-agent 等を実行
+  /work, /plan 等を実行
          ↓
 [Claude Code + Harness] 回復後
          ↓

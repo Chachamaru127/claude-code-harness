@@ -53,7 +53,7 @@ export class CommandCatalog {
   }
 
   private parseCommand(filename: string, content: string): CoreCommand | null {
-    // Extract command name from filename (e.g., "harness-init.md" -> "/harness-init")
+    // Extract command name from filename (e.g., "harness-init.md" -> "/init")
     const name = '/' + basename(filename, '.md');
     const id = basename(filename, '.md').replace(/-/g, '_');
 
@@ -103,9 +103,9 @@ export class CommandCatalog {
   private commandRequiresInput(name: string): boolean {
     // Commands that typically require input
     const inputCommands = [
-      '/plan-with-agent',
+      '/plan',
       '/work',
-      '/harness-review',
+      '/review',
     ];
     return inputCommands.some(cmd => name.includes(cmd.replace('/', '')));
   }

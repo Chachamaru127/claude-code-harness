@@ -142,7 +142,7 @@ generate_notification() {
 
     if [ -n "$NEW_TASKS" ]; then
         echo "🆕 新規タスク: PM から依頼あり"
-        echo "   → /sync-status で状況を確認し、/work で着手してください"
+        echo "   → /status で状況を確認し、/work で着手してください"
     fi
 
     if [ -n "$COMPLETED_TASKS" ]; then

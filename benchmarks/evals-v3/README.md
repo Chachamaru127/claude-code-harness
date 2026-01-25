@@ -21,7 +21,7 @@ no-plugin:    同じく最適化されたプロンプト（手動で再現）
 ## v3 の設計：正しい比較
 
 ```
-with-plugin:  曖昧なプロンプト + /plan-with-agent
+with-plugin:  曖昧なプロンプト + /plan
 no-plugin:    同じ曖昧なプロンプトのみ
               ↓
          プラグインが曖昧な指示を構造化する価値を測定
@@ -29,7 +29,7 @@ no-plugin:    同じ曖昧なプロンプトのみ
 
 ## 仮説
 
-> ハーネスのコマンド（/plan-with-agent, /work, /harness-review）は、
+> ハーネスのコマンド（/plan, /work, /review）は、
 > 曖昧な指示を構造化されたワークフローに変換し、
 > 非エンジニアでもエンジニア品質のアウトプットを得られるようにする
 
@@ -50,7 +50,7 @@ no-plugin:    同じ曖昧なプロンプトのみ
 ```
 Trial N:
   1. テストプロジェクトをクリーンセットアップ
-  2. with-plugin: /plan-with-agent {曖昧なプロンプト}
+  2. with-plugin: /plan {曖昧なプロンプト}
   3. テストプロジェクトをリセット
   4. no-plugin: {同じ曖昧なプロンプト}
   5. 両方の結果を比較

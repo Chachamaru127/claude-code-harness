@@ -249,7 +249,7 @@ description-en: Setup development tools (AST-Grep, LSP) in one command
 
 ---
 
-## Phase 4: `/harness-review` への統合
+## Phase 4: `/review` への統合
 
 ### 工数: 低
 
@@ -257,7 +257,7 @@ description-en: Setup development tools (AST-Grep, LSP) in one command
 レビューコマンドで MCP ツールを自動活用
 
 ```markdown
-# commands/core/harness-review.md に追加
+# commands/core/review.md に追加
 
 ## コードインテリジェンス活用 (オプション)
 
@@ -274,7 +274,7 @@ description-en: Setup development tools (AST-Grep, LSP) in one command
 ```
 
 ### 修正対象ファイル
-1. `commands/core/harness-review.md` - ツール活用セクション追加
+1. `commands/core/review.md` - ツール活用セクション追加
 
 ---
 
@@ -305,7 +305,7 @@ curl -fsSL https://raw.githubusercontent.com/Chachamaru127/claude-code-harness/m
 | `mcp-server/src/tools/code-intelligence.ts` | **新規** AST/LSPツール | 2 |
 | `mcp-server/src/index.ts` | ツール登録 | 2 |
 | `commands/optional/dev-tools-setup.md` | **新規** セットアップコマンド | 3 |
-| `commands/core/harness-review.md` | ツール活用追記 | 4 |
+| `commands/core/review.md` | ツール活用追記 | 4 |
 | `scripts/quick-install.sh` | **新規** インストールスクリプト | 5 |
 | `README.md` | インストール手順更新 | 5 |
 
@@ -338,7 +338,7 @@ Claude: "この関数の参照元を探して"
 
 ### Phase 4: レビュー統合
 ```bash
-/harness-review
+/review
 # → AST-Grep によるコードスメル検出が実行されることを確認
 ```
 

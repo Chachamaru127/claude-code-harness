@@ -95,7 +95,7 @@ cd claude-code-harness
    ↓
 3. /work で機能実装
    ↓
-4. /harness-review でコードレビュー
+4. /review でコードレビュー
    ↓
 5. /validate で納品前検証
    ↓
@@ -105,7 +105,7 @@ cd claude-code-harness
 ### 推奨する作業の進め方
 
 1. **計画フェーズ（1-2時間）**
-   - `/plan-with-agent` でクライアント要件を整理
+   - `/plan` でクライアント要件を整理
    - 見積もりと納期を確定
 
 2. **実装フェーズ（プロジェクトによる）**
@@ -119,7 +119,7 @@ cd claude-code-harness
    - `/deploy-setup` で自動デプロイ設定
 
 4. **品質保証フェーズ（1-2時間）**
-   - `/harness-review` でコード品質チェック
+   - `/review` でコード品質チェック
    - `/auto-fix` で自動修正
    - `/validate` で最終検証
 
@@ -133,7 +133,7 @@ cd claude-code-harness
 
 ### フェーズ1: 計画
 
-#### `/plan-with-agent` - プロジェクト計画の作成
+#### `/plan` - プロジェクト計画の作成
 
 **使用タイミング**: クライアントから依頼を受けた直後
 
@@ -269,13 +269,13 @@ Claude Codeが以下を生成します：
 
 ### フェーズ5: 品質保証と納品
 
-#### `/harness-review` - コードレビュー
+#### `/review` - コードレビュー
 
 **使用タイミング**: 実装が完了した時
 
 **実行例**:
 ```
-/harness-review
+/review
 ```
 
 Claude Codeが以下をチェック：
@@ -316,7 +316,7 @@ Claude Codeが以下をチェック：
 
 #### 1. コマンドが認識されない
 
-**症状**: `/plan-with-agent` などのコマンドが動作しない
+**症状**: `/plan` などのコマンドが動作しない
 
 **解決方法**:
 ```bash
@@ -410,7 +410,7 @@ sudo apt-get install jq  # Linux
 ```
 （全実装完了）
 ↓
-/harness-review
+/review
 （大量の問題が見つかる）
 ```
 
@@ -418,11 +418,11 @@ sudo apt-get install jq  # Linux
 ```
 /work（機能A実装）
 ↓
-/harness-review（機能Aレビュー）
+/review（機能Aレビュー）
 ↓
 /work（機能B実装）
 ↓
-/harness-review（機能Bレビュー）
+/review（機能Bレビュー）
 ```
 
 ### 4. ドキュメントを残す

@@ -56,11 +56,11 @@ cp claude-code-harness/opencode/opencode.json your-project/
 
 | コマンド | 説明 |
 |----------|------|
-| `/harness-init` | プロジェクトセットアップ |
-| `/plan-with-agent` | 開発プラン作成 |
+| `/init` | プロジェクトセットアップ |
+| `/plan` | 開発プラン作成 |
 | `/work` | タスク実行 |
-| `/harness-review` | コードレビュー |
-| `/sync-status` | 進捗確認 |
+| `/review` | コードレビュー |
+| `/status` | 進捗確認 |
 
 ## MCP ツール
 
@@ -84,9 +84,9 @@ cd your-project
 opencode
 
 # コマンドを実行
-/plan-with-agent  # プラン作成
+/plan  # プラン作成
 /work             # タスク実行
-/harness-review   # コードレビュー
+/review   # コードレビュー
 ```
 
 ---

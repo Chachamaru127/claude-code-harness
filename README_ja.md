@@ -50,14 +50,14 @@ Claude Code を「Plan → Work → Review」の自律サイクルで運用し�
 *Use the Harness workflow with any LLM: o3, Gemini, Grok, DeepSeek, and more*
 
 ```bash
-/opencode-setup   # ワンコマンドで導入
+/setup opencode   # ワンコマンドで導入
 ```
 
 OpenCode.ai で動作するコアコマンド:
-- `/harness-init` → プロジェクト初期化
-- `/plan-with-agent` → タスク計画
+- `/init` → プロジェクト初期化
+- `/plan` → タスク計画
 - `/work` → 並列タスク実行
-- `/harness-review` → マルチ視点レビュー
+- `/review` → マルチ視点レビュー
 
 詳細: [OpenCode 互換ガイド](docs/OPENCODE_COMPATIBILITY.md)
 
@@ -96,7 +96,7 @@ OpenCode.ai で動作するコアコマンド:
 
 ### Codex セカンドオピニオンレビュー（v2.7.9+）
 
-- `/harness-review` に Codex を統合（設定: `.claude-code-harness.config.yaml` の `review.codex.enabled`）
+- `/review` に Codex を統合（設定: `.claude-code-harness.config.yaml` の `review.codex.enabled`）
 - `/codex-review` で Codex 単独レビューも実行可能
 
 ### 評価スイート（Scorecard）（v2.7.9+）
@@ -121,7 +121,7 @@ OpenCode.ai で動作するコアコマンド:
 | **Performance** | DB クエリ、ループ処理 | N+1 警告 |
 
 - 強制ではなく**提案**（VibeCoder にも優しい）
-- `/plan-with-agent` で計画作成時に自動でマーカー付与
+- `/plan` で計画作成時に自動でマーカー付与
 
 ### Claude-mem 統合（v2.6.0）| Claude-mem Integration
 
@@ -164,9 +164,9 @@ bun run cursor:install -- user
 
 | コマンド | 何をする | 結果 |
 |----------|----------|------|
-| `/plan-with-agent` | 壁打ち → 計画化 | **Plans.md** 作成 |
+| `/plan` | 壁打ち → 計画化 | **Plans.md** 作成 |
 | `/work` | 計画を実行（並列対応） | 動くコード |
-| `/harness-review` | 多観点レビュー | プロ品質 |
+| `/review` | 多観点レビュー | プロ品質 |
 
 ![Quick Overview](docs/images/quick-overview.png)
 
@@ -176,8 +176,8 @@ bun run cursor:install -- user
 
 | 問題 | 症状 | 解決策 |
 |------|------|--------|
-| **迷う** | 何をすべきかわからない | `/plan-with-agent` で整理 |
-| **雑になる** | 品質が落ちる | `/harness-review` で多観点チェック |
+| **迷う** | 何をすべきかわからない | `/plan` で整理 |
+| **雑になる** | 品質が落ちる | `/review` で多観点チェック |
 | **事故る** | 危険な操作を実行 | Hooks で自動ガード |
 | **忘れる** | 前提が抜ける | SSOT + Claude-mem で継続 |
 
@@ -207,7 +207,7 @@ claude
 ### Step 2: 初期化
 
 ```bash
-/harness-init
+/init
 ```
 
 → CLAUDE.md、Plans.md、.claude/rules/ が自動生成されます。
@@ -216,7 +216,7 @@ claude
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  /plan-with-agent  →  /work  →  /harness-review        │
+│  /plan  →  /work  →  /review        │
 │      計画作成          実装        品質チェック          │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -225,13 +225,13 @@ claude
 
 ```bash
 # 「○○機能を追加したい」と言って計画を作る
-/plan-with-agent
+/plan
 
 # Plans.md のタスクを実行する
 /work
 
 # 変更内容をレビューする
-/harness-review
+/review
 ```
 
 ### 困ったときは
@@ -239,7 +239,7 @@ claude
 | 状況 | 言えばOK |
 |------|----------|
 | 何ができるか知りたい | `/skill-list` |
-| 進捗を確認したい | `/sync-status` |
+| 進捗を確認したい | `/status` |
 | Plans.md が長くなった | 「整理して」（maintenance スキル） |
 
 <details>
@@ -290,11 +290,11 @@ claude --plugin-dir ~/claude-plugins/claude-code-harness
 
 | 機能 | 説明 |
 |------|------|
-| **`/session-broadcast`** | 全セッションにメッセージ送信 |
-| **`/session-inbox`** | 他セッションからのメッセージ確認 |
-| **`/session-list`** | アクティブセッション一覧 |
+| **`/session broadcast`** | 全セッションにメッセージ送信 |
+| **`/session inbox`** | 他セッションからのメッセージ確認 |
+| **`/session list`** | アクティブセッション一覧 |
 | **MCP サーバー** | Codex、Cursor からも Harness を利用可能 |
-| **`/mcp-setup`** | クライアント別の MCP 設定 |
+| **`/setup mcp`** | クライアント別の MCP 設定 |
 
 **ユースケース**: セッションA で API を変更 → セッションB に自動通知 → 競合を事前回避
 
@@ -316,10 +316,10 @@ claude --plugin-dir ~/claude-plugins/claude-code-harness
 
 | コマンド | 用途 |
 |----------|------|
-| `/harness-init` | プロジェクト初期化 |
-| `/plan-with-agent` | 計画作成 |
+| `/init` | プロジェクト初期化 |
+| `/plan` | 計画作成 |
 | `/work` | タスク実装（並列対応） |
-| `/harness-review` | 多観点レビュー |
+| `/review` | 多観点レビュー |
 | `/skill-list` | スキル一覧 |
 
 ### 品質・運用
@@ -327,7 +327,7 @@ claude --plugin-dir ~/claude-plugins/claude-code-harness
 | コマンド | 用途 |
 |----------|------|
 | `/harness-update` | プラグイン更新 |
-| `/sync-status` | 進捗確認 → 次アクション提案 |
+| `/status` | 進捗確認 → 次アクション提案 |
 | `/codex-review` | Codex セカンドオピニオンレビュー（単独） |
 
 ### 知識・連携

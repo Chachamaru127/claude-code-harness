@@ -6,12 +6,12 @@
 
 ## Claude Code 側コマンド
 
-### /harness-init
+### /init
 
 プロジェクトの初期セットアップ。
 
 ```
-/harness-init
+/init
 ```
 
 **生成されるファイル**:
@@ -22,17 +22,17 @@
 
 ---
 
-### /plan-with-agent
+### /plan
 
 タスクの計画・分解。
 
 ```
-/plan-with-agent [タスク説明]
+/plan [タスク説明]
 ```
 
 **例**:
 ```
-/plan-with-agent ユーザー認証機能を実装したい
+/plan ユーザー認証機能を実装したい
 ```
 
 **出力**: Plans.md にタスクが追加される
@@ -54,12 +54,12 @@ Plans.md のタスクを実行。
 
 ---
 
-### /sync-status
+### /status
 
 現在の状態サマリーを出力。
 
 ```
-/sync-status
+/status
 ```
 
 **出力例**:
@@ -123,7 +123,7 @@ PM → Worker へのタスク依頼を整形。
 [セッション開始]
     │
     ▼
-/sync-status  ←── 現状確認
+/status  ←── 現状確認
     │
     ▼
 /work  ←── タスク実行

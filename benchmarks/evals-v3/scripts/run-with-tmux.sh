@@ -7,7 +7,7 @@
 #   ./run-with-tmux.sh "プロンプト" [モード] [タイムアウト秒]
 #
 # モード:
-#   with-plugin: /plan-with-agent を付けて実行
+#   with-plugin: /plan を付けて実行
 #   no-plugin: プロンプトのみで実行
 
 set -e

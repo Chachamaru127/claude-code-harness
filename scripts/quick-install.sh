@@ -117,10 +117,10 @@ echo "  1. Start Claude Code in your project:"
 echo "     ${YELLOW}cd /path/to/your-project && claude${NC}"
 echo
 echo "  2. Initialize Harness:"
-echo "     ${YELLOW}/harness-init${NC}"
+echo "     ${YELLOW}/init${NC}"
 echo
 echo "  3. Create your first plan:"
-echo "     ${YELLOW}/plan-with-agent${NC}"
+echo "     ${YELLOW}/plan${NC}"
 echo
 
 if [ "$WITH_DEV_TOOLS" = false ]; then

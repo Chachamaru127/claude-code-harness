@@ -1,6 +1,6 @@
 #!/bin/bash
 # check-codex.sh - Codex 利用可能性チェック（once hook 用）
-# /harness-review 初回実行時に一度だけ実行される
+# /review 初回実行時に一度だけ実行される
 #
 # Usage: ./scripts/check-codex.sh
 

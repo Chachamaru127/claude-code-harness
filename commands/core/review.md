@@ -9,7 +9,7 @@ hooks:
     once: true
 ---
 
-# /harness-review - Code Review (Solo Mode)
+# /review - Code Review (Solo Mode)
 
 Checks the quality of created code.
 Analyzes from multiple perspectives and suggests improvements.
@@ -196,7 +196,7 @@ hooks:
 ```
 
 **Behavior**:
-- `check-codex.sh` runs only on first `/harness-review` execution in session
+- `check-codex.sh` runs only on first `/review` execution in session
 - If Codex is installed, guides how to enable
 - Auto-skips on subsequent runs (`once: true` effect)
 
@@ -236,10 +236,10 @@ Execute parallel reviews from the following perspectives. Use **Task tool** to l
 Run each review individually and send to background with `Ctrl+B` for fully parallel execution. See [Async Subagents Guide](../docs/ASYNC_SUBAGENTS.md) for details.
 
 **Manual parallel execution steps**:
-1. Run `/harness-review security` → `Ctrl+B` to background
-2. Run `/harness-review performance` → `Ctrl+B` to background
-3. Run `/harness-review quality` → `Ctrl+B` to background
-4. Run `/harness-review accessibility` → `Ctrl+B` to background
+1. Run `/review security` → `Ctrl+B` to background
+2. Run `/review performance` → `Ctrl+B` to background
+3. Run `/review quality` → `Ctrl+B` to background
+4. Run `/review accessibility` → `Ctrl+B` to background
 5. Auto-notification when each subagent completes
 
 **Mode-specific parallel execution:**
@@ -451,7 +451,7 @@ This feature blocks commit attempts without review.
 
 **Operation flow**:
 ```
-/harness-review execution
+/review execution
     ↓
 Review result is APPROVE
     ↓
@@ -549,10 +549,10 @@ When technical details are not needed:
 ## Options
 
 ```
-/harness-review              # Check all
-/harness-review security     # Security only
-/harness-review performance  # Performance only
-/harness-review quick        # Quick check
+/review              # Check all
+/review security     # Security only
+/review performance  # Performance only
+/review quick        # Quick check
 ```
 
 ---
@@ -586,7 +586,7 @@ Review perspectives (Security/Performance/Quality/Accessibility/Codex) are **ind
 
 | Condition | Reason |
 |-----------|--------|
-| Single perspective only (`/harness-review security`) | No parallelization needed |
+| Single perspective only (`/review security`) | No parallelization needed |
 | 1-2 changed files | Each perspective is quick |
 | Want to check issues one by one | Progress interactively |
 
@@ -601,10 +601,10 @@ Review perspectives < 3 OR changed files < 5 → Sequential execution
 
 ```bash
 # Execute in parallel in background
-/harness-review security     # → Ctrl+B to background
-/harness-review performance  # → Ctrl+B to background
-/harness-review quality      # → Ctrl+B to background
-/harness-review accessibility # Last one waits
+/review security     # → Ctrl+B to background
+/review performance  # → Ctrl+B to background
+/review quality      # → Ctrl+B to background
+/review accessibility # Last one waits
 
 # Integrate results and report
 ```

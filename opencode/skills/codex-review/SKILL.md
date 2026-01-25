@@ -107,7 +107,7 @@ claude mcp list
 ### Solo モード
 
 ```
-/harness-review 実行
+/review 実行
     │
     ├── Claude レビュー（従来通り）
     │
@@ -125,7 +125,7 @@ PM（Cursor / Codex）
             │
             ├── Claude Code 実装
             │
-            └── /harness-review
+            └── /review
                     │
                     ├── Claude レビュー
                     └── Codex セカンドオピニオン

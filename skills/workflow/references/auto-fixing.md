@@ -6,7 +6,7 @@ allowed-tools: ["Read", "Write", "Edit", "Bash"]
 
 # Auto-Fix Skill
 
-`/harness-review`で検出された問題を自動的に修正するスキル。
+`/review`で検出された問題を自動的に修正するスキル。
 
 ---
 

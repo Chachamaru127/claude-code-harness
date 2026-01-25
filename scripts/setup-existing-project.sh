@@ -328,14 +328,14 @@ else
 ## 利用可能なコマンド
 
 ### コア（Plan → Work → Review）
-- `/plan-with-agent` - プロジェクト計画の作成・更新（既存ドキュメントを考慮）
+- `/plan` - プロジェクト計画の作成・更新（既存ドキュメントを考慮）
 - `/work` - 機能実装（並列実行対応、既存コードとの整合性を保つ）
-- `/harness-review` - コードレビュー
+- `/review` - コードレビュー
 
 ### 品質/運用
 - `/validate` - 納品前検証
 - `/cleanup` - Plans.md等の自動整理
-- `/sync-status` - 進捗確認→次アクション提案
+- `/status` - 進捗確認→次アクション提案
 - `/refactor` - 安全なリファクタリング
 
 ### 実装支援
@@ -426,7 +426,7 @@ echo "4. 小さな機能から実装を開始:"
 echo -e "   ${BLUE}/work${NC}"
 echo ""
 echo "5. こまめにレビュー:"
-echo -e "   ${BLUE}/harness-review${NC}"
+echo -e "   ${BLUE}/review${NC}"
 echo ""
 echo "6. （任意）Cursor連携を有効化:"
 echo -e "   ${BLUE}/setup-cursor${NC}"
