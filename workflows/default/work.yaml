@@ -40,7 +40,7 @@ steps:
 
   # Step 1.6: セッション再開/分岐制御（指定時のみ）
   - id: session-control
-    skill: session-control
+    skill: session
     condition: "resume_latest == true || resume_session_id != '' || fork_session_id != '' || fork_reason != ''"
     input:
       variables:

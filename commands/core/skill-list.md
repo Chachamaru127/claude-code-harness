@@ -37,9 +37,8 @@ Output the skill list in the following format at execution.
 
 | Skill | Description | Trigger Example |
 |-------|-------------|-----------------|
-| session-init | Environment check at session start | "start work" "check status" |
+| session | Session lifecycle & memory management | auto |
 | plans-management | Plans.md management | "add a task" |
-| session-memory | Memory management between sessions | auto |
 | parallel-workflows | Parallel execution of multiple tasks | "execute in parallel" |
 | troubleshoot | Problem diagnosis and resolution | "investigate the error" |
 
