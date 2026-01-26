@@ -61,6 +61,39 @@ cp claude-code-harness/opencode/opencode.json your-project/
 | `/work` | タスク実行 |
 | `/harness-review` | コードレビュー |
 | `/sync-status` | 進捗確認 |
+| `/handoff-to-opencode` | OpenCode PM への完了報告生成 |
+
+---
+
+## PM モード (OpenCode で計画管理)
+
+OpenCode を PM (Project Manager) として使用する場合のコマンド:
+
+| コマンド | 説明 |
+|----------|------|
+| `/start-session` | セッション開始（状況把握→計画） |
+| `/plan-with-cc` | 計画作成（Evals含む） |
+| `/project-overview` | プロジェクト概要把握 |
+| `/handoff-to-claude` | Claude Code への依頼生成 |
+| `/review-cc-work` | 作業レビュー・承認 |
+
+### ワークフロー（PM モード）
+
+```
+OpenCode (PM)                    Claude Code (Impl)
+    |                                   |
+    | /start-session                    |
+    | /plan-with-cc                     |
+    | /handoff-to-claude ─────────────> |
+    |                                   | /work
+    |                                   | /handoff-to-opencode
+    | <─────────────────────────────────|
+    | /review-cc-work                   |
+    |    ├── approve → 次タスク ────────>|
+    |    └── request_changes ──────────>|
+```
+
+---
 
 ## MCP ツール
 

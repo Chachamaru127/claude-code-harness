@@ -9,6 +9,59 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.12.0] - 2026-01-26
+
+### 🎯 What's Changed for You
+
+**OpenCode can now work as PM (Project Manager). Use OpenCode subscription (cheaper than Cursor) to manage plans while Claude Code implements.**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| PM role required Cursor | `/start-session`, `/plan-with-cc` work in OpenCode |
+| Handoff to Cursor only | `/handoff-to-opencode` for OpenCode PM |
+| `/opencode-setup` only installed Impl commands | PM commands installed by default in `pm/` |
+
+### Added
+
+- **PM Commands for OpenCode** (`opencode/commands/pm/`)
+  - `/start-session` - Session start (situational awareness → plan)
+  - `/plan-with-cc` - Plan creation with Evals
+  - `/project-overview` - Quick project overview
+  - `/handoff-to-claude` - Generate request for Claude Code
+  - `/review-cc-work` - Review and approve work
+
+- **`/handoff-to-opencode`** - Completion report for OpenCode PM
+  - Counterpart to `/handoff-to-cursor`
+  - Used when Impl Claude Code hands off to OpenCode PM
+
+### Changed
+
+- **`/opencode-setup`** now installs PM commands by default
+  - PM commands in `.opencode/commands/pm/`
+  - Updated completion message with PM mode usage
+
+- **`build-opencode.js`** processes PM templates
+  - New source: `templates/opencode/commands/`
+  - Output: `opencode/commands/pm/`
+
+### PM Workflow
+
+```
+OpenCode (PM)                    Claude Code (Impl)
+    |                                   |
+    | /start-session                    |
+    | /plan-with-cc                     |
+    | /handoff-to-claude ─────────────> |
+    |                                   | /work
+    |                                   | /handoff-to-opencode
+    | <─────────────────────────────────|
+    | /review-cc-work                   |
+```
+
+---
+
 ## [2.11.1] - 2026-01-26
 
 ### 🎯 What's Changed for You

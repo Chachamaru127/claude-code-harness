@@ -22,6 +22,8 @@ const SKILLS_DIR = path.join(ROOT_DIR, 'skills');
 const OPENCODE_DIR = path.join(ROOT_DIR, 'opencode');
 const OPENCODE_COMMANDS_DIR = path.join(OPENCODE_DIR, 'commands');
 const OPENCODE_SKILLS_DIR = path.join(OPENCODE_DIR, 'skills');
+const OPENCODE_TEMPLATES_DIR = path.join(ROOT_DIR, 'templates', 'opencode', 'commands');
+const OPENCODE_PM_DIR = path.join(OPENCODE_COMMANDS_DIR, 'pm');
 
 /**
  * ディレクトリを再帰的に作成
@@ -373,6 +375,16 @@ function main() {
   console.log('📁 Converting commands:');
   const commandCount = processDirectory(COMMANDS_DIR, OPENCODE_COMMANDS_DIR);
 
+  // PM コマンドを変換（templates/opencode/commands/ から）
+  console.log('\n📁 Processing PM commands (from templates/opencode/):');
+  let pmCount = 0;
+  if (fs.existsSync(OPENCODE_TEMPLATES_DIR)) {
+    pmCount = processDirectory(OPENCODE_TEMPLATES_DIR, OPENCODE_PM_DIR);
+    console.log(`   PM Commands: ${pmCount} files`);
+  } else {
+    console.log('   ⚠ templates/opencode/commands/ not found, skipping PM commands');
+  }
+
   // スキルをコピー
   console.log('\n📁 Copying skills:');
   const skillCount = copySkills();
@@ -385,6 +397,7 @@ function main() {
 
   console.log(`\n✅ Done!`);
   console.log(`   Commands: ${commandCount} files`);
+  console.log(`   PM Commands: ${pmCount} files`);
   console.log(`   Skills: ${skillCount} directories`);
   console.log(`   Output: ${path.relative(process.cwd(), OPENCODE_DIR)}/`);
 }
