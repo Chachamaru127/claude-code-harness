@@ -62,7 +62,7 @@ CI/benchmark mode:
 
 | Skill | Purpose | When to Call |
 |-------|---------|--------------|
-| `review` | Review (parent skill) | At review start |
+| `harness-review` | Review (parent skill) | At review start |
 | `codex-review` | Codex second opinion | When Codex is enabled (optional) |
 
 **How to call**:
