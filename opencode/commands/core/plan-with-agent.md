@@ -109,7 +109,87 @@ Check user input. If no input, ask:
 
 **Wait for response**
 
-### Step 2: Increase Resolution (Max 3 questions)
+### Step 2: Socratic Design（段階的な深堀り）
+
+**原則**: 1回に1つの質問、回答を待ってから次へ（デフォルト有効）
+
+#### 2.1 Purpose（目的の深堀り）
+
+> 🤔 **なぜそれが必要ですか？**
+>
+> （どんな問題を解決したいですか？）
+
+**Wait for response**
+
+#### 2.2 Success（成功基準）
+
+> ✅ **成功の定義**
+>
+> 「これができたらOK」と言える**具体的な1シーン**を教えてください。
+
+**Wait for response**
+
+#### 2.3 User（ユーザーの明確化）
+
+> 👤 **使う人について**
+>
+> a) 自分だけ
+> b) チーム（5人以下）
+> c) チーム（5人以上）
+> d) 一般公開
+
+**Wait for response**
+
+#### 2.4 Scope（スコープの確認）
+
+> 📦 **どこまで作りますか？**
+>
+> a) とりあえず動くもの（1日〜数日）
+> b) MVP（1-2週間）
+> c) 本格運用（1ヶ月〜）
+
+**Wait for response**
+
+#### 2.5 Constraints（制約の確認）
+
+> 🔧 **技術的な制約は？**
+>
+> a) 使用言語/FW の指定あり → 何ですか？
+> b) 既存システムとの連携必須 → どのシステム？
+> c) 特定のホスティング先 → どこ？
+> d) 特にない
+
+**Wait for response**
+
+#### 2.6 Alternatives（代替案比較）- 必須
+
+**決定前に必ず 2-3 の選択肢を提示:**
+
+> 📊 **3つのアプローチを提案します**
+>
+> | 案 | 概要 | 工数 | 拡張性 | 推奨 |
+> |----|------|------|--------|------|
+> | A | シンプル実装 | 小 | 低 | |
+> | B | 標準的実装 | 中 | 中 | ⭐ |
+> | C | 本格実装 | 大 | 高 | |
+>
+> **推奨: 案B** — 理由: YAGNI の原則に従い、必要十分
+>
+> どれにしますか？
+
+**Wait for response**
+
+---
+
+**設定で無効化する場合**:
+
+```yaml
+# .claude-code-harness.config.yaml
+planning:
+  socratic_mode: false  # 従来の3質問形式に戻す
+```
+
+従来モード（`socratic_mode: false`）の場合:
 
 > 📋 **Tell me a bit more:**
 >

@@ -9,6 +9,76 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.14.0] - 2026-01-27
+
+### 🎯 What's Changed for You
+
+**TDD Strict Mode と Socratic Design がデフォルトで有効に。実装前にテストを書くことが強制され、プロジェクト開始時の対話が構造化されます。**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| TDD は任意（推奨のみ） | **TDD 強制**（テストなしの実装はブロック） |
+| 3つの質問を一度に | **1問ずつ段階的**に深堀り |
+| 設計決定は即決 | **代替案を必ず提示**してから選択 |
+| タスクは機能単位 | **2-5分単位**に自動分解 |
+
+### Added
+
+- **TDD Strict Mode** (`skills/tdd-strict/`)
+  - RED-GREEN-REFACTOR サイクルを強制
+  - テストなしの実装をブロック
+  - 違反時はコード削除 → やり直し
+  - 設定: `tdd.mode: "strict"` (default)
+
+- **Socratic Design** (`commands/optional/brainstorm.md`)
+  - 1問1答の段階的対話
+  - 選択肢形式の質問
+  - 代替案の必須提示
+  - 設定: `planning.socratic_mode: true` (default)
+
+- **2-5分タスク分解** (`skills/plans-management/references/task-decomposition.md`)
+  - アトミックなタスク単位
+  - 各タスクでコミット
+  - 設定: `planning.task_granularity: "atomic"` (default)
+
+- **新テンプレート** (`templates/socratic/`)
+  - `questions.md` - 質問テンプレート
+  - `alternatives.md` - 代替案テンプレート
+
+- **ドキュメント**
+  - `docs/TDD_STRICT_MODE.md`
+  - `docs/SOCRATIC_DESIGN.md`
+
+### Changed
+
+- **`/plan-with-agent`** - Step 2 が Socratic Design に変更
+- **`skills/impl/SKILL.md`** - TDD Strict との統合
+
+### Configuration
+
+```yaml
+# .claude-code-harness.config.yaml
+
+# TDD Strict Mode (default: strict)
+tdd:
+  mode: "strict"  # "off" | "recommended" | "strict"
+
+# Socratic Design (default: all true)
+planning:
+  socratic_mode: true
+  max_questions_per_turn: 1
+  require_alternatives: true
+  task_granularity: "atomic"  # "atomic" | "small" | "medium"
+```
+
+### Credits
+
+- Inspired by [superpowers](https://github.com/obra/superpowers) by Jesse Vincent
+
+---
+
 ## [2.13.2] - 2026-01-27
 
 ### 🎯 What's Changed for You
