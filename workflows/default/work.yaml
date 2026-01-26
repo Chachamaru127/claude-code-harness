@@ -169,7 +169,7 @@ steps:
 
   # === Phase 2: クロスレビュー（--full時、skip_cross_review=false時のみ） ===
   - id: cross-review
-    skill: review
+    skill: harness-review
     condition: "full_mode == true && skip_cross_review == false"
     input:
       files: "{{changed_files}}"

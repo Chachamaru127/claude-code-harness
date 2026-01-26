@@ -1,5 +1,5 @@
 ---
-name: review
+name: harness-review
 description: "Reviews code for quality, security, performance, and accessibility issues. Use when user mentions reviews, code review, security, performance, quality checks, PRs, diffs, or change review. Do NOT load for: implementation work, new feature development, bug fixes, or setup."
 allowed-tools: ["Read", "Grep", "Glob", "Bash", "Task"]
 context: fork

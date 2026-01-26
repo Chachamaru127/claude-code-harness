@@ -45,7 +45,7 @@ CI/benchmark mode:
 **How to call**:
 ```
 Use Skill tool:
-  skill: "claude-code-harness:review"
+  skill: "claude-code-harness:harness-review"
 ```
 
 **Child skills (auto-routing)**:
