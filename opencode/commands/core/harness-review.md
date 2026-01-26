@@ -1,6 +1,6 @@
 ---
-description: Code review (multi-perspective security/performance/quality)
-description-en: Code review (multi-perspective security/performance/quality)
+description: Multi-perspective review (auto-detects: code, plan, scope based on context)
+description-en: Multi-perspective review (auto-detects: code, plan, scope based on context)
 context: fork
 hooks:
   - event: PreCommandInvoke
@@ -9,21 +9,39 @@ hooks:
     once: true
 ---
 
-# /harness-review - Code Review (Solo Mode)
+# /harness-review - Multi-Perspective Review
 
-Checks the quality of created code.
-Analyzes from multiple perspectives and suggests improvements.
+Reviews your work from multiple perspectives. **Auto-detects what to review based on context.**
+
+---
+
+## 🎯 Context-Aware Review
+
+| Recent Activity | Review Type | Perspectives |
+|-----------------|-------------|--------------|
+| After `/plan-with-agent` | Plan Review | Clarity, Feasibility, Dependencies, Acceptance Criteria |
+| After `/work` | Code Review | Security, Performance, Quality, Accessibility |
+| After adding tasks | Scope Review | Scope creep, Priority, Feasibility |
+| Explicit subcommand | As specified | As specified |
+
+**Usage:**
+```bash
+/harness-review           # Auto-detect from context
+/harness-review code      # Force code review
+/harness-review plan      # Force plan review
+/harness-review scope     # Force scope analysis
+```
 
 ---
 
 ## 💡 VibeCoder Usage Guide
 
-**This command is designed so you can receive high-quality code review without technical knowledge.**
+**This command is designed so you can receive high-quality review without technical knowledge.**
 
-- ✅ Auto-detect security issues
-- ✅ Suggest performance improvements
-- ✅ Auto-check code quality
-- ✅ Verify accessibility compliance
+- ✅ Auto-detect what needs review
+- ✅ Multi-perspective analysis (4 parallel reviewers)
+- ✅ Actionable improvement suggestions
+- ✅ APPROVE / REQUEST_CHANGES judgment
 
 **Important for contract development**: You can submit review results as a report to reassure clients
 
@@ -221,12 +239,69 @@ Before Codex parallel review, **run /compact first if remaining context is 30% o
 
 ---
 
-### Step 1: Identify Changed Files
+### Step 1: Determine Review Type (Context Detection)
+
+**If subcommand specified**: Use that review type directly.
+
+**If no subcommand**: Auto-detect from context:
+
+```
+1. Check recent commands/activity:
+   - Last command was /plan-with-agent → Plan Review
+   - Last command was /work → Code Review
+   - Tasks recently added to Plans.md → Scope Review
+   - Default → Code Review
+
+2. Check for uncommitted changes:
+   - git diff has changes → Code Review
+   - Plans.md modified recently → Plan Review
+   - No changes → Ask user what to review
+```
+
+**Output**: Set `review_type` to one of: `code`, `plan`, `scope`
+
+---
+
+### Step 2: Execute Review Based on Type
+
+#### If `review_type == code`: Identify Changed Files
 
 ```bash
 # Check recent changes
 git diff --name-only HEAD~5 2>/dev/null || find . -name "*.ts" -o -name "*.tsx" -o -name "*.py" | head -20
 ```
+
+Then proceed to **Step 3: Execute Parallel Code Reviews** (4 perspectives).
+
+#### If `review_type == plan`: Review Plans.md
+
+Launch 4 parallel subagents with Task tool:
+
+```
+Task tool #1: "Review plan clarity - are tasks specific enough to implement?"
+Task tool #2: "Review plan feasibility - can these tasks be completed?"
+Task tool #3: "Review dependencies - are task dependencies clear and correct?"
+Task tool #4: "Review acceptance criteria - is completion verifiable?"
+```
+
+Then aggregate results and output APPROVE/REQUEST_CHANGES.
+
+#### If `review_type == scope`: Analyze Scope
+
+Launch 4 parallel subagents with Task tool:
+
+```
+Task tool #1: "Check scope creep - are new tasks aligned with original goal?"
+Task tool #2: "Check priority - are high-priority items addressed first?"
+Task tool #3: "Check feasibility - is the scope achievable in reasonable time?"
+Task tool #4: "Check impact - what's the risk of current scope?"
+```
+
+Then aggregate results and suggest scope adjustments.
+
+---
+
+### Step 3: Execute Parallel Code Reviews (when review_type == code)
 
 ### Step 2: Execute Parallel Reviews
 
