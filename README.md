@@ -34,7 +34,7 @@ Solo developers face 4 recurring problems. Claude Harness solves all of them:
 | Problem | What Happens | How Harness Fixes It |
 |---------|--------------|---------------------|
 | **Confusion** | "Where do I start?" | `/plan-with-agent` breaks ideas into actionable tasks |
-| **Sloppiness** | Code quality drops under pressure | `/harness-review` runs 8 expert reviewers in parallel |
+| **Sloppiness** | Code quality drops under pressure | `/harness-review` runs 4 expert reviewers in parallel |
 | **Accidents** | Dangerous commands slip through | Hooks auto-block `rm -rf`, protect `.env`, guard secrets |
 | **Forgetfulness** | Past decisions lost between sessions | SSOT files + Claude-mem preserve context forever |
 

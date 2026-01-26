@@ -258,30 +258,20 @@ Task tool #4: subagent_type="code-reviewer" → Accessibility perspective
 → Integrate results and output overall evaluation
 ```
 
-#### Codex Mode (`review.mode: codex`) - MCP parallel execution with only needed experts
+#### Codex Mode (`review.mode: codex`) - MCP parallel execution with 4 experts
 
 **⚠️ Important: Do not combine multiple experts in one call**
 
 ```
 🔍 Starting Codex parallel review...
 
-1. Determine which experts to call (only needed ones, not all):
-   - enabled: false in config → exclude
-   - CLI/backend → exclude Accessibility, SEO
-   - Document only changes → prioritize Quality, Architect, Plan Reviewer, Scope Analyst
-
-2. Load prompts individually from enabled experts' experts/*.md
-
-3. Execute mcp__codex__codex in parallel within 1 response for enabled experts only:
-   Example: Web frontend with code changes → 6 experts in parallel
+Execute mcp__codex__codex in parallel within 1 response:
    mcp__codex__codex({prompt: security-expert.md})
-   mcp__codex__codex({prompt: accessibility-expert.md})
    mcp__codex__codex({prompt: performance-expert.md})
    mcp__codex__codex({prompt: quality-expert.md})
-   mcp__codex__codex({prompt: seo-expert.md})
-   mcp__codex__codex({prompt: architect-expert.md})
+   mcp__codex__codex({prompt: accessibility-expert.md})
 
-→ Only needed experts execute in parallel (cost optimization)
+→ 4 experts execute in parallel
 → Integrate each expert's results for judgment
 ```
 

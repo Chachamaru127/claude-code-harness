@@ -1,23 +1,19 @@
 # Codex 並列レビュー実行ガイド
 
-Codex モード時に複数のエキスパートを並列で呼び出すためのオーケストレーション手順。
+Codex モード時に4つのエキスパートを並列で呼び出すためのオーケストレーション手順。
 
 ## 概要
 
-Codex モードでは、Claude がオーケストレーターとして**最大 8 つのエキスパート**を MCP 経由で並列呼び出しします（プロジェクト種別・変更内容に応じて不要なエキスパートは除外）。
+Codex モードでは、Claude がオーケストレーターとして**4つのエキスパート**を MCP 経由で並列呼び出しします。
 
 ```
 Claude (オーケストレーター)
     ↓
 並列 MCP 呼び出し
     ├── Security Expert
-    ├── Accessibility Expert
     ├── Performance Expert
     ├── Quality Expert
-    ├── SEO Expert
-    ├── Architect Expert
-    ├── Plan Reviewer Expert
-    └── Scope Analyst Expert
+    └── Accessibility Expert
     ↓
 結果統合 → コミット判定
 ```
@@ -40,14 +36,23 @@ Claude (オーケストレーター)
 
 | 必須 | 方法 |
 |------|------|
-| ✅ 各エキスパートを **個別の MCP 呼び出し** で実行 | `mcp__codex__codex` を8回呼び出し |
-| ✅ experts/*.md から **個別にプロンプトを読み込む** | `security-expert.md` → Security 呼び出し → `accessibility-expert.md` → Accessibility 呼び出し... |
-| ✅ **1つのレスポンス内で8つの MCP 呼び出しを並列実行** | Claude の並列ツール呼び出し機能を使用 |
+| ✅ 各エキスパートを **個別の MCP 呼び出し** で実行 | `mcp__codex__codex` を4回呼び出し |
+| ✅ experts/*.md から **個別にプロンプトを読み込む** | `security-expert.md` → Security 呼び出し → ... |
+| ✅ **1つのレスポンス内で4つの MCP 呼び出しを並列実行** | Claude の並列ツール呼び出し機能を使用 |
 
 ### 正しい実行パターン
 
 ```
-1. 設定とプロジェクト種別から有効なエキスパートを判定
+1. 4つのエキスパートを1つのレスポンス内で同時に実行:
+
+mcp__codex__codex({prompt: security-expert.md の内容})
+mcp__codex__codex({prompt: performance-expert.md の内容})
+mcp__codex__codex({prompt: quality-expert.md の内容})
+mcp__codex__codex({prompt: accessibility-expert.md の内容})
+
+→ 4エキスパート並列実行
+→ 結果を統合して判定
+```
 2. 有効なエキスパートのみ、1つのレスポンス内で同時に実行:
 
 mcp__codex__codex({prompt: security-expert.md の内容})
