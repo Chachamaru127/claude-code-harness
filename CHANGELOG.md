@@ -9,6 +9,43 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.15.0] - 2026-01-30
+
+### 🎯 What's Changed for You
+
+**`/ultrawork` コマンドが追加されました。Plans.md の指定範囲を完了まで自律的に反復実行します。**
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| `/work` で1回実行 → 手動で再実行 | `/ultrawork 全部やって` で完了まで自動反復 |
+| 失敗したら手動で調査・再試行 | 自己学習メカニズムで同じ失敗を回避 |
+| 中断したら最初からやり直し | ワークログで再開可能 (`/ultrawork 続きやって`) |
+| タスク番号で範囲指定 | 自然言語で範囲指定 (`認証機能からユーザー管理まで`) |
+
+### Added
+
+- **`/ultrawork` コマンド** (`commands/core/ultrawork.md`)
+  - Plans.md の指定範囲を完了まで自律的に反復実行
+  - 自然言語で範囲指定（例: `認証機能からユーザー管理まで完了して`）
+  - 実行前に範囲確認プロンプトを表示（ユーザー承認必須）
+  - 自己学習メカニズム: 前回の失敗から学習して同じ失敗を回避
+  - ワークログ: `.claude/state/ultrawork.log.jsonl` に記録、再開可能
+
+- **ultrawork スキル** (`opencode/skills/ultrawork/`)
+  - `SKILL.md`: メインスキル定義
+  - `references/worklog-management.md`: ワークログ管理仕様
+  - `references/self-learning.md`: 自己学習メカニズム仕様
+
+### Philosophy
+
+> **「人間介入は失敗シグナル」** - Ralph Loop + Ultrawork のコンセプトを採用
+>
+> 反復 > 完璧性。失敗はデータ。粘り強さが勝つ。
+
+---
+
 ## [2.14.12] - 2026-01-30
 
 ### 🎯 What's Changed for You
