@@ -3,6 +3,7 @@ name: planning
 description: "Creates implementation plans from ideas and requirements, generating Plans.md ready for /work. Use when user mentions '/plan-with-agent', create a plan, organize tasks, feature planning, or TDD planning. Do NOT load for: implementation, reviews, or setup."
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "WebSearch", "Task"]
 argument-hint: "[--ci]"
+disable-model-invocation: true
 ---
 
 # Planning Skill

@@ -3,6 +3,7 @@ name: harness-init
 description: "Project setup with environment check, file generation, SSOT sync, and validation. Use when user mentions '/harness-init', new project setup, launch a project, or introduce harness to existing project. Do NOT load for: implementation, reviews, or planning."
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task"]
 argument-hint: "[project-name] [--mode=solo|2agent] [--stack=next-supabase] [--name=app-name]"
+disable-model-invocation: true
 ---
 
 # Harness Init Skill
