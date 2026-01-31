@@ -4,6 +4,7 @@ description: "Auto-generates production-ready CRUD functionality with validation
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 argument-hint: "<entity-name>"
 disable-model-invocation: true
+user-invocable: false
 ---
 
 # CRUD Skill

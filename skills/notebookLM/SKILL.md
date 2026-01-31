@@ -1,10 +1,10 @@
 ---
-name: docs
-description: "Generates documentation files including NotebookLM YAML and slide content. Use when user mentions documentation, YAML, NotebookLM, slides, or presentations. Do NOT load for: implementation work, code fixes, reviews, or deployments."
+name: notebookLM
+description: "Generates NotebookLM YAML and slide content for documentation. Use when user mentions NotebookLM, YAML, slides, or presentations. Do NOT load for: implementation work, code fixes, reviews, or deployments."
 allowed-tools: ["Read", "Write", "Edit"]
 ---
 
-# Docs Skills
+# NotebookLM Skill
 
 ドキュメント生成を担当するスキル群です。
 
