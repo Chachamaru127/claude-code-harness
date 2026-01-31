@@ -3,6 +3,7 @@ name: release
 description: "Automates release process: CHANGELOG update, version bump, and tag creation. Use when user mentions release, version bump, or tag creation."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 argument-hint: "[patch|minor|major]"
+disable-model-invocation: true
 ---
 
 # Release Skill

@@ -3,6 +3,7 @@ name: work
 description: "Executes Plans.md tasks with smart parallel detection and review loop. Use when user mentions '/work', execute plan, implement tasks, build features, or work on tasks. Do NOT load for: planning, reviews, setup, or deployment."
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task"]
 argument-hint: "[--parallel N] [--sequential] [--ci] [--no-commit] [--resume id] [--fork id]"
+disable-model-invocation: true
 ---
 
 # Work Skill
