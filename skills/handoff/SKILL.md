@@ -1,19 +1,28 @@
 ---
 name: handoff
-description: "Generates completion reports for PM handoff in 2-Agent workflow. Use when user mentions '/handoff', completion report, handoff to Cursor, or handoff to OpenCode."
+description: "Manages workflow transitions and completion reports in 2-Agent workflow. Use when user mentions '/handoff', completion report, handoff to Cursor/OpenCode, auto-fix, or reporting to PM."
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
-argument-hint: "[cursor|opencode]"
-user-invocable: false
+argument-hint: "[cursor|opencode|auto-fix]"
 ---
 
 # Handoff Skill
 
-Generates completion reports for PM (Cursor/OpenCode) in 2-Agent workflow.
+PM-実装役間のハンドオフとワークフロー遷移を管理するスキル。
+
+## 機能詳細
+
+| 機能 | 詳細 |
+|------|------|
+| **PM→実装役** | See [references/handoff-to-impl.md](references/handoff-to-impl.md) |
+| **実装役→PM** | See [references/handoff-to-pm.md](references/handoff-to-pm.md) |
+| **レビュー指摘自動修正** | See [references/auto-fixing.md](references/auto-fixing.md) |
+| **コミット実行** | See [references/execute-commit.md](references/execute-commit.md) |
 
 ## Quick Reference
 
 - "**Cursor に完了報告を書いて**" → `/handoff cursor`
 - "**OpenCode にハンドオフ**" → `/handoff opencode`
+- "**レビュー指摘を自動修正**" → `/handoff auto-fix`
 - "**変更内容とテスト結果を含めて**" → Includes git diff and test results
 
 ## Prerequisites
@@ -144,4 +153,3 @@ Phase 4: This skill runs ← First time handoff happens
 - `work` - Main implementation workflow
 - `harness-review` - Code review
 - `2agent` - 2-Agent workflow setup
-- `cc-cursor-cc` - Cursor validation round-trip
