@@ -3,6 +3,11 @@ name: harness-review
 description: "Multi-perspective review supporting code, plan, and scope analysis. Auto-detects review type from context. Use when user mentions reviews, code review, plan review, scope analysis, security, performance, quality checks, PRs, diffs, or change review. Do NOT load for: implementation work, new feature development, bug fixes, or setup."
 allowed-tools: ["Read", "Grep", "Glob", "Bash", "Task"]
 context: fork
+hooks:
+  - event: PreToolCall
+    type: command
+    command: "${CLAUDE_PLUGIN_ROOT}/scripts/check-codex.sh"
+    once: true
 ---
 
 # Review Skills
