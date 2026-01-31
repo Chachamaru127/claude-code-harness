@@ -1,6 +1,9 @@
-# Command File Editing Rules
+# Command File Editing Rules (DEPRECATED)
 
-SSOT (Single Source of Truth) rules for editing command files (`commands/core/` and `commands/optional/`).
+> **DEPRECATED**: As of v2.17.0, commands have been migrated to skills.
+> For new functionality, use skills instead. See [skill-editing.md](./skill-editing.md).
+
+Legacy SSOT rules for command files (kept for reference).
 
 ## SSOT Principles
 

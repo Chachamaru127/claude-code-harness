@@ -2,11 +2,59 @@
 name: session
 description: "Unified session management - initialization, memory persistence, state control, and cross-session communication. Use when managing Claude Code sessions, /session command. Do NOT load for: app user sessions, login state, authentication features."
 allowed-tools: ["Read", "Bash", "Write", "Edit", "Glob"]
+argument-hint: "[list|inbox|broadcast \"message\"]"
 ---
 
 # Session Skill (Unified)
 
 Consolidates all session-related functionality into one skill.
+
+## Usage
+
+```bash
+/session              # Show available options
+/session list         # Show active sessions
+/session inbox        # Check incoming messages
+/session broadcast "message"  # Send message to all sessions
+```
+
+## Subcommands
+
+### `/session list` - List Active Sessions
+
+Shows all active Claude Code sessions in the current project.
+
+```
+📋 Active Sessions
+
+| Session ID | Status | Last Activity |
+|------------|--------|---------------|
+| abc123     | active | 2 min ago     |
+| def456     | idle   | 15 min ago    |
+```
+
+### `/session inbox` - Check Inbox
+
+Checks for incoming messages from other sessions.
+
+```
+📬 Session Inbox
+
+| From | Time | Message |
+|------|------|---------|
+| abc123 | 5m ago | "Ready for review" |
+| def456 | 10m ago | "API implementation done" |
+```
+
+### `/session broadcast "message"` - Broadcast Message
+
+Sends a message to all active sessions.
+
+```bash
+/session broadcast "Review complete, ready for merge"
+```
+
+---
 
 ## Capabilities
 

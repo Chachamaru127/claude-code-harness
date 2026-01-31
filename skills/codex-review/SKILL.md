@@ -26,6 +26,7 @@ OpenAI Codex CLI を MCP サーバーとして Claude Code に統合し、コー
 | **MCP セットアップ** | See [references/codex-mcp-setup.md](references/codex-mcp-setup.md) |
 | **レビュー統合** | See [references/codex-review-integration.md](references/codex-review-integration.md) |
 | **4並列レビュー** | See [references/codex-parallel-review.md](references/codex-parallel-review.md) |
+| **モード切替** | See [references/codex-mode.md](references/codex-mode.md) |
 
 ## 実行手順
 
