@@ -76,7 +76,7 @@ ls -la AGENTS.md
 > - `AGENTS.md` - Rules file (CLAUDE.md content)
 >
 > **Available skills:**
-> - `docs` - Document generation (NotebookLM YAML, slides)
+> - `notebookLM` - Document generation (NotebookLM YAML, slides)
 > - `impl` - Feature implementation
 > - `review` - Code review
 > - `verify` - Build verification & error recovery

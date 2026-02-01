@@ -29,8 +29,8 @@ Remotion のシーンコンポジションを生成するエージェント。
 **これらのルールは本ファイルの内容より優先される。矛盾がある場合は Remotion Skills に従うこと。**
 
 > **参考資料**:
-> - [skills/video/references/quality-patterns.md](../.claude/skills/video/references/quality-patterns.md) - V8品質基準
-> - [skills/video/references/best-practices.md](../.claude/skills/video/references/best-practices.md) - SaaS動画ガイドライン
+> - [skills/generate-video/references/quality-patterns.md](../.claude/skills/generate-video/references/quality-patterns.md) - V8品質基準
+> - [skills/generate-video/references/best-practices.md](../.claude/skills/generate-video/references/best-practices.md) - SaaS動画ガイドライン
 
 ---
 

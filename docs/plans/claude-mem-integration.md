@@ -96,7 +96,7 @@ skills-gate.md と連携し、主要スキルに mem-search を自動統合。
 | verify | 過去のビルド/テストエラーパターンを参照 |
 | impl | 過去の実装パターン、gotcha を参照 |
 | troubleshoot | 過去の類似問題と解決策を参照 |
-| workflow | 過去のハンドオフパターン、改善履歴を参照 |
+| handoff | 過去のハンドオフパターン、改善履歴を参照 |
 
 **ファイル:** `.claude/rules/memory-integration.md`
 

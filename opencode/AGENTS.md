@@ -139,8 +139,8 @@ skills/
 ├── auth/                  # 認証・決済（Clerk、Supabase、Stripe）
 ├── deploy/                # デプロイ（Vercel、Netlify、アナリティクス）
 ├── ui/                    # UI（コンポーネント、フィードバック）
-├── workflow/              # ワークフロー（ハンドオフ、自動修正）
-├── docs/                  # ドキュメント（NotebookLM、YAML）
+├── handoff/               # ワークフロー（ハンドオフ、自動修正）
+├── notebookLM/            # ドキュメント（NotebookLM、YAML）
 ├── ci/                    # CI/CD（失敗分析、テスト修正）
 └── maintenance/           # メンテナンス（クリーンアップ）
 ```
@@ -176,8 +176,8 @@ skills/
 | auth | 認証、決済機能 | 「ログイン」「Clerk」「Stripe」「決済」 |
 | deploy | デプロイ、アナリティクス | 「デプロイ」「Vercel」「GA」 |
 | ui | UIコンポーネント生成 | 「コンポーネント」「ヒーロー」「フォーム」 |
-| workflow | ハンドオフ、自動修正 | 「ハンドオフ」「PMに報告」「自動修正」 |
-| docs | ドキュメント生成 | 「ドキュメント」「NotebookLM」「スライド」 |
+| handoff | ハンドオフ、自動修正 | 「ハンドオフ」「PMに報告」「自動修正」 |
+| notebookLM | ドキュメント生成 | 「ドキュメント」「NotebookLM」「スライド」 |
 | ci | CI/CD問題解決 | 「CIが落ちた」「テスト失敗」 |
 | maintenance | ファイル整理 | 「整理して」「クリーンアップ」 |
 

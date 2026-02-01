@@ -115,4 +115,12 @@ description: claude-mem context for core commands
 | ID | Time | T | Title | Read |
 |----|------|---|-------|------|
 | #18702 | 6:58 PM | 🔵 | work.mdの現在の構成を確認 - Fansレビュー条件の欠落を特定 | ~195 |
+
+### Feb 1, 2026
+
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #18969 | 11:33 AM | 🔵 | Untitled | ~622 |
+| #18963 | 3:34 AM | 🔵 | /plan-with-agent コマンドの詳細仕様確認 | ~348 |
+| #18961 | " | 🔵 | /harness-init コマンドの詳細仕様確認 | ~295 |
 </claude-mem-context>

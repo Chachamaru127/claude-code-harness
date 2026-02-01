@@ -424,7 +424,7 @@ flowchart TB
     end
 
     subgraph WORKFLOW_GROUP["ワークフロー系"]
-        WF["workflow - ハンドオフ"]
+        WF["handoff - ハンドオフ"]
         WFG["workflow-guide - ガイダンス"]
         AGENT2["2agent - 2-Agent設定"]
         PARALLEL["parallel-workflows - 並列最適化"]
@@ -438,7 +438,7 @@ flowchart TB
 
     subgraph DEPLOY_GROUP["デプロイ・ドキュメント系"]
         DEPLOY["deploy - デプロイ"]
-        DOCS["docs - ドキュメント"]
+        DOCS["notebookLM - ドキュメント"]
         MAINT["maintenance - メンテナンス"]
     end
 
@@ -488,7 +488,7 @@ flowchart TB
 
 | スキル                 | 説明                                             | トリガー例                             |
 | ---------------------- | ------------------------------------------------ | -------------------------------------- |
-| `workflow`           | ハンドオフ管理、レビューコメントの自動修正       | 「ハンドオフ」「PMに報告」「自動修正」 |
+| `handoff`            | ハンドオフ管理、レビューコメントの自動修正       | 「ハンドオフ」「PMに報告」「自動修正」 |
 | `workflow-guide`     | Cursor ↔ Claude Code 2-Agent ワークフローの解説 | 「ワークフロー」「コラボ」「プロセス」 |
 | `2agent`             | 2-Agent ワークフローの設定                       | 「2-Agent」「Cursor設定」「PM連携」    |
 | `parallel-workflows` | 複数タスクの並列実行最適化                       | 「並列で」「同時に」                   |
@@ -506,7 +506,7 @@ flowchart TB
 | スキル          | 説明                                                        | トリガー例                                 |
 | --------------- | ----------------------------------------------------------- | ------------------------------------------ |
 | `deploy`      | Vercel/Netlify へのデプロイ、アナリティクス、ヘルスチェック | 「デプロイ」「Vercel」「GA」               |
-| `docs`        | NotebookLM YAML やスライド用ドキュメント生成                | 「ドキュメント」「NotebookLM」「スライド」 |
+| `notebookLM`  | NotebookLM YAML やスライド用ドキュメント生成                | 「ドキュメント」「NotebookLM」「スライド」 |
 | `maintenance` | プロジェクトファイルの整理・クリーンアップ                  | 「整理して」「クリーンアップ」             |
 
 #### 外部連携系スキル
@@ -958,7 +958,7 @@ claude-code-harness/
 │   ├── setup/
 │   ├── memory/
 │   ├── session-init/
-│   ├── workflow/
+│   ├── handoff/
 │   └── ...
 ├── agents/                   # サブエージェント（8個）
 │   ├── task-worker.md
