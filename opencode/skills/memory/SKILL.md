@@ -15,6 +15,8 @@ allowed-tools: ["Read", "Write", "Edit", "Bash"]
 | **SSOT初期化** | See [references/ssot-initialization.md](references/ssot-initialization.md) |
 | **Plans.mdマージ** | See [references/plans-merging.md](references/plans-merging.md) |
 | **移行処理** | See [references/workflow-migration.md](references/workflow-migration.md) |
+| **プロジェクト仕様同期** | See [references/sync-project-specs.md](references/sync-project-specs.md) |
+| **メモリ→SSOT昇格** | See [references/sync-ssot-from-memory.md](references/sync-ssot-from-memory.md) |
 
 ## 実行手順
 

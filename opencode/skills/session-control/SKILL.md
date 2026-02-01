@@ -1,6 +1,6 @@
 ---
 name: session-control
-description: "Controls session resume/fork for /work based on flags. Use only from workflow."
+description: "Controls session resume/fork for /work based on flags. Internal use only from workflow. Do NOT load for: user session management, login state, app state handling."
 allowed-tools: ["Read", "Bash", "Write", "Edit"]
 user-invocable: false
 ---

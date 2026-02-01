@@ -328,7 +328,6 @@ flowchart TB
 
     subgraph HANDOFF["Handoff Commands（連携コマンド）"]
         H1["/handoff-to-cursor - Cursor への引き継ぎ"]
-        H2["/cc-cursor-cc - Cursor 経由の検証"]
     end
 
     subgraph OPTIONAL["Optional Commands（オプション）"]
@@ -364,7 +363,6 @@ flowchart TB
 | コマンド               | 説明                                                             | 用途                      |
 | ---------------------- | ---------------------------------------------------------------- | ------------------------- |
 | `/handoff-to-cursor` | 完了レポートを生成し、Cursor（PM）に引き継ぐ                     | 2-Agent: Impl → PM       |
-| `/cc-cursor-cc`      | Cursor でアイデアを検証し、Plans.md を更新後、Claude Code に戻す | 2-Agent: 計画の妥当性確認 |
 
 ### 3.4 Optional Commands 詳細
 
@@ -447,7 +445,7 @@ flowchart TB
     subgraph INTEGRATION_GROUP["外部連携系"]
         CODEX["codex-review - Codex統合"]
         CURSOR["cursor-mem - Cursorメモリ"]
-        BROWSER["dev-browser - ブラウザ自動化"]
+        BROWSER["agent-browser - ブラウザ自動化"]
     end
 ```
 
@@ -517,7 +515,7 @@ flowchart TB
 | ---------------- | -------------------------------------------------------------- | ---------------------------------------------------- |
 | `codex-review` | OpenAI Codex CLI を MCP サーバーとして統合、セカンドオピニオン | 「Codex レビュー」「セカンドオピニオン」             |
 | `cursor-mem`   | Cursor から claude-mem MCP サーバーにアクセス                  | 「メモリ検索」「過去の決定」                         |
-| `dev-browser`  | 永続的なページ状態でのブラウザ自動化                           | 「URL にアクセス」「クリック」「スクリーンショット」 |
+| `agent-browser`  | 永続的なページ状態でのブラウザ自動化                           | 「URL にアクセス」「クリック」「スクリーンショット」 |
 
 ---
 

@@ -46,7 +46,7 @@ generated-files.json → プロジェクトごとの状態記録
 "rules/coding-standards.md.template": { "tracked": true },
 "rules/testing.md.template": { "tracked": true },
 "rules/plans-management.md.template": { "tracked": true },
-"rules/ui-debugging-dev-browser.md.template": { "tracked": true }
+"rules/ui-debugging-agent-browser.md.template": { "tracked": true }
 ```
 
 ### 2.3 /localize-rules コマンド（既存）
@@ -72,7 +72,7 @@ templates/
 │   ├── coding-standards.md.template
 │   ├── testing.md.template
 │   ├── plans-management.md.template
-│   └── ui-debugging-dev-browser.md.template
+│   └── ui-debugging-agent-browser.md.template
 └── rules-by-stack/           ← 新規追加
     ├── typescript-react.md.template
     ├── python-fastapi.md.template
