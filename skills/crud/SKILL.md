@@ -1,6 +1,6 @@
 ---
 name: crud
-description: "Auto-generates production-ready CRUD functionality with validation, auth, and tests. Use when user mentions CRUD, entity generation, or wants to create API endpoints."
+description: "Auto-generates production-ready CRUD functionality with validation, auth, and tests. Use when user mentions CRUD, entity generation, or wants to create API endpoints. Do NOT load for: UI component creation, form design, database schema discussions."
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 argument-hint: "<entity-name>"
 user-invocable: false

@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: "Manages workflow transitions and completion reports in 2-Agent workflow. Use when user mentions '/handoff', completion report, handoff to Cursor/OpenCode, auto-fix, or reporting to PM."
+description: "Manages workflow transitions and completion reports in 2-Agent workflow. Use when user mentions '/handoff', completion report, handoff to Cursor/OpenCode, auto-fix, or reporting to PM. Do NOT load for: casual completion statements, progress chat, informal status updates."
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 argument-hint: "[cursor|opencode|auto-fix]"
 ---
