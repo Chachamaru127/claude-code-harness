@@ -35,6 +35,9 @@
 2. `pm:依頼中` タスクを検出
 3. マーカーを `cc:WIP` に更新
 4. 実装開始
+5. `/harness-review` で品質レビュー
+6. 指摘があれば修正 → 再レビュー（ループ、最大3回）
+7. Review OK → Auto-commit
 
 ```markdown
 # Plans.md（更新後）
@@ -52,10 +55,14 @@
 
 ---
 
-### Phase 3: Claude Code が完了報告
+### Phase 3: Claude Code が完了報告（2-Agent のみ）
+
+Review OK かつ Auto-commit 完了後、2-Agent モードでは `/handoff-to-cursor` を実行して PM に報告する。
+
+> **Solo モードでは handoff は不要** — Review OK → Auto-commit で /work は完了。
 
 ```bash
-# Claude Code で実行
+# Claude Code で実行（2-Agent モードのみ）
 /handoff-to-cursor
 ```
 
@@ -75,6 +82,9 @@
 - src/lib/api/profile.ts (+80 lines)
 - src/lib/validations/profile.ts (+25 lines)
 - prisma/schema.prisma (+10 lines)
+
+### レビュー結果
+✅ harness-review APPROVE（Critical/High 指摘なし）
 
 ### テスト結果
 ✅ 全テスト合格 (12/12)
@@ -117,7 +127,9 @@
 2. エラーログ調査
 3. 原因特定・修正
 4. テスト追加
-5. `/handoff-to-cursor` で完了報告
+5. `/harness-review` でレビュー（指摘あれば修正→再レビュー）
+6. Review OK → Auto-commit
+7. `/handoff-to-cursor` で完了報告（2-Agent のみ。Solo では省略）
 
 ---
 

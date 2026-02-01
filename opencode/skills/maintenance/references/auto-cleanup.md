@@ -97,6 +97,39 @@ cleanup:
 
 ## 実行手順
 
+### Step 0: SSOT 同期（必須）
+
+⚠️ **Plans.md クリーンアップ前に、必ずメモリシステムから重要な情報を SSOT に昇格させること**
+
+```bash
+# 必須: /sync-ssot-from-memory を先に実行
+/sync-ssot-from-memory
+```
+
+**実行する理由**:
+
+| リスク | 説明 |
+|--------|------|
+| **情報損失** | 完了タスクをアーカイブ/削除すると、関連する重要な決定や学習事項が参照しづらくなる |
+| **SSOT 未反映** | Claude-mem/Serena/コミット履歴に記録された重要情報が decisions.md/patterns.md に昇格されていない可能性 |
+| **再発防止漏れ** | バグ修正で得たパターンが patterns.md に記録されず、同じ問題を繰り返す可能性 |
+
+**チェック対象**:
+
+1. **Claude-mem**: `mem-search` で重要な decision/discovery を検索
+2. **コミット履歴**: `git log --oneline -20` で最近の変更を確認
+3. **Serena メモリ**: `.serena/memories/` の未反映情報
+
+**同期完了の確認**:
+
+```markdown
+✅ /sync-ssot-from-memory 実行済み
+- decisions.md: D{N} 追加/更新
+- patterns.md: P{N} 追加/更新
+```
+
+---
+
 ### Step 1: 設定の読み込み
 
 ```bash

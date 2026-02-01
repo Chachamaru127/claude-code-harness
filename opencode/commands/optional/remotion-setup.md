@@ -35,6 +35,7 @@ Remotionによるプログラマティック動画生成環境をセットアッ
 /remotion-setup --with-templates   # Harnessテンプレート付き
 /remotion-setup --brownfield       # 既存プロジェクトに追加
 /remotion-setup --with-narration   # ナレーション機能付き
+/remotion-setup --with-image-gen   # AI画像生成機能付き
 ```
 
 ---
@@ -161,7 +162,46 @@ mkdir -p remotion/src/utils remotion/src/hooks remotion/src/components remotion/
 | `src/hooks/useNarration.ts` | ナレーション状態管理 |
 | `src/components/NarratedScene.tsx` | 音声付きシーンラッパー |
 
-> 詳細: [aivis-narration.md](skills/video/references/aivis-narration.md)
+> 詳細: [aivis-narration.md](.claude/skills/video/references/aivis-narration.md)
+
+### Step 6.5: AI画像生成機能追加（オプション）
+
+> 🎨 **AI画像生成機能を追加しますか？**
+>
+> Nano Banana Pro（Google DeepMind）を使用して、動画シーン用の高品質画像を自動生成できます。
+>
+> **必要なもの**:
+> - Google AI Studio API キー（[AI Studio](https://ai.google.dev/aistudio)で取得）
+> - Gemini API の課金設定
+>
+> **機能**:
+> - イントロ、CTA、概念図などの画像を自動生成
+> - 2枚生成 → Claude が品質判定 → 最適なものを採用
+> - 品質が低い場合は自動で再生成（最大3回）
+>
+> 追加しますか？ (y/n)
+
+**「y」の場合**:
+
+```bash
+# 環境変数を設定
+export GOOGLE_AI_API_KEY="your-api-key"
+
+# または .env.local に追加
+echo 'GOOGLE_AI_API_KEY=your-api-key' >> .env.local
+
+# 出力ディレクトリを作成
+mkdir -p out/assets/generated
+```
+
+**確認**:
+```bash
+# API キーが設定されているか確認
+echo $GOOGLE_AI_API_KEY | head -c 10
+# AIzaSy... のように表示されれば OK
+```
+
+> 詳細: [image-generator.md](skills/video/references/image-generator.md)
 
 ### Step 7: package.json スクリプト追加
 

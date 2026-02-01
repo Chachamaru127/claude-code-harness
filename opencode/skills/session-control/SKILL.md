@@ -2,6 +2,7 @@
 name: session-control
 description: "Controls session resume/fork for /work based on flags. Use only from workflow."
 allowed-tools: ["Read", "Bash", "Write", "Edit"]
+user-invocable: false
 ---
 
 # Session Control Skill

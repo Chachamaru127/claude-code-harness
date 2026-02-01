@@ -168,7 +168,7 @@ tail -20 .claude/state/session.events.jsonl
 │ Phase 4: Handoff (2-Agent only)                         │
 ├─────────────────────────────────────────────────────────┤
 │  2-Agent mode (pm:requested detected):                  │
-│    → Execute `/handoff-to-opencode` to report to PM     │
+│    → Execute `/handoff-to-cursor` to report to PM       │
 │    → If commit_on_pm_approve: include commit-pending    │
 │      flag in handoff report                             │
 │                                                         │
@@ -436,7 +436,7 @@ PM が approve した場合、次回 /work 実行時にコミットされます�
 Phase 3 (Auto-commit) 完了後:
     ↓
 2-Agent mode (pm:requested / cursor:requested detected)?
-  YES → Execute `/handoff-to-opencode` (completion report to PM)
+  YES → Execute `/handoff-to-cursor` (completion report to PM)
         → If commit_on_pm_approve: add commit-pending section
   NO  → Solo mode: Skip handoff (workflow complete)
 ```

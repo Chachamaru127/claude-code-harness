@@ -23,13 +23,15 @@ allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "AskUse
 | **コードベース分析** | See [references/analyzer.md](references/analyzer.md) |
 | **シナリオプランニング** | See [references/planner.md](references/planner.md) |
 | **並列シーン生成** | See [references/generator.md](references/generator.md) |
-| **ナレーション統合** | See [references/aivis-narration.md](references/aivis-narration.md) |
+| **視覚効果ライブラリ** | See [references/visual-effects.md](references/visual-effects.md) |
+| **AI画像生成** | See [references/image-generator.md](references/image-generator.md) |
+| **画像品質判定** | See [references/image-quality-check.md](references/image-quality-check.md) |
 
 ## Prerequisites
 
 - Remotion がセットアップ済み（`/remotion-setup`）
 - Node.js 18+
-- ナレーション機能を使う場合: `AIVIS_API_KEY` 環境変数
+- （オプション）`GOOGLE_AI_API_KEY` - AI画像生成用
 
 ## `/generate-video` フロー
 
@@ -47,15 +49,16 @@ allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "AskUse
     │   ├─ シーン構成提案
     │   └─ ユーザー確認
     │
-    ├─[Step 3] 並列生成（generator.md）
-    │   ├─ シーン並列生成（Task tool）
-    │   ├─ 統合 + トランジション
-    │   └─ 最終レンダリング
+    ├─[Step 2.5] 素材生成（image-generator.md）← NEW
+    │   ├─ 素材必要判定（イントロ、CTA等）
+    │   ├─ Nano Banana Pro で2枚生成
+    │   ├─ Claude が品質判定（image-quality-check.md）
+    │   └─ OK → 採用 / NG → 再生成（最大3回）
     │
-    └─[Step 4] ナレーション追加（オプション）
-        ├─ Aivis Cloud API で音声生成
-        ├─ シーンごとの音声配置
-        └─ 音声付きレンダリング
+    └─[Step 3] 並列生成（generator.md）
+        ├─ シーン並列生成（Task tool）
+        ├─ 統合 + トランジション
+        └─ 最終レンダリング
 ```
 
 ## 実行手順
@@ -112,10 +115,59 @@ allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "AskUse
 
 > 詳細テンプレート: [references/best-practices.md](references/best-practices.md#テンプレート)
 
+## 音声同期ルール（重要）
+
+ナレーション付き動画では以下を厳守:
+
+| ルール | 値 |
+|--------|-----|
+| 音声開始 | シーン開始 + 30f（1秒待機） |
+| シーン長さ | 30f + 音声長さ + 20f余白 |
+| トランジション | 15f（隣接シーンとオーバーラップ） |
+| シーン開始計算 | 前シーン開始 + 前シーン長 - 15f |
+
+**事前確認**: `ffprobe` で音声長さを確認してからシーン設計
+
+> 詳細: [references/generator.md](references/generator.md#音声同期ルール重要)
+
+## BGM サポート
+
+| 項目 | 推奨値 |
+|------|--------|
+| ナレーションあり | bgmVolume: 0.20 - 0.30 |
+| ナレーションなし | bgmVolume: 0.50 - 0.80 |
+| ファイル配置 | `public/BGM/` |
+
+> 詳細: [references/generator.md](references/generator.md#bgm-サポート)
+
+## 字幕サポート
+
+| ルール | 値 |
+|--------|-----|
+| 字幕開始 | 音声開始と同じ |
+| 字幕duration | 音声長 + 10f |
+| フォント | Base64埋め込み推奨 |
+
+> 詳細: [references/generator.md](references/generator.md#字幕サポート)
+
+## 視覚効果ライブラリ
+
+インパクトのある動画向けエフェクト集:
+
+| エフェクト | 用途 |
+|-----------|------|
+| GlitchText | Hook、タイトル |
+| Particles | 背景、CTA収束 |
+| ScanLine | 解析中演出 |
+| ProgressBar | 並列処理表示 |
+| 3D Parallax | カード表示 |
+
+> 詳細: [references/visual-effects.md](references/visual-effects.md)
+
 ## Notes
 
 - Remotion未セットアップの場合は `/remotion-setup` を案内
 - 並列生成数はシーン数に応じて自動調整（max 5）
 - 生成された動画は `out/` ディレクトリに出力
-- ナレーション追加時は事前に音声ファイルを生成（`npm run generate-narration`）
-- 商用利用時は Aivis モデルのライセンス（ACML 1.0）を確認
+- AI生成画像は `out/assets/generated/` に保存
+- `GOOGLE_AI_API_KEY` 未設定時は画像生成をスキップ（既存素材 or プレースホルダー使用）

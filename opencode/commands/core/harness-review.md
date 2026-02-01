@@ -498,6 +498,27 @@ cat > .claude/state/review-approved.json << 'EOF'
 EOF
 ```
 
+**ultrawork モード時の review_status 更新（必須）**:
+
+ultrawork 実行中（`ultrawork-active.json` が存在する場合）は、レビュー結果に応じて `review_status` を更新する：
+
+```bash
+# ultrawork-active.json が存在する場合のみ実行
+ULTRAWORK_FILE=".claude/state/ultrawork-active.json"
+if [ -f "$ULTRAWORK_FILE" ] && command -v jq >/dev/null 2>&1; then
+  # APPROVE の場合
+  jq '.review_status = "passed"' "$ULTRAWORK_FILE" > tmp.$$.json && mv tmp.$$.json "$ULTRAWORK_FILE"
+
+  # REQUEST_CHANGES (Critical/High あり) の場合
+  # jq '.review_status = "failed"' "$ULTRAWORK_FILE" > tmp.$$.json && mv tmp.$$.json "$ULTRAWORK_FILE"
+fi
+```
+
+| レビュー結果 | review_status | 次のアクション |
+|-------------|---------------|---------------|
+| APPROVE | `passed` | 完了処理可能 |
+| REQUEST_CHANGES | `failed` | 修正 → 再レビュー |
+
 **To disable commit guard**:
 
 Add to `.claude-code-harness.config.yaml`:
