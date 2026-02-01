@@ -159,7 +159,7 @@ EOF
       echo "📨 未読メッセージ ${unread_count}件:"
       echo -e "$unread_messages"
       echo ""
-      echo "💡 /session-inbox --mark で既読にできます"
+      echo "💡 /session inbox --mark で既読にできます"
     else
       echo "📭 未読メッセージはありません"
     fi

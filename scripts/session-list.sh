@@ -123,8 +123,8 @@ main() {
 
   echo ""
   echo "💡 ヒント:"
-  echo "  - /session-broadcast \"メッセージ\" で全セッションに通知"
-  echo "  - /session-inbox で受信メッセージを確認"
+  echo "  - /session broadcast \"メッセージ\" で全セッションに通知"
+  echo "  - /session inbox で受信メッセージを確認"
 }
 
 main "$@"
