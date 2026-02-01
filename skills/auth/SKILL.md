@@ -2,6 +2,7 @@
 name: auth
 description: "Implements authentication and payment features using Clerk, Supabase Auth, or Stripe. Use when user mentions login, authentication, payments, subscriptions, or Stripe. Do NOT load for: general UI work, database design, or non-auth features."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
+user-invocable: false
 ---
 
 # Auth Skills

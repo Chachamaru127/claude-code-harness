@@ -2,6 +2,7 @@
 name: plans-management
 description: "Manages Plans.md tasks and marker operations. Use when user mentions adding tasks, updating Plans.md, marking complete, or changing task status. Do NOT load for: implementation work, reviews, or non-Plans file operations."
 allowed-tools: ["Read", "Write", "Edit"]
+user-invocable: false
 ---
 
 # Plans Management Skill
