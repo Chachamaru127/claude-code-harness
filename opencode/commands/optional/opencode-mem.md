@@ -23,6 +23,19 @@ Set up Claude-mem for cross-session memory in OpenCode.
 
 ---
 
+## ⚠️ Important Limitation
+
+> **MCP tool calls do NOT trigger plugin hooks in OpenCode.**
+>
+> The plugin captures only **native OpenCode tools** (Edit, Write, Bash, etc.).
+> MCP tools (like harness MCP server tools) are not automatically recorded.
+>
+> **Workaround**: Use the claude-mem MCP server for explicit memory operations:
+> - `mem-search` to search past work
+> - Manual observation recording via MCP tools
+
+---
+
 ## Prerequisites
 
 1. **OpenCode installed** - https://opencode.ai
@@ -36,18 +49,21 @@ Set up Claude-mem for cross-session memory in OpenCode.
 ┌─────────────────────────────────────────────────────────────┐
 │                        OpenCode                              │
 ├─────────────────────────────────────────────────────────────┤
-│  Plugin Layer                                                │
+│  Plugin Layer (native tools only)                            │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │ claude-mem-plugin.ts                                 │   │
-│  │ - onSessionStart: Inject previous context            │   │
-│  │ - onToolResult: Record observations                  │   │
-│  │ - onSessionEnd: Generate summary                     │   │
+│  │ - session.created: Inject previous context           │   │
+│  │ - tool.execute.after: Record observations            │   │
+│  │ - session.deleted: Generate summary                  │   │
+│  │ - experimental.chat.system.transform: Inject context │   │
 │  └───────────────────────────┬─────────────────────────┘   │
 │                              │                               │
-│  MCP Layer                   │                               │
+│  MCP Layer (explicit queries)│                               │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │ claude-mem MCP Server                                │   │
-│  │ - mem-search tool for explicit memory queries        │   │
+│  │ - mem-search: Search past work                       │   │
+│  │ - mem-timeline: Get chronological context            │   │
+│  │ - mem-get-observations: Fetch full details           │   │
 │  └───────────────────────────┬─────────────────────────┘   │
 │                              │                               │
 └──────────────────────────────┼──────────────────────────────┘

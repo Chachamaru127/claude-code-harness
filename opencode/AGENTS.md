@@ -239,12 +239,18 @@ OpenCode supports Claude-mem integration for persistent memory across sessions.
 
 Run `/opencode-mem` to set up Claude-mem integration.
 
+### ⚠️ Important Limitation
+
+**MCP tool calls do NOT trigger plugin hooks in OpenCode.**
+Only native OpenCode tools (Edit, Write, Bash, etc.) are captured by the plugin.
+Use claude-mem MCP server tools (`mem-search`) for explicit memory queries.
+
 ### Components
 
 1. **Plugin** (`.opencode/plugin/claude-mem-plugin.ts`)
-   - Injects previous session context on start
-   - Records observations from tool executions
-   - Generates session summaries on end
+   - Injects previous session context on start (via `session.created` hook)
+   - Records observations from native tool executions (via `tool.execute.after` hook)
+   - Generates session summaries on end (via `session.deleted` hook)
 
 2. **MCP Server** (configured in `opencode.json`)
    - Provides `mem-search`, `mem-timeline`, `mem-get-observations` tools

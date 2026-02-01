@@ -1,0 +1,12 @@
+{
+  "name": "claude-mem-plugin",
+  "version": "1.0.0",
+  "description": "Claude-mem integration plugin for OpenCode",
+  "type": "module",
+  "dependencies": {
+    "@opencode-ai/plugin": "^1.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
