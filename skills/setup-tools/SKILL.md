@@ -1,6 +1,6 @@
 ---
 name: setup-tools
-description: "Unified setup command for CI, LSP, MCP, dev-tools, and other development tools. Use when user mentions '/setup', tool setup, CI setup, LSP setup, MCP setup, webhook setup, remotion setup, or opencode setup."
+description: "Unified setup command for CI, LSP, MCP, dev-tools, and other development tools. Use when user mentions '/setup', tool setup, CI setup, LSP setup, MCP setup, webhook setup, remotion setup, or opencode setup. Do NOT load for: app setup screens, onboarding flows, CI concept questions."
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob"]
 argument-hint: "[ci|dev-tools|lsp|mcp|opencode|webhook|ui|remotion|skills]"
 disable-model-invocation: true

@@ -1,6 +1,6 @@
 ---
 name: sync-status
-description: "Checks progress, updates Plans.md to match reality, and suggests next action. Use when user mentions '/sync-status', progress check, where am I at, or sync Plans.md."
+description: "Checks progress, updates Plans.md to match reality, and suggests next action. Use when user mentions '/sync-status', progress check, where am I at, or sync Plans.md. Do NOT load for: casual 'how is it going' chat, informal progress questions."
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 ---
 
