@@ -1,7 +1,7 @@
 ---
 name: session-state
 version: 1.0.0
-description: "Manages session state transitions per SESSION_ORCHESTRATION.md. Internal use only."
+description: "Manages session state transitions per SESSION_ORCHESTRATION.md. Internal use only. Do NOT load for: user session management, login state, app state handling."
 allowed-tools: [Read, Bash]
 dependencies: []
 ---
