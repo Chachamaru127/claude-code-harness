@@ -9,6 +9,38 @@ Change history for claude-code-harness.
 
 ---
 
+## [2.16.7] - 2026-02-01
+
+### 🎯 What's Changed for You
+
+**Internal skills are now hidden from the /command menu**
+
+Skills that are meant to be auto-loaded by Claude (not invoked directly by users) are now hidden from the slash command menu, reducing noise.
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| Internal skills (impl, verify, auth, ui) visible in /menu | `user-invocable: false` hides from user menu |
+| `/session-broadcast`, `/session-inbox`, `/session-list` | Unified `/session` subcommands |
+
+### Changed
+
+- **Internal skills hidden from user menu**
+  - `auth`, `impl`, `plans-management`, `session-control`, `session-state`, `ui`, `verify`: Added `user-invocable: false`
+
+- **Session commands unified**
+  - `/session-broadcast` → `/session broadcast`
+  - `/session-inbox` → `/session inbox`
+  - `/session-list` → `/session list`
+  - Old commands removed, documentation updated
+
+### Fixed
+
+- Synced `opencode/` with latest `skills/` and `commands/` changes
+
+---
+
 ## [2.16.5] - 2026-01-31
 
 ### 🎯 What's Changed for You

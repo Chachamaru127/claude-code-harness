@@ -9,6 +9,38 @@
 
 ---
 
+## [2.16.7] - 2026-02-01
+
+### 🎯 あなたにとって何が変わるか
+
+**内部スキルが /command メニューから非表示になりました**
+
+Claude が自動でロードすることを想定したスキル（ユーザーが直接呼び出すものではない）が、スラッシュコマンドメニューから非表示になり、ノイズが軽減されました。
+
+#### Before → After
+
+| Before | After |
+|--------|-------|
+| 内部スキル (impl, verify, auth, ui) が /menu に表示されていた | `user-invocable: false` でユーザーメニューから非表示 |
+| `/session-broadcast`, `/session-inbox`, `/session-list` | 統一された `/session` サブコマンド |
+
+### Changed
+
+- **内部スキルをユーザーメニューから非表示**
+  - `auth`, `impl`, `plans-management`, `session-control`, `session-state`, `ui`, `verify`: `user-invocable: false` を追加
+
+- **セッションコマンドの統合**
+  - `/session-broadcast` → `/session broadcast`
+  - `/session-inbox` → `/session inbox`
+  - `/session-list` → `/session list`
+  - 旧コマンドは削除、ドキュメントを更新
+
+### Fixed
+
+- `opencode/` を最新の `skills/` および `commands/` の変更と同期
+
+---
+
 ## [2.16.5] - 2026-01-31
 
 ### 🎯 あなたにとって何が変わるか
