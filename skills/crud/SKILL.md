@@ -3,7 +3,6 @@ name: crud
 description: "Auto-generates production-ready CRUD functionality with validation, auth, and tests. Use when user mentions CRUD, entity generation, or wants to create API endpoints."
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob"]
 argument-hint: "<entity-name>"
-disable-model-invocation: true
 user-invocable: false
 ---
 
