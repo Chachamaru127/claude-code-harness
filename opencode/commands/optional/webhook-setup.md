@@ -307,7 +307,7 @@ permissions:
 
 - `/harness-review` - 手動コードレビュー
 - `/ci-setup` - 一般的なCI/CD設定
-- `/session-broadcast` - セッション間通知
+- `/session broadcast` - セッション間通知
 
 ---
 

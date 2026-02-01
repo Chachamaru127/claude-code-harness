@@ -225,7 +225,7 @@ npm install && npm run build
          ↓
 [Claude Code + Harness] 回復後
          ↓
-  /session-inbox でキャッチアップ
+  /session inbox でキャッチアップ
 ```
 
 ## 制限事項

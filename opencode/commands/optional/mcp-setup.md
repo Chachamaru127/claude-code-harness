@@ -213,15 +213,15 @@ npm run build
 
 ## Related Commands
 
-- `/session-broadcast` - プラグイン版メッセージ送信
-- `/session-inbox` - プラグイン版受信確認
-- `/session-list` - プラグイン版セッション一覧
+- `/session broadcast` - プラグイン版メッセージ送信
+- `/session inbox` - プラグイン版受信確認
+- `/session list` - プラグイン版セッション一覧
 
 ---
 
 ## Notes
 
 - MCP サーバーはプラグイン機能の拡張版です
-- プラグイン版（`/session-*`）と MCP 版は同じデータを共有します
+- プラグイン版（`/session`）と MCP 版は同じデータを共有します
 - MCP 非対応のクライアントでもプラグイン版は使用可能
 - セッションデータは `.claude/sessions/` に保存されます

@@ -81,7 +81,7 @@ This command consolidates the following individual commands:
 - `/session-inbox` → `/session inbox`
 - `/session-broadcast` → `/session broadcast "message"`
 
-The individual commands are deprecated but still work for backward compatibility.
+The individual commands have been removed. Use the unified `/session` command with subcommands.
 
 ---
 
