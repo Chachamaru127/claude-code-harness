@@ -231,6 +231,53 @@ claude --plugin-dir /path/to/claude-code-harness
 - `.claude/memory/decisions.md` - 決定事項（Why）
 - `.claude/memory/patterns.md` - 再利用パターン（How）
 
+## Claude-mem Integration (Cross-Session Memory)
+
+OpenCode supports Claude-mem integration for persistent memory across sessions.
+
+### Setup
+
+Run `/opencode-mem` to set up Claude-mem integration.
+
+### Components
+
+1. **Plugin** (`.opencode/plugin/claude-mem-plugin.ts`)
+   - Injects previous session context on start
+   - Records observations from tool executions
+   - Generates session summaries on end
+
+2. **MCP Server** (configured in `opencode.json`)
+   - Provides `mem-search`, `mem-timeline`, `mem-get-observations` tools
+   - Enables explicit memory queries during sessions
+
+3. **Worker Service** (port 37777)
+   - Stores observations in SQLite database
+   - Provides HTTP API for memory operations
+
+### Usage in Sessions
+
+```
+# At session start - Previous context is auto-injected
+[claude-mem] Session started: opencode-xxx-xxx
+[claude-mem] Previous session context available.
+
+# During session - Use mem-search for explicit queries
+Use mem-search to find how we handled authentication before
+
+# At session end - Summary is auto-generated
+[claude-mem] Session ended. 15 observations recorded.
+```
+
+### Harness-Specific Observation Types
+
+| Type | Description |
+|------|-------------|
+| `plan` | Plans.md task updates |
+| `guard` | Guardrail activations |
+| `ssot` | SSOT file updates |
+| `handoff` | Role transitions |
+| `review` | Code review findings |
+
 ## テスト改ざん防止（品質保証）
 
 > 詳細: [D9: テスト改ざん防止の3層防御戦略](.claude/memory/decisions.md#d9-テスト改ざん防止の3層防御戦略)

@@ -109,6 +109,50 @@ MCP サーバー経由で以下のツールが利用可能です：
 
 ---
 
+## Claude-mem Integration (Cross-Session Memory)
+
+OpenCode で Claude-mem を使用してセッション間メモリを有効にできます。
+
+### セットアップ
+
+```bash
+# OpenCode 内で実行
+/opencode-mem
+```
+
+または手動セットアップ：
+
+```bash
+# 1. Claude-mem をインストール
+npm install -g claude-mem-mcp
+
+# 2. プラグインをコピー
+mkdir -p .opencode/plugin
+cp claude-code-harness/opencode/plugin/claude-mem-plugin.ts .opencode/plugin/
+
+# 3. opencode.json に追加
+# "claude-mem" MCP サーバー設定を追加
+```
+
+### 利用可能な機能
+
+| 機能 | 説明 |
+|------|------|
+| コンテキスト注入 | 前回セッションの作業内容を自動挿入 |
+| 観察記録 | ツール実行結果を自動記録 |
+| セッションサマリー | セッション終了時に要約を保存 |
+| `mem-search` | 過去の作業履歴を検索 |
+
+### 共有メモリ
+
+Claude Code、Cursor、OpenCode で同じ Claude-mem データベースを共有できます：
+
+- 全ツールが同じワーカー（port 37777）を使用
+- 同じ SQLite データベースに保存
+- ツール間でメモリを共有
+
+---
+
 ## 使い方
 
 ```bash

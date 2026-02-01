@@ -773,7 +773,19 @@ To disable harness mode in Claude-mem:
 
 | Command/Skill | Purpose |
 |---------------|---------|
+| `/opencode-mem` | **OpenCode-specific** Claude-mem setup (recommended for OpenCode) |
 | `/sync-ssot-from-memory` | Promote important Claude-mem observations to SSOT |
 | `mem-search` | Search past work history |
 | `session-init` | Display past context at session start (with Claude-mem integration) |
 | `/harness-init` | Project initialization (Claude-mem integration is separate via `/harness-mem`) |
+
+---
+
+## OpenCode Users
+
+> **For OpenCode**, use `/opencode-mem` instead for a more streamlined setup.
+>
+> The `/opencode-mem` command provides:
+> - OpenCode plugin installation
+> - MCP server configuration for `opencode.json`
+> - Plugin-based hooks (instead of hooks.json)

@@ -8,6 +8,14 @@
         "node",
         "./path/to/claude-code-harness/mcp-server/dist/index.js"
       ]
+    },
+    "claude-mem": {
+      "type": "local",
+      "enabled": true,
+      "command": ["npx", "-y", "claude-mem-mcp"],
+      "env": {
+        "CLAUDE_MEM_MODE": "harness"
+      }
     }
   }
 }
