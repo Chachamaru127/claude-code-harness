@@ -15,19 +15,19 @@
     "transition": {
       "type": "object",
       "description": "このシーンへのトランジション設定",
-      "required": ["type", "duration_frames"],
+      "required": ["type", "duration_ms"],
       "properties": {
         "type": {
           "type": "string",
           "description": "トランジションの種類",
-          "enum": ["fade", "slideIn", "zoom", "cut"]
+          "enum": ["fade", "slide_in", "zoom", "cut"]
         },
-        "duration_frames": {
+        "duration_ms": {
           "type": "integer",
-          "description": "トランジションの長さ（フレーム数）",
+          "description": "トランジションの長さ（ミリ秒）",
           "minimum": 0,
-          "maximum": 60,
-          "default": 15
+          "maximum": 2000,
+          "default": 500
         },
         "easing": {
           "type": "string",
@@ -37,7 +37,7 @@
         },
         "direction": {
           "type": "string",
-          "description": "スライドの方向（slideInの場合のみ）",
+          "description": "スライドの方向（slide_inの場合のみ）",
           "enum": ["left", "right", "top", "bottom"],
           "default": "right"
         }
@@ -93,12 +93,12 @@
           "description": "背景の種類",
           "enum": ["cyberpunk", "corporate", "minimal", "gradient", "particles"]
         },
-        "primaryColor": {
+        "primary_color": {
           "type": "string",
           "description": "プライマリカラー（HEX形式）",
           "pattern": "^#[0-9A-Fa-f]{6}$"
         },
-        "secondaryColor": {
+        "secondary_color": {
           "type": "string",
           "description": "セカンダリカラー（HEX形式）",
           "pattern": "^#[0-9A-Fa-f]{6}$"
@@ -122,22 +122,22 @@
       "type": "object",
       "description": "シーン内のタイミング調整",
       "properties": {
-        "delay_before": {
+        "delay_before_ms": {
           "type": "integer",
-          "description": "シーン開始前の待機時間（フレーム数）",
+          "description": "シーン開始前の待機時間（ミリ秒）",
           "minimum": 0,
           "default": 0
         },
-        "delay_after": {
+        "delay_after_ms": {
           "type": "integer",
-          "description": "シーン終了後の待機時間（フレーム数）",
+          "description": "シーン終了後の待機時間（ミリ秒）",
           "minimum": 0,
           "default": 0
         },
-        "audio_start_offset": {
+        "audio_start_offset_ms": {
           "type": "integer",
-          "description": "音声開始オフセット（フレーム数、正=遅延、負=早める）",
-          "default": 30
+          "description": "音声開始オフセット（ミリ秒、正=遅延、負=早める）",
+          "default": 1000
         }
       },
       "additionalProperties": false

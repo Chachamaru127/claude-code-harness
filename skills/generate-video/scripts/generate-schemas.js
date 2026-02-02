@@ -13,6 +13,7 @@
 const fs = require('fs');
 const path = require('path');
 const { jsonSchemaToZod } = require('json-schema-to-zod');
+const deref = require('json-schema-deref-sync');
 
 // ディレクトリパス
 const SCHEMAS_DIR = path.join(__dirname, '../schemas');
@@ -63,8 +64,14 @@ function generateSchemas() {
       const schemaContent = fs.readFileSync(schemaPath, 'utf-8');
       const schema = JSON.parse(schemaContent);
 
+      // $ref を解決（事前にデリファレンス）
+      const dereferencedSchema = deref(schema, {
+        baseFolder: SCHEMAS_DIR,
+        failOnMissing: true,
+      });
+
       // Zodスキーマに変換
-      const zodSchema = jsonSchemaToZod(schema, {
+      const zodSchema = jsonSchemaToZod(dereferencedSchema, {
         module: 'esm', // ES Modules形式
         name: toPascalCase(baseName), // スキーマ名をPascalCaseに
       });
@@ -78,6 +85,9 @@ function generateSchemas() {
 
     } catch (error) {
       console.error(`    ❌ Error processing ${schemaFile}:`, error.message);
+      if (error.message && error.message.includes('$ref')) {
+        console.error(`       Hint: Check that all $ref paths exist in ${SCHEMAS_DIR}`);
+      }
       results.push({ file: schemaFile, success: false, error: error.message });
     }
   }
@@ -130,6 +140,7 @@ function generateTypeScriptFile(baseName, zodSchema, originalSchema) {
  * @description Auto-generated Zod schema for ${title}
  * @version ${version}
  * @generated This file is auto-generated from schemas/${baseName}.schema.json
+ *           All $ref references are resolved during generation.
  *           DO NOT EDIT MANUALLY - run \`npm run generate:schemas\` instead
  */
 

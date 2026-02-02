@@ -23,16 +23,16 @@
             "type": "string",
             "description": "強調するテキスト内容"
           },
-          "start_frame": {
+          "start_ms": {
             "type": "integer",
-            "description": "強調開始フレーム（シーン内での相対位置）",
+            "description": "強調開始時刻（シーン内での相対位置、ミリ秒）",
             "minimum": 0
           },
-          "duration_frames": {
+          "duration_ms": {
             "type": "integer",
-            "description": "強調表示の長さ（フレーム数）",
+            "description": "強調表示の長さ（ミリ秒）",
             "minimum": 1,
-            "default": 30
+            "default": 1000
           },
           "style": {
             "type": "string",
@@ -68,9 +68,9 @@
           "enum": ["start", "end", "peak"],
           "default": "start"
         },
-        "trigger_frame": {
+        "trigger_ms": {
           "type": "integer",
-          "description": "効果音発動フレーム（シーン内での相対位置）",
+          "description": "効果音発動時刻（シーン内での相対位置、ミリ秒）",
           "minimum": 0,
           "default": 0
         }
@@ -97,7 +97,7 @@
           "description": "グロー効果を適用するか",
           "default": true
         },
-        "glowIntensity": {
+        "glow_intensity": {
           "type": "number",
           "description": "グロー強度（ぼかし半径、ピクセル）",
           "minimum": 0,
@@ -150,33 +150,33 @@
         "entry": {
           "type": "string",
           "description": "登場アニメーション",
-          "enum": ["none", "fadeIn", "slideIn", "zoomIn", "bounce"],
+          "enum": ["none", "fade_in", "slide_in", "zoom_in", "bounce"],
           "default": "fadeIn"
         },
         "exit": {
           "type": "string",
           "description": "退場アニメーション",
-          "enum": ["none", "fadeOut", "slideOut", "zoomOut"],
+          "enum": ["none", "fade_out", "slide_out", "zoom_out"],
           "default": "fadeOut"
         },
-        "duration_frames": {
+        "duration_ms": {
           "type": "integer",
-          "description": "アニメーション長さ（フレーム数）",
+          "description": "アニメーション長さ（ミリ秒）",
           "minimum": 1,
-          "maximum": 60,
-          "default": 15
+          "maximum": 2000,
+          "default": 500
         },
         "pulse": {
           "type": "boolean",
           "description": "パルス効果（点滅・拡縮）を有効にするか",
           "default": false
         },
-        "pulseSpeed": {
+        "pulse_speed": {
           "type": "number",
-          "description": "パルス速度（1フレームあたりの周期進行度）",
-          "minimum": 0.01,
-          "maximum": 1,
-          "default": 0.1
+          "description": "パルス速度（1秒あたりのサイクル数）",
+          "minimum": 0.1,
+          "maximum": 10,
+          "default": 1.0
         }
       },
       "additionalProperties": false
@@ -195,7 +195,7 @@
           "description": "背景カラー（HEX形式またはRGBA）",
           "default": "rgba(0, 0, 0, 0.8)"
         },
-        "borderRadius": {
+        "border_radius": {
           "type": "number",
           "description": "角丸の半径（ピクセル）",
           "minimum": 0,
@@ -257,37 +257,37 @@
       "type": "object",
       "description": "タイポグラフィ設定",
       "properties": {
-        "fontSize": {
+        "font_size": {
           "type": "number",
           "description": "フォントサイズ（ピクセル）",
           "minimum": 12,
           "maximum": 200,
           "default": 48
         },
-        "fontWeight": {
+        "font_weight": {
           "type": ["string", "number"],
           "description": "フォントの太さ",
           "enum": [100, 200, 300, 400, 500, 600, 700, 800, 900, "normal", "bold"],
           "default": 700
         },
-        "fontFamily": {
+        "font_family": {
           "type": "string",
           "description": "フォントファミリー",
           "default": "sans-serif"
         },
-        "lineHeight": {
+        "line_height": {
           "type": "number",
           "description": "行の高さ（倍率）",
           "minimum": 0.5,
           "maximum": 3,
           "default": 1.5
         },
-        "letterSpacing": {
+        "letter_spacing": {
           "type": "number",
           "description": "文字間隔（ピクセル）",
           "default": 0
         },
-        "textTransform": {
+        "text_transform": {
           "type": "string",
           "description": "テキスト変換",
           "enum": ["none", "uppercase", "lowercase", "capitalize"],

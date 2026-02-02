@@ -5,18 +5,18 @@
   "description": "アニメーション設定のスキーマ。トランジション、イージング、スプリング物理演算パラメータを定義します。",
   "version": "1.0.0",
   "type": "object",
-  "required": ["type", "duration_frames"],
+  "required": ["type", "duration_ms"],
   "properties": {
     "type": {
       "type": "string",
       "description": "アニメーションの種類",
-      "enum": ["fade", "slideIn", "zoom", "cut", "spring", "rotate", "scale"]
+      "enum": ["fade", "slide_in", "zoom", "cut", "spring", "rotate", "scale"]
     },
-    "duration_frames": {
+    "duration_ms": {
       "type": "integer",
-      "description": "アニメーションの長さ（フレーム数）",
+      "description": "アニメーションの長さ（ミリ秒）",
       "minimum": 0,
-      "maximum": 300
+      "maximum": 10000
     },
     "easing": {
       "type": "string",
@@ -49,7 +49,7 @@
           "maximum": 10,
           "default": 1
         },
-        "overshootClamping": {
+        "overshoot_clamping": {
           "type": "boolean",
           "description": "オーバーシュート（行き過ぎ）を抑制するか",
           "default": false
@@ -57,9 +57,9 @@
       },
       "additionalProperties": false
     },
-    "delay": {
+    "delay_ms": {
       "type": "integer",
-      "description": "アニメーション開始前の遅延（フレーム数）",
+      "description": "アニメーション開始前の遅延（ミリ秒）",
       "minimum": 0,
       "default": 0
     },
@@ -125,7 +125,7 @@
       "type": "object",
       "description": "Remotion interpolate関数の詳細設定",
       "properties": {
-        "inputRange": {
+        "input_range": {
           "type": "array",
           "description": "入力範囲（フレーム数の配列）",
           "items": {
@@ -133,7 +133,7 @@
           },
           "minItems": 2
         },
-        "outputRange": {
+        "output_range": {
           "type": "array",
           "description": "出力範囲（値の配列）",
           "items": {
@@ -141,13 +141,13 @@
           },
           "minItems": 2
         },
-        "extrapolateLeft": {
+        "extrapolate_left": {
           "type": "string",
           "description": "範囲外（左）の補外方法",
           "enum": ["clamp", "extend", "identity"],
           "default": "clamp"
         },
-        "extrapolateRight": {
+        "extrapolate_right": {
           "type": "string",
           "description": "範囲外（右）の補外方法",
           "enum": ["clamp", "extend", "identity"],

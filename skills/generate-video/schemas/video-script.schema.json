@@ -264,7 +264,7 @@
         "type": {
           "type": "string",
           "description": "Default transition type",
-          "enum": ["fade", "slide", "zoom", "none"],
+          "enum": ["fade", "slide_in", "zoom", "cut"],
           "default": "fade"
         }
       }

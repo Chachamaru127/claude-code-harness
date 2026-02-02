@@ -154,6 +154,7 @@ function detectConflicts(scenes) {
 
 /**
  * Sort scenes by section_id order and scene order
+ * Tiebreaker: scene_id (lexicographic) for determinism
  */
 function sortScenes(scenes, scenario) {
   // Create section order map
@@ -177,7 +178,12 @@ function sortScenes(scenes, scenario) {
     }
 
     // Then sort by scene order within section
-    return sceneA.order - sceneB.order;
+    if (sceneA.order !== sceneB.order) {
+      return sceneA.order - sceneB.order;
+    }
+
+    // Tiebreaker: scene_id (lexicographic order) for determinism
+    return sceneA.scene_id.localeCompare(sceneB.scene_id);
   });
 }
 
@@ -198,6 +204,69 @@ function detectMissingScenes(scenes, scenario) {
 }
 
 /**
+ * Detect duplicate orders within the same section
+ */
+function detectDuplicateOrders(scenes) {
+  const duplicates = [];
+  const orderMap = new Map(); // section_id -> Map<order, scene_ids[]>
+
+  for (const { file, scene } of scenes) {
+    const sectionId = scene.section_id;
+    const order = scene.order;
+
+    if (!orderMap.has(sectionId)) {
+      orderMap.set(sectionId, new Map());
+    }
+
+    const sectionOrders = orderMap.get(sectionId);
+    if (!sectionOrders.has(order)) {
+      sectionOrders.set(order, []);
+    }
+
+    sectionOrders.get(order).push({ scene_id: scene.scene_id, file });
+  }
+
+  // Find duplicates
+  for (const [sectionId, sectionOrders] of orderMap.entries()) {
+    for (const [order, sceneInfos] of sectionOrders.entries()) {
+      if (sceneInfos.length > 1) {
+        duplicates.push({
+          section_id: sectionId,
+          order,
+          scenes: sceneInfos
+        });
+      }
+    }
+  }
+
+  return duplicates;
+}
+
+/**
+ * Detect unknown sections (scenes referencing section_id not in scenario)
+ */
+function detectUnknownSections(scenes, scenario) {
+  if (!scenario || !scenario.sections) {
+    return []; // Can't validate without scenario
+  }
+
+  const knownSections = new Set(scenario.sections.map(s => s.id));
+  const unknownSections = [];
+
+  for (const { file, scene } of scenes) {
+    if (!knownSections.has(scene.section_id)) {
+      unknownSections.push({
+        section_id: scene.section_id,
+        scene_id: scene.scene_id,
+        file
+      });
+    }
+  }
+
+  return unknownSections;
+}
+
+/**
  * Calculate total duration
  */
 function calculateTotalDuration(scenes) {
@@ -214,7 +283,8 @@ function generateMetadata(scenario) {
     title: scenario?.title || 'Generated Video',
     description: scenario?.description || '',
     version: '1.0.0',
-    created_at: new Date().toISOString(),
+    // Use scenario's timestamp for determinism, fallback to current time
+    created_at: scenario?.metadata?.generated_at || new Date().toISOString(),
     author: 'merge-scenes.js',
     video_type: scenario?.metadata?.video_type || 'custom'
   };
@@ -241,7 +311,7 @@ function generateOutputSettings() {
 /**
  * Main merge function
  */
-function mergeScenes(outputDir) {
+function mergeScenes(outputDir, options = {}) {
   console.log('🎬 Scene Merger\n');
   console.log(`Output directory: ${outputDir}\n`);
 
@@ -252,6 +322,27 @@ function mergeScenes(outputDir) {
     scenario = loadJsonFile(scenarioPath);
     if (scenario) {
       console.log('✅ Loaded scenario.json\n');
+
+      // Validate scenario.json unless --skip-validation is specified
+      if (!options.skipValidation) {
+        console.log('🔍 Validating scenario.json...');
+        const { validateScenario } = require('./validate-scenario.js');
+        const scenarioSchemaPath = path.join(__dirname, '../schemas/scenario.schema.json');
+        const validationResult = validateScenario(scenario, scenarioSchemaPath);
+
+        if (!validationResult.valid) {
+          console.error('\n❌ Scenario validation failed:');
+          validationResult.errors.forEach((error, index) => {
+            console.error(`  ${index + 1}. ${error.details || error.message}`);
+          });
+          console.error('\nRun with --skip-validation to bypass validation (not recommended).\n');
+          process.exit(1);
+        }
+
+        console.log('✅ Scenario validation passed\n');
+      } else {
+        console.log('⚠️  Skipping scenario validation (--skip-validation)\n');
+      }
     }
   }
 
@@ -300,6 +391,42 @@ function mergeScenes(outputDir) {
   }
 
   console.log('✅ No conflicts detected\n');
+
+  // Check for unknown sections (CRITICAL error)
+  if (scenario) {
+    console.log('🔍 Checking for unknown sections...');
+    const unknownSections = detectUnknownSections(sceneFiles, scenario);
+
+    if (unknownSections.length > 0) {
+      console.error('\n❌ CRITICAL: Scenes reference section_id not in scenario.json:');
+      unknownSections.forEach(({ section_id, scene_id, file }) => {
+        console.error(`  - ${file}:`);
+        console.error(`    scene_id: ${scene_id}`);
+        console.error(`    section_id: ${section_id} (not found in scenario)`);
+      });
+      console.error('\nAll section_id values must exist in scenario.json.');
+      process.exit(1);
+    }
+
+    console.log('✅ All sections are valid\n');
+  }
+
+  // Check for duplicate orders (WARNING only)
+  console.log('🔍 Checking for duplicate orders...');
+  const duplicateOrders = detectDuplicateOrders(sceneFiles);
+
+  if (duplicateOrders.length > 0) {
+    console.log('\n⚠️  WARNING: Duplicate orders detected within sections:');
+    duplicateOrders.forEach(({ section_id, order, scenes }) => {
+      console.log(`  - section_id: ${section_id}, order: ${order}`);
+      scenes.forEach(({ scene_id, file }) => {
+        console.log(`    - ${scene_id} (${file})`);
+      });
+    });
+    console.log('\n  Scenes will be ordered by scene_id (lexicographic) as tiebreaker.\n');
+  } else {
+    console.log('✅ No duplicate orders detected\n');
+  }
 
   // Check for missing scenes
   if (scenario) {
@@ -358,21 +485,49 @@ function mergeScenes(outputDir) {
   process.exit(0);
 }
 
-// Parse arguments
-const args = process.argv.slice(2);
+// Export for testing
+module.exports = {
+  sortScenes,
+  loadJsonFile,
+  detectConflicts,
+  detectDuplicateOrders,
+  detectUnknownSections,
+  detectMissingScenes
+};
 
-if (args.length !== 1) {
-  console.error('Usage: node scripts/merge-scenes.js <output-dir>');
-  console.error('Example: node scripts/merge-scenes.js out/video-20260202-001/');
-  process.exit(2);
+// Run as CLI (only when executed directly)
+if (require.main === module) {
+  // Parse arguments
+  const args = process.argv.slice(2);
+
+  if (args.length === 0 || args[0] === '--help' || args[0] === '-h') {
+    console.log(`
+Usage: node scripts/merge-scenes.js <output-dir> [options]
+
+Arguments:
+  <output-dir>         Path to output directory containing scenes/ and scenario.json
+
+Options:
+  --skip-validation    Skip scenario.json validation (not recommended)
+  --help, -h           Show this help message
+
+Example:
+  node scripts/merge-scenes.js out/video-20260202-001/
+  node scripts/merge-scenes.js out/video-20260202-001/ --skip-validation
+  `);
+    process.exit(0);
+  }
+
+  const outputDir = path.resolve(args[0]);
+  const options = {
+    skipValidation: args.includes('--skip-validation')
+  };
+
+  if (!fs.existsSync(outputDir)) {
+    console.error(`Error: Output directory not found: ${outputDir}`);
+    process.exit(2);
+  }
+
+  // Run merger
+  mergeScenes(outputDir, options);
 }
-
-const outputDir = path.resolve(args[0]);
-
-if (!fs.existsSync(outputDir)) {
-  console.error(`Error: Output directory not found: ${outputDir}`);
-  process.exit(2);
-}
-
-// Run merger
-mergeScenes(outputDir);

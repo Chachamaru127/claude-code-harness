@@ -82,12 +82,14 @@ Options:
   --concurrency <num>    Rendering concurrency (default: 50% CPU cores)
   --quality <level>      Quality: low|medium|high|ultra (default: from script)
   --preview              Generate preview instead of final render
+  --skip-validation      Skip video-script.json validation (not recommended)
   --help, -h             Show this help message
 
 Examples:
   node scripts/render-video.js out/video-script.json
   node scripts/render-video.js out/video-script.json --output final.mp4
   node scripts/render-video.js out/video-script.json --preview --quality medium
+  node scripts/render-video.js out/video-script.json --skip-validation
     `);
     process.exit(0);
   }
@@ -99,6 +101,7 @@ Examples:
     concurrency: null,
     quality: null,
     preview: false,
+    skipValidation: false,
   };
 
   for (let i = 1; i < args.length; i++) {
@@ -118,6 +121,9 @@ Examples:
       case '--preview':
         options.preview = true;
         break;
+      case '--skip-validation':
+        options.skipValidation = true;
+        break;
       default:
         logWarning(`Unknown option: ${args[i]}`);
     }
@@ -129,7 +135,7 @@ Examples:
 /**
  * Load and validate video script
  */
-function loadVideoScript(scriptPath) {
+function loadVideoScript(scriptPath, options = {}) {
   if (!fs.existsSync(scriptPath)) {
     throw new Error(`Video script not found: ${scriptPath}`);
   }
@@ -137,7 +143,41 @@ function loadVideoScript(scriptPath) {
   const content = fs.readFileSync(scriptPath, 'utf-8');
   const script = JSON.parse(content);
 
-  // Basic validation
+  // Schema validation unless --skip-validation is specified
+  if (!options.skipValidation) {
+    logInfo('Validating video-script.json against schema...');
+    const { validateVideoScript } = require('./validate-video.js');
+    const videoSchemaPath = path.join(__dirname, '../schemas/video-script.schema.json');
+    const sceneSchemaPath = path.join(__dirname, '../schemas/scene.schema.json');
+
+    const validationResult = validateVideoScript(script, videoSchemaPath, sceneSchemaPath);
+
+    if (!validationResult.valid) {
+      logError('Video script validation failed:');
+      console.error('');
+      validationResult.errors.forEach((error, index) => {
+        console.error(`  ${index + 1}. ${error.details || error.message}`);
+      });
+      console.error('');
+      logWarning('Run with --skip-validation to bypass validation (not recommended).');
+      throw new Error('Video script validation failed');
+    }
+
+    // Display warnings if any
+    if (validationResult.warnings && validationResult.warnings.length > 0) {
+      logWarning(`${validationResult.warnings.length} warning(s) found:`);
+      validationResult.warnings.forEach((warning, index) => {
+        console.log(`  ${index + 1}. ${warning.details || warning.message}`);
+      });
+      console.log('');
+    }
+
+    logSuccess('Video script validation passed');
+  } else {
+    logWarning('Skipping video-script.json validation (--skip-validation)');
+  }
+
+  // Basic validation (after schema validation or if validation is skipped)
   if (!script.metadata || !script.scenes || !script.output_settings) {
     throw new Error('Invalid video script: missing required fields (metadata, scenes, output_settings)');
   }
@@ -366,7 +406,7 @@ async function main() {
 
     // Load video script
     logInfo(`Loading video script: ${scriptPath}`);
-    const script = loadVideoScript(scriptPath);
+    const script = loadVideoScript(scriptPath, options);
     logSuccess(`Loaded: ${script.metadata.title}`);
 
     // Resolve assets

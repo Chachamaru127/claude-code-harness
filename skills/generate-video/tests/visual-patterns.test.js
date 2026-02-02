@@ -53,13 +53,13 @@ describe('Visual Patterns Schema', () => {
         topic: 'Task Management Improvement',
         style: 'modern',
         comparison: {
-          leftSide: {
+          left_side: {
             label: 'Before',
             items: ['Manual spreadsheet updates', 'Frequent missed updates', '30 minutes to check status'],
             icon: 'x',
             sentiment: 'negative'
           },
-          rightSide: {
+          right_side: {
             label: 'After',
             items: ['Automatic dashboard updates', 'Real-time sync', 'Status at a glance'],
             icon: 'check',
@@ -76,13 +76,13 @@ describe('Visual Patterns Schema', () => {
       expect(result).toBe(true);
     });
 
-    test('rejects comparison without leftSide', () => {
+    test('rejects comparison without left_side', () => {
       const validate = ajv.compile(schema);
       const invalid = {
         type: 'comparison',
         topic: 'Test',
         comparison: {
-          rightSide: {
+          right_side: {
             label: 'After',
             items: ['Item 1']
           }
@@ -92,13 +92,13 @@ describe('Visual Patterns Schema', () => {
       expect(validate(invalid)).toBe(false);
     });
 
-    test('rejects comparison without rightSide', () => {
+    test('rejects comparison without right_side', () => {
       const validate = ajv.compile(schema);
       const invalid = {
         type: 'comparison',
         topic: 'Test',
         comparison: {
-          leftSide: {
+          left_side: {
             label: 'Before',
             items: ['Item 1']
           }
@@ -229,8 +229,8 @@ describe('Visual Patterns Schema', () => {
             }
           ],
           direction: 'horizontal',
-          arrowStyle: 'solid',
-          showNumbers: true
+          arrow_style: 'solid',
+          show_numbers: true
         }
       };
 
@@ -285,12 +285,12 @@ describe('Visual Patterns Schema', () => {
         topic: 'Product Value',
         style: 'gradient',
         highlight: {
-          mainText: '95% Time Saved',
-          subText: 'Development teams freed from manual tasks',
+          main_text: '95% Time Saved',
+          sub_text: 'Development teams freed from manual tasks',
           icon: 'rocket',
           position: 'center',
           effect: 'glow',
-          fontSize: 'xlarge',
+          font_size: 'xlarge',
           emphasis: 'high'
         }
       };
@@ -302,13 +302,13 @@ describe('Visual Patterns Schema', () => {
       expect(result).toBe(true);
     });
 
-    test('rejects highlight without mainText', () => {
+    test('rejects highlight without main_text', () => {
       const validate = ajv.compile(schema);
       const invalid = {
         type: 'highlight',
         topic: 'Test',
         highlight: {
-          subText: 'Only subtitle'
+          sub_text: 'Only subtitle'
         }
       };
 
@@ -324,7 +324,7 @@ describe('Visual Patterns Schema', () => {
           type: 'highlight',
           topic: 'Test',
           highlight: {
-            mainText: 'Test Message',
+            main_text: 'Test Message',
             icon
           }
         };
@@ -340,14 +340,14 @@ describe('Visual Patterns Schema', () => {
       const valid = {
         type: 'highlight',
         topic: 'Test',
-        colorScheme: {
+        color_scheme: {
           primary: '#3B82F6',
           secondary: '#10B981',
           accent: '#F59E0B',
           background: '#1F2937'
         },
         highlight: {
-          mainText: 'Test'
+          main_text: 'Test'
         }
       };
 
@@ -359,11 +359,11 @@ describe('Visual Patterns Schema', () => {
       const invalid = {
         type: 'highlight',
         topic: 'Test',
-        colorScheme: {
+        color_scheme: {
           primary: 'blue' // Invalid: not hex format
         },
         highlight: {
-          mainText: 'Test'
+          main_text: 'Test'
         }
       };
 
@@ -380,10 +380,10 @@ describe('Visual Patterns Schema', () => {
         dimensions: {
           width: 1920,
           height: 1080,
-          aspectRatio: '16:9'
+          aspect_ratio: '16:9'
         },
         highlight: {
-          mainText: 'Test'
+          main_text: 'Test'
         }
       };
 
@@ -400,7 +400,7 @@ describe('Visual Patterns Schema', () => {
           height: 1080
         },
         highlight: {
-          mainText: 'Test'
+          main_text: 'Test'
         }
       };
 
@@ -420,7 +420,7 @@ describe('Visual Patterns Schema', () => {
           retries: 3
         },
         highlight: {
-          mainText: 'Test'
+          main_text: 'Test'
         }
       };
 
@@ -436,7 +436,7 @@ describe('Visual Patterns Schema', () => {
           type: 'highlight',
           topic: 'Test',
           generation: { quality },
-          highlight: { mainText: 'Test' }
+          highlight: { main_text: 'Test' }
         };
 
         expect(validate(valid)).toBe(true);

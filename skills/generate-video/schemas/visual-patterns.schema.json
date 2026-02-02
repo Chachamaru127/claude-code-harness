@@ -24,7 +24,7 @@
       "enum": ["minimalist", "technical", "modern", "gradient", "flat", "3d"],
       "default": "modern"
     },
-    "colorScheme": {
+    "color_scheme": {
       "type": "object",
       "description": "カラースキーム設定",
       "properties": {
@@ -55,9 +55,9 @@
     "comparison": {
       "type": "object",
       "description": "comparison（比較図）パターン用の設定",
-      "required": ["leftSide", "rightSide"],
+      "required": ["left_side", "right_side"],
       "properties": {
-        "leftSide": {
+        "left_side": {
           "type": "object",
           "description": "左側（Before / 悪い例）",
           "required": ["label", "items"],
@@ -93,7 +93,7 @@
           },
           "additionalProperties": false
         },
-        "rightSide": {
+        "right_side": {
           "type": "object",
           "description": "右側（After / 良い例）",
           "required": ["label", "items"],
@@ -303,13 +303,13 @@
           "enum": ["horizontal", "vertical", "zigzag"],
           "default": "horizontal"
         },
-        "arrowStyle": {
+        "arrow_style": {
           "type": "string",
           "description": "矢印のスタイル",
           "enum": ["solid", "dashed", "dotted", "thick", "animated"],
           "default": "solid"
         },
-        "showNumbers": {
+        "show_numbers": {
           "type": "boolean",
           "description": "ステップ番号を表示するか",
           "default": true
@@ -320,15 +320,15 @@
     "highlight": {
       "type": "object",
       "description": "highlight（強調）パターン用の設定",
-      "required": ["mainText"],
+      "required": ["main_text"],
       "properties": {
-        "mainText": {
+        "main_text": {
           "type": "string",
           "description": "メインテキスト（強調する内容）",
           "minLength": 1,
           "maxLength": 100
         },
-        "subText": {
+        "sub_text": {
           "type": "string",
           "description": "サブテキスト（補足説明）",
           "maxLength": 150
@@ -351,7 +351,7 @@
           "enum": ["glow", "shadow", "gradient", "outline", "none"],
           "default": "glow"
         },
-        "fontSize": {
+        "font_size": {
           "type": "string",
           "description": "フォントサイズ",
           "enum": ["small", "medium", "large", "xlarge"],
@@ -384,7 +384,7 @@
           "maximum": 2048,
           "default": 1080
         },
-        "aspectRatio": {
+        "aspect_ratio": {
           "type": "string",
           "description": "アスペクト比",
           "enum": ["16:9", "4:3", "1:1", "9:16"],

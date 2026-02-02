@@ -129,12 +129,12 @@
           "properties": {
             "in": {
               "type": "string",
-              "enum": ["fade", "slideIn", "zoom", "cut"],
+              "enum": ["fade", "slide_in", "zoom", "cut"],
               "default": "fade"
             },
             "out": {
               "type": "string",
-              "enum": ["fade", "slideIn", "zoom", "cut"],
+              "enum": ["fade", "slide_in", "zoom", "cut"],
               "default": "fade"
             },
             "duration_ms": {

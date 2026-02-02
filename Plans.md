@@ -10,17 +10,6 @@ generate-videoスキルの品質向上。プロダクトデモ重視、JSONス�
 分析 → シナリオ → Task並列(JSON+画像) → バリデーション → マージ → E2E検証 → render
 ```
 
-## 出力構造
-
-```
-out/video-{YYYYMMDD}-{id}/
-├── scenario.json / scenes/*.json / video-script.json
-├── assets/ (manifest.json + 画像/音声)
-└── output.mp4
-```
-
----
-
 ## 技術決定事項
 
 | 項目 | 仕様 |
@@ -32,96 +21,67 @@ out/video-{YYYYMMDD}-{id}/
 
 ---
 
-## Phase 0: 基盤 `cc:DONE`
+## 完了済み Phase（0-10）
+
+> 詳細: `.claude/archive/plans-phase0-10.md`
+
+- Phase 0-10: 全36タスク完了 ✅
+- Codex Review: Security A, Performance B, Quality B, Architect C
+
+---
+
+## Phase 11: アーキテクチャ改善 `cc:DONE`
+
+> **目標**: Codex Architect スコアを C → A に改善
+
+### 11.1 $ref 解決（型安全性） `cc:DONE`
 
 | Task | WHERE | Status |
 |------|-------|--------|
-| 0.1 スキーマ自動生成 | `scripts/generate-schemas.js` | ✅ |
-| 0.2 アセットマニフェスト | `schemas/assets.manifest.schema.json` | ✅ |
-| 0.3 決定性テスト | `tests/determinism.test.js` | ✅ |
+| 11.1.1 json-schema-deref 導入 | `scripts/generate-schemas.js` | ✅ |
+| 11.1.2 $ref 事前解決 | dereference 後に Zod 変換 | ✅ |
+| 11.1.3 scenes 型復元 | `z.any()` → 実際の Scene 型 | ✅ |
 
-## Phase 1: スキーマ `cc:DONE`
-
-| Task | WHERE | Status |
-|------|-------|--------|
-| 1.1 scenario.schema | `schemas/scenario.schema.json` | ✅ |
-| 1.2 scene.schema | `schemas/scene.schema.json` | ✅ |
-| 1.3 video-script.schema | `schemas/video-script.schema.json` | ✅ |
-
-## Phase 2: バリデーション `cc:DONE`
+### 11.2 命名・単位統一 `cc:DONE`
 
 | Task | WHERE | Status |
 |------|-------|--------|
-| 2.1 Zod生成 | `src/schemas/index.ts` | ✅ |
-| 2.2 validate-scene | `scripts/validate-scene.js` | ✅ |
-| 2.3 validate-scenario | `scripts/validate-scenario.js` | ✅ |
-| 2.4 validate-video (E2E) | `scripts/validate-video.js` | ✅ |
+| 11.2.1 命名規約定義 | `references/naming-conventions.md` | ✅ |
+| 11.2.2 時間単位統一 | 全スキーマ `_ms` に統一 | ✅ |
+| 11.2.3 enum 統一 | `slide_in`/`cut` に統一 | ✅ |
+| 11.2.4 ケース統一 | `snake_case` に統一 | ✅ |
 
-## Phase 3: 並列生成 `cc:DONE`
-
-| Task | WHERE | Status |
-|------|-------|--------|
-| 3.1 generator更新 | `references/generator.md` | ✅ |
-| 3.2 merge-scenes | `scripts/merge-scenes.js` | ✅ |
-
-## Phase 4: 演出システム `cc:DONE`
+### 11.3 マージ決定性 `cc:DONE`
 
 | Task | WHERE | Status |
 |------|-------|--------|
-| 4.1 direction.schema | `schemas/direction.schema.json` | ✅ |
-| 4.2 animation.schema | `schemas/animation.schema.json` | ✅ |
-| 4.3 emphasis.schema | `schemas/emphasis.schema.json` | ✅ |
-| 4.4 演出ガイド | `references/direction-guide.md` | ✅ |
+| 11.3.1 タイブレーク定義 | `scene_id` 辞書順でタイブレーク | ✅ |
+| 11.3.2 重複 order 検出 | 同一 section 内の order 重複を警告 | ✅ |
+| 11.3.3 未知 section エラー化 | 警告 → 失敗に変更 | ✅ |
 
-## Phase 5: 視覚コンポーネント `cc:DONE`
-
-| Task | WHERE | Status |
-|------|-------|--------|
-| 5.1 EmphasisBox | `remotion/components/EmphasisBox.tsx` | ✅ |
-| 5.2 TransitionWrapper | `remotion/components/TransitionWrapper.tsx` | ✅ |
-| 5.3 ProgressIndicator | `remotion/components/ProgressIndicator.tsx` | ✅ |
-| 5.4 BackgroundLayer | `remotion/components/BackgroundLayer.tsx` | ✅ |
-
-## Phase 6: 画像生成パターン `cc:DONE`
+### 11.4 バリデーション統合 `cc:DONE`
 
 | Task | WHERE | Status |
 |------|-------|--------|
-| 6.1 visual-patterns.schema | `schemas/visual-patterns.schema.json` | ✅ |
-| 6.2 比較図パターン | `references/image-patterns.md#comparison` | ✅ |
-| 6.3 概念図パターン | `references/image-patterns.md#concept` | ✅ |
-| 6.4 フローパターン | `references/image-patterns.md#flow` | ✅ |
-| 6.5 プロンプトテンプレート | `templates/image-prompts/` | ✅ |
+| 11.4.1 merge-scenes 入口検証 | scenario 検証を必須化 | ✅ |
+| 11.4.2 render-video 入口検証 | video-script 検証を必須化 | ✅ |
+| 11.4.3 --skip-validation フラグ | 明示的スキップのみ許可 | ✅ |
 
-## Phase 7: アセット基盤 `cc:DONE`
+### 11.5 コンポーネント/スキーマ同期 `cc:DONE`
 
 | Task | WHERE | Status |
 |------|-------|--------|
-| 7.1 背景セット | `assets/backgrounds/backgrounds.json` | ✅ |
-| 7.2 効果音セット | `assets/sounds/sounds.json` | ✅ |
-| 7.3 asset-loader | `scripts/load-assets.js` | ✅ |
-| 7.4 ユーザー上書き | `references/asset-customization.md` | ✅ |
+| 11.5.1 型定義エクスポート | `src/types/components.ts` | ✅ |
+| 11.5.2 TSX props 型適用 | コンポーネントに型適用 | ✅ |
+| 11.5.3 変換レイヤー | `src/utils/converters.ts` | ✅ |
 
-## Phase 8: レンダリング `cc:DONE`
-
-| Task | WHERE | Status |
-|------|-------|--------|
-| 8.1 render-video | `scripts/render-video.js` | ✅ |
-| 8.2 統合テスト | `tests/e2e/render.test.js` | ✅ |
-
-## Phase 9: テンプレート `cc:DONE`
+### 11.6 決定性テスト強化 `cc:DONE`
 
 | Task | WHERE | Status |
 |------|-------|--------|
-| 9.1 90秒ティザー | `templates/teaser-90s.json` | ✅ |
-| 9.2 3分Intro | `templates/intro-3min.json` | ✅ |
-| 9.3 レジストリ | `scripts/template-registry.js` | ✅ |
-
-## Phase 10: 将来拡張（設計のみ）`cc:DONE`
-
-| Task | WHERE | Status |
-|------|-------|--------|
-| 10.1 character.schema | `schemas/character.schema.json` | ✅ |
-| 10.2 dialogue拡張フック | `references/generator.md` | ✅ |
+| 11.6.1 sortScenes エクスポート | `merge-scenes.js` からエクスポート | ✅ |
+| 11.6.2 ユニットテスト追加 | `tests/merge-scenes.test.js` | ✅ |
+| 11.6.3 E2E テスト追加 | `tests/e2e/merge-e2e.test.js` | ✅ |
 
 ---
 
@@ -133,6 +93,8 @@ out/video-{YYYYMMDD}-{id}/
 - [x] 画像パターン設計
 - [x] 全Phase実装完了
 - [x] Codexレビュー承認 (Quality: B, Architect: B+)
+- [x] Phase 11 完了（19タスク）
+- [ ] Codexレビュー最終承認（Architect: A）
 
 ## 実装統計
 
@@ -141,5 +103,5 @@ out/video-{YYYYMMDD}-{id}/
 | スキーマファイル | 10個 |
 | スクリプト | 8個 |
 | コンポーネント | 4個 |
-| テストファイル | 6個 |
-| テスト数 | 92件 |
+| テストファイル | 10個 |
+| テスト数 | 184件 |
