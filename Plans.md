@@ -2,156 +2,147 @@
 
 ## 概要
 
-generate-videoスキルの品質向上。プロダクトデモ重視で、JSONスキーマ駆動の再現性確保。
+generate-videoスキルの品質向上。プロダクトデモ重視、JSONスキーマ駆動、視覚演出強化。
 
 ## アーキテクチャ
 
 ```
-分析 → シナリオ提案 → Task並列(JSON生成) → バリデーション → マージ → E2Eバリデーション → render
+分析 → シナリオ → Task並列(JSON+画像) → バリデーション → マージ → E2E検証 → render
 ```
 
----
-
-## パイプラインI/Oコントラクト
-
-### ディレクトリ構造
+## 出力構造
 
 ```
 out/video-{YYYYMMDD}-{id}/
-├── scenario.json           # Phase: シナリオ提案
-├── scenes/                 # Phase: 並列生成
-│   ├── scene-001.json
-│   ├── scene-002.json
-│   └── ...
-├── video-script.json       # Phase: マージ後
-├── assets/                 # アセット
-│   └── manifest.json       # ハッシュ管理
-└── output.mp4              # 最終出力
+├── scenario.json / scenes/*.json / video-script.json
+├── assets/ (manifest.json + 画像/音声)
+└── output.mp4
 ```
-
-### 命名規則
-
-| ファイル | パターン | 例 |
-|----------|----------|-----|
-| シーンJSON | `scene-{NNN}.json` | `scene-001.json` |
-| 生成画像 | `{scene_id}-{type}.webp` | `scene-001-highlight.webp` |
-| 音声 | `{scene_id}.wav` | `scene-001.wav` |
 
 ---
 
 ## 技術決定事項
 
-### スキーマソースオブトゥルース
-
-- **SSOT**: `schemas/*.schema.json`
-- **生成**: `npm run generate:schemas` → `src/schemas/*.ts` (Zod)
-- **トリガー**: pre-commit hook + CI gate
-- **バージョニング**: `$schema` に `"version": "1.0.0"` を含める
-
-### マージ戦略
-
-1. **順序**: `scenario.sections[]` 配列順（インデックス）を primary key とする
-2. **ソート**: 各セクション内で `scene.order` 昇順
-3. **競合**: 同一 `scene_id` → Critical error
-4. **欠落**: セクションにシーンなし → Critical error
-5. **重複order**: 同一セクション内で `order` 重複 → Critical error
-
-### 決定性制御
-
 | 項目 | 仕様 |
 |------|------|
-| ハッシュ | SHA-256、`assets/manifest.json` に格納 |
-| シード | `metadata.seed` (integer)、全生成で使用 |
-| 環境 | `package-lock.json` + Node 20 LTS + Remotion固定 |
-| 検証 | `npm test` で決定性テスト実行 |
-
-### バリデーション動作
-
-| ステージ | 失敗時 | 出力 |
-|----------|--------|------|
-| validate-scene | 即座にエラー返却 | `{valid, errors[]}` |
-| validate-scenario | 即座にエラー返却 | `{valid, errors[]}` |
-| validate-video (E2E) | Critical → 停止、Warning → ログ続行 | `{valid, errors[], warnings[]}` |
+| **SSOT** | `schemas/*.schema.json` → Zod自動生成 |
+| **マージ** | sections[]順 + scene.order昇順、競合=Critical |
+| **決定性** | SHA-256ハッシュ + seed + package-lock固定 |
+| **バリデーション** | scene→scenario→E2E の3層ゲート |
 
 ---
 
-## Phase 0: 基盤設計 `cc:TODO`
+## Phase 0: 基盤 `cc:TODO`
 
-| Task | WHERE | 受入条件 |
-|------|-------|----------|
-| 0.1 スキーマ自動生成 | `scripts/generate-schemas.js` | `npm run generate:schemas` 動作 |
-| 0.2 アセットマニフェスト | `schemas/assets.manifest.schema.json` | SHA-256ハッシュ生成・検証 |
-| 0.3 決定性テスト | `tests/determinism.test.ts` | 同一入力→同一出力 |
+| Task | WHERE |
+|------|-------|
+| 0.1 スキーマ自動生成 | `scripts/generate-schemas.js` |
+| 0.2 アセットマニフェスト | `schemas/assets.manifest.schema.json` |
+| 0.3 決定性テスト | `tests/determinism.test.ts` |
 
-## Phase 1: スキーマ設計 `cc:TODO`
+## Phase 1: スキーマ `cc:TODO`
 
-| Task | WHERE | 受入条件 |
-|------|-------|----------|
-| 1.1 scenario.schema.json | `schemas/scenario.schema.json` | ajvバリデーション可 |
-| 1.2 scene.schema.json | `schemas/scene.schema.json` | ajvバリデーション可 |
-| 1.3 video-script.schema.json | `schemas/video-script.schema.json` | ajvバリデーション可 |
+| Task | WHERE |
+|------|-------|
+| 1.1 scenario.schema | `schemas/scenario.schema.json` |
+| 1.2 scene.schema | `schemas/scene.schema.json` |
+| 1.3 video-script.schema | `schemas/video-script.schema.json` |
 
 ## Phase 2: バリデーション `cc:TODO`
 
-| Task | WHERE | 受入条件 |
-|------|-------|----------|
-| 2.1 Zod自動生成 | `src/schemas/index.ts` | TypeScript型推論OK |
-| 2.2 validate-scene.js | `scripts/validate-scene.js` | 不正JSONでエラー詳細 |
-| 2.3 validate-scenario.js | `scripts/validate-scenario.js` | セクション整合性チェック |
-| 2.4 validate-video.js | `scripts/validate-video.js` | E2Eゲート機能 |
+| Task | WHERE |
+|------|-------|
+| 2.1 Zod生成 | `src/schemas/index.ts` |
+| 2.2 validate-scene | `scripts/validate-scene.js` |
+| 2.3 validate-scenario | `scripts/validate-scenario.js` |
+| 2.4 validate-video (E2E) | `scripts/validate-video.js` |
 
-## Phase 3: 並列JSON生成 `cc:TODO`
+## Phase 3: 並列生成 `cc:TODO`
 
-| Task | WHERE | 受入条件 |
-|------|-------|----------|
-| 3.1 generator更新 | `references/generator.md` | JSON出力に変更 |
-| 3.2 merge-scenes.js | `scripts/merge-scenes.js` | 競合検出・順序保証 |
-| 3.3 ドキュメント更新 | `references/generator.md` | 新フロー明記 |
+| Task | WHERE |
+|------|-------|
+| 3.1 generator更新 | `references/generator.md` |
+| 3.2 merge-scenes | `scripts/merge-scenes.js` |
 
-## Phase 4: 視覚演出 `cc:TODO`
+## Phase 4: 演出システム `cc:TODO`
 
-| Task | WHERE | 受入条件 |
-|------|-------|----------|
-| 4.1 Highlight | `remotion/components/Highlight.tsx` | Studio表示OK |
-| 4.2 SectionIndicator | `remotion/components/SectionIndicator.tsx` | Studio表示OK |
-| 4.3 ドキュメント | `references/visual-effects.md` | 使用方法明記 |
+| Task | WHERE |
+|------|-------|
+| 4.1 direction.schema | `schemas/direction.schema.json` |
+| 4.2 animation.schema | `schemas/animation.schema.json` |
+| 4.3 emphasis.schema | `schemas/emphasis.schema.json` |
+| 4.4 演出ガイド | `references/direction-guide.md` |
 
-## Phase 5: レンダリング `cc:TODO`
+**演出パラメータ**: `transition` (fade/slideIn/zoom/cut), `emphasis` (high/medium/low + sound), `background` (5種)
 
-| Task | WHERE | 受入条件 |
-|------|-------|----------|
-| 5.1 render-video.js | `scripts/render-video.js` | JSON→MP4生成 |
-| 5.2 asset-loader.js | `scripts/asset-loader.js` | フォールバック動作 |
-| 5.3 統合テスト | `tests/e2e/render.test.ts` | E2Eパス |
+## Phase 5: 視覚コンポーネント `cc:TODO`
 
-## Phase 6: テンプレート `cc:TODO`
+| Task | WHERE |
+|------|-------|
+| 5.1 EmphasisBox | `remotion/components/EmphasisBox.tsx` |
+| 5.2 TransitionWrapper | `remotion/components/TransitionWrapper.tsx` |
+| 5.3 ProgressIndicator | `remotion/components/ProgressIndicator.tsx` |
+| 5.4 BackgroundLayer | `remotion/components/BackgroundLayer.tsx` |
 
-| Task | WHERE | 受入条件 |
-|------|-------|----------|
-| 6.1 90秒ティザー | `templates/teaser-90s.json` | シナリオ生成可 |
-| 6.2 3分Intro | `templates/intro-3min.json` | シナリオ生成可 |
-| 6.3 レジストリ | `scripts/template-registry.js` | 未知テンプレでエラー |
-| 6.4 planner更新 | `references/planner.md` | 選択フロー明記 |
+## Phase 6: 画像生成パターン `cc:TODO`
 
-## Phase 7: 将来拡張（設計のみ）`cc:TODO`
+| Task | WHERE |
+|------|-------|
+| 6.1 visual-patterns.schema | `schemas/visual-patterns.schema.json` |
+| 6.2 比較図パターン | `references/image-patterns.md#comparison` |
+| 6.3 概念図パターン | `references/image-patterns.md#concept` |
+| 6.4 フローパターン | `references/image-patterns.md#flow` |
+| 6.5 プロンプトテンプレート | `templates/image-prompts/` |
 
-| Task | WHERE | 受入条件 |
-|------|-------|----------|
-| 7.1 characterスキーマ | `schemas/character.schema.json` | 拡張ポイント明記 |
-| 7.2 dialogueフック | `references/generator.md` | 拡張ポイント文書化 |
+**画像パターン種別**:
+- `comparison`: 左右対比（Before/After、良い例/悪い例）
+- `concept`: 抽象概念の視覚化（階層、関係性）
+- `flow`: 手順・フロー図（矢印誘導、ステップ）
+- `highlight`: 要点強調（中央配置、大文字）
+
+## Phase 7: アセット基盤 `cc:TODO`
+
+| Task | WHERE |
+|------|-------|
+| 7.1 背景セット | `assets/backgrounds/` (5種) |
+| 7.2 効果音セット | `assets/sounds/` (4種) |
+| 7.3 asset-loader | `scripts/load-assets.js` |
+| 7.4 ユーザー上書き | `~/.harness/video/assets/` |
+
+## Phase 8: レンダリング `cc:TODO`
+
+| Task | WHERE |
+|------|-------|
+| 8.1 render-video | `scripts/render-video.js` |
+| 8.2 統合テスト | `tests/e2e/render.test.ts` |
+
+## Phase 9: テンプレート `cc:TODO`
+
+| Task | WHERE |
+|------|-------|
+| 9.1 90秒ティザー | `templates/teaser-90s.json` |
+| 9.2 3分Intro | `templates/intro-3min.json` |
+| 9.3 レジストリ | `scripts/template-registry.js` |
+
+## Phase 10: 将来拡張（設計のみ）`cc:TODO`
+
+| Task | WHERE |
+|------|-------|
+| 10.1 character.schema | `schemas/character.schema.json` |
+| 10.2 dialogue拡張フック | `references/generator.md` |
 
 ---
 
 ## 完了基準
 
-- [x] パイプラインI/Oコントラクト定義
-- [x] スキーマSSOT戦略決定
-- [x] マージ戦略・競合解決ルール定義
-- [x] 決定性制御仕様定義
-- [ ] 全タスク実装完了
-- [ ] 決定性テストパス
+- [x] アーキテクチャ決定
+- [x] 技術仕様定義
+- [x] 演出システム設計
+- [x] 画像パターン設計
+- [ ] 全Phase実装完了
 
-## 詳細仕様
+## 詳細仕様（実装時作成）
 
-- スキーマ詳細: `docs/schema-spec.md`（実装時作成）
-- バリデーション詳細: `docs/validation-spec.md`（実装時作成）
+- `docs/schema-spec.md` - スキーマ詳細
+- `docs/direction-spec.md` - 演出仕様詳細
+- `docs/image-pattern-spec.md` - 画像パターン詳細
