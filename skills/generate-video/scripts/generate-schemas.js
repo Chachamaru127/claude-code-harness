@@ -108,6 +108,23 @@ function generateTypeScriptFile(baseName, zodSchema, originalSchema) {
   const title = originalSchema.title || schemaName;
   const description = originalSchema.description || '';
 
+  // Remove duplicate import from generated zodSchema (json-schema-to-zod adds its own import)
+  let cleanedZodSchema = zodSchema
+    .replace(/^import \{ z \} from ['"]zod['"];?\n?/gm, '')
+    .replace(/^import \{ z \} from "zod"\n?/gm, '')
+    .trim();
+
+  // Fix variable naming: ensure export uses 'Schema' suffix
+  // json-schema-to-zod generates 'export const Name = ...'
+  // We need 'export const NameSchema = ...'
+  const exportPattern = new RegExp(`export const ${schemaName} = `, 'g');
+  if (cleanedZodSchema.match(exportPattern)) {
+    cleanedZodSchema = cleanedZodSchema.replace(exportPattern, `export const ${schemaName}Schema = `);
+  } else {
+    // If no export found, wrap the schema
+    cleanedZodSchema = `export const ${schemaName}Schema = ${cleanedZodSchema}`;
+  }
+
   return `/**
  * @file ${baseName}.ts
  * @description Auto-generated Zod schema for ${title}
@@ -121,7 +138,7 @@ import { z } from 'zod';
 /**
  * ${description}
  */
-${zodSchema}
+${cleanedZodSchema}
 
 /**
  * Inferred TypeScript type from Zod schema

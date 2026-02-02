@@ -25,7 +25,8 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync, spawn } = require('child_process');
+const { spawn } = require('child_process');
+const os = require('os');
 
 // ANSI color codes for terminal output
 const colors = {
@@ -235,12 +236,16 @@ function buildRenderCommand(script, options) {
   const remotionCli = getRemotionCli();
   const entryPoint = path.join(process.cwd(), 'remotion', 'index.ts');
 
+  // Write props to temp file to avoid CLI argument length limits (Security & Performance fix)
+  const propsFile = path.join(os.tmpdir(), `remotion-props-${Date.now()}.json`);
+  fs.writeFileSync(propsFile, JSON.stringify({ script }), 'utf-8');
+
   const args = [
     'render',
     entryPoint,
     options.composition,
     outputPath,
-    `--props=${JSON.stringify({ script })}`,
+    `--props=${propsFile}`,
   ];
 
   // Add codec
@@ -283,10 +288,19 @@ function executeRender(command, args) {
   log(`Command: ${command} ${args.join(' ')}`, 'dim');
 
   try {
-    // Use spawn for streaming output
-    const child = spawn(command, args, {
+    // Use spawn with shell: false for security (prevents command injection)
+    // Split command if it's 'npx remotion' format
+    let spawnCommand = command;
+    let spawnArgs = args;
+    if (command.includes(' ')) {
+      const parts = command.split(' ');
+      spawnCommand = parts[0];
+      spawnArgs = [...parts.slice(1), ...args];
+    }
+
+    const child = spawn(spawnCommand, spawnArgs, {
       stdio: 'inherit',
-      shell: true,
+      shell: false,
     });
 
     return new Promise((resolve, reject) => {

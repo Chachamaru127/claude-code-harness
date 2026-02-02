@@ -266,8 +266,10 @@ function validateVideoScript(videoData, schemaPath, sceneSchemaPath) {
     };
   }
 
-  // Add scene schema to ajv
-  ajv.addSchema(sceneSchema, 'scene.schema.json');
+  // Add scene schema to ajv (guard against duplicate registration)
+  if (!ajv.getSchema('scene.schema.json')) {
+    ajv.addSchema(sceneSchema, 'scene.schema.json');
+  }
 
   // Compile video schema
   let validate;

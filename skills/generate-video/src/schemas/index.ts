@@ -6,6 +6,7 @@
 
 export * from './animation';
 export * from './assets.manifest';
+export * from './character';
 export * from './direction';
 export * from './emphasis';
 export * from './scenario';
