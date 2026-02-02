@@ -3,6 +3,7 @@
  * @description Auto-generated Zod schema for Video Scenario Schema
  * @version 1.0.0
  * @generated This file is auto-generated from schemas/scenario.schema.json
+ *           All $ref references are resolved during generation.
  *           DO NOT EDIT MANUALLY - run `npm run generate:schemas` instead
  */
 

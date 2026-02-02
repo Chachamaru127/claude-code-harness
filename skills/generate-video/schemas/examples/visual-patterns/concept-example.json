@@ -23,7 +23,7 @@
         "label": "Auth Service",
         "description": "Handles authentication and authorization",
         "level": 1,
-        "parentId": "api-gateway",
+        "parent_id": "api-gateway",
         "icon": "server",
         "emphasis": "medium"
       },
@@ -32,7 +32,7 @@
         "label": "Data Service",
         "description": "Manages business data",
         "level": 1,
-        "parentId": "api-gateway",
+        "parent_id": "api-gateway",
         "icon": "database",
         "emphasis": "medium"
       },
@@ -41,7 +41,7 @@
         "label": "Notification Service",
         "description": "Sends notifications to users",
         "level": 1,
-        "parentId": "api-gateway",
+        "parent_id": "api-gateway",
         "icon": "server",
         "emphasis": "low"
       }
@@ -82,7 +82,7 @@
     "retries": 3
   },
   "metadata": {
-    "sceneId": "scene-002",
+    "scene_id": "scene-002",
     "purpose": "architecture-explanation",
     "tags": ["architecture", "microservices", "system-design"]
   }

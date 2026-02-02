@@ -173,7 +173,7 @@
                 "maximum": 5,
                 "default": 0
               },
-              "parentId": {
+              "parent_id": {
                 "type": "string",
                 "description": "親要素のID（階層構造を表現）",
                 "pattern": "^[a-z0-9_-]+$"
@@ -422,7 +422,7 @@
       "type": "object",
       "description": "メタデータ（追加情報）",
       "properties": {
-        "sceneId": {
+        "scene_id": {
           "type": "string",
           "description": "関連するシーンID"
         },

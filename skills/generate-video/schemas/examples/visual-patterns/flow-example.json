@@ -71,7 +71,7 @@
     "retries": 3
   },
   "metadata": {
-    "sceneId": "scene-003",
+    "scene_id": "scene-003",
     "purpose": "demo-workflow",
     "tags": ["workflow", "process", "automation"]
   }

@@ -242,7 +242,7 @@
         "position": {
           "type": "string",
           "description": "Position on screen (for dialogue scenes)",
-          "enum": ["left", "right", "center", "top-left", "top-right", "bottom-left", "bottom-right"],
+          "enum": ["left", "right", "center", "top_left", "top_right", "bottom_left", "bottom_right"],
           "default": "left"
         },
         "size_preset": {
@@ -303,12 +303,12 @@
           "properties": {
             "enter": {
               "type": "string",
-              "enum": ["fade", "slide", "pop", "none"],
+              "enum": ["fade", "slide_in", "pop", "none"],
               "default": "fade"
             },
             "exit": {
               "type": "string",
-              "enum": ["fade", "slide", "pop", "none"],
+              "enum": ["fade", "slide_out", "pop", "none"],
               "default": "fade"
             },
             "speaking_indicator": {

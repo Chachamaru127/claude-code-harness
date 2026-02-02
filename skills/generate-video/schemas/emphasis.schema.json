@@ -114,7 +114,7 @@
         "alignment": {
           "type": "string",
           "description": "配置位置",
-          "enum": ["center", "top", "bottom", "left", "right", "topLeft", "topRight", "bottomLeft", "bottomRight"],
+          "enum": ["center", "top", "bottom", "left", "right", "top_left", "top_right", "bottom_left", "bottom_right"],
           "default": "center"
         },
         "offset": {
@@ -151,13 +151,13 @@
           "type": "string",
           "description": "登場アニメーション",
           "enum": ["none", "fade_in", "slide_in", "zoom_in", "bounce"],
-          "default": "fadeIn"
+          "default": "fade_in"
         },
         "exit": {
           "type": "string",
           "description": "退場アニメーション",
           "enum": ["none", "fade_out", "slide_out", "zoom_out"],
-          "default": "fadeOut"
+          "default": "fade_out"
         },
         "duration_ms": {
           "type": "integer",

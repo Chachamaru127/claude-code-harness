@@ -130,7 +130,7 @@ describe('Visual Patterns Schema', () => {
               id: 'auth-service',
               label: 'Auth Service',
               level: 1,
-              parentId: 'api-gateway',
+              parent_id: 'api-gateway',
               icon: 'server',
               emphasis: 'medium'
             }

@@ -185,7 +185,7 @@ const testVideoScript = {
       },
       direction: {
         transition: {
-          in: "slide",
+          in: "slide_in",
           out: "fade",
           duration_ms: 500
         }

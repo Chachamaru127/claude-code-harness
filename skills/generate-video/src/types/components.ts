@@ -1,12 +1,22 @@
 /**
  * @file components.ts
- * @description Type definitions for Remotion components, synchronized with JSON schemas
+ * @description Type definitions for Remotion component props
  * @version 1.0.0
+ *
+ * NOTE: These types are for Remotion React components (visual rendering layer).
+ * They are intentionally different from JSON Schema types (data validation layer).
+ *
+ * For JSON Schema validation types, use Zod-inferred types from src/schemas/:
+ *   import { Animation, Emphasis, Scene } from '../schemas';
+ *   type AnimationType = z.infer<typeof AnimationSchema>;
+ *
+ * These component props include Remotion-specific fields (opacity_range, scale_range,
+ * spring config, etc.) that are not part of the video-script.json schema.
  */
 
 /**
  * Transition configuration for TransitionWrapper component
- * Maps to animation.schema.json
+ * Provides Remotion-specific props for animation rendering
  */
 export interface TransitionConfig {
   /** Transition type */
@@ -44,11 +54,11 @@ export interface TransitionConfig {
 
 /**
  * Emphasis configuration for EmphasisBox component
- * Maps to emphasis.schema.json
+ * Provides Remotion-specific props for emphasis rendering
  */
 export interface EmphasisConfig {
   /** Emphasis level affecting visual impact */
-  level: 'subtle' | 'medium' | 'strong';
+  level: 'high' | 'medium' | 'low';
 
   /** Visual effect type */
   effect: 'glow' | 'pulse' | 'outline' | 'none';
@@ -80,7 +90,7 @@ export interface EmphasisConfig {
 
 /**
  * Background configuration for BackgroundLayer component
- * Maps to visual-patterns.schema.json background section
+ * Provides Remotion-specific props for background rendering
  */
 export interface BackgroundConfig {
   /** Background type */
@@ -113,17 +123,17 @@ export interface BackgroundConfig {
 
 /**
  * Text emphasis configuration
- * Maps to emphasis.schema.json text array items
+ * Provides props for animated text rendering
  */
 export interface TextEmphasisConfig {
   /** Text content to emphasize */
   content: string;
 
-  /** Start frame (relative to scene) */
-  start_frame?: number;
+  /** Start time in milliseconds (relative to scene) */
+  start_ms?: number;
 
-  /** Duration in frames */
-  duration_frames?: number;
+  /** Duration in milliseconds */
+  duration_ms?: number;
 
   /** Text style variant */
   style?: 'bold' | 'glitch' | 'underline' | 'highlight' | 'glow';
@@ -131,7 +141,7 @@ export interface TextEmphasisConfig {
 
 /**
  * Sound effect configuration for emphasis
- * Maps to emphasis.schema.json sound object
+ * Provides props for audio cue synchronization
  */
 export interface SoundEffectConfig {
   /** Sound effect type */
@@ -143,23 +153,23 @@ export interface SoundEffectConfig {
   /** Timing relative to emphasis */
   timing?: 'start' | 'end' | 'peak';
 
-  /** Trigger frame (relative to scene) */
-  trigger_frame?: number;
+  /** Trigger time in milliseconds (relative to scene) */
+  trigger_ms?: number;
 }
 
 /**
  * Animation configuration
- * Maps to emphasis.schema.json animation object
+ * Provides props for entry/exit animations
  */
 export interface AnimationConfig {
   /** Entry animation */
-  entry?: 'none' | 'fadeIn' | 'slideIn' | 'zoomIn' | 'bounce';
+  entry?: 'none' | 'fade_in' | 'slide_in' | 'zoom_in' | 'bounce';
 
   /** Exit animation */
-  exit?: 'none' | 'fadeOut' | 'slideOut' | 'zoomOut';
+  exit?: 'none' | 'fade_out' | 'slide_out' | 'zoom_out';
 
-  /** Animation duration in frames */
-  duration_frames?: number;
+  /** Animation duration in milliseconds */
+  duration_ms?: number;
 
   /** Enable pulse effect */
   pulse?: boolean;
@@ -207,7 +217,7 @@ export function isEmphasisConfig(obj: unknown): obj is EmphasisConfig {
   const config = obj as EmphasisConfig;
   return (
     typeof config.level === 'string' &&
-    ['subtle', 'medium', 'strong'].includes(config.level) &&
+    ['high', 'medium', 'low'].includes(config.level) &&
     typeof config.effect === 'string' &&
     ['glow', 'pulse', 'outline', 'none'].includes(config.effect)
   );

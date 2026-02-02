@@ -28,7 +28,7 @@
     "retries": 3
   },
   "metadata": {
-    "sceneId": "scene-004",
+    "scene_id": "scene-004",
     "purpose": "cta",
     "tags": ["highlight", "value-prop", "impact"]
   }

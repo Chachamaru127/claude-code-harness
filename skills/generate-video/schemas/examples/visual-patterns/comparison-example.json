@@ -42,7 +42,7 @@
     "retries": 3
   },
   "metadata": {
-    "sceneId": "scene-001",
+    "scene_id": "scene-001",
     "purpose": "problem-solution",
     "tags": ["comparison", "improvement", "workflow"]
   }

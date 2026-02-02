@@ -10,17 +10,17 @@
     "test:schemas": "jest tests/schema-validation.test.js"
   },
   "dependencies": {
-    "zod": "^3.22.4",
     "react": "^18.2.0",
-    "remotion": "^4.0.0"
+    "remotion": "^4.0.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/react": "^18.2.0",
     "ajv": "^8.12.0",
     "ajv-formats": "^2.1.1",
     "jest": "^29.7.0",
     "json-schema-deref-sync": "^0.13.0",
     "json-schema-to-zod": "^2.0.0",
-    "@types/react": "^18.2.0",
     "typescript": "^5.0.0"
   },
   "engines": {
