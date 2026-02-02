@@ -1,0 +1,174 @@
+{
+  "$schema": "../../schemas/backgrounds.schema.json",
+  "version": "1.0.0",
+  "backgrounds": [
+    {
+      "id": "neutral",
+      "name": "Neutral",
+      "description": "Clean, professional background for standard content",
+      "type": "gradient",
+      "colors": {
+        "primary": "#f5f5f5",
+        "secondary": "#e0e0e0",
+        "accent": "#ffffff"
+      },
+      "gradient": {
+        "type": "linear",
+        "angle": 135,
+        "stops": [
+          { "color": "#ffffff", "position": 0 },
+          { "color": "#f5f5f5", "position": 50 },
+          { "color": "#e8e8e8", "position": 100 }
+        ]
+      },
+      "usage": {
+        "scenes": ["intro", "content", "explanation"],
+        "recommended_for": "General content, explanations, neutral information",
+        "avoid_for": "CTAs, hooks, dramatic reveals"
+      },
+      "animation": {
+        "enabled": false
+      }
+    },
+    {
+      "id": "highlight",
+      "name": "Highlight",
+      "description": "Warm, attention-grabbing background for important messages",
+      "type": "gradient",
+      "colors": {
+        "primary": "#fff9e6",
+        "secondary": "#ffe699",
+        "accent": "#ffd966"
+      },
+      "gradient": {
+        "type": "radial",
+        "stops": [
+          { "color": "#fffef5", "position": 0 },
+          { "color": "#fff9e6", "position": 40 },
+          { "color": "#ffe699", "position": 100 }
+        ]
+      },
+      "usage": {
+        "scenes": ["hook", "cta", "key_point"],
+        "recommended_for": "CTAs, important messages, value propositions, key benefits",
+        "avoid_for": "Long explanations, technical details"
+      },
+      "animation": {
+        "enabled": true,
+        "type": "pulse",
+        "duration": 2000,
+        "intensity": 0.1
+      }
+    },
+    {
+      "id": "dramatic",
+      "name": "Dramatic",
+      "description": "Dark, high-contrast background for impact and reveals",
+      "type": "gradient",
+      "colors": {
+        "primary": "#1a1a2e",
+        "secondary": "#16213e",
+        "accent": "#0f3460"
+      },
+      "gradient": {
+        "type": "linear",
+        "angle": 225,
+        "stops": [
+          { "color": "#0a0a14", "position": 0 },
+          { "color": "#1a1a2e", "position": 30 },
+          { "color": "#16213e", "position": 70 },
+          { "color": "#0f3460", "position": 100 }
+        ]
+      },
+      "overlay": {
+        "enabled": true,
+        "type": "vignette",
+        "intensity": 0.3
+      },
+      "usage": {
+        "scenes": ["hook", "problem", "differentiator", "reveal"],
+        "recommended_for": "Opening hooks, problem statements, dramatic reveals, differentiators",
+        "avoid_for": "Detailed content, text-heavy slides"
+      },
+      "animation": {
+        "enabled": true,
+        "type": "shift",
+        "duration": 10000,
+        "intensity": 0.05
+      }
+    },
+    {
+      "id": "tech",
+      "name": "Tech",
+      "description": "Modern tech-inspired background with grid patterns",
+      "type": "pattern",
+      "colors": {
+        "primary": "#0d1b2a",
+        "secondary": "#1b263b",
+        "accent": "#415a77",
+        "grid": "#2d3e50"
+      },
+      "gradient": {
+        "type": "linear",
+        "angle": 180,
+        "stops": [
+          { "color": "#0d1b2a", "position": 0 },
+          { "color": "#1b263b", "position": 100 }
+        ]
+      },
+      "pattern": {
+        "type": "grid",
+        "size": 40,
+        "lineWidth": 1,
+        "opacity": 0.15
+      },
+      "usage": {
+        "scenes": ["architecture", "technical", "system_overview"],
+        "recommended_for": "Architecture diagrams, technical explanations, system overviews, code demos",
+        "avoid_for": "Emotional content, human-focused stories"
+      },
+      "animation": {
+        "enabled": true,
+        "type": "scan",
+        "duration": 3000,
+        "intensity": 0.2
+      }
+    },
+    {
+      "id": "warm",
+      "name": "Warm",
+      "description": "Friendly, approachable background for human-focused content",
+      "type": "gradient",
+      "colors": {
+        "primary": "#fff5eb",
+        "secondary": "#ffe6cc",
+        "accent": "#ffd9b3"
+      },
+      "gradient": {
+        "type": "radial",
+        "stops": [
+          { "color": "#fffaf5", "position": 0 },
+          { "color": "#fff5eb", "position": 30 },
+          { "color": "#ffe6cc", "position": 100 }
+        ]
+      },
+      "usage": {
+        "scenes": ["testimonial", "onboarding", "community"],
+        "recommended_for": "Onboarding, testimonials, community content, friendly messages, welcome screens",
+        "avoid_for": "Technical details, dramatic statements"
+      },
+      "animation": {
+        "enabled": true,
+        "type": "float",
+        "duration": 4000,
+        "intensity": 0.08
+      }
+    }
+  ],
+  "metadata": {
+    "created_at": "2026-02-02",
+    "updated_at": "2026-02-02",
+    "author": "Claude Code",
+    "note": "These are configuration presets. Actual background rendering is handled by remotion/components/BackgroundLayer.tsx"
+  }
+}
