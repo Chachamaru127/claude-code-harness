@@ -202,16 +202,17 @@ function msToFrames(ms, fps) {
 
 /**
  * Get Remotion CLI path
+ * Returns { command: string, extraArgs: string[] } for safe spawn usage
  */
 function getRemotionCli() {
   // Check if remotion is installed locally
   const localRemotionBin = path.join(process.cwd(), 'node_modules', '.bin', 'remotion');
   if (fs.existsSync(localRemotionBin)) {
-    return localRemotionBin;
+    return { command: localRemotionBin, extraArgs: [] };
   }
 
-  // Fallback to npx
-  return 'npx remotion';
+  // Fallback to npx - split into command and args for shell: false safety
+  return { command: 'npx', extraArgs: ['remotion'] };
 }
 
 /**
@@ -233,7 +234,7 @@ function buildRenderCommand(script, options) {
   }
 
   // Build command
-  const remotionCli = getRemotionCli();
+  const { command: remotionCommand, extraArgs: remotionExtraArgs } = getRemotionCli();
   const entryPoint = path.join(process.cwd(), 'remotion', 'index.ts');
 
   // Write props to temp file to avoid CLI argument length limits (Security & Performance fix)
@@ -241,6 +242,7 @@ function buildRenderCommand(script, options) {
   fs.writeFileSync(propsFile, JSON.stringify({ script }), 'utf-8');
 
   const args = [
+    ...remotionExtraArgs,
     'render',
     entryPoint,
     options.composition,
@@ -277,7 +279,7 @@ function buildRenderCommand(script, options) {
     args.push('--every-nth-frame=2');
   }
 
-  return { command: remotionCli, args, outputPath, totalFrames, fps };
+  return { command: remotionCommand, args, outputPath, totalFrames, fps };
 }
 
 /**
@@ -285,20 +287,13 @@ function buildRenderCommand(script, options) {
  */
 function executeRender(command, args) {
   logInfo('Starting Remotion render...');
-  log(`Command: ${command} ${args.join(' ')}`, 'dim');
+  const displayCommand = `${command} ${args.join(' ')}`;
+  log(`Command: ${displayCommand}`, 'dim');
 
   try {
     // Use spawn with shell: false for security (prevents command injection)
-    // Split command if it's 'npx remotion' format
-    let spawnCommand = command;
-    let spawnArgs = args;
-    if (command.includes(' ')) {
-      const parts = command.split(' ');
-      spawnCommand = parts[0];
-      spawnArgs = [...parts.slice(1), ...args];
-    }
-
-    const child = spawn(spawnCommand, spawnArgs, {
+    // Command is already split properly by getRemotionCli()
+    const child = spawn(command, args, {
       stdio: 'inherit',
       shell: false,
     });
