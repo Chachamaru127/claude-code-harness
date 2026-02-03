@@ -2,6 +2,7 @@
 name: memory
 description: "Manages memory, SSOT files, and Plans.md operations. Use when user mentions memory, SSOT, decisions.md, patterns.md, merging, or migration. Do NOT load for: implementation work, reviews, ad-hoc notes, or in-session logging."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
+argument-hint: "[ssot|sync|migrate]"
 ---
 
 # Memory Skills

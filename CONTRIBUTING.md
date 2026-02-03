@@ -47,9 +47,8 @@ claude-code-harness/
 ├── .claude-plugin/
 │   ├── plugin.json      # Plugin manifest
 │   └── marketplace.json # Marketplace config
-├── commands/            # Slash commands
+├── skills/              # Skills (primary - v2.17.0+)
 ├── agents/              # Subagents
-├── skills/              # Agent skills
 ├── hooks/               # Lifecycle hooks
 ├── templates/           # Template files
 ├── README.md
@@ -57,11 +56,20 @@ claude-code-harness/
 └── CONTRIBUTING.md
 ```
 
-### Adding a New Command
+> **Note**: As of v2.17.0, commands have been migrated to skills. Skills are the recommended approach for new functionality.
 
-1. Create `commands/your-command.md`
-2. Follow the existing command structure
-3. Update README.md with the new command
+### Adding a New Skill (Recommended)
+
+1. Create `skills/your-skill/SKILL.md` with YAML frontmatter:
+   ```yaml
+   ---
+   name: your-skill
+   description: "Description with trigger phrases. Use when... Do NOT load for..."
+   allowed-tools: ["Read", "Write", "Edit", "Bash"]
+   ---
+   ```
+2. Add supporting files to `skills/your-skill/references/` if needed
+3. Update README.md with the new skill
 
 ### Adding a New Agent
 
@@ -70,12 +78,6 @@ claude-code-harness/
 3. Update README.md (recommended)
 
 > Note: agents/ are auto-discovered by Claude Code. You typically do not need to manually enumerate them in `plugin.json`.
-
-### Adding a New Skill
-
-1. Create `skills/your-skill/SKILL.md`
-2. Define trigger phrases
-3. Update README.md
 
 ## Version Management
 

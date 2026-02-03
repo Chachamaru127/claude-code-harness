@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.16.12-blue.svg" alt="Version"></a>
+  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.17.1-blue.svg" alt="Version"></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
   <a href="docs/CLAUDE_CODE_COMPATIBILITY.md"><img src="https://img.shields.io/badge/Claude_Code-v2.1+-purple.svg" alt="Claude Code"></a>
   <img src="https://img.shields.io/badge/Skills-42-orange.svg" alt="Skills">
@@ -37,6 +37,63 @@ graph LR
 **Three commands. One workflow. Production-ready code.**
 
 > **For VibeCoders**: Just say "I want a login form with email validation" and Harness handles planning, implementation, and review automatically.
+
+---
+
+## 🪄 Ultrawork — The Magic Word
+
+> **⚠️ Experimental**: Powerful, but understand it before using.
+
+**"Plan it, implement in parallel, review it, commit it"**
+
+...is tedious to say every time. So:
+
+```
+ultrawork
+```
+
+**One word. Harness does the rest.**
+
+```mermaid
+graph LR
+    A["ultrawork"] --> B["Generate Plan"]
+    B --> C["Parallel Implementation"]
+    C --> D["Self-Review"]
+    D --> E["Quality Gate"]
+    E --> F["Auto-Commit"]
+```
+
+### Before → After
+
+| Before | After |
+|--------|-------|
+| `/plan-with-agent` → approve → `/work` → `/harness-review` → `git commit` | `ultrawork` |
+| 5 command inputs | **1** |
+| Press "yes" every time | **Auto-proceeds after plan approval** |
+| Confirm every rm -rf | **Whitelist-based auto-approval** |
+
+### Usage
+
+```bash
+# Basic (specify task)
+ultrawork create a login form
+
+# Specify parallelism
+ultrawork --parallel 3 add 5 API endpoints
+
+# Execute all Plans.md tasks
+ultrawork --all
+```
+
+### Why "Experimental"?
+
+- `rm -rf` and `git push` **only auto-approved for paths specified in plan**
+- Auto-expires in 24 hours (runaway prevention)
+- Quality gate blocks commit if issues found
+
+**In other words**: Once you approve the plan, Claude takes responsibility to completion.
+
+> 💡 **For busy people**: Type `ultrawork`, approve the plan, go get coffee. Code's ready when you're back.
 
 ---
 
@@ -267,6 +324,37 @@ Generate product videos with Remotion:
 AI-generated scenes, narration, and effects.
 
 > **Dependencies**: Requires [Remotion](https://www.remotion.dev/) project setup and ffmpeg. This is an optional feature for advanced users.
+
+</details>
+
+<details>
+<summary><strong>Agent Trace</strong></summary>
+
+Automatically tracks AI-generated code edits:
+
+```
+.claude/state/agent-trace.jsonl
+```
+
+**What it does:**
+- Records every Edit/Write operation with timestamps
+- Shows project name, current task, and recent edits at session end
+- Enables `/sync-status` to compare Plans.md with actual changes
+
+**Session end output:**
+```
+📊 Session Summary
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📁 Project: my-app
+🎯 Current Task: Add login form
+✅ Completed: 3 tasks
+📄 Recent edits:
+   - src/components/LoginForm.tsx
+   - src/lib/auth.ts
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+No setup required—enabled by default.
 
 </details>
 

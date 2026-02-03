@@ -5,6 +5,8 @@ tools: [Read, Write, Edit, Bash, Grep, Glob]
 disallowedTools: [Task]
 model: sonnet
 color: magenta
+skills:
+  - generate-video
 ---
 
 # Video Scene Generator Agent

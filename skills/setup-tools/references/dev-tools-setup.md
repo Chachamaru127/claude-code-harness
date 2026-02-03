@@ -14,7 +14,7 @@ Simply installing AST-Grep and LSP doesn't help - Claude will continue using sta
 | Can't call from skills | Reference as MCP tool in skills |
 | Usage unclear | Document purpose and patterns in tool description |
 
-**Result**: `/harness-review` and review skill automatically use `harness_ast_search`, improving code smell detection accuracy.
+**Result**: `/harness-review` and harness-review skill automatically use `harness_ast_search`, improving code smell detection accuracy.
 
 ---
 

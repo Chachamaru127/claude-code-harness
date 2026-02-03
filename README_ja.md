@@ -8,7 +8,7 @@
 </p>
 
 <p align="center">
-  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.16.12-blue.svg" alt="Version"></a>
+  <a href="VERSION"><img src="https://img.shields.io/badge/version-2.17.1-blue.svg" alt="Version"></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
   <a href="docs/CLAUDE_CODE_COMPATIBILITY.md"><img src="https://img.shields.io/badge/Claude_Code-v2.1+-purple.svg" alt="Claude Code"></a>
   <img src="https://img.shields.io/badge/Skills-42-orange.svg" alt="Skills">
@@ -37,6 +37,63 @@ graph LR
 **3つのコマンド。1つのワークフロー。本番品質のコード。**
 
 > **VibeCoder向け**: 「メールバリデーション付きのログインフォームが欲しい」と言うだけで、Harness が計画・実装・レビューを自動で行います。
+
+---
+
+## 🪄 Ultrawork — 魔法の言葉
+
+> **⚠️ 実験的機能**: 強力だが、十分に理解してから使用してください。
+
+**「計画して、並列で実装して、レビューして、コミットして」**
+
+...と毎回言うのは面倒。だから:
+
+```
+ultrawork
+```
+
+**この一言で、Harness が全部やる。**
+
+```mermaid
+graph LR
+    A["ultrawork"] --> B["計画生成"]
+    B --> C["並列実装"]
+    C --> D["セルフレビュー"]
+    D --> E["品質チェック"]
+    E --> F["自動コミット"]
+```
+
+### Before → After
+
+| Before | After |
+|--------|-------|
+| `/plan-with-agent` → 承認 → `/work` → `/harness-review` → `git commit` | `ultrawork` |
+| 5回のコマンド入力 | **1回** |
+| 毎回「はい」を押す | **計画承認後は自動進行** |
+| rm -rf で毎回確認 | **ホワイトリスト方式で自動承認** |
+
+### 使い方
+
+```bash
+# 基本（タスクを指定）
+ultrawork ログインフォームを作って
+
+# 並列数を指定
+ultrawork --parallel 3 API エンドポイントを5つ追加
+
+# Plans.md の全タスクを実行
+ultrawork --all
+```
+
+### なぜ「実験的」？
+
+- `rm -rf` や `git push` を**計画時に承認したパスのみ**自動実行
+- 24時間で自動失効（暴走防止）
+- 品質チェックで問題があればコミットをブロック
+
+**つまり**: 人間が計画を承認したら、あとは Claude が責任を持って完遂する。
+
+> 💡 **忙しい人向け**: `ultrawork` と打って、計画を承認したら、コーヒーを取りに行こう。戻ってきたらコードができている。
 
 ---
 
@@ -267,6 +324,37 @@ Remotion でプロダクト動画を生成：
 AI生成のシーン、ナレーション、エフェクト。
 
 > **依存関係**: [Remotion](https://www.remotion.dev/) プロジェクトのセットアップと ffmpeg が必要です。上級者向けのオプション機能です。
+
+</details>
+
+<details>
+<summary><strong>Agent Trace</strong></summary>
+
+AI による編集操作を自動追跡：
+
+```
+.claude/state/agent-trace.jsonl
+```
+
+**機能:**
+- Edit/Write 操作をタイムスタンプ付きで記録
+- セッション終了時にプロジェクト名、現在のタスク、直近の編集を表示
+- `/sync-status` で Plans.md と実際の変更を照合可能に
+
+**セッション終了時の出力:**
+```
+📊 セッションサマリー
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📁 プロジェクト: my-app
+🎯 現在のタスク: ログインフォーム追加
+✅ 完了タスク: 3件
+📄 直近の編集:
+   - src/components/LoginForm.tsx
+   - src/lib/auth.ts
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+設定不要—デフォルトで有効です。
 
 </details>
 

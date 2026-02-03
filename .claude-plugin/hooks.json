@@ -13,6 +13,16 @@
         ]
       },
       {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" pretooluse-inbox-check",
+            "timeout": 10
+          }
+        ]
+      },
+      {
         "matcher": "mcp__chrome-devtools__.*|mcp__playwright__.*|mcp__plugin_playwright_playwright__.*",
         "hooks": [
           {
@@ -213,6 +223,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/emit-agent-trace.js\"",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" auto-cleanup-hook",
             "timeout": 60
           },
@@ -245,6 +260,11 @@
             "type": "command",
             "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" posttooluse-tampering-detector",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" session-auto-broadcast",
+            "timeout": 10
           }
         ]
       }
@@ -259,7 +279,7 @@
           },
           {
             "type": "prompt",
-            "prompt": "セッション終了の評価を行ってください。\n\n確認事項:\n1. ユーザーの依頼は完了しましたか？\n2. 未解決のエラーや問題がありますか？\n3. フォローアップや追加作業が必要ですか？\n\n【重要】必ず以下のJSON形式のみで回答:\n- 終了OK: {\"ok\": true}\n- 継続必要: {\"ok\": false, \"reason\": \"理由を日本語で記載\"}",
+            "prompt": "セッション終了の評価を行ってください。\n\n確認事項:\n1. ユーザーの依頼は完了しましたか？\n2. 未解決のエラーや問題がありますか？\n\n【重要】JSON形式で回答:\n- 終了OK: {\"ok\": true}\n- 継続必要: {\"ok\": false, \"reason\": \"キーワードのみ（例: 実行指示待ち/エラー未解決/確認待ち）\"}",
             "timeout": 30
           }
         ]

@@ -3,6 +3,7 @@ name: localize-rules
 description: "Localizes rule files to match project structure. Use when user mentions localizing rules, adapting rules to project, or customizing templates. Do NOT load for: app i18n/localization features, business rule implementation."
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"]
 disable-model-invocation: true
+argument-hint: "[template-name]"
 ---
 
 # Localize Rules Skill

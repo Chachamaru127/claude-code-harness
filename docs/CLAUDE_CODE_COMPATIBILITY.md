@@ -118,7 +118,7 @@
 
 | 機能 | Harness 対応 | 備考 |
 |------|-------------|------|
-| LSP tool | 対応済み | impl/review スキルで活用推奨 |
+| LSP tool | 対応済み | impl/harness-review スキルで活用推奨 |
 
 ## 互換性チェック方法
 

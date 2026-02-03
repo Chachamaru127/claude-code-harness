@@ -2,6 +2,7 @@
 name: notebookLM
 description: "Generates NotebookLM YAML and slide content for documentation. Use when user mentions NotebookLM, YAML, slides, or presentations. Do NOT load for: implementation work, code fixes, reviews, or deployments."
 allowed-tools: ["Read", "Write", "Edit"]
+argument-hint: "[yaml|slides]"
 ---
 
 # NotebookLM Skill

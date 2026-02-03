@@ -6,6 +6,7 @@ review:
   # Codex second opinion (requires Codex MCP server)
   codex:
     enabled: true
+    timeout_ms: 60000 # Codex MCP timeout (ms)
 
   # Default mode: "default" (4 perspectives) or "codex" (parallel MCP execution)
   mode: codex

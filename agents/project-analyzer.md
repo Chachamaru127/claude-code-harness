@@ -70,8 +70,8 @@ Task tool で subagent_type="project-analyzer" を指定
 [ -f AGENTS.md ] && echo "AGENTS.md:yes" || echo "AGENTS.md:no"
 [ -f CLAUDE.md ] && echo "CLAUDE.md:yes" || echo "CLAUDE.md:no"
 [ -f Plans.md ] && echo "Plans.md:yes" || echo "Plans.md:no"
-[ -d .claude/commands ] && echo ".claude/commands:yes" || echo ".claude/commands:no"
-[ -d .cursor/commands ] && echo ".cursor/commands:yes" || echo ".cursor/commands:no"
+[ -d .claude/skills ] && echo ".claude/skills:yes" || echo ".claude/skills:no"
+[ -d .cursor/skills ] && echo ".cursor/skills:yes" || echo ".cursor/skills:no"
 ```
 
 ### Step 3: コードファイルの検出

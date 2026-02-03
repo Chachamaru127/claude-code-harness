@@ -7,7 +7,7 @@ model: sonnet
 color: cyan
 skills:
   - plans-management
-  - workflow
+  - workflow-guide
 ---
 
 # Project State Updater Agent

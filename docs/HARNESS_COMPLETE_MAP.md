@@ -133,7 +133,7 @@ flowchart LR
     subgraph SKILLS["第2層 Skills"]
         S1["impl スキル"]
         S2["verify スキル"]
-        S3["review スキル"]
+        S3["harness-review スキル"]
     end
 
     subgraph HOOKS["第3層 Hooks"]
@@ -947,19 +947,17 @@ claude-code-harness/
 │   ├── hooks.json
 │   ├── marketplace.json
 │   └── CLAUDE.md
-├── commands/                 # スラッシュコマンド
-│   ├── core/                 # 主要コマンド（7個）
-│   ├── handoff/              # 連携コマンド（2個）
-│   └── optional/             # オプションコマンド（22個）
-├── skills/                   # スキル（28カテゴリ）
-│   ├── impl/
-│   ├── review/
-│   ├── verify/
-│   ├── setup/
-│   ├── memory/
-│   ├── session-init/
-│   ├── handoff/
-│   └── ...
+├── skills/                   # スキル（30+カテゴリ、v2.17.0+でcommands廃止）
+│   ├── impl/                 # 実装
+│   ├── harness-review/       # レビュー
+│   ├── verify/               # 検証
+│   ├── planning/             # プランニング
+│   ├── setup/                # セットアップ
+│   ├── memory/               # メモリ管理
+│   ├── session-init/         # セッション初期化
+│   ├── handoff/              # ハンドオフ
+│   ├── ci/                   # CI/CD
+│   └── ...                   # 他20+スキル
 ├── agents/                   # サブエージェント（8個）
 │   ├── task-worker.md
 │   ├── code-reviewer.md

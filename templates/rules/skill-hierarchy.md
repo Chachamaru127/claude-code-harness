@@ -15,7 +15,7 @@ skills/
 │   ├── SKILL.md              # カテゴリ概要・ルーティング
 │   └── work-impl-feature/    # 子スキル
 │       └── doc.md            # 具体的な手順
-├── review/
+├── harness-review/
 │   ├── SKILL.md
 │   ├── code-review/
 │   │   └── doc.md
@@ -47,8 +47,8 @@ Skill ツールで親スキルを起動した後、**ユーザーの意図に該
 | ユーザーの意図 | 起動するスキル | 読むべき子スキル |
 |---------------|---------------|-----------------|
 | 「機能を実装して」 | impl | work-impl-feature/doc.md |
-| 「コードレビューして」 | review | code-review/doc.md |
-| 「セキュリティチェック」 | review | security-review/doc.md |
+| 「コードレビューして」 | harness-review | code-review/doc.md |
+| 「セキュリティチェック」 | harness-review | security-review/doc.md |
 | 「ビルドして」 | verify | build-verify/doc.md |
 
 ### 3. 複数の子スキルが該当する場合

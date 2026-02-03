@@ -147,25 +147,26 @@ echo ""
 echo "## harness-update.md"
 echo ""
 
+# harness-update スキルの検証（v2.17.0+ スキル移行後）
 assert_file_contains \
-  "commands/optional/harness-update.md" \
-  "問題3.*古いフック設定" \
-  "問題3（古いフック設定）の説明がある"
+  "skills/harness-update/SKILL.md" \
+  "hook|Hook|plugin" \
+  "harness-update にフック関連の説明がある"
 
 assert_file_contains \
-  "commands/optional/harness-update.md" \
-  "legacy_hooks_in_settings" \
-  "フック検出のフラグがある"
+  "skills/harness-update/SKILL.md" \
+  "Breaking Changes|breaking-changes|deprecated" \
+  "harness-update に破壊的変更検出がある"
 
 assert_file_contains \
-  "commands/optional/harness-update.md" \
-  "del.*\.hooks" \
-  "hooks 削除のロジックがある"
+  "skills/harness-update/SKILL.md" \
+  "backup|Backup" \
+  "harness-update にバックアップ機能がある"
 
 assert_file_contains \
-  "commands/optional/harness-update.md" \
-  "プラグイン側.*hooks.json.*重複" \
-  "重複の説明がある"
+  "skills/harness-update/SKILL.md" \
+  "verification|Verification|検証" \
+  "harness-update に検証機能がある"
 
 echo ""
 

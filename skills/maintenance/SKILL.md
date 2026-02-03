@@ -2,6 +2,7 @@
 name: maintenance
 description: "Cleans up and organizes project files. Use when user mentions cleanup, archive, file bloat, or organizing Plans.md/session logs. Do NOT load for: implementation work, reviews, new feature development, or deployment."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
+argument-hint: "[cleanup|archive]"
 ---
 
 # Maintenance Skills

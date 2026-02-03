@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "codex-worker-config-v1.0.0",
+  "title": "Codex Worker Configuration",
+  "description": "Configuration schema for Codex Worker scripts",
+  "type": "object",
+  "properties": {
+    "ttl_minutes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 1440,
+      "default": 30,
+      "description": "Lock TTL in minutes (1-1440)"
+    },
+    "heartbeat_minutes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 60,
+      "default": 10,
+      "description": "Heartbeat interval in minutes (1-60)"
+    },
+    "max_retries": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10,
+      "default": 3,
+      "description": "Maximum retry count (1-10)"
+    },
+    "approval_policy": {
+      "type": "string",
+      "enum": ["untrusted", "on-failure", "on-request", "never"],
+      "default": "never",
+      "description": "Codex approval policy"
+    },
+    "sandbox": {
+      "type": "string",
+      "enum": ["read-only", "workspace-write", "danger-full-access"],
+      "default": "workspace-write",
+      "description": "Codex sandbox mode"
+    },
+    "base_branch": {
+      "type": "string",
+      "default": "",
+      "description": "Base branch name (empty = auto-detect)"
+    },
+    "require_gate_pass_for_merge": {
+      "type": "boolean",
+      "default": true,
+      "description": "Require quality gate pass before merge (Security: defaults to true)"
+    },
+    "gate_skip_allowlist": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["structure", "test", "evidence", "security"]
+      },
+      "default": [],
+      "description": "Gates that can be skipped (empty = none allowed)"
+    }
+  },
+  "additionalProperties": false
+}

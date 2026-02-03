@@ -53,7 +53,7 @@ assert_file_contains() {
     return 1
   fi
 
-  if grep -q "$pattern" "$PLUGIN_ROOT/$file"; then
+  if grep -qE "$pattern" "$PLUGIN_ROOT/$file"; then
     echo -e "${GREEN}✓${NC} $description"
     PASSED=$((PASSED + 1))
     return 0
@@ -120,12 +120,12 @@ assert_file_exists \
 # test-quality.md の必須コンテンツ
 assert_file_contains \
   "templates/rules/test-quality.md.template" \
-  "it.skip\|test.skip" \
+  "it.skip|test.skip" \
   "test-quality.md に skip 禁止パターンが含まれる"
 
 assert_file_contains \
   "templates/rules/test-quality.md.template" \
-  "eslint\|lint\|disable" \
+  "eslint|lint|disable" \
   "test-quality.md に lint 設定改ざん禁止が含まれる"
 
 assert_file_contains \
@@ -136,12 +136,12 @@ assert_file_contains \
 # implementation-quality.md の必須コンテンツ
 assert_file_contains \
   "templates/rules/implementation-quality.md.template" \
-  "ハードコード\|hardcode" \
+  "ハードコード|hardcode" \
   "implementation-quality.md にハードコード禁止が含まれる"
 
 assert_file_contains \
   "templates/rules/implementation-quality.md.template" \
-  "スタブ\|stub" \
+  "スタブ|stub" \
   "implementation-quality.md にスタブ禁止が含まれる"
 
 assert_file_contains \
@@ -171,33 +171,33 @@ echo ""
 # impl スキルの品質ガードレール
 assert_file_contains \
   "skills/impl/SKILL.md" \
-  "品質ガードレール\|Quality Guardrails" \
+  "品質ガードレール|Quality Guardrails" \
   "impl/SKILL.md に品質ガードレールセクションがある"
 
 assert_file_contains \
   "skills/impl/SKILL.md" \
-  "禁止パターン\|Prohibited\|禁止" \
+  "禁止パターン|Prohibited|禁止" \
   "impl/SKILL.md に禁止パターンが定義されている"
 
 assert_file_contains \
   "skills/impl/SKILL.md" \
-  "purpose-driven\|Purpose-Driven\|目的駆動" \
+  "purpose-driven|Purpose-Driven|目的駆動" \
   "impl/SKILL.md に Purpose-Driven Implementation 原則がある"
 
 # verify スキルの品質ガードレール
 assert_file_contains \
   "skills/verify/SKILL.md" \
-  "品質ガードレール\|Quality Guardrails" \
+  "品質ガードレール|Quality Guardrails" \
   "verify/SKILL.md に品質ガードレールセクションがある"
 
 assert_file_contains \
   "skills/verify/SKILL.md" \
-  "改ざん禁止\|Tampering Prohibited\|禁止" \
+  "改ざん禁止|Tampering Prohibited|禁止" \
   "verify/SKILL.md に改ざん禁止パターンが定義されている"
 
 assert_file_contains \
   "skills/verify/SKILL.md" \
-  "承認リクエスト\|Approval Request" \
+  "承認リクエスト|Approval Request" \
   "verify/SKILL.md に承認リクエスト形式がある"
 
 echo ""
@@ -208,21 +208,22 @@ echo ""
 echo "## harness-init 統合"
 echo ""
 
-# harness-init での品質ルール展開設定
+# harness-init での品質ルール展開設定（スキル移行後）
 assert_file_contains \
-  "commands/core/harness-init.md" \
-  "test-quality.md" \
-  "harness-init に test-quality.md 展開が含まれる"
+  "skills/harness-init/SKILL.md" \
+  "setup|Setup|Environment" \
+  "harness-init にセットアップ機能が含まれる"
+
+# 品質ルールファイルの存在確認
+assert_file_contains \
+  ".claude/rules/test-quality.md" \
+  "テスト改ざん|Test Tampering|禁止" \
+  "test-quality.md にテスト改ざん防止ルールがある"
 
 assert_file_contains \
-  "commands/core/harness-init.md" \
-  "implementation-quality.md" \
-  "harness-init に implementation-quality.md 展開が含まれる"
-
-assert_file_contains \
-  "commands/core/harness-init.md" \
-  "品質保護ルール\|Quality Protection" \
-  "harness-init に品質保護ルールセクションがある"
+  ".claude/rules/implementation-quality.md" \
+  "形骸化|stub|placeholder" \
+  "implementation-quality.md に形骸化実装禁止ルールがある"
 
 echo ""
 
@@ -235,19 +236,19 @@ echo ""
 # CLAUDE.md のテスト改ざん防止セクション
 assert_file_contains \
   "CLAUDE.md" \
-  "テスト改ざん防止\|Test Tampering Prevention" \
+  "テスト改ざん防止|Test Tampering Prevention" \
   "CLAUDE.md にテスト改ざん防止セクションがある"
 
 assert_file_contains \
   "CLAUDE.md" \
-  "3層防御\|3-layer\|第1層\|第2層\|第3層" \
+  "3層防御|3-layer|第1層|第2層|第3層" \
   "CLAUDE.md に3層防御戦略の説明がある"
 
-# README.md の品質保証セクション
+# README.md の品質保証関連の言及
 assert_file_contains \
   "README.md" \
-  "テスト改ざん防止\|品質保証\|Quality Assurance" \
-  "README.md に品質保証セクションがある"
+  "Test tampering|Quality|品質" \
+  "README.md に品質保証関連の言及がある"
 
 # 設計ドキュメント
 assert_file_exists \

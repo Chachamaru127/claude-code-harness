@@ -560,7 +560,7 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
           
           if [ "$SKILL_USED_THIS_SESSION" = "false" ]; then
             # スキル未使用 → ブロック
-            AVAILABLE_SKILLS=$(jq -r '.skills // [] | join(", ")' "$SKILLS_CONFIG_FILE" 2>/dev/null || echo "impl, review")
+            AVAILABLE_SKILLS=$(jq -r '.skills // [] | join(", ")' "$SKILLS_CONFIG_FILE" 2>/dev/null || echo "impl, harness-review")
             DENY_MSG="[Skills Gate] コード編集前にスキルを使用してください。
 
 このプロジェクトでは Skills Gate が有効です。
@@ -568,7 +568,7 @@ if [ "$TOOL_NAME" = "Write" ] || [ "$TOOL_NAME" = "Edit" ]; then
 
 利用可能なスキル: ${AVAILABLE_SKILLS}
 
-例: Skill ツールで 'impl' や 'review' を呼び出す
+例: Skill ツールで 'impl' や 'harness-review' を呼び出す
 
 スキルを使用後、再度 Write/Edit を実行してください。"
             emit_deny "$DENY_MSG"

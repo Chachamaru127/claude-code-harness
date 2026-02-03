@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "agent-trace-v0.1.0",
+  "title": "Agent Trace Record",
+  "description": "Open specification for tracking AI-generated code edits (v0.1.0)",
+  "type": "object",
+  "required": ["version", "id", "timestamp", "tool", "files"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "0.1.0",
+      "description": "Agent Trace specification version"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+      "description": "UUID v4 identifier"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO8601 UTC timestamp"
+    },
+    "tool": {
+      "type": "string",
+      "enum": ["Edit", "Write"],
+      "description": "Tool that performed the edit"
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path relative to repository root"
+          },
+          "action": {
+            "type": "string",
+            "enum": ["create", "modify", "delete"],
+            "description": "Action performed on the file"
+          },
+          "range": {
+            "type": "string",
+            "default": "unknown",
+            "description": "Line range affected (simplified to 'unknown')"
+          }
+        }
+      },
+      "minItems": 1,
+      "description": "Files affected by the edit"
+    },
+    "vcs": {
+      "type": "object",
+      "properties": {
+        "revision": {
+          "type": "string",
+          "description": "Git commit hash (HEAD)"
+        },
+        "branch": {
+          "type": "string",
+          "description": "Current branch name"
+        },
+        "dirty": {
+          "type": "boolean",
+          "description": "Whether working directory has uncommitted changes"
+        }
+      },
+      "description": "Version control info (omitted if not in Git repo)"
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "project": {
+          "type": "string",
+          "description": "Detected project name"
+        },
+        "projectType": {
+          "type": "string",
+          "description": "Detected project type (e.g., nextjs, rust, python)"
+        },
+        "sessionId": {
+          "type": "string",
+          "description": "Claude Code session identifier"
+        }
+      },
+      "additionalProperties": true,
+      "description": "Additional metadata"
+    }
+  },
+  "additionalProperties": false
+}

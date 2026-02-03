@@ -7,7 +7,7 @@
 ```
 skills/
 ├── impl/SKILL.md
-├── review/SKILL.md
+├── harness-review/SKILL.md
 ├── verify/SKILL.md
 └── ...
 ```
@@ -22,7 +22,7 @@ skills/
 │   ├── impl/SKILL.md
 │   └── verify/SKILL.md
 ├── quality/
-│   ├── review/SKILL.md
+│   ├── harness-review/SKILL.md
 │   └── ci/SKILL.md
 ├── workflow/
 │   ├── workflow/SKILL.md

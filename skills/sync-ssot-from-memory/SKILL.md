@@ -2,6 +2,7 @@
 name: sync-ssot-from-memory
 description: "Promotes important observations from memory systems (Claude-mem, Serena) to SSOT (decisions.md, patterns.md). Use when user mentions SSOT promotion, sync memory, save learnings, or before Plans.md cleanup. Do NOT load for: ad-hoc notes, implementation work, or reviews."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
+argument-hint: "[--preview|--apply]"
 ---
 
 # Sync SSOT from Memory

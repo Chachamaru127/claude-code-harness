@@ -46,8 +46,22 @@ fi
 
 # Plans.md のタスク状況
 COMPLETED_TASKS=0
+WIP_TASK_TITLE=""
 if [ -f "Plans.md" ]; then
   COMPLETED_TASKS=$(grep -c "cc:完了" Plans.md 2>/dev/null || echo "0")
+  # 現在のWIPタスクタイトルを取得（最初の1件）
+  WIP_TASK_TITLE=$(grep -E "^\s*-\s*\[.\]\s*\*\*.*\`cc:WIP\`" Plans.md 2>/dev/null | head -1 | sed 's/.*\*\*\(.*\)\*\*.*/\1/' || true)
+fi
+
+# Agent Trace から直近の編集ファイル情報を取得
+AGENT_TRACE_FILE=".claude/state/agent-trace.jsonl"
+RECENT_EDITS=""
+RECENT_PROJECT=""
+if [ -f "$AGENT_TRACE_FILE" ]; then
+  # 直近10件のトレースから編集ファイルを抽出
+  RECENT_EDITS=$(tail -10 "$AGENT_TRACE_FILE" 2>/dev/null | jq -r '.files[].path' 2>/dev/null | sort -u | head -5 || true)
+  # 最新のプロジェクト情報を取得
+  RECENT_PROJECT=$(tail -1 "$AGENT_TRACE_FILE" 2>/dev/null | jq -r '.metadata.project // empty' 2>/dev/null || true)
 fi
 
 # セッション時間計算
@@ -56,10 +70,20 @@ NOW_EPOCH=$(date +%s)
 DURATION_MINUTES=$(( (NOW_EPOCH - START_EPOCH) / 60 ))
 
 # サマリー出力（変更がある場合のみ）
-if [ "$CHANGES_COUNT" -gt 0 ] || [ "$GIT_COMMITS" -gt 0 ]; then
+if [ "$CHANGES_COUNT" -gt 0 ] || [ "$GIT_COMMITS" -gt 0 ] || [ -n "$RECENT_EDITS" ]; then
   echo ""
   echo "📊 セッションサマリー"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  # プロジェクト名（Agent Trace から）
+  if [ -n "$RECENT_PROJECT" ]; then
+    echo "📁 プロジェクト: ${RECENT_PROJECT}"
+  fi
+
+  # 現在のタスク（WIP）
+  if [ -n "$WIP_TASK_TITLE" ]; then
+    echo "🎯 現在のタスク: ${WIP_TASK_TITLE}"
+  fi
 
   if [ "$COMPLETED_TASKS" -gt 0 ]; then
     echo "✅ 完了タスク: ${COMPLETED_TASKS}件"
@@ -77,6 +101,15 @@ if [ "$CHANGES_COUNT" -gt 0 ] || [ "$GIT_COMMITS" -gt 0 ]; then
 
   if [ "$DURATION_MINUTES" -gt 0 ]; then
     echo "⏱️ セッション時間: ${DURATION_MINUTES}分"
+  fi
+
+  # 直近の編集ファイル（Agent Trace から）
+  if [ -n "$RECENT_EDITS" ]; then
+    echo ""
+    echo "📄 直近の編集:"
+    echo "$RECENT_EDITS" | while read -r f; do
+      [ -n "$f" ] && echo "   - $f"
+    done
   fi
 
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

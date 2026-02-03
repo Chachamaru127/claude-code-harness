@@ -1,5 +1,9 @@
 # Codex Mode Toggle
 
+> **Status: Experimental**
+>
+> Codex モードは実験段階の機能です。本番環境での使用前にテストを推奨します。
+
 Toggle Codex mode (parallel delegation to GPT experts) during reviews.
 
 ## Usage

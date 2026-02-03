@@ -92,7 +92,7 @@ skills-gate.md と連携し、主要スキルに mem-search を自動統合。
 | スキル | mem-search 活用内容 |
 |-------|-------------------|
 | session-init | 過去のガードレール発動履歴、直近の作業内容を表示 |
-| review | 過去の類似コードレビュー指摘を参照 |
+| harness-review | 過去の類似コードレビュー指摘を参照 |
 | verify | 過去のビルド/テストエラーパターンを参照 |
 | impl | 過去の実装パターン、gotcha を参照 |
 | troubleshoot | 過去の類似問題と解決策を参照 |
@@ -179,7 +179,7 @@ skills-gate.md と連携し、主要スキルに mem-search を自動統合。
 
 ### Phase 4: 高度な統合（1週間）
 
-10. `review`, `verify`, `impl` への mem-search 追加
+10. `harness-review`, `verify`, `impl` への mem-search 追加
 11. ガードレール強化（過去履歴表示）
 12. トークンコスト測定・最適化
 

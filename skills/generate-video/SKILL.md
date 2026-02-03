@@ -3,6 +3,7 @@ name: generate-video
 description: "Generates product demo videos, architecture explanations, and release note videos. Use when user mentions '/generate-video', video generation, product demos, or visual documentation. Do NOT load for: embedding video players, live demos, video playback features. Requires Remotion setup."
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "AskUserQuestion", "WebFetch"]
 disable-model-invocation: true
+argument-hint: "[demo|arch|release]"
 ---
 
 # Generate Video Skill

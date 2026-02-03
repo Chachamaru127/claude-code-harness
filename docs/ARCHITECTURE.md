@@ -33,14 +33,16 @@ graph TD
 ```
 claude-code-harness/
 ├── .claude-plugin/         # プラグインメタデータ
-│   └── plugin.json
-├── skills/                 # Skill定義 (SKILL.md)
-│   ├── core/               # コアスキル (常にロード)
-│   ├── worker/             # 実装・レビュー用スキル
-│   └── ci/                 # CI/CD関連スキル
-├── workflows/              # Workflow定義 (YAML)
-│   └── default/
-├── commands/               # スラッシュコマンド定義 (Markdown)
+│   ├── plugin.json
+│   └── hooks.json
+├── skills/                 # Skill定義 (SKILL.md + references/)
+│   ├── impl/               # 実装スキル
+│   ├── harness-review/     # レビュースキル
+│   ├── verify/             # 検証スキル
+│   ├── planning/           # プランニングスキル
+│   ├── setup/              # セットアップスキル
+│   ├── ci/                 # CI/CD関連スキル
+│   └── ...                 # その他30+スキル
 ├── agents/                 # サブエージェント定義 (Markdown)
 ├── hooks/                  # Hooks定義 (hooks.json)
 ├── scripts/                # 自動化用シェルスクリプト

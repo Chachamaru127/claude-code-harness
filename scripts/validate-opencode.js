@@ -26,13 +26,12 @@ const OPENCODE_DIR = path.join(ROOT_DIR, 'opencode');
 // opencode で無効な frontmatter フィールド
 const INVALID_FIELDS = ['description-en', 'name'];
 
-// 必須ファイル
+// 必須ファイル（v2.17.0+: commands は Skills に移行済み、skills が必須）
 const REQUIRED_FILES = [
   'opencode/AGENTS.md',
   'opencode/opencode.json',
   'opencode/README.md',
-  'opencode/commands/core',
-  'opencode/commands/optional',
+  'opencode/skills',  // Skills are now the primary mechanism
 ];
 
 let errors = [];

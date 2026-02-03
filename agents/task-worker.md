@@ -7,7 +7,7 @@ model: sonnet
 color: yellow
 skills:
   - impl
-  - review
+  - harness-review
   - verify
 ---
 

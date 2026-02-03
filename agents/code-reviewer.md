@@ -6,7 +6,7 @@ disallowedTools: [Write, Edit, Task]
 model: sonnet
 color: blue
 skills:
-  - review
+  - harness-review
 ---
 
 # Code Reviewer Agent

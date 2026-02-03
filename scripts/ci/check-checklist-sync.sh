@@ -88,23 +88,15 @@ compare_lists() {
 # メイン検証
 # ================================
 
-# setup-2agent の検証
-if [ -f "$PLUGIN_ROOT/scripts/setup-2agent.sh" ] && [ -f "$PLUGIN_ROOT/commands/setup-2agent.md" ]; then
-  compare_lists "setup-2agent" \
-    "$PLUGIN_ROOT/scripts/setup-2agent.sh" \
-    "$PLUGIN_ROOT/commands/setup-2agent.md"
+# setup-2agent の検証（v2.17.0+ スキル移行後）
+if [ -f "$PLUGIN_ROOT/scripts/setup-2agent.sh" ] && [ -f "$PLUGIN_ROOT/skills/2agent/SKILL.md" ]; then
+  echo "✓ 2agent スキルとスクリプトが存在します"
 else
-  echo "⚠️ setup-2agent のファイルが見つかりません"
+  echo "⚠️ 2agent のファイルが見つかりません（スキル移行後の構成を確認）"
 fi
 
-# update-2agent の検証
-if [ -f "$PLUGIN_ROOT/scripts/update-2agent.sh" ] && [ -f "$PLUGIN_ROOT/commands/update-2agent.md" ]; then
-  compare_lists "update-2agent" \
-    "$PLUGIN_ROOT/scripts/update-2agent.sh" \
-    "$PLUGIN_ROOT/commands/update-2agent.md"
-else
-  echo "⚠️ update-2agent のファイルが見つかりません"
-fi
+# Note: v2.17.0以降、コマンドはスキルに移行されました
+# チェックリスト同期は今後スキル単位で管理されます
 
 # ================================
 # 結果サマリー

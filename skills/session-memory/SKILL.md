@@ -36,11 +36,13 @@ user-invocable: false
 
 ```
 .claude/
-└── memory/
-    ├── session-log.md      # セッションごとのログ
-    ├── decisions.md        # 重要な決定事項
-    ├── patterns.md         # 学んだパターン
-    └── context.json        # プロジェクトコンテキスト
+├── memory/
+│   ├── session-log.md      # セッションごとのログ
+│   ├── decisions.md        # 重要な決定事項
+│   ├── patterns.md         # 学んだパターン
+│   └── context.json        # プロジェクトコンテキスト
+└── state/
+    └── agent-trace.jsonl   # Agent Trace（ツール実行履歴）
 ```
 
 ### 推奨運用（SSOT/ローカル分離）
@@ -142,8 +144,18 @@ user-invocable: false
 
 1. `.claude/memory/context.json` を読み込み
 2. 前回のセッションログを確認
-3. 未完了タスクを特定
-4. コンテキストサマリーを生成
+3. **Agent Trace から直近の編集履歴を取得**
+4. 未完了タスクを特定
+5. コンテキストサマリーを生成
+
+**Agent Trace 活用**:
+```bash
+# 前回の編集ファイル一覧を取得
+tail -50 .claude/state/agent-trace.jsonl | jq -r '.files[].path' | sort -u
+
+# プロジェクト情報を取得
+tail -1 .claude/state/agent-trace.jsonl | jq '.metadata'
+```
 
 ### セッション中
 

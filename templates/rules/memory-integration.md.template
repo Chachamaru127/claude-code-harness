@@ -53,7 +53,7 @@ mem-search: "API endpoint pattern" "error handling"
 # 過去の実装パターン、gotcha（落とし穴）が表示される
 ```
 
-### 3. レビュー時（review スキル）
+### 3. レビュー時（harness-review スキル）
 
 過去の類似レビュー指摘を参照：
 
