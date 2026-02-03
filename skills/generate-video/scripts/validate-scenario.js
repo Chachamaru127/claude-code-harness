@@ -268,8 +268,10 @@ function main() {
     console.error('');
 
     // Group errors by type
-    const schemaErrors = result.errors.filter((e) => e.keyword !== 'semantic');
-    const semanticErrors = result.errors.filter((e) => e.keyword === 'semantic');
+    // Semantic keywords from validateSemantics: 'uniqueness', 'order-sequence', 'order-duplicate', 'duration-negative', 'duration-excessive'
+    const SEMANTIC_KEYWORDS = ['uniqueness', 'order-sequence', 'order-duplicate', 'duration-negative', 'duration-excessive'];
+    const schemaErrors = result.errors.filter((e) => !SEMANTIC_KEYWORDS.includes(e.keyword));
+    const semanticErrors = result.errors.filter((e) => SEMANTIC_KEYWORDS.includes(e.keyword));
 
     if (schemaErrors.length > 0) {
       console.error('Schema Errors:');

@@ -85,11 +85,23 @@ function getTemplateMetadata(templateName) {
  * @throws {Error} If template not found or invalid
  */
 function loadTemplateFile(templateName) {
+  // Path traversal protection: only allow known templates
+  if (!TEMPLATE_METADATA[templateName]) {
+    throw new Error(
+      `Template not found: ${templateName}\nAvailable templates: ${Object.keys(TEMPLATE_METADATA).join(', ')}`
+    );
+  }
+
+  // Additional safeguard: reject any path-like characters
+  if (templateName.includes('/') || templateName.includes('\\') || templateName.includes('..')) {
+    throw new Error(`Invalid template name: ${templateName}`);
+  }
+
   const templatePath = path.join(TEMPLATES_DIR, `${templateName}.json`);
 
   if (!fs.existsSync(templatePath)) {
     throw new Error(
-      `Template not found: ${templateName}\nAvailable templates: ${Object.keys(TEMPLATE_METADATA).join(', ')}`
+      `Template file missing: ${templateName}.json\nExpected at: ${templatePath}`
     );
   }
 

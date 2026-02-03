@@ -5,10 +5,10 @@ import { useCurrentFrame, useVideoConfig, interpolate, spring, Easing } from 're
  * TransitionWrapper Component
  *
  * Wraps children with transition effects using Remotion's interpolate and spring.
- * Supports 4 transition types: fade, slideIn, zoom, cut.
+ * Supports 4 transition types: fade, slide_in, zoom, cut.
  */
 
-export type TransitionType = 'fade' | 'slideIn' | 'zoom' | 'cut';
+export type TransitionType = 'fade' | 'slide_in' | 'zoom' | 'cut';
 export type SlideDirection = 'left' | 'right' | 'top' | 'bottom';
 export type EasingType = 'linear' | 'easeIn' | 'easeOut' | 'easeInOut';
 
@@ -19,7 +19,7 @@ export interface TransitionWrapperProps {
   /** Duration of the transition in frames */
   duration?: number;
 
-  /** Direction for slideIn transition */
+  /** Direction for slide_in transition */
   direction?: SlideDirection;
 
   /** Easing function for interpolation */
@@ -122,7 +122,7 @@ export const TransitionWrapper: React.FC<TransitionWrapperProps> = ({
         };
       }
 
-      case 'slideIn': {
+      case 'slide_in': {
         const slideOffset = interpolate(
           progress,
           [0, 1],
@@ -224,14 +224,14 @@ export const TransitionPresets = {
   }),
 
   slideFromRight: (duration = 20): Partial<TransitionWrapperProps> => ({
-    type: 'slideIn',
+    type: 'slide_in',
     duration,
     direction: 'right',
     slideDistance: 200,
   }),
 
   slideFromLeft: (duration = 20): Partial<TransitionWrapperProps> => ({
-    type: 'slideIn',
+    type: 'slide_in',
     duration,
     direction: 'left',
     slideDistance: 200,

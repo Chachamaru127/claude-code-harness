@@ -120,6 +120,17 @@ function loadSounds() {
  * @returns {string|null} Absolute path to asset file or null
  */
 function loadAssetFile(category, filename) {
+  // Path traversal protection
+  if (path.isAbsolute(category) || path.isAbsolute(filename)) {
+    console.warn('⚠️ Rejecting absolute path in loadAssetFile');
+    return null;
+  }
+  const normalizedPath = path.normalize(path.join(category, filename));
+  if (normalizedPath.includes('..') || normalizedPath.startsWith('/')) {
+    console.warn('⚠️ Rejecting path traversal attempt in loadAssetFile');
+    return null;
+  }
+
   // Try user override
   const userAssetPath = path.join(USER_ASSETS_DIR, category, filename);
   if (fs.existsSync(userAssetPath)) {
