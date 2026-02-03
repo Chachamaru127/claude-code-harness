@@ -111,11 +111,28 @@ function loadSceneFiles(scenesDir) {
   return scenes;
 }
 
+// Cache for compiled validators to avoid re-compilation per scene (Performance fix)
+const validatorCache = new Map();
+
+/**
+ * Get or create cached validator for schema
+ * @param {Object} schema - JSON Schema object
+ * @param {string} schemaId - Unique identifier for caching
+ * @returns {Function} Compiled validator function
+ */
+function getValidator(schema, schemaId) {
+  if (!validatorCache.has(schemaId)) {
+    validatorCache.set(schemaId, ajv.compile(schema));
+  }
+  return validatorCache.get(schemaId);
+}
+
 /**
  * Validate scene against schema
+ * Uses cached validator for performance
  */
 function validateScene(scene, sceneSchema, fileName) {
-  const validate = ajv.compile(sceneSchema);
+  const validate = getValidator(sceneSchema, 'scene.schema.json');
   const valid = validate(scene);
 
   if (!valid) {

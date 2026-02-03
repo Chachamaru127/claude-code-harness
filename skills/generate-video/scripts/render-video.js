@@ -190,11 +190,27 @@ function loadVideoScript(scriptPath, options = {}) {
 }
 
 /**
+ * Validate that resolved path is within allowed roots (Security fix)
+ * Prevents path traversal attacks
+ */
+function isPathWithinRoots(resolvedPath, allowedRoots) {
+  const normalizedPath = path.resolve(resolvedPath);
+  return allowedRoots.some(root => {
+    const normalizedRoot = path.resolve(root);
+    return normalizedPath.startsWith(normalizedRoot + path.sep) || normalizedPath === normalizedRoot;
+  });
+}
+
+/**
  * Resolve asset paths relative to project root
+ * Security: Validates paths are within allowed directories
  */
 function resolveAssets(script, scriptPath) {
-  const scriptDir = path.dirname(scriptPath);
+  const scriptDir = path.dirname(path.resolve(scriptPath));
   const projectRoot = process.cwd();
+
+  // Allowed asset roots for security
+  const allowedRoots = [scriptDir, projectRoot];
 
   const resolvedScenes = script.scenes.map(scene => {
     if (!scene.assets || scene.assets.length === 0) {
@@ -206,20 +222,27 @@ function resolveAssets(script, scriptPath) {
         return asset;
       }
 
-      // Check if asset path is absolute
+      // Security: Reject paths with path traversal attempts
+      if (asset.source.includes('..')) {
+        logWarning(`Asset path contains '..', rejected for security: ${asset.source}`);
+        return asset;
+      }
+
+      // Security: Reject absolute paths from untrusted input
       if (path.isAbsolute(asset.source)) {
+        logWarning(`Absolute asset paths are not allowed for security: ${asset.source}`);
         return asset;
       }
 
       // Try relative to script file
-      const relativeToScript = path.join(scriptDir, asset.source);
-      if (fs.existsSync(relativeToScript)) {
+      const relativeToScript = path.resolve(scriptDir, asset.source);
+      if (isPathWithinRoots(relativeToScript, allowedRoots) && fs.existsSync(relativeToScript)) {
         return { ...asset, source: relativeToScript };
       }
 
       // Try relative to project root
-      const relativeToRoot = path.join(projectRoot, asset.source);
-      if (fs.existsSync(relativeToRoot)) {
+      const relativeToRoot = path.resolve(projectRoot, asset.source);
+      if (isPathWithinRoots(relativeToRoot, allowedRoots) && fs.existsSync(relativeToRoot)) {
         return { ...asset, source: relativeToRoot };
       }
 

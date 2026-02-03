@@ -103,7 +103,9 @@ function validateE2ESemantics(videoData) {
     }
   });
 
-  // 2. Scene order sequence (per section)
+  // 2. Scene order validation (per section)
+  // Relaxed: only require monotonic increasing + no duplicates (not strict 0..n-1 sequence)
+  // This aligns with schema which only requires minimum value, not strict sequence
   const sectionScenes = {};
   scenes.forEach((scene) => {
     if (!sectionScenes[scene.section_id]) {
@@ -114,11 +116,24 @@ function validateE2ESemantics(videoData) {
 
   Object.entries(sectionScenes).forEach(([sectionId, sectionSceneList]) => {
     const orders = sectionSceneList.map((s) => s.order).sort((a, b) => a - b);
-    for (let i = 0; i < orders.length; i++) {
-      if (orders[i] !== i) {
+
+    // Check for duplicate orders (critical error)
+    const orderSet = new Set(orders);
+    if (orderSet.size !== orders.length) {
+      const duplicates = orders.filter((o, i) => orders.indexOf(o) !== i);
+      errors.push({
+        path: `/scenes (section: ${sectionId})`,
+        message: `Duplicate order values in section "${sectionId}": ${[...new Set(duplicates)].join(', ')}`,
+        keyword: 'order-duplicate',
+      });
+    }
+
+    // Check for monotonic increasing (warning only for gaps)
+    for (let i = 1; i < orders.length; i++) {
+      if (orders[i] <= orders[i - 1]) {
         errors.push({
           path: `/scenes (section: ${sectionId})`,
-          message: `Scene order sequence broken in section "${sectionId}": expected ${i}, found ${orders[i]}`,
+          message: `Scene order not monotonic in section "${sectionId}": ${orders[i - 1]} followed by ${orders[i]}`,
           keyword: 'order-sequence',
         });
         break;
