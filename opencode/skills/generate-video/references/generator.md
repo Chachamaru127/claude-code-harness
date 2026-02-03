@@ -154,9 +154,37 @@ const parallelCount = Math.min(scenes.length, 5);
 
 ---
 
-## Task Tool による並列起動
+## Task Tool による並列JSON生成
 
-### シーン生成エージェント起動
+### 新しい生成フロー（JSON-schema駆動）
+
+```
+シナリオ（scenario.json）
+    ↓
+┌─────────────────────────────────────────────┐
+│     Task並列起動（各シーン → JSON出力）      │
+├─────────────────────────────────────────────┤
+│ Agent 1 → scenes/intro.json                 │
+│ Agent 2 → scenes/auth-demo.json             │
+│ Agent 3 → scenes/dashboard.json             │
+│ Agent 4 → scenes/features.json              │
+│ Agent 5 → scenes/cta.json                   │
+└─────────────────────────────────────────────┘
+    ↓
+┌─────────────────────────────────────────────┐
+│         scenes/*.json → マージ               │
+├─────────────────────────────────────────────┤
+│ - section_id + order でソート               │
+│ - 競合検出（同一scene_id = Critical error） │
+│ - 欠落検出（セクションにシーンなし）         │
+└─────────────────────────────────────────────┘
+    ↓
+video-script.json（全シーン統合）
+    ↓
+Remotion rendering
+```
+
+### シーン生成エージェント起動（JSON出力）
 
 ```
 各シーンに対して Task tool を起動:
@@ -165,51 +193,138 @@ Task:
   subagent_type: "video-scene-generator"
   run_in_background: true
   prompt: |
-    以下のシーンを Remotion コンポジションとして生成してください。
+    以下のシーンのJSONを scene.schema.json に従って生成してください。
 
     シーン情報:
-    - ID: {scene.id}
-    - 名前: {scene.name}
-    - 時間: {scene.duration}秒
-    - テンプレート: {scene.template}
-    - 内容: {scene.content}
+    - scene_id: {scene.id}
+    - section_id: {section.id}
+    - order: {scene.order} （セクション内の順序）
+    - type: {scene.type}
+    - duration_ms: {scene.duration_ms}
+    - content: {scene.content}
 
-    出力先: remotion/scenes/{scene.name}.tsx
+    出力先: out/video-{date}-{id}/scenes/{scene_id}.json
 
-    完了したら以下を報告:
+    必須項目:
+    - scene_id, section_id, order, type, content
+    - content.duration_ms（音声長 + 余白を考慮）
+    - direction（transition, emphasis, background, timing）
+    - assets（使用する画像・音声ファイル）
+
+    バリデーション:
+    ```bash
+    node scripts/validate-scene.js out/video-{date}-{id}/scenes/{scene_id}.json
+    ```
+
+    完了報告:
     - ファイルパス
-    - 実際の duration (フレーム数)
-    - 使用したコンポーネント
+    - バリデーション結果（PASS/FAIL）
+    - 警告があれば報告
 ```
 
 ### 進捗モニタリング
 
 ```
-🎬 並列生成中... (3/5 完了)
+🎬 並列JSON生成中... (3/5 完了)
 
-├── [Agent 1] intro ✅ (3秒)
-├── [Agent 2] auth-demo ✅ (12秒)
-├── [Agent 3] dashboard ⏳ 生成中...
-├── [Agent 4] features 🔜 待機中
-└── [Agent 5] cta 🔜 待機中
+├── [Agent 1] intro.json ✅ PASS
+├── [Agent 2] auth-demo.json ✅ PASS
+├── [Agent 3] dashboard.json ⏳ 生成中...
+├── [Agent 4] features.json 🔜 待機中
+└── [Agent 5] cta.json 🔜 待機中
 ```
 
-### 結果収集
+### 結果収集（JSON）
 
 ```
 TaskOutput で各エージェントの結果を収集:
 
 結果:
-  - scene_id: 1
-    file: "remotion/scenes/intro.tsx"
-    duration_frames: 150
+  - scene_id: "intro"
+    file: "out/video-20260202-001/scenes/intro.json"
+    validation: "PASS"
     status: "success"
 
-  - scene_id: 2
-    file: "remotion/scenes/auth-demo.tsx"
-    duration_frames: 450
+  - scene_id: "auth-demo"
+    file: "out/video-20260202-001/scenes/auth-demo.json"
+    validation: "PASS"
     status: "success"
-    notes: "Playwright capture included"
+    warnings: ["duration_ms が音声長より短い可能性"]
+```
+
+### JSON出力仕様
+
+**出力ファイル**: `out/video-{date}-{id}/scenes/{scene_id}.json`
+
+**スキーマ**: `schemas/scene.schema.json`
+
+**必須フィールド**:
+```json
+{
+  "scene_id": "intro",
+  "section_id": "opening",
+  "order": 0,
+  "type": "intro",
+  "content": {
+    "title": "MyApp",
+    "subtitle": "タスク管理を簡単に",
+    "duration_ms": 5000
+  },
+  "direction": {
+    "transition": {
+      "in": "fade",
+      "out": "fade",
+      "duration_ms": 500
+    },
+    "emphasis": {
+      "level": "high"
+    },
+    "background": {
+      "type": "gradient",
+      "value": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+    }
+  },
+  "assets": [
+    {
+      "type": "image",
+      "source": "assets/generated/intro.png",
+      "generated": true
+    }
+  ]
+}
+```
+
+### マージフェーズ
+
+全エージェントの完了後、`scripts/merge-scenes.js` を実行:
+
+```bash
+node scripts/merge-scenes.js out/video-20260202-001/
+```
+
+**処理内容**:
+1. `scenes/*.json` を読み込み
+2. `section_id` + `order` でソート
+3. 競合検出（同一 `scene_id` → Critical error）
+4. 欠落検出（セクションにシーンなし → Critical error）
+5. `video-script.json` を生成
+
+**出力**: `out/video-20260202-001/video-script.json`
+
+**フォーマット**:
+```json
+{
+  "scenes": [
+    { "scene_id": "intro", "section_id": "opening", "order": 0, ... },
+    { "scene_id": "hook", "section_id": "opening", "order": 1, ... },
+    { "scene_id": "demo", "section_id": "main", "order": 0, ... }
+  ],
+  "metadata": {
+    "total_duration_ms": 180000,
+    "scene_count": 12,
+    "generated_at": "2026-02-02T12:34:56Z"
+  }
+}
 ```
 
 ---
@@ -660,3 +775,285 @@ const SUBTITLES = [
 - 大きな動画（3分以上）は分割レンダリングを推奨
 - BGMはナレーションが聞こえるよう控えめに設定
 - カスタムフォントはBase64埋め込みで確実に読み込む
+
+---
+
+## Phase 10: 将来拡張（キャラクター対話動画）
+
+### 概要
+
+現在の動画生成は**単一ナレーション**形式ですが、将来的に以下のような**キャラクター対話動画**に拡張可能な設計にします：
+
+| 現在 | Phase 10 拡張後 |
+|------|----------------|
+| 単一ナレーター | 複数キャラクターの対話 |
+| 静的スライド + 音声 | キャラクター表示 + 対話演出 |
+| TTS: 1音声のみ | TTS: キャラクター別音声 |
+
+### ユースケース例
+
+```
+[導入動画の例]
+
+Narrator:  「今日は新機能を紹介します」
+User:      「これは何ができるの？」
+AI Guide:  「簡単に説明しましょう」
+```
+
+```
+[技術解説動画の例]
+
+Interviewer: 「このアーキテクチャの特徴は？」
+Expert:      「スケーラビリティを重視しています」
+Reviewer:    「具体的な数値を見てみましょう」
+```
+
+### 拡張ポイント（設計のみ）
+
+#### 1. Character 定義（`schemas/character.schema.json`）
+
+**既に実装済み**のスキーマで、以下を定義：
+
+```json
+{
+  "character_id": "narrator",
+  "name": "ナレーター",
+  "role": "narrator",
+  "voice": {
+    "provider": "google-cloud-tts",
+    "voice_id": "ja-JP-Neural2-B",
+    "language": "ja",
+    "speed": 1.1,
+    "style": "professional"
+  },
+  "appearance": {
+    "type": "avatar",
+    "position": "left"
+  }
+}
+```
+
+**拡張項目**:
+- `voice`: TTS設定（プロバイダー、音声ID、スピード、スタイル）
+- `appearance`: ビジュアル設定（アバター、アイコン、位置）
+- `dialogue_style`: 対話演出（吹き出しスタイル、アニメーション）
+- `personality`: 性格特性（将来のAI対話生成用）
+
+#### 2. Dialogue シーン定義（将来仕様）
+
+**dialogue.json** の構造（実装は Phase 10 以降）:
+
+```json
+{
+  "scene_id": "intro-dialogue",
+  "type": "dialogue",
+  "content": {
+    "duration_ms": 15000,
+    "exchanges": [
+      {
+        "character_id": "user",
+        "text": "この機能は何ができますか？",
+        "timing_ms": 0,
+        "duration_ms": 3000,
+        "emotion": "curious"
+      },
+      {
+        "character_id": "guide",
+        "text": "簡単に説明します。まず...",
+        "timing_ms": 3500,
+        "duration_ms": 5000,
+        "emotion": "friendly"
+      },
+      {
+        "character_id": "narrator",
+        "text": "実際の画面を見てみましょう",
+        "timing_ms": 9000,
+        "duration_ms": 3000,
+        "emotion": "neutral"
+      }
+    ]
+  },
+  "characters": [
+    {
+      "$ref": "characters/user.json"
+    },
+    {
+      "$ref": "characters/guide.json"
+    },
+    {
+      "$ref": "characters/narrator.json"
+    }
+  ],
+  "direction": {
+    "layout": "split-screen",
+    "transition_between_speakers": "highlight"
+  }
+}
+```
+
+#### 3. TTS 連携の拡張方法
+
+**現在（単一音声）**:
+```javascript
+// 1つの音声ファイルを再生
+<Audio src={staticFile('narration.wav')} />
+```
+
+**Phase 10 拡張後（キャラクター別音声）**:
+```javascript
+// キャラクター別にTTS呼び出し
+async function generateDialogue(exchanges, characters) {
+  const audioFiles = await Promise.all(
+    exchanges.map(async (exchange) => {
+      const character = characters.find(c => c.character_id === exchange.character_id);
+
+      // TTS APIを呼び出し（プロバイダーに応じて分岐）
+      const audioBuffer = await ttsProvider.synthesize({
+        text: exchange.text,
+        voiceId: character.voice.voice_id,
+        speed: character.voice.speed,
+        emotion: exchange.emotion,
+      });
+
+      return {
+        character_id: exchange.character_id,
+        audio: audioBuffer,
+        timing_ms: exchange.timing_ms,
+        duration_ms: exchange.duration_ms,
+      };
+    })
+  );
+
+  return audioFiles;
+}
+```
+
+**TTS プロバイダー連携**:
+
+| プロバイダー | API 呼び出し例 |
+|-------------|---------------|
+| Google Cloud TTS | `textToSpeech.synthesizeSpeech({ voice, input })` |
+| ElevenLabs | `elevenlabs.textToSpeech({ voiceId, text })` |
+| OpenAI TTS | `openai.audio.speech.create({ voice, input })` |
+| AWS Polly | `polly.synthesizeSpeech({ VoiceId, Text })` |
+
+#### 4. ビジュアル演出の拡張
+
+**キャラクター表示（Remotion コンポーネント例）**:
+
+```tsx
+// 将来実装: DialogueScene.tsx
+const DialogueScene: React.FC<{
+  exchanges: Exchange[];
+  characters: Character[];
+}> = ({ exchanges, characters }) => {
+  const frame = useCurrentFrame();
+
+  return (
+    <AbsoluteFill>
+      {/* 背景 */}
+      <Background />
+
+      {/* キャラクター表示 */}
+      <CharacterDisplay
+        characters={characters}
+        activeCharacterId={getCurrentSpeaker(frame, exchanges)}
+      />
+
+      {/* 対話テキスト（吹き出し） */}
+      <DialogueBubble
+        exchange={getCurrentExchange(frame, exchanges)}
+      />
+
+      {/* 音声再生 */}
+      {exchanges.map((ex, i) => (
+        <Sequence from={ex.timing_ms / 33.33} durationInFrames={ex.duration_ms / 33.33}>
+          <Audio src={staticFile(`dialogue/${ex.character_id}_${i}.wav`)} />
+        </Sequence>
+      ))}
+    </AbsoluteFill>
+  );
+};
+```
+
+**アニメーション例**:
+- 話している キャラクターをハイライト
+- 話していないキャラクターは半透明
+- 吹き出しがフェードイン/アウト
+- キャラクターアバターが口パク（オプション）
+
+#### 5. 実装ロードマップ（Phase 10 以降）
+
+| Phase | 実装内容 | 優先度 |
+|-------|---------|--------|
+| **Phase 10.1** | `character.schema.json` 実装 | ✅ 完了 |
+| **Phase 10.2** | TTS プロバイダー連携（Google Cloud TTS） | High |
+| **Phase 10.3** | `DialogueScene` Remotion コンポーネント | High |
+| **Phase 10.4** | `dialogue.json` スキーマ定義 | Medium |
+| **Phase 10.5** | キャラクター表示 UI（アバター/アイコン） | Medium |
+| **Phase 10.6** | 吹き出しアニメーション | Low |
+| **Phase 10.7** | 複数 TTS プロバイダー対応（ElevenLabs, OpenAI） | Low |
+| **Phase 10.8** | AI 対話生成（personality に基づく自動生成） | Future |
+
+#### 6. 互換性の維持
+
+拡張は**後方互換性を保つ**設計：
+
+```
+既存の video-script.json（単一ナレーション）
+    ↓ そのまま動作
+新しい dialogue.json（対話形式）
+    ↓ 新しいシーンタイプとして追加
+両方が共存可能
+```
+
+**scene.schema.json への追加**:
+```json
+{
+  "type": {
+    "enum": [
+      "intro",
+      "ui-demo",
+      "dialogue",  // ← Phase 10 で追加
+      "..."
+    ]
+  }
+}
+```
+
+#### 7. 参考実装
+
+既存プロジェクトの例:
+- **Manim Community**: キャラクターアニメーション
+- **Remotion Templates**: 対話形式テンプレート
+- **Google Cloud TTS**: 多言語・多音声対応
+
+---
+
+### Phase 10 実装時のチェックリスト
+
+将来実装する際は以下を確認：
+
+- [ ] `character.schema.json` が有効（既に Phase 10.1 で完了）
+- [ ] TTS API キーが設定済み（Google Cloud TTS 推奨）
+- [ ] `dialogue.json` スキーマを定義
+- [ ] `DialogueScene.tsx` Remotion コンポーネント実装
+- [ ] キャラクター音声ファイルの命名規則統一
+- [ ] 吹き出しスタイルのブランド一貫性
+- [ ] 既存シーン（intro, ui-demo 等）との共存テスト
+- [ ] パフォーマンス: 複数音声の同時レンダリング最適化
+
+---
+
+### まとめ（Phase 10）
+
+**現状**: 単一ナレーション動画に対応
+**Phase 10 設計**: キャラクター対話動画への拡張ポイントを明確化
+**実装済み**: `character.schema.json`（キャラクター定義）
+**未実装**: TTS連携、対話シーン、ビジュアル演出（将来実装）
+
+この設計により、将来的に以下が可能になります：
+- 複数キャラクターの対話形式動画
+- キャラクター別の音声スタイル
+- 視覚的なキャラクター表示と対話演出
+- AI による対話生成（personality 設定に基づく）

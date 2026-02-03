@@ -38,12 +38,15 @@
 │    - 全体ビルド実行                                         │
 │    - テストスイート実行                                     │
 │                                                             │
-│  Step 3.5: /harness-review 実行                             │
+│  Step 3.5: /harness-review + 自己修正ループ                 │
 │    - 全タスク完了時のみ                                     │
-│    - APPROVE → 完了処理へ                                   │
+│    - APPROVE まで自動修正を繰り返す                         │
+│    - REJECT/STOP は即停止                                   │
 │                                                             │
 │  Step 4: 判定                                               │
-│    - 全完了 + APPROVE → 完了処理へ                          │
+│    - APPROVE → 完了処理へ                                   │
+│    - REQUEST CHANGES → 自己修正ループ                       │
+│    - REJECT/STOP → 即停止 + 手動介入                        │
 │    - 未完了あり → 次 iteration へ                           │
 └─────────────────────────────────────────────────────────────┘
     ↓
@@ -57,6 +60,80 @@
 │  4. 完了レポート生成                                        │
 │  5. 2-Agent モードなら handoff 実行                         │
 └─────────────────────────────────────────────────────────────┘
+```
+
+### Step 3.5: /harness-review + 自己修正ループ（自動実行・必須）
+
+全タスク完了時に `/harness-review` を実行し、**APPROVE になるまで自動修正を繰り返す**。
+
+**重要**: このループは**自動実行**。ユーザー確認（Y/N）は求めない。
+
+```
+/harness-review 実行
+    ↓
+判定結果
+    ├── APPROVE → 完了処理へ
+    ├── REQUEST CHANGES → 自己修正ループ
+    ├── REJECT → 即停止 + 手動介入指示
+    └── STOP → 検証失敗 + 手動修正指示
+```
+
+#### リトライ状態管理
+
+**ファイル**: `.claude/state/ultrawork-retry.json`
+
+**スキーマ**:
+```json
+{
+  "task_id": "phase44-auth-to-usermgmt",
+  "base_sha": "abc1234",
+  "status": "request_changes",
+  "retry_count": 1,
+  "last_findings": [...],
+  "last_review_at": "2025-01-15T10:30:00Z",
+  "task_range": "...",
+  "started_at": "2025-01-15T09:00:00Z",
+  "expires_at": "2025-01-15T18:00:00Z"
+}
+```
+
+### 検証実行規則（全て実行、失敗で即停止）
+
+| 順位 | 対象 | コマンド |
+|------|------|---------|
+| 1 | `./tests/validate-plugin.sh` | `bash ./tests/validate-plugin.sh` |
+| 2 | `./scripts/ci/check-consistency.sh` | `bash ./scripts/ci/check-consistency.sh` |
+| 3 | `package.json` の `test` script | `{pkg_mgr} test` |
+| 4 | `package.json` の `lint` script | `{pkg_mgr} run lint` |
+| 5 | `pytest.ini` / `pyproject.toml` | `pytest` |
+| 6 | `Cargo.toml` | `cargo test` |
+| 7 | `go.mod` | `go test ./...` |
+
+> **注**: 該当ファイルが存在する場合は必ず実行し、**失敗した時点で即停止**する。
+
+### STOP / REJECT テンプレート
+
+#### REJECT
+
+```markdown
+### Manual Intervention Required
+
+**Decision**: REJECT
+**Grade**: F
+**Reason**: Critical issues require manual review and fix
+**Critical issues**: ...
+```
+
+#### STOP
+
+```markdown
+### Verification Failed
+
+**Decision**: STOP
+**Grade**: N/A (blocked)
+**Failure Type**: [lint_failure | test_failure | environment_error]
+**Failed command**: ...
+**Required fixes**: ...
 ```
 
 ## 範囲指定の解釈

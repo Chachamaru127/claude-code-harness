@@ -2,6 +2,7 @@
 name: harness-mem
 description: "Claude-mem integration setup for cross-session memory and learning. Use when user mentions '/harness-mem', claude-mem integration, cross-session memory, or memory setup. Do NOT load for: app memory/storage features, casual 'remember this' requests."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
+argument-hint: "[setup|status]"
 ---
 
 # Harness-Mem Skill

@@ -43,32 +43,58 @@ Ask user: "What should the next version be? (e.g., 2.5.23)"
 
 ### Step 3: CHANGELOG Update (JP + EN)
 
-**Follow [Keep a Changelog](https://keepachangelog.com/) format**
+> **⚠️ 重要**: ユーザー体験に影響する変更を中心に記載。内部修正は簡潔に。
 
-Update both `CHANGELOG_ja.md` (Japanese) and `CHANGELOG.md` (English).
+Update both `CHANGELOG_ja.md` and `CHANGELOG.md`.
 
-Add new version entry after `## [Unreleased]`:
+#### CHANGELOG 記載ルール
+
+| 変更タイプ | 記載方法 |
+|-----------|---------|
+| **ユーザー体験に影響** | `🎯 What's Changed for You` + Before/After テーブル |
+| **新機能追加** | `Added` セクションで簡潔に |
+| **内部修正（CI/テスト/ドキュメント）** | `Internal` セクションで1行のみ |
+| **バグ修正（ユーザー影響あり）** | `Fixed` セクション |
+| **バグ修正（内部のみ）** | 省略または `Internal` に統合 |
+
+#### テンプレート
 
 ```markdown
 ## [X.Y.Z] - YYYY-MM-DD
 
+### 🎯 What's Changed for You
+
+**ユーザー体験の変化を1行で説明**
+
+| Before | After |
+|--------|-------|
+| 変更前の状態 | 変更後の状態 |
+
 ### Added
-- New features
 
-### Changed
-- Changes to existing features
+- 新機能の簡潔な説明
 
-### Fixed
-- Bug fixes
+### Internal
 
-### Deprecated
-- Features to be removed
+- 内部修正の1行サマリー
+```
 
-### Removed
-- Removed features
+#### Before/After テーブルのルール
 
-### Security
-- Security fixes
+- **体験が変わる変更のみ** Before/After を記載
+- 内部修正（CI、テスト、リファクタリング）には不要
+- 技術詳細ではなく **ユーザー視点の変化** を記載
+
+#### 悪い例 vs 良い例
+
+```markdown
+❌ 悪い例（技術詳細すぎる）:
+- **agents/*.md**: スキル参照を更新（`review` → `harness-review`）
+- **CI: validate-plugin.sh** が Skills 移行後も正常動作するように修正
+
+✅ 良い例（ユーザー視点）:
+### Internal
+- CI/テスト/ドキュメントを Skills 移行後の構造に更新
 ```
 
 ### Step 3.5: README Update Check
@@ -79,6 +105,11 @@ Add new version entry after `## [Unreleased]`:
 
 ```bash
 echo "X.Y.Z" > VERSION
+```
+
+Also update `.claude-plugin/plugin.json`:
+```json
+"version": "X.Y.Z"
 ```
 
 ### Step 5: Commit and Tag
@@ -103,7 +134,20 @@ gh release create vX.Y.Z \
   --title "vX.Y.Z - Title" \
   --notes "$(cat <<'EOF'
 ## 🎯 What's Changed for You
-...
+
+**ユーザー体験の変化を1行で**
+
+| Before | After |
+|--------|-------|
+| 変更前 | 変更後 |
+
+### Added / Changed / Fixed
+
+- 簡潔な説明
+
+---
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
 )"
 ```
@@ -119,17 +163,13 @@ Follow `.claude/rules/github-release.md`:
 
 **One-line value description**
 
-### Before → After
-
 | Before | After |
 |--------|-------|
 | Previous state | New state |
 
----
+### Added / Changed / Fixed
 
-## Added / Changed / Fixed
-
-- **Feature**: Description
+- Brief description
 
 ---
 
@@ -141,4 +181,3 @@ Follow `.claude/rules/github-release.md`:
 ## Related Skills
 
 - `verify` - Pre-release verification
-- `docs` - Documentation updates

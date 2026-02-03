@@ -1,0 +1,184 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://claude-code-harness.com/schemas/animation.schema.json",
+  "title": "Animation Schema",
+  "description": "アニメーション設定のスキーマ。トランジション、イージング、スプリング物理演算パラメータを定義します。",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["type", "duration_ms"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "アニメーションの種類",
+      "enum": ["fade", "slide_in", "zoom", "cut", "spring", "rotate", "scale"]
+    },
+    "duration_ms": {
+      "type": "integer",
+      "description": "アニメーションの長さ（ミリ秒）",
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "easing": {
+      "type": "string",
+      "description": "イージング関数（springタイプの場合は無視される）",
+      "enum": ["linear", "easeIn", "easeOut", "easeInOut", "easeInQuad", "easeOutQuad", "easeInOutQuad", "easeInCubic", "easeOutCubic", "easeInOutCubic"],
+      "default": "easeInOut"
+    },
+    "spring": {
+      "type": "object",
+      "description": "スプリング物理演算パラメータ（typeがspringの場合のみ適用）",
+      "properties": {
+        "damping": {
+          "type": "number",
+          "description": "ダンピング（減衰係数）。値が大きいほど早く止まる",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 200
+        },
+        "stiffness": {
+          "type": "number",
+          "description": "スティフネス（バネの硬さ）。値が大きいほど反発が強い",
+          "minimum": 1,
+          "maximum": 500,
+          "default": 100
+        },
+        "mass": {
+          "type": "number",
+          "description": "質量。値が大きいほど動きが重くなる",
+          "minimum": 0.1,
+          "maximum": 10,
+          "default": 1
+        },
+        "overshoot_clamping": {
+          "type": "boolean",
+          "description": "オーバーシュート（行き過ぎ）を抑制するか",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "delay_ms": {
+      "type": "integer",
+      "description": "アニメーション開始前の遅延（ミリ秒）",
+      "minimum": 0,
+      "default": 0
+    },
+    "from": {
+      "type": "object",
+      "description": "アニメーション開始時の値",
+      "properties": {
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "x": {
+          "type": "number",
+          "description": "X座標オフセット（ピクセル）"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y座標オフセット（ピクセル）"
+        },
+        "scale": {
+          "type": "number",
+          "description": "スケール値",
+          "minimum": 0
+        },
+        "rotate": {
+          "type": "number",
+          "description": "回転角度（度数法）"
+        }
+      },
+      "additionalProperties": false
+    },
+    "to": {
+      "type": "object",
+      "description": "アニメーション終了時の値",
+      "properties": {
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "x": {
+          "type": "number",
+          "description": "X座標オフセット（ピクセル）"
+        },
+        "y": {
+          "type": "number",
+          "description": "Y座標オフセット（ピクセル）"
+        },
+        "scale": {
+          "type": "number",
+          "description": "スケール値",
+          "minimum": 0
+        },
+        "rotate": {
+          "type": "number",
+          "description": "回転角度（度数法）"
+        }
+      },
+      "additionalProperties": false
+    },
+    "interpolate": {
+      "type": "object",
+      "description": "Remotion interpolate関数の詳細設定",
+      "properties": {
+        "input_range": {
+          "type": "array",
+          "description": "入力範囲（フレーム数の配列）",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2
+        },
+        "output_range": {
+          "type": "array",
+          "description": "出力範囲（値の配列）",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2
+        },
+        "extrapolate_left": {
+          "type": "string",
+          "description": "範囲外（左）の補外方法",
+          "enum": ["clamp", "extend", "identity"],
+          "default": "clamp"
+        },
+        "extrapolate_right": {
+          "type": "string",
+          "description": "範囲外（右）の補外方法",
+          "enum": ["clamp", "extend", "identity"],
+          "default": "clamp"
+        }
+      },
+      "additionalProperties": false
+    },
+    "loop": {
+      "type": "object",
+      "description": "ループ設定（オプション）",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "ループを有効にするか",
+          "default": false
+        },
+        "count": {
+          "type": "integer",
+          "description": "ループ回数（0で無限ループ）",
+          "minimum": 0,
+          "default": 0
+        },
+        "reverse": {
+          "type": "boolean",
+          "description": "往復ループ（前進→後退）にするか",
+          "default": false
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,14 @@
+export declare const isSafari: () => boolean;
+export declare const isIosSafari: () => boolean;
+export declare const appendVideoFragment: ({ actualSrc, actualFrom, duration, fps, }: {
+    actualSrc: string;
+    actualFrom: number;
+    duration: number;
+    fps: number;
+}) => string;
+export declare const useAppendVideoFragment: ({ actualSrc: initialActualSrc, actualFrom: initialActualFrom, duration: initialDuration, fps, }: {
+    actualSrc: string;
+    actualFrom: number;
+    duration: number;
+    fps: number;
+}) => string;

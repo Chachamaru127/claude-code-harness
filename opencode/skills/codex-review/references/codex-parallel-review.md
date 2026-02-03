@@ -282,6 +282,63 @@ const results = await Promise.all(
 | High ≥ 1 または Medium > 3 | REQUEST CHANGES |
 | それ以外 | APPROVE |
 
+### Step 7.1: 判定出力テンプレート（統一）
+
+判定の出力は **commit-judgment-logic の統一テンプレート**に合わせる。
+
+#### APPROVE
+
+```markdown
+### 🎯 How to Achieve A
+
+**Decision**: APPROVE
+**Grade**: A
+**A Grade Criteria**:
+- Critical: 0 ✅
+- High: 0 ✅
+- Medium: ≤3 ✅
+**Required fixes**: None
+**次のアクション**: `git commit` でコミット可能
+```
+
+#### REQUEST CHANGES
+
+```markdown
+### 🎯 How to Achieve A
+
+**Decision**: REQUEST CHANGES
+**Grade**: [grade]
+**A Grade Criteria**:
+- Critical: 0 [status]
+- High: 0 [status]
+- Medium: ≤3 [status]
+**Required fixes**:
+1. [file:line] - [issue] → [fix]
+```
+
+#### REJECT
+
+```markdown
+### Manual Intervention Required
+
+**Decision**: REJECT
+**Grade**: F
+**Reason**: Critical issues require manual review and fix
+**Critical issues**: ...
+```
+
+#### STOP
+
+```markdown
+### Verification Failed
+
+**Decision**: STOP
+**Grade**: N/A (blocked)
+**Failure Type**: [lint_failure | test_failure | environment_error]
+**Failed command**: ...
+**Required fixes**: ...
+```
+
 ## エラーハンドリング
 
 ### 一部エキスパート失敗時

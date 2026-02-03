@@ -1,0 +1,101 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Audio = exports.Html5Audio = void 0;
+const jsx_runtime_1 = require("react/jsx-runtime");
+/* eslint-disable @typescript-eslint/no-use-before-define */
+const react_1 = require("react");
+const Sequence_js_1 = require("../Sequence.js");
+const absolute_src_js_1 = require("../absolute-src.js");
+const calculate_media_duration_js_1 = require("../calculate-media-duration.js");
+const cancel_render_js_1 = require("../cancel-render.js");
+const enable_sequence_stack_traces_js_1 = require("../enable-sequence-stack-traces.js");
+const index_js_1 = require("../loop/index.js");
+const prefetch_js_1 = require("../prefetch.js");
+const use_remotion_environment_js_1 = require("../use-remotion-environment.js");
+const use_video_config_js_1 = require("../use-video-config.js");
+const validate_media_props_js_1 = require("../validate-media-props.js");
+const validate_start_from_props_js_1 = require("../validate-start-from-props.js");
+const duration_state_js_1 = require("../video/duration-state.js");
+const AudioForPreview_js_1 = require("./AudioForPreview.js");
+const AudioForRendering_js_1 = require("./AudioForRendering.js");
+const shared_audio_tags_js_1 = require("./shared-audio-tags.js");
+const AudioRefForwardingFunction = (props, ref) => {
+    var _a, _b, _c;
+    const audioContext = (0, react_1.useContext)(shared_audio_tags_js_1.SharedAudioContext);
+    const { startFrom, endAt, trimBefore, trimAfter, name, stack, pauseWhenBuffering, showInTimeline, onError: onRemotionError, ...otherProps } = props;
+    const { loop, ...propsOtherThanLoop } = props;
+    const { fps } = (0, use_video_config_js_1.useVideoConfig)();
+    const environment = (0, use_remotion_environment_js_1.useRemotionEnvironment)();
+    if (environment.isClientSideRendering) {
+        throw new Error('<Html5Audio> is not supported in @remotion/web-renderer. Use <Audio> from @remotion/media instead. See https://remotion.dev/docs/client-side-rendering/limitations');
+    }
+    const { durations, setDurations } = (0, react_1.useContext)(duration_state_js_1.DurationsContext);
+    if (typeof props.src !== 'string') {
+        throw new TypeError(`The \`<Html5Audio>\` tag requires a string for \`src\`, but got ${JSON.stringify(props.src)} instead.`);
+    }
+    const preloadedSrc = (0, prefetch_js_1.usePreload)(props.src);
+    const onError = (0, react_1.useCallback)((e) => {
+        // eslint-disable-next-line no-console
+        console.log(e.currentTarget.error);
+        // If there is no `loop` property, we don't need to get the duration
+        // and this does not need to be a fatal error
+        const errMessage = `Could not play audio with src ${preloadedSrc}: ${e.currentTarget.error}. See https://remotion.dev/docs/media-playback-error for help.`;
+        if (loop) {
+            if (onRemotionError) {
+                onRemotionError(new Error(errMessage));
+                return;
+            }
+            (0, cancel_render_js_1.cancelRender)(new Error(errMessage));
+        }
+        else {
+            onRemotionError === null || onRemotionError === void 0 ? void 0 : onRemotionError(new Error(errMessage));
+            // eslint-disable-next-line no-console
+            console.warn(errMessage);
+        }
+    }, [loop, onRemotionError, preloadedSrc]);
+    const onDuration = (0, react_1.useCallback)((src, durationInSeconds) => {
+        setDurations({ type: 'got-duration', durationInSeconds, src });
+    }, [setDurations]);
+    const durationFetched = (_a = durations[(0, absolute_src_js_1.getAbsoluteSrc)(preloadedSrc)]) !== null && _a !== void 0 ? _a : durations[(0, absolute_src_js_1.getAbsoluteSrc)(props.src)];
+    (0, validate_start_from_props_js_1.validateMediaTrimProps)({ startFrom, endAt, trimBefore, trimAfter });
+    const { trimBeforeValue, trimAfterValue } = (0, validate_start_from_props_js_1.resolveTrimProps)({
+        startFrom,
+        endAt,
+        trimBefore,
+        trimAfter,
+    });
+    if (loop && durationFetched !== undefined) {
+        if (!Number.isFinite(durationFetched)) {
+            return ((0, jsx_runtime_1.jsx)(exports.Html5Audio, { ...propsOtherThanLoop, ref: ref, _remotionInternalNativeLoopPassed: true }));
+        }
+        const duration = durationFetched * fps;
+        return ((0, jsx_runtime_1.jsx)(index_js_1.Loop, { layout: "none", durationInFrames: (0, calculate_media_duration_js_1.calculateMediaDuration)({
+                trimAfter: trimAfterValue,
+                mediaDurationInFrames: duration,
+                playbackRate: (_b = props.playbackRate) !== null && _b !== void 0 ? _b : 1,
+                trimBefore: trimBeforeValue,
+            }), children: (0, jsx_runtime_1.jsx)(exports.Html5Audio, { ...propsOtherThanLoop, ref: ref, _remotionInternalNativeLoopPassed: true }) }));
+    }
+    if (typeof trimBeforeValue !== 'undefined' ||
+        typeof trimAfterValue !== 'undefined') {
+        return ((0, jsx_runtime_1.jsx)(Sequence_js_1.Sequence, { layout: "none", from: 0 - (trimBeforeValue !== null && trimBeforeValue !== void 0 ? trimBeforeValue : 0), showInTimeline: false, durationInFrames: trimAfterValue, name: name, children: (0, jsx_runtime_1.jsx)(exports.Html5Audio, { _remotionInternalNeedsDurationCalculation: Boolean(loop), pauseWhenBuffering: pauseWhenBuffering !== null && pauseWhenBuffering !== void 0 ? pauseWhenBuffering : false, ...otherProps, ref: ref }) }));
+    }
+    (0, validate_media_props_js_1.validateMediaProps)({ playbackRate: props.playbackRate, volume: props.volume }, 'Html5Audio');
+    if (environment.isRendering) {
+        return ((0, jsx_runtime_1.jsx)(AudioForRendering_js_1.AudioForRendering, { onDuration: onDuration, ...props, ref: ref, onNativeError: onError, _remotionInternalNeedsDurationCalculation: Boolean(loop) }));
+    }
+    return ((0, jsx_runtime_1.jsx)(AudioForPreview_js_1.AudioForPreview, { _remotionInternalNativeLoopPassed: (_c = props._remotionInternalNativeLoopPassed) !== null && _c !== void 0 ? _c : false, _remotionInternalStack: stack !== null && stack !== void 0 ? stack : null, shouldPreMountAudioTags: audioContext !== null && audioContext.numberOfAudioTags > 0, ...props, ref: ref, onNativeError: onError, onDuration: onDuration, 
+        // Proposal: Make this default to true in v5
+        pauseWhenBuffering: pauseWhenBuffering !== null && pauseWhenBuffering !== void 0 ? pauseWhenBuffering : false, _remotionInternalNeedsDurationCalculation: Boolean(loop), showInTimeline: showInTimeline !== null && showInTimeline !== void 0 ? showInTimeline : true }));
+};
+/**
+ * @description With this component, you can add audio to your video. All audio formats which are supported by Chromium are supported by the component.
+ * @see [Documentation](https://remotion.dev/docs/html5-audio)
+ */
+exports.Html5Audio = (0, react_1.forwardRef)(AudioRefForwardingFunction);
+(0, enable_sequence_stack_traces_js_1.addSequenceStackTraces)(exports.Html5Audio);
+/**
+ * @deprecated This component has been renamed to `Html5Audio`.
+ * @see [Documentation](https://remotion.dev/docs/mediabunny/new-video)
+ */
+exports.Audio = exports.Html5Audio;

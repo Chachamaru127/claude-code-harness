@@ -2,7 +2,7 @@
 name: ultrawork
 description: "Autonomously iterates until specified Plans.md range is complete - long-running /work with self-learning. Use when user mentions '/ultrawork', complete until done, finish all tasks, or autonomous execution. Do NOT load for: single tasks, reviews, or setup."
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task"]
-argument-hint: "[natural language range] [--max-iterations N]"
+argument-hint: "[natural language range] [--max-iterations N] [--codex] [--parallel N] [--worktree-base PATH]"
 disable-model-invocation: true
 ---
 
@@ -52,6 +52,7 @@ Plans.md の指定範囲を**完了まで自動的に反復実行**する。
 | **Self-Learning** | See [references/self-learning.md](references/self-learning.md) |
 | **Security & Guards** | See [references/security-guards.md](references/security-guards.md) |
 | **Session State** | See [references/session-state.md](references/session-state.md) |
+| **Codex Mode** (Experimental) | See [references/codex-mode.md](references/codex-mode.md) |
 
 ## Completion Conditions
 

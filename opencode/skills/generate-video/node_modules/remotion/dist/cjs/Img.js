@@ -1,0 +1,168 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Img = void 0;
+const jsx_runtime_1 = require("react/jsx-runtime");
+const react_1 = require("react");
+const SequenceContext_js_1 = require("./SequenceContext.js");
+const cancel_render_js_1 = require("./cancel-render.js");
+const get_cross_origin_value_js_1 = require("./get-cross-origin-value.js");
+const prefetch_js_1 = require("./prefetch.js");
+const use_buffer_state_js_1 = require("./use-buffer-state.js");
+const use_delay_render_js_1 = require("./use-delay-render.js");
+const use_remotion_environment_js_1 = require("./use-remotion-environment.js");
+function exponentialBackoff(errorCount) {
+    return 1000 * 2 ** (errorCount - 1);
+}
+const ImgRefForwarding = ({ onError, maxRetries = 2, src, pauseWhenLoading, delayRenderRetries, delayRenderTimeoutInMilliseconds, onImageFrame, crossOrigin, ...props }, ref) => {
+    const imageRef = (0, react_1.useRef)(null);
+    const errors = (0, react_1.useRef)({});
+    const { delayPlayback } = (0, use_buffer_state_js_1.useBufferState)();
+    const sequenceContext = (0, react_1.useContext)(SequenceContext_js_1.SequenceContext);
+    if (!src) {
+        throw new Error('No "src" prop was passed to <Img>.');
+    }
+    const _propsValid = true;
+    if (!_propsValid) {
+        throw new Error('typecheck error');
+    }
+    (0, react_1.useImperativeHandle)(ref, () => {
+        return imageRef.current;
+    }, []);
+    const actualSrc = (0, prefetch_js_1.usePreload)(src);
+    const retryIn = (0, react_1.useCallback)((timeout) => {
+        if (!imageRef.current) {
+            return;
+        }
+        const currentSrc = imageRef.current.src;
+        setTimeout(() => {
+            var _a;
+            if (!imageRef.current) {
+                // Component has been unmounted, do not retry
+                return;
+            }
+            const newSrc = (_a = imageRef.current) === null || _a === void 0 ? void 0 : _a.src;
+            if (newSrc !== currentSrc) {
+                // src has changed, do not retry
+                return;
+            }
+            imageRef.current.removeAttribute('src');
+            imageRef.current.setAttribute('src', newSrc);
+        }, timeout);
+    }, []);
+    const didGetError = (0, react_1.useCallback)((e) => {
+        var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l;
+        if (!errors.current) {
+            return;
+        }
+        errors.current[(_a = imageRef.current) === null || _a === void 0 ? void 0 : _a.src] =
+            ((_c = errors.current[(_b = imageRef.current) === null || _b === void 0 ? void 0 : _b.src]) !== null && _c !== void 0 ? _c : 0) + 1;
+        if (onError &&
+            ((_e = errors.current[(_d = imageRef.current) === null || _d === void 0 ? void 0 : _d.src]) !== null && _e !== void 0 ? _e : 0) > maxRetries) {
+            onError(e);
+            return;
+        }
+        if (((_g = errors.current[(_f = imageRef.current) === null || _f === void 0 ? void 0 : _f.src]) !== null && _g !== void 0 ? _g : 0) <= maxRetries) {
+            const backoff = exponentialBackoff((_j = errors.current[(_h = imageRef.current) === null || _h === void 0 ? void 0 : _h.src]) !== null && _j !== void 0 ? _j : 0);
+            // eslint-disable-next-line no-console
+            console.warn(`Could not load image with source ${(_k = imageRef.current) === null || _k === void 0 ? void 0 : _k.src}, retrying again in ${backoff}ms`);
+            retryIn(backoff);
+            return;
+        }
+        (0, cancel_render_js_1.cancelRender)('Error loading image with src: ' + ((_l = imageRef.current) === null || _l === void 0 ? void 0 : _l.src));
+    }, [maxRetries, onError, retryIn]);
+    const { delayRender, continueRender } = (0, use_delay_render_js_1.useDelayRender)();
+    if (typeof window !== 'undefined') {
+        const isPremounting = Boolean(sequenceContext === null || sequenceContext === void 0 ? void 0 : sequenceContext.premounting);
+        const isPostmounting = Boolean(sequenceContext === null || sequenceContext === void 0 ? void 0 : sequenceContext.postmounting);
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        (0, react_1.useLayoutEffect)(() => {
+            var _a, _b;
+            if (((_b = (_a = window.process) === null || _a === void 0 ? void 0 : _a.env) === null || _b === void 0 ? void 0 : _b.NODE_ENV) === 'test') {
+                if (imageRef.current) {
+                    imageRef.current.src = actualSrc;
+                }
+                return;
+            }
+            const { current } = imageRef;
+            if (!current) {
+                return;
+            }
+            const newHandle = delayRender('Loading <Img> with src=' + actualSrc, {
+                retries: delayRenderRetries !== null && delayRenderRetries !== void 0 ? delayRenderRetries : undefined,
+                timeoutInMilliseconds: delayRenderTimeoutInMilliseconds !== null && delayRenderTimeoutInMilliseconds !== void 0 ? delayRenderTimeoutInMilliseconds : undefined,
+            });
+            const unblock = pauseWhenLoading && !isPremounting && !isPostmounting
+                ? delayPlayback().unblock
+                : () => undefined;
+            let unmounted = false;
+            const onComplete = () => {
+                var _a, _b, _c, _d;
+                // the decode() promise isn't cancelable -- it may still resolve after unmounting
+                if (unmounted) {
+                    continueRender(newHandle);
+                    return;
+                }
+                if (((_b = errors.current[(_a = imageRef.current) === null || _a === void 0 ? void 0 : _a.src]) !== null && _b !== void 0 ? _b : 0) > 0) {
+                    delete errors.current[(_c = imageRef.current) === null || _c === void 0 ? void 0 : _c.src];
+                    // eslint-disable-next-line no-console
+                    console.info(`Retry successful - ${(_d = imageRef.current) === null || _d === void 0 ? void 0 : _d.src} is now loaded`);
+                }
+                if (current) {
+                    onImageFrame === null || onImageFrame === void 0 ? void 0 : onImageFrame(current);
+                }
+                unblock();
+                continueRender(newHandle);
+            };
+            if (!imageRef.current) {
+                onComplete();
+                return;
+            }
+            current.src = actualSrc;
+            current
+                .decode()
+                .then(onComplete)
+                .catch((err) => {
+                // fall back to onload event if decode() fails
+                // eslint-disable-next-line no-console
+                console.warn(err);
+                if (current.complete) {
+                    onComplete();
+                }
+                else {
+                    current.addEventListener('load', onComplete);
+                }
+            });
+            // If tag gets unmounted, clear pending handles because image is not going to load
+            return () => {
+                unmounted = true;
+                current.removeEventListener('load', onComplete);
+                unblock();
+                continueRender(newHandle);
+            };
+        }, [
+            actualSrc,
+            delayPlayback,
+            delayRenderRetries,
+            delayRenderTimeoutInMilliseconds,
+            pauseWhenLoading,
+            isPremounting,
+            isPostmounting,
+            onImageFrame,
+            continueRender,
+            delayRender,
+        ]);
+    }
+    const { isClientSideRendering } = (0, use_remotion_environment_js_1.useRemotionEnvironment)();
+    const crossOriginValue = (0, get_cross_origin_value_js_1.getCrossOriginValue)({
+        crossOrigin,
+        requestsVideoFrame: false,
+        isClientSideRendering,
+    });
+    // src gets set once we've loaded and decoded the image.
+    return ((0, jsx_runtime_1.jsx)("img", { ...props, ref: imageRef, crossOrigin: crossOriginValue, onError: didGetError, decoding: "sync" }));
+};
+/*
+ * @description Works just like a regular HTML img tag. When you use the <Img> tag, Remotion will ensure that the image is loaded before rendering the frame.
+ * @see [Documentation](https://remotion.dev/docs/img)
+ */
+exports.Img = (0, react_1.forwardRef)(ImgRefForwarding);

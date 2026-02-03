@@ -3,6 +3,7 @@ name: ci
 description: "Diagnoses and fixes CI/CD pipeline failures. Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
 allowed-tools: ["Read", "Grep", "Bash", "Task"]
 context: fork
+argument-hint: "[analyze|fix|run]"
 ---
 
 # CI/CD Skills

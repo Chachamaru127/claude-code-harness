@@ -1,0 +1,123 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://claude-code-harness.dev/schemas/video/scenario.schema.json",
+  "title": "Video Scenario Schema",
+  "description": "Defines the high-level structure of a video scenario with sections and metadata",
+  "type": "object",
+  "version": "1.0.0",
+  "required": ["title", "description", "sections", "metadata"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Title of the video scenario",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the scenario purpose and content",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "sections": {
+      "type": "array",
+      "description": "Ordered list of scenario sections",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "description", "order"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique identifier for the section",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "title": {
+            "type": "string",
+            "description": "Section title",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "description": {
+            "type": "string",
+            "description": "Section description and purpose",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "order": {
+            "type": "integer",
+            "description": "Order of the section in the scenario (0-indexed)",
+            "minimum": 0
+          },
+          "duration_estimate_ms": {
+            "type": "integer",
+            "description": "Estimated duration of this section in milliseconds",
+            "minimum": 0
+          },
+          "tags": {
+            "type": "array",
+            "description": "Tags for categorizing the section",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9-]+$"
+            }
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Metadata about the scenario generation",
+      "required": ["version", "generated_at"],
+      "properties": {
+        "seed": {
+          "type": "string",
+          "description": "Random seed used for generation (optional)",
+          "pattern": "^[a-zA-Z0-9-]+$"
+        },
+        "version": {
+          "type": "string",
+          "description": "Schema version",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "generated_at": {
+          "type": "string",
+          "description": "ISO 8601 timestamp of scenario generation",
+          "format": "date-time"
+        },
+        "generator": {
+          "type": "string",
+          "description": "Tool or agent that generated this scenario"
+        },
+        "project_name": {
+          "type": "string",
+          "description": "Name of the project this scenario is for"
+        },
+        "video_type": {
+          "type": "string",
+          "description": "Type of video (e.g., product-demo, release-notes, architecture)",
+          "enum": [
+            "lp-teaser",
+            "intro-demo",
+            "release-notes",
+            "architecture",
+            "onboarding",
+            "custom"
+          ]
+        },
+        "target_funnel": {
+          "type": "string",
+          "description": "Marketing funnel stage this video targets",
+          "enum": [
+            "awareness",
+            "interest",
+            "consideration",
+            "decision",
+            "retention",
+            "advocacy"
+          ]
+        }
+      }
+    }
+  }
+}

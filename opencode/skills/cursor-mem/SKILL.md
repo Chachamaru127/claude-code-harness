@@ -2,6 +2,7 @@
 name: cursor-mem
 description: "Accesses the claude-mem MCP server from Cursor to search session history and record observations. Triggers: memory search, claude-mem, past decisions, record this. Do NOT load for: normal coding, temporary notes, or implementation work."
 allowed-tools: ["Bash", "Read", "mcp__claude-mem__*"]
+argument-hint: "[search|record] [query]"
 ---
 
 # Cursor-Mem Integration Skill

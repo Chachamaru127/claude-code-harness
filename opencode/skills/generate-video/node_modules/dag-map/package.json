@@ -1,0 +1,28 @@
+{
+  "name": "dag-map",
+  "version": "1.0.2",
+  "description": "DAG stands for Directed acyclic graph. It is used to build a graph of dependencies checking that there isn't circular dependencies",
+  "main": "dist/dag-map.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/krisselden/dag-map.git"
+  },
+  "scripts": {
+    "build": "ember build",
+    "build:production": "ember build --environment=production",
+    "test": "ember test",
+    "test:server": "ember test --server",
+    "prepublish": "ember build --environment production"
+  },
+  "author": "Kris Selden",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "broccoli-es6-module-transpiler": "^0.5.0",
+    "broccoli-stew": "^0.2.1",
+    "broccoli-uglify-js": "^0.1.3",
+    "ember-cli": "^0.2.0",
+    "es6-module-transpiler-amd-formatter": "^0.3.0",
+    "qunitjs": "^1.17.1"
+  }
+}

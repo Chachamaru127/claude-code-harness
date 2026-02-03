@@ -6,7 +6,7 @@ allowed-tools: ["Read"]
 
 # Determine Review Mode
 
-`.claude-code-harness.config.yaml`からレビューモードを決定し、Codex未設定時は`default`にフォールバックするスキル。
+`.claude-code-harness.config.yaml`からレビューモードを決定し、**Codex MCP を自動検出**して利用可否を判断する。利用不可の場合は`default`にフォールバックする。
 
 ---
 
@@ -51,21 +51,34 @@ allowed-tools: ["Read"]
 review:
   mode: codex  # または "default"
   codex:
-    enabled: true  # または false
+    enabled: true      # または false
+    timeout_ms: 60000  # Codex MCP のタイムアウト（ミリ秒）
 ```
 
-### Step 3: 判定ロジック
+### Step 3: Codex MCP 自動検出（必須）
+
+Codex MCP サーバーの有無を確認する。検出に失敗したら `default` にフォールバック。
+
+```bash
+# 例: MCP サーバー一覧で codex を検出
+claude mcp list | grep -i codex
+```
+
+> **タイムアウト**: `review.codex.timeout_ms`（ms）を上限に検出を打ち切る。
+
+### Step 4: 判定ロジック
 
 ```javascript
 // 疑似コード例
 let review_mode = "default";
+const timeoutMs = config.review?.codex?.timeout_ms ?? 60000;
+const codexAvailable = detectCodexMcp(timeoutMs);
 
 // 1. review.modeを確認
 if (config.review?.mode === "codex") {
   // 2. review.codex.enabledを確認
-  if (config.review?.codex?.enabled === true) {
-    // 3. Codex MCPサーバーが利用可能か確認（オプション）
-    // ここでは設定ファイルの値のみを信頼
+  if (config.review?.codex?.enabled === true && codexAvailable) {
+    // 3. Codex MCP サーバーが利用可能なら codex
     review_mode = "codex";
   }
 }
@@ -74,7 +87,7 @@ if (config.review?.mode === "codex") {
 return { review_mode };
 ```
 
-### Step 4: フォールバック条件
+### Step 5: フォールバック条件
 
 以下の場合は`default`にフォールバック：
 
@@ -82,6 +95,7 @@ return { review_mode };
 2. `review.mode`が未設定または`default`
 3. `review.mode`が`codex`だが`review.codex.enabled`が`false`
 4. `review.codex.enabled`が未設定
+5. Codex MCP サーバーが検出できない（`timeout_ms` 超過含む）
 
 ---
 

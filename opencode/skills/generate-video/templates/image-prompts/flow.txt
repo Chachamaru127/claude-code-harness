@@ -1,0 +1,95 @@
+Create a professional flow diagram showing "{{topic}}" in a {{style}} style.
+
+FLOW OVERVIEW:
+- Process: {{topic}}
+- Direction: {{direction}} (horizontal/vertical/zigzag)
+- Number of steps: {{stepCount}}
+- Arrow style: {{arrowStyle}}
+
+STEPS:
+{{#steps}}
+{{order}}. {{label}} ({{type}} step)
+   - Icon: {{icon}}
+   {{#description}}- Description: {{.}}{{/description}}
+   {{#duration}}- Duration: {{.}}{{/duration}}
+{{/steps}}
+
+FLOW STRUCTURE:
+{{#directionIsHorizontal}}
+- Arrange steps left-to-right
+- Use horizontal arrows between steps
+- Show progress as moving forward
+{{/directionIsHorizontal}}
+{{#directionIsVertical}}
+- Arrange steps top-to-bottom
+- Use vertical arrows between steps
+- Show progress as moving downward
+{{/directionIsVertical}}
+{{#directionIsZigzag}}
+- Arrange steps in S-curve pattern
+- Alternate left and right positioning
+- Connect with flowing arrows
+{{/directionIsZigzag}}
+
+STEP TYPES & VISUALS:
+{{#hasStart}}
+- START: Circle icon, green color, "beginning" indicator
+{{/hasStart}}
+{{#hasProcess}}
+- PROCESS: Square/rectangle, blue color, action-oriented
+{{/hasProcess}}
+{{#hasDecision}}
+- DECISION: Diamond shape, yellow/amber color, branching point
+{{/hasDecision}}
+{{#hasParallel}}
+- PARALLEL: Multiple boxes side-by-side, purple color, concurrent actions
+{{/hasParallel}}
+{{#hasSubprocess}}
+- SUBPROCESS: Rounded rectangle, gray/blue, detailed sub-flow
+{{/hasSubprocess}}
+{{#hasEnd}}
+- END: Double circle, red/orange color, completion indicator
+{{/hasEnd}}
+
+ARROW STYLE:
+- Style: {{arrowStyle}} (solid/dashed/dotted/thick/animated)
+- Direction: Clear arrowheads showing flow direction
+- Consistency: All arrows use same style throughout
+
+NUMBERING:
+{{#showNumbers}}
+- Display step numbers (1, 2, 3...) prominently
+- Place number inside or next to each step icon
+{{/showNumbers}}
+{{^showNumbers}}
+- No step numbers, rely on arrows to show sequence
+{{/showNumbers}}
+
+STYLE REQUIREMENTS:
+- Style: {{style}} (minimalist/technical/modern/gradient/flat/3d)
+- Color scheme: Primary {{primaryColor}}, Secondary {{secondaryColor}}, Background {{backgroundColor}}
+- Typography: Clear, consistent across all steps
+- Aspect ratio: {{aspectRatio}}
+- Quality: Clean, professional flow diagram
+
+TIMING/DURATION (if provided):
+{{#hasDurations}}
+- Show duration below or beside each step
+- Use clock icon or time indicator
+- Format: "2 min", "30 sec", "instant", etc.
+{{/hasDurations}}
+
+TECHNICAL SPECS:
+- Resolution: {{width}}x{{height}}
+- Format: PNG with transparency
+- Text: Step labels should be short (max 30 characters)
+- Icons: Distinct shape for each step type
+- Spacing: Consistent gaps between steps
+
+AVOID:
+- More than 10 steps (breaks into sub-flows if needed)
+- Complex branching (keep linear if possible)
+- Unclear arrow directions
+- Inconsistent step styling
+
+Focus on making the process flow intuitive and easy to follow visually.

@@ -1,12 +1,24 @@
 ---
 name: codex-review
-description: "Integrates OpenAI Codex CLI as an MCP server to provide second-opinion reviews. Triggered by requests for Codex review, second opinion, or Codex setup. Do NOT load for: standard reviews without Codex, implementation work, or non-setup tasks."
+description: "Integrates OpenAI Codex CLI as an MCP server to provide second-opinion reviews. Use when user mentions 'Codex レビュー', 'セカンドオピニオン', 'Codex の意見', 'Codex でレビュー', or 'Codex セットアップ'. Do NOT load for: 'Codex に実装させて', 'Codex Worker', 'Codex に作らせて', '実装を依頼'."
 allowed-tools: ["Bash", "Read", "Write", "Edit"]
+argument-hint: "[code|plan|scope]"
 ---
 
 # Codex Review Integration Skill
 
 OpenAI Codex CLI を MCP サーバーとして Claude Code に統合し、コードレビュー時にセカンドオピニオンを提供するスキル。
+
+## Do NOT Load For (誤発動防止)
+
+以下のキーワードは `codex-worker` スキルが担当します（description と完全一致）:
+
+| トリガーワード | 正しいスキル | 理由 |
+|---------------|-------------|------|
+| "**Codex に実装させて**" | `codex-worker` | 実装 ≠ レビュー |
+| "**Codex Worker**" | `codex-worker` | Worker = 実装役 |
+| "**Codex に作らせて**" | `codex-worker` | 作成 = 実装 |
+| "**実装を依頼**" | `codex-worker` | 実装目的 |
 
 ## 🎯 使用場面
 

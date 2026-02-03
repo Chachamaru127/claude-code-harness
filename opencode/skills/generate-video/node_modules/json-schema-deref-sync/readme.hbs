@@ -1,0 +1,93 @@
+# json-schema-deref-sync
+
+[![npm version](https://img.shields.io/npm/v/json-schema-deref-sync.svg?style=flat-square)](https://www.npmjs.com/package/json-schema-deref-sync)
+[![build status](https://img.shields.io/travis/bojand/json-schema-deref-sync/master.svg?style=flat-square)](https://travis-ci.org/bojand/json-schema-deref-sync)
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg?style=flat-square)](https://standardjs.com)
+[![License](https://img.shields.io/github/license/bojand/json-schema-deref-sync.svg?style=flat-square)](https://raw.githubusercontent.com/bojand/json-schema-deref-sync/master/LICENSE)
+
+Dereference JSON pointers in a JSON schemas with their true resolved values.
+Basically a lighter, synchronous version of [json-schema-deref](https://github.com/bojand/json-schema-deref) but omits web references.
+
+## Installation
+
+`npm install json-schema-deref-sync`
+
+## Overview
+
+Let's say you have the following JSON Schema:
+
+```json
+{
+  "description": "Just some JSON schema.",
+  "title": "Basic Widget",
+  "type": "object",
+  "definitions": {
+    "id": {
+      "description": "unique identifier",
+      "type": "string",
+      "minLength": 1,
+      "readOnly": true
+    }
+  },
+  "properties": {
+    "id": {
+      "$ref": "#/definitions/id"
+    },
+    "foo": {
+      "$ref": "http://www.mysite.com/myschema.json#/definitions/foo"
+    },
+    "bar": {
+      "$ref": "bar.json"
+    }
+  }
+}
+```
+
+Sometimes you just want that schema to be fully expanded, with `$ref`'s being their (true) resolved values:
+
+```json
+{
+  "description": "Just some JSON schema.",
+  "title": "Basic Widget",
+  "type": "object",
+  "definitions": {
+    "id": {
+      "description": "unique identifier",
+      "type": "string",
+      "minLength": 1,
+      "readOnly": true
+    }
+  },
+  "properties": {
+    "id": {
+      "description": "unique identifier",
+      "type": "string",
+      "minLength": 1,
+      "readOnly": true
+    },
+    "foo": {
+      "description": "foo property",
+      "readOnly": true,
+      "type": "number"
+    },
+    "bar": {
+      "description": "bar property",
+      "type": "boolean"
+    }
+  }
+}
+```
+
+This utility lets you do that:
+
+
+```js
+var deref = require('json-schema-deref-sync');
+var myschema = require('schema.json');
+
+var fullSchema = deref(myschema);
+```
+
+## API Reference
+
+{{>all-docs~}}
