@@ -343,12 +343,31 @@ function copyDirectoryRecursive(src, dest) {
 
   const entries = fs.readdirSync(src, { withFileTypes: true });
 
+  // 除外するディレクトリ/ファイルパターン
+  const excludePatterns = [
+    'CLAUDE.md',           // claude-mem の自動生成ファイル
+    'node_modules',        // npm 依存関係
+    'coverage',            // テストカバレッジ
+    '.claude',             // Claude セッション状態
+  ];
+
+  // 除外するファイル名パターン（startsWith）
+  const excludePrefixes = [
+    'IMPLEMENTATION_',     // 開発途中ドキュメント
+    'TASK_',               // タスク関連ドキュメント
+  ];
+
   for (const entry of entries) {
     const srcPath = path.join(src, entry.name);
     const destPath = path.join(dest, entry.name);
 
-    // CLAUDE.md はスキップ（claude-mem の自動生成ファイル）
-    if (entry.name === 'CLAUDE.md') {
+    // 完全一致で除外
+    if (excludePatterns.includes(entry.name)) {
+      continue;
+    }
+
+    // プレフィックスで除外
+    if (excludePrefixes.some(prefix => entry.name.startsWith(prefix))) {
       continue;
     }
 
