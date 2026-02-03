@@ -1,8 +1,0 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.getOffthreadVideoSource = void 0;
-const absolute_src_1 = require("../absolute-src");
-const getOffthreadVideoSource = ({ src, transparent, currentTime, toneMapped, }) => {
-    return `http://localhost:${window.remotion_proxyPort}/proxy?src=${encodeURIComponent((0, absolute_src_1.getAbsoluteSrc)(src))}&time=${encodeURIComponent(Math.max(0, currentTime))}&transparent=${String(transparent)}&toneMapped=${String(toneMapped)}`;
-};
-exports.getOffthreadVideoSource = getOffthreadVideoSource;

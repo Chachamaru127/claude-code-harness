@@ -1,7 +1,0 @@
-import type { ComponentType, LazyExoticComponent } from 'react';
-import type { VideoConfig } from './video-config.js';
-type ReturnType = (VideoConfig & {
-    component: LazyExoticComponent<ComponentType<Record<string, unknown>>> | ComponentType<Record<string, unknown>>;
-}) | null;
-export declare const useVideo: () => ReturnType;
-export {};

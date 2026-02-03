@@ -153,6 +153,13 @@ out/
 *.webm
 *.gif
 
+# Skills - node_modules and generated files
+**/skills/**/node_modules/
+**/skills/**/coverage/
+**/skills/**/.claude/state/
+**/skills/**/.claude/logs/
+**/skills/**/.claude/sessions/
+
 # OpenCode (local-only)
 .opencode/
 
