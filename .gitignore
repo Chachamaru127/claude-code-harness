@@ -160,6 +160,10 @@ out/
 **/skills/**/.claude/logs/
 **/skills/**/.claude/sessions/
 
+# Skills - temporary implementation docs
+**/skills/**/IMPLEMENTATION_*.md
+**/skills/**/TASK_*.md
+
 # OpenCode (local-only)
 .opencode/
 
