@@ -2,7 +2,7 @@
 name: code-reviewer
 description: セキュリティ/性能/品質を多角的にレビュー
 tools: [Read, Grep, Glob, Bash]
-disallowedTools: [Write, Edit, Task]
+disallowedTools: [Write, Edit, Bash, Task]
 model: sonnet
 color: blue
 memory: project
