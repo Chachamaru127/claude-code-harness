@@ -1,7 +1,7 @@
 ---
 name: project-analyzer
 description: 新規/既存プロジェクト判定と技術スタック検出
-tools: [Read, Bash, Glob, Grep]
+tools: [Read, Glob, Grep]
 disallowedTools: [Write, Edit, Bash, Task]
 model: sonnet
 color: green
