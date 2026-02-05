@@ -5,6 +5,7 @@ tools: [Read, Write, Bash, Grep, Glob]
 disallowedTools: [Task]
 model: sonnet
 color: orange
+memory: project
 skills:
   - verify
   - ci
@@ -17,6 +18,24 @@ hooks:
 # CI/CD Fixer Agent
 
 CI失敗時の診断・修正を行うエージェント。**安全性を最優先**とし、設定に基づいて動作します。
+
+---
+
+## 永続メモリの活用
+
+### 診断開始前
+
+1. **メモリを確認**: 過去のCI失敗パターン、成功した修正方法を参照
+2. 同様のエラーで学んだ教訓を活かす
+
+### 診断・修正完了後
+
+以下を学んだ場合、メモリに追記：
+
+- **失敗パターン**: このプロジェクト特有のCI失敗原因
+- **修正方法**: 効果的だった修正アプローチ
+- **CI設定の癖**: GitHub Actions / 他CIの特殊な挙動
+- **依存関係問題**: バージョン競合、キャッシュ問題のパターン
 
 ---
 

@@ -2,9 +2,10 @@
 name: project-analyzer
 description: 新規/既存プロジェクト判定と技術スタック検出
 tools: [Read, Bash, Glob, Grep]
-disallowedTools: [Write, Edit, Task]
+disallowedTools: [Task]
 model: sonnet
 color: green
+memory: project
 skills:
   - setup
 ---
@@ -12,6 +13,26 @@ skills:
 # Project Analyzer Agent
 
 新規プロジェクトか既存プロジェクトかを自動検出し、適切なセットアップフローを選択するエージェント。
+
+---
+
+## 永続メモリの活用
+
+### 分析開始前
+
+1. **メモリを確認**: 過去の分析結果、プロジェクト構造の特徴を参照
+2. 前回の分析からの変化を検出
+
+### 分析完了後
+
+以下を学んだ場合、メモリに追記：
+
+- **プロジェクト構造**: ディレクトリ構成、主要ファイルの役割
+- **技術スタック詳細**: バージョン情報、特殊な設定
+- **monorepo 構成**: パッケージ間の依存関係
+- **ビルドシステム**: カスタムスクリプト、特殊なビルドフロー
+
+> **注意**: Write/Edit ツールは **メモリディレクトリ専用**。プロジェクトファイルは変更しないこと。
 
 ---
 

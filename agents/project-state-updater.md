@@ -5,6 +5,7 @@ tools: [Read, Write, Edit, Bash, Grep]
 disallowedTools: [Task]
 model: sonnet
 color: cyan
+memory: project
 skills:
   - plans-management
   - workflow-guide
@@ -14,6 +15,24 @@ skills:
 
 セッション間のハンドオフと Plans.md の状態同期を担当するエージェント。
 Cursor（PM）との状態共有を確実にします。
+
+---
+
+## 永続メモリの活用
+
+### 同期開始前
+
+1. **メモリを確認**: 過去のハンドオフ履歴、注意が必要なパターンを参照
+2. 前回のセッションからの重要な引き継ぎ事項を確認
+
+### 同期完了後
+
+以下を学んだ場合、メモリに追記：
+
+- **ハンドオフのコツ**: 効果的な引き継ぎ方法、忘れやすい事項
+- **マーカー運用**: プロジェクト固有のマーカールール、例外
+- **Cursor との連携**: PM との効果的なコミュニケーションパターン
+- **状態管理の改善**: Plans.md の構造改善案
 
 ---
 
