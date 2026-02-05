@@ -2,7 +2,7 @@
 name: code-reviewer
 description: セキュリティ/性能/品質を多角的にレビュー
 tools: [Read, Grep, Glob, Bash]
-disallowedTools: [Task]
+disallowedTools: [Write, Edit, Task]
 model: sonnet
 color: blue
 memory: project
@@ -33,7 +33,8 @@ skills:
 - **アーキテクチャ決定**: レビューで学んだ設計意図
 - **例外事項**: 意図的に許容されている逸脱
 
-> **注意**: Write/Edit ツールは **メモリディレクトリ専用**。レビュー対象のソースコードは絶対に変更しないこと。
+> **Read-only エージェント**: このエージェントは Write/Edit ツールが無効化されています。
+> メモリへの追記が必要な場合は、親エージェントに結果を返し、親が `.claude/memory/` に記録します。
 
 ---
 

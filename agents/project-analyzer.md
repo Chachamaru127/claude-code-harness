@@ -2,7 +2,7 @@
 name: project-analyzer
 description: 新規/既存プロジェクト判定と技術スタック検出
 tools: [Read, Bash, Glob, Grep]
-disallowedTools: [Task]
+disallowedTools: [Write, Edit, Task]
 model: sonnet
 color: green
 memory: project
@@ -32,7 +32,8 @@ skills:
 - **monorepo 構成**: パッケージ間の依存関係
 - **ビルドシステム**: カスタムスクリプト、特殊なビルドフロー
 
-> **注意**: Write/Edit ツールは **メモリディレクトリ専用**。プロジェクトファイルは変更しないこと。
+> **Read-only エージェント**: このエージェントは Write/Edit ツールが無効化されています。
+> メモリへの追記が必要な場合は、親エージェントに結果を返し、親が `.claude/memory/` に記録します。
 
 ---
 
