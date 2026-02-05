@@ -178,3 +178,20 @@ out/
 
 # MCP Server (local development only)
 /mcp-server/
+
+# Cache directory
+/.cache/
+
+# Experimental/unused code directories
+/app/
+/frontend/
+/src/
+
+# X post images (local only)
+/image/
+
+# VS Code workspace files
+*.code-workspace
+
+# Absolute path remnants (accidentally created)
+/Users/
