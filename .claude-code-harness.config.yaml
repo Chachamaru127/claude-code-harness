@@ -30,3 +30,21 @@ cleanup:
     max_lines: 500
   claude_md:
     max_lines: 100
+
+# OpenClaw autonomous daemon (Bun + Agent SDK)
+openclaw:
+  enabled: false
+  cron_interval: "*/30 * * * *"    # 30-minute interval
+  max_turns: 20                     # Max turns per cron run
+  max_budget_usd: 1.00              # Max budget per cron run (USD)
+  services:
+    gmail:
+      enabled: false
+    calendar:
+      enabled: false
+    line:
+      enabled: false
+    slack:
+      enabled: false
+    discord:
+      enabled: false

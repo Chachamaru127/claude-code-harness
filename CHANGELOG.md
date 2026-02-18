@@ -4,6 +4,37 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
+## [2.21.0] - 2026-02-18
+
+### 🎯 What's Changed for You
+
+**New OpenClaw plugin: autonomous daemon that checks Gmail, Calendar, LINE, Slack, Discord every 30 minutes using Bun + Claude Agent SDK.**
+
+| Before | After |
+|--------|-------|
+| No autonomous message/email handling | `/openclaw start` launches a Bun daemon that runs Agent SDK sessions on a cron schedule |
+| Manual email/message checking required | Daemon auto-checks all enabled services, drafts replies, and generates structured reports |
+| No cross-service integration | Single daemon manages Gmail, Calendar, LINE, Slack, Discord via MCP servers |
+
+### Added
+
+- **OpenClaw daemon** (`openclaw/daemon/`): Bun + Claude Agent SDK cron-based autonomous agent
+  - `index.ts`: Entry point with croner scheduling and Agent SDK `query()` invocation
+  - `config.ts`: Config loader from `.claude-code-harness.config.yaml`
+  - `mcp-registry.ts`: MCP server builder for 5 services (Google Workspace, LINE, Slack, Discord)
+  - `session-manager.ts`: Session resume/new management for context continuity
+  - `prompt-builder.ts`: Dynamic prompt generation based on enabled services
+  - `logger.ts`: Structured NDJSON logging
+  - `types.ts`: TypeScript type definitions
+- **Skill `openclaw`** (`skills/openclaw/`): User-facing management commands
+  - Subcommands: `setup`, `start`, `stop`, `status`, `config`
+  - References: setup-guide, gmail-calendar, line, slack, discord, daemon-management
+- **Agent `openclaw-daemon`** (`agents/openclaw-daemon.md`): Subagent definition for autonomous execution
+- **Scripts**: `openclaw-start.sh`, `openclaw-stop.sh`, `openclaw-status.sh`
+- **Config**: `openclaw` section in `.claude-code-harness.config.yaml`
+
+---
+
 ## [2.20.9] - 2026-02-15
 
 ### 🎯 What's Changed for You
