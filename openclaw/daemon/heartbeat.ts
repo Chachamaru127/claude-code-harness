@@ -57,6 +57,6 @@ function extractTasks(content: string): string[] {
       // Match unchecked checkboxes or plain list items with content
       return /^-\s*(\[\s*\]\s*)?.+/.test(trimmed);
     })
-    .map((line) => line.replace(/^-\s*\[\s*\]\s*/, "").trim())
+    .map((line) => line.replace(/^-\s*(\[\s*\]\s*)?/, "").trim())
     .filter(Boolean);
 }

@@ -83,9 +83,11 @@ Bun Daemon (openclaw/daemon/index.ts)
   │
   ├── Step 1: HEARTBEAT.md チェック → 空なら SKIP (API 呼ばない)
   │
-  ├── Step 2: 予算チェック → 当日累計コスト ≧ 日次上限なら SKIP
+  ├── Step 2: 有効サービス確認 → なければ SKIP
   │
-  ├── Step 3: サービス別 isolated query() (resume なし)
+  ├── Step 3: 予算チェック → 当日累計コスト ≧ 日次上限なら SKIP
+  │
+  ├── Step 4: サービス別 isolated query() (resume なし)
   │     ├── Memory: 前回 context_snapshot を prompt に注入
   │     ├── systemPrompt: claude_code preset
   │     ├── settingSources: ["project"]
@@ -95,12 +97,13 @@ Bun Daemon (openclaw/daemon/index.ts)
   │     ├── maxTurns: サービス別設定
   │     ├── maxBudgetUsd: サービス別設定
   │     └── permissionMode: bypassPermissions
+  │     └── 結果を run-history.jsonl に保存
   │
-  ├── Step 4: 結果を run-history.jsonl に保存
+  ├── Step 5: 結果マージ
   │
-  ├── Step 5: 配信: LINE/Slack/Discord/Gmail に結果 push
+  ├── Step 6: 配信: LINE/Slack/Discord/Gmail に結果 push
   │
-  └── Step 6: ログサマリー出力
+  └── Step 7: ログサマリー出力
 ```
 
 ## 設定

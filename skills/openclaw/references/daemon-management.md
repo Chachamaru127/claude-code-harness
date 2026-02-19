@@ -174,7 +174,7 @@ v2 では各サービスを **独立した query() セッション** で実行�
 ```json
 {"ts":"2026-02-19T10:00:00.000Z","level":"info","event":"daemon-started","interval":"*/30 * * * *","services":["gmail","calendar"],"pid":12345}
 {"ts":"2026-02-19T10:00:00.100Z","level":"info","event":"heartbeat-check","hasWork":true,"tasks":["GitHub PR確認"]}
-{"ts":"2026-02-19T10:00:01.000Z","level":"info","event":"service-start","service":"gmail","model":"sonnet"}
+{"ts":"2026-02-19T10:00:01.000Z","level":"info","event":"service-start","service":"gmail","model":"claude-sonnet-4-5-20250929"}
 {"ts":"2026-02-19T10:02:30.000Z","level":"info","event":"service-complete","service":"gmail","turns":8,"cost":0.35,"duration_ms":149000}
 {"ts":"2026-02-19T10:02:31.000Z","level":"info","event":"delivery-sent","channel":"line","actions":3}
 ```

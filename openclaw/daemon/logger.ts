@@ -28,17 +28,12 @@ function rotateIfNeeded() {
     const stats = statSync(LOG_FILE);
     if (stats.size < MAX_LOG_SIZE_BYTES) return;
 
-    // Shift existing rotated files: .3 → delete, .2 → .3, .1 → .2
+    // Shift existing rotated files: .2 → .3 (overwrites oldest), .1 → .2, current → .1
     for (let i = MAX_ROTATED_FILES; i >= 1; i--) {
       const src = i === 1 ? LOG_FILE : `${LOG_FILE}.${i - 1}`;
       const dst = `${LOG_FILE}.${i}`;
       if (existsSync(src)) {
-        if (i === MAX_ROTATED_FILES) {
-          // Overwrite oldest — rename is atomic and faster than copy
-          renameSync(src, dst);
-        } else {
-          renameSync(src, dst);
-        }
+        renameSync(src, dst);
       }
     }
 

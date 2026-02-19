@@ -41,7 +41,8 @@ function shutdown() {
   } catch {
     /* PID file may already be gone */
   }
-  process.exit(0);
+  // Allow in-flight async operations to observe abort and clean up
+  setTimeout(() => process.exit(0), 3000);
 }
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
@@ -59,12 +60,17 @@ function getEnabledServices(): string[] {
 }
 
 function parseCronIntervalMinutes(cronExpr: string): number {
-  // Extract interval from common cron patterns like "*/30 * * * *" or "0 * * * *"
-  const match = cronExpr.match(/^\*\/(\d+)\s/);
-  if (match) return parseInt(match[1], 10);
-  // Hourly pattern "0 * * * *"
-  if (/^0\s\*\s/.test(cronExpr)) return 60;
-  // Default: assume 30 minutes
+  // Use croner to compute actual interval from any valid cron expression
+  try {
+    const cron = new Cron(cronExpr);
+    const runs = cron.nextRuns(2);
+    if (runs.length === 2) {
+      return Math.round((runs[1].getTime() - runs[0].getTime()) / 60000);
+    }
+  } catch {
+    /* invalid cron expression — fall through to default */
+  }
+  // Fallback: assume 30 minutes
   return 30;
 }
 
@@ -372,8 +378,14 @@ async function executeCronRun() {
       return;
     }
 
-    // Step 2: Budget check — sum all per-service budgets as daily safety limit
+    // Step 2: Check enabled services
     const enabledServices = getEnabledServices();
+    if (enabledServices.length === 0) {
+      log.warn("cron-skip", { runId, reason: "no services enabled" });
+      return;
+    }
+
+    // Step 3: Budget check — sum all per-service budgets as daily safety limit
     const todayCost = history.getTodayCost();
     const perRunBudget = enabledServices.reduce((sum, svc) => {
       const svcCfg = config.openclaw.services[svc];
@@ -383,7 +395,7 @@ async function executeCronRun() {
     const cronMinutes = parseCronIntervalMinutes(config.openclaw.cron_interval);
     const maxRunsPerDay = Math.ceil((24 * 60) / cronMinutes);
     const dailyBudget = perRunBudget * maxRunsPerDay;
-    if (todayCost >= dailyBudget) {
+    if (dailyBudget > 0 && todayCost >= dailyBudget) {
       log.warn("budget-exceeded", {
         runId,
         todayCost,
@@ -393,7 +405,7 @@ async function executeCronRun() {
       return;
     }
 
-    // Step 3: Execute each service in isolated sessions
+    // Step 4: Execute each service in isolated sessions
     const serviceResults: ServiceRunResult[] = [];
 
     for (const service of enabledServices) {
@@ -407,15 +419,15 @@ async function executeCronRun() {
       serviceResults.push(result);
     }
 
-    // Step 4: Merge results
+    // Step 5: Merge results
     const report = mergeResults(serviceResults);
 
-    // Step 5: Delivery
+    // Step 6: Delivery
     if (config.openclaw.delivery.enabled) {
       await executeDelivery(report, runId);
     }
 
-    // Step 6: Log summary
+    // Step 7: Log summary
     const totalCost = serviceResults.reduce((sum, r) => sum + r.cost, 0);
     const totalTurns = serviceResults.reduce((sum, r) => sum + r.turns, 0);
     const totalDuration = serviceResults.reduce(
@@ -455,7 +467,14 @@ log.info("daemon-started", {
 });
 
 // Write PID file
-writeFileSync(config.openclaw.pid_file, String(process.pid));
+try {
+  writeFileSync(config.openclaw.pid_file, String(process.pid));
+} catch (err) {
+  log.error("pid-file-write-failed", { error: String(err) });
+  process.exit(1);
+}
 
 // Run immediately on start, then cron takes over
-executeCronRun();
+executeCronRun().catch((err) => {
+  log.error("initial-run-failed", { error: String(err) });
+});

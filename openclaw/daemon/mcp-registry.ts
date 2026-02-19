@@ -180,7 +180,15 @@ export function buildMcpServersForService(
   if (service === "__delivery__") {
     const channel = config.openclaw.delivery?.channel;
     if (channel) {
-      return buildMcpServersForService(channel, config);
+      const deliveryServers = buildMcpServersForService(channel, config);
+      if (Object.keys(deliveryServers).length === 0) {
+        log.warn("mcp-env-missing", {
+          server: "delivery",
+          channel,
+          reason: `Unknown delivery channel "${channel}" — no MCP server available`,
+        });
+      }
+      return deliveryServers;
     }
   }
 
