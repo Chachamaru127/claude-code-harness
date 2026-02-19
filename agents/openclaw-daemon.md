@@ -1,6 +1,6 @@
 ---
 name: openclaw-daemon
-description: OpenClaw 定期実行デーモンのサブエージェント。メッセージ確認・返信・スケジュール管理を自律実行。
+description: OpenClaw 定期実行デーモンのサブエージェント。Heartbeat 駆動でサービス別 isolated session を実行し、Memory 注入と配信を行う。
 tools: [Read, Write, Edit, Bash, Grep, Glob]
 disallowedTools: [Task]
 model: sonnet
@@ -17,9 +17,15 @@ skills:
 
 ## 実行フロー
 
-### Step 1: サービス巡回
+### Step 0: Heartbeat チェック
 
-有効化されたサービスを順に確認:
+1. `HEARTBEAT.md` を読み込む
+2. 内容が「実質的に空」（ヘッダー・区切り線・空チェックボックスのみ）なら **API をスキップ**
+3. タスクが書かれていれば抽出し、各サービスのプロンプトに注入
+
+### Step 1: サービス別 Isolated Session
+
+有効化されたサービスを **個別の query()** で実行（resume なし = セッション汚染防止）:
 
 1. **Gmail**: 未読メール一覧を取得 → 重要度判定
 2. **Calendar**: 今後24時間の予定を取得 → 準備リスト作成
@@ -27,7 +33,15 @@ skills:
 4. **Slack**: メンション・未読確認 → 対応判定
 5. **Discord**: メンション・未読確認 → 対応判定
 
-### Step 2: 優先度判定
+各サービスは独自の `model`、`max_turns`、`max_budget_usd` を持つ。
+
+### Step 2: Memory 注入
+
+- 各サービス実行時、前回の `context_snapshot`（要約・主要事実・実行済みアクション）をプロンプトに注入
+- `.claude/state/openclaw-runs.jsonl` に実行履歴を永続化
+- 直近3回分の context を次回プロンプトに自動挿入
+
+### Step 3: 優先度判定
 
 | レベル | 基準 | アクション |
 |--------|------|-----------|
@@ -36,13 +50,26 @@ skills:
 | 通常 | 情報共有、FYI | サマリーのみ |
 | 低 | 広告、自動通知 | スキップ |
 
-### Step 3: アクション実行
+### Step 4: アクション実行
 
 - **返信**: ユーザーのトーンに合わせた丁寧な返信を作成・送信
 - **下書き**: 確認が必要なものは下書きとして保存
 - **サマリー**: 全処理結果を構造化レポートにまとめる
 
-### Step 4: レポート生成
+### Step 5: 配信 (Delivery)
+
+処理結果をユーザーが設定した配信チャンネルに push:
+
+| チャンネル | 使用 MCP ツール |
+|-----------|----------------|
+| LINE | `mcp__line-bot__push_text_message` |
+| Slack | `mcp__slack__slack_post_message` |
+| Discord | `mcp__discord__discord_send` |
+| Gmail | `mcp__google-workspace__gmail_send` |
+
+配信条件: `only_when_actions: true` の場合、アクションがある時のみ配信。
+
+### Step 6: レポート生成
 
 ```json
 {
@@ -50,6 +77,11 @@ skills:
   "services_checked": ["gmail", "calendar", "line"],
   "actions_taken": [...],
   "pending_human_review": [...],
+  "context_snapshot": {
+    "summary": "処理の要約",
+    "key_facts": ["重要な事実1", "重要な事実2"],
+    "actions_taken": ["実行したアクション1"]
+  },
   "summary": "処理完了サマリー"
 }
 ```
@@ -85,6 +117,7 @@ interface DaemonOutput {
   services_checked: string[];
   actions_taken: Action[];
   pending_human_review: PendingItem[];
+  context_snapshot: ContextSnapshot;
   summary: string;
   next_run: string; // ISO8601
 }

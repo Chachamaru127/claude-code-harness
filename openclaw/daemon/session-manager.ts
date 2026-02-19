@@ -3,6 +3,10 @@ import { dirname } from "node:path";
 
 const DEFAULT_STATE_FILE = ".claude/state/openclaw-session.json";
 
+/**
+ * @deprecated v2 uses isolated sessions (no resume). Memory is handled by RunHistoryManager.
+ * This class is retained for backward compatibility and graceful migration.
+ */
 export class SessionManager {
   private sessionId: string | null = null;
   private statePath: string;

@@ -9,7 +9,8 @@
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.2.45",
     "croner": "^9.0.0",
-    "yaml": "^2.7.0"
+    "yaml": "^2.7.0",
+    "zod": "^3.24.0"
   },
   "devDependencies": {
     "@types/bun": "latest",

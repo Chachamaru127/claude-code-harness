@@ -4,6 +4,46 @@ Change history for claude-code-harness.
 
 > **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
 
+## [2.21.1] - 2026-02-19
+
+### 🎯 What's Changed for You
+
+**OpenClaw v2: Heartbeat-driven execution, per-service isolated sessions, Memory (context continuity), and Delivery (push results to LINE/Slack/Discord/Gmail).**
+
+| Before | After |
+|--------|-------|
+| All services run in a single shared session (context bleed risk) | Each service runs in its own isolated `query()` session |
+| No way to skip API calls when there's nothing to do | `HEARTBEAT.md` empty → entire cron run skipped ($0.00 cost) |
+| No memory between cron runs | Previous run's context snapshot automatically injected into next prompt |
+| Results only logged to file | Results pushed to user's preferred channel (LINE/Slack/Discord/Gmail) |
+| Same model for all services | Per-service model (opus/sonnet/haiku), turns, and budget configuration |
+
+### Added
+
+- **Heartbeat** (`heartbeat.ts`): `HEARTBEAT.md` file watching with empty-check to skip API calls when no work
+- **Memory** (`run-history.ts`): JSONL-based run history with context snapshot injection (last 3 runs per service)
+- **Delivery** (`delivery.ts`): Push processing results to LINE/Slack/Discord/Gmail via MCP tools
+- **Structured Output** (`schemas.ts`): Zod schemas + JSON Schema for Agent SDK `outputFormat`
+- **HEARTBEAT.md template** (`openclaw/HEARTBEAT.md`): User task file for dynamic cron task specification
+- `/openclaw heartbeat` subcommand for HEARTBEAT.md management
+
+### Changed
+
+- **index.ts**: Complete rewrite — single `query()` → per-service isolated `query()` loop with Heartbeat → Memory → Delivery pipeline
+- **prompt-builder.ts**: `buildCronPrompt()` (all services) → `buildServicePrompt()` (per-service with memory injection)
+- **config.ts**: Added `heartbeat`, `delivery`, per-service `model`/`max_turns`/`max_budget_usd`/`priority` config
+- **mcp-registry.ts**: Added `validateServiceEnv()` and `buildMcpServersForService()` for per-service MCP
+- **types.ts**: Added `HeartbeatConfig`, `DeliveryConfig`, `ContextSnapshot`, `RunHistoryEntry`; extended `ServiceConfig`
+- **logger.ts**: Added 5MB log rotation with 3 generations
+- **session-manager.ts**: Deprecated (replaced by Memory via RunHistoryManager)
+- **agents/openclaw-daemon.md**: Added Heartbeat, Isolated Session, Memory, Delivery flow documentation
+- **skills/openclaw/SKILL.md**: Added `heartbeat` subcommand, v2 architecture diagram
+- **references/daemon-management.md**: Added Heartbeat, Memory, Delivery, Isolated Session sections
+- **config.yaml**: Added `heartbeat`, `delivery`, per-service settings
+- **package.json**: Added `zod` dependency
+
+---
+
 ## [2.21.0] - 2026-02-18
 
 ### 🎯 What's Changed for You

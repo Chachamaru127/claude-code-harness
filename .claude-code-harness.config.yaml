@@ -35,16 +35,44 @@ cleanup:
 openclaw:
   enabled: false
   cron_interval: "*/30 * * * *"    # 30-minute interval
-  max_turns: 20                     # Max turns per cron run
-  max_budget_usd: 1.00              # Max budget per cron run (USD)
+  max_turns: 20                     # Max turns per cron run (global fallback)
+  max_budget_usd: 1.00              # Max budget per cron run (global fallback)
+  heartbeat:
+    enabled: true
+    file: "HEARTBEAT.md"            # Heartbeat file path (relative to project_cwd)
+    skip_when_empty: true           # Skip API calls when HEARTBEAT.md is empty
+  delivery:
+    enabled: false
+    channel: "line"                 # Delivery channel: line / slack / discord / gmail
+    only_when_actions: true         # Only deliver when actions were taken
   services:
     gmail:
       enabled: false
+      model: sonnet
+      max_turns: 10
+      max_budget_usd: 0.40
+      priority: high
     calendar:
       enabled: false
+      model: haiku
+      max_turns: 5
+      max_budget_usd: 0.20
+      priority: medium
     line:
       enabled: false
+      model: sonnet
+      max_turns: 6
+      max_budget_usd: 0.15
+      priority: medium
     slack:
       enabled: false
+      model: sonnet
+      max_turns: 8
+      max_budget_usd: 0.15
+      priority: medium
     discord:
       enabled: false
+      model: haiku
+      max_turns: 4
+      max_budget_usd: 0.10
+      priority: low
