@@ -2,7 +2,6 @@ import {
   appendFileSync,
   existsSync,
   mkdirSync,
-  readFileSync,
   renameSync,
   statSync,
   writeFileSync,
@@ -35,8 +34,8 @@ function rotateIfNeeded() {
       const dst = `${LOG_FILE}.${i}`;
       if (existsSync(src)) {
         if (i === MAX_ROTATED_FILES) {
-          // Overwrite oldest
-          writeFileSync(dst, readFileSync(src));
+          // Overwrite oldest — rename is atomic and faster than copy
+          renameSync(src, dst);
         } else {
           renameSync(src, dst);
         }

@@ -111,14 +111,31 @@ Agent SDK の `prompt` として自動生成されるため、直接の入力は
 
 ## 出力フォーマット
 
+各サービスの query() は structured output (`outputFormat: json_schema`) で以下の `CronRunResult` を返す:
+
 ```typescript
-interface DaemonOutput {
-  status: "completed" | "partial" | "failed";
+interface CronRunResult {
+  timestamp: string;                    // ISO8601
   services_checked: string[];
-  actions_taken: Action[];
-  pending_human_review: PendingItem[];
-  context_snapshot: ContextSnapshot;
+  actions_taken: Array<{
+    service: string;
+    action: string;                     // "replied" | "summarized" | "drafted" | "flagged"
+    subject?: string;
+    to?: string;
+    event?: string;
+  }>;
+  pending_human_review: Array<{
+    service: string;
+    reason: string;                     // "金銭関連" | "法的文言" | "不明"
+    subject?: string;
+  }>;
+  context_snapshot: {
+    service?: string;
+    timestamp?: string;
+    summary: string;
+    key_facts: string[];
+    actions_taken: string[];
+  };
   summary: string;
-  next_run: string; // ISO8601
 }
 ```

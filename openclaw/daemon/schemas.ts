@@ -1,6 +1,8 @@
 import { z } from "zod";
 
 export const ContextSnapshotSchema = z.object({
+  service: z.string().optional(),
+  timestamp: z.string().optional(),
   summary: z.string(),
   key_facts: z.array(z.string()),
   actions_taken: z.array(z.string()),
@@ -68,6 +70,8 @@ export const cronRunResultJsonSchema = {
     context_snapshot: {
       type: "object" as const,
       properties: {
+        service: { type: "string" as const },
+        timestamp: { type: "string" as const },
         summary: { type: "string" as const },
         key_facts: {
           type: "array" as const,

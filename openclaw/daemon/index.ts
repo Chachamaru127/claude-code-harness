@@ -8,7 +8,7 @@ import { checkHeartbeat } from "./heartbeat";
 import { RunHistoryManager } from "./run-history";
 import { cronRunResultJsonSchema, CronRunResultSchema } from "./schemas";
 import { log } from "./logger";
-import { writeFileSync } from "node:fs";
+import { unlinkSync, writeFileSync } from "node:fs";
 import type { CronRunResult, ContextSnapshot, RunHistoryEntry } from "./types";
 
 const MODEL_MAP: Record<string, string> = {
@@ -36,6 +36,11 @@ function shutdown() {
   if (abort.signal.aborted) return;
   log.info("daemon-shutdown");
   abort.abort();
+  try {
+    unlinkSync(config.openclaw.pid_file);
+  } catch {
+    /* PID file may already be gone */
+  }
   process.exit(0);
 }
 process.on("SIGINT", shutdown);
@@ -149,7 +154,7 @@ async function executeServiceQuery(
           const rawJson = JSON.parse(resultText);
           const validated = CronRunResultSchema.safeParse(rawJson);
           if (validated.success) {
-            parsedResult = validated.data as unknown as CronRunResult;
+            parsedResult = validated.data as CronRunResult;
           } else {
             log.warn("service-validation-error", {
               runId,
@@ -207,7 +212,8 @@ async function executeServiceQuery(
       cost: resultCost,
       turns: resultTurns,
       durationMs,
-      status: "success",
+      status: parsedResult ? "success" : "error",
+      error: parsedResult ? undefined : "Failed to parse structured output",
     };
   } catch (err) {
     const durationMs = Date.now() - startTime;
@@ -363,14 +369,13 @@ async function executeCronRun() {
         status: "skipped",
       });
 
-      isRunning = false;
       return;
     }
 
     // Step 2: Budget check — sum all per-service budgets as daily safety limit
+    const enabledServices = getEnabledServices();
     const todayCost = history.getTodayCost();
-    const enabledSvcList = getEnabledServices();
-    const perRunBudget = enabledSvcList.reduce((sum, svc) => {
+    const perRunBudget = enabledServices.reduce((sum, svc) => {
       const svcCfg = config.openclaw.services[svc];
       return sum + (svcCfg?.max_budget_usd ?? config.openclaw.max_budget_usd);
     }, 0);
@@ -385,12 +390,10 @@ async function executeCronRun() {
         dailyBudget,
         maxRunsPerDay,
       });
-      isRunning = false;
       return;
     }
 
     // Step 3: Execute each service in isolated sessions
-    const enabledServices = getEnabledServices();
     const serviceResults: ServiceRunResult[] = [];
 
     for (const service of enabledServices) {

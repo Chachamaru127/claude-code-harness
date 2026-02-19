@@ -101,7 +101,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/openclaw-status.sh"
 
 ### 次回実行への注入
 
-直近 3 回分の `context_snapshot` が次回プロンプトに自動挿入される:
+直近 3 回分の `context`（`ContextSnapshot`）が次回プロンプトに自動挿入される:
 
 ```
 ## 前回の実行コンテキスト

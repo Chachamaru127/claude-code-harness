@@ -15,7 +15,13 @@ export function checkHeartbeat(cwd: string, file?: string): HeartbeatResult {
     return { hasWork: false, tasks: [], rawContent: "" };
   }
 
-  const raw = readFileSync(path, "utf-8");
+  let raw: string;
+  try {
+    raw = readFileSync(path, "utf-8");
+  } catch {
+    // File may have been deleted between existsSync and readFileSync (TOCTOU)
+    return { hasWork: false, tasks: [], rawContent: "" };
+  }
 
   if (isEffectivelyEmpty(raw)) {
     return { hasWork: false, tasks: [], rawContent: raw };
