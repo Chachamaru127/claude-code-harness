@@ -4,7 +4,7 @@ description: "Plans.mdのタスクを実装。スコープを聞いて自動判�
 description-en: "Execute Plans.md tasks. Asks scope, auto-selects strategy from single task to full iteration. Use when user mentions '/work', execute plan, implement tasks, build features, work on tasks, 'do everything', 'implement'. Do NOT load for: planning, reviews, setup, deployment, or breezing (team execution)."
 description-ja: "Plans.mdのタスクを実装。スコープを聞いて自動判断、1タスクから全タスクまで。Use when user mentions '/work', execute plan, implement tasks, build features, work on tasks, 'do everything', 'implement', '実装して', '全部やって', 'ここだけ'. Do NOT load for: planning, reviews, setup, deployment, or breezing (team execution)."
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task"]
-argument-hint: "[all] [task-number|range] [--codex] [--parallel N] [--no-commit] [--resume id]"
+argument-hint: "[all] [task-number|range] [--codex] [--parallel N] [--no-commit] [--no-breezing] [--resume id]"
 disable-model-invocation: true
 ---
 
@@ -43,6 +43,7 @@ Plans.md のタスクを実装する**主力スキル**。スコープに応じ�
 | `--parallel N` | 並列ワーカー数 | auto |
 | `--sequential` | 並列禁止（直列実行） | - |
 | `--no-commit` | 自動コミット抑制 | false |
+| `--no-breezing` | breezing 提案を抑制 | false |
 | `--max-iterations N` | 反復上限（all 時） | 10 |
 | `--resume <id\|latest>` | セッション再開 | - |
 | `--fork <id\|current>` | セッションフォーク | - |
@@ -74,6 +75,7 @@ Plans.md のタスクを実装する**主力スキル**。スコープに応じ�
 | 1タスク | 直接実装 | 旧 `/work` |
 | 2-3タスク | サブエージェント並列 | 旧 `/work --parallel` |
 | 4+タスク or `all` | サブエージェント並列 + 自動反復 | 旧 `/ultrawork` |
+| 4+タスク + breezing 推奨 | (ユーザー承認後) Agent Teams で完走 | `/breezing` に委譲 |
 
 ```
 実行開始時に戦略を表示:
@@ -81,9 +83,12 @@ Plans.md のタスクを実装する**主力スキル**。スコープに応じ�
 🔧 戦略: 直接実装 (タスク1件)
 🔧 戦略: 並列 3 ワーカー (タスク3件)
 🔧 戦略: 並列 3 ワーカー + 自動反復 (タスク8件, 最大10回)
+🏇 戦略提案: breezing を推奨 (タスク5件, 独立率80%) → ユーザー承認待ち
 ```
 
-ユーザーは戦略を意識する必要なし。
+ユーザーは戦略を意識する必要なし。4+ タスクで breezing が有効な場合は自動提案。
+
+詳細: [references/strategy-analyzer.md](references/strategy-analyzer.md)
 
 ## Default Flow
 
@@ -92,12 +97,18 @@ Plans.md のタスクを実装する**主力スキル**。スコープに応じ�
     ↓
 Phase 0: スコープ確認 (引数なしなら対話)
     ↓
+Phase 0.5: 戦略分析 (4+タスク時、--no-breezing で省略)
+    → breezing 推奨 → AskUserQuestion で提案
+    → ユーザーが breezing 選択 → /breezing に委譲 (終了)
+    → ユーザーが parallel/direct 選択 → Phase 1 へ
+    ↓
 Phase 1: 戦略選択 (タスク数で自動判断)
     ↓
 Phase 2: 実装
     → 1タスク: 直接実装
     → 複数: task-worker サブエージェント並列
     → 全部/4+: 並列 + 反復ループ (完了まで自動)
+    → (反復失敗時: breezing エスカレーション提案)
     ↓
 Phase 3: Review Loop (harness-review)
     → APPROVE: proceed
@@ -153,6 +164,7 @@ Tip 表示
 
 | Feature | Reference |
 |---------|-----------|
+| **Strategy Analyzer** | See [references/strategy-analyzer.md](references/strategy-analyzer.md) |
 | **Scope Dialog** | See [references/scope-dialog.md](references/scope-dialog.md) |
 | **Auto-Iteration** | See [references/auto-iteration.md](references/auto-iteration.md) |
 | **Codex Engine** | See [references/codex-engine.md](references/codex-engine.md) |
@@ -181,6 +193,12 @@ Done! 2 tasks completed. (3 remaining)
 Tip: /breezing でチーム並列実行できます
 Tip: --codex を付けると Codex に実装を委託できます
 ```
+
+**条件分岐**:
+- 残タスクあり + breezing 推奨条件に該当 → `/breezing` Tip を表示
+- 残タスクあり + breezing 条件外 → 従来の Tip
+- 全タスク完了 → Tip なし
+- breezing を提案済みでユーザーが却下 → `/breezing` Tip を**表示しない**（ノイズ削減）
 
 ## Session State
 
@@ -223,6 +241,7 @@ Override defaults via `.claude-code-harness.config.yaml`:
 work:
   auto_commit: false          # Disable auto-commit
   commit_on_pm_approve: true  # 2-Agent: defer commit until PM approves
+  breezing_auto_approve: false  # Auto-invoke breezing when recommended (high confidence)
 ```
 
 ## VibeCoder Hints

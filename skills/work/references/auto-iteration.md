@@ -137,6 +137,100 @@ Iteration 2:
 # 4. 失敗履歴を学習データとして引き継ぎ
 ```
 
+## Escalation to Breezing
+
+auto-iteration 中に失敗が続いた場合、breezing へのエスカレーションを提案する。
+
+### 発動条件
+
+```text
+Iteration N 完了後の判定ステップで:
+  work.log.jsonl を確認:
+    同一タスクが 2 回以上の iteration で task_failed
+    → Escalation Check 発動
+```
+
+**重要**: エスカレーションは **iteration 完了後の判定ステップ** でのみ提案する。
+iteration 実行中（task-worker 稼働中）には提案しない。
+
+### エスカレーション判定ロジック
+
+```text
+Iteration N の Step 4（判定）:
+    ↓
+work.log.jsonl から失敗タスクを集計:
+  repeated_failures = タスク別の失敗回数 >= 2
+    ↓
+repeated_failures が 1件以上?
+  YES → エスカレーション提案 (AskUserQuestion)
+  NO  → 通常の次 iteration へ
+```
+
+### AskUserQuestion 仕様
+
+```json
+{
+  "questions": [{
+    "question": "一部のタスクが繰り返し失敗しています。戦略を変更しますか？",
+    "header": "Escalation",
+    "options": [
+      {
+        "label": "breezing に切り替え (推奨)",
+        "description": "Reviewer の独立視点で構造的問題を検出",
+        "markdown": "## ⚠️ 反復失敗の分析\n\n| タスク | 失敗回数 | 直近のエラー |\n|-------|---------|-------------|\n| タスク3: ログイン機能 | 2回 | TypeError: User型が未定義 |\n| タスク5: セッション管理 | 2回 | Import path 解決不能 |\n\n## 🏇 breezing が有効な理由\n\n- Reviewer の独立レビューで設計問題を検出\n- 型定義の欠落は Implementer 間の依存整理で解消可能\n- 推定追加コスト: ~300k tokens"
+      },
+      {
+        "label": "このまま続行",
+        "description": "自己学習で次の iteration を再試行"
+      },
+      {
+        "label": "手動で修正",
+        "description": "自動反復を中断し、手動介入する"
+      }
+    ],
+    "multiSelect": false
+  }]
+}
+```
+
+> **注**: `markdown` の失敗分析テーブルは work.log.jsonl から動的に生成する。
+
+### エスカレーション理由の動的生成
+
+work.log.jsonl の失敗履歴から「なぜ breezing が有効か」を推論:
+
+| 失敗パターン | breezing が有効な理由 |
+|-------------|---------------------|
+| 型エラーの繰り返し | 型定義の依存関係整理 → Reviewer が設計問題を検出 |
+| Import パス解決不能 | プロジェクト構造の理解不足 → Planner の分析で解消 |
+| テスト失敗の循環 | テスト設計の問題 → Reviewer の独立レビューで指摘 |
+| ビルドエラー（依存関係） | タスク間の暗黙の依存 → Lead の調整能力が必要 |
+
+### breezing 切り替え時の引き継ぎ
+
+```text
+1. work-active.json を保存（中断状態として記録）
+2. 引き継ぎデータを構築:
+   {
+     "source": "work-escalation",
+     "scope": "残りの未完了タスク",
+     "completed_tasks": ["完了済みタスクの ID"],
+     "failure_history": [work.log.jsonl の失敗エントリ],
+     "strategy_analysis": { "escalation_reason": "repeated_failures" }
+   }
+3. Skill tool で /breezing --from-work [remaining-scope] invoke
+4. /work の Phase は終了（breezing に委譲完了）
+```
+
+### 手動修正選択時
+
+```text
+ユーザーが「手動で修正」を選択:
+  → auto-iteration を停止
+  → 現在の進捗レポートを表示
+  → work-active.json を維持（/work --resume で再開可能）
+```
+
 ## Progress Display
 
 ```text

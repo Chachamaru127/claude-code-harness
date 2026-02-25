@@ -6,6 +6,15 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Added
+
+- **Strategy Analyzer**: `/work all` now analyzes task scope and recommends optimal execution strategy (direct, parallel, or breezing). Decision based on task count, independence ratio, dependency depth, and failure history
+- **Transparent Escalation UX**: When breezing is recommended, `/work` presents a strategy proposal via AskUserQuestion with markdown preview showing analysis results and cost estimates
+- **Failure-Driven Escalation**: When the same task fails across 2+ iterations, `/work` proposes switching to breezing mode with failure analysis and reasoning
+- **`--from-work` inbound support**: `/breezing` accepts `--from-work` flag to skip scope confirmation when invoked from `/work`, enabling seamless handoff
+- **`--no-breezing` option**: Suppress breezing recommendations in `/work`
+- **`breezing_auto_approve` config**: Auto-invoke breezing without confirmation when confidence is high
+
 ### Changed
 
 - **CHANGELOG link definitions repaired**: All version compare links supplemented

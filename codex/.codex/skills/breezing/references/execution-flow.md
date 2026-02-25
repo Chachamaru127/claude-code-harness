@@ -145,7 +145,12 @@ Phase 0 は戦略/アーキテクチャ評価、V1〜V4 は技術的詳細チェ
 Agent Teams なしで実行する場合は `/work all` を使用してください。
 ```
 
-### 2. 範囲確認（ユーザー承認必須）
+### 2. 範囲確認（ユーザー承認必須 / `--from-work` 時スキップ）
+
+**`--from-work` フラグがある場合**: `/work` 側でスコープ確認済みのため、このステップをスキップ。
+args から scope を解析し、対象タスクを特定して直接 Step 3 へ進む。
+
+**通常時**:
 
 | 指定パターン | 解釈 |
 |-------------|------|
@@ -239,9 +244,30 @@ breezing-active.json はメタデータのみを保持。
   "review": {
     "retake_count": 0,
     "max_retakes": 3
+  },
+  "invoked_from": null
+}
+```
+
+**`invoked_from` フィールド**（`--from-work` 時のみ設定）:
+
+```json
+{
+  "invoked_from": {
+    "source": "work",
+    "strategy_analysis": {
+      "recommended": "breezing",
+      "confidence": "high",
+      "metrics": { "task_count": 5, "independent_ratio": 0.8 }
+    },
+    "completed_tasks": [],
+    "failure_history": []
   }
 }
 ```
+
+- `source: "work"`: Strategy Analyzer による事前提案
+- `source: "work-escalation"`: 反復失敗からのエスカレーション（`completed_tasks` が非空）
 
 ### Implementer 数の自動決定
 

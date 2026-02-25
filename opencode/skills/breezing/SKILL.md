@@ -4,7 +4,7 @@ description: "楽勝で流す。Agent Teamsで完全自走、寝てる間にゴ�
 description-en: "Auto-complete Plans.md with Agent Teams, fully autonomous. Use when user mentions '/breezing', agent teams, team execution, full auto completion, multi-agent workflow. Do NOT load for: single tasks, reviews, setup, or /work (direct implementation)."
 description-ja: "楽勝で流す。Agent Teamsで完全自走、寝てる間にゴール。Use when user mentions '/breezing', agent teams, team execution, full auto completion, multi-agent workflow, 'チームで完走', 'チームで全部'. Do NOT load for: single tasks, reviews, setup, or /work (direct implementation)."
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task"]
-argument-hint: "[all] [task-number|range] [--codex] [--parallel N] [--no-commit] [--no-discuss]"
+argument-hint: "[all] [task-number|range] [--codex] [--parallel N] [--no-commit] [--no-discuss] [--from-work]"
 disable-model-invocation: true
 ---
 
@@ -43,6 +43,7 @@ Agent Teams を活用して Plans.md の未完了タスクを**チーム協調�
 | `--parallel N` | Implementer 並列数 | auto |
 | `--no-commit` | 自動コミット抑制 | false |
 | `--no-discuss` | 計画議論 Phase (Phase 0) をスキップ | false |
+| `--from-work` | `/work` から invoke された場合のマーカー（内部用） | false |
 
 ## Scope Dialog (引数なし時)
 
@@ -188,8 +189,56 @@ Tip: --codex を付けると Codex に実装を委託できます
 | 前回の続きから | `/breezing 続きやって` |
 | 1タスクだけ | → `/work` を使用 |
 
+## Invoked from /work（`--from-work` 時の動作）
+
+`/work` の Strategy Analyzer が breezing を推奨し、ユーザーが承認した場合に Skill tool 経由で invoke される。
+
+### 動作変更
+
+| Phase | 通常 | `--from-work` |
+|-------|------|---------------|
+| Phase 0 (Planning Discussion) | 実行 | **実行**（計画議論は独自の価値がある） |
+| Phase A Step 2 (範囲確認) | ユーザー承認 | **スキップ**（/work 側で確認済み） |
+| breezing-active.json | 通常記録 | `source: "work"` を追加記録 |
+
+### 引き継ぎデータスキーマ
+
+`/work` から渡される情報（Skill tool の args に含まれる scope 情報から復元）:
+
+```json
+{
+  "source": "work" | "work-escalation",
+  "scope": "all" | "3-6",
+  "completed_tasks": ["1", "2"],
+  "failure_history": [],
+  "strategy_analysis": {
+    "recommended": "breezing",
+    "confidence": "high",
+    "metrics": { ... }
+  }
+}
+```
+
+- `source: "work"` → 事前戦略分析による提案
+- `source: "work-escalation"` → 反復失敗からのエスカレーション
+  - `completed_tasks` に /work で完了済みタスクの ID が含まれる
+  - `failure_history` に失敗エントリが含まれる → Phase 0 の分析材料として活用
+
+### breezing-active.json への記録
+
+```json
+{
+  "session_id": "breezing-...",
+  "invoked_from": {
+    "source": "work",
+    "strategy_analysis": { ... },
+    "completed_tasks": []
+  }
+}
+```
+
 ## Related Skills
 
-- `work` - Claude が直接実装（1タスクから全タスクまで）
+- `work` - Claude が直接実装（1タスクから全タスクまで。breezing を自動提案する）
 - `harness-review` - コードレビュー（breezing 内で自動起動）
 - `codex-review` - Codex によるセカンドオピニオンレビュー

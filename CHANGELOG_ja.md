@@ -9,6 +9,15 @@
 
 ## [Unreleased]
 
+### Added
+
+- **Strategy Analyzer**: `/work all` がタスクスコープを分析し、最適な実行戦略（direct, parallel, breezing）を推奨。タスク数、独立タスク率、依存深度、失敗履歴に基づく判定
+- **透明エスカレーション UX**: breezing 推奨時に `/work` が AskUserQuestion で戦略提案を表示（markdown preview で分析結果とコスト見積もり）
+- **失敗時エスカレーション**: 同一タスクが 2 回以上の iteration で失敗した場合、breezing モードへの切り替えを提案（失敗分析と理由を提示）
+- **`--from-work` インバウンド対応**: `/breezing` が `--from-work` フラグを受け取り、`/work` から invoke 時にスコープ確認をスキップ
+- **`--no-breezing` オプション**: `/work` での breezing 推奨を抑制
+- **`breezing_auto_approve` 設定**: confidence: high 時に確認なしで自動的に breezing を invoke
+
 ### Changed
 
 - **CHANGELOG リンク定義修復**: 全バージョンの compare リンクを補完

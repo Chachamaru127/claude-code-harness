@@ -349,3 +349,66 @@ Codex は `./codex/rules/` 配下の `.rules` ファイルでコマンド実行�
 |------|------|--------|
 | 15.5.1 | `./tests/validate-plugin.sh && ./scripts/ci/check-consistency.sh` で構造検証 | cc:完了 |
 | 15.5.2 | CHANGELOG.md / CHANGELOG_ja.md に Phase 15 のエントリ追加 + コミット | cc:完了 |
+
+---
+
+## Phase 16: 透明エスカレーション UX — `/work` から `/breezing` への自動提案
+
+作成日: 2026-02-25
+起点: Phase 13-15 完了後の残存ギャップ分析 + Claude Code 仕様検証
+目的: `/work` を「考えるエントリポイント」に昇格。「何を使うか」の判断負担をユーザーから取り除く
+
+### 設計原則
+
+> **ユーザーは「何を作るか」だけ決める。「どう作るか」はシステムが提案し、ユーザーが承認する。**
+
+### Phase 16.1: Strategy Analyzer（戦略分析エンジン）[P1]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 16.1.1 | `references/strategy-analyzer.md` 新規作成: タスク分析 → 推奨戦略判定のロジック仕様。判定基準: (1) タスク数 (2) 依存グラフの複雑度 (3) ファイル競合率 (4) 推定並列効率 | cc:完了 |
+| 16.1.2 | 判定出力スキーマ定義: `{ recommended, reasoning, cost_estimate, confidence }` | cc:完了 |
+| 16.1.3 | breezing 推奨条件の明文化: (a) 4+タスク かつ 独立タスク率 60%以上 (b) 依存チェーンが3段以上 (c) UI+API+テストの混在 (d) 2回以上の iteration 失敗履歴あり | cc:完了 |
+
+### Phase 16.2: Scope Dialog の拡張 — 戦略提案 UI [P1]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 16.2.1 | `scope-dialog.md` に「Strategy Recommendation」セクション追加: breezing 推奨時の AskUserQuestion 仕様 | cc:完了 |
+| 16.2.2 | AskUserQuestion の options 定義（markdown preview で理由+コスト見積もり表示） | cc:完了 |
+| 16.2.3 | ユーザーが breezing を選択 → Skill tool で `/breezing` を invoke（引数引き継ぎ） | cc:完了 |
+| 16.2.4 | `breezing_auto_approve: true` 設定対応: `.claude-code-harness.config.yaml` の `work.breezing_auto_approve` | cc:完了 |
+
+### Phase 16.3: Failure-Driven Escalation（失敗時エスカレーション）[P2]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 16.3.1 | `auto-iteration.md` に「Escalation to Breezing」セクション追加: 2回連続 iteration で同一タスクが失敗 → breezing 提案 | cc:完了 |
+| 16.3.2 | エスカレーション理由の動的生成: 失敗履歴から「なぜ breezing が有効か」を説明 | cc:完了 |
+| 16.3.3 | エスカレーション承認後: work-active.json を保存 → Skill tool で `/breezing` invoke（失敗履歴引き継ぎ） | cc:完了 |
+
+### Phase 16.4: `/work` SKILL.md の戦略選択ロジック更新 [P1]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 16.4.1 | Auto Strategy Selection テーブルに breezing 行追加 | cc:完了 |
+| 16.4.2 | Options に `--no-breezing` 追加: breezing 提案を抑制するオプション | cc:完了 |
+| 16.4.3 | Completion Tip の条件分岐更新 | cc:完了 |
+
+### Phase 16.5: `/breezing` 側のインバウンド対応 [P2]
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 16.5.1 | breezing SKILL.md に「Invoked from /work」セクション追加（Phase 0 のスコープ確認スキップ） | cc:完了 |
+| 16.5.2 | `execution-flow.md` の Phase A Step 2 に「/work 経由の場合は範囲確認をスキップ」条件追加 | cc:完了 |
+| 16.5.3 | 引き継ぎデータ形式の定義: `/work` → `/breezing` に渡す情報スキーマ | cc:完了 |
+
+### Phase 16.6: 検証 + 同期
+
+| Task | 内容 | Status |
+|------|------|--------|
+| 16.6.1 | `/work all` → breezing 推奨 → 承認 → breezing 実行の E2E フロー確認 | cc:完了 |
+| 16.6.2 | `/work all --no-breezing` で breezing 提案が出ないことを確認 | cc:完了 |
+| 16.6.3 | `breezing_auto_approve: true` 設定で確認ダイアログがスキップされることを確認 | cc:完了 |
+| 16.6.4 | ミラー同期 + validate-plugin + check-consistency | cc:完了 |
+| 16.6.5 | CHANGELOG.md + CHANGELOG_ja.md エントリ + バージョンバンプ | cc:完了 |
