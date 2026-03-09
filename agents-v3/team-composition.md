@@ -126,7 +126,7 @@ Teammate は UI なしでバックグラウンド実行されるため、
 3. PreToolUse hooks がガードレールを維持
 4. Lead が常に監視
 
-### Auto Mode（Research Preview, 2026-03-12〜）
+### Auto Mode（Research Preview, Phase 1 active）
 
 `bypassPermissions` の安全な代替として Anthropic が提供する新しい権限モード。
 Claude が権限判断を自動で行い、プロンプトインジェクション対策も内蔵する。
@@ -155,15 +155,34 @@ Claude が権限判断を自動で行い、プロンプトインジェクショ�
 
 | フェーズ | 期間 | デフォルト | `--auto-mode` |
 |---------|------|-----------|---------------|
-| **Phase 0** (現在) | 〜2026-03-12 | `bypassPermissions` | 未対応（フラグ無視） |
-| **Phase 1** (RP 開始) | 2026-03-12〜 | `bypassPermissions` | `autoMode` に切替 |
-| **Phase 2** (検証完了後) | TBD | `autoMode` | — |
+| Phase 0 | 〜2026-03-12 | `bypassPermissions` | 未対応（フラグ無視） |
+| **Phase 1 (現在)** | **2026-03-12〜** | `bypassPermissions` | `autoMode` に切替 |
+| Phase 2 (検証完了後) | TBD | `autoMode` | — |
 
-Phase 1 開始後、以下を検証してから Phase 2 への移行を判断する:
+Phase 1 検証中。以下を確認してから Phase 2 への移行を判断する:
 
 1. PreToolUse / PostToolUse hooks が Auto Mode でも従来どおり発火するか
 2. Teammate のバックグラウンド spawn で権限プロンプトがブロックされないか
 3. Breezing 並列実行でのトークンコスト増の実測
+
+### Agent Teams 公式ドキュメント化
+
+Agent Teams が公式に実験的機能としてドキュメント化された。
+有効化には `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` 環境変数が必要:
+
+```json
+// settings.json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+**Harness への影響**:
+- `breezing` スキルは Agent Teams を前提とする → セットアップ時に環境変数チェックを追加
+- 公式ドキュメントで `teammateMode` 設定が明文化（`"in-process"` | `"tmux"` | `"auto"`）
+- `TeammateIdle` / `TaskCompleted` の `{"continue": false}` は公式仕様として安定化
 
 ## Codex CLI Environment
 

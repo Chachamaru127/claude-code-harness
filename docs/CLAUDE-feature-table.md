@@ -48,7 +48,7 @@
 | **`/reload-plugins` (v2.1.69)** | 全スキル | スキル・フック編集後の即時反映 |
 | **`includeGitInstructions: false` (v2.1.69)** | work, breezing | git 指示が不要な場面のトークン削減 |
 | **`git-subdir` plugin source (v2.1.69)** | setup, release | サブディレクトリ管理された plugin source に対応 |
-| **Auto Mode (Research Preview, 2026-03-12〜)** | breezing, work | `bypassPermissions` の安全な代替。`--auto-mode` フラグで有効化。3 フェーズ移行計画で段階導入 |
+| **Auto Mode (Research Preview, Phase 1 active)** | breezing, work | `bypassPermissions` の安全な代替。`--auto-mode` フラグで有効化。Phase 1: RP 開始済み (2026-03-12〜) |
 | **Per-agent hooks (v2.1.69+)** | agents-v3/ | エージェント定義の frontmatter に `hooks` フィールドを追加。Worker に PreToolUse ガード、Reviewer に Stop ログを設定 |
 | **Agent `isolation: worktree` (v2.1.50+)** | agents-v3/worker | Worker エージェント定義に `isolation: worktree` を追加。並列書き込み時の自動 worktree 分離 |
 | **Compaction 画像保持 (v2.1.70)** | notebookLM, harness-review | サマリーリクエストで画像を保持。プロンプトキャッシュ再利用改善 |
@@ -62,6 +62,14 @@
 | **`--print` チームエージェント hang 修正 (v2.1.71)** | CI 連携 | `--print` モードでのチームエージェント hang を修正 |
 | **Plugin インストール並列実行修正 (v2.1.71)** | breezing | 複数インスタンス時のプラグイン状態安定化 |
 | **Marketplace 改善 (v2.1.71)** | setup | @ref パーサー修正、update merge conflict 修正、MCP server 重複排除、/plugin uninstall が settings.local.json 使用 |
+| **Subagent `background` フィールド (v2.1.71+)** | breezing, parallel-workflows | エージェント定義に `background: true` を追加。常にバックグラウンドタスクとして実行 |
+| **Subagent `local` メモリスコープ (v2.1.71+)** | agents-v3/ | `memory: local` で `.claude/agent-memory-local/` に保存。VCS にコミットしない機密性の高い学習を分離 |
+| **Agent Teams 実験フラグ (v2.1.71+)** | breezing | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` 環境変数で Agent Teams を有効化。公式ドキュメント化済み |
+| **`/agents` コマンド (v2.1.71+)** | troubleshoot, setup | エージェントの対話的管理UI。作成・編集・削除・一覧を GUI で操作 |
+| **Desktop Scheduled Tasks (v2.1.71+)** | harness-work | `~/.claude/scheduled-tasks/<task-name>/SKILL.md` 形式で定期タスクを定義。Desktop アプリから管理 |
+| **`CronCreate/CronList/CronDelete` ツール (v2.1.71+)** | breezing, harness-work | `/loop` の内部ツール。セッション内での定期タスク作成・管理 |
+| **`CLAUDE_CODE_DISABLE_CRON` 環境変数 (v2.1.71+)** | setup | `=1` で Cron スケジューラを無効化。セキュリティポリシーで定期実行を制限する環境向け |
+| **`--agents` CLI フラグ (v2.1.71+)** | breezing, CI | JSON でセッションレベルのエージェント定義を渡す。ディスクに保存されない一時的なエージェント構成 |
 
 ## 機能詳細
 
@@ -398,19 +406,97 @@ Harness では Worker エージェントに `isolation: worktree` を追加。
 
 ### Auto Mode 段階移行計画
 
-Auto Mode は CC Research Preview として 2026-03-12 に開始予定。
+Auto Mode は CC Research Preview として 2026-03-12 に開始。
 Harness は 3 フェーズで段階的に移行する:
 
 | フェーズ | 期間 | デフォルト | `--auto-mode` |
 |---------|------|-----------|---------------|
-| Phase 0 (現在) | 〜2026-03-12 | `bypassPermissions` | フラグ無視 |
-| Phase 1 (RP 開始) | 2026-03-12〜 | `bypassPermissions` | `autoMode` に切替 |
+| Phase 0 | 〜2026-03-12 | `bypassPermissions` | フラグ無視 |
+| **Phase 1 (現在)** | **2026-03-12〜** | `bypassPermissions` | `autoMode` に切替 |
 | Phase 2 (検証完了後) | TBD | `autoMode` | — |
 
-Phase 1 検証項目:
+Phase 1 検証項目（実施中）:
 1. PreToolUse / PostToolUse hooks が Auto Mode でも発火するか
 2. Teammate のバックグラウンド spawn で権限プロンプトがブロックされないか
 3. トークンコスト増の実測
+
+### Subagent `background` フィールド
+
+エージェント定義の frontmatter に `background: true` を追加すると、そのエージェントは常にバックグラウンドタスクとして実行される。
+明示的に `run_in_background: true` を指定しなくても、Agent tool 経由で起動するたびにバックグラウンド実行となる。
+
+```yaml
+---
+name: long-running-analyzer
+background: true
+---
+```
+
+Harness では `breezing` の Worker spawn 時に検討可能だが、現状は Lead が明示的に `run_in_background` を制御しているため、追加適用は Phase 2 以降で検討する。
+
+### Subagent `local` メモリスコープ
+
+`memory: local` は `.claude/agent-memory-local/<name>/` に保存され、`.gitignore` に追加すべきパス。
+`project` との違い:
+
+| スコープ | パス | VCS コミット | ユースケース |
+|---------|------|-------------|------------|
+| `user` | `~/.claude/agent-memory/<name>/` | 対象外 | 全プロジェクト共通の学習 |
+| `project` | `.claude/agent-memory/<name>/` | 共有可能 | チーム共有のプロジェクト知識 |
+| `local` | `.claude/agent-memory-local/<name>/` | 非推奨 | 個人固有・機密性の高い学習 |
+
+Harness では Worker/Reviewer ともに `memory: project` を使用中。`local` は個人的なデバッグパターンの記録に適するが、チーム共有を優先するため現行設定を維持。
+
+### Agent Teams 実験フラグ
+
+Agent Teams は実験的機能として `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` 環境変数で有効化される。
+settings.json 経由でも設定可能:
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  }
+}
+```
+
+Harness の `breezing` スキルは Agent Teams 機能を前提としているため、
+セットアップ時にこの環境変数が設定されていることを確認する検証ステップを追加。
+
+### Desktop Scheduled Tasks
+
+Desktop アプリの Scheduled Tasks は `~/.claude/scheduled-tasks/<task-name>/SKILL.md` に保存される。
+YAML frontmatter で `name` と `description` を定義し、本文にプロンプトを記述する。
+
+スケジュール設定（頻度・時刻・フォルダ）は Desktop アプリの UI から管理。
+`/harness-work` や `/harness-review` を定期実行する用途に活用可能。
+
+### `/agents` コマンド
+
+エージェントの対話的管理インターフェース。以下の操作が可能:
+- 利用可能な全エージェントの一覧表示（built-in, user, project, plugin）
+- ガイド付きまたは Claude 生成によるエージェント作成
+- 既存エージェントの設定・ツールアクセス編集
+- カスタムエージェントの削除
+
+CLI からの非対話的な一覧表示: `claude agents`
+
+### `--agents` CLI フラグ
+
+セッション起動時に JSON でエージェント定義を渡す。ディスクに保存されない一時的な構成:
+
+```bash
+claude --agents '{
+  "quick-reviewer": {
+    "description": "Quick code review",
+    "prompt": "Review for critical issues only",
+    "tools": ["Read", "Grep", "Glob"],
+    "model": "haiku"
+  }
+}'
+```
+
+CI/CD パイプラインでの一時的なエージェント注入に有用。
 
 ## 関連ドキュメント
 

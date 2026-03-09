@@ -8,6 +8,47 @@ Change history for claude-code-harness.
 
 ---
 
+## [3.7.3] - 2026-03-10
+
+### テーマ: Claude Code 公式ドキュメント整合
+
+**Claude Code v2.1.71+ の公式ドキュメントに追加された新機能・フィールドを Harness のドキュメントに反映し、Auto Mode Phase 1 移行マーカーを更新。**
+
+---
+
+#### 1. Feature Table 拡充（9 項目追加）
+
+**今まで**: v2.1.71 リリース時点の機能のみ記載。公式ドキュメントで追加されたサブエージェントの新フィールドや Agent Teams の実験フラグが未反映。
+
+**今後**: 以下の機能を Feature Table に追加:
+- Subagent `background` フィールド
+- Subagent `local` メモリスコープ
+- Agent Teams 実験フラグ (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`)
+- `/agents` コマンド（対話的管理 UI）
+- Desktop Scheduled Tasks
+- `CronCreate/CronList/CronDelete` ツール
+- `CLAUDE_CODE_DISABLE_CRON` 環境変数
+- `--agents` CLI フラグ
+
+各機能の詳細セクションも `docs/CLAUDE-feature-table.md` に追記。
+
+#### 2. Auto Mode Phase 1 移行マーカー更新
+
+**今まで**: 「Phase 0 (現在)」「Phase 1 (RP 開始)」と記載。RP 開始日 2026-03-12 以前の表記。
+
+**今後**: 「**Phase 1 (現在)**」に更新。影響ファイル:
+- `docs/CLAUDE-feature-table.md`
+- `CLAUDE.md` Feature Table
+- `agents-v3/team-composition.md`
+
+#### 3. Agent Teams 公式ドキュメント対応
+
+**今まで**: Harness の breezing が Agent Teams を使用しているが、公式の有効化手順が未記載。
+
+**今後**: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` 環境変数の設定方法と `teammateMode` 設定を `agents-v3/team-composition.md` に追記。
+
+---
+
 ## [3.7.2] - 2026-03-10
 
 ### Fixed
