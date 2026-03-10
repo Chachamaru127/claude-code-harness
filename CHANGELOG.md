@@ -8,6 +8,60 @@ Change history for claude-code-harness.
 
 ---
 
+## [3.9.0] - 2026-03-11
+
+### テーマ: Output Styles 統合 + Agent 定義強化 + Agent Teams 公式ベストプラクティス整合
+
+**Claude Code 公式ドキュメントの Output Styles / Agent Teams / エージェント frontmatter の最新仕様を Harness に反映し、運用体験を向上。**
+
+---
+
+#### 1. Harness Output Style 新規追加
+
+**今まで**: Plan/Work/Review の進捗報告や Quality Gate 結果のフォーマットが統一されておらず、各スキル・エージェントが独自の出力形式で報告していた。
+
+**今後**: `.claude/output-styles/harness-ops.md` を新設。`/output-style harness-ops` で有効化すると、以下が構造化されて出力される:
+- 進捗報告（実施/現在地/次アクション形式）
+- Quality Gate 結果（Build/Test/Lint の表形式）
+- Review 判定（APPROVE/REQUEST_CHANGES の構造化フォーマット）
+- エスカレーション（3回ルール違反時の標準出力形式）
+- 判断ポイント（最大3選択肢、推奨先頭）
+
+```bash
+/output-style harness-ops
+```
+
+#### 2. エージェント定義に `permissionMode` を明示追加
+
+**今まで**: Worker/Reviewer/Scaffolder の権限モードは spawn 時に `mode: "bypassPermissions"` として指定。エージェント定義自体には権限情報がなく、Lead の spawn コードに依存していた。
+
+**今後**: Claude Code 公式ドキュメントで `permissionMode` がエージェント frontmatter の正式フィールドとして文書化されたことを受け、3エージェント全ての frontmatter に `permissionMode: bypassPermissions` を追加。定義レベルでの宣言的権限管理を実現。
+
+```yaml
+# agents-v3/worker.md
+permissionMode: bypassPermissions  # 新規追加
+```
+
+#### 3. Agent Teams 公式ベストプラクティス整合
+
+**今まで**: Harness のチーム運用は独自のパターンに基づいていた。Claude Code の Agent Teams は「実験的」というステータスのみで、公式ガイダンスが限定的だった。
+
+**今後**: `agent-teams.md` が独立した公式ドキュメントに昇格。`agents-v3/team-composition.md` に以下を反映:
+- **タスク粒度ガイドライン**: 5-6 tasks/teammate の公式推奨値
+- **`teammateMode` 設定**: `"auto"` / `"in-process"` / `"tmux"` の3モード
+- **Plan Approval パターン**: Worker に plan mode を要求する公式フロー
+- **Quality Gate Hooks**: `TeammateIdle`/`TaskCompleted` の exit 2 フィードバックパターン
+- **チームサイズ**: 3-5 teammates の公式推奨（Harness の Worker 1-3 + Reviewer 1 と整合確認）
+
+#### 4. Feature Table 拡充（3項目追加）
+
+`docs/CLAUDE-feature-table.md` に以下を追加:
+- Output Styles 統合
+- `permissionMode` in agent frontmatter
+- Agent Teams 公式ベストプラクティス整合
+
+---
+
 ## [3.8.0] - 2026-03-11
 
 ### テーマ: Claude Code v2.1.72 互換対応

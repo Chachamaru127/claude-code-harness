@@ -115,16 +115,30 @@ Harness 側は冗長な防止文言を最小化し、以下の運用に統一す
 2. Worker/Reviewer プロンプトでは「実装/レビュー責務」に集中させる
 3. nested 防止は hooks 追加ではなく公式ガードに委ねる（運用を簡素化）
 
-## 権限設定（bypassPermissions）
+## 権限設定（bypassPermissions / permissionMode）
 
-Teammate は UI なしでバックグラウンド実行されるため、
-全 Teammate spawn に `mode: "bypassPermissions"` を指定する。
+Teammate は UI なしでバックグラウンド実行されるため、権限モードの明示設定が必要。
 
-安全層:
-1. `disallowedTools` でツールを制限
-2. spawn prompt で行動範囲を明示
+### v2.1.72+ 推奨: `permissionMode` in frontmatter
+
+公式ドキュメントで `permissionMode` がエージェント frontmatter の正式フィールドとして文書化された。
+spawn 時の `mode` 指定よりも **定義レベルでの宣言が推奨**:
+
+```yaml
+# agents-v3/worker.md frontmatter
+permissionMode: bypassPermissions
+```
+
+**利点**: spawn prompt に依存せず、エージェント定義自体に権限モードを組み込む。
+Lead の spawn コードが `mode` を渡し忘れても安全。
+
+### 安全層（多層防御）
+
+1. `permissionMode: bypassPermissions` — frontmatter で宣言
+2. `disallowedTools` でツールを制限
 3. PreToolUse hooks がガードレールを維持
 4. Lead が常に監視
+5. `Agent(worker, reviewer)` で spawn 可能なエージェント種別を制限
 
 ### Auto Mode（Research Preview, Phase 1 active）
 
@@ -183,6 +197,67 @@ Agent Teams が公式に実験的機能としてドキュメント化された�
 - `breezing` スキルは Agent Teams を前提とする → セットアップ時に環境変数チェックを追加
 - 公式ドキュメントで `teammateMode` 設定が明文化（`"in-process"` | `"tmux"` | `"auto"`）
 - `TeammateIdle` / `TaskCompleted` の `{"continue": false}` は公式仕様として安定化
+
+## 公式 Agent Teams ベストプラクティス整合（2026-03）
+
+Claude Code 公式ドキュメント `agent-teams.md` に基づくベストプラクティスとの整合状況。
+
+### タスク粒度ガイドライン
+
+公式推奨: **5-6 tasks per teammate**。Harness の Lead はタスク分解時にこの粒度を目安にする。
+
+| 粒度 | 判定 | 例 |
+|------|------|-----|
+| 小さすぎ | コーディネーション > 実装コスト | 1行修正、コメント追加 |
+| 適切 | 明確な成果物を持つ自己完結単位 | 関数実装、テストファイル作成、レビュー |
+| 大きすぎ | チェックインなしに長時間動作 | モジュール全体の再設計 |
+
+### `teammateMode` 設定
+
+公式サポートされた表示モード:
+
+| モード | 動作 | 推奨環境 |
+|--------|------|----------|
+| `"auto"` | tmux セッション内なら split、それ以外は in-process | デフォルト |
+| `"in-process"` | 全 teammate を同一ターミナルで管理 | VS Code 統合ターミナル |
+| `"tmux"` | 各 teammate に個別ペイン | iTerm2 / tmux ユーザー |
+
+```json
+// settings.json
+{ "teammateMode": "in-process" }
+```
+
+### Plan Approval パターン
+
+公式の「Require plan approval for teammates」パターン:
+
+```
+Lead: "Spawn an architect teammate. Require plan approval before changes."
+  → Teammate が plan mode で調査・計画を立案
+  → Lead に plan_approval_request を送信
+  → Lead が APPROVE → Teammate が実装開始
+  → Lead が REJECT + feedback → Teammate が plan 修正
+```
+
+Harness では Reviewer の `REQUEST_CHANGES` → Worker 修正ループと補完的に使用可能。
+複雑なアーキテクチャ変更時は Worker spawn に plan approval を要求することを推奨。
+
+### Quality Gate Hooks
+
+公式フックイベントとの整合:
+
+| Hook | Harness 実装 | 公式ドキュメント |
+|------|-------------|--------------|
+| `TeammateIdle` | `teammate-idle.sh` (実装済み) | exit 2 で feedback + 継続指示 |
+| `TaskCompleted` | `task-completed.sh` (実装済み) | exit 2 で完了拒否 + feedback |
+| `SubagentStart` | 未実装 | settings.json で matcher 指定可能 |
+| `SubagentStop` | agent frontmatter Stop hook で実装 | settings.json でも追加設定可能 |
+
+### チームサイズガイドライン
+
+公式推奨: **3-5 teammates**。これは Harness の現行構成（Worker 1-3 + Reviewer 1）と整合する。
+
+> 「Three focused teammates often outperform five scattered ones.」— 公式ドキュメントより
 
 ## Codex CLI Environment
 

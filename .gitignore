@@ -23,6 +23,7 @@ docs/design/
 # Local development
 .claude/*
 !.claude/rules/
+!.claude/output-styles/
 .serena/
 # .mcp.json はプラグイン MCP 設定として配布に含める
 .github/mlc_config.json

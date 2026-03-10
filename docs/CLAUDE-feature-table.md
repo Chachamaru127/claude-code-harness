@@ -81,6 +81,9 @@
 | **HTML コメント非表示 (v2.1.72)** | 全スキル | CLAUDE.md の `<!-- -->` が自動注入時に非表示。Read ツールでは引き続き可視 |
 | **Bash auto-approval 追加 (v2.1.72)** | guardrails | `lsof`, `pgrep`, `tput`, `ss`, `fd`, `fdfind` が許可リストに追加 |
 | **プロンプトキャッシュ修正 (v2.1.72)** | 全スキル | SDK `query()` のキャッシュ無効化修正。入力トークンコスト最大 12 倍削減 |
+| **Output Styles (v2.1.72+)** | 全スキル | `.claude/output-styles/` にカスタム出力スタイルを定義。`harness-ops` で Plan/Work/Review の構造化出力を提供 |
+| **`permissionMode` in agent frontmatter (v2.1.72+)** | agents-v3/ | エージェント定義 YAML に `permissionMode` を明示宣言。spawn 時の `mode` 指定が不要に |
+| **Agent Teams 公式ベストプラクティス (v2.1.72+)** | breezing | 5-6 tasks/teammate ガイドライン、`teammateMode` 設定、plan approval パターンを team-composition に反映 |
 
 ## 機能詳細
 
@@ -616,6 +619,48 @@ CC 2.1.72 で SDK の `query()` 呼び出し時のプロンプトキャッシュ
 Harness への影響:
 - `breezing` や `harness-work` で多数のサブエージェント spawn を行う際のコスト大幅削減
 - 特に同一セッション内での反復的な API 呼び出しパターンで効果大
+
+### Output Styles (v2.1.72+)
+
+CC の Output Styles 機能により、システムプロンプト自体をカスタマイズできる。
+CLAUDE.md（ユーザーメッセージとして追加）や Skills（特定タスク用）とは異なるレイヤー。
+
+Harness では `.claude/output-styles/harness-ops.md` を提供:
+- `keep-coding-instructions: true` — コーディング指示を維持しつつ運用フローを最適化
+- 構造化された進捗報告フォーマット（実施/現在地/次アクション）
+- Quality Gate の表形式出力
+- Review 判定の構造化フォーマット
+- エスカレーション（3回ルール）の標準出力形式
+
+```bash
+# 有効化
+/output-style harness-ops
+```
+
+### `permissionMode` in agent frontmatter (v2.1.72+)
+
+公式ドキュメントで `permissionMode` がエージェント frontmatter の正式フィールドとして文書化された。
+
+Harness への反映:
+- Worker/Reviewer/Scaffolder の3エージェント全てに `permissionMode: bypassPermissions` を追加
+- spawn 時の `mode` 指定に依存しない宣言的権限管理を実現
+- Auto Mode Phase 2 移行時は `permissionMode: autoMode` に書き換えるだけで対応可能
+
+```yaml
+# agents-v3/worker.md frontmatter
+permissionMode: bypassPermissions  # 追加
+```
+
+### Agent Teams 公式ベストプラクティス (v2.1.72+)
+
+Claude Code 公式に `agent-teams.md` が独立ドキュメントとして整備された。
+Harness の `agents-v3/team-composition.md` に以下を反映:
+
+1. **タスク粒度ガイドライン**: 5-6 tasks/teammate の推奨値
+2. **`teammateMode` 設定**: `"auto"` / `"in-process"` / `"tmux"` の公式サポート
+3. **Plan Approval パターン**: Worker に plan mode を要求する公式パターン
+4. **Quality Gate Hooks**: `TeammateIdle`/`TaskCompleted` のexit 2 フィードバックパターン
+5. **チームサイズ**: 3-5 teammates の推奨値（Harness の Worker 1-3 + Reviewer 1 と整合）
 
 ## 関連ドキュメント
 

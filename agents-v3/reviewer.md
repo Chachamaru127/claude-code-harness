@@ -4,6 +4,7 @@ description: セキュリティ/性能/品質/計画を多角的にレビュー�
 tools: [Read, Grep, Glob]
 disallowedTools: [Write, Edit, Bash, Task]
 model: sonnet
+permissionMode: bypassPermissions
 color: blue
 memory: project
 skills:

@@ -4,6 +4,7 @@ description: 実装→セルフレビュー→検証→コミットを自己完�
 tools: [Read, Write, Edit, Bash, Grep, Glob]
 disallowedTools: [Task]
 model: sonnet
+permissionMode: bypassPermissions
 color: yellow
 memory: project
 isolation: worktree
