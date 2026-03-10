@@ -82,10 +82,12 @@ Harness v3 の統合実行スキル。
 - `/execute all` → 全タスク、自動モード選択
 - `/execute 3-6` → 4件なので Breezing 自動選択
 
-## Effort レベル制御（v2.1.68+）
+## Effort レベル制御（v2.1.68+, v2.1.72 簡素化）
 
-Claude Code v2.1.68 で Opus 4.6 は **medium effort** がデフォルト。
-複雑なタスクには `ultrathink` キーワードで high effort を有効化する。
+Claude Code v2.1.68 で Opus 4.6 は **medium effort** (`◐`) がデフォルト。
+v2.1.72 で `max` レベルが廃止され、3段階 `low(○)/medium(◐)/high(●)` に簡素化。
+`/effort auto` でデフォルトにリセット可能。
+複雑なタスクには `ultrathink` キーワードで high effort (`●`) を有効化する。
 
 ### 多要素スコアリング
 

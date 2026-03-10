@@ -16,11 +16,13 @@ hooks:
           timeout: 5
 ---
 
-## Effort 制御（v2.1.68+）
+## Effort 制御（v2.1.68+, v2.1.72 簡素化）
 
-- **通常レビュー**: medium effort で十分（コード品質・パターン適合は中程度の思考で判定可能）
-- **ultrathink 推奨**: セキュリティレビュー、アーキテクチャレビュー時
+- **通常レビュー**: medium effort (`◐`) で十分（コード品質・パターン適合は中程度の思考で判定可能）
+- **ultrathink 推奨**: セキュリティレビュー、アーキテクチャレビュー時 → high effort (`●`)
+- **v2.1.72 変更**: `max` レベル廃止。3段階 `low(○)/medium(◐)/high(●)` に簡素化
 - **Lead の責務**: セキュリティ関連タスクの場合、Reviewer spawn prompt に `ultrathink` を注入
+- **model override (v2.1.72)**: Lead が Agent tool の `model` パラメータで Reviewer のモデルを spawn 時に指定可能（将来活用）
 
 # Reviewer Agent (v3)
 

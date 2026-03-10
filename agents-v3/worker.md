@@ -19,12 +19,19 @@ hooks:
           timeout: 15
 ---
 
-## Effort 制御（v2.1.68+）
+## Effort 制御（v2.1.68+, v2.1.72 簡素化）
 
-- **デフォルト**: medium effort（Opus 4.6 の標準動作）
-- **ultrathink 適用時**: Lead がスコアリングで判定し、spawn prompt に注入
+- **デフォルト**: medium effort（Opus 4.6 の標準動作、シンボル: `◐`）
+- **ultrathink 適用時**: Lead がスコアリングで判定し、spawn prompt に注入 → high effort (`●`)
+- **v2.1.72 変更**: `max` レベル廃止。3段階 `low(○)/medium(◐)/high(●)` に簡素化。`/effort auto` でリセット
 - **自動適用ケース**: アーキテクチャ変更、セキュリティ関連、失敗リトライ時
 - **Codex 環境**: effort 制御は Claude Code 固有。Codex CLI では適用外
+
+## Worktree 操作（v2.1.72+）
+
+- **`isolation: worktree`**: frontmatter で自動 worktree 分離（既存）
+- **`ExitWorktree` ツール**: 実装完了後にプログラム的に worktree を離脱可能（v2.1.72 新規）
+- **worktree 修正**: Task resume 時の cwd 復元、background 通知に worktreePath を含む（v2.1.72 修正）
 
 # Worker Agent (v3)
 

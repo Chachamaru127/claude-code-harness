@@ -8,6 +8,59 @@ Change history for claude-code-harness.
 
 ---
 
+## [3.8.0] - 2026-03-11
+
+### テーマ: Claude Code v2.1.72 互換対応
+
+**Claude Code v2.1.72 の全新機能・修正を Harness に反映。Effort レベル簡素化、ExitWorktree ツール、Agent tool model パラメータ復活、並列ツール呼び出し修正など、12 項目の機能を Feature Table とエージェント定義に追記。**
+
+---
+
+#### 1. ExitWorktree ツール対応
+
+**今まで**: worktree セッションからの離脱はセッション終了時のプロンプトに依存。Worker エージェントが実装完了後にプログラム的に worktree を閉じる手段がなかった。
+
+**今後**: CC v2.1.72 の `ExitWorktree` ツールにより、Worker が実装完了後に明示的に worktree を離脱可能。`agents-v3/worker.md` に「Worktree 操作」セクションを追加し、`ExitWorktree` の活用方法を文書化。
+
+#### 2. Effort レベル簡素化（`max` 廃止）
+
+**今まで**: effort レベルに `max` が存在していたが、Harness のドキュメントでは `ultrathink` → high effort の対応のみ使用。
+
+**今後**: CC v2.1.72 で `max` が廃止、3段階 `low(○)/medium(◐)/high(●)` に統一。Harness のドキュメントをシンボル付きで更新。影響ファイル:
+- `skills-v3/harness-work/SKILL.md` + 3 ミラー
+- `agents-v3/worker.md`
+- `agents-v3/reviewer.md`
+- `agents-v3/team-composition.md`
+
+#### 3. Agent tool `model` パラメータ復活
+
+**今まで**: per-invocation model override が利用不可だった期間があり、エージェント定義の `model` フィールドのみで運用。
+
+**今後**: CC v2.1.72 で Agent tool の `model` パラメータが復活。タスク特性に応じた動的モデル選択が再び可能に。`agents-v3/team-composition.md` に Phase 2 検討項目として記載。
+
+#### 4. Feature Table 拡充（12 項目追加）
+
+`CLAUDE.md` と `docs/CLAUDE-feature-table.md` に以下を追加:
+- `ExitWorktree` ツール
+- Effort levels 簡素化
+- Agent tool `model` パラメータ復活
+- `/plan` description 引数
+- 並列ツール呼び出し修正
+- Worktree isolation 修正
+- `/clear` バックグラウンドエージェント保持
+- Hooks 修正群（4 件）
+- HTML コメント非表示
+- Bash auto-approval 追加
+- プロンプトキャッシュ修正
+
+各機能の詳細セクションも `docs/CLAUDE-feature-table.md` に追記。
+
+#### 5. バージョンヘッダー更新
+
+`CLAUDE.md` と `docs/CLAUDE-feature-table.md` のヘッダーを `2.1.71+` → `2.1.72+` に更新。
+
+---
+
 ## [3.7.3] - 2026-03-10
 
 ### テーマ: Claude Code 公式ドキュメント整合

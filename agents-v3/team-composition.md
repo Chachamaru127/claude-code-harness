@@ -298,12 +298,13 @@ project_doc_max_bytes = 32768      # AGENTS.md の読み込み上限（デフォ
 - `codex-learnings.md` の内容を定期的に AGENTS.md に昇格（SSOT 維持）
 - `agents.<name>.config_file` でワーカー・レビュアーの個別設定を分離（将来対応）
 
-## v2.1.68 Effort レベル変更の影響
+## v2.1.68/v2.1.72 Effort レベル変更の影響
 
 ### 変更点
 - Opus 4.6 が **medium effort** デフォルトに変更（v2.1.68）
 - `ultrathink` キーワードで high effort を有効化（1ターン限定）
 - Opus 4 / 4.1 が first-party API から削除（Opus 4.6 に自動移行）
+- **v2.1.72**: `max` レベル廃止。3段階 `low(○)/medium(◐)/high(●)` に簡素化。`/effort auto` でリセット
 
 ### チームへの影響
 - Worker（`model: sonnet`）: Sonnet は effort レベルの影響を受けない。変更なし
@@ -313,3 +314,14 @@ project_doc_max_bytes = 32768      # AGENTS.md の読み込み上限（デフォ
 
 ### Effort 注入パターン
 Lead が Worker/Reviewer を spawn する際、タスクの複雑度スコアに基づいて spawn prompt の冒頭に `ultrathink` を追加する。詳細は `skills-v3/harness-work/SKILL.md` の「Effort レベル制御」セクションを参照。
+
+### v2.1.72 Agent tool `model` パラメータ復活
+Agent tool の per-invocation `model` パラメータが復活した。エージェント定義の `model` とは別に、spawn 時に一時的なモデル指定が可能。
+- **現状**: Worker/Reviewer とも `model: sonnet` 固定で運用
+- **Phase 2 検討**: タスク特性に応じた動的モデル選択（軽量→haiku, 高品質→opus）
+
+### v2.1.72 `/clear` バックグラウンドエージェント保持
+`/clear` がフォアグラウンドタスクのみ停止するようになった。breezing チーム実行中に Lead が `/clear` してもバックグラウンド Worker は存続する。
+
+### v2.1.72 並列ツール呼び出し修正
+Read/WebFetch/Glob の失敗が sibling 呼び出しをキャンセルしなくなった。Worker の並列ファイル読み込みの信頼性が向上。
