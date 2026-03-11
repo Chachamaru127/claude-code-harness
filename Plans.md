@@ -11,7 +11,7 @@
 
 | Task | 内容 | DoD | Depends | Status |
 |------|------|-----|---------|--------|
-| M3 | Auto Mode ドキュメント誤記、README/CHANGELOG の版ズレ、validate-plugin の baseline 破綻、opencode mirror ドリフトを修正する | `validate-plugin.sh` / `check-consistency.sh` / `node scripts/build-opencode.js` / `core` テストが通り、PR #58 の残ブロッカーが整理されている | - | cc:WIP |
+| M3 | Auto Mode ドキュメント誤記、README/CHANGELOG の版ズレ、validate-plugin の baseline 破綻、opencode mirror ドリフトを修正する | `validate-plugin.sh` / `check-consistency.sh` / `node scripts/build-opencode.js` / `core` テストが通り、PR #58 の残ブロッカーが整理されている | - | cc:完了 [cb625b12] |
 
 ---
 
