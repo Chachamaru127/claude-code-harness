@@ -207,6 +207,8 @@ out/
 # Skills - temporary implementation docs
 **/skills/**/IMPLEMENTATION_*.md
 **/skills/**/TASK_*.md
+!codex/.codex/skills/**/IMPLEMENTATION_*.md
+!opencode/skills/**/IMPLEMENTATION_*.md
 
 # OpenCode (local-only)
 .opencode/
