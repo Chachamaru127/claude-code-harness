@@ -84,6 +84,16 @@
 | **Output Styles (v2.1.72+)** | 全スキル | `.claude/output-styles/` にカスタム出力スタイルを定義。`harness-ops` で Plan/Work/Review の構造化出力を提供 |
 | **`permissionMode` in agent frontmatter (v2.1.72+)** | agents-v3/ | エージェント定義 YAML に `permissionMode` を明示宣言。spawn 時の `mode` 指定が不要に |
 | **Agent Teams 公式ベストプラクティス (v2.1.72+)** | breezing | 5-6 tasks/teammate ガイドライン、`teammateMode` 設定、plan approval パターンを team-composition に反映 |
+| **Sandboxing (`/sandbox`)** | breezing, harness-work | OS レベルのファイルシステム/ネットワーク隔離。`bypassPermissions` の補完レイヤー |
+| **`opusplan` モデルエイリアス** | breezing | Plan 時は Opus、実行時は Sonnet に自動切替。Lead の Plan → Execute フローに最適 |
+| **`CLAUDE_CODE_SUBAGENT_MODEL` 環境変数** | breezing, harness-work | サブエージェントのモデルを一括指定。Worker/Reviewer のモデル制御を集約 |
+| **`availableModels` 設定** | setup | 利用可能モデルの制限リスト。エンタープライズ運用でのモデルガバナンス |
+| **Checkpointing (`/rewind`)** | harness-work | セッション状態の追跡・巻き戻し・要約。安全な探索と実験をサポート |
+| **Code Review (managed service)** | harness-review | マルチエージェント PR レビュー + `REVIEW.md`。Teams/Enterprise 向け Research Preview |
+| **Status Line (`/statusline`)** | 全スキル | カスタムシェルスクリプトで状態表示バー。コンテキスト使用量・コスト・git 状態を常時モニタリング |
+| **1M Context Window (`sonnet[1m]`)** | harness-review, breezing | 大規模コードベース分析に 100 万トークンコンテキスト窓を活用 |
+| **Per-model Prompt Caching Control** | 全スキル | `DISABLE_PROMPT_CACHING_*` でモデル別にキャッシュ制御。デバッグ・コスト最適化 |
+| **`CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING`** | harness-work | Adaptive Reasoning 無効化で固定 thinking budget に復帰。予測可能なコスト制御 |
 
 ## 機能詳細
 
@@ -662,6 +672,180 @@ Harness の `agents-v3/team-composition.md` に以下を反映:
 3. **Plan Approval パターン**: Worker に plan mode を要求する公式パターン
 4. **Quality Gate Hooks**: `TeammateIdle`/`TaskCompleted` のexit 2 フィードバックパターン
 5. **チームサイズ**: 3-5 teammates の推奨値（Harness の Worker 1-3 + Reviewer 1 と整合）
+
+### Sandboxing (`/sandbox`)
+
+Claude Code にネイティブ統合された OS レベルのサンドボックス機能。macOS は Seatbelt、Linux は bubblewrap を使用し、Bash コマンドのファイルシステム/ネットワークアクセスを制限する。
+
+**2つのモード**:
+- **Auto-allow mode**: サンドボックス内のコマンドは自動承認。制約外のアクセスは通常の権限フローへフォールバック
+- **Regular permissions mode**: サンドボックス内でも全コマンドに承認が必要
+
+**Harness での活用戦略**:
+- `bypassPermissions` の **補完レイヤー** として位置づける（置換ではない）
+- Worker エージェントの Bash コマンドに OS レベルの安全境界を追加
+- `sandbox.filesystem.allowWrite` で Worker が書き込める範囲を明示制限
+- `sandbox.network` で外部アクセスを信頼済みドメインに制限（エクスフィルトレーション防止）
+
+**段階導入計画**:
+
+| フェーズ | Worker 権限 | Sandbox |
+|---------|-----------|---------|
+| 現行 | `bypassPermissions` + hooks ガード | 未適用 |
+| 検証フェーズ | `bypassPermissions` + hooks + sandbox auto-allow | Worker の Bash に適用 |
+| 安定後 | sandbox auto-allow のみ（`bypassPermissions` 廃止検討） | 全 Bash に適用 |
+
+```json
+// settings.json (検証フェーズ用)
+{
+  "sandbox": {
+    "enabled": true,
+    "filesystem": {
+      "allowWrite": ["~/.claude", "//tmp"]
+    }
+  }
+}
+```
+
+> `@anthropic-ai/sandbox-runtime` が OSS として公開されており、MCP サーバーのサンドボックス化にも利用可能。
+
+### `opusplan` モデルエイリアス
+
+Plan mode では Opus、実行モードでは Sonnet に自動切替するハイブリッドエイリアス。
+
+**Harness での活用**:
+- Breezing の Lead セッションに最適: Plan フェーズ（タスク分解・アーキテクチャ決定）は Opus の推論力を活用し、Worker spawn 後の実行コーディネーションは Sonnet でコスト効率化
+- `claude --model opusplan` または `/model opusplan` で有効化
+
+**環境変数による制御**:
+```bash
+# opusplan の内部マッピングをカスタマイズ
+ANTHROPIC_DEFAULT_OPUS_MODEL=claude-opus-4-6    # Plan 時
+ANTHROPIC_DEFAULT_SONNET_MODEL=claude-sonnet-4-6  # 実行時
+```
+
+### `CLAUDE_CODE_SUBAGENT_MODEL` 環境変数
+
+サブエージェント（Worker/Reviewer）のモデルを一括で指定する環境変数。
+
+**Harness での活用**:
+- 現状: Worker/Reviewer は `model: sonnet` をエージェント定義で固定
+- 本環境変数を使うと、エージェント定義を変更せずにモデルを切り替え可能
+- CI 環境でのコスト制御（`CLAUDE_CODE_SUBAGENT_MODEL=haiku` でテスト実行）に有用
+
+```bash
+# 全サブエージェントを haiku で実行（CI コスト削減）
+export CLAUDE_CODE_SUBAGENT_MODEL=claude-haiku-4-5-20251001
+```
+
+### `availableModels` 設定
+
+ユーザーが選択可能なモデルを制限する設定。managed/policy settings で設定すると、`/model`、`--model`、`ANTHROPIC_MODEL` のいずれでも制限が適用される。
+
+**Harness での活用**:
+- エンタープライズ環境でのモデルガバナンス: Worker/Reviewer が意図しないモデルを使用することを防止
+- `availableModels` + `model` の組み合わせで全ユーザーのモデル体験を統制可能
+
+```json
+// managed settings
+{
+  "model": "sonnet",
+  "availableModels": ["sonnet", "haiku", "opusplan"]
+}
+```
+
+### Checkpointing (`/rewind`)
+
+セッション中のファイル編集を自動追跡し、任意のポイントに巻き戻し可能にする機能。
+各ユーザープロンプトでチェックポイントが自動作成される。
+
+**操作方法**:
+- `Esc + Esc` または `/rewind` でリワインドメニューを開く
+- 選択肢: コード復元 / 会話復元 / 両方復元 / ここから要約
+
+**Harness での活用**:
+- `harness-work` のセルフレビューフェーズで問題発見時、実装前の状態に巻き戻し
+- 「ここから要約」で冗長なデバッグセッションのコンテキスト窓を回収
+- `/compact` との違い: チェックポイントは選択的に圧縮範囲を指定できる
+
+**制限事項**:
+- Bash コマンドによるファイル変更は追跡されない（`rm`, `mv`, `cp` 等）
+- 外部の手動変更は追跡されない
+- Git の代替ではなく、セッションレベルの「ローカル Undo」
+
+### Code Review (managed service)
+
+Anthropic インフラ上で動作するマルチエージェント PR レビューサービス。Teams/Enterprise 向け Research Preview。
+
+**動作概要**:
+1. PR 作成/更新時に自動起動
+2. 複数の専門エージェントが並列で差分とコードベースを分析
+3. 検証ステップで偽陽性をフィルタ
+4. 重複排除・重要度ランク付け後にインラインコメントとして投稿
+
+**重要度レベル**:
+| マーカー | レベル | 意味 |
+|---------|--------|------|
+| 🔴 | Normal | マージ前に修正すべきバグ |
+| 🟡 | Nit | 軽微な問題（ブロッキングではない） |
+| 🟣 | Pre-existing | この PR 以前から存在するバグ |
+
+**`REVIEW.md`**: リポジトリルートに配置するレビュー専用ガイダンスファイル。`CLAUDE.md` とは別に、レビュー時のみ適用されるルールを定義。
+
+**Harness での活用**:
+- `harness-review` スキルの Code Review 対応として `REVIEW.md` テンプレート生成を検討
+- Harness の Worker セルフレビューと managed Code Review は補完的（ローカル + リモートの二重検査）
+- 平均コスト $15-25/レビュー。`on-push` トリガーは push 回数分のコストが発生するため注意
+
+### Status Line (`/statusline`)
+
+Claude Code のターミナル下部に表示されるカスタマイズ可能な状態バー。シェルスクリプトに JSON セッションデータを渡し、出力テキストを表示。
+
+**利用可能データ**:
+- `model.id`, `model.display_name` — 現在のモデル
+- `context_window.used_percentage` — コンテキスト使用率
+- `cost.total_cost_usd` — セッションコスト
+- `cost.total_duration_ms` — 経過時間
+- `worktree.*` — ワークツリー情報
+- `agent.name` — エージェント名
+- `output_style.name` — 出力スタイル名
+
+**Harness での活用**:
+- `scripts/statusline-harness.sh` で Harness 専用ステータスライン提供
+- モデル名・コンテキスト使用率・セッションコスト・git ブランチ・Harness バージョンを常時表示
+- ANSI カラーでコンテキスト使用率のしきい値表示（70% 黄色、90% 赤）
+
+### 1M Context Window (`sonnet[1m]`)
+
+Opus 4.6 と Sonnet 4.6 で利用可能な 100 万トークンコンテキスト窓。200K トークンを超えると long-context pricing が適用される。
+
+**Harness での活用**:
+- `harness-review` の大規模コードベース分析に有用
+- `breezing` で多数のファイルを同時に扱うセッション
+- `/model sonnet[1m]` で有効化。`CLAUDE_CODE_DISABLE_1M_CONTEXT=1` で無効化可能
+
+### Per-model Prompt Caching Control
+
+モデル別にプロンプトキャッシュを制御する環境変数群。
+
+| 環境変数 | 用途 |
+|---------|------|
+| `DISABLE_PROMPT_CACHING` | 全モデルのキャッシュ無効化 |
+| `DISABLE_PROMPT_CACHING_HAIKU` | Haiku のみ無効化 |
+| `DISABLE_PROMPT_CACHING_SONNET` | Sonnet のみ無効化 |
+| `DISABLE_PROMPT_CACHING_OPUS` | Opus のみ無効化 |
+
+**Harness での活用**:
+- デバッグ時に特定モデルのキャッシュを無効化して挙動を確認
+- クラウドプロバイダ（Bedrock/Vertex）でキャッシュ実装が異なる場合の選択的制御
+
+### `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING`
+
+Opus 4.6 / Sonnet 4.6 の Adaptive Reasoning を無効化し、`MAX_THINKING_TOKENS` で制御される固定 thinking budget に復帰する環境変数。
+
+**Harness での活用**:
+- トークンコストの予測可能性が必要な CI 環境で有用
+- `harness-work` の effort スコアリングと排他的ではない（両方使用可能だが、通常は adaptive thinking を有効にしたまま ultrathink で制御する方が効果的）
 
 ## 関連ドキュメント
 

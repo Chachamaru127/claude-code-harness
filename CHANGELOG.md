@@ -8,6 +8,70 @@ Change history for claude-code-harness.
 
 ---
 
+## [3.10.0] - 2026-03-11
+
+### テーマ: Claude Code ドキュメント機能 10 項目の Harness 統合 + Status Line 実装
+
+**Claude Code の公式ドキュメントに記載された新機能（Sandboxing, Model Configuration, Checkpointing, Code Review, Status Line 等）を Feature Table に統合し、Harness 専用ステータスラインスクリプトを新規追加。**
+
+---
+
+#### 1. Sandboxing (`/sandbox`) 統合
+
+**今まで**: Worker の Bash コマンドは `bypassPermissions` + hooks で制御していた。OS レベルのファイルシステム/ネットワーク隔離は Harness の運用ガイドに含まれていなかった。
+
+**今後**: Claude Code のネイティブ Sandboxing（macOS Seatbelt / Linux bubblewrap）を `bypassPermissions` の**補完レイヤー**として位置づけ。段階導入計画（Phase 0→1→2）を `team-composition.md` に追加。Worker の Bash に OS レベルの安全境界を段階的に導入する方針。
+
+#### 2. Model Configuration 3 機能
+
+**今まで**: Worker/Reviewer のモデルはエージェント定義の `model: sonnet` で固定。Lead も単一モデルで Plan と Execute を実行していた。
+
+**今後**:
+- **`opusplan` エイリアス**: Lead セッションで Plan 時に Opus、Execute 時に Sonnet を自動切替
+- **`CLAUDE_CODE_SUBAGENT_MODEL`**: 全サブエージェントのモデルを環境変数で一括指定（CI でのコスト削減に有用）
+- **`availableModels`**: エンタープライズ環境でのモデルガバナンス
+
+#### 3. Checkpointing (`/rewind`) 対応
+
+**今まで**: セッション中にファイル編集が期待通りでなかった場合、手動で git revert するか、最初からやり直す必要があった。
+
+**今後**: `Esc+Esc` または `/rewind` でセッション内の任意のポイントに巻き戻し可能。「ここから要約」で冗長なデバッグセッションのコンテキスト窓を選択的に回収。`harness-work` のセルフレビューフェーズでの安全な探索に活用。
+
+#### 4. Code Review (managed service) 対応
+
+**今まで**: Harness の `harness-review` はローカルエージェントによるコードレビューのみ。
+
+**今後**: Anthropic インフラ上のマルチエージェント PR レビュー（Teams/Enterprise 向け Research Preview）を Feature Table に追加。`REVIEW.md` によるレビュー固有ガイダンスの仕組みを文書化。ローカルレビュー（`harness-review`）と managed レビューは補完的な二重検査として位置づけ。
+
+#### 5. Harness Status Line スクリプト新規追加
+
+**今まで**: Claude Code の `/statusline` 機能は存在していたが、Harness 固有のステータス表示がなかった。
+
+**今後**: `scripts/statusline-harness.sh` を新規追加。以下を 2 行で常時表示:
+- Line 1: モデル名 + git ブランチ + staged/modified ファイル数 + エージェント名/ワークツリー名
+- Line 2: コンテキスト使用率バー（70% 黄、90% 赤）+ セッションコスト + 経過時間 + 出力スタイル名
+
+```bash
+# 設定方法
+/statusline use scripts/statusline-harness.sh
+```
+
+#### 6. Feature Table 拡充（10 項目追加）
+
+`docs/CLAUDE-feature-table.md` と `CLAUDE.md` サマリーに以下を追加:
+- Sandboxing (`/sandbox`)
+- `opusplan` モデルエイリアス
+- `CLAUDE_CODE_SUBAGENT_MODEL` 環境変数
+- `availableModels` 設定
+- Checkpointing (`/rewind`)
+- Code Review (managed service)
+- Status Line (`/statusline`)
+- 1M Context Window (`sonnet[1m]`)
+- Per-model Prompt Caching Control
+- `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING`
+
+---
+
 ## [3.9.0] - 2026-03-11
 
 ### テーマ: Output Styles 統合 + Agent 定義強化 + Agent Teams 公式ベストプラクティス整合

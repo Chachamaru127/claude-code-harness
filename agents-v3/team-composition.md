@@ -373,6 +373,80 @@ project_doc_max_bytes = 32768      # AGENTS.md の読み込み上限（デフォ
 - `codex-learnings.md` の内容を定期的に AGENTS.md に昇格（SSOT 維持）
 - `agents.<name>.config_file` でワーカー・レビュアーの個別設定を分離（将来対応）
 
+## Sandboxing 統合（段階導入）
+
+Claude Code の `/sandbox` 機能は OS レベルのファイルシステム/ネットワーク隔離を提供する。
+現行の `bypassPermissions` + hooks 多層防御に **追加の安全レイヤー** として導入する。
+
+### 現行 vs Sandboxing
+
+| 観点 | bypassPermissions + hooks | Sandbox auto-allow |
+|------|--------------------------|-------------------|
+| 粒度 | ツール単位（hooks で判定） | ファイルパス/ドメイン単位（OS 強制） |
+| 実装レイヤー | Claude Code 権限システム | macOS Seatbelt / Linux bubblewrap |
+| プロンプトインジェクション | hooks で部分防御 | OS レベルで完全防御 |
+| Worker の自由度 | 全 Bash 許可（hooks でガード） | 定義済みパス/ドメインのみ |
+| トークンコスト | なし | なし |
+
+### Worker への適用方針
+
+```json
+// settings.json — Worker セッション向け Sandbox 設定例
+{
+  "sandbox": {
+    "enabled": true,
+    "filesystem": {
+      "allowWrite": [
+        "/",
+        "~/.claude",
+        "//tmp"
+      ]
+    }
+  }
+}
+```
+
+- `allowWrite: ["/"]` は settings.json のディレクトリ相対パス（プロジェクトルート）
+- `~/.claude` は Agent Memory の書き込みに必要
+- `//tmp` はビルド出力・一時ファイル用
+
+### 段階導入スケジュール
+
+| フェーズ | 状態 | Worker 権限 | Sandbox |
+|---------|------|-----------|---------|
+| **Phase 0（現行）** | 運用中 | `bypassPermissions` + hooks | 未適用 |
+| **Phase 1（検証）** | 次回リリースで検証開始 | `bypassPermissions` + hooks + sandbox | Worker の Bash に適用 |
+| **Phase 2（移行）** | TBD | sandbox auto-allow のみ | 全 Bash に適用 |
+
+Phase 1 検証項目:
+1. Worker の `npm test` / `npm run build` が sandbox 内で正常動作するか
+2. `codex exec` が sandbox 内で正常動作するか
+3. Agent Memory（`.claude/agent-memory/`）への書き込みがブロックされないか
+4. hooks の PreToolUse/PostToolUse が sandbox と併用可能か
+
+### `opusplan` による Lead モデル最適化
+
+`opusplan` エイリアスは Lead セッションに最適:
+- **Plan フェーズ**: Opus でタスク分解・アーキテクチャ判断（高品質推論）
+- **Execute フェーズ**: Sonnet で Worker コーディネーション（コスト効率）
+
+```bash
+# breezing セッションで opusplan を使用
+claude --model opusplan
+/breezing all
+```
+
+### `CLAUDE_CODE_SUBAGENT_MODEL` による Worker モデル制御
+
+環境変数 `CLAUDE_CODE_SUBAGENT_MODEL` で全サブエージェントのモデルを一括指定:
+
+```bash
+# CI 環境でコスト削減（Worker/Reviewer を haiku で実行）
+export CLAUDE_CODE_SUBAGENT_MODEL=claude-haiku-4-5-20251001
+```
+
+> エージェント定義の `model` フィールドとの優先順位は未検証。Phase 2 で検証予定。
+
 ## v2.1.68/v2.1.72 Effort レベル変更の影響
 
 ### 変更点
