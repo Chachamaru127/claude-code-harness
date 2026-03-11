@@ -250,8 +250,8 @@ Harness では Reviewer の `REQUEST_CHANGES` → Worker 修正ループと補�
 |------|-------------|--------------|
 | `TeammateIdle` | `teammate-idle.sh` (実装済み) | exit 2 で feedback + 継続指示 |
 | `TaskCompleted` | `task-completed.sh` (実装済み) | exit 2 で完了拒否 + feedback |
-| `SubagentStart` | 未実装 | settings.json で matcher 指定可能 |
-| `SubagentStop` | agent frontmatter Stop hook で実装 | settings.json でも追加設定可能 |
+| `SubagentStart` | 実装済み（subagent-tracker + matcher: worker/reviewer/scaffolder） | settings.json で agent type 別にフィルタリング |
+| `SubagentStop` | 実装済み（subagent-tracker + matcher + agent frontmatter Stop hook） | settings.json + frontmatter の二層監視 |
 
 ### チームサイズガイドライン
 

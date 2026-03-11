@@ -136,6 +136,27 @@
     ],
     "SubagentStart": [
       {
+        "matcher": "worker",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" subagent-tracker start",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "reviewer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" subagent-tracker start",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "scaffolder",
         "hooks": [
           {
             "type": "command",
@@ -158,6 +179,27 @@
     ],
     "SubagentStop": [
       {
+        "matcher": "worker",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" subagent-tracker stop",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "reviewer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" subagent-tracker stop",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "scaffolder",
         "hooks": [
           {
             "type": "command",

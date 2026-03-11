@@ -94,6 +94,18 @@
 | **1M Context Window (`sonnet[1m]`)** | harness-review, breezing | 大規模コードベース分析に 100 万トークンコンテキスト窓を活用 |
 | **Per-model Prompt Caching Control** | 全スキル | `DISABLE_PROMPT_CACHING_*` でモデル別にキャッシュ制御。デバッグ・コスト最適化 |
 | **`CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING`** | harness-work | Adaptive Reasoning 無効化で固定 thinking budget に復帰。予測可能なコスト制御 |
+| **Chrome Integration (`--chrome`, beta)** | harness-work, harness-review | ブラウザ自動化でUI テスト・フォーム入力・コンソールデバッグ。`/chrome` でセッション内切替 |
+| **LSP サーバー統合 (`.lsp.json`)** | setup | Language Server Protocol で型情報・診断・参照検索をリアルタイム提供。`pyright-lsp`, `typescript-lsp`, `rust-lsp` 利用可能 |
+| **`SubagentStart`/`SubagentStop` matcher (v2.1.72+)** | breezing, hooks | settings.json レベルで agent type 別にサブエージェントライフサイクルを監視。Worker/Reviewer/Scaffolder を個別トラッキング |
+| **Agent Teams: Task Dependencies** | breezing | タスク間依存の自動管理。依存完了で blocked タスクが自動 unblock。ファイルロックで claiming 競合防止 |
+| **`--teammate-mode` CLI フラグ (v2.1.72+)** | breezing | セッション単位で `in-process`/`tmux` 表示モードを切替。`claude --teammate-mode in-process` |
+| **`CLAUDE_CODE_DISABLE_BACKGROUND_TASKS` (v2.1.72+)** | setup | `=1` で全バックグラウンドタスク機能を無効化。セキュリティポリシーでバックグラウンド実行を制限する環境向け |
+| **`CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` (v2.1.72+)** | breezing, harness-work | サブエージェントの auto-compaction しきい値を調整（デフォルト 95%）。`50` で早期圧縮、長時間 Worker の安定性向上 |
+| **`cleanupPeriodDays` 設定 (v2.1.72+)** | setup | サブエージェント transcript の自動クリーンアップ期間（デフォルト 30 日） |
+| **`/btw` サイドクエスチョン (v2.1.72+)** | 全スキル | 現在のコンテキストを保持したまま短い質問。ツールアクセスなし、履歴に残らない。サブエージェント起動の軽量代替 |
+| **Plugin CLI コマンド群 (v2.1.72+)** | setup | `claude plugin install/uninstall/enable/disable/update` + `--scope` フラグ。スクリプトによる自動化対応 |
+| **Remote Control 強化 (v2.1.72+)** | 調査済み・将来対応 | `/remote-control` (`/rc`) でセッション内から有効化。`--name`, `--sandbox`, `--verbose` フラグ。`/mobile` で QR コード表示。自動再接続対応 |
+| **`skills` フィールド in agent frontmatter (v2.1.72+)** | agents-v3/ | サブエージェントにスキルをプリロード。Worker に execute+review、Reviewer に review を注入（実装済み） |
 
 ## 機能詳細
 
@@ -846,6 +858,162 @@ Opus 4.6 / Sonnet 4.6 の Adaptive Reasoning を無効化し、`MAX_THINKING_TOK
 **Harness での活用**:
 - トークンコストの予測可能性が必要な CI 環境で有用
 - `harness-work` の effort スコアリングと排他的ではない（両方使用可能だが、通常は adaptive thinking を有効にしたまま ultrathink で制御する方が効果的）
+
+### Chrome Integration (`--chrome`)
+
+Claude Code の Chrome 拡張機能と連携し、ブラウザ自動化をターミナルから実行する beta 機能。
+`--chrome` フラグでセッション起動、または `/chrome` でセッション内から有効化。
+
+**主要機能**:
+- ライブデバッグ: コンソールエラーを読み取り、原因コードを即座に修正
+- UI テスト: フォーム検証、ビジュアルリグレッション確認、ユーザーフロー検証
+- データ抽出: Web ページから構造化データを抽出しローカル保存
+- GIF 記録: ブラウザ操作シーケンスを GIF として記録
+
+**Harness での活用**:
+- `harness-work` での UI コンポーネント実装後の自動検証
+- `harness-review` での Web アプリケーションのビジュアルレビュー
+- `/chrome` 有効化で Worker がブラウザテストを実行可能に
+
+**制約**: Google Chrome / Microsoft Edge のみ。Brave, Arc 等は未対応。WSL 非対応。
+
+### LSP サーバー統合 (`.lsp.json`)
+
+Language Server Protocol サーバーを Plugin 経由で統合し、リアルタイムコード診断を提供。
+
+**利用可能な LSP プラグイン**:
+| プラグイン | Language Server | インストール |
+|-----------|----------------|------------|
+| `pyright-lsp` | Pyright (Python) | `pip install pyright` |
+| `typescript-lsp` | TypeScript Language Server | `npm install -g typescript-language-server typescript` |
+| `rust-lsp` | rust-analyzer | rust-analyzer 公式ガイド参照 |
+
+**提供される機能**:
+- 即座の診断: 編集後すぐにエラー/警告を表示
+- コードナビゲーション: 定義ジャンプ、参照検索、ホバー情報
+- 型情報: シンボルの型とドキュメント表示
+
+**設定例** (`.lsp.json`):
+```json
+{
+  "typescript": {
+    "command": "typescript-language-server",
+    "args": ["--stdio"],
+    "extensionToLanguage": {
+      ".ts": "typescript",
+      ".tsx": "typescriptreact"
+    }
+  }
+}
+```
+
+### `SubagentStart`/`SubagentStop` matcher
+
+settings.json レベルでサブエージェントのライフサイクルを agent type 別に監視するフック。
+公式ドキュメントで matcher にエージェント名を指定するパターンが文書化された。
+
+**Harness の実装**:
+- `SubagentStart`: Worker/Reviewer/Scaffolder の起動を個別にトラッキング
+- `SubagentStop`: 各エージェントの完了を個別に記録
+- 既存の `subagent-tracker` Node.js スクリプトに matcher を追加
+
+```json
+"SubagentStart": [
+  { "matcher": "worker", "hooks": [{ "type": "command", "command": "...subagent-tracker start" }] },
+  { "matcher": "reviewer", "hooks": [{ "type": "command", "command": "...subagent-tracker start" }] }
+]
+```
+
+### Agent Teams: Task Dependencies
+
+Agent Teams のタスクに依存関係を設定可能。依存タスク完了で blocked タスクが自動 unblock。
+
+**動作**:
+- タスクは `pending`, `in_progress`, `completed` の3状態
+- 未解決の依存がある pending タスクは claimed 不可
+- 依存完了時に自動 unblock（手動介入不要）
+- ファイルロックで複数 teammate の同時 claim を防止
+
+**Harness での活用**:
+- Breezing の Lead がタスク分解時に依存関係を明示指定
+- 例: 「API エンドポイント実装」→「テスト作成」→「ドキュメント更新」の順序保証
+
+### `--teammate-mode` CLI フラグ
+
+セッション単位で Agent Teams の表示モードを指定するフラグ。
+
+```bash
+claude --teammate-mode in-process  # 全 teammate を同一ターミナル
+claude --teammate-mode tmux        # 各 teammate に個別ペイン
+```
+
+settings.json の `teammateMode` 設定を上書き。VS Code 統合ターミナルでは `in-process` が推奨。
+
+### `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS`
+
+`=1` で全バックグラウンドタスク機能を無効化する環境変数。
+
+**Harness での活用**:
+- セキュリティポリシーでバックグラウンド実行を制限する環境向け
+- Breezing のバックグラウンド Worker spawn も無効化されるため、使用時は要注意
+
+### `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`
+
+サブエージェントの auto-compaction しきい値を調整する環境変数（デフォルト 95%）。
+
+**Harness での活用**:
+- `50` に設定で早期圧縮を有効化。長時間 Worker の安定性向上
+- Breezing の Worker が大量のファイルを読み込む場合にコンテキスト溢れを防止
+
+### `cleanupPeriodDays` 設定
+
+サブエージェント transcript の自動クリーンアップ期間を制御する設定（デフォルト 30 日）。
+transcript は `~/.claude/projects/{project}/{sessionId}/subagents/agent-{agentId}.jsonl` に保存。
+
+### `/btw` サイドクエスチョン
+
+現在のコンテキストを保持したまま短い質問を行うコマンド。
+回答後にメインの会話履歴に残らないため、コンテキスト窓を消費しない。
+
+**サブエージェントとの使い分け**:
+- `/btw`: 現在のコンテキストで即答可能な質問（ツールアクセスなし）
+- サブエージェント: 独立した調査・実装タスク（ツールアクセスあり）
+
+### Plugin CLI コマンド群
+
+プラグインの非対話的管理コマンド。スクリプトによる自動化に対応。
+
+```bash
+claude plugin install <plugin> [--scope user|project|local]
+claude plugin uninstall <plugin> [--scope user|project|local]
+claude plugin enable <plugin> [--scope user|project|local]
+claude plugin disable <plugin> [--scope user|project|local]
+claude plugin update <plugin> [--scope user|project|local|managed]
+```
+
+### Remote Control 強化
+
+`/remote-control` (`/rc`) でセッション内から Remote Control を有効化可能に。
+
+**新機能**:
+- `--name "My Project"`: セッション名の指定
+- `--sandbox` / `--no-sandbox`: サンドボックスの有効化/無効化
+- `--verbose`: 詳細ログ表示
+- `/mobile`: QR コード表示で iOS/Android アプリに素早く接続
+- 自動再接続: ネットワーク断からの自動復帰（10 分以内）
+- `/config` → "Enable Remote Control for all sessions" で常時有効化
+
+### `skills` フィールド in agent frontmatter
+
+サブエージェントの frontmatter に `skills` フィールドを追加し、起動時にスキルの全コンテンツをプリロード。
+親会話のスキルは継承されないため、明示的にリストする必要がある。
+
+**Harness の実装状況**:
+- Worker: `skills: [execute, review]` — 実装とセルフレビューのスキルをプリロード
+- Reviewer: `skills: [review]` — レビュースキルをプリロード
+- Scaffolder: `skills: [setup, plan]` — セットアップと計画スキルをプリロード
+
+> `skills` in skill (`context: fork`) の逆パターン。skill が agent を制御するのではなく、agent が skill を読み込む。
 
 ## 関連ドキュメント
 

@@ -8,6 +8,46 @@ Change history for claude-code-harness.
 
 ---
 
+## [3.10.1] - 2026-03-12
+
+### テーマ: Claude Code 公式ドキュメント深層統合 — 13 機能追加 + SubagentStart/Stop matcher 強化
+
+**公式ドキュメント 60 ページの精査により発見した未追跡機能 13 項目を Feature Table に追加。SubagentStart/SubagentStop hooks に agent type 別 matcher を追加し、Worker/Reviewer/Scaffolder の起動・停止を個別にトラッキング可能に。**
+
+---
+
+#### 1. SubagentStart/SubagentStop matcher 強化
+
+**今まで**: `SubagentStart`/`SubagentStop` hooks は全エージェント一律で `subagent-tracker` を起動。team-composition.md では「SubagentStart: 未実装」と誤記載。
+
+**今後**: agent type 別の matcher（`worker`, `reviewer`, `scaffolder`）を追加。各エージェントの起動・停止を個別にトラッキングし、ロール別のメトリクス収集を可能に。team-composition.md の Quality Gate Hooks テーブルも実態に合わせて更新。
+
+#### 2. Feature Table に 13 機能追加
+
+**今まで**: Chrome Integration, LSP サーバー統合, Task Dependencies, `/btw`, Plugin CLI コマンド群等の公式ドキュメント記載機能が Feature Table に未登録。
+
+**今後**: 以下を Feature Table（概要テーブル + 機能詳細セクション）に追加:
+- Chrome Integration (`--chrome`, beta)
+- LSP サーバー統合 (`.lsp.json`)
+- SubagentStart/SubagentStop matcher
+- Agent Teams: Task Dependencies
+- `--teammate-mode` CLI フラグ
+- `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS`
+- `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`
+- `cleanupPeriodDays` 設定
+- `/btw` サイドクエスチョン
+- Plugin CLI コマンド群
+- Remote Control 強化
+- `skills` フィールド in agent frontmatter
+
+#### 3. CLAUDE.md Feature Table サマリー更新
+
+**今まで**: CLAUDE.md の要約テーブルに Chrome Integration, LSP, matcher, Task Dependencies 等が含まれていなかった。
+
+**今後**: 最もインパクトの大きい 6 機能を CLAUDE.md の要約テーブルに追加。
+
+---
+
 ## [3.10.0] - 2026-03-11
 
 ### テーマ: Claude Code ドキュメント機能 10 項目の Harness 統合 + Status Line 実装
