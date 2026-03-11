@@ -60,6 +60,12 @@ permissionMode: bypassPermissions  # 新規追加
 - `permissionMode` in agent frontmatter
 - Agent Teams 公式ベストプラクティス整合
 
+#### 5. Pre-merge 整合修正
+
+**今まで**: README のバージョンバッジ、compare link、Auto Mode の段階表記、`validate-plugin` の core dependency step、opencode mirror が一部不整合で、required checks を安定して通せない状態だった。
+
+**今後**: 版表記と compare link を同期し、Auto Mode は「staged rollout / RP 開始後に検証」へ表現を是正。`validate-plugin` は `core/package.json` をキャッシュキーにして `npm install` を使う構成へ修正し、opencode mirror も再生成前提で整える。
+
 ---
 
 ## [3.8.0] - 2026-03-11
@@ -139,11 +145,11 @@ permissionMode: bypassPermissions  # 新規追加
 
 各機能の詳細セクションも `docs/CLAUDE-feature-table.md` に追記。
 
-#### 2. Auto Mode Phase 1 移行マーカー更新
+#### 2. Auto Mode Phase 1 開始予定表記へ更新
 
 **今まで**: 「Phase 0 (現在)」「Phase 1 (RP 開始)」と記載。RP 開始日 2026-03-12 以前の表記。
 
-**今後**: 「**Phase 1 (現在)**」に更新。影響ファイル:
+**今後**: 「Phase 0 (pre-RP)」「Phase 1 (RP 開始後)」に更新。影響ファイル:
 - `docs/CLAUDE-feature-table.md`
 - `CLAUDE.md` Feature Table
 - `agents-v3/team-composition.md`
@@ -1751,7 +1757,10 @@ Purpose: 自己修正ループ失敗時に「止まるだけ」から「次の�
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.7.2...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.9.0...HEAD
+[3.9.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.8.0...v3.9.0
+[3.8.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.7.3...v3.8.0
+[3.7.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.7.2...v3.7.3
 [3.7.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.7.1...v3.7.2
 [3.7.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.7.0...v3.7.1
 [3.7.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.6.0...v3.7.0

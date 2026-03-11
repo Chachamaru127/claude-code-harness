@@ -140,9 +140,9 @@ Lead の spawn コードが `mode` を渡し忘れても安全。
 4. Lead が常に監視
 5. `Agent(worker, reviewer)` で spawn 可能なエージェント種別を制限
 
-### Auto Mode（Research Preview, Phase 1 active）
+### Auto Mode（Research Preview, staged rollout）
 
-`bypassPermissions` の安全な代替として Anthropic が提供する新しい権限モード。
+`bypassPermissions` の安全な代替として Anthropic が提供する新しい権限運用。
 Claude が権限判断を自動で行い、プロンプトインジェクション対策も内蔵する。
 
 | 観点 | bypassPermissions | Auto Mode |
@@ -162,18 +162,18 @@ Claude が権限判断を自動で行い、プロンプトインジェクショ�
 /execute --breezing --auto-mode all
 ```
 
-**動作**: Worker/Reviewer の spawn 時に `mode: "bypassPermissions"` の代わりに
-`permissionMode: "autoMode"` を使用する。hooks と disallowedTools はそのまま維持。
+**想定動作**: Worker/Reviewer の frontmatter は `permissionMode: bypassPermissions` のまま維持し、
+Auto Mode の有効化は teammate 実行経路側で行う。hooks と disallowedTools はそのまま維持。
 
 #### 移行方針
 
 | フェーズ | 期間 | デフォルト | `--auto-mode` |
 |---------|------|-----------|---------------|
-| Phase 0 | 〜2026-03-12 | `bypassPermissions` | 未対応（フラグ無視） |
-| **Phase 1 (現在)** | **2026-03-12〜** | `bypassPermissions` | `autoMode` に切替 |
-| Phase 2 (検証完了後) | TBD | `autoMode` | — |
+| **Phase 0 (pre-RP)** | **RP 開始前** | `bypassPermissions` | 未対応（フラグ無視） |
+| **Phase 1 (RP 開始後)** | **2026-03-12〜** | `bypassPermissions` | Auto Mode を検証 |
+| Phase 2 (検証完了後) | TBD | TBD | 採用可否を再判定 |
 
-Phase 1 検証中。以下を確認してから Phase 2 への移行を判断する:
+Phase 1 では以下を確認してから Phase 2 への移行を判断する:
 
 1. PreToolUse / PostToolUse hooks が Auto Mode でも従来どおり発火するか
 2. Teammate のバックグラウンド spawn で権限プロンプトがブロックされないか

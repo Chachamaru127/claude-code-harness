@@ -60,11 +60,11 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
-          cache-dependency-path: core/package-lock.json
+          cache-dependency-path: core/package.json
 
       - name: Install core dependencies
         working-directory: core
-        run: npm ci
+        run: npm install --package-lock=false
 
       - name: Typecheck core
         working-directory: core
@@ -73,4 +73,3 @@ jobs:
       - name: Run vitest
         working-directory: core
         run: npm test
-

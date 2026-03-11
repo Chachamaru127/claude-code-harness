@@ -256,16 +256,15 @@ if [ -f "$SECURITY_TEMPLATE" ]; then
   fi
 fi
 
-# Check 3: settings.local.json.template が存在し、defaultMode が bypassPermissions または autoMode であること
-# NOTE: Auto Mode (Research Preview, 2026-03-12〜) 対応で autoMode も許容する
+# Check 3: settings.local.json.template が存在し、defaultMode が documented な permission mode であること
+# NOTE: project template は bypassPermissions を配布し、未文書化の値は許容しない
 LOCAL_TEMPLATE="$PLUGIN_ROOT/templates/claude/settings.local.json.template"
 if [ -f "$LOCAL_TEMPLATE" ]; then
-  if grep -q '"defaultMode"[[:space:]]*:[[:space:]]*"bypassPermissions"' "$LOCAL_TEMPLATE" || \
-     grep -q '"defaultMode"[[:space:]]*:[[:space:]]*"autoMode"' "$LOCAL_TEMPLATE"; then
+  if grep -q '"defaultMode"[[:space:]]*:[[:space:]]*"bypassPermissions"' "$LOCAL_TEMPLATE"; then
     mode_val=$(grep '"defaultMode"' "$LOCAL_TEMPLATE" | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
     echo "  ✅ settings.local.json.template: defaultMode=${mode_val}"
   else
-    echo "  ❌ settings.local.json.template に defaultMode=bypassPermissions または autoMode がありません"
+    echo "  ❌ settings.local.json.template に defaultMode=bypassPermissions がありません"
     BYPASS_ISSUES=$((BYPASS_ISSUES + 1))
   fi
 else

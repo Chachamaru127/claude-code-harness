@@ -57,10 +57,10 @@ user-invocable: true
 | Role | Agent Type | Mode | 責務 |
 |------|-----------|------|------|
 | Lead | (self) | - | 調整・指揮・タスク分配 |
-| Worker ×N | `claude-code-harness:worker` | `bypassPermissions` / `autoMode`* | 実装 |
-| Reviewer | `claude-code-harness:reviewer` | `bypassPermissions` / `autoMode`* | 独立レビュー |
+| Worker ×N | `claude-code-harness:worker` | `bypassPermissions` / Auto Mode* | 実装 |
+| Reviewer | `claude-code-harness:reviewer` | `bypassPermissions` / Auto Mode* | 独立レビュー |
 
-> *`--auto-mode` 指定時は `autoMode` を使用。デフォルトは `bypassPermissions`。
+> *`--auto-mode` 指定時は Auto Mode を有効化する。frontmatter の `permissionMode` は `bypassPermissions` のまま維持する。
 
 ### Codex Mode (`--codex`)
 

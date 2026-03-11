@@ -4,6 +4,17 @@
 
 ---
 
+## Maintenance: PR58 pre-merge stabilization
+
+作成日: 2026-03-11
+目的: PR #58 の docs / CI / mirror 整合を修正し、merge 可否を再判定できる状態に戻す
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| M3 | Auto Mode ドキュメント誤記、README/CHANGELOG の版ズレ、validate-plugin の baseline 破綻、opencode mirror ドリフトを修正する | `validate-plugin.sh` / `check-consistency.sh` / `node scripts/build-opencode.js` / `core` テストが通り、PR #58 の残ブロッカーが整理されている | - | cc:WIP |
+
+---
+
 ## Maintenance: Claude-mem MCP 削除
 
 作成日: 2026-03-08

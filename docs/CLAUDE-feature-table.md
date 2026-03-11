@@ -48,7 +48,7 @@
 | **`/reload-plugins` (v2.1.69)** | 全スキル | スキル・フック編集後の即時反映 |
 | **`includeGitInstructions: false` (v2.1.69)** | work, breezing | git 指示が不要な場面のトークン削減 |
 | **`git-subdir` plugin source (v2.1.69)** | setup, release | サブディレクトリ管理された plugin source に対応 |
-| **Auto Mode (Research Preview, Phase 1 active)** | breezing, work | `bypassPermissions` の安全な代替。`--auto-mode` フラグで有効化。Phase 1: RP 開始済み (2026-03-12〜) |
+| **Auto Mode (Research Preview, staged rollout)** | breezing, work | `bypassPermissions` の安全な代替。`--auto-mode` フラグで有効化。RP 開始後に段階検証を予定 (2026-03-12〜) |
 | **Per-agent hooks (v2.1.69+)** | agents-v3/ | エージェント定義の frontmatter に `hooks` フィールドを追加。Worker に PreToolUse ガード、Reviewer に Stop ログを設定 |
 | **Agent `isolation: worktree` (v2.1.50+)** | agents-v3/worker | Worker エージェント定義に `isolation: worktree` を追加。並列書き込み時の自動 worktree 分離 |
 | **Compaction 画像保持 (v2.1.70)** | notebookLM, harness-review | サマリーリクエストで画像を保持。プロンプトキャッシュ再利用改善 |
@@ -426,10 +426,11 @@ Harness は 3 フェーズで段階的に移行する:
 | フェーズ | 期間 | デフォルト | `--auto-mode` |
 |---------|------|-----------|---------------|
 | Phase 0 | 〜2026-03-12 | `bypassPermissions` | フラグ無視 |
-| **Phase 1 (現在)** | **2026-03-12〜** | `bypassPermissions` | `autoMode` に切替 |
-| Phase 2 (検証完了後) | TBD | `autoMode` | — |
+| **Phase 0 (pre-RP)** | **RP 開始前** | `bypassPermissions` | 未対応（フラグ無視） |
+| **Phase 1 (RP 開始後)** | **2026-03-12〜** | `bypassPermissions` | Auto Mode を検証 |
+| Phase 2 (検証完了後) | TBD | TBD | 採用可否を再判定 |
 
-Phase 1 検証項目（実施中）:
+Phase 1 検証項目:
 1. PreToolUse / PostToolUse hooks が Auto Mode でも発火するか
 2. Teammate のバックグラウンド spawn で権限プロンプトがブロックされないか
 3. トークンコスト増の実測
@@ -644,7 +645,7 @@ Harness では `.claude/output-styles/harness-ops.md` を提供:
 Harness への反映:
 - Worker/Reviewer/Scaffolder の3エージェント全てに `permissionMode: bypassPermissions` を追加
 - spawn 時の `mode` 指定に依存しない宣言的権限管理を実現
-- Auto Mode Phase 2 移行時は `permissionMode: autoMode` に書き換えるだけで対応可能
+- Auto Mode 採用可否は teammate 実行経路側で再評価する。frontmatter の `permissionMode` は文書化済み値のみを使う
 
 ```yaml
 # agents-v3/worker.md frontmatter
