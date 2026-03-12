@@ -164,6 +164,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "video-scene-generator",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" subagent-tracker start",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "InstructionsLoaded": [
@@ -200,6 +210,16 @@
       },
       {
         "matcher": "scaffolder",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" subagent-tracker stop",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "video-scene-generator",
         "hooks": [
           {
             "type": "command",
