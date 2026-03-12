@@ -8,6 +8,56 @@ Change history for claude-code-harness.
 
 ---
 
+## [3.10.2] - 2026-03-12
+
+### テーマ: Claude Code v2.1.73/v2.1.74 互換対応 — 13 機能追加 + SessionEnd hooks 信頼性向上 + `/output-style` 廃止対応
+
+**CC v2.1.73 と v2.1.74 で追加された新機能・修正 13 項目を Feature Table に統合。SessionEnd hooks のタイムアウト制御が可能になり、セッション終了時のクリーンアップ信頼性が向上。エンタープライズ向け `modelOverrides` 設定と `autoMemoryDirectory` 設定のドキュメントを追加。**
+
+---
+
+#### 1. Feature Table に 13 機能追加（v2.1.73 + v2.1.74）
+
+**今まで**: Feature Table は CC v2.1.72 までの機能のみをカバーしていた。`modelOverrides`、`autoMemoryDirectory`、SessionEnd hooks timeout 制御などの新機能が未登録。
+
+**今後**: 以下を Feature Table（概要テーブル + 機能詳細セクション）に追加:
+- `modelOverrides` 設定 — カスタムプロバイダモデル ID マッピング
+- Bedrock/Vertex/Foundry Opus 4.6 デフォルト化
+- サブエージェントモデル Bedrock/Vertex ダウングレード修正
+- `/output-style` 廃止 → `/config` 移行
+- SessionStart hooks 二重発火修正
+- JSON-output hooks コンテキスト注入修正
+- `autoMemoryDirectory` 設定
+- `/context` コマンド改善
+- `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS`
+- Full model ID 修正
+- Managed policy `ask` rules 修正
+- Streaming API メモリリーク修正
+
+#### 2. SessionEnd hooks タイムアウト制御
+
+**今まで**: SessionEnd hooks は `hook.timeout` の設定に関わらず固定 1.5 秒で強制終了されていた。`session-cleanup`（timeout: 30s）が完了前に kill されるリスクがあった。
+
+**今後**: `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` 環境変数でタイムアウトを制御可能に。Harness では 45000ms（45秒）を推奨。hooks-editing.md に SessionEnd 固有のガイドラインを追加。
+
+```bash
+export CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=45000
+```
+
+#### 3. `/output-style` → `/config` 移行対応
+
+**今まで**: Output Styles の有効化は `/output-style harness-ops` で案内していた。
+
+**今後**: v2.1.73 で `/output-style` が非推奨になったため、`/config` → Output Style 経由の設定を推奨として案内。Feature Table の Output Styles エントリと詳細セクションを更新。
+
+#### 4. CLAUDE.md Feature Table 更新
+
+**今まで**: CLAUDE.md の要約テーブルは CC v2.1.72 までの機能のみ。
+
+**今後**: `modelOverrides`、`/output-style` 廃止、Bedrock Opus 4.6 デフォルト化、`autoMemoryDirectory`、`CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS`、Full model ID 修正、Streaming API メモリリーク修正の 8 機能を追加。
+
+---
+
 ## [3.10.1] - 2026-03-12
 
 ### テーマ: Claude Code 公式ドキュメント深層統合 — 12 機能追加 + Auto Mode rollout 整理 + SubagentStart/Stop matcher 強化

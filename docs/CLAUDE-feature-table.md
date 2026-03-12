@@ -81,7 +81,7 @@
 | **HTML コメント非表示 (v2.1.72)** | 全スキル | CLAUDE.md の `<!-- -->` が自動注入時に非表示。Read ツールでは引き続き可視 |
 | **Bash auto-approval 追加 (v2.1.72)** | guardrails | `lsof`, `pgrep`, `tput`, `ss`, `fd`, `fdfind` が許可リストに追加 |
 | **プロンプトキャッシュ修正 (v2.1.72)** | 全スキル | SDK `query()` のキャッシュ無効化修正。入力トークンコスト最大 12 倍削減 |
-| **Output Styles (v2.1.72+)** | 全スキル | `.claude/output-styles/` にカスタム出力スタイルを定義。`harness-ops` で Plan/Work/Review の構造化出力を提供 |
+| **Output Styles (v2.1.72+)** | 全スキル | `.claude/output-styles/` にカスタム出力スタイルを定義。`harness-ops` で Plan/Work/Review の構造化出力を提供。v2.1.73+ では `/config` 経由で設定 |
 | **`permissionMode` in agent frontmatter (v2.1.72+)** | agents-v3/ | エージェント定義 YAML に `permissionMode` を明示宣言。spawn 時の `mode` 指定が不要に |
 | **Agent Teams 公式ベストプラクティス (v2.1.72+)** | breezing | 5-6 tasks/teammate ガイドライン、`teammateMode` 設定、plan approval パターンを team-composition に反映 |
 | **Sandboxing (`/sandbox`)** | breezing, harness-work | OS レベルのファイルシステム/ネットワーク隔離。`bypassPermissions` の補完レイヤー |
@@ -106,6 +106,18 @@
 | **Plugin CLI コマンド群 (v2.1.72+)** | setup | `claude plugin install/uninstall/enable/disable/update` + `--scope` フラグ。スクリプトによる自動化対応 |
 | **Remote Control 強化 (v2.1.72+)** | 調査済み・将来対応 | `/remote-control` (`/rc`) でセッション内から有効化。`--name`, `--sandbox`, `--verbose` フラグ。`/mobile` で QR コード表示。自動再接続対応 |
 | **`skills` フィールド in agent frontmatter (v2.1.72+)** | agents-v3/ | サブエージェントにスキルをプリロード。Worker に `harness-work`+`harness-review`、Reviewer に `harness-review`、Scaffolder に `harness-setup`+`harness-plan` を注入（実装済み） |
+| **`modelOverrides` 設定 (v2.1.73)** | setup, breezing | モデルピッカーエントリをカスタムプロバイダモデル ID（Bedrock ARN 等）にマッピング。エンタープライズ環境でのモデルガバナンス強化 |
+| **Bedrock/Vertex/Foundry Opus 4.6 デフォルト化 (v2.1.73)** | breezing | Bedrock/Vertex/Microsoft Foundry でデフォルト Opus が 4.1 → 4.6 に変更。クロスプロバイダ一貫性向上 |
+| **サブエージェントモデル Bedrock/Vertex 修正 (v2.1.73)** | breezing, agents-v3/ | `model: opus/sonnet/haiku` 指定時に旧バージョンへダウングレードされる問題を修正。Agent Teams のクラウドプロバイダ運用安定化 |
+| **`/output-style` 廃止 → `/config` (v2.1.73)** | 全スキル | `/output-style` コマンドが非推奨に。出力スタイル設定は `/config` 経由に統一 |
+| **SessionStart hooks 二重発火修正 (v2.1.73)** | hooks | `--resume`/`--continue` 再開時の SessionStart hooks 二重発火を修正。Harness の session-init が1回のみ実行される保証 |
+| **JSON-output hooks コンテキスト注入修正 (v2.1.73)** | hooks | JSON 出力フックが system-reminder メッセージをモデルコンテキストに注入する問題を修正 |
+| **`autoMemoryDirectory` 設定 (v2.1.74)** | session-memory, setup | 自動メモリの保存先をカスタム指定可能に。プロジェクト固有のメモリ分離・共有ディレクトリ運用を実現 |
+| **`/context` コマンド改善 (v2.1.74)** | 全スキル | コンテキストを大量消費しているツールやメモリ問題を特定し、最適化ガイダンスを提示 |
+| **`CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` (v2.1.74)** | hooks | SessionEnd hooks のタイムアウトを設定可能に（以前は固定 1.5 秒で kill）。セッション終了処理の信頼性向上 |
+| **Full model ID 修正 (v2.1.74)** | agents-v3/, breezing | `claude-opus-4-6` 等のフルモデル ID がエージェント frontmatter と JSON config で正常に認識されるように修正 |
+| **Managed policy `ask` rules 修正 (v2.1.74)** | setup | managed policy の `ask` ルールがユーザー `allow` やスキル `allowed-tools` でバイパスされる問題を修正。エンタープライズガバナンス強化 |
+| **Streaming API メモリリーク修正 (v2.1.74)** | breezing, harness-work | Node.js/npm でのストリーミング API レスポンスバッファの無制限 RSS 増加を修正。長時間セッション安定性向上 |
 
 ## 機能詳細
 
@@ -658,8 +670,9 @@ Harness では `.claude/output-styles/harness-ops.md` を提供:
 - エスカレーション（3回ルール）の標準出力形式
 
 ```bash
-# 有効化
-/output-style harness-ops
+# 有効化（v2.1.73+ では /config 経由を推奨）
+/config  # → Output Style → harness-ops を選択
+# レガシー: /output-style harness-ops（非推奨、将来削除予定）
 ```
 
 ### `permissionMode` in agent frontmatter (v2.1.72+)
@@ -1016,6 +1029,135 @@ claude plugin update <plugin> [--scope user|project|local|managed]
 - Scaffolder: `skills: [harness-setup, harness-plan]` — セットアップと計画スキルをプリロード
 
 > `skills` in skill (`context: fork`) の逆パターン。skill が agent を制御するのではなく、agent が skill を読み込む。
+
+### `modelOverrides` 設定 (v2.1.73)
+
+モデルピッカーのエントリをカスタムプロバイダのモデル ID にマッピングする設定。Bedrock ARN、Vertex モデル名、Microsoft Foundry ID などを指定可能。
+
+**設定例**:
+```json
+// settings.json
+{
+  "modelOverrides": {
+    "opus": "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-opus-4-6",
+    "sonnet": "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-sonnet-4-6"
+  }
+}
+```
+
+**Harness での活用**:
+- `availableModels` と組み合わせてエンタープライズ環境でのモデルガバナンスを実現
+- Breezing の Worker/Reviewer がクラウドプロバイダ固有のモデル ID を透過的に使用可能
+
+### Bedrock/Vertex/Foundry Opus 4.6 デフォルト化 (v2.1.73)
+
+CC 2.1.73 で Bedrock、Vertex、Microsoft Foundry でのデフォルト Opus モデルが 4.1 → 4.6 に変更された。
+first-party API では既に Opus 4.6 がデフォルトだったが、クラウドプロバイダ経由では遅れていた。
+
+**Harness への影響**:
+- クラウドプロバイダ経由でも Opus 4.6 の effort levels（low/medium/high）が正しく適用
+- `opusplan` エイリアスがクラウドプロバイダでも期待通り動作
+
+### サブエージェントモデル Bedrock/Vertex 修正 (v2.1.73)
+
+CC 2.1.73 で `model: opus`/`sonnet`/`haiku` を指定したサブエージェントが Bedrock、Vertex、Microsoft Foundry で旧バージョンのモデルにダウングレードされる問題が修正された。
+
+**Harness への影響**:
+- Agent Teams のクラウドプロバイダ運用が安定化
+- Worker (`model: sonnet`) と Reviewer (`model: sonnet`) がクラウドプロバイダでも Sonnet 4.6 を使用
+
+### `/output-style` 廃止 → `/config` (v2.1.73)
+
+CC 2.1.73 で `/output-style` コマンドが非推奨となった。出力スタイルの設定は `/config` メニュー経由に統一される。
+
+**Harness への影響**:
+- `harness-ops` 出力スタイルの有効化方法を `/config` → Output Style に変更
+- 既存の `/output-style harness-ops` は引き続き動作するが、将来削除される可能性あり
+
+```bash
+# 新しい有効化方法
+/config  # → Output Style を選択 → harness-ops を選択
+```
+
+### SessionStart hooks 二重発火修正 (v2.1.73)
+
+CC 2.1.73 で `--resume` や `--continue` でセッション再開する際に SessionStart hooks が2回発火する問題が修正された。
+
+**Harness への影響**:
+- `session-init` と `session-monitor` が再開時に1回のみ実行されることが保証された
+- セッション状態の二重初期化によるメモリ問題が解消
+
+### JSON-output hooks コンテキスト注入修正 (v2.1.73)
+
+CC 2.1.73 で JSON 出力モードのフックが system-reminder メッセージをモデルコンテキストに注入してしまう問題が修正された。
+
+**Harness への影響**:
+- hooks.json 内の `type: "command"` フックが JSON 出力を返した際、その内容がモデルの次の推論に混入しなくなった
+- フックの副作用がモデルの推論品質に影響しない保証が強化
+
+### `autoMemoryDirectory` 設定 (v2.1.74)
+
+CC 2.1.74 で自動メモリの保存先ディレクトリをカスタム指定できる `autoMemoryDirectory` 設定が追加された。
+
+**設定例**:
+```json
+// settings.json
+{
+  "autoMemoryDirectory": "/path/to/custom/memory"
+}
+```
+
+**Harness での活用**:
+- プロジェクト横断のメモリ共有: 複数プロジェクトで同一メモリディレクトリを指定し、学習を共有
+- チーム共有メモリ: NFS/共有ドライブ上のディレクトリを指定して、チーム間で学習を共有
+- `session-memory` スキルのセットアップガイダンスに追加
+
+### `/context` コマンド改善 (v2.1.74)
+
+CC 2.1.74 で `/context` コマンドにアクション可能な提案機能が追加された。コンテキストを大量消費しているツールやメモリ問題を検出し、最適化ガイダンスを提示する。
+
+**Harness での活用**:
+- Breezing の長時間セッションでコンテキスト窓が逼迫した際の診断ツールとして案内
+- Worker のコンテキスト消費パターンの最適化に活用
+
+### `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` (v2.1.74)
+
+CC 2.1.74 で SessionEnd hooks のタイムアウトが設定可能になった。以前は `hook.timeout` の設定に関わらず固定 1.5 秒で kill されていた。
+
+**Harness への影響**:
+- `session-cleanup` フック（timeout: 30s）が確実に完了するようになった
+- 環境変数 `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` でグローバルタイムアウトを制御可能
+
+```bash
+# 例: SessionEnd hooks に最大 60 秒を許可
+export CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=60000
+```
+
+**推奨設定**: Harness の `session-cleanup`（timeout: 30s）に対して `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=45000` を推奨。セッション終了時のクリーンアップ完了を保証しつつ、過度な待機を防ぐ。
+
+### Full model ID 修正 (v2.1.74)
+
+CC 2.1.74 で `claude-opus-4-6` や `claude-sonnet-4-6` 等のフルモデル ID がエージェント frontmatter および JSON config で正しく認識されるようになった。以前はショートネーム（`opus`, `sonnet`）しか有効でなかった。
+
+**Harness への影響**:
+- `--agents` CLI フラグで JSON 指定する際にフルモデル ID が使用可能に
+- エージェント定義で `model: claude-sonnet-4-6` の明示指定が正常動作
+
+### Managed policy `ask` rules 修正 (v2.1.74)
+
+CC 2.1.74 で managed policy の `ask` ルールがユーザーの `allow` ルールやスキルの `allowed-tools` でバイパスされる問題が修正された。
+
+**Harness への影響**:
+- エンタープライズ環境で管理者が設定した `ask` ルールがスキルの `allowed-tools` で迂回されなくなった
+- Harness のスキル frontmatter `allowed-tools` はポリシーの制約内で動作するため、実害なし
+
+### Streaming API メモリリーク修正 (v2.1.74)
+
+CC 2.1.74 で Node.js/npm 環境でのストリーミング API レスポンスバッファの無制限 RSS 増加が修正された。
+
+**Harness への影響**:
+- Breezing の長時間チームセッション（30 分以上）での安定性が大幅に向上
+- 以前は長時間セッションで OOM が発生する可能性があったが、修正により解消
 
 ## 関連ドキュメント
 

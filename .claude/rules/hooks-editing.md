@@ -228,6 +228,7 @@ Execute command type via `run-script.js`:
 | PreToolUse | 30s | Guard processing, file validation |
 | PostToolUse | 5-30s | Depends on processing content |
 | Stop | 20s | Ensure completion of termination processing |
+| SessionEnd | 30s | セッション終了処理。`CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` で制御可能 |
 | UserPromptSubmit | 10-30s | Policy injection, tracking |
 
 ### Special Considerations for Stop Hooks
@@ -235,6 +236,19 @@ Execute command type via `run-script.js`:
 Stop hooks execute at session termination, so:
 - Too short timeouts may interrupt processing
 - 20 seconds or more recommended (D14 decision)
+
+### Special Considerations for SessionEnd Hooks
+
+**CC v2.1.74+**: SessionEnd hooks のタイムアウトは `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` 環境変数で制御可能になった。
+以前は `hook.timeout` の設定に関わらず固定 1.5 秒で kill されていた。
+
+```bash
+# Harness 推奨: session-cleanup（timeout: 30s）に対して 45 秒を設定
+export CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=45000
+```
+
+- Harness の `session-cleanup` フック（hooks.json で timeout: 30s 指定）が確実に完了するために、45 秒以上を推奨
+- 環境変数を設定しない場合、CC のデフォルト値が適用される（v2.1.74+ では hook.timeout 設定を尊重）
 
 ## Hook Structure
 
