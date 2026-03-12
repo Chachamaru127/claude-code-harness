@@ -257,7 +257,7 @@ if [ -f "$SECURITY_TEMPLATE" ]; then
 fi
 
 # Check 3: settings.local.json.template が存在し、defaultMode が documented な permission mode であること
-# NOTE: project template は bypassPermissions を配布し、未文書化の値は許容しない
+# NOTE: Auto Mode の既定化は teammate 実行経路で扱い、project template では documented な bypassPermissions を配布する
 LOCAL_TEMPLATE="$PLUGIN_ROOT/templates/claude/settings.local.json.template"
 if [ -f "$LOCAL_TEMPLATE" ]; then
   if grep -q '"defaultMode"[[:space:]]*:[[:space:]]*"bypassPermissions"' "$LOCAL_TEMPLATE"; then

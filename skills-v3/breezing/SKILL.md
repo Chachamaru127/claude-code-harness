@@ -4,7 +4,7 @@ description: "Agent Teams execution mode — backward-compatible alias for /harn
 description-ja: "Agent Teams 実行モード — /harness-work のチーム協調エイリアス。breezing, チーム実行, 全部やって でトリガー。"
 description-en: "Agent Teams execution mode — backward-compatible alias for /harness-work with team orchestration."
 allowed-tools: ["Agent", "Read", "Write", "Edit", "Bash", "Grep", "Glob", "TaskCreate", "TaskUpdate", "TaskList", "TaskGet", "TeamCreate", "TeamDelete", "SendMessage", "WebSearch", "WebFetch"]
-argument-hint: "[all|N-M|--codex|--parallel N|--no-discuss]"
+argument-hint: "[all|N-M|--codex|--parallel N|--no-commit|--no-discuss|--auto-mode|--bypass-permissions]"
 user-invocable: true
 ---
 
@@ -15,8 +15,8 @@ user-invocable: true
 ## Quick Reference
 
 ```bash
-/breezing                        # スコープを聞いてから実行
-/breezing all                    # Plans.md 全タスクを完走
+/breezing                        # Auto Mode 既定でスコープを聞いてから実行
+/breezing all                    # Auto Mode 既定で Plans.md 全タスクを完走
 /breezing 3-6                    # タスク3〜6を完走
 /breezing --codex all            # Codex CLI で全タスク完走
 /breezing --parallel 2 all       # 2並列で全タスク完走
@@ -33,7 +33,8 @@ user-invocable: true
 | `--parallel N` | Implementer 並列数 | auto |
 | `--no-commit` | 自動コミット抑制 | false |
 | `--no-discuss` | 計画議論スキップ | false |
-| `--auto-mode` | Auto Mode で権限判断（bypassPermissions の代替） | false |
+| `--auto-mode` | Auto Mode を明示再指定（既定 ON、後方互換用） | true |
+| `--bypass-permissions` | Auto Mode を無効化し、legacy teammate runtime に戻す | false |
 
 ## Execution
 
@@ -42,6 +43,7 @@ user-invocable: true
 1. **引数をそのまま `/harness-work` に渡す**
 2. **Agent Teams モードを強制** — TeamCreate → Worker spawn → Reviewer spawn の三者分離
 3. **Lead は delegate 専念** — コードを直接書かない
+4. **Auto Mode を既定有効化** — `--auto-mode` は旧ドキュメント互換の明示フラグとして受け付ける
 
 ### `/harness-work` との違い
 
@@ -57,10 +59,10 @@ user-invocable: true
 | Role | Agent Type | Mode | 責務 |
 |------|-----------|------|------|
 | Lead | (self) | - | 調整・指揮・タスク分配 |
-| Worker ×N | `claude-code-harness:worker` | `bypassPermissions` / Auto Mode* | 実装 |
-| Reviewer | `claude-code-harness:reviewer` | `bypassPermissions` / Auto Mode* | 独立レビュー |
+| Worker ×N | `claude-code-harness:worker` | Auto Mode（既定） / `bypassPermissions`* | 実装 |
+| Reviewer | `claude-code-harness:reviewer` | Auto Mode（既定） / `bypassPermissions`* | 独立レビュー |
 
-> *`--auto-mode` 指定時は Auto Mode を有効化する。frontmatter の `permissionMode` は `bypassPermissions` のまま維持する。
+> *project template と frontmatter には文書化済みの `bypassPermissions` を維持しつつ、Breezing の teammate 実行経路では Auto Mode を既定挙動として扱う。必要時のみ `--bypass-permissions` で legacy 運用へ戻す。
 
 ### Codex Mode (`--codex`)
 
@@ -77,7 +79,7 @@ rm -f "$CODEX_PROMPT"
 ## Flow Summary
 
 ```
-/breezing [scope] [--codex] [--parallel N] [--no-discuss]
+/breezing [scope] [--codex] [--parallel N] [--no-discuss] [--bypass-permissions]
     │
     ↓ Load /harness-work skill with Agent Teams mode
     │

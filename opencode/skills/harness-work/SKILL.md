@@ -3,7 +3,7 @@ name: harness-work
 description: "Unified execution skill for Harness v3. Implements Plans.md tasks from single task to full parallel team runs. Use when user mentions: implement, execute, /harness-work, /work, do everything, build features, run tasks, breezing, team run, --codex, --parallel. Do NOT load for: planning, code review, release, or setup."
 description-ja: "Harness v3 統合実行スキル。Plans.md タスクを1件から全並列チーム実行まで担当。以下で起動: 実装して、実行して、/harness-work、/work、全部やって、breezing、チーム実行、--codex、--parallel。プランニング・レビュー・リリース・セットアップには使わない。"
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task"]
-argument-hint: "[all] [task-number|range] [--codex] [--parallel N] [--no-commit] [--resume id] [--breezing]"
+argument-hint: "[all] [task-number|range] [--codex] [--parallel N] [--no-commit] [--resume id] [--breezing] [--auto-mode|--bypass-permissions]"
 ---
 
 # Harness Work (v3)
@@ -26,9 +26,9 @@ Harness v3 の統合実行スキル。
 | `/execute 3` | solo | タスク3だけ即実行 |
 | `/execute --parallel 5` | parallel | 5ワーカーで並列実行（強制） |
 | `/execute --codex` | codex | Codex CLI に委託（明示時のみ） |
-| `/execute --breezing` | breezing | Agent Teams でチーム実行（強制） |
+| `/execute --breezing` | breezing | Agent Teams でチーム実行（Auto Mode 既定） |
 
-## Auto Mode Detection（フラグなし時の自動判定）
+## Execution Mode Auto Selection（フラグなし時の自動判定）
 
 明示的なモードフラグ（`--parallel`, `--breezing`, `--codex`）がない場合、
 対象タスク数に応じて最適なモードを自動選択する:
@@ -62,7 +62,8 @@ Harness v3 の統合実行スキル。
 | `--breezing` | Agent Teams でチーム実行 | false |
 | `--no-tdd` | TDD フェーズスキップ | false |
 | `--no-simplify` | Auto-Refinement スキップ | false |
-| `--auto-mode` | Auto Mode で権限判断（Breezing 時のみ有効） | false |
+| `--auto-mode` | Auto Mode を明示再指定（Breezing では既定 ON、後方互換用） | true (Breezing) |
+| `--bypass-permissions` | Breezing 時のみ Auto Mode を無効化し、legacy teammate runtime に戻す | false |
 
 > **Token Optimization (v2.1.69+)**: git 操作を伴わない軽量タスクでは
 > plugin settings の `includeGitInstructions: false` を有効にして
@@ -158,6 +159,11 @@ rm -f "$CODEX_PROMPT"
 ### Breezing モード（4 件以上で自動選択 / `--breezing` で強制）
 
 Agent Teams（Worker + Reviewer）でチーム実行。
+
+**権限ポリシー**:
+- Breezing では **Auto Mode を既定で有効化** する
+- `--auto-mode` は旧ドキュメントとの後方互換のため受け付けるが、Breezing では既定挙動と同じ
+- `permissions.defaultMode` や agent frontmatter の `permissionMode` には未文書化の `autoMode` 値を書かない
 
 > **CC v2.1.69+**: nested teammates はプラットフォーム側で禁止されるため、
 > Worker/Reviewer プロンプトには冗長な nested 防止文言を追加しない。

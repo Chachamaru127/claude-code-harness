@@ -10,9 +10,9 @@ Change history for claude-code-harness.
 
 ## [3.10.1] - 2026-03-12
 
-### テーマ: Claude Code 公式ドキュメント深層統合 — 13 機能追加 + SubagentStart/Stop matcher 強化
+### テーマ: Claude Code 公式ドキュメント深層統合 — 12 機能追加 + Auto Mode 既定化 + SubagentStart/Stop matcher 強化
 
-**公式ドキュメント 60 ページの精査により発見した未追跡機能 13 項目を Feature Table に追加。SubagentStart/SubagentStop hooks に agent type 別 matcher を追加し、Worker/Reviewer/Scaffolder の起動・停止を個別にトラッキング可能に。**
+**公式ドキュメント 60 ページの精査により発見した未追跡機能 12 項目を Feature Table に追加。Breezing の teammate 実行では Auto Mode を既定化しつつ、SubagentStart/SubagentStop hooks に agent type 別 matcher を追加して Worker/Reviewer/Scaffolder/Video Generator の起動・停止を個別にトラッキング可能に。**
 
 ---
 
@@ -20,9 +20,9 @@ Change history for claude-code-harness.
 
 **今まで**: `SubagentStart`/`SubagentStop` hooks は全エージェント一律で `subagent-tracker` を起動。team-composition.md では「SubagentStart: 未実装」と誤記載。
 
-**今後**: agent type 別の matcher（`worker`, `reviewer`, `scaffolder`）を追加。各エージェントの起動・停止を個別にトラッキングし、ロール別のメトリクス収集を可能に。team-composition.md の Quality Gate Hooks テーブルも実態に合わせて更新。
+**今後**: agent type 別の matcher（`worker`, `reviewer`, `scaffolder`, `video-scene-generator`）を追加。各エージェントの起動・停止を個別にトラッキングし、ロール別のメトリクス収集を可能に。team-composition.md の Quality Gate Hooks テーブルも実態に合わせて更新。
 
-#### 2. Feature Table に 13 機能追加
+#### 2. Feature Table に 12 機能追加
 
 **今まで**: Chrome Integration, LSP サーバー統合, Task Dependencies, `/btw`, Plugin CLI コマンド群等の公式ドキュメント記載機能が Feature Table に未登録。
 
@@ -45,6 +45,12 @@ Change history for claude-code-harness.
 **今まで**: CLAUDE.md の要約テーブルに Chrome Integration, LSP, matcher, Task Dependencies 等が含まれていなかった。
 
 **今後**: 最もインパクトの大きい 6 機能を CLAUDE.md の要約テーブルに追加。
+
+#### 4. Breezing の Auto Mode を既定化
+
+**今まで**: Auto Mode は `--auto-mode` 指定時だけ有効化する段階移行扱いで、Breezing の既定値は `bypassPermissions` 前提だった。
+
+**今後**: `/breezing` と `/harness-work --breezing` は teammate 実行時に Auto Mode を既定で有効化する。`--auto-mode` は後方互換の明示再指定として維持し、project template / frontmatter には公式 docs に載っている `bypassPermissions` を残す。
 
 ---
 
@@ -540,7 +546,7 @@ Purpose: 自己修正ループ失敗時に「止まるだけ」から「次の�
 ### Changed
 - **PreToolUse breezing role guard**: role lookup を `agent_id` 優先・`session_id` fallback に拡張
 - **SKILL reference path policy**: skills/codex/opencode の SKILL.md で references 参照を `${CLAUDE_SKILL_DIR}` ベースへ更新
-- **check-consistency**: `defaultMode=autoMode` も許容（Research Preview 対応）
+- **check-consistency**: project template の `defaultMode` baseline を検証し、未文書化の値を配布しない方針を明記
 - **Feature docs**: CLAUDE.md / README / README_ja / docs/CLAUDE-feature-table.md / docs/CLAUDE-commands.md 更新
 
 ### Fixed
@@ -1859,7 +1865,9 @@ Purpose: 自己修正ループ失敗時に「止まるだけ」から「次の�
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.9.0...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.10.1...HEAD
+[3.10.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.10.0...v3.10.1
+[3.10.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.9.0...v3.10.0
 [3.9.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.7.2...v3.9.0
 [3.7.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.7.1...v3.7.2
 [3.7.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v3.7.0...v3.7.1

@@ -140,7 +140,7 @@ Lead の spawn コードが `mode` を渡し忘れても安全。
 4. Lead が常に監視
 5. `Agent(worker, reviewer)` で spawn 可能なエージェント種別を制限
 
-### Auto Mode（Research Preview, staged rollout）
+### Auto Mode（Breezing default）
 
 `bypassPermissions` の安全な代替として Anthropic が提供する新しい権限運用。
 Claude が権限判断を自動で行い、プロンプトインジェクション対策も内蔵する。
@@ -151,33 +151,32 @@ Claude が権限判断を自動で行い、プロンプトインジェクショ�
 | 安全層 | hooks + disallowedTools | 内蔵対策 + hooks + disallowedTools |
 | トークンコスト | 追加なし | 微増 |
 | レイテンシ | 追加なし | 微増 |
-| Teammate 互換 | 検証済み | 要検証（バックグラウンド実行での動作確認が必要） |
+| Teammate 互換 | 検証済み | Harness の teammate 実行既定として採用 |
 
-#### 有効化方法
+#### 既定動作
 
-`--auto-mode` フラグを `/breezing` または `/harness-work --breezing` に渡す:
+`/breezing` と `/harness-work --breezing` は teammate 実行時に **Auto Mode を既定で有効化** する。
+`--auto-mode` フラグは旧ドキュメント互換の明示再指定として受け付ける:
 
 ```bash
-/breezing --auto-mode all     # Auto Mode で全タスク完走
-/execute --breezing --auto-mode all
+/breezing all                 # Auto Mode 既定で全タスク完走
+/breezing --auto-mode all     # 明示再指定（既定挙動と同じ）
+/execute --breezing all
 ```
 
 **想定動作**: Worker/Reviewer の frontmatter は `permissionMode: bypassPermissions` のまま維持し、
 Auto Mode の有効化は teammate 実行経路側で行う。hooks と disallowedTools はそのまま維持。
 
-#### 移行方針
+#### 設定ポリシー
 
-| フェーズ | 期間 | デフォルト | `--auto-mode` |
-|---------|------|-----------|---------------|
-| **Phase 0 (pre-RP)** | **RP 開始前** | `bypassPermissions` | 未対応（フラグ無視） |
-| **Phase 1 (RP 開始後)** | **2026-03-12〜** | `bypassPermissions` | Auto Mode を検証 |
-| Phase 2 (検証完了後) | TBD | TBD | 採用可否を再判定 |
+| レイヤー | 採用値 | 理由 |
+|---------|--------|------|
+| project template (`permissions.defaultMode`) | `bypassPermissions` | 公式 docs の documented permission modes に `autoMode` が含まれないため |
+| agent frontmatter (`permissionMode`) | `bypassPermissions` | frontmatter 側も documented な permission mode のみを宣言するため |
+| teammate 実行経路 | **Auto Mode（既定）** | Harness のチーム実行をより安全側に寄せるため |
+| `--auto-mode` フラグ | 明示再指定 | 旧 docs / 既存オペレーションとの後方互換 |
 
-Phase 1 では以下を確認してから Phase 2 への移行を判断する:
-
-1. PreToolUse / PostToolUse hooks が Auto Mode でも従来どおり発火するか
-2. Teammate のバックグラウンド spawn で権限プロンプトがブロックされないか
-3. Breezing 並列実行でのトークンコスト増の実測
+この分離により、配布テンプレートでは未文書化の設定値を避けつつ、Breezing の実行既定だけを Auto Mode に切り替える。
 
 ### Agent Teams 公式ドキュメント化
 
@@ -250,7 +249,7 @@ Harness では Reviewer の `REQUEST_CHANGES` → Worker 修正ループと補�
 |------|-------------|--------------|
 | `TeammateIdle` | `teammate-idle.sh` (実装済み) | exit 2 で feedback + 継続指示 |
 | `TaskCompleted` | `task-completed.sh` (実装済み) | exit 2 で完了拒否 + feedback |
-| `SubagentStart` | 実装済み（subagent-tracker + matcher: worker/reviewer/scaffolder） | settings.json で agent type 別にフィルタリング |
+| `SubagentStart` | 実装済み（subagent-tracker + matcher: worker/reviewer/scaffolder/video-scene-generator） | settings.json で agent type 別にフィルタリング |
 | `SubagentStop` | 実装済み（subagent-tracker + matcher + agent frontmatter Stop hook） | settings.json + frontmatter の二層監視 |
 
 ### チームサイズガイドライン

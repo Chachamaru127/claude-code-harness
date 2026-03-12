@@ -4,6 +4,17 @@
 
 ---
 
+## Maintenance: PR59/60 Auto Mode default merge prep
+
+作成日: 2026-03-12
+目的: PR #59 / #60 を Auto Mode 既定方針で merge できるよう、skill 正本・docs・README 版表記・mirror を同期し、validate の残ブロッカーを解消する
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| M5 | Breezing の Auto Mode 既定化を teammate 実行層に統一し、README / feature docs / CHANGELOG / skill mirror を同期して merge-ready に戻す | `./scripts/sync-v3-skill-mirrors.sh --check` / `./scripts/ci/check-consistency.sh` / `./tests/validate-plugin.sh` が通り、README 英日・CHANGELOG・skills-v3/mirror が一致している | - | cc:WIP |
+
+---
+
 ## Maintenance: PR58 pre-merge stabilization
 
 作成日: 2026-03-11

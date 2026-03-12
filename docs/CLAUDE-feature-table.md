@@ -48,7 +48,7 @@
 | **`/reload-plugins` (v2.1.69)** | 全スキル | スキル・フック編集後の即時反映 |
 | **`includeGitInstructions: false` (v2.1.69)** | work, breezing | git 指示が不要な場面のトークン削減 |
 | **`git-subdir` plugin source (v2.1.69)** | setup, release | サブディレクトリ管理された plugin source に対応 |
-| **Auto Mode (Research Preview, staged rollout)** | breezing, work | `bypassPermissions` の安全な代替。`--auto-mode` フラグで有効化。RP 開始後に段階検証を予定 (2026-03-12〜) |
+| **Auto Mode (Breezing default)** | breezing, work | `bypassPermissions` の安全な代替。Breezing (`/breezing`, `/execute --breezing`) では既定で有効化し、`--auto-mode` は明示再指定用に維持 |
 | **Per-agent hooks (v2.1.69+)** | agents-v3/ | エージェント定義の frontmatter に `hooks` フィールドを追加。Worker に PreToolUse ガード、Reviewer に Stop ログを設定 |
 | **Agent `isolation: worktree` (v2.1.50+)** | agents-v3/worker | Worker エージェント定義に `isolation: worktree` を追加。並列書き込み時の自動 worktree 分離 |
 | **Compaction 画像保持 (v2.1.70)** | notebookLM, harness-review | サマリーリクエストで画像を保持。プロンプトキャッシュ再利用改善 |
@@ -96,7 +96,7 @@
 | **`CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING`** | harness-work | Adaptive Reasoning 無効化で固定 thinking budget に復帰。予測可能なコスト制御 |
 | **Chrome Integration (`--chrome`, beta)** | harness-work, harness-review | ブラウザ自動化でUI テスト・フォーム入力・コンソールデバッグ。`/chrome` でセッション内切替 |
 | **LSP サーバー統合 (`.lsp.json`)** | setup | Language Server Protocol で型情報・診断・参照検索をリアルタイム提供。`pyright-lsp`, `typescript-lsp`, `rust-lsp` 利用可能 |
-| **`SubagentStart`/`SubagentStop` matcher (v2.1.72+)** | breezing, hooks | settings.json レベルで agent type 別にサブエージェントライフサイクルを監視。Worker/Reviewer/Scaffolder を個別トラッキング |
+| **`SubagentStart`/`SubagentStop` matcher (v2.1.72+)** | breezing, hooks | settings.json レベルで agent type 別にサブエージェントライフサイクルを監視。Worker/Reviewer/Scaffolder/Video Generator を個別トラッキング |
 | **Agent Teams: Task Dependencies** | breezing | タスク間依存の自動管理。依存完了で blocked タスクが自動 unblock。ファイルロックで claiming 競合防止 |
 | **`--teammate-mode` CLI フラグ (v2.1.72+)** | breezing | セッション単位で `in-process`/`tmux` 表示モードを切替。`claude --teammate-mode in-process` |
 | **`CLAUDE_CODE_DISABLE_BACKGROUND_TASKS` (v2.1.72+)** | setup | `=1` で全バックグラウンドタスク機能を無効化。セキュリティポリシーでバックグラウンド実行を制限する環境向け |
@@ -440,22 +440,24 @@ Harness では Worker エージェントに `isolation: worktree` を追加。
 `memory: project` と組み合わせることで、worktree 間で Agent Memory（MEMORY.md）が共有され、
 並列 Worker が同一の学習内容を参照・更新可能。
 
-### Auto Mode 段階移行計画
+### Auto Mode 既定化ポリシー
 
-Auto Mode は CC Research Preview として 2026-03-12 に開始。
-Harness は 3 フェーズで段階的に移行する:
+Auto Mode は Claude Code の team execution をより安全側に寄せるため、Harness では Breezing の既定挙動として採用する。
+一方で project template や frontmatter には、公式 docs に載っている permission mode のみを残す。
 
-| フェーズ | 期間 | デフォルト | `--auto-mode` |
-|---------|------|-----------|---------------|
-| Phase 0 | 〜2026-03-12 | `bypassPermissions` | フラグ無視 |
-| **Phase 0 (pre-RP)** | **RP 開始前** | `bypassPermissions` | 未対応（フラグ無視） |
-| **Phase 1 (RP 開始後)** | **2026-03-12〜** | `bypassPermissions` | Auto Mode を検証 |
-| Phase 2 (検証完了後) | TBD | TBD | 採用可否を再判定 |
+| レイヤー | 採用値 | 理由 |
+|---------|--------|------|
+| project template (`permissions.defaultMode`) | `bypassPermissions` | documented permission modes に `autoMode` が含まれないため |
+| agent frontmatter (`permissionMode`) | `bypassPermissions` | 宣言的設定は documented 値のみを使うため |
+| teammate 実行経路 | **Auto Mode（既定）** | Breezing の安全性を上げつつ、template 側の互換性を壊さないため |
+| `--auto-mode` | 明示再指定 | 旧 docs / 運用との後方互換 |
 
-Phase 1 検証項目:
-1. PreToolUse / PostToolUse hooks が Auto Mode でも発火するか
-2. Teammate のバックグラウンド spawn で権限プロンプトがブロックされないか
-3. トークンコスト増の実測
+既定コマンド例:
+
+```bash
+/breezing all
+/execute --breezing all
+```
 
 ### Subagent `background` フィールド
 
@@ -667,7 +669,7 @@ Harness では `.claude/output-styles/harness-ops.md` を提供:
 Harness への反映:
 - Worker/Reviewer/Scaffolder の3エージェント全てに `permissionMode: bypassPermissions` を追加
 - spawn 時の `mode` 指定に依存しない宣言的権限管理を実現
-- Auto Mode 採用可否は teammate 実行経路側で再評価する。frontmatter の `permissionMode` は文書化済み値のみを使う
+- Auto Mode は teammate 実行経路で既定採用する。frontmatter の `permissionMode` と project template の `defaultMode` は文書化済み値のみを使う
 
 ```yaml
 # agents-v3/worker.md frontmatter
@@ -913,7 +915,7 @@ settings.json レベルでサブエージェントのライフサイクルを ag
 公式ドキュメントで matcher にエージェント名を指定するパターンが文書化された。
 
 **Harness の実装**:
-- `SubagentStart`: Worker/Reviewer/Scaffolder の起動を個別にトラッキング
+- `SubagentStart`: Worker/Reviewer/Scaffolder/Video Generator の起動を個別にトラッキング
 - `SubagentStop`: 各エージェントの完了を個別に記録
 - 既存の `subagent-tracker` Node.js スクリプトに matcher を追加
 
