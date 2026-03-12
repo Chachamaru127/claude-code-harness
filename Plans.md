@@ -11,7 +11,7 @@
 
 | Task | 内容 | DoD | Depends | Status |
 |------|------|-----|---------|--------|
-| M5 | Breezing の Auto Mode 既定化を teammate 実行層に統一し、README / feature docs / CHANGELOG / skill mirror を同期して merge-ready に戻す | `./scripts/sync-v3-skill-mirrors.sh --check` / `./scripts/ci/check-consistency.sh` / `./tests/validate-plugin.sh` が通り、README 英日・CHANGELOG・skills-v3/mirror が一致している | - | cc:WIP |
+| M5 | Breezing の Auto Mode 既定化を teammate 実行層に統一し、README / feature docs / CHANGELOG / skill mirror を同期して merge-ready に戻す | `./scripts/sync-v3-skill-mirrors.sh --check` / `./scripts/ci/check-consistency.sh` / `./tests/validate-plugin.sh` が通り、README 英日・CHANGELOG・skills-v3/mirror が一致している | - | cc:完了 [6983808] |
 
 ---
 
