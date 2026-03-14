@@ -71,7 +71,7 @@
 | **`CLAUDE_CODE_DISABLE_CRON` 環境変数 (v2.1.71+)** | setup | `=1` で Cron スケジューラを無効化。セキュリティポリシーで定期実行を制限する環境向け |
 | **`--agents` CLI フラグ (v2.1.71+)** | breezing, CI | JSON でセッションレベルのエージェント定義を渡す。ディスクに保存されない一時的なエージェント構成 |
 | **`ExitWorktree` ツール (v2.1.72)** | breezing, harness-work | プログラム的に worktree セッションを離脱するツール |
-| **Effort levels 簡素化 (v2.1.72)** | harness-work | `max` 廃止、`low/medium/high` の3段階 + `○ ◐ ●` シンボル。`/effort auto` でデフォルトリセット |
+| **Effort levels 簡素化 (v2.1.72)** | harness-work | 永続レベルは `low/medium/high`（`○ ◐ ●`）。`max` は Opus 4.6 のセッション専用オプションとして存続。`/effort auto` でデフォルトリセット |
 | **Agent tool `model` パラメータ復活 (v2.1.72)** | breezing | per-invocation model override が再度利用可能に |
 | **`/plan` description 引数 (v2.1.72)** | harness-plan | `/plan fix the auth bug` のように説明付きでプランモードに入れる |
 | **並列ツール呼び出し修正 (v2.1.72)** | breezing, harness-work | Read/WebFetch/Glob 失敗が sibling 呼び出しをキャンセルしなくなった（Bash エラーのみカスケード） |
@@ -92,6 +92,11 @@
 | **Code Review (managed service)** | harness-review | マルチエージェント PR レビュー + `REVIEW.md`。Teams/Enterprise 向け Research Preview |
 | **Status Line (`/statusline`)** | 全スキル | カスタムシェルスクリプトで状態表示バー。コンテキスト使用量・コスト・git 状態を常時モニタリング |
 | **1M Context Window (`sonnet[1m]`)** | harness-review, breezing | 大規模コードベース分析に 100 万トークンコンテキスト窓を活用 |
+| **1M Context Window (`opus[1m]`) (v2.1.75)** | breezing, harness-review | Opus 4.6 の 1M コンテキスト窓。Max/Team/Enterprise では自動昇格。Lead セッションでの包括的分析に最適 |
+| **Memory file timestamps (v2.1.75)** | session-memory, memory | メモリファイルに最終更新タイムスタンプを自動付与。Claude が鮮度を判断し、古い記憶と新しい記憶を区別 |
+| **Async hook suppression (v2.1.75)** | breezing, hooks | 非同期フック完了メッセージをデフォルト非表示に。Breezing 並列実行時のノイズ削減。`--verbose` で表示可能 |
+| **`/effort max` session-only (v2.1.75+)** | harness-work, harness-plan | Opus 4.6 限定の最深推論モード。`low/medium/high` は永続だが `max` はセッション単位で自動リセット |
+| **Token estimation fix (v2.1.75)** | 全スキル | thinking/tool_use ブロックのトークン過大推定を修正。早すぎるコンパクションを防止し、長時間セッションの安定性向上 |
 | **Per-model Prompt Caching Control** | 全スキル | `DISABLE_PROMPT_CACHING_*` でモデル別にキャッシュ制御。デバッグ・コスト最適化 |
 | **`CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING`** | harness-work | Adaptive Reasoning 無効化で固定 thinking budget に復帰。予測可能なコスト制御 |
 | **Chrome Integration (`--chrome`, beta)** | harness-work, harness-review | ブラウザ自動化でUI テスト・フォーム入力・コンソールデバッグ。`/chrome` でセッション内切替 |
@@ -564,12 +569,12 @@ Harness での活用:
 
 ### Effort levels 簡素化 (v2.1.72)
 
-CC 2.1.72 で effort レベルが `low/medium/high` の3段階に簡素化された。`max` レベルが廃止され、表示シンボルが `○ ◐ ●` に統一された。`/effort auto` でデフォルト（medium）にリセット可能。
+CC 2.1.72 で永続する effort レベルが `low/medium/high` の3段階に簡素化された。表示シンボルが `○ ◐ ●` に統一。`/effort auto` でデフォルト（medium）にリセット可能。`max` はセッション専用オプションとして Opus 4.6 限定で存続（v2.1.75 model-config ドキュメントで確認）。
 
 Harness への影響:
 - `ultrathink` キーワードによる high effort 注入は引き続き有効（変更なし）
 - harness-work のスコアリングロジックに変更は不要（ultrathink → high effort の対応が維持）
-- ドキュメント上の `max` への言及を `high` に統一
+- `max` は永続設定に保存されないため、セッション単位でのみ有効。`/effort max` または `--effort max` で手動指定
 
 ### Agent tool `model` パラメータ復活 (v2.1.72)
 
@@ -1359,6 +1364,75 @@ claude -n "breezing-$(date +%Y%m%d-%H%M%S)"
 **Harness での活用**:
 - 長時間セッションでの ToolSearch 経由ツールの安定性が向上
 - Breezing のコンパクション後もMCPツールが正常に動作
+
+## Claude Code 2.1.75 新機能
+
+### 1M Context Window (`opus[1m]`)
+
+**動作概要**: Opus 4.6 で 1M トークンコンテキスト窓が利用可能に。Max / Team / Enterprise プランでは Opus が自動的に 1M コンテキストに昇格（追加設定不要）。Pro プランでは extra usage 経由でアクセス。`/model opus[1m]` で明示的に有効化も可能。
+
+**Harness での活用**:
+- Breezing の Lead セッションに `opus[1m]` を使用し、大規模コードベースの Plan フェーズで包括的な分析を実行
+- `harness-review` で 1M コンテキストの Opus を使用し、多数のファイルにまたがるレビューを一度に完了
+- `opusplan` との使い分け: `opusplan` は Plan/Execute の自動切替、`opus[1m]` は Plan フェーズに Opus を維持しつつ 1M コンテキスト
+
+**コード例**:
+```bash
+# 明示的に 1M Opus を指定
+claude --model opus[1m]
+
+# セッション内で切替
+/model opus[1m]
+
+# 環境変数でデフォルト設定（1M 付き）
+export ANTHROPIC_DEFAULT_OPUS_MODEL='claude-opus-4-6[1m]'
+```
+
+**プラン別の利用可否**:
+| プラン | Opus 1M | Sonnet 1M |
+|--------|---------|-----------|
+| Max / Team / Enterprise | サブスクリプション含む | Extra usage |
+| Pro | Extra usage | Extra usage |
+| API / Pay-as-you-go | フルアクセス | フルアクセス |
+
+### Memory file timestamps
+
+**動作概要**: CC 2.1.75 でメモリファイルに最終更新タイムスタンプが自動付与されるようになった。Claude がメモリを読む際に「この情報はいつ記録されたか」を判断でき、古い記憶と新しい記憶を区別できる。
+
+**Harness での活用**:
+- `session-memory` スキルがメモリの鮮度を判断し、古い情報を優先的にアーカイブ
+- Agent Memory（`.claude/agent-memory/`）の MEMORY.md でも鮮度判断が向上
+- 「3ヶ月前に記録されたビルド手順」と「昨日記録されたビルド手順」を自動的に後者優先
+
+### Async hook suppression
+
+**動作概要**: CC 2.1.75 で非同期フック（`async: true`）の完了メッセージがデフォルトで非表示になった。`--verbose` モードまたはトランスクリプトモードで表示可能。
+
+**Harness での活用**:
+- Breezing のチーム実行中に非同期フック（OTel メトリクス送信、Slack 通知等）の完了メッセージが Lead のコンテキストを汚さなくなった
+- hooks.json の `"async": true` 設定のフックが、ノイズなしにバックグラウンドで動作
+- デバッグ時は `--verbose` でフック完了を確認可能
+
+### `/effort max` session-only (Opus 4.6)
+
+**動作概要**: `low/medium/high` の3段階は永続設定だが、`max` は Opus 4.6 限定のセッション専用オプションとして存続している。`max` はトークン支出に制約なく最深推論を行うため、レスポンスは遅くコストも高い。セッション終了で自動リセットされる。
+
+**Harness での活用**:
+- 複雑なアーキテクチャ決定やセキュリティレビューで `/effort max` を手動指定
+- `harness-plan` で Plan フェーズの初期分析に一時的に `max` を適用し、タスク分解の精度を最大化
+- `harness-work` の ultrathink スコアリング（閾値 3 以上で high 注入）とは別レイヤー: ultrathink は自動、`/effort max` は手動
+- 永続しないためセッション終了後にコスト影響なし
+
+**注意**: `max` は永続設定 (`settings.json`, `effortLevel`) には保存されない。`/effort max` または `--effort max` でセッション単位のみ有効。
+
+### Token estimation fix
+
+**動作概要**: CC 2.1.75 で thinking ブロックと `tool_use` ブロックのトークン数が過大に推定されていた問題が修正された。この過大推定により、実際にはコンテキスト窓に余裕があるにもかかわらず早期にコンパクションが発火していた。
+
+**Harness への影響**:
+- 長時間セッション（特に Breezing の Lead）でのコンパクション頻度が低下
+- Worker エージェントがより多くのファイルを読み込んだ後もコンテキスト窓内で作業を継続可能
+- `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` 設定との組み合わせで、より精密なコンパクション制御が可能に
 
 ## 関連ドキュメント
 

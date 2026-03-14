@@ -7,9 +7,16 @@ model: sonnet
 permissionMode: bypassPermissions
 color: green
 memory: project
+isolation: worktree
 skills:
   - harness-setup
   - harness-plan
+hooks:
+  Stop:
+    - hooks:
+        - type: command
+          command: "echo 'Scaffolder session completed' >&2"
+          timeout: 5
 ---
 
 # Scaffolder Agent (v3)

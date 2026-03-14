@@ -6,6 +6,30 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### テーマ: Claude Code 2.1.75 機能の統合 + scaffolder エージェント安全化
+
+**v2.1.75 で追加された5つの機能を Feature Table に追加し、scaffolder エージェントの並列実行安全性を向上。**
+
+---
+
+#### 1. Feature Table に v2.1.75 の5機能を追加
+
+**今まで**: Feature Table のバージョン表記は `2.1.76+` だが、v2.1.75 で追加された `opus[1m]` モデルエイリアス、メモリファイルタイムスタンプ、非同期フック抑制、`/effort max` セッション専用オプション、トークン推定修正が未記載だった。
+
+**今後**: `CLAUDE.md` と `docs/CLAUDE-feature-table.md` の両方に5エントリを追加。各機能の Harness での活用方法、コード例、プラン別利用可否を詳細に記述。
+
+#### 2. Effort levels エントリの修正
+
+**今まで**: v2.1.72 で `max` が「廃止」と記載されていたが、公式 model-config ドキュメントでは Opus 4.6 限定のセッション専用オプションとして存続していることが確認された。
+
+**今後**: Feature Table の effort levels エントリを修正。永続レベルは `low/medium/high`（`○ ◐ ●`）で、`max` は Opus 4.6 のセッション単位オプションとして明記。`/effort max` または `--effort max` でセッション単位のみ有効化。
+
+#### 3. scaffolder エージェントに `isolation: worktree` と Stop hook を追加
+
+**今まで**: scaffolder は Write/Edit/Bash 権限を持つにもかかわらず、`isolation: worktree` が未設定だった。Worker は worktree 分離されているが、scaffolder は分離されておらず、Breezing 並列実行時にファイル衝突リスクがあった。また、Stop hook が未設定で reviewer のようなセッション完了ログが記録されなかった。
+
+**今後**: `agents-v3/scaffolder.md` に `isolation: worktree` を追加し、並列実行時の安全性を確保。Stop hook を追加してセッション完了を記録。Worker（worktree + PreToolUse hooks）、Reviewer（hooks のみ、Read-only のため worktree 不要）と同水準の安全設計に統一。
+
 ## [3.10.3] - 2026-03-14
 
 ### Changed
