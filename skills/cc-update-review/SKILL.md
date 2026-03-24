@@ -1,6 +1,6 @@
 ---
 name: cc-update-review
-description: "CC アプデ統合の品質ガードレール。Feature Table 追加時に「書いただけ」を検出し、実装案を強制出力。Use when reviewing CC update integration PRs. Do NOT load for: implementation work, standard reviews, setup."
+description: "Quality guardrail for CC update integration. Detects doc-only Feature Table additions and requires implementation proposals. Internal use only."
 description-en: "Quality guardrail for CC update integration. Detects doc-only Feature Table additions and requires implementation proposals. Internal use only."
 description-ja: "CC アプデ統合の品質ガードレール。Feature Table 追加時に「書いただけ」を検出し、実装案を強制出力。内部専用。"
 user-invocable: false

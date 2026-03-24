@@ -1,6 +1,6 @@
 ---
 name: vibecoder-guide
-description: "VibeCoder（非技術ユーザー）を自然言語開発でガイド。Use when user asks what to do next, how to use the system, needs help, or is stuck. Do NOT load for: technical-user work, direct implementation requests, or reviews."
+description: "Guides VibeCoder (non-technical users) through natural language development. Use when user asks what to do next, how to use the system, needs help, or is stuck. Do NOT load for: technical-user work, direct implementation requests, or reviews."
 description-en: "Guides VibeCoder (non-technical users) through natural language development. Use when user asks what to do next, how to use the system, needs help, or is stuck. Do NOT load for: technical-user work, direct implementation requests, or reviews."
 description-ja: "VibeCoder（非技術ユーザー）を自然言語開発でガイド。Use when user asks what to do next, how to use the system, needs help, or is stuck. Do NOT load for: technical-user work, direct implementation requests, or reviews."
 allowed-tools: ["Read"]

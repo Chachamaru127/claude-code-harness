@@ -1,6 +1,6 @@
 ---
 name: harness-release
-description: "Harness v3 統合リリーススキル。CHANGELOG・バージョンバンプ・タグ・GitHub Release を自動化。以下で起動: リリース、バージョンバンプ、タグ作成、公開、/harness-release。実装・コードレビュー・プランニング・セットアップには使わない。"
+description: "Unified release skill for Harness v3. CHANGELOG, version bump, tag, GitHub Release automation. Use when user mentions: release, version bump, create tag, publish, /harness-release. Do NOT load for: implementation, code review, planning, or setup."
 description-en: "Unified release skill for Harness v3. CHANGELOG, version bump, tag, GitHub Release automation. Use when user mentions: release, version bump, create tag, publish, /harness-release. Do NOT load for: implementation, code review, planning, or setup."
 description-ja: "Harness v3 統合リリーススキル。CHANGELOG・バージョンバンプ・タグ・GitHub Release を自動化。以下で起動: リリース、バージョンバンプ、タグ作成、公開、/harness-release。実装・コードレビュー・プランニング・セットアップには使わない。"
 allowed-tools: ["Read", "Write", "Edit", "Bash"]

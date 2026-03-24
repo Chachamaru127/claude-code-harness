@@ -1,6 +1,6 @@
 ---
 name: ci
-description: "CIが赤くなったら呼んで。パイプライン消防隊、出動します。Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
+description: "CI red? Call us. Pipeline fire brigade deploys. Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
 description-en: "CI red? Call us. Pipeline fire brigade deploys. Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
 description-ja: "CIが赤くなったら呼んで。パイプライン消防隊、出動します。Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
 allowed-tools: ["Read", "Grep", "Bash", "Task"]

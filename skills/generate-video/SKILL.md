@@ -1,6 +1,6 @@
 ---
 name: generate-video
-description: "プロダクトデモ動画を自動生成。百聞は一見にしかず、を体現。Use when user mentions '/generate-video', video generation, product demos, or visual documentation. Do NOT load for: embedding video players, live demos, video playback features. Requires Remotion setup."
+description: "Auto-generate product demo videos. A picture worth thousand words, embodied. Use when user mentions '/generate-video', video generation, product demos, or visual documentation. Do NOT load for: embedding video players, live demos, video playback features. Requires Remotion setup."
 description-en: "Auto-generate product demo videos. A picture worth thousand words, embodied. Use when user mentions '/generate-video', video generation, product demos, or visual documentation. Do NOT load for: embedding video players, live demos, video playback features. Requires Remotion setup."
 description-ja: "プロダクトデモ動画を自動生成。百聞は一見にしかず、を体現。Use when user mentions '/generate-video', video generation, product demos, or visual documentation. Do NOT load for: embedding video players, live demos, video playback features. Requires Remotion setup."
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "AskUserQuestion", "WebFetch"]
