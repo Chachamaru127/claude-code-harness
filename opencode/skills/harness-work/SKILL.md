@@ -4,6 +4,7 @@ description: "Unified execution skill for Harness v3. Implements Plans.md tasks 
 description-ja: "Harness v3 統合実行スキル。Plans.md タスクを1件から全並列チーム実行まで担当。以下で起動: 実装して、実行して、harness-work、全部やって、breezing、チーム実行、parallel。プランニング・レビュー・リリース・セットアップには使わない。"
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task"]
 argument-hint: "[all] [task-number|range] [--codex] [--parallel N] [--no-commit] [--resume id] [--breezing] [--auto-mode]"
+effort: medium
 ---
 
 # Harness Work (v3)

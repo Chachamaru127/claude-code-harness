@@ -5,6 +5,7 @@ description-ja: "チーム実行モード — harness-work のチーム協調エ
 description-en: "Team execution mode — backward-compatible alias for harness-work with team orchestration."
 allowed-tools: ["Read", "Write", "Edit", "Bash", "Grep", "Glob", "Task", "WebSearch"]
 argument-hint: "[all|N-M|--codex|--parallel N|--no-commit|--no-discuss|--auto-mode]"
+effort: medium
 user-invocable: true
 ---
 

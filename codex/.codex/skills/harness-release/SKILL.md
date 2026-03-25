@@ -4,6 +4,7 @@ description: "Unified release skill for Harness v3. CHANGELOG, version bump, tag
 description-ja: "Harness v3 統合リリーススキル。CHANGELOG・バージョンバンプ・タグ・GitHub Release を自動化。以下で起動: リリース、バージョンバンプ、タグ作成、公開、/harness-release。実装・コードレビュー・プランニング・セットアップには使わない。"
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 argument-hint: "[patch|minor|major|--dry-run|--announce]"
+effort: medium
 context: fork
 ---
 

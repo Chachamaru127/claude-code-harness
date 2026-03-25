@@ -4,6 +4,7 @@ description: "Unified review skill for Harness v3. Multi-angle code, plan, and s
 description-ja: "Harness v3 統合レビュースキル。コード・プラン・スコープを多角的にレビュー。以下で起動: レビュー、コードレビュー、プランレビュー、スコープ分析、セキュリティ、品質チェック、harness-review。実装・新機能・バグ修正・セットアップ・リリースには使わない。"
 allowed-tools: ["Read", "Grep", "Glob", "Bash", "Task"]
 argument-hint: "[code|plan|scope]"
+effort: high
 context: fork
 ---
 
