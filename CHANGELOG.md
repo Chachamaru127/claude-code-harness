@@ -26,6 +26,46 @@ Change history for claude-code-harness.
 
 **今後**: CLAUDE.md の概要テーブルと docs/CLAUDE-feature-table.md の詳細セクションに追加。長時間 Breezing セッションでのコンパクション頻発の原因特定に有用。
 
+#### 4. Claude Code 2.1.81 統合
+
+Claude Code v2.1.77〜v2.1.81 の新機能を Harness に統合。Feature Table のバージョン表記を `2.1.76+` → `2.1.81+` に更新。
+
+##### 4-1. `StopFailure` フックハンドラの実装
+
+**CC のアプデ**: API エラー（レート制限、認証失敗、API 過負荷等）でターンが異常終了した際に発火する `StopFailure` フックイベントが追加された（v2.1.78）。既存の `PostToolUseFailure`（ツール単位）とは異なり、ターンレベルの API エラーをキャッチする。
+
+**Harness での活用**: `stop-failure.sh` を新規作成し、hooks.json の両ファイルに登録。エラー種別（rate_limit / auth / overloaded）に応じた回復ガイダンスを systemMessage で返す。`.claude/state/stop-failure-events.jsonl` にイベントログを記録し、Breezing Worker のサイレント停止の事後分析が可能に。
+
+##### 4-2. `effort` frontmatter によるスキル自動 effort 制御
+
+**CC のアプデ**: スキル/コマンドの YAML frontmatter に `effort: high|medium|low` フィールドが追加された（v2.1.80）。スキル呼び出し時にモデルの思考深度が自動的に切り替わる。
+
+**Harness での活用**: 全 7 スキル（skills-v3/）に effort を設定。harness-review と harness-plan は `effort: high`（深い分析が必要）、harness-work / breezing / harness-release / harness-setup / harness-sync は `effort: medium`（標準的な実行）。タスクの性質に応じた最適な品質/速度バランスを自動実現。
+
+##### 4-3. Agent `resume` 廃止と `SendMessage` への移行
+
+**CC のアプデ**: Agent tool の `resume` パラメータが廃止された（v2.1.77）。代わりに `SendMessage({to: agentId})` を使用し、停止エージェントをバックグラウンドで自動再開する方式に変更。
+
+**Harness への影響**: Harness は既に `TaskCreate`/`TaskUpdate`/`SendMessage` ベースの連携を採用しており、旧 `resume` パターンは未使用。team-composition.md に破壊的変更の注記を追加。
+
+##### 4-4. PreToolUse `allow`/`deny` セキュリティ修正
+
+**CC のアプデ**: PreToolUse フックが `"allow"` を返しても、`deny` パーミッションルール（エンタープライズ managed settings 含む）をバイパスしなくなった（v2.1.77）。以前はフック `allow` が deny を上書きできた。
+
+**Harness での活用**: Harness の PreToolUse フックは `permissionDecision` を返す設計のため直接影響なし。hooks-editing.md にセキュリティ注記を追加し、カスタムフック開発者への注意喚起を実施。
+
+##### 4-5. その他の新機能追加
+
+- Opus 4.6 出力トークン上限が 64k（デフォルト）/ 128k（上限）に拡大（v2.1.77）
+- `${CLAUDE_PLUGIN_DATA}` 永続ストレージ（v2.1.78）— プラグインアップデートを跨いで状態保持
+- `effort`/`maxTurns`/`disallowedTools` が agent frontmatter で公式サポート（v2.1.78）
+- `--worktree` がスキル/フックを worktree ディレクトリから正しく読み込むように修正（v2.1.78）
+- `SessionEnd` が `/resume` セッション切替時に正しく発火するように修正（v2.1.79）
+- `rate_limits` ステータスラインフィールド追加（v2.1.80）
+- `--bare` フラグでスクリプト用軽量モード追加（v2.1.81）
+- `--channels` permission relay でモバイルへのツール承認転送（v2.1.81、Research Preview）
+- Worktree resume でセッション再開時に worktree へ自動復帰（v2.1.81）
+
 ## [3.10.3] - 2026-03-14
 
 ### Changed

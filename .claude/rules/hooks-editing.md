@@ -36,6 +36,15 @@ hooks/hooks.json           ← Source file (for development)
 > **CC v2.1.76+**: `Elicitation`、`ElicitationResult`、`PostCompact` イベントが追加されました。
 > MCP Elicitation はバックグラウンドエージェントでは UI 対話不能なため、フックで自動処理が必要です。
 > PostCompact は PreCompact と対になり、コンパクション後のコンテキスト再注入に使用します。
+>
+> **CC v2.1.78+**: `StopFailure` イベントが追加されました。
+> API エラー（レート制限、認証失敗等）でターンが終了した際に発火します。
+> Breezing の Worker がサイレントに停止する問題の検知・対処に活用します。
+>
+> **CC v2.1.77 セキュリティ修正**: PreToolUse フックが `"allow"` を返しても、`deny` パーミッションルール（エンタープライズ managed settings 含む）をバイパスしなくなりました。Harness の PreToolUse フックは `permissionDecision` を返す設計のため、影響はありませんが、カスタムフックを追加する際は注意してください。
+>
+> **CC v2.1.80+**: スキル/コマンド frontmatter に `effort` フィールドが追加されました。
+> `effort: high|medium|low` を設定するとスキル呼び出し時に自動的にモデルの思考深度が切り替わります。
 
 ### command Type (General Purpose)
 
@@ -281,7 +290,9 @@ export CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=45000
     "PostCompact": [],     // After context compaction (v2.1.76+)
     "Elicitation": [],     // MCP elicitation request (v2.1.76+)
     "ElicitationResult": [], // MCP elicitation result (v2.1.76+)
-    "Notification": []     // On notification dispatch
+    "Notification": [],    // On notification dispatch
+    "StopFailure": [],     // On API error ending the turn (v2.1.78+)
+    "SessionEnd": []       // On session end
   }
 }
 ```

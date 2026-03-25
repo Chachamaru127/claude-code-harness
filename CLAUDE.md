@@ -8,9 +8,9 @@ This file provides guidance for Claude Code when working in this repository.
 
 **Special note**: This project is self-referential — it uses the harness itself to improve the harness.
 
-## Claude Code 2.1.76+ Feature Utilization Guide
+## Claude Code 2.1.81+ Feature Utilization Guide
 
-Harness makes full use of new features introduced in Claude Code 2.1.76.
+Harness makes full use of new features introduced in Claude Code 2.1.81.
 
 | Feature | Skill | Purpose |
 |---------|-------|---------|
@@ -106,6 +106,18 @@ Harness makes full use of new features introduced in Claude Code 2.1.76.
 | **`/context` コマンド (v2.1.74)** | all skills | コンテキスト消費の可視化と最適化提案。長時間セッションの肥大化防止 |
 | **`maxTurns` エージェント安全制限** | agents-v3/ | Worker: 100, Reviewer: 50, Scaffolder: 75。暴走防止の安全弁 |
 | **`Notification` フック実装** | hooks | 通知イベント（permission_prompt, idle_prompt 等）のログ記録。Breezing 観測性向上 |
+| **Opus 4.6 出力 64k/128k (v2.1.77)** | all skills | デフォルト 64k、上限 128k トークン。長い実装・レビューの途切れ防止 |
+| **Agent `resume` → `SendMessage` (v2.1.77)** | breezing | Agent tool の `resume` 廃止。`SendMessage` で stopped agent を自動再開 |
+| **PreToolUse `allow`/`deny` セキュリティ修正 (v2.1.77)** | hooks | フック `allow` が `deny` ルールをバイパスしなくなった |
+| **`StopFailure` hook (v2.1.78)** | hooks, breezing | API エラーでターン終了時に発火。Worker サイレント停止の検知（実装済み） |
+| **`effort`/`maxTurns`/`disallowedTools` agent FM (v2.1.78)** | agents-v3/ | プラグインエージェント frontmatter の公式サポート |
+| **`${CLAUDE_PLUGIN_DATA}` (v2.1.78)** | setup | アップデートを跨ぐプラグイン永続ストレージ |
+| **`SessionEnd` `/resume` 修正 (v2.1.79)** | hooks, session | セッション切替時の SessionEnd 発火修正 |
+| **`rate_limits` statusline (v2.1.80)** | all skills | レート制限使用率をステータスラインに表示 |
+| **`effort` skill frontmatter (v2.1.80)** | all skills | スキル呼び出し時の自動 effort 切替（実装済み） |
+| **`--bare` flag (v2.1.81)** | CI, codex | スクリプト用軽量モード。フック/LSP/プラグイン走査スキップ |
+| **`--channels` relay (v2.1.81)** | breezing（将来） | モバイルへのツール承認プロンプト転送 |
+| **Worktree resume (v2.1.81)** | breezing | セッション再開時の worktree 自動復帰 |
 
 Full details: [docs/CLAUDE-feature-table.md](docs/CLAUDE-feature-table.md)
 

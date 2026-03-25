@@ -111,6 +111,7 @@ codex/.codex/skills/test-*/
 
 # 開発用スキル（非公開）
 skills/allow1/
+skills/x-announce/
 skills/x-promo/
 skills/x-release-harness/
 opencode/skills/x-promo/

@@ -240,6 +240,17 @@
         ]
       }
     ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/stop-failure.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
     "TeammateIdle": [
       {
         "hooks": [

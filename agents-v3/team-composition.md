@@ -106,6 +106,15 @@ Worker: 修正実装 → コミット
 Reviewer: 再レビュー
 ```
 
+### Agent Resume → SendMessage（v2.1.77 破壊的変更）
+
+CC 2.1.77 で Agent tool の `resume` パラメータが廃止された。
+停止したエージェントの再開には `SendMessage({to: agentId})` を使用する。
+`SendMessage` は停止エージェントをバックグラウンドで自動再開する。
+
+Harness は Phase B の Lead-Worker 連携に `TaskCreate`/`TaskUpdate`/`SendMessage` を使用しており、
+旧 `resume` パターンは使用していないため**実装への影響なし**。
+
 ### Nested Teammate Policy（v2.1.69）
 
 CC 2.1.69 で teammates の多重 spawn（nested teammates）はプラットフォーム側でブロックされる。

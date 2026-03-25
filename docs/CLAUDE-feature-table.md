@@ -1,6 +1,6 @@
-# Claude Code 2.1.74+ 新機能活用ガイド（完全版）
+# Claude Code 2.1.81+ 新機能活用ガイド（完全版）
 
-> **概要**: Harness が活用する Claude Code 2.1.74+ の全機能一覧。
+> **概要**: Harness が活用する Claude Code 2.1.81+ の全機能一覧。
 > CLAUDE.md の Feature Table の完全版（詳細説明付き）。
 
 ## 機能一覧
@@ -124,6 +124,29 @@
 | **`Notification` hook event** | hooks | 通知発火時のカスタムハンドラ（実装済み） |
 | **`/context` コマンド (v2.1.74)** | all skills | コンテキスト消費の可視化と最適化提案 |
 | **`maxTurns` エージェント安全制限** | agents-v3/ | ターン上限による暴走防止。Worker: 100, Reviewer: 50, Scaffolder: 75 |
+| **Opus 4.6 出力トークン 64k/128k (v2.1.77)** | 全スキル | デフォルト 64k、上限 128k。長い実装・レビューでの途切れを防止 |
+| **`allowRead` sandbox 設定 (v2.1.77)** | breezing, harness-work | `denyRead` 内の特定パスへの読み取りを再許可。Sandbox の柔軟な設定 |
+| **PreToolUse `allow` / `deny` セキュリティ修正 (v2.1.77)** | hooks | フックが `allow` を返しても `deny` ルールをバイパスしなくなった。Managed settings の安全性向上 |
+| **Agent `resume` 廃止 → `SendMessage` (v2.1.77)** | breezing | Agent tool の `resume` パラメータ廃止。`SendMessage({to: agentId})` で stopped agent を自動再開 |
+| **Sessions auto-named from plan (v2.1.77)** | harness-plan | Plan 承認時にセッション名を自動設定。Breezing セッション識別が容易に |
+| **Background bash 5GB 制限 (v2.1.77)** | breezing, harness-work | バックグラウンド bash が 5GB 出力で自動 kill。暴走プロセスのディスク圧迫を防止 |
+| **`claude plugin validate` 強化 (v2.1.77)** | setup | スキル/エージェント/コマンドの frontmatter + hooks.json の YAML 解析エラー検出 |
+| **`StopFailure` hook event (v2.1.78)** | hooks, breezing | API エラー（レート制限、認証失敗等）でターン終了時に発火。Worker のサイレント停止を検知（実装済み） |
+| **`${CLAUDE_PLUGIN_DATA}` 永続ストレージ (v2.1.78)** | setup | プラグインのアップデートを跨いで永続化する状態ディレクトリ。`/plugin uninstall` 時に削除確認 |
+| **`effort` / `maxTurns` / `disallowedTools` agent frontmatter (v2.1.78)** | agents-v3/ | プラグイン出荷エージェントの frontmatter で effort、ターン上限、ツール制限を公式サポート |
+| **`--worktree` スキル/フック読み込み修正 (v2.1.78)** | breezing | `--worktree` フラグが worktree ディレクトリからスキルとフックを正しく読み込むように修正 |
+| **`ANTHROPIC_CUSTOM_MODEL_OPTION` (v2.1.78)** | setup | `/model` ピッカーにカスタムモデルエントリを追加。`_NAME`/`_DESCRIPTION` 接尾辞で表示名も設定可能 |
+| **Response line-by-line streaming (v2.1.78)** | 全スキル | レスポンステキストが生成中に行単位でストリーミング表示 |
+| **`--console` auth (v2.1.79)** | setup | `claude auth login --console` で Anthropic Console（API 課金）認証に対応 |
+| **`SessionEnd` hooks `/resume` 修正 (v2.1.79)** | hooks, session | `/resume` でセッション切替時に SessionEnd フックが正しく発火するように修正 |
+| **`CLAUDE_CODE_PLUGIN_SEED_DIR` 複数ディレクトリ (v2.1.79)** | setup | `:` 区切りで複数の seed ディレクトリを指定可能に |
+| **`rate_limits` statusline (v2.1.80)** | 全スキル | ステータスラインスクリプトに 5 時間 / 7 日のレート制限使用率フィールドを追加 |
+| **`source: 'settings'` plugin (v2.1.80)** | setup | settings.json にプラグインエントリをインライン宣言可能に |
+| **`effort` skill frontmatter (v2.1.80)** | 全スキル | スキル/コマンドの frontmatter で `effort: high\|medium\|low` を設定。呼び出し時に自動的に思考深度を切替（実装済み） |
+| **`--bare` flag (v2.1.81)** | CI, codex | スクリプト用の軽量モード。フック、LSP、プラグイン同期、スキルディレクトリ走査をスキップ |
+| **`--channels` permission relay (v2.1.81)** | breezing（将来対応） | チャネルサーバー経由でツール承認プロンプトをモバイルに転送。リモート承認の基盤 |
+| **Worktree resume 修正 (v2.1.81)** | breezing | セッション再開時に worktree に自動的に戻るように修正 |
+| **Plugin freshness 改善 (v2.1.81)** | setup | ref-tracked プラグインがロード毎に re-clone。上流変更の即時反映 |
 
 ## 機能詳細
 
