@@ -22,7 +22,7 @@ workflow 変数:
 | `idle` | セッション未開始 |
 | `initialized` | SessionStart 完了 |
 | `planning` | Plan/Work の準備 |
-| `executing` | harness-work 実行中 |
+| `executing` | /work 実行中 |
 | `reviewing` | review 実行中 |
 | `verifying` | build/test 実行中 |
 | `escalated` | 人間確認待ち |

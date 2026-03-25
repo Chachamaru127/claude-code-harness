@@ -1,8 +1,8 @@
 ---
 name: session
-description: "セッション管理の総合窓口。初期化・記憶・状態を一手に引き受けます。Use when managing Codex Harness sessions or session command flows. Do NOT load for: app user sessions, login state, authentication features."
-description-en: "Unified session management window. Handles initialization, memory, state all-in-one. Use when managing Codex Harness sessions or session command flows. Do NOT load for: app user sessions, login state, authentication features."
-description-ja: "セッション管理の総合窓口。初期化・記憶・状態を一手に引き受けます。Use when managing Codex Harness sessions or session command flows. Do NOT load for: app user sessions, login state, authentication features."
+description: "セッション管理の総合窓口。初期化・記憶・状態を一手に引き受けます。Use when managing Claude Code sessions, /session command. Do NOT load for: app user sessions, login state, authentication features."
+description-en: "Unified session management window. Handles initialization, memory, state all-in-one. Use when managing Claude Code sessions, /session command. Do NOT load for: app user sessions, login state, authentication features."
+description-ja: "セッション管理の総合窓口。初期化・記憶・状態を一手に引き受けます。Use when managing Claude Code sessions, /session command. Do NOT load for: app user sessions, login state, authentication features."
 allowed-tools: ["Read", "Bash", "Write", "Edit", "Glob"]
 argument-hint: "[list|inbox|broadcast \"message\"]"
 ---
@@ -79,7 +79,7 @@ Claude Code 2.1.49 以降、セッション再開時のメモリ使用量が **6
 |------------|---------|
 | **通常実装** | 1-2時間ごとに `--resume` で再開 |
 | **大規模リファクタ** | 機能単位でセッション分割 → 各セッションで `--resume` |
-| **並列タスク** | `$harness-work all` や `$breezing all` で実行し、長時間なら途中で `--resume` |
+| **並列タスク** | `/work all` で並列実行、長時間なら途中で `--resume` |
 | **メモリ警告時** | 即座に `--resume` で再開（以前より高速） |
 
 ### セッション名の自動生成（CC 2.1.41+）
@@ -117,8 +117,8 @@ claude --resume "テストを追加"
 
 ## When to Use
 
-- Session initialization (`$harness-setup init` または session-init)
-- Session resume/fork (`$harness-work --resume`, `$harness-work --fork`)
+- Session initialization (`/harness-init`)
+- Session resume/fork (`/work --resume`, `/work --fork`)
 - Memory persistence (automatic)
 - Cross-session communication (`/session broadcast`)
 
@@ -127,7 +127,7 @@ claude --resume "テストを追加"
 ### 1. Session Initialization
 
 ```
-$harness-setup init
+/harness-init
     ↓
 ├── Load project context
 ├── Initialize session.json
@@ -135,16 +135,16 @@ $harness-setup init
 └── Display session status
 ```
 
-### 2. Session Control (from $harness-work)
+### 2. Session Control (from /work)
 
 ```
-$harness-work --resume
+/work --resume
     ↓
 ├── Check session.json exists
 ├── Load session state
 └── Continue from last checkpoint
 
-$harness-work --fork
+/work --fork
     ↓
 ├── Create new session branch
 ├── Copy relevant context

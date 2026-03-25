@@ -4,14 +4,14 @@
 
 ---
 
-## Codex 側コマンド
+## Claude Code 側コマンド
 
-### $harness-setup init
+### /setup
 
-プロジェクトの初期セットアップ。
+プロジェクトの初期セットアップ（旧 `/harness-init`）。
 
 ```
-$harness-setup init
+/setup
 ```
 
 **生成されるファイル**:
@@ -22,12 +22,12 @@ $harness-setup init
 
 ---
 
-### $harness-setup codex
+### /setup codex
 
 Codex CLI 用の Harness 設定を**ユーザーベース**（`${CODEX_HOME:-~/.codex}`）に導入・更新。
 
 ```
-$harness-setup codex
+/setup codex
 ```
 
 **生成されるファイル（デフォルト）**:
@@ -42,29 +42,29 @@ $harness-setup codex
 
 ---
 
-### $harness-plan
+### /plan-with-agent
 
 タスクの計画・分解。
 
 ```
-$harness-plan [タスク説明]
+/plan-with-agent [タスク説明]
 ```
 
 **例**:
 ```
-$harness-plan ユーザー認証機能を実装したい
+/plan-with-agent ユーザー認証機能を実装したい
 ```
 
 **出力**: Plans.md にタスクが追加される
 
 ---
 
-### $harness-work
+### /work
 
 Plans.md のタスクを実行。
 
 ```
-$harness-work
+/work
 ```
 
 **機能**:
@@ -74,12 +74,12 @@ $harness-work
 
 ---
 
-### $harness-sync
+### /sync-status
 
 現在の状態サマリーを出力。
 
 ```
-$harness-sync
+/sync-status
 ```
 
 **出力例**:
@@ -143,10 +143,10 @@ PM → Worker へのタスク依頼を整形。
 [セッション開始]
     │
     ▼
-$harness-sync  ←── 現状確認
+/sync-status  ←── 現状確認
     │
     ▼
-$harness-work  ←── タスク実行
+/work  ←── タスク実行
     │
     ▼
 /handoff-to-cursor  ←── 完了報告

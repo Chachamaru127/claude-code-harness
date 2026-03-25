@@ -17,7 +17,7 @@
 - "review", "code review", "plan review"
 - "scope analysis", "security", "performance"
 - "quality checks", "PRs", "diffs"
-- "harness-review"
+- "/harness-review"
 
 **除外キーワード**（description から引用）:
 - "implementation", "new features", "bug fixes"
@@ -28,8 +28,7 @@
 **目的**: Codex を実装エンジンとして使用（v3 で統合）
 
 **トリガーキーワード**:
-- "implement", "execute", "harness-work"
-- "harness-work"
+- "implement", "execute", "/work"
 - "breezing", "team run"
 - "--codex", "--parallel"
 
@@ -37,7 +36,7 @@
 - "planning", "code review", "release"
 - "setup", "initialization"
 
-**対応**: `$harness-work` / `$breezing` で実行
+**対応**: `/harness-work --codex` で実行
 
 ## ルーティング判定フロー（参考）
 

@@ -29,7 +29,7 @@ user-invocable: false
 
 ## 概要
 
-Session Init スキルは、Codex Harness セッション開始時に自動的に以下を確認します：
+Session Init スキルは、Claude Code セッション開始時に自動的に以下を確認します：
 
 1. **Git 状態**: 現在のブランチ、未コミットの変更
 2. **Plans.md**: 進行中タスク、依頼されたタスク
@@ -165,8 +165,8 @@ Plans.md から以下を抽出：
 
 ## 関連コマンド
 
-- `$harness-work` / `$breezing` - タスク実行（必要に応じて並列実行）
-- `$harness-sync` - Plans.md の進捗サマリー
+- `/work` - タスク実行（並列実行対応）
+- `/sync-status` - Plans.md の進捗サマリー
 - `/maintenance` - ファイルの自動整理
 
 ---
@@ -174,5 +174,5 @@ Plans.md から以下を抽出：
 ## 注意事項
 
 - **AGENTS.md を必ず確認**: 役割分担を把握してから作業開始
-- **Plans.md が無い場合**: `$harness-plan create` または `$harness-setup init` を案内
+- **Plans.md が無い場合**: `/harness-init` を案内
 - **前回の作業が中断している場合**: 継続するか確認

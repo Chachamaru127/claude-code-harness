@@ -26,8 +26,8 @@
 ### Phase 2: Claude Code が作業開始
 
 ```bash
-# Codex で実行
-$harness-work
+# Claude Code で実行
+/work
 ```
 
 **Claude Code の作業**:
@@ -59,7 +59,7 @@ $harness-work
 
 Review OK かつ Auto-commit 完了後、2-Agent モードでは `/handoff-to-cursor` を実行して PM に報告する。
 
-> **Solo モードでは handoff は不要** — Review OK → Auto-commit で `$harness-work` は完了。
+> **Solo モードでは handoff は不要** — Review OK → Auto-commit で /work は完了。
 
 ```bash
 # Claude Code で実行（2-Agent モードのみ）
@@ -123,7 +123,7 @@ Review OK かつ Auto-commit 完了後、2-Agent モードでは `/handoff-to-cu
 
 ### Claude Code の対応
 
-1. `$harness-work` で着手
+1. `/work` で着手
 2. エラーログ調査
 3. 原因特定・修正
 4. テスト追加
@@ -182,7 +182,7 @@ GitHub Actions: ❌ Build failed
 - [ ] テスト追加: ユーティリティ関数 `cc:TODO`
 ```
 
-### $harness-work 実行時
+### /work 実行時
 
 Claude Code が並列実行可能か判断:
 - 独立したタスク → 並列実行

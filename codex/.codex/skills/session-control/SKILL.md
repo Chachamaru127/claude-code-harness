@@ -1,15 +1,15 @@
 ---
 name: session-control
-description: "harness-work のセッション resume/fork を --resume/--fork フラグに基づいて制御。session.json と session.events.jsonl を更新する内部ワークフロー専用スキル。Do NOT load for: user session management, login state, app state handling."
-description-en: "Controls session resume/fork for harness-work based on --resume/--fork flags. Updates session.json and session.events.jsonl. Internal workflow use only. Do NOT load for: user session management, login state, app state handling."
-description-ja: "harness-work のセッション resume/fork を --resume/--fork フラグに基づいて制御。session.json と session.events.jsonl を更新する内部ワークフロー専用スキル。Do NOT load for: user session management, login state, app state handling."
+description: "/work のセッション resume/fork を --resume/--fork フラグに基づいて制御。session.json と session.events.jsonl を更新する内部ワークフロー専用スキル。Do NOT load for: user session management, login state, app state handling."
+description-en: "Controls session resume/fork for /work based on --resume/--fork flags. Updates session.json and session.events.jsonl. Internal workflow use only. Do NOT load for: user session management, login state, app state handling."
+description-ja: "/work のセッション resume/fork を --resume/--fork フラグに基づいて制御。session.json と session.events.jsonl を更新する内部ワークフロー専用スキル。Do NOT load for: user session management, login state, app state handling."
 allowed-tools: ["Read", "Bash", "Write", "Edit"]
 user-invocable: false
 ---
 
 # Session Control Skill
 
-`harness-work` の `--resume` / `--fork` フラグに応じてセッション状態を切り替える。
+/work の `--resume` / `--fork` フラグに応じてセッション状態を切り替える。
 
 ## 機能詳細
 

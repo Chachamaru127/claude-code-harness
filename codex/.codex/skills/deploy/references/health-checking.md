@@ -52,6 +52,6 @@ allowed-tools: ["Read", "Bash"]
 ✅ .claude/settings.json
 
 ### 利用可能な機能
-✅ $harness-work, $harness-plan, $harness-sync
+✅ /work, /plan-with-agent, /sync-status
 ⚠️ CI自動修正 (gh が必要)
 ```

@@ -6,11 +6,11 @@
 
 | Situation | Command to Use |
 |-----------|----------------|
-| "How far along? What's next?" | `$harness-sync` (use this first) |
+| "How far along? What's next?" | `/sync-status` (use this first) |
 | "Worked on it but forgot if I updated Plans.md" | **This command** |
 | "Started from old template, format might be outdated" | **This command** |
 
-> Tip: Usually `$harness-sync` is sufficient. Use this for "just in case" or "format migration".
+> Tip: Usually `/sync-status` is sufficient. Use this for "just in case" or "format migration".
 
 ---
 
@@ -84,7 +84,7 @@ Tell user:
 
 ### Step 4: Finish (Required)
 
-- Run `$harness-sync` to verify markers
+- Run `/sync-status` to verify markers
 - Use `/remember` to lock "project-specific operations" if needed
 
 ---
