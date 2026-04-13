@@ -6,6 +6,14 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+## [4.0.3] - 2026-04-13
+
+### テーマ: プラグイン配布時の skill ロード失敗を修正
+
+**`claude plugin install` や `--plugin-dir` 経由で harness を読み込んだ際、skill が 1 件もロードされない致命的なバグを修正。開発環境ではフォールバックが効いていて見逃されていた。**
+
+---
+
 ### Fixed
 
 #### plugin.json の skills パス誤りでプラグイン配布時に skill が 0 件ロードされる問題

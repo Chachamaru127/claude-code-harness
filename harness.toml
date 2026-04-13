@@ -3,7 +3,7 @@
 
 [project]
 name = "claude-code-harness"
-version = "4.0.2"
+version = "4.0.3"
 description = "Claude harness - A harness for solo developers (Vibecoders) to handle full-cycle contract development."
 homepage = "https://github.com/Chachamaru127/claude-code-harness"
 repository = "https://github.com/Chachamaru127/claude-code-harness"
