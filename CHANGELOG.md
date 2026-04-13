@@ -6,6 +6,21 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Fixed
+
+#### plugin.json の skills パス誤りでプラグイン配布時に skill が 0 件ロードされる問題
+
+**今まで**: `.claude-plugin/plugin.json` の `skills` フィールドが `["./"]` と誤って設定されており、
+プラグインルート直下を skills ディレクトリとして扱っていました。実際の `SKILL.md` は
+`skills/` サブディレクトリ配下にあるため、`claude plugin install` や
+`claude --plugin-dir /path/to/claude-code-harness` で読み込んだ場合に**プラグインの skill が 1 件も検出されない**状態でした。
+開発環境（リポジトリ直下で `claude` を起動）では `.claude/skills/` 経由のプロジェクト skill 自動検出が
+フォールバックとして働いていたため、サイレントに見逃されていました。
+
+**今後**: `skills` フィールドを `"./skills/"` に修正し、配布経路でも `/claude-code-harness:harness-work` などが
+正しく呼び出せるようになります。既にインストール済みのユーザーは `claude plugin update claude-code-harness` で
+修正版に切り替えてください。
+
 ## [4.0.2] - 2026-04-12
 
 ### テーマ: 大規模移行後の「見えない残骸」を自動検出する仕組み
