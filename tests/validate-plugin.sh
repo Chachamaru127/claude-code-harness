@@ -144,6 +144,59 @@ echo ""
 echo "3. スキルの検証"
 echo "----------------------------------------"
 
+# plugin.json の skills パス先に SKILL.md が実在するかチェック（v4.0.3 regression guard）
+# skills: ["./"] のような誤設定で配布時に 0 件ロードされる事故を再発させないため、
+# plugin.json の skills フィールドが指すディレクトリを実際に走査し、SKILL.md の存在を検証する。
+skills_path_check_output=$(python3 - "$PLUGIN_ROOT/.claude-plugin/plugin.json" "$PLUGIN_ROOT" <<'PY' 2>&1
+import json
+import os
+import sys
+
+manifest_path, plugin_root = sys.argv[1], sys.argv[2]
+with open(manifest_path, "r", encoding="utf-8") as fh:
+    manifest = json.load(fh)
+
+skills_field = manifest.get("skills", "./skills/")
+if isinstance(skills_field, str):
+    paths = [skills_field]
+elif isinstance(skills_field, list):
+    paths = skills_field
+else:
+    print("skills field must be string or array of strings", file=sys.stderr)
+    sys.exit(2)
+
+errors = []
+details = []
+for entry in paths:
+    resolved = os.path.normpath(os.path.join(plugin_root, entry))
+    if not os.path.isdir(resolved):
+        errors.append(f"path does not exist: {entry}")
+        continue
+    count = 0
+    for dirpath, _dirnames, filenames in os.walk(resolved):
+        if "SKILL.md" in filenames:
+            count += 1
+    if count == 0:
+        errors.append(f"no SKILL.md found under: {entry}")
+    else:
+        details.append(f"{entry} -> {count} skills")
+
+if errors:
+    for err in errors:
+        print(err, file=sys.stderr)
+    sys.exit(1)
+
+print(", ".join(details))
+PY
+)
+skills_path_check_status=$?
+
+if [ $skills_path_check_status -eq 0 ]; then
+    pass_test "plugin.json の skills パス先に SKILL.md が実在します ($skills_path_check_output)"
+else
+    fail_test "plugin.json の skills パス先に SKILL.md が見つかりません: $skills_path_check_output"
+fi
+
 # スキルディレクトリの存在
 if [ -d "$PLUGIN_ROOT/skills" ]; then
     SKILL_COUNT=$(find "$PLUGIN_ROOT/skills" -name "SKILL.md" | wc -l)

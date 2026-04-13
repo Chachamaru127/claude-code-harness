@@ -6,6 +6,29 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Added
+
+#### validate-plugin.sh に plugin.json の skills パス検証を追加
+
+**今まで**: `.claude-plugin/plugin.json` の `skills` フィールドに誤ったパス（例: `["./"]`）を書いても、
+CI の `validate-plugin.sh` はそれを検出できませんでした。実際 v4.0.2 以前ではこのミスが混入しており、
+配布経路で skill が 0 件ロードされる事故をサイレントに許していました。
+
+**今後**: `validate-plugin.sh` のセクション 3 が `plugin.json` の `skills` フィールドを解析し、
+各パスの配下に `SKILL.md` が実在するかを走査します。パスが存在しない、あるいは SKILL.md が 1 件も
+見つからない場合は `fail_test` で CI を落とします。今回のような「書いただけで動かない設定」を
+PR 段階でブロックできるようになりました。
+
+#### sync-version.sh bump に CHANGELOG compare link 自動挿入を追加
+
+**今まで**: `./scripts/sync-version.sh bump` で patch バージョンを上げた後、CHANGELOG.md の
+compare link セクション（末尾の `[Unreleased]: ...` と `[x.y.z]: ...` 行）を手動で更新する必要がありました。
+更新を忘れると `scripts/ci/check-version-bump.sh` が落ちます（実際 v4.0.3 のリリース時に踏みました）。
+
+**今後**: `bump` サブコマンドが自動で `[Unreleased]` 行の比較元を新バージョンに書き換え、
+`[新バージョン]: .../compare/v<旧>...v<新>` 行を直後に挿入します。CI の release metadata check に
+一発で通るリリース手順になります。
+
 ## [4.0.3] - 2026-04-13
 
 ### テーマ: プラグイン配布時の skill ロード失敗を修正

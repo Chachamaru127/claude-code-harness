@@ -85,6 +85,54 @@ sync_version() {
     echo "✅ 同期完了: $version"
 }
 
+# CHANGELOG.md の compare link を更新 (Unreleased のバージョン差し替え + 新バージョン行を挿入)
+update_changelog_compare_links() {
+    local current="$1"
+    local new="$2"
+    local changelog="CHANGELOG.md"
+
+    if [ ! -f "$changelog" ]; then
+        return 0
+    fi
+
+    python3 - "$changelog" "$current" "$new" <<'PY'
+import re
+import sys
+
+changelog, current, new = sys.argv[1], sys.argv[2], sys.argv[3]
+with open(changelog, "r", encoding="utf-8") as fh:
+    lines = fh.readlines()
+
+pattern = re.compile(
+    rf"^\[Unreleased\]: (https://github\.com/[^/]+/[^/]+)/compare/v{re.escape(current)}\.\.\.HEAD\s*$"
+)
+
+new_lines = []
+inserted = False
+for line in lines:
+    match = pattern.match(line)
+    if match and not inserted:
+        repo = match.group(1)
+        new_lines.append(f"[Unreleased]: {repo}/compare/v{new}...HEAD\n")
+        new_lines.append(f"[{new}]: {repo}/compare/v{current}...v{new}\n")
+        inserted = True
+        continue
+    new_lines.append(line)
+
+if not inserted:
+    print(
+        f"⚠️  CHANGELOG.md に [Unreleased] compare link (v{current}...HEAD) が見つかりません。手動で追加してください。",
+        file=sys.stderr,
+    )
+    sys.exit(0)
+
+with open(changelog, "w", encoding="utf-8") as fh:
+    fh.writelines(new_lines)
+
+print(f"✅ CHANGELOG.md に compare link を追加: [{new}]")
+PY
+}
+
 # パッチバージョンを上げる
 bump_version() {
     local current=$(get_version)
@@ -99,6 +147,7 @@ bump_version() {
     echo "✅ VERSION を更新: $current → $new_version"
 
     sync_version
+    update_changelog_compare_links "$current" "$new_version"
 }
 
 # メイン
