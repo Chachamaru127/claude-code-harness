@@ -292,7 +292,10 @@ out/
 # Go build artifacts and internal state
 go/.claude/
 go/harness
-bin/harness-*
+# bin/harness-{darwin-arm64,darwin-amd64,linux-amd64} are TRACKED (v4.0.4+)
+# for marketplace distribution. Only the local-only build artifacts stay ignored:
+bin/harness.exe
+bin/harness-native
 
 # Hook output artifacts (broken directory names from JSON responses)
 {*}
