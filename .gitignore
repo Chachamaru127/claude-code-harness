@@ -118,10 +118,13 @@ skills/x-article/
 skills/x-announce/
 skills/x-promo/
 skills/x-release-harness/
+skills/harness-release-internal/
 opencode/skills/x-promo/
 opencode/skills/x-release-harness/
+opencode/skills/harness-release-internal/
 codex/.codex/skills/x-promo/
 codex/.codex/skills/x-release-harness/
+codex/.codex/skills/harness-release-internal/
 
 # Harness UI / optional UI integration (distribution excluded)
 /harness-ui/

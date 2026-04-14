@@ -6,7 +6,24 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
-### Added
+### Changed
+
+#### harness-release を汎用化、本体専用は harness-release-internal へ分離
+
+**今まで**: `harness-release` スキル 1 本に、汎用リリース自動化（CHANGELOG 昇格・タグ・GitHub Release）と、本体 claude-code-harness 固有の処理（`sync-version.sh` による 3 点同期、codex/opencode への mirror 同期、migration residue check、i18n ロケール切替）が混在していました。他プロジェクトに配布しても、これら本体固有のロジックが障害になったり、単に動かなかったりしていました。
+
+**今後**: スキルを 2 本に分割しました:
+
+- **`harness-release`**（汎用、配布対象）: Keep a Changelog を守るあらゆるプロジェクトで動作。単一確認ゲート UX を採用し、承認後は Pre-Gate の準備 → ファイル書き換え → commit → tag → GitHub Release publish まで中断なく自動実行。version file は `VERSION` / `package.json` / `pyproject.toml` / `Cargo.toml` の 4 エコシステムを自動検出。bump level は `[Unreleased]` の見出し（Added/Fixed/Breaking Changes 等）から推定し、ユーザー override も可能。
+- **`harness-release-internal`**（本体専用、`.gitignore` で配布除外）: 汎用スキルを薄くラップし、本体固有の preflight（residue / mirror check / validate-plugin）と finalization（mirror 同期 / 完了マーカーコミット / optional `/x-announce`）を足す。
+
+#### Added
+
+#### 単一確認ゲートフロー
+
+**今まで**: リリース手順は Phase 0-10 の手順書で、ユーザーが phase ごとに追いかけたり、Claude が途中で判断を仰いだりする作りでした。mini-confirmation が複数あり、最後にはラバースタンプ化して確認が形骸化する問題がありました。
+
+**今後**: リリース計画（新バージョン、bump 判定理由、CHANGELOG 差分、Release notes draft、変更対象ファイル、最終アクション）を**Pre-Gate ですべてメモリ上にドラフト**し、**ユーザーに 1 回だけ提示**。承認後は中断なく全自動実行します。判断ポイントが 1 つに集約されるため、確認がラバースタンプ化せず、内容を本当に見てから yes を出せる UX になりました。
 
 #### validate-plugin.sh に plugin.json の skills パス検証を追加
 
