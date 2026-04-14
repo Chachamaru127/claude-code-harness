@@ -6,6 +6,22 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Fixed
+
+#### harness sync が plugin.json の skills パスを ["./"] に書き戻す回帰バグを修正
+
+**今まで**: Go 製の `harness sync` コマンド（`go/cmd/harness/sync.go`）の `pluginJSON` 構造体 Skills フィールドに
+`[]string{"./"}` がハードコードされており、`sync` を実行するたびに
+`.claude-plugin/plugin.json` の `skills` フィールドを `["./"]` に書き戻していました。
+これは v4.0.3 で修正した「配布時 skill 0 件ロード問題」の修正値（`"./skills/"`）を
+静かに破壊する動作で、`sync-skill-mirrors.sh` や `harness-release` の Phase 4 が走るたびに
+v4.0.3 の fix が undo されてしまう回帰の温床でした。
+
+**今後**: ハードコード値を `[]string{"./skills/"}` に修正し、`sync_test.go` の expectation も同期。
+`harness sync` 実行後も plugin.json の skills パスが `"./skills/"` 相当を保持します。
+合わせて、plugin.json の skills フィールドは `harness sync` の出力に合わせて
+配列形式 `["./skills/"]` に正規化しました（CC 2.1.94+ は string / array 両方を受理するため動作は等価）。
+
 ### Added
 
 #### validate-plugin.sh に plugin.json の skills パス検証を追加

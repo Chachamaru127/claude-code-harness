@@ -117,8 +117,11 @@ func TestSync_GeneratesPluginJSON(t *testing.T) {
 	if v["homepage"] != "https://github.com/Chachamaru127/claude-code-harness" {
 		t.Errorf("plugin.json homepage = %v", v["homepage"])
 	}
-	// CC 2.1.94+: skills field must be ["./"] so frontmatter `name` drives
-	// invocation. Prevents auto-revert regression when harness sync runs.
+	// CC 2.1.94+: skills field must be ["./skills/"] so CC discovers SKILL.md
+	// files under the actual skills directory. The earlier ["./"] value caused
+	// distributed installs (`claude plugin install`, `--plugin-dir`) to load
+	// zero skills because no SKILL.md exists at the plugin root (v4.0.3 fix).
+	// Prevents auto-revert regression when harness sync runs.
 	skillsRaw, ok := v["skills"]
 	if !ok {
 		t.Fatalf("plugin.json missing skills field")
@@ -127,8 +130,8 @@ func TestSync_GeneratesPluginJSON(t *testing.T) {
 	if !ok {
 		t.Fatalf("plugin.json skills = %v (type %T), want []interface{}", skillsRaw, skillsRaw)
 	}
-	if len(skills) != 1 || skills[0] != "./" {
-		t.Errorf("plugin.json skills = %v, want [./]", skills)
+	if len(skills) != 1 || skills[0] != "./skills/" {
+		t.Errorf("plugin.json skills = %v, want [./skills/]", skills)
 	}
 }
 
