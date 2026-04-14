@@ -16,6 +16,8 @@
     "workflow",
     "plan-work-review"
   ],
-  "skills": "./skills/",
+  "skills": [
+    "./skills/"
+  ],
   "outputStyles": "./output-styles/"
 }

@@ -100,8 +100,13 @@ type pluginJSON struct {
 	License      string      `json:"license,omitempty"`
 	Keywords     []string    `json:"keywords,omitempty"`
 	// Skills declares the skill discovery roots per CC 2.1.94+.
-	// With ["./"], CC uses each SKILL.md frontmatter `name` field as the
-	// invocation name, allowing directory name and invocation name to differ.
+	// Points to the directory containing skill subdirectories (each with SKILL.md).
+	// Previously hardcoded to ["./"] per 009faf74, which assumed SKILL.md lived at
+	// the plugin root. That assumption did not match this repo's layout (SKILL.md
+	// files are under `skills/`), so `claude plugin install` / `--plugin-dir`
+	// discovered zero skills. v4.0.3 (25bd633d) fixed plugin.json to "./skills/"
+	// but the sync regenerator still wrote back "./"; this field now emits
+	// "./skills/" so subsequent syncs preserve the fix.
 	Skills       []string    `json:"skills,omitempty"`
 	OutputStyles string      `json:"outputStyles,omitempty"`
 }
@@ -128,10 +133,11 @@ func generatePluginJSON(projectRoot string, cfg *config.Config) error {
 		Repository:   cfg.Project.Repository,
 		License:      cfg.Project.License,
 		Keywords:     cfg.Project.Keywords,
-		// Always emit ["./"] so CC 2.1.94+ uses frontmatter `name` fields
-		// for skill invocation. This enables short-name aliases like
-		// HAR:plan while keeping directory names unchanged.
-		Skills:       []string{"./"},
+		// Emit ["./skills/"] so CC 2.1.94+ can discover SKILL.md files under the
+		// actual skills directory. The earlier ["./"] value (009faf74) pointed to
+		// the plugin root where no SKILL.md exists, causing distributed installs
+		// (`claude plugin install`, `--plugin-dir`) to load zero skills.
+		Skills:       []string{"./skills/"},
 		OutputStyles: cfg.Project.OutputStyles,
 	}
 
