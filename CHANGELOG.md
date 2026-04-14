@@ -6,6 +6,38 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Fixed
+
+#### 配布物の正常化 — hook shim のフェイル挙動修正と未参照画像の untrack
+
+**今まで**: `bin/harness` shim がプラットフォーム非対応時に `{"decision":"approve","reason":"..."}` を stderr に出して `exit 1` していました。CC のフック契約では JSON は stdout に出すべきで、stderr + exit 1 は「失敗かつ出力は診断扱い」と解釈されるため、対応バイナリのない環境では hook が壊れる扱いになっていました。加えて、shim が stdout に固定 JSON を返す設計は、`hook permission` / `hook session-start` / `doctor` / `sync` 等の呼び出しで**プロトコル不一致の偽成功**を起こすリスクがありました。
+
+さらに `docs/images/` には README から参照されない画像（`hokage-back.jpg` 2.0MB、`hokage-silhouette.jpg` 1.7MB）が tracked のまま配布されていて、git clone で全ユーザーに届く状態でした。
+
+**今後**:
+
+- `bin/harness` shim を **stdout 無出力 + stderr 診断 + exit 0** に変更。未対応プラットフォームでは stdout が空のため、どの hook スキーマでも「decision 未指定」として扱われ、CC の通常フローを壊しません。`doctor` 等の非 hook コマンドも無音で no-op になります。
+- `docs/images/` に allowlist 形式の `.gitignore` を導入し、README が参照する `claude-harness-logo-with-text.png` と `hokage/hokage-hero.jpg` のみ tracked に残しました。残り 2 ファイル（合計 3.7MB）は `git rm --cached` で untrack し、git clone での配布から外れます。ファイル自体は開発者のローカルには残ります。
+
+### Added
+
+#### `.gitattributes` による release tarball のスリム化
+
+**今まで**: `.gitattributes` が未導入のため、`git archive` で作る release tarball には `tests/` `benchmarks/` `go/` `codex/` `opencode/` `Plans.md` `CONTRIBUTING.md` などの dev-only コンテンツが全部含まれていました。
+
+**今後**: `.gitattributes` を新規作成し、dev-only パスに `export-ignore` を設定しました。`git archive` で作る tarball から以下が除外されます:
+
+- 開発管理系: `Plans.md`, `CONTRIBUTING.md`, `AGENTS.md`, `claude-code-harness.config.{example.json,schema.json,yaml}`
+- CI/開発ツール: `.github/`, `.githooks/`
+- テスト/ベンチ/ソース: `tests/`, `benchmarks/`, `go/`
+- 他 IDE 向けスキルミラー: `codex/`, `opencode/`, `skills-codex/`
+- 開発スクリプト: `scripts/ci/`, `scripts/release/`, `scripts/evidence/`
+- 開発 docs サブツリー: `docs/slides/`, `docs/presentation/`, `docs/design/`, `docs/research/`, `docs/notebooklm/`, `docs/social/`
+
+`docs/images/` 全体は **除外しません**（README 参照の `hokage/hokage-hero.jpg` と `claude-harness-logo-with-text.png` を保護するため）。改行コード正規化ルール（`* text=auto eol=lf`）も併せて設定。
+
+> `git clone` 配布には `.gitattributes` は効きません（これは `git archive` 専用）。clone サイズの削減は上記「未参照画像の untrack」で対応しています。
+
 ### Changed
 
 #### harness-release を汎用化、本体専用は harness-release-internal へ分離

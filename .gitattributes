@@ -1,0 +1,53 @@
+# Paths excluded from `git archive` release tarballs (export-ignore).
+# Does not affect `git clone` — for that, see .gitignore + untracked files.
+
+# Dev-only docs / planning
+Plans.md                export-ignore
+CONTRIBUTING.md         export-ignore
+AGENTS.md               export-ignore
+
+# Dev configs (example/schema) — not needed by end users
+.claude-code-harness.config.yaml            export-ignore
+claude-code-harness.config.example.json     export-ignore
+claude-code-harness.config.schema.json      export-ignore
+
+# CI / dev tooling
+.github/                export-ignore
+.githooks/              export-ignore
+
+# Tests / benchmarks / source
+tests/                  export-ignore
+benchmarks/             export-ignore
+go/                     export-ignore
+
+# Other-IDE skill mirrors (CC users don't need these)
+codex/                  export-ignore
+opencode/               export-ignore
+skills-codex/           export-ignore
+
+# Dev scripts (keep only runtime essentials)
+scripts/ci/             export-ignore
+scripts/release/        export-ignore
+scripts/evidence/       export-ignore
+
+# Dev-heavy docs subtrees. docs/images/ is NOT export-ignored as a whole:
+# it contains tracked README assets (claude-harness-logo-with-text.png and
+# hokage/hokage-hero.jpg) that must ship in `git archive` tarballs.
+# Only clearly dev-only subtrees get export-ignored here.
+docs/slides/            export-ignore
+docs/presentation/      export-ignore
+docs/design/            export-ignore
+docs/research/          export-ignore
+docs/notebooklm/        export-ignore
+docs/social/            export-ignore
+
+# Line-ending normalization
+* text=auto eol=lf
+*.sh text eol=lf
+*.go text eol=lf
+*.md text eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.svg text

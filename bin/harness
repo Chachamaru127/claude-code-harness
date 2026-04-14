@@ -1,4 +1,11 @@
 #!/bin/sh
+# Harness runtime shim — dispatches to platform-specific Go binary.
+# On missing binary: emit diagnostic on stderr, exit 0 with EMPTY stdout
+# so CC hooks treat it as "no decision" (proceed normally) and non-hook
+# subcommands (doctor, sync, validate) no-op silently.
+# Never print JSON here — we don't know which hook/command is being
+# called and emitting the wrong schema breaks the hook protocol.
+
 OS="$(uname -s | tr A-Z a-z)"
 ARCH="$(uname -m)"
 case "$ARCH" in
@@ -8,7 +15,8 @@ esac
 BINARY="$(dirname "$0")/harness-${OS}-${ARCH}"
 if [ -x "$BINARY" ]; then
   exec "$BINARY" "$@"
-else
-  echo "{\"decision\":\"approve\",\"reason\":\"platform not supported: ${OS}-${ARCH}\"}" >&2
-  exit 1
 fi
+
+printf 'claude-code-harness: no binary for %s-%s at %s (command %s skipped).\n' \
+  "$OS" "$ARCH" "$BINARY" "${1:-<none>}" >&2
+exit 0

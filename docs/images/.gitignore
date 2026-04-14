@@ -1,0 +1,17 @@
+# docs/images: strict allowlist — only track assets actually referenced
+# from README or distributed documentation. Everything else (dev
+# screenshots, draft variants, etc.) stays local only.
+
+# Default: ignore everything under docs/images
+/*
+
+# Allow the directory metadata itself
+!/.gitignore
+
+# Allow top-of-README brand logo (README.md:2, README_ja.md:2)
+!/claude-harness-logo-with-text.png
+
+# Allow hokage hero (README.md:24, README_ja.md:24) — but no other hokage assets
+!/hokage/
+/hokage/*
+!/hokage/hokage-hero.jpg
