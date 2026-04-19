@@ -55,13 +55,13 @@ Purpose: `monitors/monitors.json` の description が掲げる 3 要素（harnes
 
 ---
 
-## Phase 49: SessionStart に resume_pack 注入を追加 (XR-003) [P0]
+## Phase 49: SessionStart resume-pack injection の配線欠損を修正 (XR-003) [P0]
 
-Purpose: `cross-repo-session-bootstrap.sh` が harness-mem `/v1/resume-pack` を一切呼んでおらず、新 session 起動時に直前 session の文脈が注入されない状態が 2026-04-19 に確認された。daemon 自体は healthy、`detail_level=L0` の軽量 pack も取得可能なのに hook 側の呼び出しコードが欠損していた。`harness-governance-private/XR-Registry.md` の **XR-003** として発番、harness-mem 側 Plans.md §90 と整合。
+Purpose: harness-mem は daemon / resume-pack API / shell hook scripts (`memory-session-start.sh`, `userprompt-inject-policy.sh`) まで整備されているのに、新 session で直前 session の summary が注入されない状態が 2026-04-19 に確認された。真因は「plugin に同梱されている shell scripts が `.claude-plugin/hooks.json` から一度も呼ばれていなかった」こと。当初は `cross-repo-session-bootstrap.sh` (governance 用 local-only hook) に quick fix を入れる方針で進めたが、関心分離違反かつ `.gitignore` で配布不可と判明し、owner を claude-code-harness plugin に確定。既存 shell scripts に wiring を追加するだけで解決する最小変更に切り替え。`harness-governance-private/XR-Registry.md` の **XR-003** として発番、harness-mem 側 Plans.md §90 と整合。
 
 | Task | 内容 | DoD | Depends | Status |
 |------|------|-----|---------|--------|
-| 49.1.1 | `.claude/hooks/cross-repo-session-bootstrap.sh` に `/v1/resume-pack` 呼び出しを追加する。`detail_level=L0` / `resume_pack_max_tokens=1500` / `limit=3` で取得し、jq で `items` から最新の `session_summary` タイプを抽出、`## 直前セッション要約 (session_id[0:8], ended_at)` セクションを `BOOT_CONTEXT` 末尾に append する。timeout 3 秒、daemon 不達 / jq 欠損 / summary null はいずれも silent skip で bootstrap 本体を壊さない。`HARNESS_MEM_HOST` / `HARNESS_MEM_PORT` 環境変数で上書き可能 (既定 127.0.0.1:37888) | (a) `CLAUDE_PROJECT_DIR=<harness-mem path> bash cross-repo-session-bootstrap.sh` を実行すると stdout JSON の `additionalContext` に `## 直前セッション要約` セクションが含まれる、(b) daemon 停止中でも exit 0 で既存の governance context だけが返る、(c) curl / jq 未インストール環境でも exit 0 で skip、(d) 注入サイズが 5KB 以内、(e) bootstrap 実行が 5 秒以内に完了する | - | cc:WIP |
-| 49.1.2 | harness-mem 側 follow-up `summary_only=true` mode との接続 (S90-002 が landed 後、hook 側 jq を単純化) | harness-mem 側 PR が merge されたら hook script を 3 行程度に縮小できる | 49.1.1, S90-002 | cc:TODO |
+| 49.1.1 | `.claude-plugin/hooks.json` に 2 箇所の shell script 呼び出しを追加する。(i) `SessionStart[matcher="startup\|resume"].hooks` 配列末尾に `bash "${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-session-start.sh"` (timeout 30, once=true) を追加 — 既存の `harness hook session-start` と `memory-bridge` (Go 実装) はそのまま残置し並走。(ii) `UserPromptSubmit[matcher="*"].hooks` の `memory-bridge` と `inject-policy` の間に `bash "${CLAUDE_PLUGIN_ROOT}/scripts/userprompt-inject-policy.sh"` (timeout 15) を挿入 — 先に shell 側で `.memory-resume-pending` flag を処理し `additionalContext` を出した後に既存の Go hook を走らせる | (a) `harness-mem` が healthy な状態で新 session を開くと、1 回目の `UserPromptSubmit` で直前 claude session の `# Session Handoff` summary が `additionalContext` に載る、(b) `memory-resume-pack.json` のタイムスタンプが新 session のたびに更新される、(c) daemon 不達 / `curl` / `jq` 欠損時は shell script が silent skip して既存の Go hooks と governance bootstrap を壊さない、(d) 既存の `harness hook session-start` / `memory-bridge` / `inject-policy` の出力 (decision approve / UserPromptSubmit stub) と `additionalContext` merge が競合しない | - | cc:WIP |
+| 49.1.2 | harness-mem 側 follow-up `summary_only=true` mode が landed したら、plugin 側 shell script (`memory-session-start.sh` / `userprompt-inject-policy.sh`) の jq パイプラインを短縮できないか再検討 | S90-002 merge 後に行数削減 or 廃止のコミットを別 PR で提出 | 49.1.1, S90-002 | cc:TODO |
 
 ---

@@ -112,6 +112,12 @@
             "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/harness\" hook memory-bridge",
             "timeout": 30,
             "once": true
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-session-start.sh\"",
+            "timeout": 30,
+            "once": true
           }
         ]
       }
@@ -294,6 +300,11 @@
             "type": "command",
             "command": "\"${CLAUDE_PLUGIN_ROOT}/bin/harness\" hook memory-bridge",
             "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/userprompt-inject-policy.sh\"",
+            "timeout": 15
           },
           {
             "type": "command",
