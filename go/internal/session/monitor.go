@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -457,6 +458,30 @@ func atoi(s string) int {
 // 48.1.1: harness-mem ヘルスチェック
 // ---------------------------------------------------------------------------
 
+// resolveHarnessBinary は harness 実行バイナリの信頼可能なパスを返す。
+// 優先順位:
+//  1. os.Executable() — 現在実行中の harness binary（最も信頼可能）
+//  2. CLAUDE_PLUGIN_ROOT/bin/harness — plugin インストール済みパス
+//  3. exec.LookPath("harness") — PATH 上の harness
+//
+// projectRoot/bin/harness は信頼境界外（repo 内に悪意ある binary が混入する
+// 可能性がある）のため解決対象に含めない。
+func resolveHarnessBinary() (string, error) {
+	if exe, err := os.Executable(); err == nil && exe != "" {
+		return exe, nil
+	}
+	if root := os.Getenv("CLAUDE_PLUGIN_ROOT"); root != "" {
+		candidate := filepath.Join(root, "bin", "harness")
+		if _, statErr := os.Stat(candidate); statErr == nil {
+			return candidate, nil
+		}
+	}
+	if lookPath, lookErr := exec.LookPath("harness"); lookErr == nil {
+		return lookPath, nil
+	}
+	return "", errors.New("harness binary not found")
+}
+
 // checkMemHealth は harness-mem のヘルスを検査する。
 // h.MemHealthCommand が設定されている場合はそれを使う（テスト注入用）。
 // nil の場合は本番デフォルト実装（bin/harness mem health を exec）を使う。
@@ -470,17 +495,16 @@ func (h *MonitorHandler) checkMemHealth(projectRoot string) (healthy bool, reaso
 }
 
 // defaultMemHealthCheck は bin/harness mem health を exec して結果を返す。
-func (h *MonitorHandler) defaultMemHealthCheck(projectRoot string) (healthy bool, reason string, err error) {
-	// バイナリパスの解決: projectRoot/bin/harness → PATH の harness
-	binaryPath := filepath.Join(projectRoot, "bin", "harness")
-	if _, statErr := os.Stat(binaryPath); statErr != nil {
-		// PATH から探す
-		if lookPath, lookErr := exec.LookPath("harness"); lookErr == nil {
-			binaryPath = lookPath
-		} else {
-			// バイナリが見つからない場合はスキップ（監視全体は止めない）
-			return true, "", nil
-		}
+// projectRoot 引数は signature 後方互換のため保持しているが使用しない。
+// 過去実装は projectRoot/bin/harness を exec していたが、repo 内に悪意ある
+// binary が混入した場合に guardrail を bypass されるリスクがあった。
+// v4.3.1 からは os.Executable() → CLAUDE_PLUGIN_ROOT/bin/harness → PATH
+// の優先順で解決する（いずれも信頼可能なインストール済みパス）。
+func (h *MonitorHandler) defaultMemHealthCheck(_ string) (healthy bool, reason string, err error) {
+	binaryPath, resolveErr := resolveHarnessBinary()
+	if resolveErr != nil {
+		// バイナリが見つからない場合はスキップ（監視全体は止めない）
+		return true, "", nil
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)

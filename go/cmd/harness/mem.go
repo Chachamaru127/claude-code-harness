@@ -3,14 +3,40 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
+	"time"
 )
 
 // memHealthOutput は `bin/harness mem health` の JSON 出力スキーマ。
 type memHealthOutput struct {
 	Healthy bool   `json:"healthy"`
 	Reason  string `json:"reason"`
+}
+
+// daemonProbe は harness-mem daemon への到達性確認。
+// テスト注入のため package 変数。本番では probeHarnessMemDaemon を使う。
+var daemonProbe = probeHarnessMemDaemon
+
+// probeHarnessMemDaemon は HARNESS_MEM_HOST:HARNESS_MEM_PORT に TCP connect を試す。
+// 既定 127.0.0.1:37888。接続失敗はそのまま error を返す（fail-silent な呼び出し側で処理）。
+func probeHarnessMemDaemon() error {
+	host := os.Getenv("HARNESS_MEM_HOST")
+	if host == "" {
+		host = "127.0.0.1"
+	}
+	port := os.Getenv("HARNESS_MEM_PORT")
+	if port == "" {
+		port = "37888"
+	}
+	addr := net.JoinHostPort(host, port)
+	conn, err := net.DialTimeout("tcp", addr, 500*time.Millisecond)
+	if err != nil {
+		return err
+	}
+	_ = conn.Close()
+	return nil
 }
 
 // runMem は `harness mem <subcommand>` を処理する。
@@ -29,7 +55,8 @@ func runMem(args []string) {
 }
 
 // runMemHealth は `harness mem health` サブコマンドを実行する。
-// ~/.claude-mem/ のヘルスチェックを行い JSON を stdout に出力する。
+// ~/.claude-mem/ のファイルチェック後に daemon への TCP probe を行い、
+// いずれかの段階で失敗したら unhealthy を返す。
 // exit 0: healthy, exit 1: unhealthy
 func runMemHealth(_ []string) {
 	result, code := runMemHealthCheck()
@@ -68,6 +95,11 @@ func runMemHealthCheck() (memHealthOutput, int) {
 
 	if !settingsOK && !supervisorOK {
 		return memHealthOutput{Healthy: false, Reason: "corrupted"}, 1
+	}
+
+	// daemon reachability probe: ファイルは揃っていても daemon 停止中は unhealthy
+	if err := daemonProbe(); err != nil {
+		return memHealthOutput{Healthy: false, Reason: "daemon-unreachable"}, 1
 	}
 
 	return memHealthOutput{Healthy: true, Reason: ""}, 0

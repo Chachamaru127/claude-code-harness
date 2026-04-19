@@ -24,7 +24,7 @@ Change history for claude-code-harness.
 
 **今まで**: `monitors.json` の description には「harness-mem health を監視する」と書かれていましたが、実装側にはそれに対応するコードが無く、daemon が unhealthy でも session-monitor は黙って素通りしていました。新 session 起動時に resume_pack が取れないままワークフローが始まる事故（XR-003 の遠因）が発生する状態でした。
 
-**今後**: `bin/harness mem health` サブコマンドを新設し、`MonitorHandler.Handle` から timeout 2 秒で起動します。不達時は stdout 末尾に `⚠️ harness-mem unhealthy: {reason}` の 1 行を出力し、session.json に `harness_mem: { healthy, last_checked, last_error }` を記録。timeout や exec 失敗は healthy=unknown で握り潰して monitor 全体は止めません。
+**今後**: `bin/harness mem health` サブコマンドを新設し、`MonitorHandler.Handle` から timeout 2 秒で起動します。ヘルスチェックは 2 段階で、(i) `~/.claude-mem/` 配下のファイル整合性、(ii) daemon への TCP probe（`HARNESS_MEM_HOST:HARNESS_MEM_PORT` 既定 `127.0.0.1:37888`、500ms timeout）、の両方が通った場合のみ healthy 判定。daemon 停止中は `⚠️ harness-mem unhealthy: daemon-unreachable` を stdout に出し、session.json に `harness_mem: { healthy, last_checked, last_error }` を記録。timeout や exec 失敗は healthy=unknown で握り潰して monitor 全体は止めません。なお `defaultMemHealthCheck` が exec する harness binary は `os.Executable()` → `CLAUDE_PLUGIN_ROOT/bin/harness` → `PATH` の順で解決し、`projectRoot/bin/harness` は信頼境界外として除外します（repo 内に悪意ある binary が混入しても guardrail を bypass されない）。
 
 ```
 ⚠️ harness-mem unhealthy: connection refused (127.0.0.1:37888)
