@@ -6,6 +6,14 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+## [4.3.1] - 2026-04-19
+
+### テーマ: Session Monitor 能動監視化 + XR-003 / Phase 49 hooks wiring 修正
+
+**v4.3.0 "Arcana" 直後に見つかった「`monitors.json` の description 通りに能動監視できていない」「harness-mem の resume-pack 注入 shell scripts が hooks.json から一度も呼ばれていなかった」という 2 つの沈黙バグを一括解消する patch。**
+
+---
+
 ### テーマ: Session Monitor の能動監視化 — manifest と実装の description 乖離を解消
 
 **`monitors/monitors.json` が掲げる 3 要素（harness-mem health / advisor-reviewer drift / Plans.md drift）のうち、これまでは Plans.md の件数カウントと git 状態しか見られていなかった。残り 2 要素を `go/internal/session/monitor.go` に実装し、出力を `⚠️ {category}: {detail}` 1 行形式に統一することで、Claude 側が重要度判定して PushNotification を発火できるようにした。**
@@ -61,6 +69,18 @@ Phase 48 の Reviewer 判定は `APPROVE` (critical=0 / major=0 / minor=3) で�
 **今後**: `UserPromptSubmit[matcher="*"].hooks` の `memory-bridge` と `inject-policy` の間に `bash "${CLAUDE_PLUGIN_ROOT}/scripts/userprompt-inject-policy.sh"` を挿入しました。timeout 15 秒。先に shell 側で `.memory-resume-pending` flag を処理し、続けて Go 側の `harness hook inject-policy` を走らせる構成です。Claude Code は複数 hook の `additionalContext` をマージする仕様なので、どちらか片方だけ出しても、両方出しても安全に動作します。
 
 **検証**: この PR を merge し、harness-mem が healthy な状態で Claude Code を新 session で起動すると、1 回目の `UserPromptSubmit` から直前 claude session の `# Session Handoff` summary が `additionalContext` に載ります。daemon 不達 / `curl` / `jq` 欠損時は shell script 側で silent skip し、既存の Go hooks と governance bootstrap は壊れません。
+
+#### dual sync 修正と機械検証の追加 (Phase 49.1.1 release hardening)
+
+**今まで**: 先行 PR (`2c60972b`) では `.claude-plugin/hooks.json` だけに Phase 49 エントリを追加し、`hooks/hooks.json` (source file for development) が置き去りになっていました。`.claude/rules/hooks-editing.md` が必須としている dual sync が破れた状態で、後続の `sync-plugin-cache.sh` 実行で `.claude-plugin/` 側が `hooks/` 側から上書きされ Phase 49 が**静かに消える**リスクがありました。さらに既存の `tests/test-memory-hook-wiring.sh` は `memory-bridge` の有無しか見ておらず、この欠落を検出できませんでした。
+
+**今後**: release 直前に両 `hooks.json` を揃え、`tests/test-memory-hook-wiring.sh` を次の 3 点で拡張しました。
+- 両 `hooks.json` の `SessionStart[startup|resume]` に `memory-session-start.sh` が存在する (DoD a 配線)
+- 両 `hooks.json` の `UserPromptSubmit[*]` に `userprompt-inject-policy.sh` が存在する (DoD a 配線)
+- `UserPromptSubmit` の hook 順序が `memory-bridge` → `userprompt-inject-policy.sh` → `inject-policy` であることを jq で assert (DoD d: `additionalContext` merge が壊れない配列順)
+- `userprompt-inject-policy.sh` を空 stdin / harness-mem 不達状態で実行して valid な `{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit"}}` JSON を返すことを確認 (DoD c: silent skip)
+
+これで次回以降の dual sync 忘れは CI (`validate-plugin.sh` セクション 8) で即ブロックされます。
 
 ---
 
@@ -3384,7 +3404,8 @@ Purpose: 自己修正ループ失敗時に「止まるだけ」から「次の�
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.3.0...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.3.1...HEAD
+[4.3.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.3.0...v4.3.1
 [4.3.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.2.0...v4.3.0
 [4.2.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.1.1...v4.2.0
 [4.1.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.1.0...v4.1.1

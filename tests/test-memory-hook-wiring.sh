@@ -57,7 +57,62 @@ for hooks_file in "${ROOT_DIR}/hooks/hooks.json" "${ROOT_DIR}/.claude-plugin/hoo
     echo "Stop is missing memory-bridge stop in ${hooks_file}"
     exit 1
   }
+
+  # --- XR-003 / Phase 49: shell 実装の resume-pack 注入 wiring 検証 ---
+  # SessionStart[startup|resume] に memory-session-start.sh が入っていること (DoD a の配線)
+  jq -e '.hooks.SessionStart[] | select(.matcher | test("(^|\\|)startup($|\\|)")) | .hooks[] | select(.command? | strings | contains("memory-session-start.sh"))' "${hooks_file}" >/dev/null || {
+    echo "SessionStart startup is missing memory-session-start.sh (Phase 49) in ${hooks_file}"
+    exit 1
+  }
+  jq -e '.hooks.SessionStart[] | select(.matcher | test("(^|\\|)resume($|\\|)")) | .hooks[] | select(.command? | strings | contains("memory-session-start.sh"))' "${hooks_file}" >/dev/null || {
+    echo "SessionStart resume is missing memory-session-start.sh (Phase 49) in ${hooks_file}"
+    exit 1
+  }
+
+  # UserPromptSubmit に userprompt-inject-policy.sh が入っていること (DoD a の配線)
+  jq -e '.hooks.UserPromptSubmit[] | .hooks[] | select(.command? | strings | contains("userprompt-inject-policy.sh"))' "${hooks_file}" >/dev/null || {
+    echo "UserPromptSubmit is missing userprompt-inject-policy.sh (Phase 49) in ${hooks_file}"
+    exit 1
+  }
+
+  # UserPromptSubmit での順序: memory-bridge → userprompt-inject-policy.sh → inject-policy (DoD d: merge 競合しない配列順)
+  order_check=$(jq -r '.hooks.UserPromptSubmit[] | select(.matcher=="*") | .hooks | map(.command) | map(
+    if test("hook memory-bridge") then "1:memory-bridge"
+    elif test("userprompt-inject-policy.sh") then "2:userprompt-inject-policy"
+    elif test("hook inject-policy") then "3:inject-policy"
+    else empty end
+  ) | join(",")' "${hooks_file}")
+  [[ "${order_check}" == "1:memory-bridge,2:userprompt-inject-policy,3:inject-policy" ]] || {
+    echo "UserPromptSubmit hook order mismatch in ${hooks_file}: got '${order_check}'"
+    echo "expected order: memory-bridge → userprompt-inject-policy.sh → inject-policy"
+    exit 1
+  }
 done
+
+# --- DoD (c): harness-mem daemon 不達時 userprompt-inject-policy.sh が silent skip する ---
+# 空 stdin / state dir 無しでも exit 0 で JSON を返すこと
+SILENT_TMP="$(mktemp -d)"
+trap 'rm -rf "${TMP_DIR}" "${SILENT_TMP}"' EXIT
+silent_out="$(cd "${SILENT_TMP}" && echo '' | bash "${ROOT_DIR}/scripts/userprompt-inject-policy.sh" 2>/dev/null || true)"
+# state dir が無いため early exit し空出力になる — 既存 Go hooks と additionalContext merge が競合しない
+if [ -n "${silent_out}" ]; then
+  # 出力がある場合は valid な JSON schema であること
+  echo "${silent_out}" | jq -e '.hookSpecificOutput.hookEventName == "UserPromptSubmit"' >/dev/null || {
+    echo "userprompt-inject-policy.sh silent-skip output is not a valid UserPromptSubmit hook JSON"
+    echo "output: ${silent_out}"
+    exit 1
+  }
+fi
+
+# state dir ありだが harness-mem daemon 不達（resume pending flag 無し）でも silent skip する
+mkdir -p "${SILENT_TMP}/.claude/state"
+echo '{"session_id":"test","prompt_seq":0}' > "${SILENT_TMP}/.claude/state/session.json"
+no_resume_out="$(cd "${SILENT_TMP}" && echo '{"prompt":"test"}' | bash "${ROOT_DIR}/scripts/userprompt-inject-policy.sh" 2>/dev/null)"
+echo "${no_resume_out}" | jq -e '.hookSpecificOutput.hookEventName == "UserPromptSubmit"' >/dev/null || {
+  echo "userprompt-inject-policy.sh did not return valid UserPromptSubmit JSON when daemon unreachable"
+  echo "output: ${no_resume_out}"
+  exit 1
+}
 
 mkdir -p "${TMP_DIR}/.claude/state/snapshots"
 mkdir -p "${TMP_DIR}/scripts/lib"
