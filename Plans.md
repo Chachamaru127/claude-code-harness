@@ -65,3 +65,13 @@ Purpose: harness-mem は daemon / resume-pack API / shell hook scripts (`memory-
 | 49.1.2 | harness-mem 側 follow-up `summary_only=true` mode が landed したら、plugin 側 shell script (`memory-session-start.sh` / `userprompt-inject-policy.sh`) の jq パイプラインを短縮できないか再検討 | 調査結果: claude-code-harness 側 `scripts/hook-handlers/memory-session-start.sh` は 7 行の薄いラッパーで harness-mem の同名スクリプトを `exec` 丸投げ、`scripts/userprompt-inject-policy.sh` は `memory-resume-context.md` を読むのみで `/v1/resume-pack` を直接呼ばない。したがって plugin 側に短縮対象となる jq パイプラインは存在せず no-op close。実短縮は harness-mem の `4a7cb36` (`hook_extract_meta_summary` / `hook_fetch_resume_pack_summary_only` 追加) が担い、wrapper の delegate 構造により plugin 側が自動継承する。cross-repo handoff: [harness-mem#70](https://github.com/Chachamaru127/harness-mem/issues/70) | 49.1.1, S90-002 | cc:完了 [no-op, harness-mem#70] |
 
 ---
+
+## Phase 50: active watching 機能の 3-state 依存テスト規約化 [P2]
+
+Purpose: v4.3.1 で Session Monitor に harness-mem active watching を追加した直後に、v4.3.3 hotfix として「`~/.claude-mem/` 不在で unhealthy 誤警告」regression を修正する必要があった。根本原因は「opt-in な外部依存に対して、未インストール状態のテストケースを最初から書いていなかった」こと。同じ形の regression が将来の active watching 機能（MCP server health, Codex daemon 監視など）で再発しないよう、テスト設計規約を `.claude/rules/` に明文化する。D40 / P29 で SSOT 昇格済みの tri-state 設計パターンの自然な運用ルール化。
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 50.1.1 | `.claude/rules/active-watching-test-policy.md` を新規作成する。以下を含める: (a) 規約の適用範囲（「Session Monitor 等で外部プロセス / ファイル / daemon を watch するコードを新規追加する場合」を literal に列挙）、(b) 3 状態の定義と期待挙動（未インストール = `not-configured` で healthy=true + warning 無し、未起動 = `daemon-unreachable` 等で unhealthy + warning 有り、破損 = `corrupted` で unhealthy + warning 有り）、(c) 3 状態それぞれに対するテスト命名規約（`TestXxx_NotConfigured` / `TestXxx_Unreachable` / `TestXxx_Corrupted`）、(d) v4.3.3 hotfix を事例付録として参照 (`go/cmd/harness/mem.go` の `runMemHealthCheck` + `go/internal/session/monitor_test.go` の 3 テストを good example として link)、(e) D40 / P29 / `.claude/rules/migration-policy.md` との関係を 1 行で整理 | (a) `.claude/rules/active-watching-test-policy.md` が 80-150 行で存在、(b) 3 状態の命名規約が表形式で明示、(c) 事例付録に v4.3.3 の該当コミット SHA `23589344` と対象ファイル 2 つが link、(d) `CLAUDE.md` の Permission Boundaries / Test Tampering Prevention セクション周辺から新ルールへの pointer が 1 行追加される、(e) `./tests/validate-plugin.sh` 全 PASS、(f) 既存の opus-4-7-prompt-audit / test-quality / implementation-quality ルールと衝突しない | - | cc:WIP |
+
+---
