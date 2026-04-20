@@ -109,6 +109,7 @@ func HandleAskUserQuestionNormalize(in io.Reader, out io.Writer) error {
 type askQuestionOptionSet struct {
 	labels       map[string]string
 	canonicalMap map[string]string
+	multiSelect  bool
 }
 
 func extractAskQuestionOptions(raw interface{}) map[string]askQuestionOptionSet {
@@ -131,6 +132,9 @@ func extractAskQuestionOptions(raw interface{}) map[string]askQuestionOptionSet 
 		optionSet := askQuestionOptionSet{
 			labels:       make(map[string]string),
 			canonicalMap: make(map[string]string),
+		}
+		if ms, ok := q["multiSelect"].(bool); ok {
+			optionSet.multiSelect = ms
 		}
 		if options, ok := q["options"].([]interface{}); ok {
 			for _, opt := range options {
@@ -234,6 +238,9 @@ func normalizeAskQuestionAnswers(rawAnswers map[string]string, questions map[str
 func normalizeAskQuestionAnswer(raw string, options askQuestionOptionSet) (string, bool, bool) {
 	parts := splitAnswerParts(raw)
 	if len(parts) == 0 {
+		return "", false, false
+	}
+	if len(parts) > 1 && !options.multiSelect {
 		return "", false, false
 	}
 	normalizedParts := make([]string, 0, len(parts))

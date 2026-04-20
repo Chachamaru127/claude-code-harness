@@ -134,6 +134,25 @@ func TestHandleAskUserQuestionNormalize_MultiSelectAnswers(t *testing.T) {
 	}
 }
 
+func TestHandleAskUserQuestionNormalize_MultiValueRejectedForSingleSelect(t *testing.T) {
+	t.Setenv("HARNESS_ASK_USER_QUESTION_ANSWERS", `{"Workflow style?":["探索","playwright"]}`)
+
+	input := `{
+		"tool_name":"AskUserQuestion",
+		"tool_input":{
+			"questions":[{"question":"Workflow style?","header":"Style","options":[{"label":"exploratory"},{"label":"scripted"}],"multiSelect":false}]
+		}
+	}`
+
+	var out bytes.Buffer
+	if err := HandleAskUserQuestionNormalize(strings.NewReader(input), &out); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if out.Len() != 0 {
+		t.Fatalf("expected no output when single-select receives multi-value answer, got %s", out.String())
+	}
+}
+
 func TestHandleAskUserQuestionNormalize_IgnoresStaleEnvAnswers(t *testing.T) {
 	t.Setenv("HARNESS_ASK_USER_QUESTION_ANSWERS", `{"Other question?":"solo"}`)
 

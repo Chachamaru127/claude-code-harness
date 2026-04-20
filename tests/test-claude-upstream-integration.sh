@@ -144,4 +144,38 @@ grep -q 'TestR05_MacOSPrivatePath' "${GUARDRAIL_RULES_TEST_GO}" || {
   exit 1
 }
 
+# v2.1.113: template parity for deniedDomains (consumer init must inherit metadata protection)
+SECURITY_TEMPLATE="${ROOT_DIR}/templates/claude/settings.security.json.template"
+[ -f "${SECURITY_TEMPLATE}" ] || {
+  echo "settings.security.json.template does not exist"
+  exit 1
+}
+jq -e '.sandbox.network.deniedDomains | type == "array" and (index("169.254.169.254") != null)' "${SECURITY_TEMPLATE}" >/dev/null || {
+  echo "${SECURITY_TEMPLATE} is missing deniedDomains parity with .claude-plugin/settings.json"
+  exit 1
+}
+
+# v2.1.113: end-to-end exercise of ask-user-question-normalize hook (binary contract smoke)
+HARNESS_BIN="${ROOT_DIR}/bin/harness"
+if [ -x "${HARNESS_BIN}" ]; then
+  ASK_HOOK_INPUT='{"tool_name":"AskUserQuestion","tool_input":{"questions":[{"question":"Execution mode?","header":"Mode","options":[{"label":"solo"},{"label":"team"}],"multiSelect":false}],"answers":{"Execution mode?":"solo"}}}'
+  ASK_HOOK_OUTPUT="$(printf '%s' "${ASK_HOOK_INPUT}" | "${HARNESS_BIN}" hook ask-user-question-normalize 2>/dev/null || true)"
+  if [ -z "${ASK_HOOK_OUTPUT}" ]; then
+    echo "ask-user-question-normalize hook produced no output for a valid single-select answer"
+    exit 1
+  fi
+  printf '%s' "${ASK_HOOK_OUTPUT}" | jq -e '.hookSpecificOutput.permissionDecision == "allow" and .hookSpecificOutput.hookEventName == "PreToolUse"' >/dev/null || {
+    echo "ask-user-question-normalize hook output missing expected permissionDecision/hookEventName"
+    echo "output: ${ASK_HOOK_OUTPUT}"
+    exit 1
+  }
+  printf '%s' "${ASK_HOOK_OUTPUT}" | jq -e '.hookSpecificOutput.updatedInput.answers["Execution mode?"] == "solo"' >/dev/null || {
+    echo "ask-user-question-normalize hook did not echo answers in updatedInput"
+    echo "output: ${ASK_HOOK_OUTPUT}"
+    exit 1
+  }
+else
+  echo "skip: bin/harness is not executable, skipping end-to-end ask-user-question-normalize exercise"
+fi
+
 echo "OK"
