@@ -47,7 +47,7 @@ All responses must be in **Japanese** (including `context: fork` skills).
 
 ## Repository Structure
 
-`.claude-plugin/` Plugin manifest / `agents/` Sub-agents (Worker, Reviewer, Scaffolder) / `skills/` Skills (5-verb skills) / `hooks/` Hooks / `scripts/` Shell scripts / `docs/` Documentation / `tests/` Validation / `go/` Harness v4 Go rewrite ([SPEC.md](go/SPEC.md) — 詳細仕様, [DESIGN.md](go/DESIGN.md) — 設計) / `bin/` Go バイナリ出力 / `core/` TypeScript engine (guardrails + state management)
+`.claude-plugin/` Plugin manifest / `agents/` Sub-agents (Worker, Reviewer, Scaffolder, Advisor) / `skills/` Skills / `hooks/` Hooks / `scripts/` Shell scripts / `docs/` Documentation / `tests/` Validation / `go/` Harness v4 Go native engine (guardrails + state management) ([SPEC.md](go/SPEC.md) — 詳細仕様, [DESIGN.md](go/DESIGN.md) — 設計) / `bin/` Go バイナリ出力
 
 ## Using Skills (Important)
 
@@ -89,6 +89,7 @@ Details: [docs/CLAUDE-commands.md](docs/CLAUDE-commands.md)
 - **Watch for self-reference**: Running `/work` on this plugin means editing its own code
 - **Hooks run automatically**: PreToolUse/PostToolUse guards are active
 - **VERSION sync**: Leave version files untouched in normal PRs; update them only for releases
+- **Worker 契約 (v4.3.0+)**: Worker は `worker-report.v1` で self_review 5 件必須。Plans.md の `cc:*` マーカー書換は NG-1 で自動 deny。詳細: [agents/worker.md](agents/worker.md)
 
 ## MCP Trust Policy
 
@@ -139,5 +140,6 @@ Details & handoff: [docs/CLAUDE-commands.md](docs/CLAUDE-commands.md)
 Details: [.claude/rules/test-quality.md](.claude/rules/test-quality.md) / [.claude/rules/implementation-quality.md](.claude/rules/implementation-quality.md)
 
 - Migration policy: [.claude/rules/migration-policy.md](.claude/rules/migration-policy.md) - deleted-concepts.yaml の運用ルール (Phase 40 で導入)
+- Active watching test policy: [.claude/rules/active-watching-test-policy.md](.claude/rules/active-watching-test-policy.md) - 外部 daemon / opt-in ファイル監視機能の 3 状態テスト規約 (Phase 50 で導入、D40 / P29 運用ルール化)
 
-<!-- harness-integrity: last-audit=2026-04-07 -->
+<!-- harness-integrity: last-audit=2026-04-19 -->
