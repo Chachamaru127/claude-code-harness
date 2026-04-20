@@ -82,25 +82,30 @@ func TestRunMemHealth_DaemonUnreachable(t *testing.T) {
 	}
 }
 
-func TestRunMemHealth_NotInitialized(t *testing.T) {
+// TestRunMemHealth_NotConfigured は harness-mem 未インストール環境を想定する。
+// `~/.claude-mem/` が無い = opt-in 未使用 なので、壊れている扱い (unhealthy) では
+// なく監視対象外 (healthy + reason="not-configured") として扱う。
+// これにより MonitorHandler 側の `⚠️ harness-mem unhealthy` 警告が
+// harness-mem を使っていないユーザーのセッションで誤発火しない。
+func TestRunMemHealth_NotConfigured(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	// ~/.claude-mem/ を作成しない
+	// ~/.claude-mem/ を作成しない (harness-mem 未インストール状態)
 
 	out, exitCode := captureMemHealth()
-	if exitCode == 0 {
-		t.Fatalf("expected non-zero exit for not-initialized, got 0; output: %s", out)
+	if exitCode != 0 {
+		t.Fatalf("expected exit 0 for not-configured (opt-in not used), got %d; output: %s", exitCode, out)
 	}
 
 	var result memHealthResult
 	if err := json.Unmarshal([]byte(out), &result); err != nil {
 		t.Fatalf("invalid JSON output: %v\nraw: %s", err, out)
 	}
-	if result.Healthy {
-		t.Errorf("expected healthy=false")
+	if !result.Healthy {
+		t.Errorf("expected healthy=true for not-configured (monitor exclusion), got false")
 	}
-	if result.Reason != "not-initialized" {
-		t.Errorf("expected reason=not-initialized, got %q", result.Reason)
+	if result.Reason != "not-configured" {
+		t.Errorf("expected reason=not-configured, got %q", result.Reason)
 	}
 }
 

@@ -175,6 +175,8 @@ deleted_concepts:
       - "docs/research/"  # リサーチドキュメント（claude-mem 統合調査を含む）
       - "go/cmd/harness/mem.go"  # harness-mem health check 実装（~/.claude-mem/ パスを検査する正当な参照）
       - "go/cmd/harness/mem_test.go"  # mem health テスト（~/.claude-mem/ を TempDir で模擬）
+      - "go/internal/session/monitor_test.go"  # monitor mem health 回帰テスト（v4.3.3 で not-configured regression 対応コメント内に ~/.claude-mem/ 参照あり）
+      - "go/.claude/state/"  # gitignored な session state snapshot（.claude/state/ と同扱い、サブディレクトリ配下のため別 prefix で追加）
       - "go/cmd/harness/main.go"  # harness mem サブコマンドの usage 表示
       - "go/harness"  # ビルド済みバイナリ（mem.go のシンボルを含む）
       - "bin/harness"  # ビルド済み harness 本体と platform variant（harness-darwin-amd64 等は prefix match で同時にカバー）。bin/claude-mem 等の旧 binary は allowlist 外として検出対象のままにする。

@@ -67,17 +67,27 @@ func runMemHealth(_ []string) {
 
 // runMemHealthCheck はヘルスチェックロジックを実行し、結果と exit code を返す。
 // テストからも直接呼び出せるよう os.Exit を含まない形で分離する。
+//
+// harness-mem が未設定のケース (`~/.claude-mem/` が存在しない) は、
+// 「壊れている」ではなく「監視対象外」として扱う。
+// healthy=true + reason="not-configured" を返すことで、
+// MonitorHandler 側の `⚠️ harness-mem unhealthy` 警告を抑止する。
+// daemon 停止 (daemon-unreachable) や構成破損 (corrupted) は従来どおり unhealthy。
 func runMemHealthCheck() (memHealthOutput, int) {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return memHealthOutput{Healthy: false, Reason: "not-initialized"}, 1
+		// ホームディレクトリ解決失敗は環境異常。
+		// harness-mem 未設定判定もできない状態なので healthy=true で手を引く。
+		return memHealthOutput{Healthy: true, Reason: "not-configured"}, 0
 	}
 
 	claudeMem := filepath.Join(home, ".claude-mem")
 
-	// ~/.claude-mem/ の存在チェック
+	// ~/.claude-mem/ の存在チェック。
+	// 不在 = harness-mem がそもそもインストールされていない (opt-in 未使用)。
+	// 監視対象外として healthy 扱いにして exit 0 を返す。
 	if _, err := os.Stat(claudeMem); os.IsNotExist(err) {
-		return memHealthOutput{Healthy: false, Reason: "not-initialized"}, 1
+		return memHealthOutput{Healthy: true, Reason: "not-configured"}, 0
 	}
 
 	// settings.json または supervisor.json のいずれかが読めるか

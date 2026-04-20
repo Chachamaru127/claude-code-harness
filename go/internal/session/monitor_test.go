@@ -336,7 +336,7 @@ func TestMonitorHandler_HarnessMemUnhealthy(t *testing.T) {
 		StateDir:  stateDir,
 		PlansFile: filepath.Join(dir, "Plans.md"),
 		MemHealthCommand: func(_ context.Context) (bool, string, error) {
-			return false, "not-initialized", nil
+			return false, "daemon-unreachable", nil
 		},
 	}
 
@@ -349,8 +349,8 @@ func TestMonitorHandler_HarnessMemUnhealthy(t *testing.T) {
 	if !strings.Contains(s, "harness-mem unhealthy") {
 		t.Errorf("expected unhealthy warning in output, got:\n%s", s)
 	}
-	if !strings.Contains(s, "not-initialized") {
-		t.Errorf("expected reason 'not-initialized' in warning, got:\n%s", s)
+	if !strings.Contains(s, "daemon-unreachable") {
+		t.Errorf("expected reason 'daemon-unreachable' in warning, got:\n%s", s)
 	}
 
 	// session.json の harness_mem.healthy が false
@@ -366,8 +366,53 @@ func TestMonitorHandler_HarnessMemUnhealthy(t *testing.T) {
 	if sess.HarnessMem.Healthy {
 		t.Errorf("expected harness_mem.healthy=false in session.json")
 	}
-	if sess.HarnessMem.LastError != "not-initialized" {
-		t.Errorf("expected harness_mem.last_error=not-initialized, got %q", sess.HarnessMem.LastError)
+	if sess.HarnessMem.LastError != "daemon-unreachable" {
+		t.Errorf("expected harness_mem.last_error=daemon-unreachable, got %q", sess.HarnessMem.LastError)
+	}
+}
+
+// TestMonitorHandler_HarnessMemNotConfigured は harness-mem 未インストール
+// ユーザーのセッションで `⚠️ harness-mem unhealthy` 警告が誤発火しないことを固定する。
+// v4.3.1 で導入された mem health check が `~/.claude-mem/` 不在時に
+// `not-initialized`/unhealthy を返し、監視対象外のユーザーにも警告が出ていた regression
+// を v4.3.3 で修正 (opt-in 未使用 = healthy=true + reason="not-configured" 扱い)。
+func TestMonitorHandler_HarnessMemNotConfigured(t *testing.T) {
+	dir := t.TempDir()
+	stateDir := filepath.Join(dir, "state")
+
+	h := &MonitorHandler{
+		StateDir:  stateDir,
+		PlansFile: filepath.Join(dir, "Plans.md"),
+		MemHealthCommand: func(_ context.Context) (bool, string, error) {
+			return true, "not-configured", nil
+		},
+	}
+
+	var out bytes.Buffer
+	if err := h.Handle(strings.NewReader(`{"cwd":"`+dir+`"}`), &out); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	s := out.String()
+	if strings.Contains(s, "harness-mem unhealthy") {
+		t.Errorf("not-configured must NOT emit unhealthy warning, got:\n%s", s)
+	}
+
+	// session.json の harness_mem.healthy=true、LastError は空 (healthy なので)
+	sessionFile := filepath.Join(stateDir, "session.json")
+	data, err := os.ReadFile(sessionFile)
+	if err != nil {
+		t.Fatalf("session.json not created: %v", err)
+	}
+	var sess sessionStateJSON
+	if err := json.Unmarshal(data, &sess); err != nil {
+		t.Fatalf("invalid session.json: %v", err)
+	}
+	if !sess.HarnessMem.Healthy {
+		t.Errorf("expected harness_mem.healthy=true (monitor exclusion), got false")
+	}
+	if sess.HarnessMem.LastError != "" {
+		t.Errorf("expected harness_mem.last_error=\"\" when healthy, got %q", sess.HarnessMem.LastError)
 	}
 }
 
