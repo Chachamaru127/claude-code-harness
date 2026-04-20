@@ -93,6 +93,7 @@ def grep_files(term: str, repo_root: str) -> list:
         result = subprocess.run(
             ["grep", "-rln", "-F",
              "--exclude-dir=.git",
+             "--exclude-dir=.agents",
              term, "."],
             cwd=repo_root,
             capture_output=True,
@@ -139,6 +140,7 @@ def grep_h1_v3_files(repo_root: str) -> list:
         result = subprocess.run(
             ["grep", "-rln", "--include=*.md",
              "--exclude-dir=.git",
+             "--exclude-dir=.agents",
              r"^# .*(v3)", "."],
             cwd=repo_root,
             capture_output=True,

@@ -104,10 +104,16 @@ func normalizeCommand(cmd string) string {
 }
 
 // ---------------------------------------------------------------------------
-// Dangerous rm -rf detection
+// Dangerous deletion detection
 // ---------------------------------------------------------------------------
 
-var rmRecursivePattern = regexp.MustCompile(`\brm\s+--recursive\b`)
+var (
+	rmRecursivePattern            = regexp.MustCompile(`\brm\s+--recursive\b`)
+	findDeletePattern             = regexp.MustCompile(`\bfind\s+.*(?:\s-delete(?:\s|$)|\s-exec\s+rm\s+.*(?:\\;|;|\+|$))`)
+	macOSDangerousRmTargetPattern = regexp.MustCompile(
+		`\brm\s+.*(?:/private/(?:etc|var|tmp|home)(?:/|\s|$)|/System(?:/|\s|$)|/Library/(?:LaunchDaemons|LaunchAgents|Preferences|Keychains)(?:/|\s|$)|~/Library(?:/|\s|$)|/Users/[^/\s]+/Library(?:/|\s|$))`,
+	)
+)
 
 // rmRfManual detects rm with both -r and -f flags (in any order/combination).
 // Go regexp doesn't support lookahead (?=...) so we check manually.
@@ -116,6 +122,9 @@ var rmWithFlags = regexp.MustCompile(`\brm\s+(.+)`)
 func hasDangerousRmRf(command string) bool {
 	// Normalize whitespace before matching (CC 2.1.98: defense-in-depth)
 	command = normalizeCommand(command)
+	if hasDangerousFindDelete(command) || hasDangerousMacOSRemovalPath(command) {
+		return true
+	}
 	if rmRecursivePattern.MatchString(command) {
 		return true
 	}
@@ -145,13 +154,21 @@ func hasDangerousRmRf(command string) bool {
 	return hasR && hasF
 }
 
+func hasDangerousFindDelete(command string) bool {
+	return findDeletePattern.MatchString(command)
+}
+
+func hasDangerousMacOSRemovalPath(command string) bool {
+	return macOSDangerousRmTargetPattern.MatchString(command)
+}
+
 // ---------------------------------------------------------------------------
 // git push --force detection
 // ---------------------------------------------------------------------------
 
 var (
-	forcePushPattern  = regexp.MustCompile(`\bgit\s+push\b.*--force(?:-with-lease)?\b`)
-	forcePushShort    = regexp.MustCompile(`\bgit\s+push\b.*-f\b`)
+	forcePushPattern = regexp.MustCompile(`\bgit\s+push\b.*--force(?:-with-lease)?\b`)
+	forcePushShort   = regexp.MustCompile(`\bgit\s+push\b.*-f\b`)
 )
 
 func hasForcePush(command string) bool {

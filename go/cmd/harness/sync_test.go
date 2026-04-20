@@ -87,6 +87,9 @@ ask = [
 [safety.sandbox]
 failIfUnavailable = true
 
+[safety.sandbox.network]
+deniedDomains = ["169.254.169.254", "metadata.google.internal"]
+
 [safety.sandbox.filesystem]
 denyRead = [".env", "secrets/**", "**/*.pem"]
 allowRead = [".env.example", "docs/**"]
@@ -191,6 +194,20 @@ func TestSync_GeneratesSettingsJSON(t *testing.T) {
 	}
 	if sbRaw["failIfUnavailable"] != true {
 		t.Errorf("sandbox.failIfUnavailable = %v, want true", sbRaw["failIfUnavailable"])
+	}
+	networkRaw, ok := sbRaw["network"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("sandbox.network is not an object")
+	}
+	deniedDomainsRaw, ok := networkRaw["deniedDomains"].([]interface{})
+	if !ok {
+		t.Fatalf("sandbox.network.deniedDomains is not an array")
+	}
+	if len(deniedDomainsRaw) != 2 {
+		t.Errorf("sandbox.network.deniedDomains len = %d, want 2", len(deniedDomainsRaw))
+	}
+	if deniedDomainsRaw[0] != "169.254.169.254" {
+		t.Errorf("sandbox.network.deniedDomains[0] = %v", deniedDomainsRaw[0])
 	}
 	fsRaw, ok := sbRaw["filesystem"].(map[string]interface{})
 	if !ok {

@@ -91,14 +91,14 @@ func resolveProjectRoot(args []string) (string, error) {
 // pluginJSON is the schema for .claude-plugin/plugin.json.
 // Fields that are not set in harness.toml are omitted from the output.
 type pluginJSON struct {
-	Name         string      `json:"name,omitempty"`
-	Version      string      `json:"version,omitempty"`
-	Description  string      `json:"description,omitempty"`
-	Author       interface{} `json:"author,omitempty"`
-	Homepage     string      `json:"homepage,omitempty"`
-	Repository   string      `json:"repository,omitempty"`
-	License      string      `json:"license,omitempty"`
-	Keywords     []string    `json:"keywords,omitempty"`
+	Name        string      `json:"name,omitempty"`
+	Version     string      `json:"version,omitempty"`
+	Description string      `json:"description,omitempty"`
+	Author      interface{} `json:"author,omitempty"`
+	Homepage    string      `json:"homepage,omitempty"`
+	Repository  string      `json:"repository,omitempty"`
+	License     string      `json:"license,omitempty"`
+	Keywords    []string    `json:"keywords,omitempty"`
 	// Skills declares the skill discovery roots per CC 2.1.94+.
 	// Points to the directory containing skill subdirectories (each with SKILL.md).
 	// Previously hardcoded to ["./"] per 009faf74, which assumed SKILL.md lived at
@@ -107,8 +107,8 @@ type pluginJSON struct {
 	// discovered zero skills. v4.0.3 (25bd633d) fixed plugin.json to "./skills/"
 	// but the sync regenerator still wrote back "./"; this field now emits
 	// "./skills/" so subsequent syncs preserve the fix.
-	Skills       []string    `json:"skills,omitempty"`
-	OutputStyles string      `json:"outputStyles,omitempty"`
+	Skills       []string `json:"skills,omitempty"`
+	OutputStyles string   `json:"outputStyles,omitempty"`
 }
 
 func generatePluginJSON(projectRoot string, cfg *config.Config) error {
@@ -125,14 +125,14 @@ func generatePluginJSON(projectRoot string, cfg *config.Config) error {
 	}
 
 	p := pluginJSON{
-		Name:         cfg.Project.Name,
-		Version:      cfg.Project.Version,
-		Description:  cfg.Project.Description,
-		Author:       author,
-		Homepage:     cfg.Project.Homepage,
-		Repository:   cfg.Project.Repository,
-		License:      cfg.Project.License,
-		Keywords:     cfg.Project.Keywords,
+		Name:        cfg.Project.Name,
+		Version:     cfg.Project.Version,
+		Description: cfg.Project.Description,
+		Author:      author,
+		Homepage:    cfg.Project.Homepage,
+		Repository:  cfg.Project.Repository,
+		License:     cfg.Project.License,
+		Keywords:    cfg.Project.Keywords,
 		// Emit ["./skills/"] so CC 2.1.94+ can discover SKILL.md files under the
 		// actual skills directory. The earlier ["./"] value (009faf74) pointed to
 		// the plugin root where no SKILL.md exists, causing distributed installs
@@ -205,8 +205,13 @@ type permissionsField struct {
 }
 
 type sandboxField struct {
-	FailIfUnavailable bool                  `json:"failIfUnavailable"`
+	FailIfUnavailable bool                    `json:"failIfUnavailable"`
+	Network           *sandboxNetworkField    `json:"network,omitempty"`
 	Filesystem        *sandboxFilesystemField `json:"filesystem,omitempty"`
+}
+
+type sandboxNetworkField struct {
+	DeniedDomains []string `json:"deniedDomains,omitempty"`
 }
 
 type sandboxFilesystemField struct {
@@ -240,9 +245,14 @@ func generateSettingsJSON(projectRoot string, cfg *config.Config) error {
 
 	// [safety.sandbox]
 	sb := cfg.Safety.Sandbox
-	if sb.FailIfUnavailable || len(sb.Filesystem.DenyRead) > 0 || len(sb.Filesystem.AllowRead) > 0 {
+	if sb.FailIfUnavailable || len(sb.Network.DeniedDomains) > 0 || len(sb.Filesystem.DenyRead) > 0 || len(sb.Filesystem.AllowRead) > 0 {
 		sf := &sandboxField{
 			FailIfUnavailable: sb.FailIfUnavailable,
+		}
+		if len(sb.Network.DeniedDomains) > 0 {
+			sf.Network = &sandboxNetworkField{
+				DeniedDomains: sb.Network.DeniedDomains,
+			}
 		}
 		if len(sb.Filesystem.DenyRead) > 0 || len(sb.Filesystem.AllowRead) > 0 {
 			sf.Filesystem = &sandboxFilesystemField{

@@ -1,6 +1,6 @@
-# Claude Code 2.1.111 + Opus 4.7 新機能活用ガイド（完全版）
+# Claude Code 2.1.114 + Codex 0.121.0 + Opus 4.7 新機能活用ガイド（完全版）
 
-> **概要**: Harness が活用する Claude Code 2.1.111 と Opus 4.7 までの全機能一覧。
+> **概要**: Harness が活用する Claude Code 2.1.114、Codex 0.121.0、Opus 4.7 までの全機能一覧。
 > CLAUDE.md の Feature Table の完全版（詳細説明付き）。
 
 ## 機能一覧
@@ -158,7 +158,7 @@
 | **Cowork Dispatch 修正 (v2.1.87)** | breezing | Cowork Dispatch のメッセージ配信修正。CC 自動継承 |
 | **`PermissionDenied` hook event (v2.1.89)** | hooks, breezing | auto mode classifier 拒否時に発火。`{retry:true}` でリトライ誘導。Breezing Worker の拒否追跡・Lead 通知に実装 |
 | **`"defer"` permission decision (v2.1.89)** | hooks, breezing | PreToolUse から `"defer"` を返すとヘッドレスセッションを一時停止→resume で再評価。Breezing の安全弁 |
-| **`updatedInput` + `AskUserQuestion` (v2.1.89)** | hooks | ヘッドレス環境で外部 UI が質問を収集し `allow` + 回答を注入。将来の対話型フロー正規化に活用予定 |
+| **`updatedInput` + `AskUserQuestion` (v2.1.89+)** | hooks | ヘッドレス環境で外部 UI / 明示 answer source が質問回答を収集し、既知同義語だけ canonical option label に寄せて `updatedInput.answers` を返す。A: 実装あり (`ask-user-question-normalize`) |
 | **Hook output >50K disk save (v2.1.89)** | hooks | 大出力フックをディスク保存＋プレビュー。コンテキスト肥大化防止 |
 | **Hooks `if` compound command fix (v2.1.89)** | hooks | `ls && git push` や `FOO=bar git push` のような複合コマンドが `if` 条件にマッチするよう修正。CC 自動継承 |
 | **Autocompact thrash loop fix (v2.1.89)** | all skills | 3 回連続 compact→即再充填で actionable error を出して停止。CC 自動継承 |
@@ -219,6 +219,23 @@
 **注記**:
 この追補では `A` と `C` だけを使い、`B` は `0` 件です。  
 `A` は「Harness 側で明示追従する責務がある項目」、`C` は「Claude Code 本体の更新をそのまま継承する項目」を意味します。
+
+## Phase 51 追補テーブル
+
+この追補セクションでは、Claude Code `2.1.112-2.1.114` と Codex `0.121.0` の一次情報から、Harness に載せる項目だけを分類します。
+
+| 機能 | 活用スキル / 領域 | 用途 | 付加価値 |
+|------|-------------------|------|----------|
+| **AskUserQuestion `updatedInput.answers` bridge** | hooks, harness-plan, harness-release | `PreToolUse` で明示的に渡された answers を読み、`solo/team` や `scripted/exploratory` など既知同義語だけを option label に正規化して headless 対話を継続 | `A: 実装あり` (`go/internal/hookhandler/ask_user_question_normalizer.go`, `hooks/hooks.json`, `tests/test-claude-upstream-integration.sh`) |
+| **Claude Code 2.1.113 permission / sandbox hardening** | settings, guardrails | `sandbox.network.deniedDomains` を設定し、`find -exec` / `-delete` と macOS dangerous rm paths を Harness guardrail でも検出 | `A: 実装あり` (`.claude-plugin/settings.json`, `go/internal/guardrail/helpers.go`, `tests/test-claude-upstream-integration.sh`) |
+| **Claude Code 2.1.114 permission dialog crash fix** | hooks, team execution | Agent Teams teammate の permission dialog crash 修正 | `C: CC 自動継承` |
+| **Claude/Codex upstream update Skills gate** | skills, review | upstream update 実施前に version-by-version 分解表を必須化し、PR 対象の `skills/` / `codex/.codex/skills/` と local-only `.agents/skills/` の判定を同期 | `A: 実装あり` (`claude-codex-upstream-update`, `cc-update-review`) |
+| **Codex 0.121.0 marketplace / MCP Apps / memory controls** | setup, future Codex workflow | plugin marketplace、MCP Apps tool calls、memory reset / cleanup、sandbox metadata を Harness の Codex 比較軸へ残す | `P: Plans 化`。今回は Claude hardening 実装を優先し Plans に切り出し |
+| **Codex 0.121.0 secure devcontainer / bubblewrap** | setup, guardrails | secure devcontainer profile と macOS Unix socket allowlist を将来の sandbox policy 比較対象にする | `C: Codex 側調査済み / Harness 変更なし` |
+| **Skills mirror 総点検** | skills, setup | `.agents/skills` の Claude/Codex 置換 drift、Codex native tool model、memory/session path、media generation metadata を棚卸し | `P: Plans 化` (`docs/skills-audit-2026-04-20.md`) |
+
+**注記**:
+Phase 51 でも `B: 書いただけ` は `0` 件です。Codex 0.121.0 の大きい項目は、今回の直接実装ではなく「Codex 比較軸」として Plans に残し、Claude Code 側の `AskUserQuestion.updatedInput` と 2.1.113 hardening は settings / Go / tests まで実装して `A` としました。
 
 ## 機能詳細
 

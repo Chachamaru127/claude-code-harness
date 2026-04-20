@@ -60,6 +60,13 @@ ask = [
 [safety.sandbox]
 failIfUnavailable = true
 
+[safety.sandbox.network]
+deniedDomains = [
+  "169.254.169.254",
+  "metadata.google.internal",
+  "metadata.azure.com",
+]
+
 [safety.sandbox.filesystem]
 denyRead = [
   ".env",
@@ -95,4 +102,3 @@ default_rules = [
 ]
 extra_rules = []                         # project 固有 rule を追加する場合はここに列挙
 max_retries_before_escalate = 2          # 3 回目の差し戻しで Lead に escalate
-

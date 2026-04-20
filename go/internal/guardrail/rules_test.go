@@ -40,6 +40,22 @@ func TestR01_SudoInMiddle(t *testing.T) {
 	}
 }
 
+func TestR01_SudoWrappedByEnv(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "env sudo id"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionDeny {
+		t.Errorf("expected deny, got %s", result.Decision)
+	}
+}
+
+func TestR01_SudoWrappedByWatch(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "watch sudo id"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionDeny {
+		t.Errorf("expected deny, got %s", result.Decision)
+	}
+}
+
 func TestR01_NoSudo(t *testing.T) {
 	ctx := makeCtx("Bash", map[string]interface{}{"command": "ls -la"})
 	result := EvaluateRules(ctx)
@@ -189,6 +205,46 @@ func TestR05_RmFOnly(t *testing.T) {
 
 func TestR05_RmRecursive(t *testing.T) {
 	ctx := makeCtx("Bash", map[string]interface{}{"command": "rm --recursive ./dir"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionAsk {
+		t.Errorf("expected ask, got %s", result.Decision)
+	}
+}
+
+func TestR05_FindDelete(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "find . -name '*.tmp' -delete"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionAsk {
+		t.Errorf("expected ask, got %s", result.Decision)
+	}
+}
+
+func TestR05_FindExecRmRf(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": `find . -type f -exec rm -rf {} \;`})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionAsk {
+		t.Errorf("expected ask, got %s", result.Decision)
+	}
+}
+
+func TestR05_FindPrintOnly(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "find . -name '*.tmp' -print"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionApprove {
+		t.Errorf("expected approve, got %s", result.Decision)
+	}
+}
+
+func TestR05_MacOSPrivatePath(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "rm -r /private/etc"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionAsk {
+		t.Errorf("expected ask, got %s", result.Decision)
+	}
+}
+
+func TestR05_MacOSUserLibrary(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "rm -r ~/Library/Messages"})
 	result := EvaluateRules(ctx)
 	if result.Decision != hookproto.DecisionAsk {
 		t.Errorf("expected ask, got %s", result.Decision)

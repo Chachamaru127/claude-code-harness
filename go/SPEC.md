@@ -142,6 +142,9 @@ CC 公式フック仕様に基づく、フィールドごとの分類。
   // サンドボックス設定
   "sandbox": {
     "failIfUnavailable": true,
+    "network": {
+      "deniedDomains": ["169.254.169.254", "metadata.google.internal"]
+    },
     "filesystem": {
       "denyRead": [".env", "secrets/**", "**/*.pem"],
       "allowRead": [".env.example", "docs/**"]

@@ -6,6 +6,28 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Added
+
+#### Phase 51: Claude Code / Codex upstream 追従 — AskUserQuestion `updatedInput.answers` bridge
+
+**CC のアプデ**: Claude Code hooks docs で `AskUserQuestion` の `tool_input` schema が `questions` + optional `answers` と明文化され、`PreToolUse` hook が `permissionDecision: "allow"` + `updatedInput` を返すことで headless / SDK UI 側の回答を注入できるようになっている。あわせて 2.1.113 / 2.1.114 では permission / sandbox / Agent Teams permission dialog 周りの hardening が進んだ。
+
+**Codex のアプデ**: Codex 0.121.0 では marketplace add、MCP Apps tool calls、memory reset / cleanup、sandbox-state metadata、secure devcontainer などが入り、Harness の Codex workflow 比較軸として残す価値が高い。
+
+**Harness での活用**: `PreToolUse` の `AskUserQuestion` 専用 handler `ask-user-question-normalize` を追加し、明示的な answer source（`tool_input.answers` または `HARNESS_ASK_USER_QUESTION_ANSWERS`）がある場合だけ `updatedInput.answers` を返すようにした。`solo/team`、`scripted/exploratory`、`patch/minor/major` など既知の選択肢だけを option label に正規化し、選択肢にない値・自由入力・承認 yes/no は自動変換しない。
+
+**今まで**: `updatedInput + AskUserQuestion` は Feature Table 上では将来活用予定のままで、hooks から `AskUserQuestion` が発火せず、headless UI が集めた回答を Harness 側で安全に注入する導線がなかった。
+
+**今後**: `hooks/hooks.json` / `.claude-plugin/hooks.json` の `PreToolUse` に `AskUserQuestion` wiring が入り、Go handler + unit test + upstream integration test で「明示 answer source がある時だけ allow + updatedInput」「不明値は no-output fail-open」を固定。Feature Table の Phase 51 追補でも `B: 書いただけ 0 件` として分類済み。
+
+**追加の 2.1.113 hardening**: `.claude-plugin/settings.json` に `sandbox.network.deniedDomains` を追加し、metadata endpoint 系のネットワーク到達を denied domain として明示した。さらに `go/internal/guardrail` で `find -delete` / `find -exec rm ...` と macOS の `/private/etc`, `/private/var`, `/private/tmp`, `/private/home`, `~/Library` 系危険削除パスを R05 の確認対象に追加し、wrapper 経由 `sudo` と合わせて unit test で固定した。
+
+**Skill gate の修正**: `claude-codex-upstream-update` は「実装前に version-by-version 分解表を作る」ことを必須化し、2.1.113 hardening / Codex 0.121.0 / 0.122.0-alpha の確認項目を明文化した。`cc-update-review` は Claude/Codex upstream update review として再定義し、A/C/P 判定、permission / sandbox の安易な C 判定禁止、mirror drift 検出を追加した。PR 対象の `skills/` と `codex/.codex/skills/` を同期し、local-only の `.agents/skills/` も作業環境上では同内容へ更新した。
+
+**検証 hardening**: `validate-plugin` の migration residue check が、配布対象外のローカル `.agents/` スキルミラーまでスキャンして false positive を出していたため、`scripts/check-residue.sh` で `.agents` を除外するようにした。配布対象の `skills/` / `agents/` / `codex/` は従来どおり検査対象。
+
+**Skills 総点検**: 全 `SKILL.md` を点検し、`.agents/skills` の Claude/Codex 置換 drift、Codex native tool model と Claude Code 擬似コードの混在、memory/session path、media generation skill metadata の不整合を `docs/skills-audit-2026-04-20.md` と `Plans.md` Phase 51.2 に切り出した。
+
 ## [4.3.3] - 2026-04-20
 
 ### テーマ: harness-mem 未使用ユーザーへの誤警告 regression を hotfix

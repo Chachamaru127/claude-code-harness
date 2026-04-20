@@ -39,6 +39,9 @@ ask = [
 [safety.sandbox]
 failIfUnavailable = true
 
+[safety.sandbox.network]
+deniedDomains = ["169.254.169.254", "metadata.google.internal"]
+
 [safety.sandbox.filesystem]
 denyRead = [".env", "secrets/**", "**/*.pem"]
 allowRead = [".env.example", "docs/**"]
@@ -103,6 +106,12 @@ func TestParse_Full(t *testing.T) {
 	// [safety.sandbox]
 	if !cfg.Safety.Sandbox.FailIfUnavailable {
 		t.Error("sandbox.failIfUnavailable = false, want true")
+	}
+	if len(cfg.Safety.Sandbox.Network.DeniedDomains) != 2 {
+		t.Errorf("sandbox.network.deniedDomains len = %d, want 2", len(cfg.Safety.Sandbox.Network.DeniedDomains))
+	}
+	if cfg.Safety.Sandbox.Network.DeniedDomains[0] != "169.254.169.254" {
+		t.Errorf("sandbox.network.deniedDomains[0] = %q", cfg.Safety.Sandbox.Network.DeniedDomains[0])
 	}
 	if len(cfg.Safety.Sandbox.Filesystem.DenyRead) != 3 {
 		t.Errorf("sandbox.filesystem.denyRead len = %d, want 3", len(cfg.Safety.Sandbox.Filesystem.DenyRead))

@@ -44,6 +44,13 @@
   },
   "sandbox": {
     "failIfUnavailable": true,
+    "network": {
+      "deniedDomains": [
+        "169.254.169.254",
+        "metadata.google.internal",
+        "metadata.azure.com"
+      ]
+    },
     "filesystem": {
       "denyRead": [
         ".env",

@@ -34,6 +34,11 @@ jq -e '.sandbox.failIfUnavailable == true' "${SETTINGS_FILE}" >/dev/null || {
   exit 1
 }
 
+jq -e '.sandbox.network.deniedDomains | type == "array" and (index("169.254.169.254") != null)' "${SETTINGS_FILE}" >/dev/null || {
+  echo "settings.json is missing sandbox.network.deniedDomains metadata protection"
+  exit 1
+}
+
 for hooks_file in "${HOOK_FILES[@]}"; do
   for event in TaskCreated CwdChanged FileChanged; do
     jq -e ".hooks.${event}[]?.hooks[]? | select(.command | contains(\"runtime-reactive\"))" "${hooks_file}" >/dev/null || {
@@ -44,6 +49,11 @@ for hooks_file in "${HOOK_FILES[@]}"; do
 done
 
 for hooks_file in "${HOOK_FILES[@]}"; do
+  jq -e '.hooks.PreToolUse[]? | select(.matcher == "AskUserQuestion") | .hooks[]? | select(.command | contains("ask-user-question-normalize"))' "${hooks_file}" >/dev/null || {
+    echo "${hooks_file} is missing PreToolUse AskUserQuestion -> ask-user-question-normalize wiring"
+    exit 1
+  }
+
   jq -e '.hooks.PermissionRequest[]? | select(.matcher == "Edit|Write|MultiEdit")' "${hooks_file}" >/dev/null || {
     echo "${hooks_file} is missing PermissionRequest matcher for Edit|Write|MultiEdit"
     exit 1
@@ -96,6 +106,41 @@ PERM_DENIED_HANDLER="${ROOT_DIR}/scripts/hook-handlers/permission-denied-handler
 }
 [ -x "${PERM_DENIED_HANDLER}" ] || {
   echo "permission-denied-handler.sh is not executable"
+  exit 1
+}
+
+# v2.1.89+: AskUserQuestion updatedInput answer bridge exists in Go fast path
+ASK_NORMALIZER_GO="${ROOT_DIR}/go/internal/hookhandler/ask_user_question_normalizer.go"
+[ -f "${ASK_NORMALIZER_GO}" ] || {
+  echo "ask_user_question_normalizer.go does not exist"
+  exit 1
+}
+grep -q 'HARNESS_ASK_USER_QUESTION_ANSWERS' "${ASK_NORMALIZER_GO}" || {
+  echo "ask_user_question_normalizer.go is missing explicit answer source support"
+  exit 1
+}
+grep -q 'updatedInput' "${ASK_NORMALIZER_GO}" || {
+  echo "ask_user_question_normalizer.go is missing updatedInput output"
+  exit 1
+}
+
+# v2.1.113: Bash hardening parity checks for find deletion and macOS dangerous removal paths
+GUARDRAIL_HELPERS_GO="${ROOT_DIR}/go/internal/guardrail/helpers.go"
+GUARDRAIL_RULES_TEST_GO="${ROOT_DIR}/go/internal/guardrail/rules_test.go"
+grep -q 'hasDangerousFindDelete' "${GUARDRAIL_HELPERS_GO}" || {
+  echo "guardrail helpers are missing find -delete / -exec rm detection"
+  exit 1
+}
+grep -q 'hasDangerousMacOSRemovalPath' "${GUARDRAIL_HELPERS_GO}" || {
+  echo "guardrail helpers are missing macOS dangerous removal path detection"
+  exit 1
+}
+grep -q 'TestR05_FindDelete' "${GUARDRAIL_RULES_TEST_GO}" || {
+  echo "guardrail tests are missing find -delete coverage"
+  exit 1
+}
+grep -q 'TestR05_MacOSPrivatePath' "${GUARDRAIL_RULES_TEST_GO}" || {
+  echo "guardrail tests are missing macOS dangerous path coverage"
   exit 1
 }
 

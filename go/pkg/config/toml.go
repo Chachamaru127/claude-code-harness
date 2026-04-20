@@ -25,10 +25,10 @@ import (
 
 // Config is the top-level harness.toml structure.
 type Config struct {
-	Project   ProjectConfig   `toml:"project"`
-	Agent     AgentConfig     `toml:"agent"`
-	Env       map[string]string `toml:"env"`
-	Safety    SafetyConfig    `toml:"safety"`
+	Project ProjectConfig     `toml:"project"`
+	Agent   AgentConfig       `toml:"agent"`
+	Env     map[string]string `toml:"env"`
+	Safety  SafetyConfig      `toml:"safety"`
 }
 
 // ProjectConfig maps to [project] in harness.toml.
@@ -90,8 +90,14 @@ type PermissionsConfig struct {
 // SandboxConfig maps to [safety.sandbox].
 // Reflected to settings.json as the sandbox key.
 type SandboxConfig struct {
-	FailIfUnavailable bool                  `toml:"failIfUnavailable"`
+	FailIfUnavailable bool                    `toml:"failIfUnavailable"`
+	Network           SandboxNetworkConfig    `toml:"network"`
 	Filesystem        SandboxFilesystemConfig `toml:"filesystem"`
+}
+
+// SandboxNetworkConfig maps to [safety.sandbox.network].
+type SandboxNetworkConfig struct {
+	DeniedDomains []string `toml:"deniedDomains"`
 }
 
 // SandboxFilesystemConfig maps to [safety.sandbox.filesystem].

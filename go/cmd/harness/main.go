@@ -10,6 +10,7 @@
 //	harness hook post-compact      — PostCompact WIP context re-injection
 //	harness hook notification      — Notification event logging
 //	harness hook permission-denied — PermissionDenied event logging
+//	harness hook ask-user-question-normalize — PreToolUse AskUserQuestion answer bridge
 //	harness hook session-init      — SessionStart: session initialization + Plans.md summary
 //	harness hook session-cleanup   — SessionEnd: temp file cleanup
 //	harness hook session-monitor   — SessionStart: project state collection + session.json
@@ -110,6 +111,7 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "  hook post-compact       PostCompact WIP context re-injection")
 	fmt.Fprintln(os.Stderr, "  hook notification       Notification event logging")
 	fmt.Fprintln(os.Stderr, "  hook permission-denied  PermissionDenied event logging + Worker retry")
+	fmt.Fprintln(os.Stderr, "  hook ask-user-question-normalize  PreToolUse AskUserQuestion answer bridge")
 	fmt.Fprintln(os.Stderr, "  hook session-init       SessionStart: session initialization + Plans.md summary")
 	fmt.Fprintln(os.Stderr, "  hook session-cleanup    SessionEnd: temp file cleanup")
 	fmt.Fprintln(os.Stderr, "  hook session-monitor    SessionStart: project state collection + session.json")
@@ -261,6 +263,10 @@ func runHook(hookType string) {
 	case "browser-guide":
 		if err := hookhandler.HandleBrowserGuide(os.Stdin, os.Stdout); err != nil {
 			fmt.Fprintf(os.Stderr, "browser-guide handler error: %v\n", err)
+		}
+	case "ask-user-question-normalize":
+		if err := hookhandler.HandleAskUserQuestionNormalize(os.Stdin, os.Stdout); err != nil {
+			fmt.Fprintf(os.Stderr, "ask-user-question-normalize handler error: %v\n", err)
 		}
 	case "memory-bridge":
 		if err := hookhandler.HandleMemoryBridge(os.Stdin, os.Stdout); err != nil {

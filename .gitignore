@@ -25,6 +25,7 @@ env.local
 .claude/*
 !.claude/rules/
 !.claude/output-styles/
+.agents/
 .serena/
 .superset/
 # .mcp.json はプラグイン MCP 設定として配布に含める
