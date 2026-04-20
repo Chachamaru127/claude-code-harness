@@ -38,7 +38,7 @@ Purpose: CLAUDE.md が 141 行となり post-tool-use hook が分割検討を出
 
 | Task | 内容 | DoD | Depends | Status |
 |------|------|-----|---------|--------|
-| 47.1.1 | (a) CLAUDE.md 現行 141 行を section 単位で token 計測し、どのセクションが session-start 読込時に最もコストを食っているかをデータで出す（`wc -l` + 各セクションの行数表を `docs/claude-md-structure-audit.md` に記録）。(b) 他の harness repo (.claude/rules/ 配下 11 ファイル) に移せる section 候補を列挙（例: Permission Boundaries → `.claude/rules/permission-boundaries.md`、MCP Trust Policy → `.claude/rules/mcp-trust-policy.md` として再配置可能か）。(c) 分割した場合の CLAUDE.md side の pointer 方式（`@path/to/file.md` 参照 vs インラインコピー）を比較し、CC 2.1.111+ で `@` 記法が安定動作するかを `tests/test-claude-md-auto-include.sh` のような smoke test で確認（既存があれば参照、無ければ新設不要で観察のみ）。(d) 最終判断: 分割実装する/現状維持する のどちらかを rationale 付きで docs に記録 | (a) section 別 line 計測が docs/claude-md-structure-audit.md にある、(b) 分割候補 section が 2 つ以上列挙されている、(c) `@` 記法の可否が判定済み、(d) 判断と根拠が記録されている、(e) この Phase は調査のみで本体 CLAUDE.md は変更しない | - | cc:WIP |
+| 47.1.1 | (a) CLAUDE.md 現行 141 行を section 単位で token 計測し、どのセクションが session-start 読込時に最もコストを食っているかをデータで出す（`wc -l` + 各セクションの行数表を `docs/claude-md-structure-audit.md` に記録）。(b) 他の harness repo (.claude/rules/ 配下 11 ファイル) に移せる section 候補を列挙（例: Permission Boundaries → `.claude/rules/permission-boundaries.md`、MCP Trust Policy → `.claude/rules/mcp-trust-policy.md` として再配置可能か）。(c) 分割した場合の CLAUDE.md side の pointer 方式（`@path/to/file.md` 参照 vs インラインコピー）を比較し、CC 2.1.111+ で `@` 記法が安定動作するかを `tests/test-claude-md-auto-include.sh` のような smoke test で確認（既存があれば参照、無ければ新設不要で観察のみ）。(d) 最終判断: 分割実装する/現状維持する のどちらかを rationale 付きで docs に記録 | (a) section 別 line 計測が docs/claude-md-structure-audit.md にある、(b) 分割候補 section が 2 つ以上列挙されている、(c) `@` 記法の可否が判定済み、(d) 判断と根拠が記録されている、(e) この Phase は調査のみで本体 CLAUDE.md は変更しない | - | cc:完了 [940fec14] |
 
 ---
 
