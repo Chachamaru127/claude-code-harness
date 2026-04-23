@@ -137,6 +137,43 @@ set -euo pipefail
 echo '{"ok":true,"items":[]}'
 EOF
 
+  cat > "${workdir}/bin/codex" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+cmd="${1:-}"
+shift || true
+if [ "${cmd}" != "exec" ]; then
+  echo "unknown fake codex command: ${cmd}" >&2
+  exit 2
+fi
+
+case "${FAKE_CODEX_MODE:-success}" in
+  fail)
+    cat >/dev/null
+    echo "fake codex failed" >&2
+    exit 42
+    ;;
+  slow)
+    if [ -n "${FAKE_CODEX_PID_FILE:-}" ]; then
+      printf '%s\n' "$$" > "${FAKE_CODEX_PID_FILE}"
+    fi
+    trap 'if [ -n "${FAKE_CODEX_TERM_FILE:-}" ]; then echo terminated > "${FAKE_CODEX_TERM_FILE}"; fi; exit 143' TERM INT
+    while true; do
+      sleep 1
+    done
+    ;;
+  success)
+    cat >/dev/null
+    echo "RESULT: BLOCKED"
+    exit 0
+    ;;
+  *)
+    echo "unknown FAKE_CODEX_MODE: ${FAKE_CODEX_MODE:-}" >&2
+    exit 2
+    ;;
+esac
+EOF
+
   cat > "${workdir}/bin/fake-advisor.sh" <<'EOF'
 #!/bin/bash
 set -euo pipefail
@@ -291,7 +328,7 @@ case "\${cmd}" in
 esac
 EOF
 
-  chmod +x "${workdir}"/bin/fake-*.sh
+  chmod +x "${workdir}"/bin/fake-*.sh "${workdir}/bin/codex"
 }
 
 setup_repo() {
@@ -309,6 +346,37 @@ EOF
   git -C "${repo}" config user.name "Loop Test"
   git -C "${repo}" add Plans.md
   git -C "${repo}" commit -m "initial" >/dev/null 2>&1
+}
+
+setup_local_worker_job() {
+  local repo="$1"
+  local job_id="$2"
+  local prompt_file="${repo}/.claude/state/codex-loop/prompts/${job_id}.md"
+  local job_file="${repo}/.claude/state/codex-loop/jobs/${job_id}.json"
+  local log_file="${repo}/.claude/state/codex-loop/jobs/${job_id}.log"
+  local output_file="${repo}/.claude/state/codex-loop/jobs/${job_id}.out"
+
+  mkdir -p "${repo}/.claude/state/codex-loop/prompts" "${repo}/.claude/state/codex-loop/jobs"
+  printf 'fake prompt\n' > "${prompt_file}"
+  : > "${log_file}"
+  : > "${output_file}"
+  cat > "${job_file}" <<EOF
+{
+  "id": "${job_id}",
+  "status": "queued",
+  "phase": "queued",
+  "title": "Codex Task",
+  "summary": "fake prompt",
+  "workspaceRoot": "${repo}",
+  "jobClass": "task",
+  "write": true,
+  "logFile": "${log_file}",
+  "request": {
+    "cwd": "${repo}",
+    "promptFile": "${prompt_file}"
+  }
+}
+EOF
 }
 
 setup_named_repo() {
@@ -363,6 +431,101 @@ PY
     tries=$((tries + 1))
   done
   return 1
+}
+
+run_local_worker_failure_case() {
+  local tmp
+  tmp="$(mktemp -d)"
+  local repo="${tmp}/repo"
+  local job_id="local-fail-job"
+  mkdir -p "${repo}"
+  setup_fake_tools "${tmp}" "complete"
+  setup_local_worker_job "${repo}" "${job_id}"
+
+  local status=0
+  set +e
+  PROJECT_ROOT="${repo}" \
+  PATH="${tmp}/bin:${PATH}" \
+  FAKE_CODEX_MODE=fail \
+  bash "${LOOP_SCRIPT}" local-task-worker --job-id "${job_id}" >/dev/null 2>&1
+  status=$?
+  set -e
+
+  if [ "${status}" -eq 42 ]; then
+    pass "local worker failure: codex exec exit status propagated"
+  else
+    fail "local worker failure: codex exec exit status was not propagated"
+  fi
+
+  jq -e '.status == "failed" and .phase == "failed" and .pid == null and .childPid == null and .result.status == 42' \
+    "${repo}/.claude/state/codex-loop/jobs/${job_id}.json" >/dev/null \
+    && pass "local worker failure: job recorded failed state" \
+    || fail "local worker failure: job did not record failed state"
+
+  cleanup_tmp "${tmp}"
+}
+
+run_local_worker_cancel_case() {
+  local tmp
+  tmp="$(mktemp -d)"
+  local repo="${tmp}/repo"
+  local job_id="local-cancel-job"
+  local worker_pid=""
+  local codex_pid_file="${tmp}/codex.pid"
+  local codex_term_file="${tmp}/codex-terminated"
+  mkdir -p "${repo}"
+  setup_fake_tools "${tmp}" "complete"
+  setup_local_worker_job "${repo}" "${job_id}"
+  cat > "${repo}/.claude/state/codex-loop/run.json" <<EOF
+{
+  "schema_version": "codex-loop-run.v1",
+  "run_id": "local-cancel-run",
+  "status": "running",
+  "current_job_id": "${job_id}"
+}
+EOF
+
+  PROJECT_ROOT="${repo}" \
+  PATH="${tmp}/bin:${PATH}" \
+  FAKE_CODEX_MODE=slow \
+  FAKE_CODEX_PID_FILE="${codex_pid_file}" \
+  FAKE_CODEX_TERM_FILE="${codex_term_file}" \
+  bash "${LOOP_SCRIPT}" local-task-worker --job-id "${job_id}" >/dev/null 2>&1 &
+  worker_pid=$!
+
+  local tries=0
+  while [ "${tries}" -lt 40 ]; do
+    if jq -e '.childPid != null' "${repo}/.claude/state/codex-loop/jobs/${job_id}.json" >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.1
+    tries=$((tries + 1))
+  done
+
+  PROJECT_ROOT="${repo}" \
+  PATH="${tmp}/bin:${PATH}" \
+  bash "${LOOP_SCRIPT}" stop >/dev/null
+
+  wait "${worker_pid}" 2>/dev/null || true
+
+  if [ -f "${codex_term_file}" ]; then
+    pass "local worker cancel: child codex process received termination"
+  else
+    fail "local worker cancel: child codex process was not terminated"
+  fi
+
+  if [ -f "${codex_pid_file}" ] && ! kill -0 "$(cat "${codex_pid_file}")" 2>/dev/null; then
+    pass "local worker cancel: child codex process exited"
+  else
+    fail "local worker cancel: child codex process is still alive"
+  fi
+
+  jq -e '.status == "cancelled" and .phase == "cancelled" and .pid == null and .childPid == null' \
+    "${repo}/.claude/state/codex-loop/jobs/${job_id}.json" >/dev/null \
+    && pass "local worker cancel: job preserved cancelled state" \
+    || fail "local worker cancel: job did not preserve cancelled state"
+
+  cleanup_tmp "${tmp}"
 }
 
 run_completion_case() {
@@ -913,6 +1076,8 @@ run_reentry_guard_case() {
   cleanup_tmp "${tmp}"
 }
 
+run_local_worker_failure_case
+run_local_worker_cancel_case
 run_completion_case
 run_stop_case
 run_cross_repo_case

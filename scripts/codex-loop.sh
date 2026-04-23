@@ -8,7 +8,17 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SOURCE_PATH="${BASH_SOURCE[0]}"
+while [ -h "${SOURCE_PATH}" ]; do
+  SOURCE_DIR="$(cd -P "$(dirname "${SOURCE_PATH}")" && pwd)"
+  SOURCE_TARGET="$(readlink "${SOURCE_PATH}")"
+  case "${SOURCE_TARGET}" in
+    /*) SOURCE_PATH="${SOURCE_TARGET}" ;;
+    *) SOURCE_PATH="${SOURCE_DIR}/${SOURCE_TARGET}" ;;
+  esac
+done
+SCRIPT_DIR="$(cd -P "$(dirname "${SOURCE_PATH}")" && pwd)"
+SELF_SCRIPT="${SCRIPT_DIR}/$(basename "${SOURCE_PATH}")"
 DEFAULT_INSTALL_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 HARNESS_INSTALL_ROOT="${HARNESS_INSTALL_ROOT:-${DEFAULT_INSTALL_ROOT}}"
 DEFAULT_PROJECT_ROOT="${HARNESS_INSTALL_ROOT}"
@@ -208,6 +218,88 @@ is_pid_alive() {
   local pid="${1:-}"
   [ -n "${pid}" ] || return 1
   kill -0 "${pid}" 2>/dev/null
+}
+
+terminate_process_tree() {
+  local root_pid="${1:-}"
+  local grace_sec="${CODEX_LOOP_CANCEL_GRACE_SEC:-1}"
+  [ -n "${root_pid}" ] || return 1
+  # macOS does not provide setsid by default, so cancel direct descendants too.
+  python_json "${root_pid}" "${grace_sec}" <<'PY'
+import os
+import signal
+import subprocess
+import sys
+import time
+
+try:
+    root = int(sys.argv[1])
+except (TypeError, ValueError):
+    raise SystemExit(1)
+
+try:
+    grace = float(sys.argv[2])
+except (TypeError, ValueError):
+    grace = 1.0
+
+
+def pid_alive(pid):
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+def process_tree(root_pid):
+    try:
+        output = subprocess.check_output(["ps", "-axo", "pid=,ppid="], text=True)
+    except Exception:
+        return []
+    children = {}
+    for raw_line in output.splitlines():
+        parts = raw_line.split()
+        if len(parts) < 2:
+            continue
+        try:
+            pid, ppid = int(parts[0]), int(parts[1])
+        except ValueError:
+            continue
+        children.setdefault(ppid, []).append(pid)
+
+    result = []
+
+    def visit(pid):
+        for child in children.get(pid, []):
+            visit(child)
+            result.append(child)
+
+    visit(root_pid)
+    return result
+
+
+targets = process_tree(root) + [root]
+sent = False
+for pid in targets:
+    try:
+        os.kill(pid, signal.SIGTERM)
+        sent = True
+    except OSError:
+        pass
+
+if sent and grace > 0:
+    time.sleep(grace)
+
+for pid in targets:
+    if not pid_alive(pid):
+        continue
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except OSError:
+        pass
+
+raise SystemExit(0 if sent else 1)
+PY
 }
 
 cleanup_stale_lock_if_needed() {
@@ -587,6 +679,7 @@ if job.get("status") not in {"queued", "running"}:
     raise SystemExit(0)
 
 pid = job.get("pid")
+child_pid = job.get("childPid")
 if not pid:
     job["status"] = "failed"
     job["phase"] = "failed"
@@ -596,9 +689,15 @@ else:
         os.kill(int(pid), 0)
         raise SystemExit(0)
     except OSError:
+        if child_pid:
+            try:
+                os.kill(int(child_pid), signal.SIGTERM)
+            except OSError:
+                pass
         job["status"] = "failed"
         job["phase"] = "failed"
         job["pid"] = None
+        job["childPid"] = None
         job["errorMessage"] = "Loop worker process exited unexpectedly."
 
 with open(job_file, "w", encoding="utf-8") as fh:
@@ -639,7 +738,7 @@ local_task_start_json() {
 EOF
 )"
 
-  nohup bash "$0" local-task-worker --job-id "${job_id}" >/dev/null 2>&1 &
+  nohup bash "${SELF_SCRIPT}" local-task-worker --job-id "${job_id}" >> "${log_file}" 2>&1 &
   local worker_pid=$!
 
   python_json "${job_file}" "${worker_pid}" <<'PY'
@@ -651,6 +750,7 @@ pid = int(sys.argv[2])
 with open(job_file, "r", encoding="utf-8") as fh:
     job = json.load(fh)
 job["pid"] = pid
+job["childPid"] = None
 with open(job_file, "w", encoding="utf-8") as fh:
     json.dump(job, fh, ensure_ascii=False, indent=2)
     fh.write("\n")
@@ -720,30 +820,39 @@ local_task_cancel_json() {
     return 0
   }
 
-  python_json "${job_file}" <<'PY'
+  local worker_pid child_pid cancelled reason
+  worker_pid="$(json_get_file "${job_file}" "pid" "")"
+  child_pid="$(json_get_file "${job_file}" "childPid" "")"
+  cancelled="false"
+  reason="not-running"
+
+  if [ -n "${child_pid}" ] && terminate_process_tree "${child_pid}"; then
+    cancelled="true"
+    reason="signal_sent"
+  fi
+  if [ -n "${worker_pid}" ]; then
+    if kill -TERM "${worker_pid}" 2>/dev/null; then
+      cancelled="true"
+      reason="signal_sent"
+    elif [ "${cancelled}" != "true" ]; then
+      reason="already-exited"
+    fi
+  fi
+
+  python_json "${job_file}" "${cancelled}" "${reason}" <<'PY'
 import json
-import os
-import signal
 import sys
 
 job_file = sys.argv[1]
+cancelled = sys.argv[2] == "true"
+reason = sys.argv[3]
 with open(job_file, "r", encoding="utf-8") as fh:
     job = json.load(fh)
-
-pid = job.get("pid")
-cancelled = False
-reason = "not-running"
-if pid:
-    try:
-        os.kill(int(pid), signal.SIGTERM)
-        cancelled = True
-        reason = "signal_sent"
-    except OSError:
-        reason = "already-exited"
 
 job["status"] = "cancelled"
 job["phase"] = "cancelled"
 job["pid"] = None
+job["childPid"] = None
 with open(job_file, "w", encoding="utf-8") as fh:
     json.dump(job, fh, ensure_ascii=False, indent=2)
     fh.write("\n")
@@ -817,6 +926,7 @@ with open(job_file, "r", encoding="utf-8") as fh:
 job["status"] = "running"
 job["phase"] = "running"
 job["pid"] = pid
+job["childPid"] = None
 job["startedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 with open(job_file, "w", encoding="utf-8") as fh:
     json.dump(job, fh, ensure_ascii=False, indent=2)
@@ -826,8 +936,41 @@ PY
   printf '[%s] local task worker started: %s\n' "$(timestamp_utc)" "${job_id}" >> "${log_file}"
 
   local exit_code=0
-  if ! cat "${prompt_file}" | codex exec - --dangerously-bypass-approvals-and-sandbox > "${output_file}" 2>> "${log_file}"; then
-    exit_code=$?
+  local child_pid=""
+  local worker_cancelled=0
+
+  terminate_child() {
+    worker_cancelled=1
+    if [ -n "${child_pid}" ]; then
+      printf '[%s] local task worker terminating child: %s\n' "$(timestamp_utc)" "${child_pid}" >> "${log_file}"
+      terminate_process_tree "${child_pid}" || true
+    fi
+  }
+
+  trap 'terminate_child' TERM INT
+  codex exec - --dangerously-bypass-approvals-and-sandbox < "${prompt_file}" > "${output_file}" 2>> "${log_file}" &
+  child_pid=$!
+  python_json "${job_file}" "${child_pid}" <<'PY'
+import json
+import sys
+
+job_file = sys.argv[1]
+child_pid = int(sys.argv[2])
+with open(job_file, "r", encoding="utf-8") as fh:
+    job = json.load(fh)
+job["childPid"] = child_pid
+with open(job_file, "w", encoding="utf-8") as fh:
+    json.dump(job, fh, ensure_ascii=False, indent=2)
+    fh.write("\n")
+PY
+  set +e
+  wait "${child_pid}"
+  exit_code=$?
+  set -e
+  trap - TERM INT
+  child_pid=""
+  if [ "${worker_cancelled}" -eq 1 ] && [ "${exit_code}" -eq 0 ]; then
+    exit_code=143
   fi
 
   python_json "${job_file}" "${output_file}" "${exit_code}" <<'PY'
@@ -844,9 +987,15 @@ with job_file.open("r", encoding="utf-8") as fh:
     job = json.load(fh)
 
 raw_output = output_file.read_text(encoding="utf-8") if output_file.exists() else ""
-job["status"] = "completed" if exit_code == 0 else "failed"
-job["phase"] = "done" if exit_code == 0 else "failed"
+was_cancelled = job.get("status") == "cancelled"
+if was_cancelled:
+    job["status"] = "cancelled"
+    job["phase"] = "cancelled"
+else:
+    job["status"] = "completed" if exit_code == 0 else "failed"
+    job["phase"] = "done" if exit_code == 0 else "failed"
 job["pid"] = None
+job["childPid"] = None
 job["completedAt"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 job["result"] = {
     "status": exit_code,
@@ -855,7 +1004,7 @@ job["result"] = {
     "reasoningSummary": [],
 }
 job["rendered"] = raw_output
-if exit_code != 0:
+if exit_code != 0 and not was_cancelled:
     job["errorMessage"] = f"codex exec exited with status {exit_code}"
 
 with job_file.open("w", encoding="utf-8") as fh:
@@ -1736,7 +1885,8 @@ EOF
   mv "${run_tmp}" "${RUN_JSON}"
   : > "${RUNNER_LOG}"
 
-  nohup env CODEX_LOOP_BOOTSTRAP_PID="$$" bash "$0" run --run-id "${run_id}" >/dev/null 2>&1 &
+  log_line "starting runner: script=${SELF_SCRIPT} run_id=${run_id}"
+  nohup env CODEX_LOOP_BOOTSTRAP_PID="$$" bash "${SELF_SCRIPT}" run --run-id "${run_id}" >> "${RUNNER_LOG}" 2>&1 &
   local runner_pid=$!
   printf '%s\n' "${runner_pid}" > "${LOCK_DIR}/pid"
   run_state_patch "$(cat <<EOF
@@ -1998,7 +2148,7 @@ EOF
     local next_cycle
     next_cycle=$((cycle_count + 1))
     local cycle_status=0
-    bash "$0" run-cycle --run-id "${run_id}" --task-id "${task_id}" --cycle "${next_cycle}" || cycle_status=$?
+    bash "${SELF_SCRIPT}" run-cycle --run-id "${run_id}" --task-id "${task_id}" --cycle "${next_cycle}" || cycle_status=$?
     if [ "${cycle_status}" -ne 0 ]; then
       case "${cycle_status}" in
         21) finalize_run "failed" "task_blocked" "Task ${task_id} did not reach approval" ;;

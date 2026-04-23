@@ -56,6 +56,12 @@ Change history for claude-code-harness.
 
 **Skills 総点検**: 全 `SKILL.md` を点検し、`.agents/skills` の Claude/Codex 置換 drift、Codex native tool model と Claude Code 擬似コードの混在、memory/session path、media generation skill metadata の不整合を `docs/skills-audit-2026-04-20.md` と `Plans.md` Phase 51.2 に切り出した。
 
+### Fixed
+
+- `harness codex-loop` の background runner / local worker 再入実行を、呼び出し時の `$0` ではなく実スクリプトの絶対パスで起動するようにし、起動直後に落ちた場合も `runner.log` / job log に原因が残るようにした。
+- local worker が `codex exec` の失敗終了コードを 0 として扱い、失敗ジョブを成功扱いにし得る問題を修正。`codex exec` を子プロセスとして追跡し、`stop` 時に子プロセスまで終了させて orphan を残しにくくした。
+- Codex 用 `harness-loop` skill mirror に、`START..END` / 英字付き task ID 範囲指定と local worker 既定動作の説明を反映した。
+
 ## [4.3.3] - 2026-04-20
 
 ### テーマ: harness-mem 未使用ユーザーへの誤警告 regression を hotfix
