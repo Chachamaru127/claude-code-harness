@@ -44,7 +44,7 @@ All responses must be in **Japanese** (including `context: fork` skills).
 
 ## Repository Structure
 
-`.claude-plugin/` Plugin manifest / `agents/` Sub-agents (Worker, Reviewer, Scaffolder, Advisor) / `skills/` Skills / `hooks/` Hooks / `scripts/` Shell scripts / `docs/` Documentation / `tests/` Validation / `go/` Harness v4 Go native engine (guardrails + state management) ([SPEC.md](go/SPEC.md) — 詳細仕様, [DESIGN.md](go/DESIGN.md) — 設計) / `bin/` Go バイナリ出力
+`.claude-plugin/` Plugin manifest / `.claude/` Claude runtime state, memory, rules, hooks / `.cursor/` Cursor commands, rules, plans, skills / `agents/` Sub-agents / `skills/` Primary skills / `skills-codex/` Codex-specific skill variants / `hooks/` Hooks / `scripts/` Shell scripts / `src/` TypeScript implementation / `app/` App layer / `frontend/` Frontend implementation / `docs/` Documentation / `templates/` Templates / `tests/` Validation / `go/` Harness v4 Go native engine ([SPEC.md](go/SPEC.md), [DESIGN.md](go/DESIGN.md)) / `mcp-server/` MCP server implementation / `harness-ui/` UI subproject / `opencode/` OpenCode-compatible output
 
 ## Using Skills (Important)
 
@@ -52,17 +52,18 @@ All responses must be in **Japanese** (including `context: fork` skills).
 
 > For heavy tasks, skills spawn sub-agents from `agents/` in parallel via the Task tool.
 
-### Top Skill Categories (Top 5)
+### Top Skill Areas
 
 | Category | Purpose | Trigger Examples |
 |---------|---------|-----------------|
-| work | Task implementation (auto-scope detection, --codex support) | "implement", "do it all", "/work" |
-| breezing | Full auto-run with Agent Teams (--codex support) | "run with team", "breezing" |
+| harness-work | Task implementation from Plans.md | "implement", "do it all", "/work" |
+| breezing | Full parallel run with Agent Teams | "run with team", "breezing" |
 | harness-review | Code review, quality checks | "review", "security", "performance" |
-| setup | Setup integration hub (init, harness-mem, Codex CLI, etc.) | "setup", "initialize", "harness-mem", "codex-setup" |
+| harness-plan | Planning and task shaping into Plans.md | "plan", "break this down", "/plan-with-agent" |
+| harness-sync | Check alignment across Plans.md, git state, and implementation | "sync", "is this aligned?", "check drift" |
 | memory | SSOT management, memory search, SSOT promotion | "SSOT", "decisions.md", "memory search", "harness-mem" |
 
-Full category list and hierarchy: [docs/CLAUDE-skill-catalog.md](docs/CLAUDE-skill-catalog.md)
+Skills are organized as flat directories under `skills/`, with Codex-specific variants in `skills-codex/`. Full catalog: [docs/CLAUDE-skill-catalog.md](docs/CLAUDE-skill-catalog.md)
 
 ## Development Flow
 
