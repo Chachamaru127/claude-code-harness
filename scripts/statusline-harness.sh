@@ -81,11 +81,28 @@ MINS=$((DURATION_MS / 60000))
 SECS=$(((DURATION_MS % 60000) / 1000))
 
 # Git info (cached for 5 seconds)
-CACHE_FILE="/tmp/harness-statusline-git-cache"
+CACHE_FILE="${HARNESS_STATUSLINE_GIT_CACHE:-/tmp/harness-statusline-git-cache}"
 CACHE_MAX_AGE=5
+cache_mtime() {
+    local ts=""
+    ts="$(stat -c %Y "$CACHE_FILE" 2>/dev/null || true)"
+    if [ -n "$ts" ] && printf '%s' "$ts" | grep -Eq '^[0-9]+$'; then
+        printf '%s\n' "$ts"
+        return 0
+    fi
+
+    ts="$(stat -f %m "$CACHE_FILE" 2>/dev/null || true)"
+    if [ -n "$ts" ] && printf '%s' "$ts" | grep -Eq '^[0-9]+$'; then
+        printf '%s\n' "$ts"
+        return 0
+    fi
+
+    printf '0\n'
+}
+
 cache_is_stale() {
     [ ! -f "$CACHE_FILE" ] || \
-    [ $(($(date +%s) - $(stat -f %m "$CACHE_FILE" 2>/dev/null || stat -c %Y "$CACHE_FILE" 2>/dev/null || echo 0))) -gt $CACHE_MAX_AGE ]
+    [ $(( $(date +%s) - $(cache_mtime) )) -gt $CACHE_MAX_AGE ]
 }
 if cache_is_stale; then
     if git rev-parse --git-dir > /dev/null 2>&1; then

@@ -56,4 +56,28 @@ jq -s '
   exit 1
 }
 
+mkdir -p "${TMP_DIR}/bin"
+cat > "${TMP_DIR}/bin/stat" <<'EOF'
+#!/bin/bash
+if [ "${1:-}" = "-f" ] && [ "${2:-}" = "%m" ]; then
+  printf '/mock-mount\n'
+  exit 0
+fi
+exec /usr/bin/stat "$@"
+EOF
+chmod +x "${TMP_DIR}/bin/stat"
+touch "${TMP_DIR}/cache-file"
+
+linux_like_output="$(
+  cd "${TMP_DIR}" &&
+  PATH="${TMP_DIR}/bin:${PATH}" \
+  HARNESS_STATUSLINE_GIT_CACHE="${TMP_DIR}/cache-file" \
+  printf '%s' "${rich_input}" | bash "${TMP_DIR}/statusline-harness.sh"
+)"
+
+printf '%s' "${linux_like_output}" | grep -q 'effort:high' || {
+  echo "statusline output must keep working when GNU stat returns a non-numeric -f %m value"
+  exit 1
+}
+
 echo "OK"
