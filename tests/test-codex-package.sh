@@ -484,6 +484,47 @@ else
   log_fail "codex README sandbox/exec guidance is incomplete"
 fi
 
+log_test "Codex multi-environment write guard is wired and documented"
+primary_guard_ok=true
+if [ ! -x "scripts/codex-primary-environment-guard.sh" ]; then
+  echo "  missing executable guard: scripts/codex-primary-environment-guard.sh"
+  primary_guard_ok=false
+fi
+if ! rg -q --fixed-strings 'codex-primary-environment-guard.sh' "scripts/codex-companion.sh" "scripts/codex/codex-exec-wrapper.sh"; then
+  echo "  missing guard wiring in Codex write entrypoints"
+  primary_guard_ok=false
+fi
+if ! rg -q --fixed-strings 'HARNESS_CODEX_EXECUTION_ROOT="${EXECUTION_ROOT}"' "scripts/codex-companion.sh"; then
+  echo "  missing execution-root anchored guard call in scripts/codex-companion.sh"
+  primary_guard_ok=false
+fi
+if ! rg -q --fixed-strings 'HARNESS_CODEX_ALLOW_NON_PRIMARY_WRITE=1' "codex/README.md"; then
+  echo "  missing override guidance in codex/README.md"
+  primary_guard_ok=false
+fi
+if ! rg -q --fixed-strings 'HARNESS_CODEX_RESET_PRIMARY_ENVIRONMENT=1' "codex/README.md"; then
+  echo "  missing primary reset guidance in codex/README.md"
+  primary_guard_ok=false
+fi
+if ! rg -q --fixed-strings 'HARNESS_CODEX_DISABLE_PRIMARY_ENV_GUARD=1' "codex/README.md"; then
+  echo "  missing guard disable guidance in codex/README.md"
+  primary_guard_ok=false
+fi
+if $primary_guard_ok; then
+  log_pass "Codex multi-environment write guard is wired and documented"
+else
+  log_fail "Codex multi-environment write guard checks failed"
+fi
+
+log_test "primary environment guard behavior"
+if bash tests/test-codex-primary-environment-guard.sh >/tmp/codex-primary-env-guard.$$ 2>&1; then
+  log_pass "Primary environment guard behavior works"
+else
+  cat /tmp/codex-primary-env-guard.$$ | sed 's/^/  /'
+  log_fail "Primary environment guard behavior failed"
+fi
+rm -f /tmp/codex-primary-env-guard.$$ || true
+
 # Test 1.8: codex-setup-local should cleanup duplicate frontmatter names
 log_test "codex-setup-local cleans duplicate frontmatter skill aliases"
 if PROJECT_ROOT="$PROJECT_ROOT" bash -lc '

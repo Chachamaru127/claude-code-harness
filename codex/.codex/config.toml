@@ -4,6 +4,13 @@
 [features]
 multi_agent = true
 
+# Phase 56.2.2: Codex 0.124.0 stable hooks parity review
+# Harness intentionally ships no inline hooks in the distributed config:
+# - Claude Code already owns the primary runtime hook/guardrail path in this repo
+# - managed requirements.toml is the right place for org-level Codex hook policy
+# - MCP/apply_patch/long-running Bash observation needs dedicated Codex package tests
+# Details: docs/upstream-followups-phase56-2026-04-25.md
+
 # Codex 0.123.0+ has a built-in amazon-bedrock provider.
 # Harness does not set it as the default. Add this only in user/project config
 # when the current environment should use Bedrock:

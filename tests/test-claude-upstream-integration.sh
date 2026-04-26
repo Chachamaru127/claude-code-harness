@@ -771,6 +771,11 @@ PHASE56_SNAPSHOT_DOC="${ROOT_DIR}/docs/upstream-update-snapshot-2026-04-25.md"
   echo "${PHASE56_SNAPSHOT_DOC} does not exist"
   exit 1
 }
+PHASE56_FOLLOWUP_DOC="${ROOT_DIR}/docs/upstream-followups-phase56-2026-04-25.md"
+[ -f "${PHASE56_FOLLOWUP_DOC}" ] || {
+  echo "${PHASE56_FOLLOWUP_DOC} does not exist"
+  exit 1
+}
 for referencing_file in \
   "${ROOT_DIR}/CHANGELOG.md" \
   "${ROOT_DIR}/docs/CLAUDE-feature-table.md" \
@@ -816,6 +821,10 @@ grep -q 'Hooks are stable, configurable inline in `config.toml` and managed `req
   echo "Phase 56 snapshot must classify Codex stable hooks"
   exit 1
 }
+grep -q 'docs/upstream-followups-phase56-2026-04-25.md' "${PHASE56_SNAPSHOT_DOC}" || {
+  echo "Phase 56 snapshot must link to the follow-up decisions doc"
+  exit 1
+}
 grep -q 'alpha から推測実装しない' "${PHASE56_SNAPSHOT_DOC}" || {
   echo "Phase 56 snapshot must forbid speculative alpha implementation"
   exit 1
@@ -824,16 +833,80 @@ grep -q 'B: 書いただけ 0 件の理由' "${PHASE56_SNAPSHOT_DOC}" || {
   echo "Phase 56 snapshot must explain why B is zero"
   exit 1
 }
+grep -q 'PostToolUse.duration_ms は今回は no-op' "${PHASE56_FOLLOWUP_DOC}" || {
+  echo "Phase 56 follow-up doc must record the no-op decision for PostToolUse.duration_ms"
+  exit 1
+}
+grep -q 'status line 1 行目に `effort:<level>` を表示する' "${PHASE56_FOLLOWUP_DOC}" || {
+  echo "Phase 56 follow-up doc must describe the statusline effort display"
+  exit 1
+}
+grep -q 'Codex hooks は parity review のみ行い、shipped config は no-op にする' "${PHASE56_FOLLOWUP_DOC}" || {
+  echo "Phase 56 follow-up doc must record the Codex hooks no-op decision"
+  exit 1
+}
+grep -q 'GitHub CLI remains primary' "${PHASE56_FOLLOWUP_DOC}" || {
+  echo "Phase 56 follow-up doc must keep GitHub CLI as the primary automation path"
+  exit 1
+}
+grep -q 'one primary environment per write turn' "${PHASE56_FOLLOWUP_DOC}" || {
+  echo "Phase 56 follow-up doc must define the multi-environment safe default"
+  exit 1
+}
+grep -q 'scripts/codex-primary-environment-guard.sh' "${PHASE56_FOLLOWUP_DOC}" || {
+  echo "Phase 56 follow-up doc must mention the primary-environment guard"
+  exit 1
+}
 grep -q 'Phase 56 Claude Code 2.1.119 / Codex 0.124.0 snapshot' "${ROOT_DIR}/docs/CLAUDE-feature-table.md" || {
   echo "Feature Table must include the Phase 56 upstream snapshot row"
   exit 1
 }
-grep -q 'Plans `56.1.1` / `56.1.2`' "${ROOT_DIR}/docs/CLAUDE-feature-table.md" || {
-  echo "Feature Table must link the Phase 56 row back to Plans 56.1.1 / 56.1.2"
+grep -q 'Plans `56.1.1`-`56.2.4`' "${ROOT_DIR}/docs/CLAUDE-feature-table.md" || {
+  echo "Feature Table must link the Phase 56 row back to Plans 56.1.1-56.2.4"
   exit 1
 }
 grep -q 'Phase 56: Claude Code 2.1.119 / Codex 0.124.0 upstream snapshot' "${ROOT_DIR}/CHANGELOG.md" || {
   echo "CHANGELOG must include the Phase 56 upstream snapshot"
+  exit 1
+}
+grep -q 'docs/upstream-followups-phase56-2026-04-25.md' "${ROOT_DIR}/CHANGELOG.md" || {
+  echo "CHANGELOG must mention the Phase 56 follow-up decisions doc"
+  exit 1
+}
+grep -q 'effort.level` / `thinking.enabled` を表示・記録する' "${ROOT_DIR}/CHANGELOG.md" || {
+  echo "CHANGELOG must mention the statusline effort/thinking adoption"
+  exit 1
+}
+grep -q 'shipped `codex/.codex/config.toml` は no-op' "${ROOT_DIR}/CHANGELOG.md" || {
+  echo "CHANGELOG must mention the Codex hooks no-op decision"
+  exit 1
+}
+grep -q 'one primary environment per write turn' "${ROOT_DIR}/CHANGELOG.md" || {
+  echo "CHANGELOG must mention the multi-environment safe default"
+  exit 1
+}
+grep -q 'codex-primary-environment-guard.sh' "${ROOT_DIR}/CHANGELOG.md" || {
+  echo "CHANGELOG must mention the primary-environment write guard"
+  exit 1
+}
+grep -qi 'details: docs/upstream-followups-phase56-2026-04-25.md' "${ROOT_DIR}/codex/.codex/config.toml" || {
+  echo "codex/.codex/config.toml must explain why no Codex hooks are shipped"
+  exit 1
+}
+grep -q 'one primary environment per write turn' "${ROOT_DIR}/codex/README.md" || {
+  echo "codex/README.md must document the multi-environment safe default"
+  exit 1
+}
+grep -q 'HARNESS_CODEX_ALLOW_NON_PRIMARY_WRITE=1' "${ROOT_DIR}/codex/README.md" || {
+  echo "codex/README.md must document the non-primary write override"
+  exit 1
+}
+grep -q 'GitHub-first' "${ROOT_DIR}/skills/harness-review/SKILL.md" || {
+  echo "harness-review must document the GitHub-first PR host boundary"
+  exit 1
+}
+grep -q 'docs-only' "${ROOT_DIR}/skills/harness-release/SKILL.md" || {
+  echo "harness-release must document the docs-only multi-host boundary"
   exit 1
 }
 grep -q '56.2.2 | Codex `0.124.0` stable hooks' "${ROOT_DIR}/Plans.md" || {
@@ -850,6 +923,22 @@ grep -q '56.2.3 | `prUrlTemplate` / `--from-pr` multi-host review support' "${RO
 }
 grep -q '56.2.4 | Codex `0.124.0` multi-environment app-server と branch/workdir policy' "${ROOT_DIR}/Plans.md" || {
   echo "Plans.md must keep the multi-environment app-server follow-up task"
+  exit 1
+}
+grep -q '56.2.1 .* cc:完了' "${ROOT_DIR}/Plans.md" || {
+  echo "Plans.md must mark 56.2.1 as complete"
+  exit 1
+}
+grep -q '56.2.2 .* cc:完了' "${ROOT_DIR}/Plans.md" || {
+  echo "Plans.md must mark 56.2.2 as complete"
+  exit 1
+}
+grep -q '56.2.3 .* cc:完了' "${ROOT_DIR}/Plans.md" || {
+  echo "Plans.md must mark 56.2.3 as complete"
+  exit 1
+}
+grep -q '56.2.4 .* cc:完了' "${ROOT_DIR}/Plans.md" || {
+  echo "Plans.md must mark 56.2.4 as complete"
   exit 1
 }
 

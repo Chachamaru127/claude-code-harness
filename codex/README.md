@@ -214,6 +214,27 @@ Details: `docs/codex-sandbox-execution-policy.md`.
 - Native flow uses `spawn_agent`, `wait`, `send_input`, `resume_agent`, `close_agent`.
 - `breezing` keeps Lead/Worker/Reviewer separation while reusing Codex-native subagents instead of older teammate-only wording.
 
+## Multi-Environment Safe Default
+
+Codex `0.124.0` lets one app-server session choose an environment and working directory per turn.
+Harness keeps a narrower operational default so branch and worktree boundaries stay understandable.
+
+- Use one primary environment per write turn.
+- Treat non-primary or remote environments as read-only until you explicitly switch the write target.
+- Keep branch updates, cherry-picks, and Plans.md status changes in the primary repo/worktree only.
+- When you switch environment, restate the target repo, branch, and workdir before the next write.
+
+Harness now adds a primary-environment write guard on Codex write paths.
+The first write target becomes the primary repo/worktree for that execution root.
+If a later write points at a different worktree or repo, Harness stops it unless you opt in explicitly.
+
+- Temporary override: `HARNESS_CODEX_ALLOW_NON_PRIMARY_WRITE=1`
+- Move the primary target: `HARNESS_CODEX_RESET_PRIMARY_ENVIRONMENT=1`
+- Disable the guard entirely: `HARNESS_CODEX_DISABLE_PRIMARY_ENV_GUARD=1`
+
+This keeps multi-environment exploration available without weakening Harness's single-repo merge discipline.
+Details: `docs/upstream-followups-phase56-2026-04-25.md`.
+
 ## Realtime Handoff And Silence Policy
 
 Codex `0.123.0` lets background agents receive transcript deltas during realtime handoff.

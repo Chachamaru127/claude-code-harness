@@ -58,6 +58,18 @@
 | Codex `0.124.0` stable hooks と Claude Code hooks の parity review | Codex 側の stable hooks を guardrail / long-running Bash / MCP tool observation に活かせる可能性がある | Codex package / guardrails |
 | Codex multi-environment app-server と branch/workdir policy | 複数 repo / worktree / remote environment の取り違えを減らせる | Codex workflow |
 
+## Phase 56.2 closeout
+
+Phase 56 の follow-up decision は `docs/upstream-followups-phase56-2026-04-25.md` に記録した。
+
+要点:
+
+- `PostToolUse.duration_ms` は今回は no-op とし、per-tool telemetry sink を別 task に残す
+- `effort.level` / `thinking.enabled` は `scripts/statusline-harness.sh` に取り込み、statusline telemetry にも保存する
+- Codex stable hooks は parity review のみ行い、`codex/.codex/config.toml` には no-op 理由のコメントだけ残す
+- `prUrlTemplate` / `--from-pr` multi-host review は docs-only とし、owner / branch / CI の automation は GitHub-first を維持する
+- Codex multi-environment app-server は workflow guidance として扱い、write は 1 turn につき 1 primary environment に絞る safe default と write guard を採る
+
 ## B: 書いただけ 0 件の理由
 
 - Feature Table の Phase 56 追加行は、すべてこの snapshot と Plans の Phase 56 task に接続している。

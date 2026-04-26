@@ -22,6 +22,66 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PRIMARY_ENV_GUARD="${SCRIPT_DIR}/codex-primary-environment-guard.sh"
+EXECUTION_ROOT="${HARNESS_CODEX_EXECUTION_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+
+extract_target_cwd() {
+  shift || true
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --cd|-C)
+        printf '%s\n' "${2:-$PWD}"
+        return 0
+        ;;
+      --cd=*|-C=*)
+        printf '%s\n' "${1#*=}"
+        return 0
+        ;;
+    esac
+    shift || true
+  done
+  printf '%s\n' "$PWD"
+}
+
+task_has_write_intent() {
+  [ "${1:-}" = "task" ] || return 1
+  shift || true
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --write|--full-auto|--dangerously-bypass-approvals-and-sandbox)
+        return 0
+        ;;
+      --sandbox|-s)
+        case "${2:-}" in
+          workspace-write|danger-full-access) return 0 ;;
+        esac
+        shift 2
+        continue
+        ;;
+      --sandbox=*|-s=*)
+        case "${1#*=}" in
+          workspace-write|danger-full-access) return 0 ;;
+        esac
+        ;;
+    esac
+    shift || true
+  done
+  return 1
+}
+
+guard_primary_environment_if_needed() {
+  if [ ! -x "${PRIMARY_ENV_GUARD}" ]; then
+    return 0
+  fi
+  if task_has_write_intent "$@"; then
+    local target_cwd
+    target_cwd="$(extract_target_cwd "$@")"
+    HARNESS_CODEX_EXECUTION_ROOT="${EXECUTION_ROOT}" \
+      bash "${PRIMARY_ENV_GUARD}" --mode write --target-cwd "${target_cwd}"
+  fi
+}
+
 should_use_structured_task_exec() {
   [ "${1:-}" = "task" ] || return 1
   shift || true
@@ -131,6 +191,7 @@ fi
 # task サブコマンドの場合、タスク説明から effort を計算して --effort フラグで渡す。
 # calculate-effort.sh が存在しない場合は CODEX_EFFORT 環境変数（デフォルト: medium）を使う。
 SUBCOMMAND="${1:-}"
+guard_primary_environment_if_needed "$@"
 if should_use_structured_task_exec "$@"; then
   STRUCTURED_TASK_EXEC=1
 else

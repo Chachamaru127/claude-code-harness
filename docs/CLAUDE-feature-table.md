@@ -8,7 +8,7 @@
 | 機能 | 活用スキル | 用途 |
 |------|-----------|------|
 | **Issue #105 English default + Japanese opt-in CI gate** | setup, harness-work, CI | New distribution surfaces default to English while Japanese opt-in UX, bilingual skill metadata, setup rendering, and mirror consistency are locked by the i18n regression suite. |
-| **Phase 56 Claude Code 2.1.119 / Codex 0.124.0 snapshot** | upstream-update, harness-review, setup | `A: 検証強化`。`docs/upstream-update-snapshot-2026-04-25.md` と Plans `56.1.1` / `56.1.2` に接続し、`--print` frontmatter parity, `PostToolUse.duration_ms`, status line effort/thinking, `prUrlTemplate`, Codex stable hooks, multi-environment app-server, and `0.125.0-alpha.2` watch status を A/C/P 分類した上で、`B: 書いただけ 0 件` を tests で固定。 |
+| **Phase 56 Claude Code 2.1.119 / Codex 0.124.0 snapshot** | upstream-update, harness-review, setup | `A: 検証強化`。`docs/upstream-update-snapshot-2026-04-25.md` と `docs/upstream-followups-phase56-2026-04-25.md` を Plans `56.1.1`-`56.2.4` に接続し、`--print` frontmatter parity, `PostToolUse.duration_ms`, status line effort/thinking, `prUrlTemplate`, Codex stable hooks, multi-environment app-server, and `0.125.0-alpha.2` watch status を A/C/P 分類した上で、statusline 追従と docs-only safe default を tests で固定。 |
 | **Task tool メトリクス** | parallel-workflows | サブエージェントのトークン/ツール/時間を集計 |
 | **`/debug` コマンド** | troubleshoot | 複雑なセッション問題の診断 |
 | **PDF ページ範囲** | notebookLM, harness-review | 大型ドキュメントの効率的な処理 |

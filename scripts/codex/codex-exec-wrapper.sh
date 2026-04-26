@@ -16,6 +16,7 @@ PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 EXECUTION_ROOT="${HARNESS_CODEX_EXECUTION_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
 CONTRACT_TEMPLATE="${SCRIPT_DIR}/../lib/codex-hardening-contract.txt"
 HARDENING_MARKER="HARNESS_HARDENING_CONTRACT_V1"
+PRIMARY_ENV_GUARD="${SCRIPT_DIR}/../codex-primary-environment-guard.sh"
 
 PROMPT_FILE="${1:-}"
 TIMEOUT_SEC="${2:-120}"
@@ -91,6 +92,11 @@ else
     printf '\n---\n\n'
     cat "${PROMPT_FILE}"
   } > "${TMP_PROMPT}"
+fi
+
+# === Primary environment guard ===
+if [ -x "${PRIMARY_ENV_GUARD}" ]; then
+  bash "${PRIMARY_ENV_GUARD}" --mode write --target-cwd "${EXECUTION_ROOT}"
 fi
 
 # === 一時ファイルの準備 ===

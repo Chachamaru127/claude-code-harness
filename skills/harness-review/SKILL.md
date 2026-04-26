@@ -211,6 +211,12 @@ echo "Auto-detected review type: ${REVIEW_TYPE}"
 | `/harness-review --ui-rubric` | UI Rubric Review | デザイン品質の 4 軸採点レビュー |
 | `/ultrareview` | built-in slash | CC ネイティブのアドホックレビュー。**Harness flow 内では呼ばない**（後述参照） |
 
+## PR host boundary
+
+Claude Code `2.1.119` の `prUrlTemplate` と `--from-pr` により、human-facing な review URL は multi-host に寄せられる余地がある。
+ただし Harness の review automation は今も GitHub-first であり、owner / branch / CI metadata の自動取得までは抽象化していない。
+そのため multi-host は docs-only follow-up とし、automation の primary path は GitHub のまま維持する。
+
 ## オプション
 
 | オプション | デフォルト | 説明 |

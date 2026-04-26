@@ -24,6 +24,8 @@ Change history for claude-code-harness.
 
 **今後**: Phase 56 は fresh main から分離し、Claude Code `2.1.119` の `PostToolUse.duration_ms`、status line `effort.level` / `thinking.enabled`、`prUrlTemplate`、multi-host `--from-pr`、Codex `0.124.0` stable hooks / multi-environment app-server を、即時実装ではなく `A: 検証強化`, `C: 自動継承`, `P: 将来タスク` に分類して追跡する。Codex `0.125.0-alpha.2` は tag 存在のみ記録し、compare から推測実装しない。
 
+**Follow-up closeout**: `docs/upstream-followups-phase56-2026-04-25.md` に 56.2.1-56.2.4 の判断を追加した。`scripts/statusline-harness.sh` は `effort.level` / `thinking.enabled` を表示・記録する一方、`PostToolUse.duration_ms` は per-tool telemetry sink が無いため no-op に留める。Codex stable hooks は parity review のみで shipped `codex/.codex/config.toml` は no-op、`prUrlTemplate` multi-host support は docs-only、multi-environment app-server は one primary environment per write turn を safe default とし、`scripts/codex-primary-environment-guard.sh` で non-primary write を既定停止にした。
+
 | Before | After |
 |--------|-------|
 | Upstream snapshot は Phase 53 の Claude Code `2.1.118` / Codex `0.123.0` までで、i18n 大差分と混ぜるとレビューしづらかった | Phase 56 を fresh main から分離し、Claude Code `2.1.119` / Codex `0.124.0` / `0.125.0-alpha.2` を A/C/P 分類と follow-up task で固定 |

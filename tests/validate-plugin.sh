@@ -675,6 +675,18 @@ else
     fail_test "reenter-worktree.sh の JSON 出力契約テストに失敗 — 'bash tests/test-reenter-worktree-json.sh' で詳細確認"
 fi
 
+if bash "$PLUGIN_ROOT/tests/test-statusline-harness-fields.sh" > /dev/null 2>&1; then
+    pass_test "statusline-harness.sh は effort/thinking を null-safe に表示します (test-statusline-harness-fields.sh)"
+else
+    fail_test "statusline-harness.sh の effort/thinking 契約テストに失敗 — 'bash tests/test-statusline-harness-fields.sh' で詳細確認"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-codex-primary-environment-guard.sh" > /dev/null 2>&1; then
+    pass_test "Codex primary environment guard が non-primary write を防ぎます (test-codex-primary-environment-guard.sh)"
+else
+    fail_test "Codex primary environment guard の契約テストに失敗 — 'bash tests/test-codex-primary-environment-guard.sh' で詳細確認"
+fi
+
 echo ""
 echo "=========================================="
 echo "テスト結果サマリー"
