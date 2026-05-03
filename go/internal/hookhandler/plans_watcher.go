@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -25,8 +24,8 @@ var exitFailClosed = func(msg string) {
 
 // plansWatcherInput は plans-watcher.sh に渡される stdin JSON。
 type plansWatcherInput struct {
-	ToolName string `json:"tool_name"`
-	CWD      string `json:"cwd"`
+	ToolName  string `json:"tool_name"`
+	CWD       string `json:"cwd"`
 	ToolInput struct {
 		FilePath string `json:"file_path"`
 	} `json:"tool_input"`
@@ -50,7 +49,7 @@ const plansLockMaxRetries = 3
 
 // flockCall と sleepCall はテスト差し替え用。
 var flockCall = func(fd int, how int) error {
-	return syscall.Flock(fd, how)
+	return fileLock(fd, how)
 }
 
 var sleepCall = time.Sleep
@@ -75,7 +74,7 @@ func acquirePlansLock(lockPath string) (*plansLockHandle, error) {
 			return nil, fmt.Errorf("open plans lock file: %w", err)
 		}
 
-		if err := flockCall(int(f.Fd()), syscall.LOCK_EX|syscall.LOCK_NB); err == nil {
+		if err := flockCall(int(f.Fd()), fileLockExclusive|fileLockNonblock); err == nil {
 			return &plansLockHandle{
 				file:    f,
 				lockDir: lockPath + plansLockDirSuffix,
@@ -113,7 +112,7 @@ func acquirePlansMkdirLock(lockDir string) (*plansLockHandle, error) {
 }
 
 func isPlansLockBusy(err error) bool {
-	return errors.Is(err, syscall.EWOULDBLOCK) || errors.Is(err, syscall.EAGAIN)
+	return fileLockBusy(err)
 }
 
 // releasePlansLock はロックを解放してファイルをクローズする。
@@ -128,7 +127,7 @@ func releasePlansLock(lock *plansLockHandle) {
 		if lock.file == nil {
 			return
 		}
-		flockCall(int(lock.file.Fd()), syscall.LOCK_UN) //nolint:errcheck
+		flockCall(int(lock.file.Fd()), fileLockUnlock) //nolint:errcheck
 		lock.file.Close()
 	}
 }

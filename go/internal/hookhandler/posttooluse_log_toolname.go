@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -22,8 +21,8 @@ type PostToolUseLogToolNameHandler struct {
 
 // logToolNameInput は PostToolUse フックの stdin JSON。
 type logToolNameInput struct {
-	ToolName  string              `json:"tool_name"`
-	SessionID string              `json:"session_id"`
+	ToolName  string               `json:"tool_name"`
+	SessionID string               `json:"session_id"`
 	ToolInput logToolNameToolInput `json:"tool_input"`
 }
 
@@ -69,13 +68,13 @@ type skillsUsedState struct {
 }
 
 const (
-	toolEventsFile     = "tool-events.jsonl"
-	sessionEventsFile  = "session-events.jsonl"
-	skillsUsedFile     = "session-skills-used.json"
-	logMaxSizeBytes    = 256 * 1024 // 256KB
-	logMaxLines        = 2000
-	logMaxGenerations  = 5
-	sessionEvMaxLines  = 500
+	toolEventsFile    = "tool-events.jsonl"
+	sessionEventsFile = "session-events.jsonl"
+	skillsUsedFile    = "session-skills-used.json"
+	logMaxSizeBytes   = 256 * 1024 // 256KB
+	logMaxLines       = 2000
+	logMaxGenerations = 5
+	sessionEvMaxLines = 500
 )
 
 // Handle は stdin から PostToolUse ペイロードを読み取り、ログを記録する。
@@ -459,13 +458,13 @@ func withFileLock(lockFile string, fn func()) {
 	defer f.Close()
 
 	// flock で排他ロック（タイムアウトなし、ブロック）
-	if err := syscall.Flock(int(f.Fd()), syscall.LOCK_EX); err != nil {
+	if err := fileLock(int(f.Fd()), fileLockExclusive); err != nil {
 		// flock が使えない環境ではロックなしで実行
 		fn()
 		return
 	}
 	defer func() {
-		_ = syscall.Flock(int(f.Fd()), syscall.LOCK_UN)
+		_ = fileLock(int(f.Fd()), fileLockUnlock)
 	}()
 
 	fn()

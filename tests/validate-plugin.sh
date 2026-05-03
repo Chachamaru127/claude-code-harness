@@ -687,6 +687,12 @@ else
     fail_test "Codex primary environment guard の契約テストに失敗 — 'bash tests/test-codex-primary-environment-guard.sh' で詳細確認"
 fi
 
+if bash "$PLUGIN_ROOT/tests/test-windows-worktree-support.sh" > /dev/null 2>&1; then
+    pass_test "Windows Breezing worktree support の配布・hook 契約が維持されています (test-windows-worktree-support.sh)"
+else
+    fail_test "Windows Breezing worktree support の契約テストに失敗 — 'bash tests/test-windows-worktree-support.sh' で詳細確認"
+fi
+
 echo ""
 echo "=========================================="
 echo "テスト結果サマリー"

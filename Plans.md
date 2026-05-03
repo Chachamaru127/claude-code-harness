@@ -171,3 +171,15 @@ Purpose: Claude Code `2.1.119` と Codex `0.124.0` stable / `0.125.0-alpha.2` pr
 | 56.2.2 | Codex `0.124.0` stable hooks と Claude Code hooks の parity review を行う。Codex `config.toml` / managed `requirements.toml` の inline hooks、MCP tool / `apply_patch` / long-running Bash observation を、Harness guardrail と二重化しない形で比較する | (a) Codex hook surface と Claude Code hook surface の比較表がある、(b) `codex/.codex/config.toml` に即時追加するか no-op にするか判断済み、(c) 追加する場合は Codex package test がある、(d) no-op の場合も理由が記録される | 56.1.2 | cc:完了 |
 | 56.2.3 | `prUrlTemplate` / `--from-pr` multi-host review support を `harness-review` / release docs の後続候補として整理する。GitHub Enterprise / GitLab / Bitbucket URL を扱う場合の owner / branch / CI 取得境界を確認する | (a) GitHub 固定前提の記述を `rg` で確認、(b) multi-host を実装するか docs-only に留めるか判断、(c) GitHub CLI 前提を壊さない fallback が記録される | 56.1.2 | cc:完了 |
 | 56.2.4 | Codex `0.124.0` multi-environment app-server と branch/workdir policy を整理する。複数 environment / working directory を 1 session で扱う時に、Harness の branch 運用、worktree 分離、remote workspace 境界をどう保つかを決める | (a) Codex app-server multi-environment surface と current branch/worktree policy の差分が整理される、(b) 単一 repo 前提で壊れる箇所を `rg` で確認、(c) docs-only で留めるか workflow 変更に進むか判断、(d) remote environment を含む時の safe default が記録される | 56.1.2 | cc:完了 |
+
+---
+
+## Phase 57: External Issue closeout 2026-05-03 [P1]
+
+Purpose: Owner 以外が起票した open Issue #117, #118, #119, #120, #67 を精査し、close-safe な質問系は回答して閉じ、実バグは修正 PR にし、large feature は SSOT を壊さない設計 work item として保持する。
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 57.1.1 | Issue #117 の Windows Breezing worktree isolation fallback を修正する。`bin/harness` が Git Bash/MSYS/Cygwin で `harness-windows-amd64.exe` を解決し、`go/scripts/build-all.sh` が Windows amd64 binary を生成し、`WorktreeCreate` が platform path join と cwd validation を使うようにする | (a) Windows amd64 binary が `bin/` に追加される、(b) shim が Windows shell family と `.exe` suffix を解決する、(c) WorktreeCreate が `filepath.Join` を使い hook decision JSON を cwd として扱わない、(d) Unix-only `syscall.Flock` が Windows build を壊さない、(e) Go unit test と shell regression test が PASS、(f) README / compatibility / migration docs / CHANGELOG が更新される、(g) PR から Issue #117 にリンクする | - | cc:完了 |
+| 57.1.2 | Issue #67 の multiple Plans 要望を、既存 `Plans.md` SSOT を壊さない feature design として返信する。既存 `Plans.md` は default plan のまま残し、named plan registry と explicit `--plan` 解決を将来実装候補にする | (a) Issue #67 に設計方針をコメント、(b) 複数 active plan は避ける方針を明記、(c) `default` plan 互換・path traversal 拒否・`/plan list` / `/plan switch <name>` / `/work --plan=<name>` のテスト観点を含める、(d) Issue は enhancement として open 維持 | - | cc:完了 |
+| 57.1.3 | Issue #118 / #119 / #120 を回答で整理する。Codex CLI support は supported と確認し、sudo/full-permission は security policy として default enable しない、strict English は English default 対応済みかつ Japanese opt-in は保持する方針を返す | (a) #118 に support path と setup command をコメントして close、(b) #119 に sudo/full-permission を標準有効化しない理由をコメントして close、(c) #120 に English default / Japanese opt-in の現状と再現依頼境界をコメントして close または duplicate 扱い、(d) 実装 PR が不要な質問系 Issue だけを閉じる | - | cc:完了 |

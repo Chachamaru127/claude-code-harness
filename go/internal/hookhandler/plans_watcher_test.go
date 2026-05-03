@@ -3,10 +3,10 @@ package hookhandler
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"testing"
 	"time"
 )
@@ -637,7 +637,7 @@ func TestAcquirePlansLock_FallsBackToMkdir(t *testing.T) {
 	origFlockCall := flockCall
 	origSleepCall := sleepCall
 	flockCall = func(fd int, how int) error {
-		return syscall.ENOTSUP
+		return errors.New("file lock unsupported")
 	}
 	sleepCall = func(time.Duration) {}
 	defer func() {

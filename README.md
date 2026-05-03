@@ -418,6 +418,7 @@ Skill packs can teach a prompt. Harness also enforces behavior at runtime.
 |-------|----------|
 | Command not found | Run `/harness-setup` first |
 | `harness-*` commands missing on Windows | Update or reinstall the plugin. Public command skills now ship as real directories, so `core.symlinks=false` no longer hides them. |
+| Breezing falls back to Solo mode on Windows | Update to a build that includes `bin/harness-windows-amd64.exe`. Git Bash/MSYS/Cygwin now resolve that binary automatically; WSL2 users continue to use the Linux binary. |
 | Plugin not loading | Clear cache: `rm -rf ~/.claude/plugins/cache/claude-code-harness-marketplace/` and restart |
 | Hooks not working | Run `bin/harness doctor` to diagnose (Go binary, no Node.js needed) |
 | Stale v3 references after migration | Run `bin/harness doctor --residue` — auto-detects leftover references to deleted code |

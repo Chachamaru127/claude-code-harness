@@ -6,6 +6,14 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Fixed
+
+- Windows Git Bash/MSYS/Cygwin sessions now resolve `bin/harness-windows-amd64.exe` through the `bin/harness` shim, and `WorktreeCreate` uses platform path joining while rejecting hook decision JSON mistakenly supplied as a cwd. Windows builds also avoid Unix-only `syscall.Flock` calls by falling back to mkdir/no-lock behavior where appropriate. This keeps Breezing worktree isolation from falling back to Solo mode because the Windows hook binary or worktree state path cannot be resolved.
+
+### Added
+
+- Windows Breezing worktree support now has regression coverage for shim platform mapping, `windows/amd64` build output, and the WorktreeCreate path contract.
+
 ## [4.4.0] - 2026-04-26
 
 ### Fixed

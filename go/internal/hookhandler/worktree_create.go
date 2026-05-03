@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -25,8 +27,8 @@ type worktreeInfo struct {
 // HandleWorktreeCreate ports scripts/hook-handlers/worktree-create.sh.
 //
 // On WorktreeCreate events it:
-//   1. Creates .claude/state/ inside the worktree (cwd).
-//   2. Writes worktree-info.json with worker_id, created_at, and cwd.
+//  1. Creates .claude/state/ inside the worktree (cwd).
+//  2. Writes worktree-info.json with worker_id, created_at, and cwd.
 func HandleWorktreeCreate(in io.Reader, out io.Writer) error {
 	data, err := io.ReadAll(in)
 	if err != nil || len(data) == 0 {
@@ -38,11 +40,12 @@ func HandleWorktreeCreate(in io.Reader, out io.Writer) error {
 		return writeWorktreeApprove(out, "WorktreeCreate: no payload")
 	}
 
-	if input.CWD == "" {
-		return writeWorktreeApprove(out, "WorktreeCreate: no cwd")
+	cwd, reason, ok := normalizeWorktreeCreateCWD(input.CWD)
+	if !ok {
+		return writeWorktreeApprove(out, reason)
 	}
 
-	stateDir := input.CWD + "/.claude/state"
+	stateDir := worktreeStateDir(cwd)
 	if mkErr := os.MkdirAll(stateDir, 0o755); mkErr != nil {
 		// Non-fatal: log and continue.
 		fmt.Fprintf(os.Stderr, "[claude-code-harness] worktree-create: mkdir %s: %v\n", stateDir, mkErr)
@@ -51,15 +54,45 @@ func HandleWorktreeCreate(in io.Reader, out io.Writer) error {
 	info := worktreeInfo{
 		WorkerID:  input.SessionID,
 		CreatedAt: time.Now().UTC().Format(time.RFC3339),
-		CWD:       input.CWD,
+		CWD:       cwd,
 	}
 	infoData, err := json.Marshal(info)
 	if err == nil {
-		infoPath := stateDir + "/worktree-info.json"
+		infoPath := filepath.Join(stateDir, "worktree-info.json")
 		_ = os.WriteFile(infoPath, append(infoData, '\n'), 0o644)
 	}
 
 	return writeWorktreeApprove(out, "WorktreeCreate: initialized worktree state")
+}
+
+func normalizeWorktreeCreateCWD(raw string) (string, string, bool) {
+	cwd := strings.TrimSpace(raw)
+	if cwd == "" {
+		return "", "WorktreeCreate: no cwd", false
+	}
+	if looksLikeHookDecisionJSON(cwd) {
+		return "", "WorktreeCreate: invalid cwd", false
+	}
+	return cwd, "", true
+}
+
+func worktreeStateDir(cwd string) string {
+	return filepath.Join(cwd, ".claude", "state")
+}
+
+func looksLikeHookDecisionJSON(value string) bool {
+	trimmed := strings.TrimSpace(value)
+	if !strings.HasPrefix(trimmed, "{") {
+		return false
+	}
+
+	var payload map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(trimmed), &payload); err != nil {
+		return false
+	}
+	_, hasDecision := payload["decision"]
+	_, hasReason := payload["reason"]
+	return hasDecision && hasReason
 }
 
 // writeWorktreeApprove writes the standard approve decision JSON.

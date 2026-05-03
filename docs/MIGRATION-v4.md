@@ -132,7 +132,7 @@ Common causes: stale `hooks.json` entries pointing to removed bash shims, or `bi
 
 ### Unsupported platform
 
-Pre-built binaries are provided for macOS (arm64/amd64) and Linux (amd64). If you are on an unsupported platform (e.g., Windows ARM), build from source:
+Pre-built binaries are provided for macOS (arm64/amd64), Linux (amd64), and Windows (amd64). Git Bash, MSYS, and Cygwin shells resolve `bin/harness-windows-amd64.exe`; WSL2 resolves the Linux binary. If you are on an unsupported platform (e.g., Windows ARM), build from source:
 
 ```bash
 cd go && make install

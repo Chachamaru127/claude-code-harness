@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -32,6 +33,32 @@ func TestHandleWorktreeCreate_NoCWD(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	assertWorktreeApprove(t, out.String(), "WorktreeCreate: no cwd")
+}
+
+func TestHandleWorktreeCreate_RejectsHookDecisionAsCWD(t *testing.T) {
+	dir := t.TempDir()
+	originalWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd: %v", err)
+	}
+	if err := os.Chdir(dir); err != nil {
+		t.Fatalf("chdir temp: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(originalWD)
+	})
+
+	var out bytes.Buffer
+	badCWD := `{"decision":"approve","reason":"WorktreeCreate: initialized worktree state"}`
+	payload := `{"session_id":"worker-json","cwd":` + strconv.Quote(badCWD) + `}`
+	if err := HandleWorktreeCreate(strings.NewReader(payload), &out); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	assertWorktreeApprove(t, out.String(), "WorktreeCreate: invalid cwd")
+	if _, err := os.Stat(filepath.Join(dir, badCWD)); !os.IsNotExist(err) {
+		t.Fatalf("hook decision JSON was treated as a directory: stat err=%v", err)
+	}
 }
 
 func TestHandleWorktreeCreate_CreatesStateDir(t *testing.T) {
@@ -94,6 +121,15 @@ func TestHandleWorktreeCreate_Idempotent(t *testing.T) {
 			t.Fatalf("call %d: unexpected error: %v", i+1, err)
 		}
 		assertWorktreeApprove(t, out.String(), "WorktreeCreate: initialized worktree state")
+	}
+}
+
+func TestWorktreeStateDir_UsesPlatformJoin(t *testing.T) {
+	dir := filepath.Join("repo", "worker-a")
+	got := worktreeStateDir(dir)
+	want := filepath.Join(dir, ".claude", "state")
+	if got != want {
+		t.Fatalf("worktreeStateDir() = %q, want %q", got, want)
 	}
 }
 

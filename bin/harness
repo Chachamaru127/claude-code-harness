@@ -18,13 +18,21 @@ done
 
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
 
-OS="$(uname -s | tr A-Z a-z)"
+RAW_OS="$(uname -s | tr A-Z a-z)"
+EXT=""
+case "$RAW_OS" in
+  darwin*) OS="darwin" ;;
+  linux*) OS="linux" ;;
+  mingw*|msys*|cygwin*) OS="windows"; EXT=".exe" ;;
+  *) OS="$RAW_OS" ;;
+esac
 ARCH="$(uname -m)"
 case "$ARCH" in
   x86_64)  ARCH="amd64" ;;
   aarch64) ARCH="arm64" ;;
+  arm64)   ARCH="arm64" ;;
 esac
-BINARY="${SCRIPT_DIR}/harness-${OS}-${ARCH}"
+BINARY="${SCRIPT_DIR}/harness-${OS}-${ARCH}${EXT}"
 if [ -x "$BINARY" ]; then
   exec "$BINARY" "$@"
 fi

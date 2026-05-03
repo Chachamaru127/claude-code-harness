@@ -43,6 +43,8 @@ We do **not** maintain a full version-by-version support matrix in the README. T
 
 On Windows, Git often defaults to `core.symlinks=false`. Public `harness-*` command skills are therefore shipped as real directories in `skills/`, `codex/.codex/skills/`, and `opencode/skills/` so they still appear in command lists after checkout. Session start repair still handles broken extension links inside `skills/extensions/`.
 
+Native Windows Git Bash/MSYS/Cygwin sessions resolve `bin/harness-windows-amd64.exe` through the `bin/harness` shim. WSL2 sessions keep using the Linux binary. Breezing worktree isolation should therefore have a real hook binary on Windows amd64 instead of silently falling back because no platform binary was found.
+
 ## What Requires Extra Validation
 
 These flows are supported, but they depend on extra tools or environment setup and should be verified in your own environment:
