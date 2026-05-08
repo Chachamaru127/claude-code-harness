@@ -6,6 +6,7 @@ package guardrail
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 
 	"github.com/Chachamaru127/claude-code-harness/go/pkg/hookproto"
@@ -411,7 +412,11 @@ var Rules = []GuardRule{
 			if !ok {
 				return nil
 			}
-			if !memoryFilePattern.MatchString(filePath) {
+			// Normalize backslashes to forward slashes before matching
+			// memoryFilePattern; without this the regex (which uses
+			// `/` as the path separator) silently never matches Windows
+			// paths and R16 becomes a no-op on Windows hosts.
+			if !memoryFilePattern.MatchString(filepath.ToSlash(filePath)) {
 				return nil
 			}
 			planID := resolvePlanID()

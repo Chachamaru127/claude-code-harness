@@ -26,6 +26,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
@@ -85,6 +86,20 @@ type Invocation struct {
 //
 // The second return is `ok=false` when no CLI was resolvable and pipx fallback
 // was not allowed; callers must treat that as ErrNotInstalled.
+// isExecutable returns true if the file at info has any execute bit set,
+// or true unconditionally on Windows (where Unix execute bits don't
+// apply — exec.LookPath / direct invocation will surface real
+// non-executable files via their own error path). This prevents the
+// foot-gun where a chmod-644 candidate passes os.Stat but later fails
+// at Run with a permission-denied error that does NOT propagate as
+// ErrNotInstalled.
+func isExecutable(info os.FileInfo) bool {
+	if runtime.GOOS == "windows" {
+		return true
+	}
+	return info.Mode()&0o111 != 0
+}
+
 func ResolveInvocation(allowNpx bool) (Invocation, bool) {
 	if cli := os.Getenv("DDOUNS_CLI"); cli != "" {
 		return Invocation{Name: cli, Installed: true}, true
@@ -93,7 +108,7 @@ func ResolveInvocation(allowNpx bool) (Invocation, bool) {
 	home, _ := os.UserHomeDir()
 	if home != "" {
 		candidate := filepath.Join(home, ".ddouns", "runtime", "ddouns", "scripts", "ddouns")
-		if info, err := os.Stat(candidate); err == nil && !info.IsDir() {
+		if info, err := os.Stat(candidate); err == nil && !info.IsDir() && isExecutable(info) {
 			return Invocation{Name: candidate, Installed: true}, true
 		}
 	}

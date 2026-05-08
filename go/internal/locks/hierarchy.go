@@ -20,7 +20,7 @@
 // acquire_index, acquire_advisory, acquire_primary_multiple). The Python
 // invariants ported here:
 //
-//   - sha256(key)[:32] for filename hashing (lock.py:87-88)
+//   - sha256(key)[:16] for filename hashing (lock.py:87-88)
 //   - atomic create via O_CREAT|O_EXCL|O_WRONLY (lock.py:108-110;
 //     Go uses os.O_EXCL with the same semantics)
 //   - stale detection by expiry timestamp on payload (lock.py:97-103)
@@ -37,13 +37,30 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"path/filepath"
+	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
+
+// goid returns the current goroutine's ID by parsing the runtime stack
+// header. The Go runtime makes no guarantee about goroutine-ID stability
+// or representation, so this is a documented anti-pattern; it is
+// nevertheless the only way to associate state with a specific
+// goroutine without altering the public API. Used in production by
+// cockroachdb, influxdb, and the well-known petermattis/goid package.
+// Cost is ~100ns per call — acceptable for the few Acquire calls per
+// hook invocation in this package.
+func goid() uint64 {
+	var buf [64]byte
+	n := runtime.Stack(buf[:], false)
+	var id uint64
+	_, _ = fmt.Sscanf(string(buf[:n]), "goroutine %d ", &id)
+	return id
+}
 
 // LockKind enumerates the three tiers. Higher values = deeper in the
 // lattice. Acquire order MUST be non-decreasing in LockKind value.
@@ -84,16 +101,19 @@ type Handle interface {
 	Key() string
 }
 
-// Manager is goroutine-local in the sense that every Manager instance tracks
-// its own held set; cross-process coordination is via the on-disk flock files
-// at .claude/state/locks/{primary,index,secondary}/<sha256>.lock.
+// Manager tracks held locks per-goroutine so the lex-order constraint
+// only considers locks the calling goroutine actually holds. Two
+// goroutines sharing the same Manager can independently climb the
+// lattice without seeing each other's locks for ordering purposes;
+// cross-process coordination remains via the on-disk lock files at
+// .claude/state/locks/{primary,index,secondary}/<sha256(key)[:16]>.lock.
 type Manager struct {
 	rootDir   string
 	sessionID string
 	ttl       time.Duration
 
 	mu   sync.Mutex
-	held []*handleImpl // ordered by acquire-time; used to enforce lex order
+	held map[uint64][]*handleImpl // keyed by goroutine id; ordered by acquire-time
 }
 
 // NewManager constructs a Manager rooted at rootDir (typically
@@ -103,7 +123,12 @@ func NewManager(rootDir, sessionID string, ttl time.Duration) *Manager {
 	if ttl <= 0 {
 		ttl = 30 * time.Minute
 	}
-	return &Manager{rootDir: rootDir, sessionID: sessionID, ttl: ttl}
+	return &Manager{
+		rootDir:   rootDir,
+		sessionID: sessionID,
+		ttl:       ttl,
+		held:      make(map[uint64][]*handleImpl),
+	}
 }
 
 // Acquire takes a lock at the given tier and key. Order rules:
@@ -150,14 +175,18 @@ func (m *Manager) Acquire(kind LockKind, key string) (Handle, error) {
 		return nil, fmt.Errorf("open lock file: %w", err)
 	}
 	if _, err := f.Write(data); err != nil {
-		f.Close()
-		os.Remove(path)
+		_ = f.Close()
+		_ = os.Remove(path)
 		return nil, fmt.Errorf("write lock payload: %w", err)
 	}
-	f.Close()
+	if err := f.Close(); err != nil {
+		_ = os.Remove(path)
+		return nil, fmt.Errorf("close lock file: %w", err)
+	}
 
-	h := &handleImpl{kind: kind, key: key, path: path, mgr: m}
-	m.held = append(m.held, h)
+	gid := goid()
+	h := &handleImpl{kind: kind, key: key, path: path, mgr: m, gid: gid}
+	m.held[gid] = append(m.held[gid], h)
 	return h, nil
 }
 
@@ -170,14 +199,18 @@ func (m *Manager) retryAcquireUnlocked(kind LockKind, key string, data []byte, p
 		return nil, fmt.Errorf("%w: %s/%s (post-stale-cleanup race)", ErrBusy, kind.String(), key)
 	}
 	if _, err := f.Write(data); err != nil {
-		f.Close()
-		os.Remove(path)
+		_ = f.Close()
+		_ = os.Remove(path)
 		return nil, fmt.Errorf("write lock payload: %w", err)
 	}
-	f.Close()
+	if err := f.Close(); err != nil {
+		_ = os.Remove(path)
+		return nil, fmt.Errorf("close lock file: %w", err)
+	}
 
-	h := &handleImpl{kind: kind, key: key, path: path, mgr: m}
-	m.held = append(m.held, h)
+	gid := goid()
+	h := &handleImpl{kind: kind, key: key, path: path, mgr: m, gid: gid}
+	m.held[gid] = append(m.held[gid], h)
 	return h, nil
 }
 
@@ -221,9 +254,10 @@ func (m *Manager) tryStaleCleanup(path string) bool {
 	return false
 }
 
-// checkOrder enforces the two ordering rules. Caller holds m.mu.
+// checkOrder enforces the two ordering rules against the calling
+// goroutine's own held set. Caller holds m.mu.
 func (m *Manager) checkOrder(kind LockKind, key string) error {
-	for _, h := range m.held {
+	for _, h := range m.held[goid()] {
 		if h.kind > kind {
 			return fmt.Errorf("%w: cannot acquire %s/%s while holding deeper %s/%s",
 				ErrOrderViolation, kind.String(), key, h.kind.String(), h.key)
@@ -274,6 +308,7 @@ type handleImpl struct {
 	key  string
 	path string
 	mgr  *Manager
+	gid  uint64 // goroutine id at acquire-time; used to scope Release on m.held
 	once sync.Once
 	err  error
 }
@@ -281,8 +316,11 @@ type handleImpl struct {
 func (h *handleImpl) Kind() LockKind { return h.kind }
 func (h *handleImpl) Key() string    { return h.key }
 
-// Release removes the on-disk lock file and detaches this handle from the
-// manager's held list. Idempotent.
+// Release removes the on-disk lock file and detaches this handle from
+// the manager's per-goroutine held list. Idempotent. Release uses the
+// gid recorded at Acquire so it works correctly even when called from
+// a different goroutine than the acquirer (e.g. defer-on-cleanup
+// patterns).
 func (h *handleImpl) Release() error {
 	h.once.Do(func() {
 		if err := os.Remove(h.path); err != nil && !os.IsNotExist(err) {
@@ -290,9 +328,13 @@ func (h *handleImpl) Release() error {
 			return
 		}
 		h.mgr.mu.Lock()
-		for i, x := range h.mgr.held {
+		slice := h.mgr.held[h.gid]
+		for i, x := range slice {
 			if x == h {
-				h.mgr.held = append(h.mgr.held[:i], h.mgr.held[i+1:]...)
+				h.mgr.held[h.gid] = append(slice[:i], slice[i+1:]...)
+				if len(h.mgr.held[h.gid]) == 0 {
+					delete(h.mgr.held, h.gid)
+				}
 				break
 			}
 		}
