@@ -344,12 +344,9 @@ var Rules = []GuardRule{
 			if content == "" {
 				return nil
 			}
-			args := []string{
-				"--file", filePath,
-				"--content-stdin-len", fmt.Sprintf("%d", len(content)),
-			}
+			_ = filePath // closure-check operates on candidate frontmatter, not on-disk pre-edit state
 			var resp ddounsClosureResp
-			if !ddounsCheckQuick("closure-check", args, &resp) {
+			if !ddounsCheckQuick("closure-check", nil, content, &resp) {
 				return nil
 			}
 			if !resp.Violation {
@@ -382,12 +379,9 @@ var Rules = []GuardRule{
 			if content == "" {
 				return nil
 			}
-			args := []string{
-				"--file", filePath,
-				"--content-stdin-len", fmt.Sprintf("%d", len(content)),
-			}
+			_ = filePath // dedup-check compares the candidate body against the corpus
 			var resp ddounsDedupResp
-			if !ddounsCheckQuick("dedup-check", args, &resp) {
+			if !ddounsCheckQuick("dedup-check", nil, content, &resp) {
 				return nil
 			}
 			if !resp.Collision {
@@ -424,12 +418,14 @@ var Rules = []GuardRule{
 			if planID == "" {
 				return nil
 			}
-			args := []string{
-				"--file", filePath,
-				"--plan-id", planID,
-			}
+			// attest-check is path-based — the CLI walks the event log
+			// keyed by file path; plan_id env signal gates whether the
+			// rule runs at all (above), but the CLI surface itself
+			// doesn't accept --plan-id. Content is empty: attest-check
+			// is not a candidate-content check.
+			_ = planID
 			var resp ddounsAttestResp
-			if !ddounsCheckQuick("attest-check", args, &resp) {
+			if !ddounsCheckQuick("attest-check", []string{filePath}, "", &resp) {
 				return nil
 			}
 			if resp.Attested || !resp.NeedsAttest {

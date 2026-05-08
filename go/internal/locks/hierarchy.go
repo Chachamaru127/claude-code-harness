@@ -183,26 +183,36 @@ func (m *Manager) retryAcquireUnlocked(kind LockKind, key string, data []byte, p
 
 // tryStaleCleanup reads the existing payload; if its `expiry` is in the
 // past, removes the file. Returns true iff a cleanup occurred.
-// Mirrors lock.py:97-103 + lock.py:153-159.
+//
+// Conservative: removes ONLY on confirmed-past expiry. Parse failures
+// (read error, malformed JSON, unparseable timestamp) leave the file
+// in place because a winner in the O_EXCL→Write window can produce
+// transiently-empty/partial reads — silently removing those would
+// undermine the atomic create-or-fail guarantee and allow double
+// acquisition. Persistent corruption from a crashed holder will fail
+// caller acquires until the TTL has lapsed and a future holder writes
+// a parseable expiry; this trades stale-recovery latency for safety.
+//
+// Mirrors lock.py:97-103 + lock.py:153-159 (semantics) but tightens the
+// failure-mode handling vs the Python production reference.
 func (m *Manager) tryStaleCleanup(path string) bool {
 	body, err := os.ReadFile(path)
 	if err != nil {
-		// Unreadable — concurrent partial write. Treat as stale per
-		// lock.py:115-130 (Windows safety: partial reads can see empty).
-		_ = os.Remove(path)
-		return true
+		// Don't touch — concurrent winner may be mid-write.
+		return false
 	}
 	var payload struct {
 		Expiry string `json:"expiry"`
 	}
 	if err := json.Unmarshal(body, &payload); err != nil {
-		_ = os.Remove(path)
-		return true
+		// Partial/malformed payload — winner may still be in the
+		// O_EXCL → Write window. Don't remove; treat as still busy.
+		return false
 	}
 	exp, err := time.Parse(time.RFC3339, payload.Expiry)
 	if err != nil {
-		_ = os.Remove(path)
-		return true
+		// Couldn't parse expiry — same caution as malformed payload.
+		return false
 	}
 	if time.Now().UTC().After(exp) {
 		_ = os.Remove(path)

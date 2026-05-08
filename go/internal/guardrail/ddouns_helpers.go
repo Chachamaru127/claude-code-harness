@@ -54,11 +54,34 @@ type ddounsAttestResp struct {
 	Reason      string `json:"reason,omitempty"`
 }
 
-func ddounsCheckQuick(subcmd string, args []string, v interface{}) bool {
+// ddounsCheckQuick invokes a `ddouns <subcmd> --quick --json` subprocess
+// and JSON-decodes its stdout into v.
+//
+// content: when non-empty, the bytes are written to a tempfile and the
+// tempfile path is appended to args as the positional <path> argument
+// the DDouns substrate CLI expects (see cmyoya/DDouns spec/companion-
+// contract-v1.md). When empty, args are passed through unchanged
+// (R16/attest reads the on-disk file via the caller-provided path).
+//
+// Threading the proposed edit through a tempfile is required because
+// the substrate CLI subcommands are positional-path designs by spec —
+// they read from disk, not stdin — and Write/Edit/MultiEdit hooks need
+// the candidate edit checked, not the pre-edit on-disk state.
+func ddounsCheckQuick(subcmd string, args []string, content string, v interface{}) bool {
 	ctx, cancel := context.WithTimeout(context.Background(), hotPathBudget)
 	defer cancel()
 
-	full := append([]string{"--quick", "--json"}, args...)
+	finalArgs := args
+	if content != "" {
+		tmpPath, cleanup, err := writeContentTemp(content)
+		if err != nil {
+			return false
+		}
+		defer cleanup()
+		finalArgs = append(append([]string{}, args...), tmpPath)
+	}
+
+	full := append([]string{"--quick", "--json"}, finalArgs...)
 	result, err := ddouns.Run(ctx, subcmd, full, false)
 	if err != nil {
 		return false
@@ -71,6 +94,26 @@ func ddounsCheckQuick(subcmd string, args []string, v interface{}) bool {
 		return false
 	}
 	return true
+}
+
+// writeContentTemp materialises content to a uniquely-named temp file
+// in the OS temp dir and returns the path plus a cleanup func. Caller
+// MUST defer cleanup() to remove the file.
+func writeContentTemp(content string) (string, func(), error) {
+	f, err := os.CreateTemp("", "ddouns-edit-*.md")
+	if err != nil {
+		return "", func() {}, err
+	}
+	if _, err := f.WriteString(content); err != nil {
+		_ = f.Close()
+		_ = os.Remove(f.Name())
+		return "", func() {}, err
+	}
+	if err := f.Close(); err != nil {
+		_ = os.Remove(f.Name())
+		return "", func() {}, err
+	}
+	return f.Name(), func() { _ = os.Remove(f.Name()) }, nil
 }
 
 func resolvePlanID() string {
