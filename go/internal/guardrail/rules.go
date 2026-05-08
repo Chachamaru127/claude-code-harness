@@ -330,6 +330,125 @@ var Rules = []GuardRule{
 			}
 		},
 	},
+
+	// R14: closure-invariant violation → DENY.
+	{
+		ID:          "R14:closure-invariant-violated",
+		ToolPattern: regexp.MustCompile(`^(?:Write|Edit|MultiEdit)$`),
+		Evaluate: func(ctx hookproto.RuleContext) *hookproto.HookResult {
+			filePath, ok := getStringField(ctx.Input.ToolInput, "file_path")
+			if !ok {
+				return nil
+			}
+			content := getChangedContent(ctx.Input.ToolInput)
+			if content == "" {
+				return nil
+			}
+			args := []string{
+				"--file", filePath,
+				"--content-stdin-len", fmt.Sprintf("%d", len(content)),
+			}
+			var resp ddounsClosureResp
+			if !ddounsCheckQuick("closure-check", args, &resp) {
+				return nil
+			}
+			if !resp.Violation {
+				return nil
+			}
+			reason := "closure invariant violated"
+			if resp.Predicate != "" {
+				reason = fmt.Sprintf("closure invariant violated: %s", resp.Predicate)
+			}
+			if resp.Detail != "" {
+				reason = reason + " — " + resp.Detail
+			}
+			return &hookproto.HookResult{
+				Decision: hookproto.DecisionDeny,
+				Reason:   reason,
+			}
+		},
+	},
+
+	// R15: dedup gate rejection → ASK.
+	{
+		ID:          "R15:dedup-gate-rejected",
+		ToolPattern: regexp.MustCompile(`^(?:Write|Edit|MultiEdit)$`),
+		Evaluate: func(ctx hookproto.RuleContext) *hookproto.HookResult {
+			filePath, ok := getStringField(ctx.Input.ToolInput, "file_path")
+			if !ok {
+				return nil
+			}
+			content := getChangedContent(ctx.Input.ToolInput)
+			if content == "" {
+				return nil
+			}
+			args := []string{
+				"--file", filePath,
+				"--content-stdin-len", fmt.Sprintf("%d", len(content)),
+			}
+			var resp ddounsDedupResp
+			if !ddounsCheckQuick("dedup-check", args, &resp) {
+				return nil
+			}
+			if !resp.Collision {
+				return nil
+			}
+			reason := fmt.Sprintf(
+				"dedup gate flagged a near-duplicate of %s (similarity=%.2f)",
+				resp.Neighbor, resp.Similarity,
+			)
+			if resp.Explanation != "" {
+				reason = reason + ": " + resp.Explanation
+			}
+			reason = reason + "\nProceed only if the duplication is intentional."
+			return &hookproto.HookResult{
+				Decision: hookproto.DecisionAsk,
+				Reason:   reason,
+			}
+		},
+	},
+
+	// R16: attestation missing for memory-file write → DENY.
+	{
+		ID:          "R16:attestation-missing",
+		ToolPattern: regexp.MustCompile(`^(?:Write|Edit|MultiEdit)$`),
+		Evaluate: func(ctx hookproto.RuleContext) *hookproto.HookResult {
+			filePath, ok := getStringField(ctx.Input.ToolInput, "file_path")
+			if !ok {
+				return nil
+			}
+			if !memoryFilePattern.MatchString(filePath) {
+				return nil
+			}
+			planID := resolvePlanID()
+			if planID == "" {
+				return nil
+			}
+			args := []string{
+				"--file", filePath,
+				"--plan-id", planID,
+			}
+			var resp ddounsAttestResp
+			if !ddounsCheckQuick("attest-check", args, &resp) {
+				return nil
+			}
+			if resp.Attested || !resp.NeedsAttest {
+				return nil
+			}
+			reason := fmt.Sprintf(
+				"memory-file write must be plan-scoped via `ddouns attest` "+
+					"(file=%s, plan=%s)",
+				filePath, planID,
+			)
+			if resp.Reason != "" {
+				reason = reason + ": " + resp.Reason
+			}
+			return &hookproto.HookResult{
+				Decision: hookproto.DecisionDeny,
+				Reason:   reason,
+			}
+		},
+	},
 }
 
 // EvaluateRules evaluates all guard rules in order and returns the first match.
