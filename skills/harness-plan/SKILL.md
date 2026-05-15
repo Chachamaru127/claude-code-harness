@@ -1,10 +1,10 @@
 ---
 name: harness-plan
-description: "HAR: Task planning, Plans.md management, progress sync. Trigger: create a plan, add tasks, update Plans.md, mark complete, check progress. Do NOT load for: implementation, review, release."
-description-en: "HAR: Task planning, Plans.md management, progress sync. Trigger: create a plan, add tasks, update Plans.md, mark complete, check progress. Do NOT load for: implementation, review, release."
-description-ja: "HAR:タスク計画・Plans.md管理・進捗同期を担当。計画作って、計画を作る、タスクを追加、Plans.md更新、完了マーク、進捗確認で起動。実装・レビュー・リリースには使わない。"
+description: "HAR: Research-backed task planning, Plans.md management, progress sync. Trigger: create a plan, add tasks, update Plans.md, mark complete, check progress. Do NOT load for: implementation, review, release."
+description-en: "HAR: Research-backed task planning, Plans.md management, progress sync. Trigger: create a plan, add tasks, update Plans.md, mark complete, check progress. Do NOT load for: implementation, review, release."
+description-ja: "HAR:調査・採点・記憶確認つきのタスク計画、Plans.md管理、進捗同期を担当。計画作って、タスク追加、Plans.md更新、完了マーク、進捗確認で起動。実装・レビュー・リリースには使わない。"
 kind: workflow
-purpose: "Create and maintain Plans.md task contracts"
+purpose: "Create and maintain evidence-backed Plans.md task contracts"
 trigger: "create a plan, add tasks, update Plans.md, check progress"
 shape: workflow
 role: generator
@@ -46,6 +46,38 @@ Harness の統合プランニングスキル。
 
 ## サブコマンド詳細
 
+### 標準の計画品質契約
+
+See [references/planning-quality.md](${CLAUDE_SKILL_DIR}/references/planning-quality.md)
+
+`harness-plan` は、渡された情報をそのまま Plans.md に落とさない。
+計画作成や大きな task 追加では、最新情報・既存仕様・記憶・複数視点の議論を確認し、
+このプロダクトに取り入れるべき要素だけを task contract に変換する。
+
+**適用する場面**:
+
+- `create` で新しい計画を作る
+- `add` で product behavior / API / 権限 / 課金 / 外部連携 / 配布面に影響する task を足す
+- ユーザーが外部プロダクト、競合、仕様案、改善案、比較材料を渡した
+- 既存仕様や過去判断との衝突リスクがある
+
+**軽く扱ってよい場面**:
+
+- marker 更新だけの `update`
+- status 照合だけの `sync`
+- typo、format、README/CHANGELOG のみ
+- 既存 spec とテストで正解が固定されている狭い変更
+
+**品質フロー**:
+1. 入力情報を分解し、評価対象・採点軸・不確かな事実を明示する
+2. 最新情報を取得する。外部事実は WebSearch / 公式ドキュメント / 一次情報を優先し、重要点は複数ソースでクロスチェックする
+3. 既存仕様・Plans.md・README・docs・CLAUDE.md・関連 skill を確認する
+4. harness-mem / harness-recall / `.claude/agent-memory/` / `.claude/state/` など、利用可能な記憶面を project-scoped で確認する
+5. Task サブエージェントを使い、Product / Architecture / QA / Skeptic など異なる視点で独立レビューする
+6. 中立的な採点レビューを出し、Required / Recommended / Optional / Reject に分類する
+7. `$easy` 形式で、提案内容・理由・どうなるのかを報告する
+8. 採用する案だけを spec SSOT / Plans.md / test task へ落とし込む
+
 ### create — 計画作成
 
 See [references/create.md](${CLAUDE_SKILL_DIR}/references/create.md)
@@ -55,13 +87,14 @@ See [references/create.md](${CLAUDE_SKILL_DIR}/references/create.md)
 **フロー**:
 1. 会話コンテキスト確認（直前の議論から抽出 or 新規ヒアリング）
 2. 何を作るか聞く（max 3問）
-3. 技術調査（WebSearch）
-4. 機能リスト抽出
-5. **仕様正本チェック**（必要時だけ project spec SSOT を作成/更新）
-6. 優先度マトリクス（Required / Recommended / Optional）
-7. TDD 採用判断（テスト設計）
-8. Plans.md 生成（`cc:TODO` マーカー付き）
-9. 次のアクション案内
+3. **計画品質チェック**（最新情報、既存仕様、記憶、複数視点レビュー、採点）
+4. 技術調査（WebSearch）
+5. 機能リスト抽出
+6. **仕様正本チェック**（必要時だけ project spec SSOT を作成/更新）
+7. 優先度マトリクス（Required / Recommended / Optional / Reject）
+8. TDD 採用判断（テスト設計）
+9. Plans.md 生成（`cc:TODO` マーカー付き）
+10. 次のアクション案内
 
 ### 仕様正本チェック（デフォルト）
 
