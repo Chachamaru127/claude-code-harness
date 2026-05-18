@@ -84,6 +84,9 @@ Change history for claude-code-harness.
 - Tightened the Claude plugin archive gate so repo-local context, CI/test fixtures, alternative-client mirrors, and sandbox examples are excluded from `git archive` distribution payloads.
 - Added a local plugin inventory gate so ignored private/dev-only skills cannot sit under public `skills/` surfaces and appear via `claude --plugin-dir .`.
 - Updated OpenCode mirror generation and validation so OpenCode skills use lowercase kebab-case names and only supported skill frontmatter fields.
+- **`/harness-review` が起動時に "バックシェル" 表示のまま無音停止する不具合を修正**: `skills/harness-review/SKILL.md` の frontmatter から `disable-model-invocation: true` を削除。同フラグは dangerous operation 用だが、harness-review は read-only 判定を返す設計のため設計意図と矛盾していた。`user-invocable: true` を残すことで「user の slash command 起動のみ許可」の意図は維持される。codex mirror (`codex/.codex/skills/harness-review/SKILL.md`) も同時更新（OpenCode mirror は OpenCode-native frontmatter で同フィールドを持たないため変更不要）。
+- **`/ci` skill の同種不具合も同時修正**: `skills/ci/SKILL.md` と codex mirror から `disable-model-invocation: true` を削除。harness-review と完全に同じ root cause で、2026-02-04 (`387c5568`) に `release` skill が経験した症状の 3 度目の再発。
+- **patterns.md P27 に Anti-Pattern を SSOT 化**: 「`user-invocable: true` の read-only skill に `disable-model-invocation: true` を併用してはならない」を P27 非適用条件に明文化。フラグの本来の目的 (`efcd097a`: dangerous side-effect skill の Claude 自動 trigger 防止) を逸脱した併用が `release` / `harness-review` / `ci` で 3 度連続で再発したため、根本対策として記録。
 
 ### Phase 69: Claude Code 2.1.133-2.1.142 後続活用 (10 バージョン分の A/C/P 完全分類)
 

@@ -5,7 +5,6 @@ description-en: "CI red? Call us. Pipeline fire brigade deploys. Use when user m
 description-ja: "CIが赤くなったら呼んで。パイプライン消防隊、出動します。Use when user mentions CI failures, build errors, test failures, or pipeline issues. Do NOT load for: local builds, standard implementation work, reviews, or setup."
 allowed-tools: ["Read", "Grep", "Bash", "Task", "Monitor"]
 user-invocable: true
-disable-model-invocation: true
 context: fork
 argument-hint: "[analyze|fix|run]"
 ---

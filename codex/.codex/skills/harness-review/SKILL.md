@@ -16,7 +16,6 @@ argument-hint: "[code|plan|scope|--quick|--codex-closeout|--dual|--team-debate|-
 context: fork
 effort: high
 user-invocable: true
-disable-model-invocation: true
 ---
 
 # Harness Review

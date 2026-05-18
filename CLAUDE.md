@@ -90,6 +90,7 @@ Details: [docs/CLAUDE-commands.md](docs/CLAUDE-commands.md)
 - **Hooks run automatically**: PreToolUse/PostToolUse guards are active
 - **VERSION sync**: Leave version files untouched in normal PRs; update them only for releases
 - **Worker 契約 (v4.3.0+)**: Worker は `worker-report.v1` で self_review 5 件必須。Plans.md の `cc:*` マーカー書換は NG-1 で自動 deny。詳細: [agents/worker.md](agents/worker.md)
+- **Skill frontmatter 設計**: `disable-model-invocation: true` は dangerous side-effect skill 専用。read-only / 判定 skill に付けると Skill tool 経由起動をブロックする副作用。Anti-Pattern: [.claude/rules/skill-editing.md](.claude/rules/skill-editing.md) + [.claude/memory/patterns.md](.claude/memory/patterns.md) P27 非適用条件 (2026-05-18 codify)
 
 ## MCP Trust Policy
 
@@ -143,4 +144,4 @@ Details: [.claude/rules/test-quality.md](.claude/rules/test-quality.md) / [.clau
 - Active watching test policy: [.claude/rules/active-watching-test-policy.md](.claude/rules/active-watching-test-policy.md) - 外部 daemon / opt-in ファイル監視機能の 3 状態テスト規約 (Phase 50 で導入、D40 / P29 運用ルール化)
 - Cross-repo handoff: [.claude/rules/cross-repo-handoff.md](.claude/rules/cross-repo-handoff.md) - claude-code-harness ↔ harness-mem 責任境界 + 2 経路 handoff workflow (Phase 65 で codify、D42 の shareable policy 部分)
 
-<!-- harness-integrity: last-audit=2026-04-19 -->
+<!-- harness-integrity: last-audit=2026-05-18 -->
