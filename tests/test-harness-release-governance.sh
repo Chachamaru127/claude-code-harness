@@ -27,6 +27,9 @@ required_terms=(
   "\`REQUEST_CHANGES\` 単体を最終停止理由にしてはいけない"
   "release dry-run"
   "working tree clean check"
+  "RELEASE_AUTOSTART:"
+  'if $ARGUMENTS == ""'
+  "タスクが不明確"
 )
 
 failures=0

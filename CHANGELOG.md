@@ -6,6 +6,44 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+## [4.11.2] - 2026-05-19
+
+### テーマ: `/harness-release` 沈黙不具合の修正 + AUTO-START Contract literal を governance test で必須化
+
+**v4.11.1 の harness-review/ci 沈黙修正と同じ家系の不具合を `harness-release` でも修正。さらに今後の同種事故再発を CI で検知するため governance test を強化。**
+
+---
+
+#### 1. `/harness-release` skill の沈黙不具合
+
+**今まで**: `/harness-release` を引数なしで起動すると、`AskUserQuestion` も呼ばれず "バックシェル" 表示のまま停止していました。原因は `harness-review` と異なり `disable-model-invocation` ではなく、SKILL.md に **P27 解法 3 点セット (AUTO-START Contract literal) が欠落**していたため。`context: fork` で起動した fork context が host session-start rules を継承し、「タスクが不明確」と解釈して停止していました。
+
+**今後**: SKILL.md `## Bare invocation contract` 直下に literal 3 点を追加:
+
+- 機械可読条件 `if $ARGUMENTS == "":`
+- AUTOSTART marker `RELEASE_AUTOSTART: target=..., base_ref=..., mode=...`
+- 禁止行動 literal「タスクが不明確」「指示を待ちます」「タスクがありません」「追加の指示をお待ちします」
+
+これで bare `/release` 起動時に fork context 内モデルが自動進行し、Review Gate / Work Commit Gate を経由してリリースまで完走します。codex mirror も同期更新。
+
+#### 2. CI gate: `RELEASE_AUTOSTART` literal を必須 term に追加
+
+**今まで**: `tests/test-harness-release-governance.sh` は「Bare invocation contract」「AskUserQuestion」等の **散文** 文言は check していましたが、P27 解法 3 点セット (機械可読条件 + AUTOSTART marker + 禁止行動 literal) の literal 存在を check していませんでした。そのため今回のような literal 欠落を CI で検知できませんでした。
+
+**今後**: `required_terms` 配列に以下を追加:
+
+- `RELEASE_AUTOSTART:`
+- `if $ARGUMENTS == ""`
+- `タスクが不明確`
+
+今後 SKILL.md から literal が剥がれた場合は `validate-plugin.sh` の harness-release governance gate で fail します。
+
+#### 3. `.claude/memory/patterns.md` P27 に事故事例を追記
+
+**今まで**: P27 の例セクションは `skills/harness-review/SKILL.md` だけをリファレンス実装として挙げており、P27 の適用漏れがどう事故化したかの track record が SSOT に無く、後続セッションが「P27 を真面目に実装する重みづけ」を判断できませんでした。
+
+**今後**: P27 例セクションに `harness-release` をリファレンス実装として追加、別途「事故事例」テーブルを設けて 2026-05-18 の `/harness-release` 沈黙事故を記録。同様の症状が再発した時の reference point として機能。
+
 ## [4.11.1] - 2026-05-18
 
 ### テーマ: Skill 沈黙不具合の修正 + Anti-Pattern の SSOT 化
