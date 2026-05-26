@@ -10,11 +10,11 @@ This file provides guidance for Claude Code when working in this repository.
 
 ## Claude Code Feature Utilization
 
-<!-- Feature Table は docs/CLAUDE-feature-table.md に集約。ここに行を追加しない -->
-CC v2.1.111+ と Opus 4.7 の機能を活用。詳細: [docs/CLAUDE-feature-table.md](docs/CLAUDE-feature-table.md)
-長時間タスクの手順: [docs/long-running-harness.md](docs/long-running-harness.md)
+<!-- Feature Table is consolidated in docs/CLAUDE-feature-table.md — do not add rows here -->
+Targets CC v2.1.111+ and Opus 4.7 features. Details: [docs/CLAUDE-feature-table.md](docs/CLAUDE-feature-table.md)
+Long-running task procedures: [docs/long-running-harness.md](docs/long-running-harness.md)
 
-主要活用機能: Agent Memory, Worktree isolation, Agent hooks, PreCompact/PostCompact, PermissionDenied tracking, 1M Context Window
+Key features used: Agent Memory, Worktree isolation, Agent hooks, PreCompact/PostCompact, PermissionDenied tracking, 1M Context Window
 
 ## Development Rules
 
@@ -34,7 +34,7 @@ Details: [.claude/rules/github-release.md](.claude/rules/github-release.md) (Kee
 
 ### Language
 
-All responses must be in **Japanese** (including `context: fork` skills).
+All responses must be in **English** (including `context: fork` skills).
 
 ### Code Style
 
@@ -44,7 +44,9 @@ All responses must be in **Japanese** (including `context: fork` skills).
 
 ## Repository Structure
 
-`.claude-plugin/` Plugin manifest / `.claude/` Claude runtime state, memory, rules, hooks / `.cursor/` Cursor commands, rules, plans, skills / `agents/` Sub-agents / `skills/` Primary skills / `skills-codex/` Codex-specific skill variants / `hooks/` Hooks / `scripts/` Shell scripts / `src/` TypeScript implementation / `app/` App layer / `frontend/` Frontend implementation / `docs/` Documentation / `templates/` Templates / `tests/` Validation / `go/` Harness v4 Go native engine ([SPEC.md](go/SPEC.md), [DESIGN.md](go/DESIGN.md)) / `mcp-server/` MCP server implementation / `harness-ui/` UI subproject / `opencode/` OpenCode-compatible output
+`.claude-plugin/` Plugin manifest / `.claude/` Claude runtime state, memory, rules, hooks / `agents/` Sub-agents / `skills/` Primary skills / `hooks/` Hooks / `scripts/` Shell scripts / `docs/` Documentation / `templates/` Templates / `tests/` Validation / `go/` Harness v4 Go native engine ([SPEC.md](go/SPEC.md), [DESIGN.md](go/DESIGN.md)) / `archive/` Non-Claude runtime surfaces (Codex, OpenCode, Cursor — archived, not active)
+
+See [docs/PROJECT_SCOPE.md](docs/PROJECT_SCOPE.md) for active vs. archived component list.
 
 ## Using Skills (Important)
 
@@ -62,16 +64,16 @@ All responses must be in **Japanese** (including `context: fork` skills).
 | harness-plan | Planning and task shaping into Plans.md | "plan", "break this down", "/plan-with-agent" |
 | harness-sync | Check alignment across Plans.md, git state, and implementation | "sync", "is this aligned?", "check drift" |
 | memory | SSOT management, memory search, SSOT promotion | "SSOT", "decisions.md", "memory search", "harness-mem" |
-| cognitive-load (Plan Brief / Progress / Accept) | 3 surface HTML for non-engineer vibecoder review (Phase 65) | "plan brief", "進捗確認", "受け入れ判断", "ship/wait/reject" |
+| cognitive-load (Plan Brief / Progress / Accept) | 3 surface HTML for non-engineer review | "plan brief", "progress check", "accept decision", "ship/wait/reject" |
 
-Skills are organized as flat directories under `skills/`, with Codex-specific variants in `skills-codex/`. Full catalog: [docs/CLAUDE-skill-catalog.md](docs/CLAUDE-skill-catalog.md)
-Cognitive-load 3 surface 詳細: [docs/cognitive-load-surfaces.md](docs/cognitive-load-surfaces.md) / Cross-project safety: [docs/cross-project-safety.md](docs/cross-project-safety.md)
+Skills are organized as flat directories under `skills/`. Full catalog: [docs/CLAUDE-skill-catalog.md](docs/CLAUDE-skill-catalog.md)
+Cognitive-load surfaces: [docs/cognitive-load-surfaces.md](docs/cognitive-load-surfaces.md) / Cross-project safety: [docs/cross-project-safety.md](docs/cross-project-safety.md)
 
 ## Development Flow
 
 0. **When editing skills/hooks**: run `/reload-plugins` to refresh runtime cache immediately
 1. **Plan**: Use `/plan-with-agent` to add tasks to Plans.md
-2. **Implement**: `/work` (Claude implements) or `/breezing` (team full-run). Both support `--codex`
+2. **Implement**: `/work` (Claude implements) or `/breezing` (team full-run)
 3. **Review**: Runs automatically (manual: `/harness-review`)
 4. **Validate**: Run `./tests/validate-plugin.sh` for structural validation
 
@@ -89,43 +91,43 @@ Details: [docs/CLAUDE-commands.md](docs/CLAUDE-commands.md)
 - **Watch for self-reference**: Running `/work` on this plugin means editing its own code
 - **Hooks run automatically**: PreToolUse/PostToolUse guards are active
 - **VERSION sync**: Leave version files untouched in normal PRs; update them only for releases
-- **Worker 契約 (v4.3.0+)**: Worker は `worker-report.v1` で self_review 5 件必須。Plans.md の `cc:*` マーカー書換は NG-1 で自動 deny。詳細: [agents/worker.md](agents/worker.md)
-- **Skill frontmatter 設計**: `disable-model-invocation: true` は dangerous side-effect skill 専用。read-only / 判定 skill に付けると Skill tool 経由起動をブロックする副作用。Anti-Pattern: [.claude/rules/skill-editing.md](.claude/rules/skill-editing.md) + [.claude/memory/patterns.md](.claude/memory/patterns.md) P27 非適用条件 (2026-05-18 codify)
-- **Slash command 出力の要約契約**: `/コマンド` の `<local-command-stdout>` が長文 (10 行以上) で host Claude に渡された場合、host は必ず assistant message として 1-3 行で要約し、次のアクション (待機 / 終了 / ユーザー判断要請) を明示する。skill 側も結論時に instruction line literal (`↑この結果は Claude が要約します。Enter キーで次へ進むか、新規 prompt で別の指示を出してください。`) を出力する。詳細: [.claude/memory/patterns.md](.claude/memory/patterns.md) P35 (2026-05-19 codify)
+- **Worker contract (v4.3.0+)**: Worker must include 5 self_review items in `worker-report.v1`. Rewriting `cc:*` markers in Plans.md is auto-denied (NG-1). Details: [agents/worker.md](agents/worker.md)
+- **Skill frontmatter design**: `disable-model-invocation: true` is reserved for dangerous side-effect skills only. Applying it to read-only or decision skills blocks invocation via the Skill tool. Anti-Pattern: [.claude/rules/skill-editing.md](.claude/rules/skill-editing.md) + [.claude/memory/patterns.md](.claude/memory/patterns.md) P27 (codified 2026-05-18)
+- **Slash command output summary contract**: When a `/command` `<local-command-stdout>` is long (10+ lines) and passed to host Claude, host must summarize in 1-3 lines as an assistant message and state the next action (wait / end / request user decision). The skill side must also emit a summary instruction line at conclusion. Details: [.claude/memory/patterns.md](.claude/memory/patterns.md) P35 (codified 2026-05-19)
 
 ## MCP Trust Policy
 
-ユーザーレベル MCP は全て信頼済みソース。
-外部 MCP 追加時のルール:
-1. `harness_mem_ingest` 経由のメモリ書き込みには出所タグ (`source: "mcp:<server-name>"`) を付与
-2. 不特定の外部入力はサブエージェントで検疫（隔離コンテキストで検証後にメモリ昇格）
-3. プロジェクトレベル MCP 追加時は deny で `mcp__<新サーバー>__*` を制限し、必要なツールのみ allow
+All user-level MCPs are treated as trusted sources.
+Rules when adding external MCPs:
+1. Memory writes via `harness_mem_ingest` must include a source tag (`source: "mcp:<server-name>"`)
+2. Unverified external input must be quarantined in a sub-agent (validate in isolated context before promoting to memory)
+3. When adding a project-level MCP, deny `mcp__<new-server>__*` and only allow required tools explicitly
 
 ## Permission Boundaries
 
-以下は settings.json の deny/ask + ガードレールエンジン (R01-R13) による**多層防御**。
+Multi-layer defense via settings.json deny/ask + guardrail engine (R01-R13).
 
-| Rule | 防御層 | 理由 |
-|------|--------|------|
-| `.claude-plugin/settings*`, `.claude/settings*` | deny | 自己書き換え防止 |
-| `.eslintrc*`, `eslint.config.*`, `biome.json`, `tsconfig*.json` | deny | 品質基準の保護 |
-| `.github/workflows/*` | deny | CI パイプラインの保護 |
-| `git push --force` | ask + R06 deny | 不可逆操作の防止 |
-| `git push origin main/master` | R12 ask（設定で deny / allow 可） | protected branch 保護 |
-| `git reset --hard` | ask + R11 deny | 不可逆操作の防止 |
-| `mcp__codex__*` | deny | Codex MCP 直接使用の防止 |
+| Rule | Layer | Reason |
+|------|-------|--------|
+| `.claude-plugin/settings*`, `.claude/settings*` | deny | Prevent self-modification |
+| `.eslintrc*`, `eslint.config.*`, `biome.json`, `tsconfig*.json` | deny | Protect quality standards |
+| `.github/workflows/*` | deny | Protect CI pipeline |
+| `git push --force` | ask + R06 deny | Prevent irreversible operations |
+| `git push origin main/master` | R12 ask (configurable deny/allow) | Protect main branch |
+| `git reset --hard` | ask + R11 deny | Prevent irreversible operations |
+| `mcp__codex__*` | deny | Prevent direct Codex MCP use (archived runtime) |
 
-変更が必要な場合はユーザーに手動操作を依頼すること。
+If a change is needed, ask the user to perform the operation manually.
 
-外部 API への sandbox allowlist 設定 (Firecrawl / web スクレイプ等): [docs/sandbox-allowlist-recipe.md](docs/sandbox-allowlist-recipe.md) — `~/.claude/settings.json` への patch 手順を SSOT 化。`templates/sandbox-settings.json.template` と数値・項目を同期。
+External API sandbox allowlist configuration (Firecrawl / web scraping, etc.): [docs/sandbox-allowlist-recipe.md](docs/sandbox-allowlist-recipe.md) — SSOT for `~/.claude/settings.json` patch procedure. Keep in sync with `templates/sandbox-settings.json.template`.
 
 ## Key Commands (for development)
 
 | Command | Purpose |
 |---------|---------|
 | `/plan-with-agent` | Add improvement tasks to Plans.md |
-| `/work` | Implement tasks (auto-scope detection, --codex support) |
-| `/breezing` | Full team parallel run with Agent Teams (--codex support) |
+| `/work` | Implement tasks (auto-scope detection) |
+| `/breezing` | Full team parallel run with Agent Teams |
 | `/harness-review` | Review changes |
 | `/validate` | Validate plugin |
 | `/remember` | Record learnings |
@@ -143,8 +145,8 @@ Details & handoff: [docs/CLAUDE-commands.md](docs/CLAUDE-commands.md)
 
 Details: [.claude/rules/test-quality.md](.claude/rules/test-quality.md) / [.claude/rules/implementation-quality.md](.claude/rules/implementation-quality.md)
 
-- Migration policy: [.claude/rules/migration-policy.md](.claude/rules/migration-policy.md) - deleted-concepts.yaml の運用ルール (Phase 40 で導入)
-- Active watching test policy: [.claude/rules/active-watching-test-policy.md](.claude/rules/active-watching-test-policy.md) - 外部 daemon / opt-in ファイル監視機能の 3 状態テスト規約 (Phase 50 で導入、D40 / P29 運用ルール化)
-- Cross-repo handoff: [.claude/rules/cross-repo-handoff.md](.claude/rules/cross-repo-handoff.md) - claude-code-harness ↔ harness-mem 責任境界 + 2 経路 handoff workflow (Phase 65 で codify、D42 の shareable policy 部分)
+- Migration policy: [.claude/rules/migration-policy.md](.claude/rules/migration-policy.md) - deleted-concepts.yaml operational rules (introduced Phase 40)
+- Active watching test policy: [.claude/rules/active-watching-test-policy.md](.claude/rules/active-watching-test-policy.md) - 3-state test contract for external daemon / opt-in file watching (introduced Phase 50, D40/P29 operational rules)
+- Cross-repo handoff: [.claude/rules/cross-repo-handoff.md](.claude/rules/cross-repo-handoff.md) - claude-code-harness ↔ harness-mem responsibility boundary + 2-path handoff workflow (codified Phase 65, D42 shareable policy)
 
 <!-- harness-integrity: last-audit=2026-05-18 -->
