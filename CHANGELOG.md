@@ -6,6 +6,10 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Changed
+
+- `harness codex-loop` now exits immediately with code 1 and prints `codex-loop is archived/out of scope for Company AI Harness v1`; the command is removed from `harness --help` output.
+
 ## [4.12.3] - 2026-05-25
 
 ### Changed
