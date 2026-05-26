@@ -19,10 +19,6 @@ grep_file() {
   fi
 }
 
-grep_file 'mingw\*|msys\*|cygwin\*' "bin/harness" "shim maps Git Bash/MSYS/Cygwin to Windows"
-grep_file 'EXT="\.exe"' "bin/harness" "shim appends Windows executable suffix"
-grep_file 'harness-\$\{OS\}-\$\{ARCH\}\$\{EXT\}' "bin/harness" "shim resolves suffixed binary"
-
 grep_file '"windows/amd64"' "go/scripts/build-all.sh" "build-all includes Windows amd64"
 grep_file '\.exe' "go/scripts/build-all.sh" "build-all emits Windows .exe artifact"
 

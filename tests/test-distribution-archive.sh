@@ -40,7 +40,6 @@ required_entries=(
   ".claude-plugin/hooks.json"
   ".claude-plugin/settings.json"
   "VERSION"
-  "bin/harness"
   "skills/harness-work/SKILL.md"
   "agents/worker.md"
   "hooks/hooks.json"

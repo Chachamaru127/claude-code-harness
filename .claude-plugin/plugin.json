@@ -2,7 +2,9 @@
   "name": "company-ai-harness",
   "version": "4.12.3",
   "description": "Company AI Harness — an AI-assisted engineering workflow harness for Claude Code.",
-  "author": "Company Engineering",
+  "author": {
+    "name": "Company Engineering"
+  },
   "license": "MIT",
   "keywords": [
     "claude-code",
