@@ -252,31 +252,31 @@ Active hook handlers and runtime utilities. Over 100 scripts total.
 | `docs/i18n-language-contract.md` | Language policy |
 | `docs/upstream-update-snapshot-*.md` | CC version snapshots (10 files) — historical reference |
 
-#### Docs referencing archived surfaces (modify)
-| Path | Notes |
-|------|-------|
-| `docs/CURSOR_INTEGRATION.md` | Cursor-specific; archived surface — mark as archived or remove |
-| `docs/codex-mcp-diagnostics.md` | Codex MCP diagnostics; archived surface |
-| `docs/codex-permission-profiles-policy.md` | Codex policy; archived surface |
-| `docs/codex-plugin-workflows-policy.md` | Codex workflows; archived surface |
-| `docs/codex-provider-setup-policy.md` | Codex setup; archived surface |
-| `docs/codex-sandbox-execution-policy.md` | Codex sandbox; archived surface |
-| `docs/hardening-parity.md` | Claude hooks vs Codex gates comparison; partially relevant |
-| `docs/distribution-scope.md` | Distribution/marketplace scope; needs internal fork review |
-| `docs/cc-2.1.99-2.1.110-impact.md` | Upstream phase impact analysis (Japanese-heavy) |
-| `docs/cc-2.1.99-2.1.111-impact.md` | Upstream phase impact analysis |
+#### Docs referencing archived surfaces — ARCHIVED 2026-05-26 (AIH-011)
+| Path | Status | Notes |
+|------|--------|-------|
+| `docs/CURSOR_INTEGRATION.md` | `archive` | Moved to `archive/non-claude/docs/` |
+| `docs/codex-mcp-diagnostics.md` | `archive` | Moved to `archive/non-claude/docs/` |
+| `docs/codex-permission-profiles-policy.md` | `archive` | Moved to `archive/non-claude/docs/` |
+| `docs/codex-plugin-workflows-policy.md` | `archive` | Moved to `archive/non-claude/docs/` |
+| `docs/codex-provider-setup-policy.md` | `archive` | Moved to `archive/non-claude/docs/` |
+| `docs/codex-sandbox-execution-policy.md` | `archive` | Moved to `archive/non-claude/docs/` |
+| `docs/hardening-parity.md` | `modify` | Kept active — Claude Code guardrail policy; Codex comparison sections are historical |
+| `docs/distribution-scope.md` | `modify` | Distribution/marketplace scope; needs internal fork review |
+| `docs/cc-2.1.99-2.1.110-impact.md` | `keep` | Upstream phase impact analysis (Japanese-heavy, historical reference) |
+| `docs/cc-2.1.99-2.1.111-impact.md` | `keep` | Upstream phase impact analysis |
 
-#### Marketing/social docs (modify or archive)
-| Path | Notes |
-|------|-------|
-| `docs/social/` | X/Twitter posts, upstream social content — archive or remove for internal fork |
-| `docs/positioning-notes.md` | Upstream product positioning — archive or remove |
-| `docs/release-copy-phase21.md` | Upstream release copy — archive or remove |
-| `docs/content-layout.md` | Content layout for public README — review |
-| `docs/claims-audit.md` | Support claims audit |
-| `docs/github-harness-plugin-benchmark.md` | GitHub plugin benchmark |
-| `docs/benchmark-rubric.md` | Benchmark rubric |
-| `docs/issue-105-response-draft.md` | Draft response to upstream issue #105 — archive |
+#### Marketing/social docs — ARCHIVED 2026-05-26 (AIH-011)
+| Path | Status | Notes |
+|------|--------|-------|
+| `docs/social/` | `archive` | Moved to `archive/non-claude/docs/social/` |
+| `docs/positioning-notes.md` | `archive` | Moved to `archive/non-claude/docs/` |
+| `docs/release-copy-phase21.md` | `archive` | Moved to `archive/non-claude/docs/` |
+| `docs/issue-105-response-draft.md` | `archive` | Moved to `archive/non-claude/docs/` |
+| `docs/content-layout.md` | `modify` | Content layout for public README — review |
+| `docs/claims-audit.md` | `unknown` | Support claims audit — review per phase |
+| `docs/github-harness-plugin-benchmark.md` | `unknown` | GitHub plugin benchmark — review per phase |
+| `docs/benchmark-rubric.md` | `unknown` | Benchmark rubric — review per phase |
 
 #### Research/evidence docs (unknown — review per phase)
 | Path | Notes |
@@ -296,20 +296,40 @@ Active hook handlers and runtime utilities. Over 100 scripts total.
 ### `archive/` — Archived Non-Claude Surfaces
 **Class: `archive`**
 
+Reorganized on 2026-05-26 (AIH-011): all non-Claude runtime surfaces consolidated under `archive/non-claude/`.
+
 | Path | Notes |
 |------|-------|
-| `archive/codex/` | Archived Codex AGENTS.md and README |
-| `archive/opencode/` | Archived OpenCode skills, commands, README |
-| `archive/cursor/` | Archived Cursor rules |
-| `archive/skills/` | Archived `cc-cursor-cc` skill |
-| `archive/skills-codex/` | Archived Codex mirror skills |
-| `archive/tests/` | Archived Codex/OpenCode tests |
-| `archive/scripts/` | Archived Codex scripts (15 files) |
-| `archive/codex-plugin/` | Archived Codex plugin manifest |
-| `archive/workflows/` | Archived OpenCode workflow YAML |
+| `archive/non-claude/codex/` | Codex CLI distribution (moved from `archive/codex/`) |
+| `archive/non-claude/codex-plugin/` | Codex CLI plugin manifest (moved from `archive/codex-plugin/`) |
+| `archive/non-claude/opencode/` | OpenCode distribution (moved from `archive/opencode/`) |
+| `archive/non-claude/cursor/` | Cursor IDE config and rules (moved from `archive/cursor/`) |
+| `archive/non-claude/skills/` | Cursor-specific skills — `cc-cursor-cc` (moved from `archive/skills/`) |
+| `archive/non-claude/skills-codex/` | Codex mirror skills (moved from `archive/skills-codex/`) |
+| `archive/non-claude/scripts/` | Codex companion and helper scripts (moved from `archive/scripts/`) |
+| `archive/non-claude/tests/` | Codex/OpenCode test files (moved from `archive/tests/`) |
+| `archive/non-claude/workflows/` | OpenCode workflow YAML (moved from `archive/workflows/`) |
+| `archive/non-claude/docs/` | Docs covering non-Claude host surfaces only (archived 2026-05-26) |
 | `archive/Plans.md` | Upstream project tracker (historical reference) |
 | `archive/README.md` | Archive index |
 | `archive/README_ja.md` | Upstream Japanese README |
+
+### `archive/non-claude/docs/` — Archived Non-Claude Documentation
+**Class: `archive`** — Archived 2026-05-26 as part of AIH-011
+
+| Path | Original path | Reason |
+|------|---------------|--------|
+| `codex-mcp-diagnostics.md` | `docs/codex-mcp-diagnostics.md` | Codex MCP only |
+| `codex-permission-profiles-policy.md` | `docs/codex-permission-profiles-policy.md` | Codex only |
+| `codex-plugin-workflows-policy.md` | `docs/codex-plugin-workflows-policy.md` | Codex only |
+| `codex-provider-setup-policy.md` | `docs/codex-provider-setup-policy.md` | Codex only |
+| `codex-sandbox-execution-policy.md` | `docs/codex-sandbox-execution-policy.md` | Codex only |
+| `CURSOR_INTEGRATION.md` | `docs/CURSOR_INTEGRATION.md` | Cursor only |
+| `hardening-parity.md` | `docs/hardening-parity.md` | Claude vs Codex comparison — Codex archived |
+| `social/` | `docs/social/` | Upstream social/marketing content |
+| `positioning-notes.md` | `docs/positioning-notes.md` | Upstream product positioning |
+| `release-copy-phase21.md` | `docs/release-copy-phase21.md` | Upstream release copy |
+| `issue-105-response-draft.md` | `docs/issue-105-response-draft.md` | Draft response to upstream issue #105 |
 
 **Policy**: Items here are frozen. Do not edit. Do not reference from active code.
 

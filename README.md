@@ -8,7 +8,7 @@
 
 <p align="center">
   <strong>Plan. Work. Review. Ship.</strong><br>
-  <em>A disciplined delivery loop for Claude Code, with bounded paths for Codex and OpenCode.</em>
+  <em>A disciplined delivery loop for Claude Code.</em>
 </p>
 
 <p align="center">
@@ -19,9 +19,6 @@
   <img src="https://img.shields.io/badge/Core-Go_Native-00ADD8.svg" alt="Go Core">
 </p>
 
-<p align="center">
-  English | <a href="README_ja.md">日本語</a>
-</p>
 
 <p align="center">
   <img src="docs/images/readme/hero-operating-loop-en.png" alt="Claude Code Harness operating loop: Spec, Plan, Work, Review, Release" width="900">
@@ -103,7 +100,7 @@ The 5 verb skills keep that surface small: plan, work, review, sync, release.
 | `/harness-work all` | Runs the approved plan through implementation and review paths; use after the plan is clear and the repo baseline is known. |
 | `/harness-review` | Reviews the result separately from implementation and treats major findings as blockers. |
 | `/harness-release` | Checks release readiness, CHANGELOG/tag boundaries, and evidence packaging after implementation and review are complete. |
-| `bin/harness doctor --migration-report` | Inventories old plugin caches, Codex skills, OpenCode files, symlinks, and memory state without deleting data. |
+| `bin/harness doctor --migration-report` | Inventories old plugin caches, symlinks, and memory state without deleting data. |
 
 ## Basic Workflow
 
@@ -121,19 +118,14 @@ The 5 verb skills keep that surface small: plan, work, review, sync, release.
 | Tool | Tier | Route |
 |---|---|---|
 | Claude Code | `supported` | Claude plugin marketplace, then `/harness-setup`. |
-| Codex CLI | `internal-compatible` | `scripts/setup-codex.sh --user`; direct plugin smoke is tracked separately. |
-| Codex app | `candidate` | Candidate smoke only; do not reuse Codex CLI proof. |
-| OpenCode | `internal-compatible` | `scripts/setup-opencode.sh`; runtime parity is not claimed. |
-| Cursor | `candidate` | PM handoff or adapter research only. |
-| GitHub Copilot CLI | `candidate` | Manual profile research only. |
-| Antigravity CLI | `future/unsupported` | No end-user install route in this phase. |
+
+Other runtimes (Codex CLI, OpenCode, Cursor, GitHub Copilot CLI) are out of scope for v1 and archived under `archive/non-claude/`. See [docs/PROJECT_SCOPE.md](docs/PROJECT_SCOPE.md).
 
 ## Existing User Migration
 
 Run `bin/harness doctor --migration-report` before changing an existing setup.
-The report inventories stale Claude plugin caches, duplicate Codex skills, old
-symlinks, OpenCode backup paths, and harness-mem state without deleting
-anything.
+The report inventories stale Claude plugin caches, old symlinks, and harness-mem
+state without deleting anything.
 
 ## Support Boundary
 
@@ -159,8 +151,6 @@ Use these after the basic trigger path is visible.
 | Capability | What it adds | Boundary |
 |------------|--------------|----------|
 | Breezing | Planner/Critic/Worker style team execution for larger task lists. | Still gated by plan quality and review. |
-| Codex companion review | Schema-backed Codex second opinion through `scripts/codex-companion.sh`. | Raw `codex exec` is not the Harness companion path. |
-| OpenCode bootstrap | Mirrors Harness guidance into OpenCode-compatible surfaces. | Real runtime parity is not claimed. |
 | harness-mem | Project-scoped memory and recall across sessions. | Optional companion; purge remains explicit. |
 
 ## Documentation
@@ -173,9 +163,8 @@ Use these after the basic trigger path is visible.
 | [Skill trigger gate](docs/onboarding/skill-trigger-acceptance.md) | How install success is verified. |
 | [Capability matrix](docs/tool-capability-matrix.md) | Supported, internal-compatible, candidate, and unsupported host claims. |
 | [Claude Code Compatibility](docs/CLAUDE_CODE_COMPATIBILITY.md) | Current Claude Code requirements and compatibility notes. |
-| [Cursor Integration](docs/CURSOR_INTEGRATION.md) | Cursor handoff boundary and candidate-route notes. |
 | [Distribution Scope](docs/distribution-scope.md) | Included vs compatibility vs development-only paths. |
-| [Hardening parity](docs/hardening-parity.md) | Runtime safety differences between Claude hooks and Codex gates. |
+| [Hardening parity](docs/hardening-parity.md) | Claude Code hook guardrail policy (Codex comparison sections are historical). |
 | [Work All Evidence Pack](docs/evidence/work-all.md) | Success/failure verification contract for full-plan execution. |
 | [Changelog](CHANGELOG.md) | User-facing version history. |
 
