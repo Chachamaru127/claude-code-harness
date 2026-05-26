@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"sort"
 	"strings"
 )
@@ -295,22 +294,20 @@ func checkHooksGoPattern(projectRoot string) checkResult {
 	return checkResult{label: label, ok: true, detail: "all command hooks use Go binary pattern"}
 }
 
-// checkPlatformBinary verifies that a pre-built binary for the current
-// OS/architecture exists under bin/ (e.g. bin/harness-darwin-arm64).
+// checkPlatformBinary verifies that bin/harness exists and is executable.
+// The binary is built from Go source (not committed); run `make build` to generate it.
 func checkPlatformBinary(projectRoot string) checkResult {
-	goos := runtime.GOOS
-	goarch := runtime.GOARCH
-	label := "platform binary exists"
-	binaryName := fmt.Sprintf("harness-%s-%s", goos, goarch)
-	binaryPath := filepath.Join(projectRoot, "bin", binaryName)
+	label := "bin/harness built"
+	binaryPath := filepath.Join(projectRoot, "bin", "harness")
 
-	if _, err := os.Stat(binaryPath); err == nil {
+	info, err := os.Stat(binaryPath)
+	if err == nil && info.Mode()&0o111 != 0 {
 		return checkResult{label: label, ok: true, detail: binaryPath}
 	}
 	return checkResult{
 		label:  label,
-		ok:     true, // advisory only
-		detail: fmt.Sprintf("⚠️ No binary for %s-%s. Build: cd go && GOOS=%s GOARCH=%s go build -o bin/%s ./cmd/harness/", goos, goarch, goos, goarch, binaryName),
+		ok:     false,
+		detail: fmt.Sprintf("bin/harness not found or not executable. Run: make build  (or: cd go && go build -o ../bin/harness ./cmd/harness/)"),
 	}
 }
 

@@ -84,7 +84,24 @@ Short aliases (`/plan`, `/work`, etc.) are planned convenience wrappers. Until t
 
 - Claude Code v2.1+
 - A project repository with write access for local setup
+- Go 1.21+ (to build the guardrail engine from source)
 - No Node.js required (guardrail engine is Go-native)
+
+## Building
+
+The harness binary is built from source — it is not committed to git. Run once after cloning:
+
+```bash
+make build
+```
+
+This runs `cd go && go build -o ../bin/harness ./cmd/harness/` and places the binary at `bin/harness`.
+
+The hooks reference `bin/harness` at runtime, so it must be present before starting Claude Code with this plugin active. If it is missing, the hooks log a diagnostic message and skip rather than fail hard. To verify:
+
+```bash
+bin/harness version
+```
 
 ---
 
@@ -97,6 +114,7 @@ Short aliases (`/plan`, `/work`, etc.) are planned convenience wrappers. Until t
 | [docs/REPO_INVENTORY.md](docs/REPO_INVENTORY.md) | Full file-level inventory of the repository. |
 | [docs/NAMING_PLAN.md](docs/NAMING_PLAN.md) | Internal naming conventions and cleanup plan. |
 | [docs/JAPANESE_TEXT_CLEANUP.md](docs/JAPANESE_TEXT_CLEANUP.md) | Status of Japanese text removal across the codebase. |
+| [docs/hardening-parity.md](docs/hardening-parity.md) | Guardrail hardening parity requirements. |
 | [CHANGELOG.md](CHANGELOG.md) | Version history. |
 
 ---

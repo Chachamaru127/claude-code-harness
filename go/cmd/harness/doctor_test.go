@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 )
@@ -660,40 +659,40 @@ func TestDoctor_CheckHooksGoPattern_MissingFile(t *testing.T) {
 // TestDoctor_CheckPlatformBinary
 // ---------------------------------------------------------------------------
 
-// TestDoctor_CheckPlatformBinary_Present verifies ok when the binary exists.
+// TestDoctor_CheckPlatformBinary_Present verifies ok when bin/harness exists and is executable.
 func TestDoctor_CheckPlatformBinary_Present(t *testing.T) {
 	dir := t.TempDir()
 
-	goos := runtime.GOOS
-	goarch := runtime.GOARCH
-	binaryName := "harness-" + goos + "-" + goarch
 	binDir := filepath.Join(dir, "bin")
 	if err := os.MkdirAll(binDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(binDir, binaryName), []byte(""), 0o755); err != nil {
+	if err := os.WriteFile(filepath.Join(binDir, "harness"), []byte(""), 0o755); err != nil {
 		t.Fatal(err)
 	}
 
 	r := checkPlatformBinary(dir)
 	if !r.ok {
-		t.Errorf("expected ok=true when platform binary exists, got false")
+		t.Errorf("expected ok=true when bin/harness exists, got false: %s", r.detail)
 	}
-	if strings.Contains(r.detail, "No binary") {
-		t.Errorf("expected no 'No binary' warning, got %q", r.detail)
+	if strings.Contains(r.detail, "not found") {
+		t.Errorf("expected no 'not found' warning, got %q", r.detail)
 	}
 }
 
-// TestDoctor_CheckPlatformBinary_Absent verifies advisory detail when binary is missing.
+// TestDoctor_CheckPlatformBinary_Absent verifies error detail when bin/harness is missing.
 func TestDoctor_CheckPlatformBinary_Absent(t *testing.T) {
 	dir := t.TempDir() // no bin/ directory
 
 	r := checkPlatformBinary(dir)
-	if !r.ok {
-		t.Errorf("expected ok=true (advisory), got false")
+	if r.ok {
+		t.Errorf("expected ok=false when bin/harness is absent, got true")
 	}
-	if !strings.Contains(r.detail, "No binary") {
-		t.Errorf("expected 'No binary' in detail, got %q", r.detail)
+	if !strings.Contains(r.detail, "bin/harness") {
+		t.Errorf("expected 'bin/harness' in detail, got %q", r.detail)
+	}
+	if !strings.Contains(r.detail, "make build") {
+		t.Errorf("expected 'make build' remediation hint, got %q", r.detail)
 	}
 	if !strings.Contains(r.detail, "go build") {
 		t.Errorf("expected 'go build' remediation hint, got %q", r.detail)
