@@ -3,8 +3,8 @@
 # Phase 65.4.3 - Progress Tracker drift detection (5 alert kinds)
 #
 # Purpose:
-#   Plans.md と session state を検査し、5 種類の drift alert を生成する。
-#   生成 alert は progress-alert.v1 schema 準拠の JSON 配列で出力。
+#   Inspect Plans.md and session state, then generate 5 kinds of drift alerts.
+#   Generated alerts are output as a JSON array conforming to the progress-alert.v1 schema.
 #
 # Schema: progress-alert.v1
 #   {
@@ -17,27 +17,27 @@
 #
 # Usage:
 #   progress-detect-drift.sh \
-#     [--scope-creep-files <csv>]   # Plans.md にない file 編集 (CSV)
-#     [--elapsed-min <int>]          # 経過分数
-#     [--estimate-min <int>]         # 推定総分数
-#     [--repeated-failure-count <int>]  # test 連続失敗数
-#     [--cost-so-far <float>]        # コスト so far
-#     [--cost-limit <float>]         # コスト上限
-#     [--high-risk-files <csv>]      # harness.toml deny path matching file (CSV)
+#     [--scope-creep-files <csv>]   # Files edited that are not in Plans.md (CSV)
+#     [--elapsed-min <int>]          # Elapsed minutes
+#     [--estimate-min <int>]         # Estimated total minutes
+#     [--repeated-failure-count <int>]  # Consecutive test failure count
+#     [--cost-so-far <float>]        # Cost so far
+#     [--cost-limit <float>]         # Cost limit
+#     [--high-risk-files <csv>]      # Files matching harness.toml deny paths (CSV)
 #
-# 各 input が空 / default の場合、その alert kind は出力されない (no-op)。
-# stdout に [{...}, ...] の JSON 配列を出力 (空配列もあり)。
+# When each input is empty / default, that alert kind is not emitted (no-op).
+# Outputs a JSON array [{...}, ...] to stdout (may be empty array).
 #
-# 検出条件 (Plans.md DoD 準拠):
-#   - scope-creep:    Plans.md に出てこない file が編集された
+# Detection conditions (per Plans.md DoD):
+#   - scope-creep:    A file not mentioned in Plans.md was edited
 #   - time-overrun:   elapsed > estimate × 1.5
 #   - repeated-failure: test fail count >= 3
-#   - cost-warning:   cost_so_far / cost_limit >= 0.80 かつ cost_limit > 0
-#   - high-risk-file: harness.toml deny path に match した file が編集された
+#   - cost-warning:   cost_so_far / cost_limit >= 0.80 and cost_limit > 0
+#   - high-risk-file: A file matching a harness.toml deny path was edited
 #
-# severity マップ:
+# Severity map:
 #   - scope-creep:      warn
-#   - time-overrun:     warn (1.5x), critical (2.0x 以上)
+#   - time-overrun:     warn (1.5x), critical (2.0x or above)
 #   - repeated-failure: critical
 #   - cost-warning:     warn (80-100%), critical (100%+)
 #   - high-risk-file:   critical
@@ -49,15 +49,15 @@ usage() {
 Usage: progress-detect-drift.sh [options]
 
 All optional (each input absent → corresponding alert not emitted):
-  --scope-creep-files <csv>      Plans.md にない file 編集の CSV
-  --elapsed-min <int>            経過分数 (default 0)
-  --estimate-min <int>           推定総分数 (default 0)
-  --repeated-failure-count <int> test 連続失敗数 (default 0)
-  --cost-so-far <float>          コスト so far (default 0)
-  --cost-limit <float>           コスト上限 (default 0)
-  --high-risk-files <csv>        harness.toml deny path matching の CSV
+  --scope-creep-files <csv>      CSV of files edited that are not in Plans.md
+  --elapsed-min <int>            Elapsed minutes (default 0)
+  --estimate-min <int>           Estimated total minutes (default 0)
+  --repeated-failure-count <int> Consecutive test failure count (default 0)
+  --cost-so-far <float>          Cost so far (default 0)
+  --cost-limit <float>           Cost limit (default 0)
+  --high-risk-files <csv>        CSV of files matching harness.toml deny paths
 
-Output: JSON array of progress-alert.v1 objects (空配列もあり)
+Output: JSON array of progress-alert.v1 objects (may be empty array)
 Exit:   0 = success / 2 = usage error
 USAGE
   exit 2
@@ -140,8 +140,8 @@ if scope_creep_files:
     alerts.append({
         "kind": "scope-creep",
         "severity": "warn",
-        "message": f"Plans.md にない {len(scope_creep_files)} ファイルが編集されました: {', '.join(scope_creep_files[:3])}",
-        "suggested_action": "編集が意図したスコープ内か確認するか、Plans.md にタスクを追加してください",
+        "message": f"{len(scope_creep_files)} file(s) not in Plans.md were edited: {', '.join(scope_creep_files[:3])}",
+        "suggested_action": "Confirm the edits are within the intended scope, or add tasks to Plans.md",
         "triggered_at": TIMESTAMP,
     })
 
@@ -152,16 +152,16 @@ if estimate_min > 0 and elapsed_min > 0:
         alerts.append({
             "kind": "time-overrun",
             "severity": "critical",
-            "message": f"経過 {elapsed_min} 分が推定 {estimate_min} 分の {ratio:.1f} 倍を超えています",
-            "suggested_action": "残作業をスコープ縮小するか、別セッションへ分割を検討してください",
+            "message": f"Elapsed {elapsed_min} min exceeds the estimate of {estimate_min} min by {ratio:.1f}x",
+            "suggested_action": "Reduce remaining scope or split into separate sessions",
             "triggered_at": TIMESTAMP,
         })
     elif ratio >= 1.5:
         alerts.append({
             "kind": "time-overrun",
             "severity": "warn",
-            "message": f"経過 {elapsed_min} 分が推定 {estimate_min} 分の {ratio:.1f} 倍を超えました",
-            "suggested_action": "残タスクの所要時間を再見積もりしてください",
+            "message": f"Elapsed {elapsed_min} min has exceeded the estimate of {estimate_min} min by {ratio:.1f}x",
+            "suggested_action": "Re-estimate the time required for remaining tasks",
             "triggered_at": TIMESTAMP,
         })
 
@@ -170,8 +170,8 @@ if failure_count >= 3:
     alerts.append({
         "kind": "repeated-failure",
         "severity": "critical",
-        "message": f"テストが {failure_count} 回連続で失敗しています",
-        "suggested_action": "原因調査を一時停止して、ユーザーへエスカレーションしてください",
+        "message": f"Tests have failed {failure_count} times consecutively",
+        "suggested_action": "Pause investigation and escalate to the user",
         "triggered_at": TIMESTAMP,
     })
 
@@ -182,16 +182,16 @@ if cost_limit > 0:
         alerts.append({
             "kind": "cost-warning",
             "severity": "critical",
-            "message": f"コスト ${cost_so_far:.2f} が上限 ${cost_limit:.2f} を超過しました ({pct*100:.0f}%)",
-            "suggested_action": "セッションを停止し、残タスクを別予算で再開してください",
+            "message": f"Cost ${cost_so_far:.2f} has exceeded the limit ${cost_limit:.2f} ({pct*100:.0f}%)",
+            "suggested_action": "Stop the session and resume remaining tasks under a new budget",
             "triggered_at": TIMESTAMP,
         })
     elif pct >= 0.80:
         alerts.append({
             "kind": "cost-warning",
             "severity": "warn",
-            "message": f"コスト ${cost_so_far:.2f} が上限 ${cost_limit:.2f} の {pct*100:.0f}% に到達しました",
-            "suggested_action": "残タスクの優先度を見直し、必須項目に絞り込んでください",
+            "message": f"Cost ${cost_so_far:.2f} has reached {pct*100:.0f}% of the limit ${cost_limit:.2f}",
+            "suggested_action": "Review the priority of remaining tasks and focus on essentials",
             "triggered_at": TIMESTAMP,
         })
 
@@ -200,8 +200,8 @@ if high_risk_files:
     alerts.append({
         "kind": "high-risk-file",
         "severity": "critical",
-        "message": f"harness.toml deny path に該当するファイル {len(high_risk_files)} 件への編集試行: {', '.join(high_risk_files[:3])}",
-        "suggested_action": "編集を取り消すか、ユーザーに deny path 設定変更の是非を確認してください",
+        "message": f"Edit attempted on {len(high_risk_files)} file(s) matching harness.toml deny paths: {', '.join(high_risk_files[:3])}",
+        "suggested_action": "Revert the edits, or ask the user whether the deny path setting should be changed",
         "triggered_at": TIMESTAMP,
     })
 

@@ -11,17 +11,16 @@ import (
 	"time"
 )
 
-// MemoryBridgeClient は harness-mem デーモンへの HTTP 連携を行う。
-// harness-mem が起動していない環境では fail-silent で動作し、
-// 既存の JSONL ログのみが記録される。
+// MemoryBridgeClient handles HTTP communication with the harness-mem daemon.
+// Operates fail-silent when harness-mem is not running; only the JSONL log is recorded.
 type MemoryBridgeClient struct {
-	// HTTPClient はテスト用 DI。nil の場合は 2s timeout のデフォルトクライアントを使用。
+	// HTTPClient is for DI in tests. When nil, a default client with a 2s timeout is used.
 	HTTPClient *http.Client
-	// BaseURL はテスト用 override。空の場合は環境変数から構築。
+	// BaseURL is a test override. When empty, it is constructed from environment variables.
 	BaseURL string
 }
 
-// defaultMemBridgeClient はパッケージレベルのデフォルトインスタンス。
+// defaultMemBridgeClient is the package-level default instance.
 var defaultMemBridgeClient = &MemoryBridgeClient{}
 
 // memoryBridgeEvent represents a dispatched memory bridge event written to the
@@ -55,7 +54,7 @@ var bridgeToEventType = map[string]string{
 	"user-prompt":   "user_prompt",
 	"post-tool-use": "tool_use",
 	"codex-notify":  "checkpoint",
-	// "stop" は /v1/sessions/finalize を使うため、このマップには含まない。
+	// "stop" uses /v1/sessions/finalize and is therefore not included in this map.
 }
 
 // --- harness-mem API request types ---
@@ -132,8 +131,8 @@ func (c *MemoryBridgeClient) Handle(in io.Reader, out io.Writer) error {
 	return approveMemoryBridge(out, target)
 }
 
-// validateBridgeInput は harness-mem に POST する前に最小限のスキーマ検証を行う。
-// 不正なイベントが長期記憶に昇格するのを防ぐ (K-1.2: 記憶は保存前に監査する)。
+// validateBridgeInput performs minimal schema validation before POSTing to harness-mem.
+// Prevents invalid events from being promoted to long-term memory (K-1.2: audit before saving memory).
 func validateBridgeInput(input memoryBridgeInput) error {
 	if input.SessionID == "" {
 		return fmt.Errorf("session_id is required")
@@ -147,9 +146,9 @@ func validateBridgeInput(input memoryBridgeInput) error {
 	return nil
 }
 
-// postToHarnessMem は harness-mem デーモンにイベントを HTTP POST する。
-// 接続失敗・タイムアウト・エラーレスポンスは全て stderr ログのみで無視する。
-// harness-mem が起動していない環境ではコネクション拒否で即座に返る。
+// postToHarnessMem HTTP POSTs an event to the harness-mem daemon.
+// Connection failures, timeouts, and error responses are all silently ignored (stderr log only).
+// In environments where harness-mem is not running, returns immediately with a connection refused error.
 func (c *MemoryBridgeClient) postToHarnessMem(target string, input memoryBridgeInput) {
 	baseURL := c.BaseURL
 	if baseURL == "" {

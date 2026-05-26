@@ -1,12 +1,12 @@
 # Claude harness Architecture
 
-## 1. 概要
+## 1. Overview
 
-`claude-code-harness`は、Claude Codeの能力を最大限に引き出すための、モジュール化された自律的な開発フレームワークです。中心的な設計思想は、**Plan → Work → Review**という体系的な開発サイクルを、**Skills**、**Rules**、**Hooks**という3つの主要な拡張機能でサポートすることです。
+`claude-code-harness` is a modular, autonomous development framework that maximizes the capabilities of Claude Code. The central design philosophy is to support a systematic development cycle — **Plan → Work → Review** — with three primary extensions: **Skills**, **Rules**, and **Hooks**.
 
-## 2. 3層アーキテクチャ
+## 2. Three-layer architecture
 
-このプラグインは、再利用性と保守性を高めるために、以下の3層アーキテクチャを採用しています。
+The plugin adopts the following three-layer architecture to maximize reusability and maintainability.
 
 ```mermaid
 graph TD
@@ -24,49 +24,49 @@ graph TD
     B -- uses --> C;
 ```
 
-- **Skill Layer**: `SKILL.md`ファイルとして定義される、自己完結した知識ユニットです。特定のタスク（例：セキュリティレビュー、コード実装）を実行するための具体的な手順と知識が含まれています。
-- **Workflow Layer**: `*.yaml`ファイルとして定義され、特定の開発フェーズ（例：`/work`）を実行するための**Skills**のオーケストレーションを行います。ステップの順序、条件分岐、エラーハンドリングなどを管理します。
-- **Profile Layer**: プラグイン全体の動作を定義します。どのワークフローをどのコマンドに割り当てるか、どのSkillカテゴリを許可するかなどを指定します。
+- **Skill Layer**: Self-contained knowledge units defined as `SKILL.md` files. Contains specific procedures and knowledge for executing particular tasks (e.g., security review, code implementation).
+- **Workflow Layer**: Defined as `*.yaml` files, orchestrates **Skills** for executing specific development phases (e.g., `/work`). Manages step ordering, conditional branching, and error handling.
+- **Profile Layer**: Defines the overall behavior of the plugin. Specifies which workflows are mapped to which commands and which skill categories are permitted.
 
-## 3. ディレクトリ構造
+## 3. Directory structure
 
 ```
 claude-code-harness/
-├── .claude-plugin/         # プラグインメタデータ
+├── .claude-plugin/         # Plugin metadata
 │   ├── plugin.json
 │   └── hooks.json
-├── skills/                 # Skill定義 (SKILL.md + references/)
-│   ├── impl/               # 実装スキル
-│   ├── harness-review/     # レビュースキル
-│   ├── verify/             # 検証スキル
-│   ├── planning/           # プランニングスキル
-│   ├── setup/              # セットアップスキル
-│   ├── ci/                 # CI/CD関連スキル
-│   └── ...                 # その他30+スキル
-├── agents/                 # サブエージェント定義 (Markdown)
-├── hooks/                  # Hooks定義 (hooks.json)
-├── scripts/                # 自動化用シェルスクリプト
-├── docs/                   # ドキュメント
-└── templates/              # 各種テンプレート
+├── skills/                 # Skill definitions (SKILL.md + references/)
+│   ├── impl/               # Implementation skills
+│   ├── harness-review/     # Review skills
+│   ├── verify/             # Verification skills
+│   ├── planning/           # Planning skills
+│   ├── setup/              # Setup skills
+│   ├── ci/                 # CI/CD related skills
+│   └── ...                 # 30+ other skills
+├── agents/                 # Sub-agent definitions (Markdown)
+├── hooks/                  # Hook definitions (hooks.json)
+├── scripts/                # Shell scripts for automation
+├── docs/                   # Documentation
+└── templates/              # Various templates
 ```
 
-## 4. 主要コンポーネント
+## 4. Key components
 
 ### 4.1. Skills
 
-各スキルは、`description`（いつ使うべきか）と`allowed-tools`（使用許可ツール）を明記することで、Claudeによる自律的な発見と安全な実行をサポートします。
+Each skill specifies `description` (when to use it) and `allowed-tools` (permitted tools), which supports Claude's autonomous discovery and safe execution.
 
 ### 4.2. Rules
 
-`claude-code-harness.config.schema.json` で厳密に定義された設定ファイルにより、安全性（`dry-run`モード）やパス制限（`protected`パス）を強制します。
+Configuration files strictly defined in `claude-code-harness.config.schema.json` enforce safety (`dry-run` mode) and path restrictions (`protected` paths).
 
 ### 4.3. Hooks
 
-`hooks.json`で定義され、開発プロセスの重要なポイントで自動的にスクリプトを実行します。
-- **SessionStart**: セッション開始時の環境チェック
-- **PostToolUse**: ファイル編集後の自動テストや変更追跡
-- **Stop**: セッション終了時のサマリー生成
+Defined in `hooks.json`, hooks automatically execute scripts at key points in the development process.
+- **SessionStart**: Environment checks at session start
+- **PostToolUse**: Automatic tests and change tracking after file edits
+- **Stop**: Summary generation at session end
 
-### 4.4. 並列処理
+### 4.4. Parallel processing
 
-`/harness-review`コマンドでは、`code-reviewer`サブエージェントを複数同時に起動し、セキュリティ、パフォーマンス、品質のレビューを並列実行することで、フィードバック時間を大幅に短縮します。
+The `/harness-review` command launches multiple `code-reviewer` sub-agents simultaneously and runs security, performance, and quality reviews in parallel, significantly reducing feedback time.

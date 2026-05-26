@@ -1,21 +1,21 @@
 #!/bin/bash
 # posttooluse-log-toolname.sh
-# Phase0: 全ツール名をログに記録（tool_name ディスカバリ用）
-# + LSP追跡: LSP関連ツールを検出して tooling-policy.json を更新
+# Phase0: Log all tool names (for tool_name discovery)
+# + LSP tracking: detects LSP-related tools and updates tooling-policy.json
 #
-# Usage: PostToolUse hook から自動実行（matcher="*"）
+# Usage: auto-executed from PostToolUse hook (matcher="*")
 # Input: stdin JSON (Claude Code hooks)
 # Output:
-#   - .claude/state/tool-events.jsonl にJSONL追記 (Phase0ログ有効時のみ)
-#   - .claude/state/tooling-policy.json 更新 (LSP関連ツール検出時、常に)
+#   - Appends JSONL to .claude/state/tool-events.jsonl (only when Phase0 log is enabled)
+#   - Updates .claude/state/tooling-policy.json (always, when LSP-related tool is detected)
 #
-# 制御: CC_HARNESS_PHASE0_LOG=1 がある時のみログ収集を実行
-#       （tool_name確定後は無効化して、ログ肥大化を防ぐ）
-#       LSP追跡は常に実行（matcher "LSP" に依存せず、詰みを防ぐ）
+# Control: Log collection runs only when CC_HARNESS_PHASE0_LOG=1 is set
+#          (disable after tool_name is confirmed to prevent log bloat)
+#          LSP tracking always runs (independent of "LSP" matcher, to avoid deadlock)
 
 set +e
 
-# ===== 定数 =====
+# ===== Constants =====
 STATE_DIR=".claude/state"
 LOG_FILE="${STATE_DIR}/tool-events.jsonl"
 LOCK_FILE="${STATE_DIR}/tool-events.lock"
@@ -26,22 +26,22 @@ MAX_SIZE_BYTES=262144  # 256KB
 MAX_LINES=2000
 MAX_GENERATIONS=5
 
-# ===== ユーティリティ =====
+# ===== Utilities =====
 
-# ロックを取得（flock優先、なければmkdirロック）
+# Acquire lock (prefer flock; fall back to mkdir lock)
 acquire_lock() {
   local lockfile="$1"
   local timeout=5
   local waited=0
 
-  # flock が使えるなら flock を使う
+  # use flock if available
   if command -v flock >/dev/null 2>&1; then
     exec 200>"$lockfile"
     flock -w "$timeout" 200 || return 1
     return 0
   fi
 
-  # flock が無いなら mkdir ロック（原子的）
+  # flock unavailable: use mkdir lock (atomic)
   while ! mkdir "$lockfile" 2>/dev/null; do
     sleep 0.1
     waited=$((waited + 1))
@@ -52,7 +52,7 @@ acquire_lock() {
   return 0
 }
 
-# ロックを解放
+# Release lock
 release_lock() {
   local lockfile="$1"
 
@@ -63,32 +63,32 @@ release_lock() {
   fi
 }
 
-# ローテーション実行
+# Execute rotation
 rotate_log() {
   local logfile="$1"
 
-  # 最古を削除
+  # Delete oldest generation
   [ -f "${logfile}.${MAX_GENERATIONS}" ] && rm -f "${logfile}.${MAX_GENERATIONS}"
 
-  # 順にリネーム（.4 → .5, .3 → .4, ...）
+  # Rename in order (.4 → .5, .3 → .4, ...)
   for i in $(seq $((MAX_GENERATIONS - 1)) -1 1); do
     [ -f "${logfile}.${i}" ] && mv "${logfile}.${i}" "${logfile}.$((i + 1))"
   done
 
-  # 現行を .1 へ
+  # Move current log to .1
   [ -f "$logfile" ] && mv "$logfile" "${logfile}.1"
 
-  # 新しいログファイルを作成
+  # Create new log file
   touch "$logfile"
 }
 
-# ローテーションが必要かチェック
+# Check whether rotation is needed
 needs_rotation() {
   local logfile="$1"
 
   [ ! -f "$logfile" ] && return 1
 
-  # サイズチェック
+  # Size check
   local size
   if command -v stat >/dev/null 2>&1; then
     # macOS/BSD
@@ -101,7 +101,7 @@ needs_rotation() {
     return 0
   fi
 
-  # 行数チェック
+  # Line count check
   local lines
   lines=$(wc -l < "$logfile" 2>/dev/null || echo 0)
   if [ "$lines" -ge "$MAX_LINES" ]; then
@@ -111,12 +111,12 @@ needs_rotation() {
   return 1
 }
 
-# ===== メイン処理 =====
+# ===== Main processing =====
 
-# stateディレクトリ作成
+# Create state directory
 mkdir -p "$STATE_DIR"
 
-# stdin から JSON 入力を読み取る
+# Read JSON input from stdin
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
@@ -126,7 +126,7 @@ if [ -z "$INPUT" ]; then
   exit 0
 fi
 
-# JSON から必要なフィールドを抽出（jq優先、なければpython3）
+# Extract required fields from JSON (jq preferred; fall back to python3)
 TOOL_NAME=""
 SESSION_ID=""
 FILE_PATH=""
@@ -156,10 +156,10 @@ print(f"COMMAND={shlex.quote(command)}")
 ' 2>/dev/null)"
 fi
 
-# tool_name が無ければスキップ
+# Skip if tool_name is absent
 [ -z "$TOOL_NAME" ] && exit 0
 
-# prompt_seq を session.json から取得
+# Retrieve prompt_seq from session.json
 PROMPT_SEQ=0
 if [ -f "$SESSION_FILE" ]; then
   if command -v jq >/dev/null 2>&1; then
@@ -169,8 +169,8 @@ if [ -f "$SESSION_FILE" ]; then
   fi
 fi
 
-# ===== LSP追跡（常に実行、matcher依存を回避） =====
-# LSP関連ツールを検出（tool_nameに "lsp" または "LSP" が含まれる場合）
+# ===== LSP tracking (always runs; avoids matcher dependency) =====
+# Detect LSP-related tools (when tool_name contains "lsp" or "LSP")
 if echo "$TOOL_NAME" | grep -iq "lsp"; then
   TOOLING_POLICY_FILE="${STATE_DIR}/tooling-policy.json"
   if [ -f "$TOOLING_POLICY_FILE" ]; then
@@ -197,24 +197,24 @@ PY
   fi
 fi
 
-# ===== Phase0ログ収集（CC_HARNESS_PHASE0_LOG=1 の時のみ） =====
+# ===== Phase0 log collection (only when CC_HARNESS_PHASE0_LOG=1) =====
 if [ "${CC_HARNESS_PHASE0_LOG:-0}" = "1" ]; then
-  # タイムスタンプ（UTC ISO8601）
+  # Timestamp (UTC ISO8601)
   TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")
 
-  # JSONL エントリ作成（最小フィールドのみ）
+  # Build JSONL entry (minimal fields only)
   JSONL_ENTRY=$(cat <<EOF
 {"v":1,"ts":"$TIMESTAMP","session_id":"$SESSION_ID","prompt_seq":$PROMPT_SEQ,"hook_event_name":"PostToolUse","tool_name":"$TOOL_NAME"}
 EOF
   )
 
-  # ロック取得
+  # Acquire lock
   if ! acquire_lock "$LOCK_FILE"; then
-    # ロックが取れなければスキップ（失敗しても問題ない）
+    # Skip if lock cannot be acquired (failure is non-critical)
     exit 0
   fi
 
-  # ローテーションチェック
+  # Rotation check
   if needs_rotation "$LOG_FILE"; then
     rotate_log "$LOG_FILE"
   fi

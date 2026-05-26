@@ -1,19 +1,20 @@
 #!/bin/bash
 # detect-test-framework.sh
-# Phase 68 - プロジェクトのテストフレームワーク自動検知ヘルパー
+# Phase 68 - Auto-detection helper for the project test framework
 #
-# .claude/rules/tdd-paths.yaml の言語定義に従い、project root を走査して
-# 検出された framework / コマンド / 言語 / test pattern を JSON で stdout に
-# 出力する。scaffolder (sprint-contract emission) と R14 guardrail rule
-# (Phase B 実装) が共通参照する SSOT 経路。
+# Scans the project root following the language definitions in
+# .claude/rules/tdd-paths.yaml and outputs the detected framework /
+# command / language / test pattern as JSON to stdout.
+# This is the SSOT path shared by the scaffolder (sprint-contract emission)
+# and the R14 guardrail rule (Phase B implementation).
 #
 # Usage:
 #   bash scripts/detect-test-framework.sh \
 #     [--project-root <path>] \
 #     [--target-file <path>]
 #
-#   --target-file が与えられた場合、そのファイルの directory から遡って
-#   framework を検出する (polyglot monorepo 対応)。
+#   If --target-file is given, detection starts from that file's directory
+#   and walks up (polyglot monorepo support).
 #
 # Output (JSON, single line):
 #   {
@@ -25,8 +26,8 @@
 #   }
 #
 # Exit codes:
-#   0: 検出成功 (none を含む)
-#   1: 引数エラーまたは project_root 不在
+#   0: detection successful (includes none)
+#   1: argument error or project_root not found
 
 set -euo pipefail
 
@@ -54,7 +55,7 @@ while [ $# -gt 0 ]; do
   esac
 done
 
-# === Root 決定 ===
+# === Determine root ===
 if [ -n "${PROJECT_ROOT_ARG}" ]; then
   PROJECT_ROOT="${PROJECT_ROOT_ARG}"
 elif command -v detect_project_root >/dev/null 2>&1; then
@@ -68,7 +69,7 @@ if [ ! -d "${PROJECT_ROOT}" ]; then
   exit 1
 fi
 
-# === target-file がある場合、その directory から検出開始 ===
+# === If target-file is provided, start detection from its directory ===
 SEARCH_ROOT="${PROJECT_ROOT}"
 if [ -n "${TARGET_FILE}" ]; then
   if [ -f "${TARGET_FILE}" ]; then
@@ -95,13 +96,13 @@ emit_json() {
       --arg detected_via "${detected_via}" \
       '{framework:$framework, command:$command, language:$language, test_pattern:$test_pattern, detected_via:$detected_via}'
   else
-    # fallback: 安全な printf (引用符は input に含まれない前提、上記値は内部固定)
+    # fallback: safe printf (assumes no quotes in input; values above are internally fixed)
     printf '{"framework":"%s","command":"%s","language":"%s","test_pattern":"%s","detected_via":"%s"}\n' \
       "${framework}" "${command}" "${language}" "${test_pattern}" "${detected_via}"
   fi
 }
 
-# === 単一ディレクトリでの検出 ===
+# === Detection within a single directory ===
 detect_in_dir() {
   local root="$1"
 
@@ -163,9 +164,9 @@ detect_in_dir() {
   return 1
 }
 
-# === SEARCH_ROOT から親へ遡って検出 (PROJECT_ROOT の外には出ない) ===
+# === Walk up from SEARCH_ROOT toward parent (do not go outside PROJECT_ROOT) ===
 TRY_ROOT="${SEARCH_ROOT}"
-# realpath で正規化 (シンボリックリンク考慮)
+# Normalize with realpath (considering symbolic links)
 if command -v realpath >/dev/null 2>&1; then
   PROJECT_ROOT_REAL="$(realpath "${PROJECT_ROOT}" 2>/dev/null || printf '%s' "${PROJECT_ROOT}")"
 else
@@ -180,13 +181,13 @@ while [ -n "${TRY_ROOT}" ] && [ "${TRY_ROOT}" != "/" ]; do
   if [ "${PARENT}" = "${TRY_ROOT}" ]; then
     break
   fi
-  # PROJECT_ROOT より上には行かない
+  # Do not go above PROJECT_ROOT
   case "${PARENT}/" in
     "${PROJECT_ROOT_REAL}/"*) TRY_ROOT="${PARENT}" ;;
     "${PROJECT_ROOT_REAL}/")  TRY_ROOT="${PARENT}" ;;
     "${PROJECT_ROOT_REAL}")   TRY_ROOT="${PARENT}" ;;
     *)
-      # PROJECT_ROOT 自体での試行を最後に確認
+      # Final check at PROJECT_ROOT itself
       if [ "${TRY_ROOT}" != "${PROJECT_ROOT_REAL}" ]; then
         if detect_in_dir "${PROJECT_ROOT_REAL}"; then
           exit 0
@@ -197,6 +198,6 @@ while [ -n "${TRY_ROOT}" ] && [ "${TRY_ROOT}" != "/" ]; do
   esac
 done
 
-# どれも該当しない → none
+# No match found → none
 emit_json "none" "" "unknown" "" ""
 exit 0

@@ -1,174 +1,174 @@
 # Browser Automation with agent-browser
 
-agent-browser CLI を使用したブラウザ自動化の詳細ガイド。
+A detailed guide to browser automation using the agent-browser CLI.
 
 ---
 
-## インストール
+## Installation
 
 ```bash
-# グローバルインストール
+# Global install
 npm install -g agent-browser
 
-# Chromium をダウンロード
+# Download Chromium
 agent-browser install
 
-# Linux の場合、システム依存関係も
+# On Linux, also install system dependencies
 agent-browser install --with-deps
 ```
 
 ---
 
-## 基本操作
+## Basic Operations
 
-### ページを開く
+### Opening a page
 
 ```bash
-# 基本
+# Basic
 agent-browser open https://example.com
 
-# ブラウザを表示して開く（デバッグ用）
+# Open with visible browser (for debugging)
 agent-browser open https://example.com --headed
 
-# カスタムヘッダー付き
+# With custom headers
 agent-browser open https://api.example.com --headers '{"Authorization": "Bearer token"}'
 ```
 
-### クリック
+### Clicking
 
 ```bash
-# 要素参照でクリック（推奨）
+# Click by element reference (recommended)
 agent-browser click @e1
 
-# CSS セレクタでクリック
+# Click by CSS selector
 agent-browser click "button.submit"
 
-# ダブルクリック
+# Double-click
 agent-browser dblclick @e1
 ```
 
-### 入力
+### Typing
 
 ```bash
-# フォームをクリア&入力
+# Clear and fill a form field
 agent-browser fill @e1 "hello@example.com"
 
-# 追加入力（クリアしない）
-agent-browser type @e1 "追加テキスト"
+# Append text (without clearing)
+agent-browser type @e1 "additional text"
 
-# キーを押す
+# Press a key
 agent-browser press Enter
 agent-browser press Tab
 agent-browser press "Control+a"
 ```
 
-### フォーム操作
+### Form interactions
 
 ```bash
-# チェックボックス
+# Checkbox
 agent-browser check @e1
 agent-browser uncheck @e1
 
-# セレクトボックス
+# Select box
 agent-browser select @e1 "option-value"
 
-# ファイルアップロード
+# File upload
 agent-browser upload @e1 /path/to/file.pdf
 ```
 
-### スクロール
+### Scrolling
 
 ```bash
-# 方向指定
+# Directional scroll
 agent-browser scroll down
 agent-browser scroll up 500
 
-# 要素を表示
+# Scroll element into view
 agent-browser scrollintoview @e1
 ```
 
 ---
 
-## 情報取得
+## Getting Information
 
 ```bash
-# テキスト取得
+# Get text
 agent-browser get text @e1
 
-# HTML 取得
+# Get HTML
 agent-browser get html @e1
 
-# 属性取得
+# Get attribute
 agent-browser get attr href @e1
 
-# 値取得（input）
+# Get value (input)
 agent-browser get value @e1
 
-# 現在の URL
+# Current URL
 agent-browser get url
 
-# ページタイトル
+# Page title
 agent-browser get title
 
-# 要素数
+# Element count
 agent-browser get count "li.item"
 
-# 要素の位置とサイズ
+# Element position and size
 agent-browser get box @e1
 ```
 
 ---
 
-## 状態チェック
+## State Checks
 
 ```bash
-# 表示されているか
+# Check if visible
 agent-browser is visible @e1
 
-# 有効か（disabled でないか）
+# Check if enabled (not disabled)
 agent-browser is enabled @e1
 
-# チェックされているか
+# Check if checked
 agent-browser is checked @e1
 ```
 
 ---
 
-## 待機
+## Waiting
 
 ```bash
-# 要素が表示されるまで待機
+# Wait for an element to appear
 agent-browser wait @e1
 agent-browser wait "button.loaded"
 
-# 時間で待機（ミリ秒）
+# Wait by time (milliseconds)
 agent-browser wait 2000
 ```
 
 ---
 
-## スクリーンショット
+## Screenshots
 
 ```bash
-# 基本
+# Basic
 agent-browser screenshot
 
-# ファイル名指定
+# Specify filename
 agent-browser screenshot output.png
 
-# フルページ
+# Full page
 agent-browser screenshot --full page.png
 
-# PDF として保存
+# Save as PDF
 agent-browser pdf document.pdf
 ```
 
 ---
 
-## JavaScript 実行
+## JavaScript Execution
 
 ```bash
-# スクリプト実行
+# Run a script
 agent-browser eval "document.title"
 agent-browser eval "localStorage.getItem('token')"
 agent-browser eval "window.scrollTo(0, document.body.scrollHeight)"
@@ -176,19 +176,19 @@ agent-browser eval "window.scrollTo(0, document.body.scrollHeight)"
 
 ---
 
-## ネットワーク操作
+## Network Operations
 
 ```bash
-# リクエストをモック
+# Mock a request
 agent-browser network route "*/api/users" --body '{"users": []}'
 
-# リクエストをブロック
+# Block a request
 agent-browser network route "*/analytics/*" --abort
 
-# ルート解除
+# Remove a route
 agent-browser network unroute "*/api/users"
 
-# リクエスト履歴
+# Request history
 agent-browser network requests
 agent-browser network requests --filter "api"
 agent-browser network requests --clear
@@ -196,16 +196,16 @@ agent-browser network requests --clear
 
 ---
 
-## Cookie/Storage
+## Cookies / Storage
 
 ```bash
-# Cookie 取得
+# Get cookies
 agent-browser cookies get
 
-# Cookie 設定
+# Set a cookie
 agent-browser cookies set '{"name": "session", "value": "abc123", "domain": "example.com"}'
 
-# Cookie クリア
+# Clear cookies
 agent-browser cookies clear
 
 # LocalStorage
@@ -219,91 +219,91 @@ agent-browser storage session get "key"
 
 ---
 
-## タブ管理
+## Tab Management
 
 ```bash
-# 新しいタブを開く
+# Open a new tab
 agent-browser tab new
 
-# タブ一覧
+# List tabs
 agent-browser tab list
 
-# タブを切り替え
+# Switch to a tab
 agent-browser tab 2
 
-# タブを閉じる
+# Close a tab
 agent-browser tab close
 ```
 
 ---
 
-## ブラウザ設定
+## Browser Settings
 
 ```bash
-# ビューポートサイズ
+# Viewport size
 agent-browser set viewport 1920 1080
 
-# デバイスエミュレーション
+# Device emulation
 agent-browser set device "iPhone 12"
 
-# 位置情報
+# Geolocation
 agent-browser set geo 35.6762 139.6503
 
-# オフラインモード
+# Offline mode
 agent-browser set offline on
 agent-browser set offline off
 
-# ダークモード
+# Dark mode
 agent-browser set media dark
 agent-browser set media light
 
-# 認証情報
+# Credentials
 agent-browser set credentials admin password123
 ```
 
 ---
 
-## デバッグ
+## Debugging
 
 ```bash
-# コンソールログを表示
+# Show console logs
 agent-browser console
 agent-browser console --clear
 
-# ページエラーを表示
+# Show page errors
 agent-browser errors
 agent-browser errors --clear
 
-# 要素をハイライト
+# Highlight an element
 agent-browser highlight @e1
 
-# トレース記録
+# Record a trace
 agent-browser trace start
-# ... 操作 ...
+# ... interactions ...
 agent-browser trace stop trace.zip
 ```
 
 ---
 
-## Find コマンド（高度な要素検索）
+## Find Command (Advanced Element Search)
 
 ```bash
-# ロールで検索してクリック
+# Find by role and click
 agent-browser find role button click --name "Submit"
 
-# テキストで検索
+# Find by text
 agent-browser find text "Click here" click
 
-# ラベルで検索
+# Find by label
 agent-browser find label "Email" fill "test@example.com"
 
-# プレースホルダーで検索
+# Find by placeholder
 agent-browser find placeholder "Enter your name" fill "John"
 
-# テスト ID で検索
+# Find by test ID
 agent-browser find testid "submit-btn" click
 
-# 最初/最後/n番目
+# First / last / nth
 agent-browser find first "button" click
 agent-browser find last "input" fill "text"
 agent-browser find nth 2 "li" click
@@ -311,58 +311,58 @@ agent-browser find nth 2 "li" click
 
 ---
 
-## マウス操作（低レベル）
+## Mouse Operations (Low-level)
 
 ```bash
-# マウス移動
+# Mouse move
 agent-browser mouse move 100 200
 
-# マウスボタン
+# Mouse buttons
 agent-browser mouse down
 agent-browser mouse up
 agent-browser mouse down right
 
-# ホイール
+# Mouse wheel
 agent-browser mouse wheel 100
 agent-browser mouse wheel 100 50  # dy, dx
 ```
 
 ---
 
-## ドラッグ&ドロップ
+## Drag & Drop
 
 ```bash
-# 要素間のドラッグ
+# Drag between elements
 agent-browser drag @e1 @e2
 
-# 座標指定
+# Drag to coordinates
 agent-browser drag @e1 "500,300"
 ```
 
 ---
 
-## セッション管理
+## Session Management
 
 ```bash
-# 名前付きセッション
+# Named session
 agent-browser --session myapp open https://example.com
 
-# セッション一覧
+# List sessions
 agent-browser session list
 
-# 現在のセッション名
+# Current session name
 agent-browser session
 
-# 環境変数でも指定可能
+# Can also be set via environment variable
 AGENT_BROWSER_SESSION=myapp agent-browser snapshot
 ```
 
 ---
 
-## JSON 出力
+## JSON Output
 
 ```bash
-# JSON 形式で出力
+# Output as JSON
 agent-browser snapshot --json
 agent-browser get text @e1 --json
 agent-browser network requests --json
@@ -370,12 +370,12 @@ agent-browser network requests --json
 
 ---
 
-## カスタムブラウザ
+## Custom Browser
 
 ```bash
-# カスタム実行ファイル
+# Custom executable
 agent-browser --executable-path /path/to/chrome open https://example.com
 
-# 環境変数でも指定可能
+# Can also be set via environment variable
 AGENT_BROWSER_EXECUTABLE_PATH=/path/to/chrome agent-browser open https://example.com
 ```

@@ -1,56 +1,56 @@
 # Harness v4 Go Rewrite — Specification
 
-> Phase 35 の仕様がぶれないための正本。実装前にここを確認し、実装後にここと照合する。
+> The authoritative reference to keep Phase 35 specifications from drifting. Consult this before implementing, and cross-check against it after implementing.
 
-最終更新: 2026-04-06
-CC 確認バージョン: 2.1.92
+Last updated: 2026-04-06
+CC version confirmed: 2.1.92
 
 > **Internal fork note (v1)**: non-Claude runtime surfaces (Codex, OpenCode, Cursor) are archived for v1.
 > Codex/OpenCode/Cursor references below are historical upstream context unless explicitly marked active.
 
 ---
 
-## 1. スコープ定義
+## 1. Scope Definition
 
-### 変えるもの
+### What changes
 
-| 対象 | Before | After |
+| Target | Before | After |
 |------|--------|-------|
-| フック実行パス | bash → node → TypeScript | Go バイナリ直接呼び出し |
-| 設定ファイル管理 | 5-6 ファイル手動同期 | harness.toml → `harness sync` 自動生成 |
-| 状態管理 | TypeScript + better-sqlite3 | Go + pure-Go SQLite |
-| スクリプト群 | 127 本 .sh + 7 本 .js | Go サブコマンドに段階的吸収 |
+| Hook execution path | bash → node → TypeScript | Direct Go binary invocation |
+| Config file management | 5-6 files manual sync | harness.toml → `harness sync` auto-generation |
+| State management | TypeScript + better-sqlite3 | Go + pure-Go SQLite |
+| Scripts | 127 .sh + 7 .js files | Gradually absorbed into Go subcommands |
 
-### 変えないもの（CC プラグインプロトコル準拠）
+### What does not change (CC plugin protocol compliance)
 
-| 対象 | 形式 | 理由 |
+| Target | Format | Reason |
 |------|------|------|
-| `plugin.json` | JSON | CC 必須 |
-| `hooks/hooks.json` | JSON | CC 必須 |
-| `settings.json` | JSON | CC 必須 |
-| `agents/*.md` | YAML frontmatter + Markdown | CC 必須。body が Markdown のため TOML 化不適 |
-| `skills/*/SKILL.md` | YAML frontmatter + Markdown | CC 必須 |
-| `.mcp.json`, `.lsp.json` | JSON | CC 必須 |
-| `output-styles/` | Markdown | CC 必須 |
+| `plugin.json` | JSON | CC required |
+| `hooks/hooks.json` | JSON | CC required |
+| `settings.json` | JSON | CC required |
+| `agents/*.md` | YAML frontmatter + Markdown | CC required. Body is Markdown so TOML conversion is inappropriate |
+| `skills/*/SKILL.md` | YAML frontmatter + Markdown | CC required |
+| `.mcp.json`, `.lsp.json` | JSON | CC required |
+| `output-styles/` | Markdown | CC required |
 
-### 段階的移行の方針
+### Incremental migration policy
 
-「zero-base rewrite」は設計思想であり「atomic switch」ではない。移行は hook 単位で段階的に行う。
+"Zero-base rewrite" is a design philosophy, not "atomic switch." Migration is done incrementally per hook.
 
-- 各 hook には **正本実装が 1 つだけ** 存在する（Go or shell）
-- フォールバックは設けない（Phase 35.0 で Node.js フォールバック削除済み）
-- 未移行 hook は shell が正本のまま残る
-- `harness doctor --migration` で mixed-mode を検出し警告する
+- Each hook has **exactly one authoritative implementation** (Go or shell)
+- No fallback is provided (Node.js fallback removed in Phase 35.0)
+- Unmigrated hooks remain with shell as the authority
+- `harness doctor --migration` detects mixed-mode and warns
 
 ---
 
-## 2. プロトコル Truth Table
+## 2. Protocol Truth Table
 
-CC 公式フック仕様に基づく、フィールドごとの分類。
+Field-by-field classification based on the official CC hook specification.
 
 ### HookInput (stdin JSON)
 
-| Field | 分類 | CC バージョン | Go 型 |
+| Field | Classification | CC Version | Go Type |
 |-------|------|-------------|-------|
 | `session_id` | documented | - | `string` |
 | `transcript_path` | documented | - | `string` |
@@ -61,44 +61,44 @@ CC 公式フック仕様に基づく、フィールドごとの分類。
 | `tool_input` | documented (required) | - | `map[string]interface{}` |
 | `plugin_root` | harness-private | - | `string` |
 
-**未知フィールド方針**: JSON デコード時に無視する（`json.Decoder` のデフォルト動作）。strip しない。hard fail しない。
+**Unknown field policy**: Ignored during JSON decoding (default behavior of `json.Decoder`). Not stripped. Does not hard-fail.
 
 ### PreToolUse hookSpecificOutput
 
-| Field | 分類 | 出力条件 | Go 型 |
+| Field | Classification | Output condition | Go Type |
 |-------|------|---------|-------|
-| `hookEventName` | documented | 常に `"PreToolUse"` | `string` |
-| `permissionDecision` | documented | 常に | `"allow"\|"deny"\|"ask"\|"defer"` |
-| `permissionDecisionReason` | documented | deny/ask 時 | `string` |
-| `updatedInput` | documented (v2.1.89+) | 入力変更時 | `json.RawMessage` |
-| `additionalContext` | documented | warn 時 | `string` |
+| `hookEventName` | documented | Always `"PreToolUse"` | `string` |
+| `permissionDecision` | documented | Always | `"allow"\|"deny"\|"ask"\|"defer"` |
+| `permissionDecisionReason` | documented | On deny/ask | `string` |
+| `updatedInput` | documented (v2.1.89+) | When input changes | `json.RawMessage` |
+| `additionalContext` | documented | On warn | `string` |
 
-**Exit code**: deny → exit 2, それ以外 → exit 0
+**Exit code**: deny → exit 2, others → exit 0
 
 ### PostToolUse hookSpecificOutput
 
-| Field | 分類 | 出力条件 | Go 型 |
+| Field | Classification | Output condition | Go Type |
 |-------|------|---------|-------|
-| `hookEventName` | documented | 常に `"PostToolUse"` | `string` |
-| `additionalContext` | documented | 警告時 | `string` |
-| `updatedMCPToolOutput` | **experimental (未文書化)** | **未実装** | - |
+| `hookEventName` | documented | Always `"PostToolUse"` | `string` |
+| `additionalContext` | documented | On warning | `string` |
+| `updatedMCPToolOutput` | **experimental (undocumented)** | **Not implemented** | - |
 
 ### PermissionRequest hookSpecificOutput
 
-| Field | 分類 | Go 型 |
+| Field | Classification | Go Type |
 |-------|------|-------|
 | `hookSpecificOutput.hookEventName` | documented | `"PermissionRequest"` |
 | `hookSpecificOutput.decision.behavior` | documented | `"allow"\|"deny"` |
 | `hookSpecificOutput.decision.updatedInput` | documented (v2.1.89+) | `map[string]interface{}` |
 | `hookSpecificOutput.decision.updatedPermissions` | documented | `[]interface{}` |
 
-最終確認日: 2026-04-06 (CC v2.1.92, code.claude.com/docs/en/hooks)
+Last confirmed: 2026-04-06 (CC v2.1.92, code.claude.com/docs/en/hooks)
 
 ---
 
 ## 3. Hook Ownership Matrix
 
-| Hook Event | 正本 | Phase | 備考 |
+| Hook Event | Authority | Phase | Notes |
 |-----------|------|-------|------|
 | **PreToolUse** (guard) | **Go** | 35.0 ✅ | bin/harness hook pre-tool |
 | **PostToolUse** (guard) | **Go** | 35.0 ✅ | bin/harness hook post-tool |
@@ -106,7 +106,7 @@ CC 公式フック仕様に基づく、フィールドごとの分類。
 | SessionStart | shell | 35.3 | session-env-setup + memory-bridge + init |
 | SessionEnd | shell | 35.3 | session-cleanup |
 | UserPromptSubmit | shell | 35.3 | memory-bridge + policy + tracking |
-| PostToolUse (non-guard) | shell | 35.3 | log-toolname, commit-cleanup, track-changes 等 |
+| PostToolUse (non-guard) | shell | 35.3 | log-toolname, commit-cleanup, track-changes, etc. |
 | Stop | shell | 35.3 | session-summary + memory-bridge + evaluator |
 | SubagentStart/Stop | shell | 35.4 | subagent-tracker |
 | TeammateIdle | shell | 35.4 | teammate-idle handler |
@@ -120,29 +120,29 @@ CC 公式フック仕様に基づく、フィールドごとの分類。
 | InstructionsLoaded | shell | 35.3 | instructions-loaded |
 | ConfigChange/CwdChanged/FileChanged | shell | 35.3 | runtime-reactive |
 
-**Canary 順序**: PreToolUse (35.0✅) → PermissionRequest (35.0✅) → PostToolUse (35.0✅) → SessionStart → Stop → UserPromptSubmit → 残り全部
+**Canary order**: PreToolUse (35.0✅) → PermissionRequest (35.0✅) → PostToolUse (35.0✅) → SessionStart → Stop → UserPromptSubmit → all remaining
 
 ---
 
-## 4. settings.json 実態スキーマ
+## 4. settings.json Actual Schema
 
-公式ドキュメントでは「`agent` キーのみ」と記載されているが、実態では以下のキーが CC に認識される（既存 `.claude-plugin/settings.json` で確認済み）:
+The official documentation states "only the `agent` key," but in practice the following keys are recognized by CC (confirmed in existing `.claude-plugin/settings.json`):
 
 ```jsonc
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  // デフォルトエージェント
+  // Default agent
   "agent": "string",
-  // 環境変数の注入
+  // Environment variable injection
   "env": {
     "KEY": "value"
   },
-  // パーミッション制御
+  // Permission control
   "permissions": {
     "deny": ["Bash(sudo:*)", "mcp__codex__*", "Read(./.env)"],
     "ask": ["Bash(rm -r:*)", "Bash(git push -f:*)"]
   },
-  // サンドボックス設定
+  // Sandbox configuration
   "sandbox": {
     "failIfUnavailable": true,
     "network": {
@@ -158,9 +158,9 @@ CC 公式フック仕様に基づく、フィールドごとの分類。
 
 ---
 
-## 5. harness.toml → CC ファイル Mapping Table
+## 5. harness.toml → CC File Mapping Table
 
-| harness.toml セクション | 生成先 | CC キー |
+| harness.toml section | Generated target | CC key |
 |------------------------|--------|--------|
 | `[project]` name, version, description, author | `plugin.json` | name, version, description, author |
 | `[hooks]` | `hooks/hooks.json` + `.claude-plugin/hooks.json` | hooks |
@@ -168,268 +168,268 @@ CC 公式フック仕様に基づく、フィールドごとの分類。
 | `[safety.sandbox]` | `settings.json` | sandbox |
 | `[agent]` default | `settings.json` | agent |
 | `[env]` | `settings.json` | env |
-| `[telemetry]` | **harness 内部設定** (生成しない) | N/A |
-| `[state]` | **harness 内部設定** (生成しない) | N/A |
+| `[telemetry]` | **harness internal config** (not generated) | N/A |
+| `[state]` | **harness internal config** (not generated) | N/A |
 
 ### Rejected / Unsupported
 
-以下のキーは `harness sync` で **明示的にエラー** を出す:
+The following keys produce **explicit errors** in `harness sync`:
 
-- `userConfig` — CC に存在しない
-- `channels` — CC に存在しない
-- `settings.json` の未知キー — CC スキーマに存在しないキーは生成しない
+- `userConfig` — does not exist in CC
+- `channels` — does not exist in CC
+- Unknown keys in `settings.json` — keys not in the CC schema are not generated
 
 ---
 
-## 6. SQLite Driver 選定
+## 6. SQLite Driver Selection
 
-| 項目 | `modernc.org/sqlite` | `mattn/go-sqlite3` |
+| Item | `modernc.org/sqlite` | `mattn/go-sqlite3` |
 |------|---------------------|-------------------|
-| CGO | **不要** (pure Go) | 必要 |
-| クロスコンパイル | `GOOS=x go build` で完結 | ターゲット用 C compiler 必要 |
-| バイナリサイズ増加 | +3-5MB | +1-2MB |
+| CGO | **Not required** (pure Go) | Required |
+| Cross-compile | Complete with `GOOS=x go build` | Requires C compiler for target |
+| Binary size increase | +3-5MB | +1-2MB |
 | WAL mode | ✅ | ✅ |
-| ファイルロック | POSIX (flock) | POSIX (flock) |
-| パフォーマンス | 10-30% 遅い (pure Go) | ネイティブ速度 |
-| 安定性 | 高 (SQLite 公式 C コードの Go 翻訳) | 高 (SQLite 公式 C コード直接) |
+| File locking | POSIX (flock) | POSIX (flock) |
+| Performance | 10-30% slower (pure Go) | Native speed |
+| Stability | High (Go translation of official SQLite C code) | High (official SQLite C code directly) |
 
-**選定: `modernc.org/sqlite`**
+**Selection: `modernc.org/sqlite`**
 
-理由:
-- クロスコンパイルが Phase 35.7 の前提条件
-- CGO 不要でビルド・CI が大幅に単純化
-- パフォーマンス差は hook の hot path で SQLite を使わない設計で吸収（Phase 35.0 で SQLite なしの 5ms を達成済み）
-- `busy_timeout=5000` でロック競合を緩和
+Reasons:
+- Cross-compilation is a prerequisite for Phase 35.7
+- No CGO greatly simplifies build and CI
+- Performance difference is absorbed by the design that does not use SQLite in the hook hot path (5ms without SQLite achieved in Phase 35.0)
+- `busy_timeout=5000` mitigates lock contention
 
 ---
 
-## 7. CLI コマンド仕様
+## 7. CLI Command Specification
 
 ### `harness hook <event>`
 
 ```
-stdin:  Hook JSON (CC が送信)
-stdout: hookSpecificOutput JSON (CC が解釈)
+stdin:  Hook JSON (sent by CC)
+stdout: hookSpecificOutput JSON (interpreted by CC)
 exit:   0 = allow/warn, 2 = deny/block
 ```
 
-| サブコマンド | 機能 |
+| Subcommand | Function |
 |------------|------|
-| `harness hook pre-tool` | PreToolUse ガードレール (R01-R13) |
-| `harness hook post-tool` | PostToolUse 改ざん検出 + セキュリティチェック |
-| `harness hook permission` | PermissionRequest 自動承認 |
+| `harness hook pre-tool` | PreToolUse guardrail (R01-R13) |
+| `harness hook post-tool` | PostToolUse tampering detection + security check |
+| `harness hook permission` | PermissionRequest auto-approval |
 
 ### `harness sync`
 
 ```
-stdin:  なし
-stdout: 生成ログ
-exit:   0 = 成功, 1 = harness.toml パースエラー or unsupported key
+stdin:  none
+stdout: generation log
+exit:   0 = success, 1 = harness.toml parse error or unsupported key
 ```
 
-harness.toml を読み取り、以下を生成:
+Reads harness.toml and generates:
 - `hooks/hooks.json`
-- `.claude-plugin/hooks.json` (同一内容)
+- `.claude-plugin/hooks.json` (same content)
 - `.claude-plugin/plugin.json`
 - `.claude-plugin/settings.json`
 
 ### `harness init`
 
 ```
-stdin:  なし
-stdout: 生成ログ
-exit:   0 = 成功
+stdin:  none
+stdout: generation log
+exit:   0 = success
 ```
 
-カレントディレクトリに `harness.toml` テンプレートを生成。
+Generates a `harness.toml` template in the current directory.
 
 ### `harness validate [skills|agents|all]`
 
 ```
-stdout: 検証結果
-exit:   0 = 全 PASS, 1 = エラーあり
+stdout: validation results
+exit:   0 = all PASS, 1 = errors found
 ```
 
 ### `harness doctor [--migration]`
 
 ```
-stdout: 診断結果
-exit:   0 = 正常, 1 = 問題あり
+stdout: diagnostic results
+exit:   0 = normal, 1 = problems found
 ```
 
-`--migration`: Go/shell の mixed-mode を検出し、移行状況を表示。
+`--migration`: Detects Go/shell mixed-mode and displays migration status.
 
 ### `harness version`
 
 ```
-stdout: バージョン文字列
+stdout: version string
 exit:   0
 ```
 
 ---
 
-## 8. 状態マシン定義
+## 8. State Machine Definition
 
-### 正常系
+### Normal path
 
 ```
 SPAWNING → RUNNING → REVIEWING → APPROVED → COMMITTED
 ```
 
-### 異常系
+### Error path
 
 ```
-SPAWNING → FAILED        (起動失敗)
-RUNNING  → FAILED        (実行中エラー、3回リトライ超過)
-RUNNING  → CANCELLED     (ユーザー中断、Ctrl+C)
-REVIEWING → FAILED       (レビュー中エラー)
-REVIEWING → CANCELLED    (ユーザー中断)
-RUNNING  → STALE         (24h 超過で自動遷移)
-REVIEWING → STALE        (24h 超過で自動遷移)
-FAILED   → RECOVERING    (リカバリ開始)
-RECOVERING → RUNNING     (リカバリ成功)
-RECOVERING → ABORTED     (リカバリ失敗、人間介入必要)
+SPAWNING → FAILED        (startup failure)
+RUNNING  → FAILED        (runtime error, exceeded 3 retries)
+RUNNING  → CANCELLED     (user interrupt, Ctrl+C)
+REVIEWING → FAILED       (error during review)
+REVIEWING → CANCELLED    (user interrupt)
+RUNNING  → STALE         (auto-transition after 24h)
+REVIEWING → STALE        (auto-transition after 24h)
+FAILED   → RECOVERING    (recovery started)
+RECOVERING → RUNNING     (recovery succeeded)
+RECOVERING → ABORTED     (recovery failed, human intervention required)
 ```
 
-### 4段階リカバリ
+### 4-stage recovery
 
-| 段階 | トリガー | アクション |
+| Stage | Trigger | Action |
 |------|---------|----------|
-| 1. 自己修復 | 最初の失敗 | エラー分析 → 自動修正 → リトライ |
-| 2. 仲間修復 | 自己修復失敗 | 別 Worker にタスク委譲 |
-| 3. 指揮官介入 | 仲間修復失敗 | Lead セッションに escalation |
-| 4. 停止 | 指揮官介入失敗 | ABORTED 状態、ユーザー通知 |
+| 1. Self-repair | First failure | Error analysis → auto-fix → retry |
+| 2. Peer repair | Self-repair failed | Delegate task to another Worker |
+| 3. Commander intervention | Peer repair failed | Escalate to Lead session |
+| 4. Halt | Commander intervention failed | ABORTED state, user notification |
 
 ---
 
 ## 9. State Storage Contract
 
-### パス優先順位
+### Path priority
 
 ```
-1. ${CLAUDE_PLUGIN_DATA}/state.db    (CC v2.1.78+ で永続)
-2. ${PROJECT_ROOT}/.harness/state.db (フォールバック)
-3. ${PROJECT_ROOT}/.claude/state/    (shell スクリプト用、読み取りのみ)
+1. ${CLAUDE_PLUGIN_DATA}/state.db    (persistent across CC v2.1.78+ updates)
+2. ${PROJECT_ROOT}/.harness/state.db (fallback)
+3. ${PROJECT_ROOT}/.claude/state/    (for shell scripts, read-only)
 ```
 
-### 移行戦略
+### Migration strategy
 
-| 操作 | コマンド | 説明 |
+| Operation | Command | Description |
 |------|---------|------|
-| エクスポート | `harness state export` | 現行 state.db を JSON にダンプ |
-| インポート | `harness state import` | JSON から新 state.db に復元 |
-| ロールバック | `HARNESS_STATE_PATH=old.db` | 環境変数でパスを上書き |
+| Export | `harness state export` | Dump current state.db to JSON |
+| Import | `harness state import` | Restore from JSON to new state.db |
+| Rollback | `HARNESS_STATE_PATH=old.db` | Override path with environment variable |
 
-### 保持期間
+### Retention period
 
-| テーブル | TTL | クリーンアップ |
+| Table | TTL | Cleanup |
 |---------|-----|-------------|
-| `work_states` | 24h | 自動 (expires_at) |
-| `sessions` | 無制限 | 手動 |
-| `signals` | 消費済みは 7d | 自動 |
-| `task_failures` | 無制限 | 手動 |
-| `assumptions` | 無制限 | 手動 |
+| `work_states` | 24h | Automatic (expires_at) |
+| `sessions` | Unlimited | Manual |
+| `signals` | 7d after consumed | Automatic |
+| `task_failures` | Unlimited | Manual |
+| `assumptions` | Unlimited | Manual |
 
 ---
 
-## 10. ガードレールルール仕様
+## 10. Guardrail Rule Specification
 
-| ID | ツール | 条件 | アクション | バイパス |
+| ID | Tool | Condition | Action | Bypass |
 |----|--------|------|----------|---------|
-| R01 | Bash | `sudo` 検出 | deny | なし |
-| R02 | Write/Edit/MultiEdit | 保護パス (.env, .git/, *.pem, *.key, id_rsa 等) | deny | なし |
-| R03 | Bash | redirection / `tee` による `> .env`, `tee .git/` 等 | deny（TOML ask-list の `.env` / `.env.*` exact match + reason のみ ask） | `[[safety.guardrail.protectedPathAskList]]` |
-| R04 | Write/Edit/MultiEdit | プロジェクトルート外への絶対パス | ask | workMode |
+| R01 | Bash | `sudo` detected | deny | None |
+| R02 | Write/Edit/MultiEdit | Protected paths (.env, .git/, *.pem, *.key, id_rsa, etc.) | deny | None |
+| R03 | Bash | Redirection / `tee` to `> .env`, `tee .git/`, etc. | deny (TOML ask-list `.env` / `.env.*` exact match + reason → ask only) | `[[safety.guardrail.protectedPathAskList]]` |
+| R04 | Write/Edit/MultiEdit | Absolute path outside project root | ask | workMode |
 | R05 | Bash | `rm -rf` / `rm --recursive` | ask | workMode |
-| R06 | Bash | `git push --force` / `-f` | deny | なし |
-| R07 | Write/Edit/MultiEdit | codexMode 中の直接書き込み *(historical: codexMode is a Codex companion guard; archived for v1)* | deny | なし |
-| R08 | Write/Edit/MultiEdit/Bash | breezing reviewer の書き込み/変更コマンド | deny | なし |
-| R09 | Read | 機密ファイル (.env, id_rsa, *.pem, secrets/) | approve + warn | なし |
-| R10 | Bash | `--no-verify` / `--no-gpg-sign` | deny | なし |
-| R11 | Bash | protected branch への `git reset --hard` | deny | なし |
-| R12 | Bash | main/master への直接 push | ask（設定で deny / allow 可） | `protected_branch_push` |
-| R13 | Write/Edit/MultiEdit | package.json, Dockerfile, workflow 等 | approve + warn | なし |
+| R06 | Bash | `git push --force` / `-f` | deny | None |
+| R07 | Write/Edit/MultiEdit | Direct write during codexMode *(historical: codexMode is a Codex companion guard; archived for v1)* | deny | None |
+| R08 | Write/Edit/MultiEdit/Bash | Write/mutating commands by breezing reviewer | deny | None |
+| R09 | Read | Sensitive files (.env, id_rsa, *.pem, secrets/) | approve + warn | None |
+| R10 | Bash | `--no-verify` / `--no-gpg-sign` | deny | None |
+| R11 | Bash | `git reset --hard` on protected branch | deny | None |
+| R12 | Bash | Direct push to main/master | ask (configurable deny / allow) | `protected_branch_push` |
+| R13 | Write/Edit/MultiEdit | package.json, Dockerfile, workflow, etc. | approve + warn | None |
 
-R03 の target extraction は redirection / `tee` ベース。`sed -i` 等の in-place 書き込み検出は v1 範囲外。
+R03 target extraction is redirection / `tee` based. In-place write detection like `sed -i` is out of v1 scope.
 
-テスト ID: `TestR01_*` 〜 `TestR13_*` (go/internal/guard/rules_test.go)
+Test IDs: `TestR01_*` ~ `TestR13_*` (go/internal/guard/rules_test.go)
 
 ---
 
-## 11. CC バージョン互換性マトリクス
+## 11. CC Version Compatibility Matrix
 
-| 機能 | 最小 CC バージョン | 備考 |
+| Feature | Minimum CC Version | Notes |
 |------|-------------------|------|
-| `bin/` PATH 自動追加 | v2.1.91 | Bash ツールの PATH に追加 |
-| `${CLAUDE_PLUGIN_DATA}` | v2.1.78 | プラグイン更新を跨いで永続 |
-| exit code 2 ブロッキング | v2.1.90 | v2.1.89 以前はバグあり |
-| `permissionDecision: "defer"` | v2.1.89 | ヘッドレスモード一時停止 |
-| `updatedInput` | v2.1.89 | 入力書き換え |
-| `additionalContext` | v2.1.89 | Claude への追加コンテキスト |
-| PreToolUse `allow` が settings.json `deny` を上書きしない | v2.1.77 | セキュリティ強化 |
-| `settings.json` permissions/sandbox | v2.1.77+ | 実態で確認済み |
+| `bin/` PATH auto-add | v2.1.91 | Added to PATH for Bash tool |
+| `${CLAUDE_PLUGIN_DATA}` | v2.1.78 | Persistent across plugin updates |
+| exit code 2 blocking | v2.1.90 | Bug in v2.1.89 and earlier |
+| `permissionDecision: "defer"` | v2.1.89 | Headless mode pause |
+| `updatedInput` | v2.1.89 | Input rewriting |
+| `additionalContext` | v2.1.89 | Additional context for Claude |
+| PreToolUse `allow` does not override settings.json `deny` | v2.1.77 | Security hardening |
+| `settings.json` permissions/sandbox | v2.1.77+ | Confirmed in practice |
 
-**最小推奨 CC バージョン: v2.1.91** (bin/ PATH が必要なため)
+**Minimum recommended CC version: v2.1.91** (required for bin/ PATH)
 
 ---
 
-## 12. パッケージ境界
+## 12. Package Boundaries
 
-### hook-fastpath (5ms 以内)
-
-```
-internal/guard/     — ルール評価、改ざん検出、セキュリティチェック
-internal/hook/      — stdin/stdout コーデック
-pkg/protocol/       — 型定義
-```
-
-**制約**:
-- ファイル I/O 禁止（SQLite 参照は BuildContext のみ、optional）
-- ネットワーク I/O 禁止
-- goroutine 起動禁止
-- 外部プロセス起動禁止
-
-### worker-runtime (長寿命)
+### hook-fastpath (within 5ms)
 
 ```
-internal/state/       — SQLite ストア
-internal/session/     — セッションライフサイクル
-internal/breezing/    — 並行オーケストレーション
-internal/hookhandler/ — hook handler 群（OTel export, broadcast 含む）
-internal/lifecycle/   — セッション状態追跡 + リカバリ
-internal/ci/          — CI 統合ユーティリティ
-pkg/config/           — 設定パーサー (harness.toml)
+internal/guard/     — rule evaluation, tampering detection, security checks
+internal/hook/      — stdin/stdout codec
+pkg/protocol/       — type definitions
 ```
 
-**制約**:
-- goroutine は `context.Context` で管理
-- graceful shutdown 必須
-- `hook-fastpath` パッケージを import しない（逆方向の依存は可）
+**Constraints**:
+- File I/O prohibited (SQLite reference only for BuildContext, optional)
+- Network I/O prohibited
+- goroutine launch prohibited
+- External process launch prohibited
 
-### API 境界
+### worker-runtime (long-lived)
 
 ```
-hook-fastpath ←── protocol (共有)
+internal/state/       — SQLite store
+internal/session/     — session lifecycle
+internal/breezing/    — concurrent orchestration
+internal/hookhandler/ — hook handler group (including OTel export, broadcast)
+internal/lifecycle/   — session state tracking + recovery
+internal/ci/          — CI integration utilities
+pkg/config/           — config parser (harness.toml)
+```
+
+**Constraints**:
+- goroutines managed with `context.Context`
+- Graceful shutdown required
+- Must not import `hook-fastpath` packages (reverse direction is allowed)
+
+### API boundary
+
+```
+hook-fastpath ←── protocol (shared)
                        ↓
-worker-runtime ←── protocol (共有)
+worker-runtime ←── protocol (shared)
 ```
 
-`hook-fastpath` と `worker-runtime` は互いを直接 import しない。
-共有型は `pkg/protocol/` にのみ置く。
+`hook-fastpath` and `worker-runtime` do not directly import each other.
+Shared types are placed only in `pkg/protocol/`.
 
 ---
 
-## 決定事項: codex-companion.sh
+## Decision: codex-companion.sh
 
-> **Archived for v1**: codex-companion.sh と Codex CLI は非 Claude ランタイムのため v1 では対象外。
-> 以下は歴史的設計判断 — upstream からの cherry-pick 参照用。
+> **Archived for v1**: codex-companion.sh and Codex CLI are non-Claude runtimes and are out of scope for v1.
+> The following is a historical design decision — kept as a cherry-pick reference from upstream.
 
-**方針**: Go 統合 **対象外**。shell wrapper を維持する。
+**Policy**: **Out of scope for Go integration.** Maintain the shell wrapper.
 
-理由:
-- codex-companion.sh は Codex CLI (外部プロセス) の呼び出しラッパー
-- Codex CLI 自体が頻繁にアップデートされ、API が安定していない
-- shell wrapper の方が Codex CLI 変更への追従が容易
-- DESIGN.md の D2 方針と一致
+Reasons:
+- codex-companion.sh is a wrapper for calling Codex CLI (external process)
+- Codex CLI itself is frequently updated and the API is not stable
+- Shell wrapper is easier to track Codex CLI changes
+- Consistent with DESIGN.md D2 policy
 
-Go 統合の対象は Harness 内部ロジック（ガードレール、状態管理、設定生成）に限定する。
+Go integration targets are limited to Harness internal logic (guardrails, state management, config generation).

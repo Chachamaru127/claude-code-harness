@@ -183,7 +183,7 @@ needed updating).
 
 ### Result
 
-`scripts/ci/check-consistency.sh`: **✅ すべてのチェックに合格しました** (0 failures)
+`scripts/ci/check-consistency.sh`: **✅ All checks passed** (0 failures)
 
 ---
 
@@ -265,7 +265,7 @@ Claude-only; this task aligns the design documentation with that reality.
 |------|----------|------|----------------|--------------|
 | `go/SPEC.md` | top of file | design doc | primary target | Added fork note at top |
 | `go/SPEC.md` | §10 R07 `codexMode` | guardrail rule | historical (Codex companion guard) | Inline `*(historical)*` note |
-| `go/SPEC.md` | §決定事項 codex-companion.sh | design decision | historical | Added `Archived for v1` callout |
+| `go/SPEC.md` | §Decisions codex-companion.sh | design decision | historical | Added `Archived for v1` callout |
 | `go/SPEC.md` | §4 `mcp__codex__*` deny | security rule | **active** (MCP deny still valid) | No change |
 | `go/DESIGN.md` | top of file | design doc | primary target | Added fork note at top |
 | `go/DESIGN.md` | Memory Bridge `codex-notify` row | hook target | historical | Inline `*(archived for v1)*` note |

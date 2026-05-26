@@ -1,54 +1,57 @@
 # client-redaction.yaml
 #
 # Purpose:
-#   Phase 65.3.2 - Layer 2a 辞書ベース固有名詞 redaction の SSOT。
-#   harness-mem から取得したテキストに対して、クライアント名・人名・
-#   ドメイン等の固有名詞を [Client_*] / [Person_*] / [Domain_*] 等に
-#   置換するための辞書定義。
+#   Phase 65.3.2 - SSOT for Layer 2a dictionary-based proper noun redaction.
+#   Defines the dictionary for replacing proper nouns such as client names,
+#   personal names, and domains retrieved from harness-mem with tokens like
+#   [Client_*] / [Person_*] / [Domain_*].
 #
 # Schema: client-redaction.v1
-#   PiiRule 互換 (D43 判断 3): 将来の npm package 化への upgrade path を
-#   確保するため、field 名 (rule_id / replace_with) を mem 側
-#   mcp-server/src/pii/pii-filter.ts の PiiRule[] schema と互換にする。
+#   PiiRule-compatible (D43 decision 3): To preserve an upgrade path toward
+#   future npm package consolidation, field names (rule_id / replace_with)
+#   are made compatible with the PiiRule[] schema in the mem-side
+#   mcp-server/src/pii/pii-filter.ts.
 #
 # Default:
-#   clients: [], people: [], domains: []  (全 redact 無効)
+#   clients: [], people: [], domains: []  (all redaction disabled)
 #
 # Update Rules:
-#   1. opt-in default: 空 dict は何もしない (誤 redact 防止)
-#   2. rule_id は unique (clients/people/domains 全体で一意)
-#   3. name は literal string match (regex ではない、proper noun dict)
-#   4. aliases は同義語/略称 (省略可)
-#   5. replace_with は redact 後の token (例: "[Client_A]")
-#   6. 詳細仕様: docs/cross-project-groups-schema.md (姉妹 doc)
+#   1. opt-in default: an empty dict does nothing (prevents accidental redaction)
+#   2. rule_id must be unique (globally unique across clients/people/domains)
+#   3. name is a literal string match (not a regex — proper noun dictionary)
+#   4. aliases are synonyms/abbreviations (optional)
+#   5. replace_with is the token after redaction (e.g., "[Client_A]")
+#   6. Full specification: docs/cross-project-groups-schema.md (sister doc)
 #
-# Field 互換性 (PiiRule との対応、D43 判断 3):
-#   client-redaction.v1 (本 SSOT)  ←→  pii-filter.ts PiiRule
+# Field compatibility (correspondence with PiiRule, D43 decision 3):
+#   client-redaction.v1 (this SSOT)  <-->  pii-filter.ts PiiRule
 #   ────────────────────────────────────────────────────────
-#   rule_id        ←→  rule_id          (完全一致)
-#   name           ←→  pattern          (literal vs regex の違い)
-#   aliases[]      ←→  (PiiRule に無い、本 SSOT 独自)
-#   replace_with   ←→  replace_with     (完全一致)
+#   rule_id        <-->  rule_id          (exact match)
+#   name           <-->  pattern          (literal vs regex difference)
+#   aliases[]      <-->  (not in PiiRule; specific to this SSOT)
+#   replace_with   <-->  replace_with     (exact match)
 #
-#   将来 npm package 化する際は schema converter で双方向変換可能。
+#   A schema converter for bidirectional conversion can be used when npm packaging in the future.
 #
-# 二重置換ガード (D43 判断 4):
-#   既に `[REDACTED_*]` `[Entity]` `[Client_*]` `[Person_*]` `[Domain_*]`
-#   等の sentinel mark が入っているテキストは redact 対象から除外する。
-#   server 側 event-recorder.ts:redactContent との衝突防止。
+# Double-replacement guard (D43 decision 4):
+#   Text that already contains sentinel marks like `[REDACTED_*]` `[Entity]`
+#   `[Client_*]` `[Person_*]` `[Domain_*]` etc. is excluded from redaction.
+#   Prevents collision with server-side event-recorder.ts:redactContent.
 #
-#   harness-mem S110-006 closure (commit 8b34ecb) で確認:
-#   server 側 [REDACTED_*] format は大文字 EMAIL / KEY / SECRET / HEX を使う。
-#   client 側 sentinel regex は [A-Za-z0-9_]+ で大文字小文字両対応のため
-#   既存実装で問題なし。
+#   Confirmed in harness-mem S110-006 closure (commit 8b34ecb):
+#   The server-side [REDACTED_*] format uses uppercase EMAIL / KEY / SECRET / HEX.
+#   The client-side sentinel regex [A-Za-z0-9_]+ handles both cases,
+#   so the existing implementation has no issues.
 #
-# Envelope signals の扱い (harness-mem S110-006 防御的補足):
-#   memory-server/src/inject/envelope.ts:94-101 の validateProseContainsSignals
-#   は signals[] の各値を prose に substring match で要求する。signals に
-#   PII / 固有名詞を含めると Layer 2 が redact することで envelope 不変条件が
-#   壊れるため、**signals には structural label (project 名 / source 識別子等)
-#   のみ含め、PII / 固有名詞は prose 側に書く** ことを mem 側 SoT (envelope
-#   contract) に合わせて推奨。本 dict はあくまで prose 側を対象にする。
+# Handling envelope signals (defensive note from harness-mem S110-006):
+#   The validateProseContainsSignals function in
+#   memory-server/src/inject/envelope.ts:94-101 requires each value in
+#   signals[] to be present as a substring in prose. If signals contain
+#   PII / proper nouns, Layer 2 redaction will break the envelope invariant.
+#   Therefore, **signals should contain only structural labels (project names,
+#   source identifiers, etc.) and PII / proper nouns should be written on the
+#   prose side** — as recommended by the mem-side SoT (envelope contract).
+#   This dictionary targets only the prose side.
 #
 
 schema_version: client-redaction.v1
@@ -57,14 +60,14 @@ clients: []
 people: []
 domains: []
 
-# ---- 設定例 (コメントアウト雛形) ----
+# ---- Configuration examples (commented-out templates) ----
 #
 # clients:
 #   - rule_id: client-001
 #     name: NoraiCorp
 #     aliases:
 #       - Norai Corp
-#       - Norai 株式会社
+#       - Norai Inc.
 #     replace_with: "[Client_A]"
 #
 #   - rule_id: client-002
@@ -73,9 +76,9 @@ domains: []
 #
 # people:
 #   - rule_id: person-001
-#     name: 田中太郎
+#     name: Taro Tanaka
 #     aliases:
-#       - 田中
+#       - Tanaka
 #     replace_with: "[Person_A]"
 #
 # domains:

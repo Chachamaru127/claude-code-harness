@@ -1,11 +1,11 @@
 #!/bin/bash
-# VibeCoder向けプラグイン検証テスト
-# このスクリプトは、claude-code-harnessが正しく構成されているかを検証します
+# Plugin validation test
+# This script validates that claude-code-harness is correctly configured.
 #
 # Usage: ./tests/validate-plugin.sh [--quick]
-#   --quick  harness-loop wake-up 用の軽量 state 整合性チェックのみ実行（数秒で完了）
-#            検証内容: .claude/state/ 存在確認 / Plans.md 存在+v2フォーマット / sprint-contract 形式
-#            フル検証（39項目）は走らせない
+#   --quick  Run only the lightweight state consistency check for harness-loop wake-up (completes in seconds)
+#            Checks: .claude/state/ existence / Plans.md presence+v2 format / sprint-contract format
+#            Does not run the full validation (39 items)
 
 set -u
 set -o pipefail
@@ -13,7 +13,7 @@ set -o pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# --quick オプション処理
+# --quick option processing
 QUICK_MODE=0
 for arg in "$@"; do
     if [ "$arg" = "--quick" ]; then
@@ -21,43 +21,43 @@ for arg in "$@"; do
     fi
 done
 
-# --quick モード: 軽量 state 整合性チェックのみ
+# --quick mode: lightweight state consistency check only
 if [ "${QUICK_MODE}" -eq 1 ]; then
     echo "=========================================="
-    echo "Claude harness - クイック整合性チェック"
+    echo "Claude harness - Quick consistency check"
     echo "=========================================="
     echo ""
     QUICK_FAIL=0
 
-    # (1) .claude/state/ ディレクトリの存在
+    # (1) .claude/state/ directory existence
     if [ -d "${PLUGIN_ROOT}/.claude/state" ]; then
-        echo "✓ .claude/state/ ディレクトリが存在します"
+        echo "✓ .claude/state/ directory exists"
     else
-        echo "✗ .claude/state/ ディレクトリが見つかりません"
+        echo "✗ .claude/state/ directory not found"
         QUICK_FAIL=$((QUICK_FAIL + 1))
     fi
 
-    # (2) Plans.md の存在（plansDirectory 設定を尊重）
-    # config-utils.sh の get_plans_file_path() を利用して SSOT に従ったパスを解決する
+    # (2) Plans.md existence (respecting the plansDirectory setting)
+    # Resolve the path via config-utils.sh get_plans_file_path() following the SSOT
     PLANS_FILE=""
     if [ -f "${PLUGIN_ROOT}/scripts/config-utils.sh" ]; then
-        # PLUGIN_ROOT を cwd として config-utils.sh をロードし、パスを解決する
+        # Load config-utils.sh with PLUGIN_ROOT as cwd and resolve the path
         PLANS_FILE="$(
             cd "${PLUGIN_ROOT}" && \
             CONFIG_FILE="${PLUGIN_ROOT}/.claude-code-harness.config.yaml" \
             source "${PLUGIN_ROOT}/scripts/config-utils.sh" && \
             get_plans_file_path 2>/dev/null
         )" || PLANS_FILE=""
-        # get_plans_file_path は存在しない場合もデフォルトパスを返すため、実在確認する
+        # get_plans_file_path returns the default path even when the file does not exist; verify it
         if [ -n "${PLANS_FILE}" ] && [ ! -f "${PLUGIN_ROOT}/${PLANS_FILE}" ] && [ ! -f "${PLANS_FILE}" ]; then
             PLANS_FILE=""
         fi
-        # 相対パスの場合は PLUGIN_ROOT を前置する
+        # Prepend PLUGIN_ROOT for relative paths
         if [ -n "${PLANS_FILE}" ] && [ ! -f "${PLANS_FILE}" ] && [ -f "${PLUGIN_ROOT}/${PLANS_FILE}" ]; then
             PLANS_FILE="${PLUGIN_ROOT}/${PLANS_FILE}"
         fi
     fi
-    # フォールバック: config-utils.sh が使えない場合はリポジトリルート直下を確認
+    # Fallback: check repository root when config-utils.sh is unavailable
     if [ -z "${PLANS_FILE}" ]; then
         for f in Plans.md plans.md PLANS.md; do
             if [ -f "${PLUGIN_ROOT}/${f}" ]; then
@@ -67,39 +67,39 @@ if [ "${QUICK_MODE}" -eq 1 ]; then
         done
     fi
     if [ -n "${PLANS_FILE}" ]; then
-        echo "✓ Plans.md が存在します: ${PLANS_FILE}"
+        echo "✓ Plans.md exists: ${PLANS_FILE}"
     else
-        echo "✗ Plans.md が見つかりません"
+        echo "✗ Plans.md not found"
         QUICK_FAIL=$((QUICK_FAIL + 1))
     fi
 
-    # (3) Plans.md の v2 フォーマット確認（DoD / Depends カラムの存在）
+    # (3) Verify Plans.md v2 format (DoD / Depends columns)
     if [ -n "${PLANS_FILE}" ]; then
         if grep -q "DoD" "${PLANS_FILE}" && grep -q "Depends" "${PLANS_FILE}"; then
-            echo "✓ Plans.md は v2 フォーマットです（DoD / Depends カラムあり）"
+            echo "✓ Plans.md is in v2 format (DoD / Depends columns present)"
         else
-            echo "✗ Plans.md が v2 フォーマットではありません（DoD または Depends カラムがありません）"
+            echo "✗ Plans.md is not in v2 format (DoD or Depends column missing)"
             QUICK_FAIL=$((QUICK_FAIL + 1))
         fi
     fi
 
-    # (4) sprint-contract が存在する場合、JSON として parse 可能かのみ確認（syntax-only）
-    # --quick は state 破損の検知が目的。approval status チェックは wake-up フロー側
-    # （ensure-sprint-contract-ready.sh）が現タスクの contract に対して個別に行う。
-    # 全 contract を approved ホワイトリストチェックすると、他タスクの draft/pending contract が
-    # あるだけで wake-up が停止してしまう（過剰なスコープ）。
+    # (4) If sprint-contract exists, only verify it is parseable as JSON (syntax-only)
+    # --quick is intended to detect state corruption. Approval status checks are performed
+    # individually per contract by the wake-up flow (ensure-sprint-contract-ready.sh).
+    # Checking all contracts against an approved whitelist would stop wake-up whenever any
+    # draft/pending contract exists (excessively broad scope).
     CONTRACT_DIR="${PLUGIN_ROOT}/.claude/state/contracts"
     if [ -d "${CONTRACT_DIR}" ]; then
         contract_error=0
 
-        # jq フォールバック: jq → python3 → skip（macOS 素の環境等で jq 未導入でも誤判定しない）
+        # jq fallback: jq → python3 → skip (avoid false failures on macOS bare environments without jq)
         if command -v jq >/dev/null 2>&1; then
             _JSON_PARSER="jq"
         elif command -v python3 >/dev/null 2>&1; then
             _JSON_PARSER="python3"
         else
             _JSON_PARSER="skip"
-            echo "⚠ jq も python3 も利用不可のため、contract syntax check をスキップします"
+            echo "⚠ Neither jq nor python3 is available; skipping contract syntax check"
         fi
 
         _check_json_syntax() {
@@ -114,38 +114,38 @@ if [ "${QUICK_MODE}" -eq 1 ]; then
         while IFS= read -r contract_file; do
             [ ! -f "${contract_file}" ] && continue
 
-            # Syntax check のみ（approval status は wake-up の Step 3 で個別 contract に対して実行される）
+            # Syntax check only (approval status is checked per contract in wake-up Step 3)
             if ! _check_json_syntax "${contract_file}"; then
-                echo "✗ 壊れた JSON: $(basename "${contract_file}")"
+                echo "✗ Broken JSON: $(basename "${contract_file}")"
                 contract_error=$((contract_error + 1))
             fi
         done < <(find "${CONTRACT_DIR}" -name "*.sprint-contract.json" -type f 2>/dev/null)
 
         if [ "${contract_error}" -eq 0 ]; then
-            echo "✓ sprint-contract の形式チェックは問題ありません"
+            echo "✓ sprint-contract format check passed"
         else
             QUICK_FAIL=$((QUICK_FAIL + contract_error))
         fi
     else
-        echo "✓ sprint-contract ディレクトリは未作成（初回実行）"
+        echo "✓ sprint-contract directory not yet created (first run)"
     fi
 
     echo ""
     if [ "${QUICK_FAIL}" -eq 0 ]; then
-        echo "✓ クイック整合性チェック: OK"
+        echo "✓ Quick consistency check: OK"
         exit 0
     else
-        echo "✗ クイック整合性チェック: ${QUICK_FAIL} 件の問題があります"
+        echo "✗ Quick consistency check: ${QUICK_FAIL} issue(s) found"
         exit 1
     fi
 fi
 
 echo "=========================================="
-echo "Claude harness - プラグイン検証テスト"
+echo "Claude harness - Plugin validation test"
 echo "=========================================="
 echo ""
 
-# カラー出力
+# Color output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -155,7 +155,7 @@ PASS_COUNT=0
 FAIL_COUNT=0
 WARN_COUNT=0
 
-# テスト結果を記録
+# Record test results
 pass_test() {
     echo -e "${GREEN}✓${NC} $1"
     PASS_COUNT=$((PASS_COUNT + 1))
@@ -196,7 +196,7 @@ PY
 
 has_frontmatter_description() {
     local file="$1"
-    # frontmatter があり、その中に description: があるか
+    # Check that frontmatter exists and contains description:
     awk '
       NR==1 { if ($0 != "---") exit 1 }
       NR>1 && $0=="---" { exit 2 }  # end of frontmatter without description
@@ -205,80 +205,80 @@ has_frontmatter_description() {
     ' "$file"
 }
 
-echo "1. プラグイン構造の検証"
+echo "1. Plugin structure validation"
 echo "----------------------------------------"
 
-# plugin.jsonの存在確認
+# Check plugin.json exists
 if [ -f "$PLUGIN_ROOT/.claude-plugin/plugin.json" ]; then
-    pass_test "plugin.json が存在します"
+    pass_test "plugin.json exists"
 else
-    fail_test "plugin.json が見つかりません"
+    fail_test "plugin.json not found"
     exit 1
 fi
 
-# plugin.jsonの妥当性チェック
+# Validate plugin.json
 if json_is_valid "$PLUGIN_ROOT/.claude-plugin/plugin.json"; then
-    pass_test "plugin.json は有効なJSONです"
+    pass_test "plugin.json is valid JSON"
 else
-    fail_test "plugin.json が不正なJSONです"
+    fail_test "plugin.json is invalid JSON"
     exit 1
 fi
 
-# 必須フィールドの確認
+# Check required fields
 REQUIRED_FIELDS=("name" "version" "description" "author")
 for field in "${REQUIRED_FIELDS[@]}"; do
     if json_has_key "$PLUGIN_ROOT/.claude-plugin/plugin.json" "$field"; then
-        pass_test "plugin.json に $field フィールドがあります"
+        pass_test "plugin.json has $field field"
     else
-        fail_test "plugin.json に $field フィールドがありません"
+        fail_test "plugin.json is missing $field field"
     fi
 done
 
 echo ""
-echo "2. コマンドの検証（レガシー）"
+echo "2. Command validation (legacy)"
 echo "----------------------------------------"
 
-# v2.17.0 以降: コマンドは Skills に移行済み
-# commands/ ディレクトリが存在する場合のみ検証（後方互換性）
+# v2.17.0+: commands have been migrated to Skills
+# Validate only when the commands/ directory exists (backward compatibility)
 if [ -d "$PLUGIN_ROOT/commands" ]; then
     CMD_COUNT=$(find "$PLUGIN_ROOT/commands" -name "*.md" -type f | wc -l | tr -d ' ')
-    pass_test "commands/ に ${CMD_COUNT} 個のコマンドファイルがあります（レガシー）"
+    pass_test "commands/ has ${CMD_COUNT} command file(s) (legacy)"
 
-    # サブディレクトリ構造を表示
+    # Show subdirectory structure
     for subdir in "$PLUGIN_ROOT/commands"/*/; do
         if [ -d "$subdir" ]; then
             subdir_name=$(basename "$subdir")
             subdir_count=$(find "$subdir" -name "*.md" -type f | wc -l | tr -d ' ')
             if [ "$subdir_count" -gt 0 ]; then
-                pass_test "  └─ ${subdir_name}/ に ${subdir_count} 個のコマンド"
+                pass_test "  └─ ${subdir_name}/ has ${subdir_count} command(s)"
             else
-                warn_test "  └─ ${subdir_name}/ は空です（コマンドファイルがありません）"
+                warn_test "  └─ ${subdir_name}/ is empty (no command files)"
             fi
         fi
     done
 
-    # frontmatter description の存在確認（SlashCommand tool / /help の発見性向上）
+    # Check frontmatter description (improves discoverability in SlashCommand tool / /help)
     MISSING_DESC=0
     while IFS= read -r cmd_file; do
         if has_frontmatter_description "$cmd_file"; then
             pass_test "frontmatter description: $(basename "$cmd_file")"
         else
-            warn_test "frontmatter description が見つかりません: $(basename "$cmd_file")"
+            warn_test "frontmatter description not found: $(basename "$cmd_file")"
             MISSING_DESC=$((MISSING_DESC + 1))
         fi
     done < <(find "$PLUGIN_ROOT/commands" -name "*.md" -type f | sort)
 else
-    # v2.17.0+: Skills に移行済みのため、commands/ は不要
-    pass_test "commands/ は Skills に移行済み（v2.17.0+）"
+    # v2.17.0+: commands/ is no longer needed as commands have migrated to Skills
+    pass_test "commands/ has been migrated to Skills (v2.17.0+)"
 fi
 
 echo ""
-echo "3. スキルの検証"
+echo "3. Skill validation"
 echo "----------------------------------------"
 
-# plugin.json の skills パス先に SKILL.md が実在するかチェック（v4.0.3 regression guard）
-# skills: ["./"] のような誤設定で配布時に 0 件ロードされる事故を再発させないため、
-# plugin.json の skills フィールドが指すディレクトリを実際に走査し、SKILL.md の存在を検証する。
+# Check that SKILL.md exists under the skills path specified in plugin.json (v4.0.3 regression guard)
+# Prevents a repeat of incidents where misconfiguration like skills: ["./"] caused 0 skills to load.
+# Actually traverse the directory pointed to by the skills field in plugin.json and verify SKILL.md exists.
 skills_path_check_output=$(python3 - "$PLUGIN_ROOT/.claude-plugin/plugin.json" "$PLUGIN_ROOT" <<'PY' 2>&1
 import json
 import os
@@ -324,17 +324,17 @@ PY
 skills_path_check_status=$?
 
 if [ $skills_path_check_status -eq 0 ]; then
-    pass_test "plugin.json の skills パス先に SKILL.md が実在します ($skills_path_check_output)"
+    pass_test "SKILL.md exists under the skills path in plugin.json ($skills_path_check_output)"
 else
-    fail_test "plugin.json の skills パス先に SKILL.md が見つかりません: $skills_path_check_output"
+    fail_test "SKILL.md not found under the skills path in plugin.json: $skills_path_check_output"
 fi
 
-# スキルディレクトリの存在
+# Skills directory existence
 if [ -d "$PLUGIN_ROOT/skills" ]; then
     SKILL_COUNT=$(find "$PLUGIN_ROOT/skills" -name "SKILL.md" | wc -l)
-    pass_test "$SKILL_COUNT 個のスキルが定義されています"
-    
-    # スキルのフロントマター確認（サンプル）
+    pass_test "$SKILL_COUNT skill(s) defined"
+
+    # Check skill frontmatter (sample)
     SKILLS_WITH_DESCRIPTION=0
     SKILLS_WITH_ALLOWED_TOOLS=0
     
@@ -348,48 +348,48 @@ if [ -d "$PLUGIN_ROOT/skills" ]; then
     done
     
     if [ $SKILL_COUNT -gt 0 ]; then
-        pass_test "スキルファイルが適切に配置されています"
+        pass_test "Skill files are properly placed"
     fi
 else
-    warn_test "skills ディレクトリが見つかりません"
+    warn_test "skills directory not found"
 fi
 
 echo ""
-echo "4. エージェントの検証"
+echo "4. Agent validation"
 echo "----------------------------------------"
 
 if [ -d "$PLUGIN_ROOT/agents" ]; then
     AGENT_COUNT=$(find "$PLUGIN_ROOT/agents" -name "*.md" | wc -l)
     if [ $AGENT_COUNT -gt 0 ]; then
-        pass_test "$AGENT_COUNT 個のエージェントが定義されています"
+        pass_test "$AGENT_COUNT agent(s) defined"
     else
-        warn_test "エージェントが定義されていません"
+        warn_test "No agents defined"
     fi
     IGNORED_AGENT_FIELDS=$(grep -rnE "^(permissionMode|hooks):" "$PLUGIN_ROOT/agents"/*.md 2>/dev/null || true)
     if [ -n "$IGNORED_AGENT_FIELDS" ]; then
-        fail_test "plugin agent で無視される frontmatter field が残っています"
+        fail_test "Ignored frontmatter fields remain in plugin agent"
         echo "$IGNORED_AGENT_FIELDS" | sed 's/^/  /'
     else
-        pass_test "plugin agent に ignored permissionMode/hooks frontmatter はありません"
+        pass_test "No ignored permissionMode/hooks frontmatter in plugin agent"
     fi
 else
-    warn_test "agents ディレクトリが見つかりません"
+    warn_test "agents directory not found"
 fi
 
 echo ""
-echo "5. フックの検証"
+echo "5. Hook validation"
 echo "----------------------------------------"
 
 if [ -f "$PLUGIN_ROOT/hooks/hooks.json" ]; then
     if json_is_valid "$PLUGIN_ROOT/hooks/hooks.json"; then
-        pass_test "hooks.json は有効なJSONです"
-        
-        pass_test "hooks.json が読み込めます"
+        pass_test "hooks.json is valid JSON"
+
+        pass_test "hooks.json is readable"
     else
-        fail_test "hooks.json が不正なJSONです"
+        fail_test "hooks.json is invalid JSON"
     fi
 else
-    warn_test "hooks.json が見つかりません"
+    warn_test "hooks.json not found"
 fi
 
 POST_TOOL_FAILURE="$PLUGIN_ROOT/scripts/hook-handlers/post-tool-failure.sh"
@@ -404,9 +404,9 @@ if [ -f "$POST_TOOL_FAILURE" ]; then
     target_after="$(cat "$target_file" 2>/dev/null || true)"
 
     if [ "$hook_output" = "{}" ] && [ "$target_after" = "SAFE" ]; then
-        pass_test "post-tool-failure.sh は symlink state file を上書きしません"
+        pass_test "post-tool-failure.sh does not overwrite symlink state file"
     else
-        fail_test "post-tool-failure.sh の symlink 防御が不足しています"
+        fail_test "post-tool-failure.sh is missing symlink defense"
     fi
 
     rm -rf "$tmp_dir"
@@ -423,50 +423,50 @@ MEMORY_WRAPPERS=(
 )
 for wrapper in "${MEMORY_WRAPPERS[@]}"; do
     if [ -f "$wrapper" ]; then
-        pass_test "memory wrapper が存在します: $(basename "$wrapper")"
+        pass_test "memory wrapper exists: $(basename "$wrapper")"
     else
-        fail_test "memory wrapper が見つかりません: $wrapper"
+        fail_test "memory wrapper not found: $wrapper"
     fi
 done
 
 if bash "$PLUGIN_ROOT/tests/test-memory-hook-wiring.sh" >/dev/null 2>&1; then
-    pass_test "memory hook wiring が有効です"
+    pass_test "memory hook wiring is valid"
 else
-    fail_test "memory hook wiring の整合が崩れています"
+    fail_test "memory hook wiring is broken"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-sync-plugin-cache.sh" >/dev/null 2>&1; then
-    pass_test "sync-plugin-cache が memory wrapper を配布キャッシュへ同期できます"
+    pass_test "sync-plugin-cache can sync memory wrapper to distribution cache"
 else
-    fail_test "sync-plugin-cache が memory wrapper を配布キャッシュへ同期できません"
+    fail_test "sync-plugin-cache cannot sync memory wrapper to distribution cache"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-runtime-reactive-hooks.sh" >/dev/null 2>&1; then
-    pass_test "reactive hook runtime (TaskCreated/FileChanged/CwdChanged) が動作します"
+    pass_test "reactive hook runtime (TaskCreated/FileChanged/CwdChanged) is working"
 else
-    fail_test "reactive hook runtime (TaskCreated/FileChanged/CwdChanged) に問題があります"
+    fail_test "reactive hook runtime (TaskCreated/FileChanged/CwdChanged) has issues"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-claude-upstream-integration.sh" >/dev/null 2>&1; then
-    pass_test "Claude Code 2.1.80-2.1.86 の統合ポイントが配線されています"
+    pass_test "Claude Code 2.1.80-2.1.86 integration points are wired"
 else
-    fail_test "Claude Code 2.1.80-2.1.86 の統合ポイントに欠落があります"
+    fail_test "Claude Code 2.1.80-2.1.86 integration points have gaps"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-plans-status-markers.sh" >/dev/null 2>&1; then
-    pass_test "Plans.md status marker protocol の互換性が保たれています"
+    pass_test "Plans.md status marker protocol compatibility is maintained"
 else
-    fail_test "Plans.md status marker protocol の互換性に問題があります"
+    fail_test "Plans.md status marker protocol compatibility has issues"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-named-plans.sh" >/dev/null 2>&1; then
-    pass_test "Named Plans registry は manifest / active pointer / --plan を安全に解決します"
+    pass_test "Named Plans registry safely resolves manifest / active pointer / --plan"
 else
-    fail_test "Named Plans registry の契約テストに失敗 — 'bash tests/test-named-plans.sh' で詳細確認"
+    fail_test "Named Plans registry contract test failed — run 'bash tests/test-named-plans.sh' for details"
 fi
 
 echo ""
-echo "6. スクリプトの検証"
+echo "6. Script validation"
 echo "----------------------------------------"
 
 if [ -d "$PLUGIN_ROOT/scripts" ]; then
@@ -474,101 +474,101 @@ if [ -d "$PLUGIN_ROOT/scripts" ]; then
         ! -path "$PLUGIN_ROOT/scripts/lib/*" \
         ! -name "config-utils.sh" | wc -l)
     if [ $SCRIPT_COUNT -gt 0 ]; then
-        pass_test "$SCRIPT_COUNT 個の実行対象スクリプトが存在します"
-        
-        # 実行権限の確認（GNU/BSD 両対応: -perm -111 を使用）
-        # scripts/lib/* と config-utils.sh は source 用のライブラリなので除外する。
+        pass_test "$SCRIPT_COUNT executable target script(s) exist"
+
+        # Check execute permissions (GNU/BSD compatible: use -perm -111)
+        # Exclude scripts/lib/* and config-utils.sh as they are sourced libraries.
         EXECUTABLE_COUNT=$(find "$PLUGIN_ROOT/scripts" -name "*.sh" -type f \
             ! -path "$PLUGIN_ROOT/scripts/lib/*" \
             ! -name "config-utils.sh" \
             -perm -111 | wc -l | tr -d ' ')
         if [ $EXECUTABLE_COUNT -eq $SCRIPT_COUNT ]; then
-            pass_test "全ての実行対象スクリプトに実行権限があります"
+            pass_test "All executable target scripts have execute permission"
         else
-            warn_test "一部の実行対象スクリプトに実行権限がありません ($EXECUTABLE_COUNT/$SCRIPT_COUNT)"
+            warn_test "Some executable target scripts are missing execute permission ($EXECUTABLE_COUNT/$SCRIPT_COUNT)"
         fi
     else
-        warn_test "スクリプトが見つかりません"
+        warn_test "No scripts found"
     fi
 else
-    warn_test "scripts ディレクトリが見つかりません"
+    warn_test "scripts directory not found"
 fi
 
 echo ""
-echo "7. ドキュメントの検証"
+echo "7. Documentation validation"
 echo "----------------------------------------"
 
 if [ -f "$PLUGIN_ROOT/README.md" ]; then
     README_SIZE=$(wc -c < "$PLUGIN_ROOT/README.md")
     if [ $README_SIZE -gt 1000 ]; then
-        pass_test "README.md が存在します (${README_SIZE} bytes)"
+        pass_test "README.md exists (${README_SIZE} bytes)"
     else
-        warn_test "README.md が簡潔すぎます (${README_SIZE} bytes)"
+        warn_test "README.md is too brief (${README_SIZE} bytes)"
     fi
 else
-    fail_test "README.md が見つかりません"
+    fail_test "README.md not found"
 fi
 
 if [ -f "$PLUGIN_ROOT/IMPLEMENTATION_GUIDE.md" ]; then
-    pass_test "IMPLEMENTATION_GUIDE.md が存在します"
+    pass_test "IMPLEMENTATION_GUIDE.md exists"
 else
-    warn_test "IMPLEMENTATION_GUIDE.md が見つかりません（推奨）"
+    warn_test "IMPLEMENTATION_GUIDE.md not found (recommended)"
 fi
 
 echo ""
-echo "7. Claude Code プラグイン検証（v2.1.77+）"
+echo "7. Claude Code plugin validation (v2.1.77+)"
 echo "----------------------------------------"
 
-# claude コマンドが利用可能な場合のみ実行
+# Run only when the claude command is available
 if command -v claude > /dev/null 2>&1; then
-    # サブコマンドの存在を確認（v2.1.77 未満では plugin validate が無い）
+    # Check that the subcommand exists (plugin validate is not available below v2.1.77)
     if claude plugin validate --help > /dev/null 2>&1; then
         if claude plugin validate "$PLUGIN_ROOT/.claude-plugin/plugin.json" > /dev/null 2>&1; then
-            pass_test "claude plugin validate に合格"
+            pass_test "claude plugin validate passed"
         else
-            fail_test "claude plugin validate でエラー検出（CC v2.1.77+ 必須）"
+            fail_test "claude plugin validate reported an error (CC v2.1.77+ required)"
         fi
     else
-        warn_test "claude plugin validate が未サポート（CC v2.1.77+ にアップデート推奨）"
+        warn_test "claude plugin validate is not supported (update to CC v2.1.77+ recommended)"
     fi
 else
-    warn_test "claude コマンドが未インストール（claude plugin validate をスキップ）"
+    warn_test "claude command is not installed (skipping claude plugin validate)"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-distribution-archive.sh" >/dev/null 2>&1; then
-    pass_test "git archive 配布 payload に開発専用ファイルは含まれません"
+    pass_test "git archive distribution payload does not include development-only files"
 else
-    fail_test "git archive 配布 payload に開発専用ファイルが混入しています — 'bash tests/test-distribution-archive.sh' で詳細確認"
+    fail_test "git archive distribution payload contains development-only files — run 'bash tests/test-distribution-archive.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-public-plugin-inventory.sh" >/dev/null 2>&1; then
-    pass_test "local plugin inventory に非公開スキルは露出していません"
+    pass_test "No private skills are exposed in local plugin inventory"
 else
-    fail_test "local plugin inventory に非公開スキルが露出しています — 'bash tests/test-public-plugin-inventory.sh' で詳細確認"
+    fail_test "Private skills are exposed in local plugin inventory — run 'bash tests/test-public-plugin-inventory.sh' for details"
 fi
 
 echo ""
-echo "8. Hardening parity の検証"
+echo "8. Hardening parity validation"
 echo "----------------------------------------"
 
 HARDENING_DOC="$PLUGIN_ROOT/docs/hardening-parity.md"
 HARDENING_CONTRACT="$PLUGIN_ROOT/scripts/lib/codex-hardening-contract.txt"
 if [ -f "$HARDENING_DOC" ]; then
-    pass_test "hardening parity 文書が存在します"
+    pass_test "hardening parity document exists"
 else
-    fail_test "docs/hardening-parity.md が見つかりません"
+    fail_test "docs/hardening-parity.md not found"
 fi
 
 if [ -f "$HARDENING_CONTRACT" ] && grep -q "HARNESS_HARDENING_CONTRACT_V1" "$HARDENING_CONTRACT"; then
-    pass_test "Codex hardening contract テンプレートが存在します"
+    pass_test "Codex hardening contract template exists"
 else
-    fail_test "scripts/lib/codex-hardening-contract.txt が見つかりません"
+    fail_test "scripts/lib/codex-hardening-contract.txt not found"
 fi
 
 if grep -q "docs/hardening-parity.md" "$PLUGIN_ROOT/README.md"; then
-    pass_test "README.md から hardening parity 文書へリンクされています"
+    pass_test "README.md links to hardening parity document"
 else
-    fail_test "README.md に hardening parity 文書へのリンクがありません"
+    fail_test "README.md is missing link to hardening parity document"
 fi
 
 RULES_FILE="$PLUGIN_ROOT/go/internal/guardrail/rules.go"
@@ -582,7 +582,7 @@ for rule_id in "${RULE_IDS[@]}"; do
     if grep -q "$rule_id" "$RULES_FILE"; then
         pass_test "guardrail rule: $rule_id"
     else
-        fail_test "guardrail rule が見つかりません: $rule_id"
+        fail_test "guardrail rule not found: $rule_id"
     fi
 done
 
@@ -635,12 +635,12 @@ INTEGRATION_LOGS=()
 
 for integration_test in "${INTEGRATION_TESTS[@]}"; do
     if [ ! -f "$integration_test" ]; then
-        integration_warn_test "optional integration test が見つかりません: $(basename "$integration_test")"
+        integration_warn_test "optional integration test not found: $(basename "$integration_test")"
         continue
     fi
 
     if [ ! -x "$integration_test" ]; then
-        integration_warn_test "optional integration test に実行権限がありません: $(basename "$integration_test")"
+        integration_warn_test "optional integration test is not executable: $(basename "$integration_test")"
         continue
     fi
 
@@ -667,159 +667,159 @@ rm -rf "$INTEGRATION_TMP_DIR" 2>/dev/null || true
 echo ""
 echo "Optional integration summary"
 echo "----------------------------------------"
-echo "合格: ${INTEGRATION_PASS_COUNT}"
-echo "失敗: ${INTEGRATION_FAIL_COUNT}"
-echo "警告: ${INTEGRATION_WARN_COUNT}"
+echo "Passed: ${INTEGRATION_PASS_COUNT}"
+echo "Failed: ${INTEGRATION_FAIL_COUNT}"
+echo "Warnings: ${INTEGRATION_WARN_COUNT}"
 
 echo ""
 echo "11. Sync idempotent check"
 echo "----------------------------------------"
 
 if bash "$PLUGIN_ROOT/tests/test-sync-idempotent.sh" > /dev/null 2>&1; then
-    pass_test "harness sync は冪等であり phantom field を出力しません (test-sync-idempotent.sh)"
+    pass_test "harness sync is idempotent and does not output phantom fields (test-sync-idempotent.sh)"
 else
-    fail_test "harness sync の冪等性テストに失敗 — 'bash tests/test-sync-idempotent.sh' で詳細確認"
+    fail_test "harness sync idempotency test failed — run 'bash tests/test-sync-idempotent.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-reenter-worktree-json.sh" > /dev/null 2>&1; then
-    pass_test "reenter-worktree.sh は stdout に JSON だけを出力します (test-reenter-worktree-json.sh)"
+    pass_test "reenter-worktree.sh outputs only JSON to stdout (test-reenter-worktree-json.sh)"
 else
-    fail_test "reenter-worktree.sh の JSON 出力契約テストに失敗 — 'bash tests/test-reenter-worktree-json.sh' で詳細確認"
+    fail_test "reenter-worktree.sh JSON output contract test failed — run 'bash tests/test-reenter-worktree-json.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-statusline-harness-fields.sh" > /dev/null 2>&1; then
-    pass_test "statusline-harness.sh は effort/thinking を null-safe に表示します (test-statusline-harness-fields.sh)"
+    pass_test "statusline-harness.sh displays effort/thinking in a null-safe manner (test-statusline-harness-fields.sh)"
 else
-    fail_test "statusline-harness.sh の effort/thinking 契約テストに失敗 — 'bash tests/test-statusline-harness-fields.sh' で詳細確認"
+    fail_test "statusline-harness.sh effort/thinking contract test failed — run 'bash tests/test-statusline-harness-fields.sh' for details"
 fi
 
 # test-codex-primary-environment-guard.sh is archived with the Codex runtime
 if [ -f "$PLUGIN_ROOT/tests/test-codex-primary-environment-guard.sh" ]; then
     if bash "$PLUGIN_ROOT/tests/test-codex-primary-environment-guard.sh" > /dev/null 2>&1; then
-        pass_test "Codex primary environment guard が non-primary write を防ぎます (test-codex-primary-environment-guard.sh)"
+        pass_test "Codex primary environment guard prevents non-primary writes (test-codex-primary-environment-guard.sh)"
     else
-        fail_test "Codex primary environment guard の契約テストに失敗 — 'bash tests/test-codex-primary-environment-guard.sh' で詳細確認"
+        fail_test "Codex primary environment guard contract test failed — run 'bash tests/test-codex-primary-environment-guard.sh' for details"
     fi
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-windows-worktree-support.sh" > /dev/null 2>&1; then
-    pass_test "Windows Breezing worktree support の配布・hook 契約が維持されています (test-windows-worktree-support.sh)"
+    pass_test "Windows Breezing worktree support distribution and hook contract is maintained (test-windows-worktree-support.sh)"
 else
-    fail_test "Windows Breezing worktree support の契約テストに失敗 — 'bash tests/test-windows-worktree-support.sh' で詳細確認"
+    fail_test "Windows Breezing worktree support contract test failed — run 'bash tests/test-windows-worktree-support.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-worktree-create-hook.sh" > /dev/null 2>&1; then
-    pass_test "WorktreeCreate shell hook は decision JSON を cwd として扱いません (test-worktree-create-hook.sh)"
+    pass_test "WorktreeCreate shell hook does not treat decision JSON as cwd (test-worktree-create-hook.sh)"
 else
-    fail_test "WorktreeCreate shell hook の cwd 防御テストに失敗 — 'bash tests/test-worktree-create-hook.sh' で詳細確認"
+    fail_test "WorktreeCreate shell hook cwd defense test failed — run 'bash tests/test-worktree-create-hook.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-session-inbox-broadcast.sh" > /dev/null 2>&1; then
-    pass_test "session inbox/broadcast は stale 通知の再表示と stale cwd 書き込みを防ぎます (test-session-inbox-broadcast.sh)"
+    pass_test "session inbox/broadcast prevents stale notification re-display and stale cwd writes (test-session-inbox-broadcast.sh)"
 else
-    fail_test "session inbox/broadcast の stale 通知契約テストに失敗 — 'bash tests/test-session-inbox-broadcast.sh' で詳細確認"
+    fail_test "session inbox/broadcast stale notification contract test failed — run 'bash tests/test-session-inbox-broadcast.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-render-html.sh" > /dev/null 2>&1; then
-    pass_test "render-html.sh は mustache 展開と Claude Harness palette 検証を満たします (test-render-html.sh)"
+    pass_test "render-html.sh satisfies mustache expansion and Claude Harness palette validation (test-render-html.sh)"
 else
-    fail_test "render-html.sh の契約テストに失敗 — 'bash tests/test-render-html.sh' で詳細確認"
+    fail_test "render-html.sh contract test failed — run 'bash tests/test-render-html.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-plan-brief-e2e.sh" > /dev/null 2>&1; then
-    pass_test "harness-plan-brief Phase 65.1.x の 5 ステップ e2e パイプラインが round-trip します (test-plan-brief-e2e.sh)"
+    pass_test "harness-plan-brief Phase 65.1.x 5-step e2e pipeline round-trips successfully (test-plan-brief-e2e.sh)"
 else
-    fail_test "harness-plan-brief e2e の契約テストに失敗 — 'bash tests/test-plan-brief-e2e.sh' で詳細確認"
+    fail_test "harness-plan-brief e2e contract test failed — run 'bash tests/test-plan-brief-e2e.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-plan-accept-flow-e2e.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.2.x Plan→Accept flow e2e がプラン→受入の完全 trace を user_request_hash で join します (test-plan-accept-flow-e2e.sh)"
+    pass_test "Phase 65.2.x Plan→Accept flow e2e joins full plan→accept trace with user_request_hash (test-plan-accept-flow-e2e.sh)"
 else
-    fail_test "Plan→Accept flow e2e の契約テストに失敗 — 'bash tests/test-plan-accept-flow-e2e.sh' で詳細確認"
+    fail_test "Plan→Accept flow e2e contract test failed — run 'bash tests/test-plan-accept-flow-e2e.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-cross-project-groups-schema.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.3.1 cross-project-group.v1 schema validator が yaml SSOT を正しくパース・検証します (test-cross-project-groups-schema.sh)"
+    pass_test "Phase 65.3.1 cross-project-group.v1 schema validator correctly parses and validates yaml SSOT (test-cross-project-groups-schema.sh)"
 else
-    fail_test "cross-project-groups-schema の契約テストに失敗 — 'bash tests/test-cross-project-groups-schema.sh' で詳細確認"
+    fail_test "cross-project-groups-schema contract test failed — run 'bash tests/test-cross-project-groups-schema.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-redact-by-dictionary.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.3.2 Layer 2a 辞書ベース固有名詞 redaction (PiiRule 互換 + 二重置換ガード) が動作します (test-redact-by-dictionary.sh)"
+    pass_test "Phase 65.3.2 Layer 2a dictionary-based proper noun redaction (PiiRule compatible + double-replace guard) works (test-redact-by-dictionary.sh)"
 else
-    fail_test "redact-by-dictionary の契約テストに失敗 — 'bash tests/test-redact-by-dictionary.sh' で詳細確認"
+    fail_test "redact-by-dictionary contract test failed — run 'bash tests/test-redact-by-dictionary.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-redact-by-ner.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.3.3 Layer 2b NER (fugashi tokenizer + fail-open + sentinel guard) が動作します (test-redact-by-ner.sh)"
+    pass_test "Phase 65.3.3 Layer 2b NER (fugashi tokenizer + fail-open + sentinel guard) works (test-redact-by-ner.sh)"
 else
-    fail_test "redact-by-ner の契約テストに失敗 — 'bash tests/test-redact-by-ner.sh' で詳細確認"
+    fail_test "redact-by-ner contract test failed — run 'bash tests/test-redact-by-ner.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-render-html-redaction.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.3.4 render-html.sh --with-redaction が dict→NER→Layer3 を順次適用し、残骸検出時は HTML 生成を中止します (test-render-html-redaction.sh)"
+    pass_test "Phase 65.3.4 render-html.sh --with-redaction applies dict→NER→Layer3 sequentially and aborts HTML generation when residue is detected (test-render-html-redaction.sh)"
 else
-    fail_test "render-html-redaction の契約テストに失敗 — 'bash tests/test-render-html-redaction.sh' で詳細確認"
+    fail_test "render-html-redaction contract test failed — run 'bash tests/test-render-html-redaction.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-cross-project-flag.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.3.5 --cross-project-group flag が plan-brief / accept skill に統合され、D43 Option α (MCP N-call) で動作します (test-cross-project-flag.sh)"
+    pass_test "Phase 65.3.5 --cross-project-group flag is integrated into plan-brief / accept skill and works with D43 Option alpha (MCP N-call) (test-cross-project-flag.sh)"
 else
-    fail_test "cross-project-flag の契約テストに失敗 — 'bash tests/test-cross-project-flag.sh' で詳細確認"
+    fail_test "cross-project-flag contract test failed — run 'bash tests/test-cross-project-flag.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-cross-project-audit.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.3.6 cross-project-audit.v1 監査ログ append + HTML 監査サマリ表示 + クエリ生記録なし (test-cross-project-audit.sh)"
+    pass_test "Phase 65.3.6 cross-project-audit.v1 audit log append + HTML audit summary display + no raw query logging (test-cross-project-audit.sh)"
 else
-    fail_test "cross-project-audit の契約テストに失敗 — 'bash tests/test-cross-project-audit.sh' で詳細確認"
+    fail_test "cross-project-audit contract test failed — run 'bash tests/test-cross-project-audit.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-cross-project-redaction-e2e.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.3.7 e2e: 3 member group + dict + NER + Layer 3 + audit + envelope + sentinel guard が一貫して動作します (test-cross-project-redaction-e2e.sh)"
+    pass_test "Phase 65.3.7 e2e: 3 member group + dict + NER + Layer 3 + audit + envelope + sentinel guard works consistently (test-cross-project-redaction-e2e.sh)"
 else
-    fail_test "cross-project-redaction-e2e の契約テストに失敗 — 'bash tests/test-cross-project-redaction-e2e.sh' で詳細確認"
+    fail_test "cross-project-redaction-e2e contract test failed — run 'bash tests/test-cross-project-redaction-e2e.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-harness-progress.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.4.1 progress-snapshot.v1 + harness-progress skill が Plans.md から進捗 HTML を生成します (test-harness-progress.sh)"
+    pass_test "Phase 65.4.1 progress-snapshot.v1 + harness-progress skill generates progress HTML from Plans.md (test-harness-progress.sh)"
 else
-    fail_test "harness-progress の契約テストに失敗 — 'bash tests/test-harness-progress.sh' で詳細確認"
+    fail_test "harness-progress contract test failed — run 'bash tests/test-harness-progress.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-progress-regen.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.4.2 PostToolUse hook 自動再生成 + 60秒 rate limit + dual hooks.json sync が動作します (test-progress-regen.sh)"
+    pass_test "Phase 65.4.2 PostToolUse hook auto-regeneration + 60-second rate limit + dual hooks.json sync works (test-progress-regen.sh)"
 else
-    fail_test "progress-regen の契約テストに失敗 — 'bash tests/test-progress-regen.sh' で詳細確認"
+    fail_test "progress-regen contract test failed — run 'bash tests/test-progress-regen.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-progress-drift.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.4.3 drift detection が 5 alert kind (scope-creep/time-overrun/repeated-failure/cost-warning/high-risk-file) を発火します (test-progress-drift.sh)"
+    pass_test "Phase 65.4.3 drift detection fires 5 alert kinds (scope-creep/time-overrun/repeated-failure/cost-warning/high-risk-file) (test-progress-drift.sh)"
 else
-    fail_test "progress-drift の契約テストに失敗 — 'bash tests/test-progress-drift.sh' で詳細確認"
+    fail_test "progress-drift contract test failed — run 'bash tests/test-progress-drift.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-progress-past-judgments.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.4.4 過去判断 lookup が rejection_rate_pct + top_3_judgments を返し、cross-project default OFF (test-progress-past-judgments.sh)"
+    pass_test "Phase 65.4.4 past judgment lookup returns rejection_rate_pct + top_3_judgments with cross-project default OFF (test-progress-past-judgments.sh)"
 else
-    fail_test "progress-past-judgments の契約テストに失敗 — 'bash tests/test-progress-past-judgments.sh' で詳細確認"
+    fail_test "progress-past-judgments contract test failed — run 'bash tests/test-progress-past-judgments.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-progress-e2e.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.4.5 e2e: 初回 snapshot → 編集後再生成 → 5 alert 発火 → 過去判断表示 → rate limit が一貫して動作 (test-progress-e2e.sh)"
+    pass_test "Phase 65.4.5 e2e: initial snapshot → regenerate after edit → 5 alerts fire → past judgments shown → rate limit works consistently (test-progress-e2e.sh)"
 else
-    fail_test "progress-e2e の契約テストに失敗 — 'bash tests/test-progress-e2e.sh' で詳細確認"
+    fail_test "progress-e2e contract test failed — run 'bash tests/test-progress-e2e.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-3-surface-e2e.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.5.1 統合 e2e: 3 surface (plan-brief / progress / accept) が同 user_request_hash + project で完全 trace (test-3-surface-e2e.sh)"
+    pass_test "Phase 65.5.1 integrated e2e: 3 surfaces (plan-brief / progress / accept) complete trace with same user_request_hash + project (test-3-surface-e2e.sh)"
 else
-    fail_test "3-surface-e2e の契約テストに失敗 — 'bash tests/test-3-surface-e2e.sh' で詳細確認"
+    fail_test "3-surface-e2e contract test failed — run 'bash tests/test-3-surface-e2e.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-audit-ui-presence.sh" > /dev/null 2>&1; then
-    pass_test "Phase 65.5.2 監査 UI: 3 HTML templates 全てに audit-trail section + 4 項目 (検索範囲/参照ID/redact/log) (test-audit-ui-presence.sh)"
+    pass_test "Phase 65.5.2 audit UI: all 3 HTML templates have audit-trail section + 4 items (search scope/ref ID/redact/log) (test-audit-ui-presence.sh)"
 else
-    fail_test "audit-ui-presence の契約テストに失敗 — 'bash tests/test-audit-ui-presence.sh' で詳細確認"
+    fail_test "audit-ui-presence contract test failed — run 'bash tests/test-audit-ui-presence.sh' for details"
 fi
 
 echo ""
@@ -951,7 +951,7 @@ echo "----------------------------------------"
 if bash "$PLUGIN_ROOT/tests/test-spec-ssot-workflow.sh" > /dev/null 2>&1; then
     pass_test "Plans.md task workflow includes project spec SSOT creation/update guard (test-spec-ssot-workflow.sh)"
 else
-    fail_test "project spec SSOT workflow contract failed — 'bash tests/test-spec-ssot-workflow.sh' で詳細確認"
+    fail_test "project spec SSOT workflow contract failed — run 'bash tests/test-spec-ssot-workflow.sh' for details"
 fi
 
 echo ""
@@ -959,40 +959,40 @@ echo "14. Harness review governance check"
 echo "----------------------------------------"
 
 if bash "$PLUGIN_ROOT/tests/test-harness-review-governance.sh" > /dev/null 2>&1; then
-    pass_test "harness-review は TeamAgent Debate / 合格ライン / spec+Plans+デグレ gate / AskUserQuestion / mirror sync を満たします"
+    pass_test "harness-review satisfies TeamAgent Debate / pass threshold / spec+Plans+regression gate / AskUserQuestion / mirror sync"
 else
-    fail_test "harness-review governance contract failed — 'bash tests/test-harness-review-governance.sh' で詳細確認"
+    fail_test "harness-review governance contract failed — run 'bash tests/test-harness-review-governance.sh' for details"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-harness-release-governance.sh" > /dev/null 2>&1; then
-    pass_test "harness-release は bare invocation / 未レビュー AskUserQuestion / review→commit→release gate / mirror sync を満たします"
+    pass_test "harness-release satisfies bare invocation / unreviewed AskUserQuestion / review→commit→release gate / mirror sync"
 else
-    fail_test "harness-release governance contract failed — 'bash tests/test-harness-release-governance.sh' で詳細確認"
+    fail_test "harness-release governance contract failed — run 'bash tests/test-harness-release-governance.sh' for details"
 fi
 
 echo ""
-echo "15. Phase 69 (CC 2.1.133-2.1.142) terminalSequence / hooks 契約"
+echo "15. Phase 69 (CC 2.1.133-2.1.142) terminalSequence / hooks contract"
 echo "----------------------------------------"
 
 if bash "$PLUGIN_ROOT/tests/test-terminal-notify.sh" > /dev/null 2>&1; then
-    pass_test "Phase 69 hook terminalSequence / rules / template baseline 契約を満たします"
+    pass_test "Phase 69 hook terminalSequence / rules / template baseline contract is satisfied"
 else
-    fail_test "Phase 69 terminalSequence contract failed — 'bash tests/test-terminal-notify.sh' で詳細確認"
+    fail_test "Phase 69 terminalSequence contract failed — run 'bash tests/test-terminal-notify.sh' for details"
 fi
 
 echo ""
 echo "=========================================="
-echo "テスト結果サマリー"
+echo "Test results summary"
 echo "=========================================="
-echo -e "${GREEN}合格:${NC} $PASS_COUNT"
-echo -e "${YELLOW}警告:${NC} $WARN_COUNT"
-echo -e "${RED}失敗:${NC} $FAIL_COUNT"
+echo -e "${GREEN}Passed:${NC} $PASS_COUNT"
+echo -e "${YELLOW}Warnings:${NC} $WARN_COUNT"
+echo -e "${RED}Failed:${NC} $FAIL_COUNT"
 echo ""
 
 if [ $FAIL_COUNT -eq 0 ]; then
-    echo -e "${GREEN}✓ 全てのテストに合格しました！${NC}"
+    echo -e "${GREEN}✓ All tests passed!${NC}"
     exit 0
 else
-    echo -e "${RED}✗ $FAIL_COUNT 件のテストが失敗しました${NC}"
+    echo -e "${RED}✗ $FAIL_COUNT test(s) failed${NC}"
     exit 1
 fi

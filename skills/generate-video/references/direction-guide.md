@@ -1,42 +1,42 @@
-# 演出ガイド - Direction Guide
+# Direction Guide
 
-generate-videoスキルの視覚演出システムの使い分けとベストプラクティスを定義します。
+Defines the visual direction system for the generate-video skill and best practices for using it.
 
 ---
 
-## 概要
+## Overview
 
-演出システムは以下の4要素で構成されます：
+The direction system is composed of 4 elements:
 
-| 要素 | 役割 | 制御内容 |
+| Element | Role | Controls |
 |------|------|---------|
-| **transition** | シーン切り替え | フェード、スライド、ズーム、カット |
-| **emphasis** | 要素強調 | 3段階強調 + 効果音 |
-| **background** | 背景デザイン | 5種類の背景スタイル |
-| **timing** | タイミング調整 | 待機時間、音声オフセット |
+| **transition** | Scene switching | Fade, slide, zoom, cut |
+| **emphasis** | Element highlighting | 3-level emphasis + sound effects |
+| **background** | Background design | 5 background styles |
+| **timing** | Timing adjustments | Wait time, audio offset |
 
 ---
 
-## Transition（トランジション）
+## Transition
 
-### 4種類のトランジション
+### 4 Transition Types
 
-| Type | 用途 | 視覚効果 | 推奨 duration |
+| Type | Use | Visual Effect | Recommended Duration |
 |------|------|---------|--------------|
-| **fade** | 汎用的な切り替え | 滑らかなフェードイン/アウト | 500ms (15f) |
-| **slideIn** | 次の話題への移行 | 方向指定スライド（left/right/top/bottom） | 400ms (12f) |
-| **zoom** | 詳細への注目誘導 | ズームイン/アウト | 600ms (18f) |
-| **cut** | 即座の切り替え | カット（瞬時） | 0ms |
+| **fade** | General-purpose switching | Smooth fade in/out | 500ms (15f) |
+| **slideIn** | Moving to the next topic | Directional slide (left/right/top/bottom) | 400ms (12f) |
+| **zoom** | Drawing attention to detail | Zoom in/out | 600ms (18f) |
+| **cut** | Instant switching | Cut (instantaneous) | 0ms |
 
-### 使い分けガイドライン
+### Usage Guidelines
 
-#### fade（フェード）
-- **推奨シーン**: 汎用、セクション開始、落ち着いた切り替え
-- **効果**: 視覚的に優しい、注意を引きすぎない
-- **例**:
-  - イントロ → メイン説明
-  - 機能説明 → 次の機能説明
-  - CTA前の落ち着き
+#### fade
+- **Recommended scenes**: General, section openings, calm transitions
+- **Effect**: Visually gentle, does not over-attract attention
+- **Examples**:
+  - Intro → main explanation
+  - Feature explanation → next feature explanation
+  - Settling before CTA
 
 ```json
 {
@@ -48,14 +48,14 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-#### slideIn（スライドイン）
-- **推奨シーン**: 話題転換、比較表示、ステップ進行
-- **効果**: 動的、次の内容への期待感
+#### slideIn
+- **Recommended scenes**: Topic changes, comparisons, step progression
+- **Effect**: Dynamic, builds anticipation for upcoming content
 - **direction**:
-  - `right`: 前進感（次のステップ）
-  - `left`: 過去参照（Before/After の Before）
-  - `top`: 重要な情報の登場
-  - `bottom`: 補足情報の追加
+  - `right`: Forward motion (next step)
+  - `left`: Looking back (Before in a Before/After)
+  - `top`: Important information appearing
+  - `bottom`: Adding supplementary information
 
 ```json
 {
@@ -68,13 +68,13 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-#### zoom（ズーム）
-- **推奨シーン**: 詳細表示、強調、衝撃的な情報
-- **効果**: 注目誘導、インパクト
-- **例**:
-  - 重要な数値の表示
-  - 問題の核心提示
-  - 差別化ポイントの強調
+#### zoom
+- **Recommended scenes**: Showing detail, emphasis, impactful information
+- **Effect**: Draws attention, creates impact
+- **Examples**:
+  - Displaying an important number
+  - Presenting the core of a problem
+  - Emphasizing a differentiator
 
 ```json
 {
@@ -86,13 +86,13 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-#### cut（カット）
-- **推奨シーン**: デモ操作、高速展開、緊張感
-- **効果**: 瞬間的、テンポアップ
-- **例**:
-  - UI操作のステップ間
-  - 高速デモンストレーション
-  - リズミカルな機能紹介
+#### cut
+- **Recommended scenes**: Demo operations, rapid sequence, tension
+- **Effect**: Instantaneous, tempo boost
+- **Examples**:
+  - Between steps of UI operations
+  - High-speed demonstrations
+  - Rhythmic feature showcasing
 
 ```json
 {
@@ -103,52 +103,52 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-### ファネル別推奨トランジション
+### Recommended Transitions by Funnel Stage
 
-| ファネル段階 | 推奨トランジション | 理由 |
+| Funnel Stage | Recommended Transition | Reason |
 |-------------|-------------------|------|
-| 認知（LP/広告） | fade, zoom | 落ち着き、衝撃 |
-| 興味（Intro） | slideIn, fade | 動的、期待感 |
-| 検討（機能デモ） | cut, slideIn | テンポ、効率 |
-| 確信（アーキテクチャ） | fade, zoom | 詳細、信頼 |
-| 継続（オンボーディング） | slideIn, cut | ステップ進行 |
+| Awareness (LP/Ad) | fade, zoom | Calm, impactful |
+| Interest (Intro) | slideIn, fade | Dynamic, builds anticipation |
+| Consideration (Feature demo) | cut, slideIn | Pacing, efficiency |
+| Conviction (Architecture) | fade, zoom | Detail, trust |
+| Retention (Onboarding) | slideIn, cut | Step progression |
 
 ---
 
-## Emphasis（強調）
+## Emphasis
 
-### 3段階の強調レベル
+### 3 Levels of Emphasis
 
-| Level | 用途 | 視覚効果 | 推奨効果音 |
+| Level | Use | Visual Effect | Recommended Sound |
 |-------|------|---------|-----------|
-| **high** | 最重要メッセージ | 大きなアニメーション、明るいカラー | whoosh, chime |
-| **medium** | 重要ポイント | 中程度のアニメーション、アクセントカラー | pop |
-| **low** | 補足情報 | 控えめな強調、淡いカラー | none, ding |
+| **high** | Most important message | Large animation, bright color | whoosh, chime |
+| **medium** | Important points | Medium animation, accent color | pop |
+| **low** | Supplementary information | Subtle emphasis, muted color | none, ding |
 
-### 使い分けガイドライン
+### Usage Guidelines
 
-#### high（高強調）
-- **推奨シーン**:
-  - Hook（最初の衝撃）
-  - CTA（行動喚起）
-  - 差別化ポイント（Differentiator）
-  - 驚くべき結果・数値
+#### high
+- **Recommended scenes**:
+  - Hook (opening impact)
+  - CTA (call to action)
+  - Differentiator
+  - Surprising results or numbers
 
-- **視覚効果**:
-  - テキストサイズ: 特大
-  - カラー: 鮮やか（デフォルト: `#00F5FF` シアン）
-  - アニメーション: scale 1.2, bounce
-  - 効果音: `whoosh` または `chime`
+- **Visual effects**:
+  - Text size: Extra large
+  - Color: Vivid (default: `#00F5FF` cyan)
+  - Animation: scale 1.2, bounce
+  - Sound: `whoosh` or `chime`
 
-- **例**:
-  - "3倍速くなる" → high emphasis
-  - "今すぐ無料で試す" → high emphasis
+- **Examples**:
+  - "3x faster" → high emphasis
+  - "Try it free now" → high emphasis
 
 ```json
 {
   "emphasis": {
     "level": "high",
-    "text": ["3倍速くなる"],
+    "text": ["3x faster"],
     "sound": "whoosh",
     "color": "#00F5FF",
     "position": "center"
@@ -156,28 +156,28 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-#### medium（中強調）
-- **推奨シーン**:
-  - 機能説明の要点
-  - ワークフローのステップ
-  - 問題提示（Problem）
-  - 解決策（Solution）
+#### medium
+- **Recommended scenes**:
+  - Key points in feature explanations
+  - Workflow steps
+  - Problem statement
+  - Solution
 
-- **視覚効果**:
-  - テキストサイズ: 大
-  - カラー: アクセント（デフォルト: `#FFC700` ゴールド）
-  - アニメーション: scale 1.1, fade-in
-  - 効果音: `pop`
+- **Visual effects**:
+  - Text size: Large
+  - Color: Accent (default: `#FFC700` gold)
+  - Animation: scale 1.1, fade-in
+  - Sound: `pop`
 
-- **例**:
-  - "ステップ1: 設定" → medium emphasis
-  - "こんな問題ありませんか？" → medium emphasis
+- **Examples**:
+  - "Step 1: Configuration" → medium emphasis
+  - "Does this sound familiar?" → medium emphasis
 
 ```json
 {
   "emphasis": {
     "level": "medium",
-    "text": ["ステップ1: 設定"],
+    "text": ["Step 1: Configuration"],
     "sound": "pop",
     "color": "#FFC700",
     "position": "top"
@@ -185,28 +185,28 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-#### low（低強調）
-- **推奨シーン**:
-  - 補足情報
-  - 追加機能の軽い紹介
-  - 注釈
-  - 詳細情報へのリンク
+#### low
+- **Recommended scenes**:
+  - Supplementary information
+  - Light introduction of additional features
+  - Footnotes
+  - Links to detailed information
 
-- **視覚効果**:
-  - テキストサイズ: 通常
-  - カラー: 淡い（デフォルト: `#A8DADC` ライトブルー）
-  - アニメーション: fade-in のみ
-  - 効果音: `none` または `ding`
+- **Visual effects**:
+  - Text size: Normal
+  - Color: Muted (default: `#A8DADC` light blue)
+  - Animation: fade-in only
+  - Sound: `none` or `ding`
 
-- **例**:
-  - "※詳細はドキュメント参照" → low emphasis
-  - "その他多数の機能" → low emphasis
+- **Examples**:
+  - "* See documentation for details" → low emphasis
+  - "And many more features" → low emphasis
 
 ```json
 {
   "emphasis": {
     "level": "low",
-    "text": ["※詳細はドキュメント参照"],
+    "text": ["* See documentation for details"],
     "sound": "none",
     "color": "#A8DADC",
     "position": "bottom"
@@ -214,53 +214,53 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-### 効果音の選び方
+### Choosing Sound Effects
 
-| Sound | 音の特徴 | 推奨用途 |
+| Sound | Character | Recommended Use |
 |-------|---------|---------|
-| **whoosh** | 風切り音、ダイナミック | high emphasis、画面遷移 |
-| **chime** | チャイム、美しい響き | CTA、成功表示 |
-| **pop** | ポップ、軽快 | medium emphasis、ボタン表示 |
-| **ding** | 小さな鈴の音 | low emphasis、軽い通知 |
-| **none** | 無音 | 静かな情報、連続表示 |
+| **whoosh** | Wind sweep, dynamic | high emphasis, screen transitions |
+| **chime** | Bell-like, beautiful | CTA, success display |
+| **pop** | Poppy, light | medium emphasis, button appearance |
+| **ding** | Small bell | low emphasis, light notifications |
+| **none** | Silent | Quiet information, consecutive displays |
 
-### ファネル別推奨強調レベル
+### Recommended Emphasis Levels by Funnel Stage
 
-| ファネル段階 | 主要強調 | 補助強調 |
+| Funnel Stage | Primary Emphasis | Secondary Emphasis |
 |-------------|---------|---------|
-| 認知（LP/広告） | high 多用 | medium 適度 |
-| 興味（Intro） | high 1-2回 | medium 多用 |
-| 検討（機能デモ） | medium 主体 | low 補足 |
-| 確信（アーキテクチャ） | medium 適度 | low 多用 |
-| 継続（オンボーディング） | high 目標 | medium ステップ |
+| Awareness (LP/Ad) | high frequently | medium moderately |
+| Interest (Intro) | high 1-2 times | medium frequently |
+| Consideration (Feature demo) | medium primarily | low supplementary |
+| Conviction (Architecture) | medium moderately | low frequently |
+| Retention (Onboarding) | high for goals | medium for steps |
 
 ---
 
-## Background（背景）
+## Background
 
-### 5種類の背景スタイル
+### 5 Background Styles
 
-| Type | 視覚特徴 | 用途 | カラー例 |
+| Type | Visual Character | Use | Color Example |
 |------|---------|------|---------|
-| **cyberpunk** | ネオン、グリッド、未来感 | Tech系、先進性アピール | `#0a0e27` + `#00f5ff` |
-| **corporate** | 洗練、信頼感、プロフェッショナル | BtoB、エンタープライズ | `#1a1a2e` + `#16213e` |
-| **minimal** | シンプル、クリーン、集中 | 説明重視、ドキュメント | `#ffffff` + `#f0f0f0` |
-| **gradient** | カラフル、動的、親しみ | BtoC、カジュアル | `#667eea` → `#764ba2` |
-| **particles** | 動的パーティクル、エネルギッシュ | Hook、CTA、衝撃 | `#000000` + particles |
+| **cyberpunk** | Neon, grid, futuristic | Tech-focused, cutting-edge appeal | `#0a0e27` + `#00f5ff` |
+| **corporate** | Refined, trustworthy, professional | B2B, enterprise | `#1a1a2e` + `#16213e` |
+| **minimal** | Simple, clean, focused | Content-heavy, documentation | `#ffffff` + `#f0f0f0` |
+| **gradient** | Colorful, dynamic, friendly | B2C, casual | `#667eea` → `#764ba2` |
+| **particles** | Dynamic particles, energetic | Hook, CTA, high impact | `#000000` + particles |
 
-### 使い分けガイドライン
+### Usage Guidelines
 
-#### cyberpunk（サイバーパンク）
-- **推奨シーン**:
-  - テクノロジーの先進性を訴求
-  - 開発者向けツール
-  - AI/ML機能の紹介
-  - アーキテクチャ図
+#### cyberpunk
+- **Recommended scenes**:
+  - Emphasizing technological advancement
+  - Developer tools
+  - AI/ML feature introductions
+  - Architecture diagrams
 
-- **特徴**:
-  - ネオングリッド
-  - グリッチエフェクト
-  - 青・シアン系カラー
+- **Characteristics**:
+  - Neon grid
+  - Glitch effects
+  - Blue and cyan palette
 
 ```json
 {
@@ -273,17 +273,17 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-#### corporate（コーポレート）
-- **推奨シーン**:
-  - BtoBプロダクト
-  - エンタープライズ機能
-  - セキュリティ・信頼性訴求
-  - 実績・事例紹介
+#### corporate
+- **Recommended scenes**:
+  - B2B products
+  - Enterprise features
+  - Security and reliability appeal
+  - Case studies and track record
 
-- **特徴**:
-  - ダークブルー系
-  - クリーンなグラデーション
-  - 落ち着いた雰囲気
+- **Characteristics**:
+  - Dark blue palette
+  - Clean gradients
+  - Calm atmosphere
 
 ```json
 {
@@ -296,17 +296,17 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-#### minimal（ミニマル）
-- **推奨シーン**:
-  - コンテンツに集中させたい
-  - 複雑な図表・コードの表示
-  - オンボーディング
-  - ドキュメント的な説明
+#### minimal
+- **Recommended scenes**:
+  - Want the viewer to focus on content
+  - Complex diagrams or code displays
+  - Onboarding
+  - Documentation-style explanations
 
-- **特徴**:
-  - 白・グレー系
-  - シンプル
-  - 視認性重視
+- **Characteristics**:
+  - White and gray palette
+  - Simple
+  - Readability-first
 
 ```json
 {
@@ -319,17 +319,17 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-#### gradient（グラデーション）
-- **推奨シーン**:
-  - BtoCプロダクト
-  - 親しみやすさ訴求
-  - イントロ・CTA
-  - カジュアルなトーン
+#### gradient
+- **Recommended scenes**:
+  - B2C products
+  - Approachability appeal
+  - Intros and CTAs
+  - Casual tone
 
-- **特徴**:
-  - カラフルなグラデーション
-  - 柔らかい印象
-  - 視覚的に楽しい
+- **Characteristics**:
+  - Colorful gradients
+  - Soft impression
+  - Visually engaging
 
 ```json
 {
@@ -342,17 +342,17 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-#### particles（パーティクル）
-- **推奨シーン**:
-  - Hook（開始時の衝撃）
-  - CTA（行動喚起）
-  - 重要な転換点
-  - エネルギッシュな印象
+#### particles
+- **Recommended scenes**:
+  - Hook (opening impact)
+  - CTA (call to action)
+  - Important turning points
+  - Energetic impression
 
-- **特徴**:
-  - 動的なパーティクル
-  - エネルギー感
-  - 注目誘導
+- **Characteristics**:
+  - Dynamic particles
+  - Energy
+  - Draws attention
 
 ```json
 {
@@ -365,40 +365,40 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-### ファネル別推奨背景
+### Recommended Backgrounds by Funnel Stage
 
-| ファネル段階 | 推奨背景 | 理由 |
+| Funnel Stage | Recommended Background | Reason |
 |-------------|---------|------|
-| 認知（LP/広告） | particles, gradient | 視覚的インパクト |
-| 興味（Intro） | gradient, cyberpunk | 親しみやすさ、先進性 |
-| 検討（機能デモ） | minimal, corporate | 集中、信頼感 |
-| 確信（アーキテクチャ） | corporate, cyberpunk | プロフェッショナル |
-| 継続（オンボーディング） | minimal, gradient | シンプル、親切 |
+| Awareness (LP/Ad) | particles, gradient | Visual impact |
+| Interest (Intro) | gradient, cyberpunk | Approachability, cutting-edge |
+| Consideration (Feature demo) | minimal, corporate | Focus, trust |
+| Conviction (Architecture) | corporate, cyberpunk | Professional |
+| Retention (Onboarding) | minimal, gradient | Simple, welcoming |
 
 ---
 
-## Timing（タイミング）
+## Timing
 
-### タイミングパラメータ
+### Timing Parameters
 
-| Parameter | 用途 | 推奨値 |
+| Parameter | Use | Recommended Value |
 |-----------|------|--------|
-| **delay_before** | シーン開始前の待機 | 0-15f（0-500ms） |
-| **delay_after** | シーン終了後の待機 | 0-30f（0-1000ms） |
-| **audio_start_offset** | 音声開始オフセット | 30f（1000ms、標準） |
+| **delay_before** | Wait before scene starts | 0-15f (0-500ms) |
+| **delay_after** | Wait after scene ends | 0-30f (0-1000ms) |
+| **audio_start_offset** | Audio start offset | 30f (1000ms, standard) |
 
-### 使い分けガイドライン
+### Usage Guidelines
 
-#### delay_before（開始前待機）
-- **用途**:
-  - トランジション後の視覚的な落ち着き
-  - 前シーンの余韻
-  - 注意を引く間
+#### delay_before
+- **Use**:
+  - Visual settling after a transition
+  - Holding onto the previous scene's feeling
+  - A beat to draw attention
 
-- **推奨値**:
-  - `0f`: トランジションで十分な場合
-  - `5-10f`: 軽い間
-  - `15f`: しっかりした間
+- **Recommended values**:
+  - `0f`: When the transition provides enough pause
+  - `5-10f`: Light pause
+  - `15f`: Solid pause
 
 ```json
 {
@@ -408,16 +408,16 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-#### delay_after（終了後待機）
-- **用途**:
-  - 音声終了後の余韻
-  - CTA表示時間の確保
-  - 読む時間の確保
+#### delay_after
+- **Use**:
+  - Resonance after audio ends
+  - Time to absorb a CTA
+  - Time to read content
 
-- **推奨値**:
-  - `0f`: 即座に次へ
-  - `15-20f`: 標準的な余韻
-  - `30f`: しっかり読ませる
+- **Recommended values**:
+  - `0f`: Move immediately to the next
+  - `15-20f`: Standard resonance
+  - `30f`: Give them time to read
 
 ```json
 {
@@ -427,15 +427,15 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-#### audio_start_offset（音声開始オフセット）
-- **用途**:
-  - シーン表示後、音声開始までの待機
-  - 視覚的に落ち着いてから音声
+#### audio_start_offset
+- **Use**:
+  - Wait after scene appears before audio starts
+  - Audio starts once visuals have settled
 
-- **推奨値**:
-  - `30f`（1000ms）: 標準（推奨）
-  - `15f`（500ms）: 高速展開
-  - `45f`（1500ms）: ゆったり
+- **Recommended values**:
+  - `30f` (1000ms): Standard (recommended)
+  - `15f` (500ms): Fast-paced
+  - `45f` (1500ms): Leisurely
 
 ```json
 {
@@ -445,38 +445,38 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-### 音声同期の重要ルール
+### Critical Audio Sync Rules
 
-> **重要**: ナレーション付き動画では以下を厳守
+> **Important**: For narrated videos, strictly follow these rules:
 
-1. **シーン長さの計算式**:
+1. **Scene length calculation**:
    ```
-   duration_ms = audio_start_offset + 音声長さ + delay_after
+   duration_ms = audio_start_offset + audio_length + delay_after
    ```
 
-2. **音声長さの事前確認**:
+2. **Pre-check audio length**:
    ```bash
    ffprobe -v error -show_entries format=duration \
      -of default=noprint_wrappers=1:nokey=1 audio/scene.wav
    ```
 
-3. **トランジションとの調整**:
+3. **Adjustment with transitions**:
    ```
-   シーン開始 = 前シーン開始 + 前シーン長 - トランジション長
-   音声開始 = シーン開始 + audio_start_offset
+   Scene start = previous scene start + previous scene length - transition length
+   Audio start = scene start + audio_start_offset
    ```
 
-4. **余白の確保**:
-   - トランジション開始前に音声が終了すること
-   - 最低でも `delay_after: 20f` を確保
+4. **Ensure buffer**:
+   - Audio must finish before the transition begins
+   - Always maintain at least `delay_after: 20f`
 
 ---
 
-## ベストプラクティス
+## Best Practices
 
-### 1. ファネル別演出の組み合わせ
+### 1. Direction Combinations by Funnel Stage
 
-#### 90秒LP/広告ティザー（認知〜興味）
+#### 90-second LP/Ad Teaser (Awareness → Interest)
 ```json
 {
   "hook": {
@@ -500,7 +500,7 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-#### 3分Introデモ（興味→検討）
+#### 3-minute Intro Demo (Interest → Consideration)
 ```json
 {
   "intro": {
@@ -524,73 +524,73 @@ generate-videoスキルの視覚演出システムの使い分けとベストプ
 }
 ```
 
-### 2. 効果音の適切な使用
+### 2. Appropriate Use of Sound Effects
 
-**ルール**:
-- 1動画内で効果音は **最大5-7回** まで
-- 連続シーンでは効果音を控える（慣れによる効果減少）
-- high emphasis には必ず効果音を付ける
-- medium emphasis は選択的に
-- low emphasis は基本的に無音
+**Rules**:
+- No more than **5-7 sound effects** per video
+- Hold back on sound effects in consecutive scenes (diminishing returns from habituation)
+- Always include a sound effect for high emphasis
+- Sound effects for medium emphasis are optional
+- Low emphasis should generally be silent
 
-### 3. 背景の統一感
+### 3. Background Consistency
 
-**ルール**:
-- 1動画内で背景タイプは **2-3種類** まで
-- セクション単位で統一（section内は同じ背景）
-- Hook/CTAのみ特別な背景（particles）を許容
+**Rules**:
+- No more than **2-3 background types** per video
+- Unify within sections (same background within a section)
+- Special backgrounds (particles) are only permitted for Hook/CTA
 
-### 4. トランジションのリズム
+### 4. Transition Rhythm
 
-**ルール**:
-- 同じトランジションを3回以上連続させない
-- 高速展開（cut）と緩急（fade/zoom）を組み合わせる
-- セクション開始は fade または zoom を推奨
+**Rules**:
+- Do not use the same transition 3 times in a row
+- Combine fast-paced (cut) with slow-paced (fade/zoom)
+- Start sections with fade or zoom
 
-### 5. 強調レベルの配分
+### 5. Emphasis Level Distribution
 
-**ルール（90秒動画の場合）**:
-- high: 2-3回（Hook, Differentiator, CTA）
-- medium: 5-8回（主要メッセージ）
-- low: 適宜（補足情報）
-
----
-
-## 設計チェックリスト
-
-シーンの演出設計時に以下を確認：
-
-### トランジション
-- [ ] シーンの目的に合ったトランジションを選択
-- [ ] 同じトランジションの連続使用を避けている
-- [ ] duration_ms は適切か（fade: 500ms, slideIn: 400ms, zoom: 600ms）
-
-### 強調
-- [ ] 強調レベルは適切か（high: 最重要のみ）
-- [ ] 効果音の使用回数は適切か（全体で5-7回以内）
-- [ ] text配列に強調すべきキーワードを指定
-
-### 背景
-- [ ] ファネル段階に合った背景タイプを選択
-- [ ] セクション内で背景を統一
-- [ ] primaryColor, secondaryColor は指定したか
-
-### タイミング
-- [ ] audio_start_offset は 30f（標準）か
-- [ ] シーン長 = audio_start + 音声長 + delay_after
-- [ ] トランジション開始前に音声が終了する
-
-### 全体バランス
-- [ ] 効果音の使用は5-7回以内
-- [ ] 背景タイプは2-3種類以内
-- [ ] high emphasis は2-3回以内
+**Rules (for a 90-second video)**:
+- high: 2-3 times (Hook, Differentiator, CTA)
+- medium: 5-8 times (main messages)
+- low: as needed (supplementary information)
 
 ---
 
-## 関連ドキュメント
+## Scene Design Checklist
 
-- [generator.md](./generator.md) - 並列生成フロー
-- [visual-effects.md](./visual-effects.md) - 視覚エフェクトライブラリ
-- [schemas/direction.schema.json](../schemas/direction.schema.json) - 演出スキーマ定義
-- [schemas/emphasis.schema.json](../schemas/emphasis.schema.json) - 強調スキーマ定義
-- [schemas/animation.schema.json](../schemas/animation.schema.json) - アニメーションスキーマ定義
+Check the following when designing scene direction:
+
+### Transition
+- [ ] Selected a transition that matches the scene's purpose
+- [ ] Not using the same transition consecutively
+- [ ] duration_ms is appropriate (fade: 500ms, slideIn: 400ms, zoom: 600ms)
+
+### Emphasis
+- [ ] Emphasis level is appropriate (high: most important only)
+- [ ] Sound effect count is appropriate (5-7 total)
+- [ ] Keywords to emphasize are specified in the text array
+
+### Background
+- [ ] Background type matches the funnel stage
+- [ ] Background is unified within a section
+- [ ] primaryColor and secondaryColor are specified
+
+### Timing
+- [ ] audio_start_offset is 30f (standard)
+- [ ] Scene length = audio start + audio length + delay_after
+- [ ] Audio ends before the transition begins
+
+### Overall Balance
+- [ ] Sound effects are 5-7 or fewer
+- [ ] Background types are 2-3 or fewer
+- [ ] high emphasis is 2-3 times or fewer
+
+---
+
+## Related Documents
+
+- [generator.md](./generator.md) - Parallel generation flow
+- [visual-effects.md](./visual-effects.md) - Visual effects library
+- [schemas/direction.schema.json](../schemas/direction.schema.json) - Direction schema definition
+- [schemas/emphasis.schema.json](../schemas/emphasis.schema.json) - Emphasis schema definition
+- [schemas/animation.schema.json](../schemas/animation.schema.json) - Animation schema definition

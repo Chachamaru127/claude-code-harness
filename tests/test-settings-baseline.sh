@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 # test-settings-baseline.sh
-# Phase 62.1.4 + 62.2.5 (+ Phase 64 hardening): settings template baseline 検証
+# Phase 62.1.4 + 62.2.5 (+ Phase 64 hardening): settings template baseline validation
 #
-# 検証内容:
-#   (1) deniedDomains baseline が 9+ 件 (Phase 62.1.4 canonical baseline)
-#   (2) deniedDomains に metadata exfil endpoints (3 件) が含まれる
-#   (3) deniedDomains に Phase 62.1.4 paste-site/file-host 6 件が全て含まれる
-#   (4) skillOverrides は許容 (template に存在しても任意、強制しない)
-#   (5) `.claude-plugin/settings.json` と template が deniedDomains で完全一致
-#   (6) skillOverrides governance doc が存在
-#   (7) [Phase 64 SSOT-alignment] harness.toml と settings.json が deniedDomains で一致
-#       — sync drift regression 検知用 (be2a1781 follow-up)
+# Validation points:
+#   (1) deniedDomains baseline has 9+ entries (Phase 62.1.4 canonical baseline)
+#   (2) deniedDomains includes metadata exfil endpoints (3 entries)
+#   (3) deniedDomains includes all 6 Phase 62.1.4 paste-site/file-host entries
+#   (4) skillOverrides is optional (may exist in template but not enforced)
+#   (5) `.claude-plugin/settings.json` and template have identical deniedDomains
+#   (6) skillOverrides governance doc exists
+#   (7) [Phase 64 SSOT-alignment] harness.toml and settings.json deniedDomains match
+#       — sync drift regression detection (be2a1781 follow-up)
 
 set -euo pipefail
 
@@ -24,14 +24,14 @@ HARNESS_TOML="${ROOT_DIR}/harness.toml"
   exit 1
 }
 
-# (1) deniedDomains baseline が 9+ 件 in template (Phase 62.1.4 canonical baseline)
+# (1) deniedDomains baseline has 9+ entries in template (Phase 62.1.4 canonical baseline)
 TEMPLATE_DOMAINS_COUNT="$(jq -r '.sandbox.network.deniedDomains | length' "${SECURITY_TEMPLATE}")"
 if [ "${TEMPLATE_DOMAINS_COUNT}" -lt 9 ]; then
   echo "FAIL (1): ${SECURITY_TEMPLATE} has only ${TEMPLATE_DOMAINS_COUNT} deniedDomains; Phase 62.1.4 baseline requires 9+"
   exit 1
 fi
 
-# (2) metadata exfil endpoints (cloud metadata) 3 件
+# (2) metadata exfil endpoints (cloud metadata) — 3 required entries
 for required in '169.254.169.254' 'metadata.google.internal' 'metadata.azure.com'; do
   if ! jq -e --arg d "${required}" '.sandbox.network.deniedDomains | index($d) != null' "${SECURITY_TEMPLATE}" >/dev/null; then
     echo "FAIL (2): ${SECURITY_TEMPLATE} missing required metadata domain: ${required}"
@@ -39,7 +39,7 @@ for required in '169.254.169.254' 'metadata.google.internal' 'metadata.azure.com
   fi
 done
 
-# (3) Phase 62.1.4 paste-site/file-host additions (6 件全て必須)
+# (3) Phase 62.1.4 paste-site/file-host additions (all 6 required)
 for paste_site in 'pastebin.com' 'transfer.sh' '0x0.st' 'paste.ee' 'termbin.com' 'ix.io'; do
   if ! jq -e --arg d "${paste_site}" '.sandbox.network.deniedDomains | index($d) != null' "${SECURITY_TEMPLATE}" >/dev/null; then
     echo "FAIL (3): ${SECURITY_TEMPLATE} missing Phase 62.1.4 paste-site domain: ${paste_site}"
@@ -47,8 +47,8 @@ for paste_site in 'pastebin.com' 'transfer.sh' '0x0.st' 'paste.ee' 'termbin.com'
   fi
 done
 
-# (4) skillOverrides は許容 (任意)
-# 存在する場合は 3 mode のいずれかであること
+# (4) skillOverrides is optional (arbitrary)
+# If present, must be one of the 3 modes
 if jq -e 'has("skillOverrides")' "${SECURITY_TEMPLATE}" >/dev/null; then
   MODE="$(jq -r '.skillOverrides' "${SECURITY_TEMPLATE}")"
   case "${MODE}" in
@@ -59,12 +59,12 @@ if jq -e 'has("skillOverrides")' "${SECURITY_TEMPLATE}" >/dev/null; then
       ;;
   esac
 fi
-# template に skillOverrides が存在しないことは許容 (Phase 62.2.5 方針: harness-init は default を入れない)
+# skillOverrides absent from template is acceptable (Phase 62.2.5 policy: harness-init does not add a default)
 
-# (5) `.claude-plugin/settings.json` と template の deniedDomains 完全一致
-# Phase 64 hardening: Phase 62.1.4 では「user 手動同期」だったため WARN 扱いだったが、
-# harness.toml を SSOT に格上げした今、両者が drift していたら sync 漏れの sign。
-# 順序は問わず、集合として一致することを assert する。
+# (5) `.claude-plugin/settings.json` and template deniedDomains must be identical
+# Phase 64 hardening: Phase 62.1.4 treated this as WARN because sync was manual,
+# but now that harness.toml is the SSOT, any drift indicates a missed sync.
+# Assert set equality regardless of order.
 if [ -f "${PLUGIN_SETTINGS}" ]; then
   for required in '169.254.169.254' 'metadata.google.internal' 'metadata.azure.com'; do
     if ! jq -e --arg d "${required}" '.sandbox.network.deniedDomains | index($d) != null' "${PLUGIN_SETTINGS}" >/dev/null; then
@@ -76,21 +76,21 @@ if [ -f "${PLUGIN_SETTINGS}" ]; then
   PLUGIN_DOMAINS_COUNT="$(jq -r '.sandbox.network.deniedDomains | length' "${PLUGIN_SETTINGS}")"
   if [ "${PLUGIN_DOMAINS_COUNT}" -ne "${TEMPLATE_DOMAINS_COUNT}" ]; then
     echo "FAIL (5b): ${PLUGIN_SETTINGS} has ${PLUGIN_DOMAINS_COUNT} deniedDomains; template canonical has ${TEMPLATE_DOMAINS_COUNT}."
-    echo "  → harness.toml [safety.sandbox.network].deniedDomains を更新してから 'bin/harness sync' を実行してください"
+    echo "  → Update harness.toml [safety.sandbox.network].deniedDomains and run 'bin/harness sync'"
     exit 1
   fi
 
-  # 全 paste-site が settings.json にも含まれること
+  # All paste-sites must also be present in settings.json
   for paste_site in 'pastebin.com' 'transfer.sh' '0x0.st' 'paste.ee' 'termbin.com' 'ix.io'; do
     if ! jq -e --arg d "${paste_site}" '.sandbox.network.deniedDomains | index($d) != null' "${PLUGIN_SETTINGS}" >/dev/null; then
       echo "FAIL (5c): ${PLUGIN_SETTINGS} missing paste-site domain: ${paste_site}"
-      echo "  → SSOT (harness.toml) に追加して 'bin/harness sync' を実行してください"
+      echo "  → Add to SSOT (harness.toml) and run 'bin/harness sync'"
       exit 1
     fi
   done
 fi
 
-# (6) skillOverrides governance doc が存在 (Phase 62.2.5)
+# (6) skillOverrides governance doc must exist (Phase 62.2.5)
 SKILL_OVERRIDES_DOC="${ROOT_DIR}/docs/skill-overrides-policy.md"
 [ -f "${SKILL_OVERRIDES_DOC}" ] || {
   echo "FAIL (6): ${SKILL_OVERRIDES_DOC} not found (Phase 62.2.5)"
@@ -103,12 +103,12 @@ for required_mode in 'off' 'user-invocable-only' 'name-only'; do
   fi
 done
 
-# (7) Phase 64 SSOT-alignment: harness.toml と settings.json の deniedDomains 一致
-# be2a1781 follow-up:settings.json だけ手動編集して harness.toml を更新し忘れると、
-# 次の SessionStart hook で `bin/harness sync` が走り、6 件が消える事故を起こす。
-# harness.toml が真の SSOT なので、settings.json と件数・集合が一致しなければ FAIL。
+# (7) Phase 64 SSOT-alignment: harness.toml and settings.json deniedDomains must match
+# be2a1781 follow-up: manually editing only settings.json and forgetting to update harness.toml
+# causes `bin/harness sync` on the next SessionStart hook to delete those 6 entries.
+# harness.toml is the true SSOT, so count and set must match settings.json.
 if [ -f "${HARNESS_TOML}" ] && [ -f "${PLUGIN_SETTINGS}" ]; then
-  # harness.toml から deniedDomains の値だけを抽出 (TOML 配列を grep で簡易抽出)
+  # Extract only deniedDomains values from harness.toml (simple extraction of TOML array via grep)
   TOML_DOMAINS_COUNT="$(awk '
     /^\[safety\.sandbox\.network\]/ { in_section=1; next }
     /^\[/ && in_section { in_section=0 }
@@ -119,15 +119,15 @@ if [ -f "${HARNESS_TOML}" ] && [ -f "${PLUGIN_SETTINGS}" ]; then
   PLUGIN_DOMAINS_COUNT="$(jq -r '.sandbox.network.deniedDomains | length' "${PLUGIN_SETTINGS}")"
   if [ "${TOML_DOMAINS_COUNT}" -ne "${PLUGIN_DOMAINS_COUNT}" ]; then
     echo "FAIL (7): SSOT drift detected — harness.toml has ${TOML_DOMAINS_COUNT} deniedDomains but ${PLUGIN_SETTINGS} has ${PLUGIN_DOMAINS_COUNT}."
-    echo "  → 'bin/harness sync' を実行して同期してください (be2a1781 follow-up regression 防止)"
+    echo "  → Run 'bin/harness sync' to synchronize (be2a1781 follow-up regression prevention)"
     exit 1
   fi
 
-  # 各 paste-site が harness.toml にも書かれていること
+  # Each paste-site must also be listed in harness.toml
   for paste_site in 'pastebin.com' 'transfer.sh' '0x0.st' 'paste.ee' 'termbin.com' 'ix.io'; do
     if ! grep -q "\"${paste_site}\"" "${HARNESS_TOML}"; then
       echo "FAIL (7): SSOT missing — '${paste_site}' is in settings.json but not in harness.toml"
-      echo "  → harness.toml [safety.sandbox.network].deniedDomains に追加してください"
+      echo "  → Add to harness.toml [safety.sandbox.network].deniedDomains"
       exit 1
     fi
   done
@@ -166,7 +166,7 @@ for allowed_command in \
   fi
   if [ -f "${PLUGIN_SETTINGS}" ] && ! jq -e --arg c "${allowed_command}" '.permissions.allow | index($c) != null' "${PLUGIN_SETTINGS}" >/dev/null; then
     echo "FAIL (8b): ${PLUGIN_SETTINGS} missing permissions.allow entry: ${allowed_command}"
-    echo "  → harness.toml [safety.permissions].allow を更新してから 'bin/harness sync' を実行してください"
+    echo "  → Update harness.toml [safety.permissions].allow and run 'bin/harness sync'"
     exit 1
   fi
 done
@@ -183,4 +183,4 @@ for still_ask in \
   fi
 done
 
-echo "PASS: test-settings-baseline.sh (Phase 62.1.4 + 62.2.5 + Phase 64 SSOT-alignment + sandbox UX allowlist) — 8 観点"
+echo "PASS: test-settings-baseline.sh (Phase 62.1.4 + 62.2.5 + Phase 64 SSOT-alignment + sandbox UX allowlist) — 8 checks"

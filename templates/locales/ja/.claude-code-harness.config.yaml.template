@@ -5,16 +5,16 @@
 # If omitted, default values are used.
 
 # Language settings
-# 日本語テンプレートを明示選択した場合の設定です。
+# Set when the Japanese locale template was explicitly selected.
 i18n:
   language: ja
 
-# Plans.md の配置場所（デフォルト: "." = プロジェクトルート）
-# 例: ".claude/memory" にすると SSOT と統一配置
+# Location of Plans.md (default: "." = project root)
+# Example: setting ".claude/memory" co-locates it with SSOT files
 plansDirectory: "."
 
 advisor:
-  # Executor が必要なときだけ相談役を呼ぶ
+  # Call the advisor only when the executor needs it
   enabled: true
   mode: on-demand
   max_consults_per_task: 3

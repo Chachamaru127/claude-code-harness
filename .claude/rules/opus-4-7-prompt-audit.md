@@ -1,5 +1,5 @@
 ---
-description: Phase 44 / 2.1.111 の agent prompt 監査ルール
+description: Agent prompt audit rules for Phase 44 / 2.1.111
 globs:
   - "agents/worker.md"
   - "agents/reviewer.md"
@@ -10,81 +10,81 @@ globs:
 
 # Opus 4.7 Prompt Audit Rule
 
-Phase 44 / 2.1.111 で agent prompt と team composition を更新する時の監査基準。
+Audit standards for updating agent prompts and team composition in Phase 44 / 2.1.111.
 
-## 合格条件
+## Pass Conditions
 
-1. 行動指示には、次のどれかを必ず入れる。
-   - 実行コマンド名
-   - ファイルパス
-   - JSON schema 名
-   - 数値の閾値
-   - 真偽が判定できる条件
-2. 回数制御を書く時は上限を数字で書く。
-   - 例: `最大 3 回`
-   - 例: `同じ原因の失敗が 2 回続いたら`
-3. 出力形式を書く時は schema 名と列挙値を固定する。
+1. Behavioral instructions must always include at least one of the following:
+   - Name of the command to execute
+   - File path
+   - JSON schema name
+   - A numeric threshold
+   - A condition that can be evaluated as true or false
+2. When writing retry/count controls, express the upper limit as a number.
+   - Example: `maximum 3 times`
+   - Example: `if the same cause fails 2 times in a row`
+3. When writing output formats, fix the schema name and enumerated values.
    - `advisor-request.v1`
    - `advisor-response.v1`
    - `review-result.v1`
    - `worker-report.v1`
    - `PLAN | CORRECTION | STOP`
    - `APPROVE | REQUEST_CHANGES`
-   - `self_review[].rule` 列挙値 (default 6): `dry-violation-none | plans-cc-markers-untouched | all-declared-symbols-called | dod-items-verified-with-evidence | no-existing-test-regression | tdd-red-evidence-attached`
-   - `memory_updates[].scope` 列挙値: `universal | task-specific`（文字列配列は後方互換で `task-specific` 扱い）
-4. Codex 連携を書く時は wrapper command を使う。
-   - 許可: `bash scripts/codex-companion.sh task --write "..."`
-   - 許可: `bash scripts/codex-companion.sh review --base "${TASK_BASE_REF}"`
-   - 禁止: raw `codex exec` を agent 手順の標準手段として書く
-5. 2.1.111 の運用ノブは、agent 契約と operator entrypoint を分けて書く。
-   - `xhigh`: 呼び出し側が選ぶ推論強度。agent prompt が free-text marker から推測しない
-   - `/ultrareview`: 呼び出し側の review entrypoint。agent 定義側では `review-result.v1` を契約にする
-   - `--auto-mode`: opt-in rollout。既定値として書かない
-6. 権限と責務の境界は agent ごとに 1 行で判定できるようにする。
-   - Lead だけが teammate を spawn する
-   - Worker は `advisor-request.v1` を返し、Advisor を直接 spawn しない
-   - Reviewer は品質判定だけを行い、実装しない
-7. `team-composition.md` では、並列 worker 数の条件を数字で書く。
-   - `1`: 変更対象が 1 グループ、または書き込みファイルが重なる
-   - `2`: 独立した書き込みグループが 2 つ
-   - `3`: 独立した書き込みグループが 3 つ以上
-8. このフェーズでは `skills/`, `docs/`, `mirror` を更新対象に含めない。
+   - `self_review[].rule` enumerated values (default 6): `dry-violation-none | plans-cc-markers-untouched | all-declared-symbols-called | dod-items-verified-with-evidence | no-existing-test-regression | tdd-red-evidence-attached`
+   - `memory_updates[].scope` enumerated values: `universal | task-specific` (string arrays are treated as `task-specific` for backward compatibility)
+4. When writing Codex integration, use the wrapper command.
+   - Allowed: `bash scripts/codex-companion.sh task --write "..."`
+   - Allowed: `bash scripts/codex-companion.sh review --base "${TASK_BASE_REF}"`
+   - Prohibited: writing raw `codex exec` as the standard method in agent procedures
+5. Write the 2.1.111 operational knobs separately for agent contracts and operator entrypoints.
+   - `xhigh`: reasoning intensity chosen by the caller. Agent prompts must not infer this from free-text markers.
+   - `/ultrareview`: the caller's review entrypoint. On the agent definition side, use `review-result.v1` as the contract.
+   - `--auto-mode`: opt-in rollout. Do not write as the default value.
+6. Make the permission and responsibility boundary determinable in one line per agent.
+   - Only the Lead spawns teammates
+   - The Worker returns `advisor-request.v1` and does not spawn an Advisor directly
+   - The Reviewer only performs quality judgment and does not implement
+7. In `team-composition.md`, write the conditions for the number of parallel workers as numbers.
+   - `1`: the target for change is 1 group, or the files to be written overlap
+   - `2`: 2 independent groups of files to write
+   - `3`: 3 or more independent groups of files to write
+8. In this phase, do not include `skills/`, `docs/`, or `mirror` as update targets.
 
-## 曖昧語の扱い
+## Handling Vague Language
 
-次の語を使う場合は、直後の同じ文か次の箇条書きで条件を補う。
+When using any of the following terms, follow up immediately in the same sentence or the next bullet point with clarifying conditions:
 
-- `必要に応じて`
-- `適宜`
-- `適切に`
-- `十分に`
-- `柔軟に`
-- `しっかり`
-- `可能なら`
-- `場合によって`
-- `独立タスク`
-- `高リスク`
+- `as needed`
+- `as appropriate`
+- `appropriately`
+- `sufficiently`
+- `flexibly`
+- `properly`
+- `if possible`
+- `depending on the situation`
+- `independent task`
+- `high risk`
 
-補足がない場合は不合格とする。
+Failing to add a clarification results in a failed audit.
 
 ## Checklist
 
-- [ ] frontmatter に undocumented なキーを追加していない
-- [ ] `initialPrompt` の最初の 3 手以内に読むファイルか確認項目がある
-- [ ] retry / escalation / review loop の回数上限が数字で書かれている
-- [ ] output JSON の schema 名と列挙値が固定されている
-- [ ] `codex-companion.sh` を使う箇所で command 名が完全一致している
-- [ ] `ultrathink` のような旧 free-text marker を agent 契約に残していない
-- [ ] `xhigh` と `/ultrareview` を operator 側の指定として書いている
-- [ ] `--auto-mode` を既定値として書いていない
-- [ ] reviewer の verdict 条件が `critical | major | minor` と整合している
-- [ ] advisor の `STOP` 条件に `stop_reason` がある
-- [ ] team composition の spawn 権限が Lead に限定されている
+- [ ] No undocumented keys added to frontmatter
+- [ ] Within the first 3 steps of `initialPrompt`, there is a file to read or an item to confirm
+- [ ] The upper limit on the number of retries / escalations / review loops is written as a number
+- [ ] The schema name and enumerated values of output JSON are fixed
+- [ ] Wherever `codex-companion.sh` is used, the command name matches exactly
+- [ ] No legacy free-text markers like `ultrathink` remain in agent contracts
+- [ ] `xhigh` and `/ultrareview` are written as operator-side specifications
+- [ ] `--auto-mode` is not written as the default value
+- [ ] The reviewer's verdict conditions align with `critical | major | minor`
+- [ ] The advisor's `STOP` conditions include `stop_reason`
+- [ ] Spawn privileges in team composition are limited to the Lead
 
-## 推奨確認コマンド
+## Recommended Verification Commands
 
 ```bash
-rg -n "必要に応じて|適宜|適切に|十分に|柔軟に|しっかり|可能なら|場合によって" \
+rg -n "as needed|as appropriate|appropriately|sufficiently|flexibly|properly|if possible|depending on the situation" \
   agents/worker.md agents/reviewer.md agents/advisor.md agents/scaffolder.md agents/team-composition.md
 
 rg -n "codex exec|ultrathink|xhigh|/ultrareview|auto-mode|advisor-request.v1|advisor-response.v1|review-result.v1|worker-report.v1|REQUEST_CHANGES|PLAN|CORRECTION|STOP" \

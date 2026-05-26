@@ -1,11 +1,12 @@
 #!/bin/bash
 # log-tdd-red.sh
-# Phase 68 - TDD Red 証跡 JSONL 記録ヘルパー
+# Phase 68 - TDD Red evidence JSONL recording helper
 #
-# Worker が失敗テストを実行した際、その実行結果を
-# .claude/state/tdd-red-log/<task-id>.jsonl に append する。
-# 4 層強制 (L1 worker self_review / L2 reviewer critical / L3 R14 hook /
-# L4 validate-plugin compliance) が共通参照する single signal source。
+# When a Worker runs a failing test, appends the execution result to
+# .claude/state/tdd-red-log/<task-id>.jsonl.
+# Single signal source shared by all 4 enforcement layers
+# (L1 worker self_review / L2 reviewer critical / L3 R14 hook /
+# L4 validate-plugin compliance).
 #
 # Usage:
 #   bash scripts/log-tdd-red.sh \
@@ -18,19 +19,19 @@
 # Output (JSONL line appended to .claude/state/tdd-red-log/<task-id>.jsonl):
 #   {timestamp, task_id, test_file, exit_code, framework, stderr_tail, cwd_hash}
 #
-# Idempotent: 直前と同じ {test_file, exit_code} の entry は再記録しない。
-# Rotation: 500 行を超えたら末尾 400 行に切り詰める。
+# Idempotent: does not re-record an entry with the same {test_file, exit_code} as the previous one.
+# Rotation: trims to the last 400 lines when exceeding 500.
 
 set -euo pipefail
 
-# === パス解決 ===
+# === Path resolution ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "${SCRIPT_DIR}/path-utils.sh" ]; then
   # shellcheck source=/dev/null
   source "${SCRIPT_DIR}/path-utils.sh"
 fi
 
-# detect_project_root があれば使う、無ければ PROJECT_ROOT env か pwd
+# Use detect_project_root if available; otherwise fall back to PROJECT_ROOT env or pwd
 if command -v detect_project_root >/dev/null 2>&1; then
   PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 else
@@ -69,7 +70,7 @@ if [ -z "${TASK_ID}" ] || [ -z "${TEST_FILE}" ] || [ -z "${EXIT_CODE}" ]; then
   exit 1
 fi
 
-# task_id sanitization (path separator / shell metachar 除去)
+# task_id sanitization (strip path separators / shell metacharacters)
 SAFE_TASK_ID="$(printf '%s' "${TASK_ID}" | tr -c '[:alnum:]._-' '_')"
 if [ -z "${SAFE_TASK_ID}" ]; then
   echo "Error: --task-id sanitized to empty string" >&2
@@ -88,14 +89,14 @@ get_timestamp() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-# CWD のハッシュ (どこから記録されたかの追跡用、git worktree 衝突防止)
+# Hash of CWD (for tracking where the record was made; prevents git worktree collisions)
 cwd_hash() {
   if command -v sha256sum >/dev/null 2>&1; then
     printf '%s' "${PROJECT_ROOT}" | sha256sum | awk '{print substr($1, 1, 12)}'
   elif command -v shasum >/dev/null 2>&1; then
     printf '%s' "${PROJECT_ROOT}" | shasum -a 256 | awk '{print substr($1, 1, 12)}'
   else
-    # fallback: 先頭 12 文字 (安全側、衝突しても評価には影響しない)
+    # fallback: first 12 characters (safe side; collisions do not affect evaluation)
     printf '%s' "${PROJECT_ROOT}" | head -c 12
   fi
 }
@@ -110,7 +111,7 @@ rotate_jsonl() {
   fi
 }
 
-# Idempotent guard: 直前 1 行と同じ {test_file, exit_code} の重複を排除
+# Idempotent guard: deduplicate entries with the same {test_file, exit_code} as the last line
 is_duplicate_last() {
   local file="$1"
   local test_file="$2"
@@ -130,12 +131,12 @@ is_duplicate_last() {
   return 1
 }
 
-# === Compose entry ===
+# === Compose log entry ===
 TS="$(get_timestamp)"
 HASH="$(cwd_hash)"
 
 if is_duplicate_last "${LOG_FILE}" "${TEST_FILE}" "${EXIT_CODE}"; then
-  # 直前と同一なら idempotent skip (exit 0)
+  # Same as previous: idempotent skip (exit 0)
   exit 0
 fi
 
@@ -178,7 +179,7 @@ if [ -z "${log_entry}" ]; then
   exit 1
 fi
 
-# === Append + rotate ===
+# === Append and rotate ===
 printf '%s\n' "${log_entry}" >> "${LOG_FILE}"
 rotate_jsonl "${LOG_FILE}"
 

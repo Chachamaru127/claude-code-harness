@@ -3,22 +3,22 @@
 # Phase 65.4.1 - Plans.md → progress-snapshot.v1 JSON
 #
 # Purpose:
-#   Plans.md の task table から cc:todo / cc:wip / cc:done の件数と
-#   一覧を抽出し、harness-progress skill 用の snapshot JSON を生成する。
+#   Extract the cc:todo / cc:wip / cc:done counts and lists from the Plans.md
+#   task table and generate a snapshot JSON for the harness-progress skill.
 #
 # Usage:
 #   progress-snapshot.sh --plans <path> --project <name> [--state-file <path>]
 #
 # Schema: progress-snapshot.v1 (skills/harness-progress/schemas/)
 #
-# Plans.md format 想定:
+# Expected Plans.md format:
 #   | <number> | <title> | <DoD> | <Depends> | <Status> |
-#   Status は cc:todo / cc:wip / cc:done [hash]（旧 cc:TODO / cc:WIP / cc:完了 も読取可）
-#   pm:* は本 snapshot の対象外
+#   Status is cc:todo / cc:wip / cc:done [hash] (legacy cc:TODO / cc:WIP / cc:完了 also readable)
+#   pm:* markers are out of scope for this snapshot
 #
 # Optional: --state-file
-#   .claude/state/session-cost.json から elapsed_minutes / cost_so_far_usd
-#   等を読む (なければ全部 0)
+#   Reads elapsed_minutes / cost_so_far_usd etc. from .claude/state/session-cost.json
+#   (defaults to 0 for all fields if absent)
 
 set -euo pipefail
 
@@ -27,14 +27,14 @@ usage() {
 Usage: progress-snapshot.sh --plans <path> --project <name> [--state-file <path>]
 
 Required:
-  --plans <path>       Plans.md ファイルパス
-  --project <name>     project 名 (basename of repo)
+  --plans <path>       Plans.md file path
+  --project <name>     Project name (basename of repo)
 
 Optional:
-  --state-file <path>  session state JSON
-                       期待 fields: elapsed_minutes / estimated_total_minutes /
-                                   cost_so_far_usd / cost_estimate_usd
-                       なければ全て 0 で fallback
+  --state-file <path>  Session state JSON
+                       Expected fields: elapsed_minutes / estimated_total_minutes /
+                                        cost_so_far_usd / cost_estimate_usd
+                       Falls back to 0 for all fields if absent
 
 Exit: 0=success / 1=runtime error / 2=usage error
 USAGE
@@ -118,10 +118,10 @@ def to_float(s):
 COST_SO_FAR = to_float(os.environ["COST_SO_FAR_PY"])
 COST_ESTIMATE = to_float(os.environ["COST_ESTIMATE_PY"])
 
-# Plans.md の task 行を parse:
+# Parse task rows from Plans.md:
 #   "| 65.4.1 | <title> | <DoD> | <Depends> | cc:todo |"
 #   "| 65.4.1 | <title> | <DoD> | <Depends> | cc:done [a1b2c3d] |"
-# title は最初の `。` までを 1 行サマリとして使う
+# Use everything up to the first `。` as a one-line summary for title
 
 ROW_RE = re.compile(
     r"^\|\s*(\d+(?:\.\d+)*)\s*\|\s*(.+?)\s*\|\s*.+?\s*\|\s*.+?\s*\|\s*(cc:\S+(?:\s*\[[a-f0-9]+\])?)\s*\|\s*$"
@@ -137,7 +137,7 @@ with open(PLANS_PATH, "r", encoding="utf-8") as f:
         if not m:
             continue
         number, title, status = m.group(1), m.group(2), m.group(3)
-        # title 短縮: 最初の "。" で切る、なければ 80 文字まで
+        # Shorten title: cut at the first "。", otherwise limit to 80 characters
         short_title = title.split("。")[0]
         if len(short_title) > 80:
             short_title = short_title[:77] + "..."
@@ -159,8 +159,8 @@ else:
 
 current_task = wip[0]["title"] if wip else ""
 
-# Derived helpers (render-html.sh の section 展開用)
-done_recent = done[-5:][::-1]  # 最新 5 件、新しい順
+# Derived helpers (for render-html.sh section expansion)
+done_recent = done[-5:][::-1]  # Latest 5 items, newest first
 
 snapshot = {
     "schema": "progress-snapshot.v1",

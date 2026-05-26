@@ -1,6 +1,6 @@
 package hookhandler
 
-// task_completed_timeline.go - タイムライン記録・Breezing シグナル管理
+// task_completed_timeline.go - Timeline recording and Breezing signal management
 
 import (
 	"bufio"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// timelineEntry は breezing-timeline.jsonl の1行分エントリ。
+// timelineEntry is a single-line entry in breezing-timeline.jsonl.
 type timelineEntry struct {
 	Event        string `json:"event"`
 	Teammate     string `json:"teammate"`
@@ -25,7 +25,7 @@ type timelineEntry struct {
 	FailureCount string `json:"failure_count,omitempty"`
 }
 
-// signalEntry は breezing-signals.jsonl の1行分エントリ。
+// signalEntry is a single-line entry in breezing-signals.jsonl.
 type signalEntry struct {
 	Signal    string `json:"signal"`
 	SessionID string `json:"session_id"`
@@ -34,7 +34,7 @@ type signalEntry struct {
 	Timestamp string `json:"timestamp"`
 }
 
-// breezingActiveJSON は breezing-active.json のスキーマ（必要フィールドのみ）。
+// breezingActiveJSON is the schema for breezing-active.json (required fields only).
 type breezingActiveJSON struct {
 	SessionID string `json:"session_id"`
 	Batching  *struct {
@@ -46,12 +46,12 @@ type breezingActiveJSON struct {
 	PlansMDMapping map[string]json.RawMessage `json:"plans_md_mapping"`
 }
 
-// utcNow は現在時刻を RFC3339 UTC 形式で返す。
+// utcNow returns the current time in RFC3339 UTC format.
 func utcNow() string {
 	return time.Now().UTC().Format(time.RFC3339)
 }
 
-// sanitizeInlineText は改行・パイプ・連続スペースを除去する。
+// sanitizeInlineText removes newlines, pipes, and consecutive spaces.
 func sanitizeInlineText(s string) string {
 	s = strings.ReplaceAll(s, "\n", " ")
 	s = strings.ReplaceAll(s, "|", " ")
@@ -61,7 +61,7 @@ func sanitizeInlineText(s string) string {
 	return s
 }
 
-// appendTimeline はタイムラインファイルにエントリを追記し、500行超でローテーションする。
+// appendTimeline appends an entry to the timeline file and rotates when over 500 lines.
 func (h *taskCompletedHandler) appendTimeline(entry timelineEntry) {
 	data, err := json.Marshal(entry)
 	if err != nil {
@@ -80,15 +80,15 @@ func (h *taskCompletedHandler) appendTimeline(entry timelineEntry) {
 	_ = rotateJSONL(h.timelineFile, 500, 400)
 }
 
-// updateBreezingSignals は Breezing セッションのシグナル（50%/60%/完了）を管理する。
-// totalTasks と completedCount を返す。
+// updateBreezingSignals manages Breezing session signals (50%/60%/complete).
+// Returns totalTasks and completedCount.
 func (h *taskCompletedHandler) updateBreezingSignals(taskID, ts string) (totalTasks, completedCount int) {
 	activeFile := filepath.Join(h.stateDir, "breezing-active.json")
 	if _, err := os.Stat(activeFile); err != nil {
 		return 0, 0
 	}
 
-	// breezing-active.json を読み取る
+	// Read breezing-active.json
 	raw, err := os.ReadFile(activeFile)
 	if err != nil {
 		return 0, 0
@@ -100,7 +100,7 @@ func (h *taskCompletedHandler) updateBreezingSignals(taskID, ts string) (totalTa
 
 	sessionID := active.SessionID
 
-	// バッチ ID リストと合計タスク数を取得
+	// Get batch ID list and total task count
 	var batchIDs []string
 	if active.Batching != nil {
 		for _, batch := range active.Batching.Batches {
@@ -111,7 +111,7 @@ func (h *taskCompletedHandler) updateBreezingSignals(taskID, ts string) (totalTa
 			}
 		}
 	}
-	// バッチ情報がない場合は plans_md_mapping のキーを使用
+	// Use plans_md_mapping keys when batch information is absent
 	if totalTasks == 0 && len(active.PlansMDMapping) > 0 {
 		for k := range active.PlansMDMapping {
 			batchIDs = append(batchIDs, k)
@@ -119,12 +119,12 @@ func (h *taskCompletedHandler) updateBreezingSignals(taskID, ts string) (totalTa
 		totalTasks = len(batchIDs)
 	}
 
-	// タイムラインから完了数をカウント
+	// Count completed tasks from the timeline
 	completedCount = h.countCompleted(batchIDs)
 
 	signalsFile := filepath.Join(h.stateDir, "breezing-signals.jsonl")
 
-	// 50% 完了シグナル（HALF > 1 ガード: バッチサイズ 1-2 では不要）
+	// 50% completion signal (HALF > 1 guard: not needed for batch sizes 1-2)
 	if totalTasks > 0 {
 		half := (totalTasks + 1) / 2
 		if completedCount >= half && half > 1 {
@@ -139,7 +139,7 @@ func (h *taskCompletedHandler) updateBreezingSignals(taskID, ts string) (totalTa
 			}
 		}
 
-		// 60% 完了シグナル（切り上げ計算）
+		// 60% completion signal (ceiling calculation)
 		sixtyPct := (totalTasks*60 + 99) / 100
 		if sixtyPct > 0 && completedCount >= sixtyPct {
 			if !signalExists(signalsFile, "next_batch_recommended", sessionID) {
@@ -157,7 +157,7 @@ func (h *taskCompletedHandler) updateBreezingSignals(taskID, ts string) (totalTa
 	return totalTasks, completedCount
 }
 
-// countCompleted はタイムラインから指定バッチIDの完了数をカウントする。
+// countCompleted counts the number of completed items for the given batch IDs from the timeline.
 func (h *taskCompletedHandler) countCompleted(batchIDs []string) int {
 	if _, err := os.Stat(h.timelineFile); err != nil {
 		return 0
@@ -169,13 +169,13 @@ func (h *taskCompletedHandler) countCompleted(batchIDs []string) int {
 	}
 	defer f.Close()
 
-	// バッチIDをセットに変換
+	// Convert batch IDs to a set
 	idSet := make(map[string]bool, len(batchIDs))
 	for _, id := range batchIDs {
 		idSet[strings.TrimSpace(id)] = true
 	}
 
-	// タイムラインを走査し、各バッチ ID の完了を確認（1ID につき max 1 カウント）
+	// Scan timeline and confirm completion for each batch ID (max 1 count per ID)
 	found := make(map[string]bool)
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
@@ -194,7 +194,7 @@ func (h *taskCompletedHandler) countCompleted(batchIDs []string) int {
 	return len(found)
 }
 
-// signalExists は指定シグナルがセッションスコープで既に記録されているか確認する。
+// signalExists checks whether the specified signal has already been recorded in the session scope.
 func signalExists(signalsFile, sigType, sessionID string) bool {
 	f, err := os.Open(signalsFile)
 	if err != nil {
@@ -218,7 +218,7 @@ func signalExists(signalsFile, sigType, sessionID string) bool {
 	return false
 }
 
-// appendSignal はシグナルを breezing-signals.jsonl に追記する。
+// appendSignal appends a signal to breezing-signals.jsonl.
 func appendSignal(signalsFile string, entry signalEntry) {
 	data, err := json.Marshal(entry)
 	if err != nil {

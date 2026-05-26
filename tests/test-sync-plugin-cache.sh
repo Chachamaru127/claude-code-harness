@@ -24,8 +24,8 @@ mkdir -p \
   "${MARKETPLACE_DIR}/skills/harness-release-internal" \
   "${MARKETPLACE_DIR}/docs/private"
 
-# 古い/欠落したキャッシュと marketplace copy を用意して、CLAUDE_PLUGIN_ROOT を
-# plugin root として渡したときに正しく同期元解決できることを確認する。
+# Prepare stale/missing cache and marketplace copy, then verify that
+# the script correctly resolves the sync source when CLAUDE_PLUGIN_ROOT is passed as plugin root.
 printf 'stale\n' > "${CACHE_DIR}/VERSION"
 printf 'stale\n' > "${MARKETPLACE_DIR}/VERSION"
 printf 'stale\n' > "${CACHE_DIR}/codex/.codex/skills/x-article/SKILL.md"
@@ -38,8 +38,8 @@ printf '{"hooks":{"SessionStart":[{"hooks":[{"command":"\"${CLAUDE_PLUGIN_ROOT}/
 
 HOME="${TMP_HOME}" CLAUDE_PLUGIN_ROOT="${ROOT_DIR}" bash "${ROOT_DIR}/scripts/sync-plugin-cache.sh" >/dev/null 2>&1
 
-# 間違った CLAUDE_PLUGIN_ROOT が来ても、script path から実際の plugin root へ
-# 戻れることを確認する。hook 実行環境の変数揺れに対する回帰テスト。
+# Verify that even with a wrong CLAUDE_PLUGIN_ROOT, the script can recover the
+# actual plugin root from its script path. Regression test for variable drift in hook environments.
 INVALID_ROOT="${TMP_HOME}/not-a-plugin-root"
 mkdir -p "${INVALID_ROOT}"
 HOME="${TMP_HOME}" CLAUDE_PLUGIN_ROOT="${INVALID_ROOT}" bash "${ROOT_DIR}/scripts/sync-plugin-cache.sh" >/dev/null 2>&1

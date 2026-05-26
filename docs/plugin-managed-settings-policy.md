@@ -1,77 +1,82 @@
 # Plugin and Managed Settings Policy
 
-最終更新: 2026-05-03
+Last updated: 2026-05-03
 
-この文書は Claude Code `2.1.117-2.1.126` で増えた plugin / managed settings / managed sandbox まわりの運用判断を、Harness の setup guidance として固定するためのものです。
+This document fixes the operational decisions around plugin / managed settings / managed sandbox
+features added in Claude Code `2.1.117-2.1.126` as Harness setup guidance.
 
-## ひとことで
+## In one sentence
 
-Harness は plugin marketplace の安全運用を説明で支援するが、Claude Code 本体の resolver や managed settings enforcement を置き換えない。
+Harness helps explain safe operation of the plugin marketplace, but does not replace Claude Code
+core's resolver or managed settings enforcement.
 
-## たとえると
+## Analogy
 
-会社の入館管理で、Harness は「どの入口を社員に案内するか」を書いた案内板です。
-実際に入館証を検査する改札機は Claude Code 本体です。
-案内板が独自の改札機を作ると、ルールが二重になり、どちらが正しいか分からなくなるためです。
+Think of Harness as a sign board that tells staff which entrance to use when entering a building.
+The actual turnstile checking badges is Claude Code core.
+If the sign board built its own turnstile, the rules would be duplicated and it would be unclear
+which one is correct.
 
-## 公式参照
+## Official references
 
 - Claude Code changelog: <https://code.claude.com/docs/en/changelog>
 - Claude Code settings: <https://code.claude.com/docs/en/settings>
 - Claude Code plugin dependency versions: <https://code.claude.com/docs/en/plugin-dependencies>
 - Claude Code plugin install guide: <https://code.claude.com/docs/en/discover-plugins>
 
-## 対象と判断
+## Items and decisions
 
-| 項目 | 用途 | Harness 判断 |
+| Item | Purpose | Harness decision |
 |------|------|--------------|
-| plugin `themes/` directory | plugin が見た目のテーマを同梱する | plugin `themes/` directory は今回は P。Harness は運用支援 plugin なので、現時点では theme を同梱しない |
-| `DISABLE_AUTOUPDATER` | 自動更新を止める | 個人・チームの更新タイミング調整に使う。manual update までは止めない |
-| `DISABLE_UPDATES` | すべての更新経路を止める | 管理環境でだけ使う。DISABLE_UPDATES は手動 `claude update` まで止める |
-| `blockedMarketplaces` | 特定 marketplace source をブロックする | managed settings 専用。通常ユーザー向け default には入れない |
-| `strictKnownMarketplaces` | 許可された marketplace source だけ追加できるようにする | managed settings 専用。通常ユーザー向け default には入れない |
-| `extraKnownMarketplaces` | チームで使う marketplace を案内・登録する | 通常の team onboarding にはこちらを優先する |
-| plugin dependency auto-resolve / missing dependency hints | 依存 plugin の自動解決とエラー案内 | Harness 独自の dependency resolver は追加しない。Claude Code 本体に任せる |
-| `wslInheritsWindowsSettings` | Windows 側 managed settings を WSL に継承する | Windows / WSL 混在企業環境の候補。Harness default には入れない |
-| `allowManagedDomainsOnly` / `allowManagedReadPathsOnly` | managed sandbox の許可境界を管理者設定に寄せる | managed settings only。Harness の通常 template / plugin default / harness.toml には入れず、Claude Code 本体の precedence を上書きしない |
+| Plugin `themes/` directory | Bundle appearance themes with plugin | P for now. Harness is an operational plugin and does not include themes at this time |
+| `DISABLE_AUTOUPDATER` | Stop automatic updates | Use for personal / team update timing control. Does not stop manual updates |
+| `DISABLE_UPDATES` | Stop all update paths | Use only in managed environments. Stops even manual `claude update` |
+| `blockedMarketplaces` | Block specific marketplace sources | Managed settings only. Do not include in defaults for normal users |
+| `strictKnownMarketplaces` | Allow only approved marketplace sources | Managed settings only. Do not include in defaults for normal users |
+| `extraKnownMarketplaces` | Introduce and register marketplaces for teams | Prefer this for normal team onboarding |
+| Plugin dependency auto-resolve / missing dependency hints | Automatic resolution of dependent plugins and error guidance | Do not add a Harness-specific dependency resolver. Defer to Claude Code core |
+| `wslInheritsWindowsSettings` | Inherit Windows managed settings in WSL | For Windows/WSL mixed enterprise environments. Do not include in Harness defaults |
+| `allowManagedDomainsOnly` / `allowManagedReadPathsOnly` | Align allowed sandbox boundaries with admin settings | Managed settings only. Do not include in Harness standard template / plugin default / harness.toml, and do not override Claude Code core precedence |
 
 ## Update controls
 
-`DISABLE_AUTOUPDATER` は、自動更新を止めるための環境変数です。
-Claude Code 本体と plugin の自動更新を止めたい時に使います。
+`DISABLE_AUTOUPDATER` is an environment variable for stopping automatic updates.
+Use it when you want to stop automatic updates for Claude Code core and plugins.
 
-`DISABLE_UPDATES` は、より強い管理用の環境変数です。
-自動更新だけでなく、手動の `claude update` も止めます。
-これは、企業が検証済みバージョンだけを配るような環境向けです。
+`DISABLE_UPDATES` is a stronger environment variable for managed environments.
+It stops not just automatic updates but also manual `claude update`.
+This is intended for environments where organizations distribute only verified versions.
 
-| 目的 | 使うもの | 注意点 |
+| Purpose | What to use | Note |
 |------|----------|--------|
-| 個人が勝手に更新されるのを避けたい | `DISABLE_AUTOUPDATER=1` | 手動更新は残る |
-| IT 管理者が更新経路を完全に閉じたい | `DISABLE_UPDATES=1` | 手動 `claude update` も止まるため、配布・更新手順を別途用意する |
-| Claude Code 本体更新は止め、plugin 自動更新は残したい | `DISABLE_AUTOUPDATER=1` + `FORCE_AUTOUPDATE_PLUGINS=1` | plugin 側の依存 constraint と marketplace policy を先に確認する |
+| Prevent personal auto-updates | `DISABLE_AUTOUPDATER=1` | Manual update still possible |
+| IT admin fully closes update paths | `DISABLE_UPDATES=1` | Manual `claude update` also stops; provide separate distribution/update procedures |
+| Stop CC core updates while keeping plugin auto-update | `DISABLE_AUTOUPDATER=1` + `FORCE_AUTOUPDATE_PLUGINS=1` | Confirm plugin-side dependency constraints and marketplace policy first |
 
-Harness の方針:
+Harness policy:
 
-- `.claude-plugin/settings.json` や project template に `DISABLE_UPDATES` を既定値として入れない。
-- 企業配布では managed settings または端末管理の環境変数として設定する。
-- update を止める場合でも、`harness-release` の version sync / plugin tag / validate flow は維持する。
+- Do not include `DISABLE_UPDATES` as a default in `.claude-plugin/settings.json` or project templates.
+- Set it via managed settings or terminal management environment variables for enterprise distribution.
+- Even when updates are stopped, maintain `harness-release` version sync / plugin tag / validate flow.
 
 ## Marketplace policy
 
-`blockedMarketplaces` と `strictKnownMarketplaces` は、管理者が marketplace source を制御するための managed settings です。
-通常ユーザーや open-source project の default に入れるものではありません。
+`blockedMarketplaces` and `strictKnownMarketplaces` are managed settings for administrators
+to control marketplace sources. They are not intended for defaults in normal user or
+open-source project configurations.
 
-| 設定 | 何をするか | 向いている場面 |
+| Setting | What it does | When to use |
 |------|------------|----------------|
-| `blockedMarketplaces` | 指定した marketplace source をブロックする | 危険・非推奨の marketplace を明示的に止めたい |
-| `strictKnownMarketplaces` | 許可リストにある marketplace source だけ追加できる | 企業で vetted marketplace だけ使わせたい |
-| `extraKnownMarketplaces` | marketplace を案内・登録する | チームに推奨 marketplace を配りたい |
+| `blockedMarketplaces` | Blocks specified marketplace sources | When you want to explicitly stop dangerous/deprecated marketplaces |
+| `strictKnownMarketplaces` | Only allows sources in the allowlist | When you want an enterprise to use only vetted marketplaces |
+| `extraKnownMarketplaces` | Introduces and registers marketplaces | When you want to distribute recommended marketplaces to a team |
 
-`strictKnownMarketplaces` は policy gate です。
-許可するかどうかを決めるだけで、marketplace を自動登録するわけではありません。
-全員に登録もさせたい場合は、managed settings で `strictKnownMarketplaces` と `extraKnownMarketplaces` を組み合わせます。
+`strictKnownMarketplaces` is a policy gate.
+It only decides what to allow — it does not automatically register marketplaces.
+If you also want everyone to register, combine `strictKnownMarketplaces` with
+`extraKnownMarketplaces` in managed settings.
 
-例:
+Example:
 
 ```json
 {
@@ -89,47 +94,53 @@ Harness の方針:
 }
 ```
 
-Harness の方針:
+Harness policy:
 
-- 通常ユーザー向け default には `blockedMarketplaces` / `strictKnownMarketplaces` を入れない。
-- Harness の setup は、チーム onboarding では `extraKnownMarketplaces` を案内する。
-- 企業管理環境では、managed settings の最上位 precedence に任せる。
-- Harness 独自の marketplace allowlist / blocklist evaluator は実装しない。
+- Do not include `blockedMarketplaces` / `strictKnownMarketplaces` in defaults for normal users.
+- For team onboarding, Harness setup guides `extraKnownMarketplaces`.
+- For enterprise managed environments, defer to the managed settings top-level precedence.
+- Do not implement a Harness-specific marketplace allowlist/blocklist evaluator.
 
 ## Dependency resolution
 
-Claude Code は plugin の `dependencies` を読み、インストール時に依存 plugin を自動解決します。
-依存が後から欠けた場合も、`/reload-plugins`、background plugin auto-update、`claude plugin install` の再実行、または `claude plugin marketplace add` により、設定済み marketplace から解決されます。
+Claude Code reads a plugin's `dependencies` and auto-resolves dependent plugins at install time.
+If a dependency later goes missing, it can be resolved from configured marketplaces via
+`/reload-plugins`, background plugin auto-update, re-running `claude plugin install`, or
+`claude plugin marketplace add`.
 
-依存関係が解決できない場合は、Claude Code 側の plugin UI、`/doctor`、`claude plugin list --json` の `errors` を見るのが正しい入口です。
-Harness 独自の dependency resolver は追加しない。
+When dependency resolution fails, the correct entry points are Claude Code's plugin UI,
+`/doctor`, and the `errors` field in `claude plugin list --json`.
+Do not add a Harness-specific dependency resolver.
 
-Harness がすること:
+What Harness does:
 
-- setup docs で、missing dependency は Claude Code の hint に従うよう案内する。
-- release docs では `claude plugin tag` と version constraint を使い、依存解決しやすい tag を作る。
-- marketplace が未登録なら、先に `/plugin marketplace add` または `claude plugin marketplace add` を使うよう案内する。
+- In setup docs, guide users to follow Claude Code hints for missing dependencies.
+- In release docs, use `claude plugin tag` and version constraints to create easily resolvable tags.
+- If a marketplace is not registered, guide users to first use `/plugin marketplace add` or
+  `claude plugin marketplace add`.
 
-Harness がしないこと:
+What Harness does not do:
 
-- plugin を別 marketplace から勝手に探して install しない。
-- `dependencies` を独自解釈して cache を直接書き換えない。
-- `blockedMarketplaces` / `strictKnownMarketplaces` を迂回する resolver を作らない。
+- Do not automatically search for and install plugins from other marketplaces.
+- Do not directly write to the cache using custom interpretation of `dependencies`.
+- Do not build a resolver that bypasses `blockedMarketplaces` / `strictKnownMarketplaces`.
 
 ## Plugin prune
 
-`claude plugin prune` は、不要になった自動インストール dependency plugin を削除する cleanup command です。
-Claude Code が別 plugin の `dependencies` を満たすために入れた plugin が対象であり、ユーザーが直接入れた plugin を勝手に消す用途ではありません。
+`claude plugin prune` is a cleanup command that removes automatically installed dependency
+plugins that are no longer needed. It targets plugins installed by Claude Code to satisfy
+another plugin's `dependencies`, not plugins installed directly by the user.
 
-Harness の方針:
+Harness policy:
 
-- plugin uninstall 後の cleanup 案内として使う。
-- まず `claude plugin prune --dry-run` を案内する。
-- 非対話 CI で実行する場合だけ `-y` を使う。
-- release / setup の中で無条件に実行しない。
-- `${CLAUDE_PLUGIN_DATA}` に残すべき state がある場合は、uninstall 側の `--keep-data` を検討する。
+- Use as cleanup guidance after plugin uninstall.
+- First guide users to `claude plugin prune --dry-run`.
+- Use `-y` only for non-interactive CI runs.
+- Do not run unconditionally inside release / setup.
+- If there is state in `${CLAUDE_PLUGIN_DATA}` that should be preserved, consider
+  `--keep-data` on the uninstall side.
 
-推奨例:
+Recommended usage:
 
 ```bash
 claude plugin prune --dry-run
@@ -138,16 +149,18 @@ claude plugin prune -y
 
 ## Project purge
 
-`claude project purge [path]` は、Claude Code が project に持つ transcripts、tasks、file history、config entry を削除する強い cleanup command です。
+`claude project purge [path]` is a strong cleanup command that deletes the transcripts,
+tasks, file history, and config entries that Claude Code holds for a project.
 
-Harness の方針:
+Harness policy:
 
-- archive、handoff、path / owner 変更など、local Claude state を消す理由が明確な時だけ案内する。
-- まず `--dry-run` または `--interactive` を使う。
-- 進行中の task、review evidence、handoff 証跡が必要な時は使わない。
-- Harness の `Plans.md` や git 履歴の代替 cleanup として扱わない。
+- Only guide this when there is a clear reason to delete local Claude state, such as
+  archiving, handoff, or path/owner changes.
+- First use `--dry-run` or `--interactive`.
+- Do not use when there are in-progress tasks, review evidence, or handoff artifacts that are needed.
+- Do not treat as an alternative cleanup for Harness's `Plans.md` or git history.
 
-推奨例:
+Recommended usage:
 
 ```bash
 claude project purge . --dry-run
@@ -156,73 +169,82 @@ claude project purge . --interactive
 
 ## Plugin-bundled hooks
 
-Plugin に hooks を同梱できるが、Harness では「plugin を入れただけで強い副作用が走る」設計を避ける。
+Plugins can include bundled hooks, but Harness avoids designs where "installing a plugin
+triggers strong side effects immediately."
 
-Harness の方針:
+Harness policy:
 
-- bundled hooks は opt-in を基本にする。
-- 書き込み、push、deploy、外部送信、tool output 改変は既定無効にする。
-- `PostToolUse.hookSpecificOutput.updatedToolOutput` を使う場合は `docs/output-governance.md` に従う。
-- hook の stdout は JSON contract を守り、人間向けログは stderr に出す。
+- Base bundled hooks on opt-in.
+- Disable by default: writes, push, deploy, external transmission, and tool output modification.
+- When using `PostToolUse.hookSpecificOutput.updatedToolOutput`, follow `docs/output-governance.md`.
+- Hook stdout must maintain the JSON contract; human-readable logs go to stderr.
 
-理由:
+Reason:
 
-plugin は信頼境界に近い。
-ユーザーが有効化しただけで project の挙動が大きく変わると、原因追跡と安全確認が難しくなる。
+Plugins are close to the trust boundary.
+If a project's behavior changes dramatically just by the user enabling a plugin, root cause
+analysis and safety verification become difficult.
 
 ## Themes decision
 
-Claude Code `2.1.118` では `/theme` で named custom themes を作成・切替でき、plugin が `themes/` directory を同梱できるようになりました。
+With Claude Code `2.1.118`, named custom themes can be created/switched with `/theme`,
+and plugins can now bundle a `themes/` directory.
 
-今回の判断:
+Current decision:
 
-- Harness は theme を今回同梱しない。
-- Phase 53 では `P: 将来タスク` に留める。
-- 理由は、Harness の主価値が Plan / Work / Review の運用安全性であり、配布 theme は brand・アクセシビリティ・terminal 対応の別レビューが必要だから。
+- Harness does not bundle themes at this time.
+- Keeping it as `P: future task` in Phase 53.
+- Reason: Harness's primary value is operational safety for Plan / Work / Review, and
+  distributed themes require separate review for branding, accessibility, and terminal compatibility.
 
-将来 theme を入れるなら、次を満たしてからにします。
+Requirements before including a theme in the future:
 
-1. light / dark terminal で読みやすい。
-2. `/plugin` badges や warning text が潰れない。
-3. Harness の docs / screenshot / release copy と一貫する。
-4. theme がなくても機能は完全に動く。
+1. Readable in light / dark terminals.
+2. `/plugin` badges and warning text are not obscured.
+3. Consistent with Harness docs / screenshots / release copy.
+4. Features work fully even without the theme.
 
 ## Windows / WSL managed settings
 
-`wslInheritsWindowsSettings` は、Windows 側の managed settings を WSL へ継承したい企業環境向けです。
-Windows と WSL の両方で Claude Code を使う会社では、設定の二重管理を減らせます。
+`wslInheritsWindowsSettings` is for enterprise environments that want to inherit Windows
+managed settings into WSL. Companies using Claude Code on both Windows and WSL can reduce
+the overhead of managing settings in two places.
 
-Harness の方針:
+Harness policy:
 
-- Harness default には入れない。
-- Windows / WSL の端末管理をしている組織だけが検討する。
-- WSL 側で意図せず強い policy が入ると開発体験に影響するため、`/status` で active settings source を確認してから運用する。
+- Do not include in Harness defaults.
+- Only consider this for organizations that manage Windows / WSL terminals.
+- Since unintentionally strong policies in WSL can affect the development experience,
+  confirm active settings sources with `/status` before deploying.
 
 ## Managed sandbox precedence
 
-Claude Code `2.1.126` では、`allowManagedDomainsOnly` と
-`allowManagedReadPathsOnly` の precedence hardening が入りました。
+Claude Code `2.1.126` introduced precedence hardening for `allowManagedDomainsOnly` and
+`allowManagedReadPathsOnly`.
 
-これは、管理者が「この範囲だけを許可する」と決めた sandbox 境界を、
-project-local な template や plugin default が緩めないようにする安全側の変更です。
+This is a safety-side change that prevents project-local templates or plugin defaults
+from relaxing the sandbox boundary that administrators have set for "allow only this range."
 
-Harness の方針:
+Harness policy:
 
-- `allowManagedDomainsOnly` / `allowManagedReadPathsOnly` は managed settings only として扱う。
-- Harness の通常配布物である `harness.toml`、`.claude-plugin/settings.json`、
-  `templates/claude/settings.security.json.template`、
-  `templates/sandbox-settings.json.template` には既定値として入れない。
-- 企業管理環境で使う場合は、端末管理または Claude Code の managed settings を
-  source of truth にする。
-- Harness は独自に managed sandbox resolver を作らない。
-- `scripts/ci/check-consistency.sh` は、これらの managed-only key が通常 template
-  に混入していないことを回帰チェックする。
+- Treat `allowManagedDomainsOnly` / `allowManagedReadPathsOnly` as managed-settings-only.
+- Do not include as defaults in Harness's standard distribution items:
+  `harness.toml`, `.claude-plugin/settings.json`,
+  `templates/claude/settings.security.json.template`,
+  `templates/sandbox-settings.json.template`.
+- For enterprise managed environments, use terminal management or Claude Code managed settings
+  as the source of truth.
+- Do not build a Harness-specific managed sandbox resolver.
+- `scripts/ci/check-consistency.sh` performs regression checks to ensure these managed-only
+  keys are not mixed into standard templates.
 
 ## Why this way
 
-Plugin marketplace と managed settings は、信頼境界そのものです。
-信頼境界とは「どこから先を安全とみなすか」という線引きです。
-この線引きは Claude Code 本体が、managed settings の precedence とインストール前チェックで扱うべきです。
+Plugin marketplace and managed settings are the trust boundary itself.
+The trust boundary is the line defining "what is considered safe from here on."
+This boundary should be managed by Claude Code core via managed settings precedence
+and pre-installation checks.
 
-Harness はその上に、Plan / Work / Review の作業品質とガードレールを足します。
-そのため、設定の検査機そのものを作るより、公式の仕組みを使う正しい運用を文書化し、必要なテストで説明の drift を止める方針を取ります。
+Harness adds Plan / Work / Review operational quality and guardrails on top of that.
+Therefore, instead of building its own configuration inspector, the policy is to document
+correct usage of official mechanisms and stop documentation drift with necessary tests.

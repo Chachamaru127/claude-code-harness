@@ -1,6 +1,6 @@
 # Tool-First Onboarding
 
-Start here by choosing the tool you are using now (今使っている tool).
+Start here by choosing the tool you are currently using.
 Claude Code Harness is still Claude-first, but Phase 73 makes the entry point
 explicit for every host so users do not mistake a candidate route for a proven
 install path.

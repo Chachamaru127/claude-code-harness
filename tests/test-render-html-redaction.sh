@@ -1,12 +1,12 @@
 #!/bin/bash
 # tests/test-render-html-redaction.sh
-# Phase 65.3.4 - render-html.sh --with-redaction の機械検証
+# Phase 65.3.4 - render-html.sh --with-redaction mechanical validation
 #
-# 検証ケース (Plans.md §65.3.4 DoD d に対応):
-#   1. 全 clean         - 何も redact 不要 → exit 0、HTML 生成
-#   2. dict のみヒット  - dict 該当語あり → exit 0、HTML 生成 (redact 済み)
-#   3. NER のみヒット   - 固有名詞あり    → exit 0、HTML 生成 (redact 済み)
-#   4. final scan で検出 - カタカナ 5+ 連続 → exit 1、HTML 未生成
+# Validation cases (corresponding to Plans.md §65.3.4 DoD d):
+#   1. all clean        - nothing needs redacting → exit 0, HTML generated
+#   2. dict hit only    - dict match found → exit 0, HTML generated (redacted)
+#   3. NER hit only     - proper noun found → exit 0, HTML generated (redacted)
+#   4. final scan catch - 5+ consecutive katakana → exit 1, HTML not generated
 
 set -euo pipefail
 
@@ -30,7 +30,7 @@ if [[ ! -x "$SCRIPT" ]]; then
 fi
 pass "render-html.sh exists and is executable"
 
-# tokenizer 可用性 (NER ケースを skip 判定するため)
+# Tokenizer availability (for NER case skip decision)
 TOKENIZER_AVAILABLE="false"
 if python3 -c "from fugashi import Tagger; Tagger()" 2>/dev/null; then
   TOKENIZER_AVAILABLE="true"
@@ -40,7 +40,7 @@ TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/test-render-redaction.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 # ============================================================
-# Case 1: 全 clean — redact 不要、exit 0、HTML 生成
+# Case 1: all clean — nothing to redact, exit 0, HTML generated
 # ============================================================
 
 DATA1="$TMP_DIR/data1-clean.json"
@@ -56,7 +56,7 @@ JSON
 
 OUT1="$TMP_DIR/out1.html"
 if bash "$SCRIPT" --template "$TEMPLATE" --data "$DATA1" --out "$OUT1" --with-redaction 2>"$TMP_DIR/c1-stderr.txt"; then
-  pass "Case 1 (全 clean): exit 0"
+  pass "Case 1 (all clean): exit 0"
 else
   fail "Case 1: unexpected non-zero exit"
 fi
@@ -74,7 +74,7 @@ else
 fi
 
 # ============================================================
-# Case 2: dict のみヒット — custom client dict を使う
+# Case 2: dict hit only — using custom client dict
 # ============================================================
 
 DICT2="$TMP_DIR/dict2-test.yaml"
@@ -118,7 +118,7 @@ else
 fi
 
 # ============================================================
-# Case 3: NER のみヒット — 田中太郎が title に
+# Case 3: NER hit only — 田中太郎 in title
 # ============================================================
 
 if [[ "$TOKENIZER_AVAILABLE" == "true" ]]; then
@@ -146,7 +146,7 @@ JSON
   fi
 
   if grep -q "田中太郎" "$OUT3" 2>/dev/null; then
-    fail "Case 3: original '田中太郎' should NOT appear in HTML"
+    fail "Case 3: original '田中太郎' should NOT appear in HTML (not redacted)"
   else
     pass "Case 3: original '田中太郎' redacted (not in HTML)"
   fi
@@ -157,11 +157,11 @@ else
 fi
 
 # ============================================================
-# Case 4: final scan で検出 — カタカナ 5+ 連続を含む title
+# Case 4: final scan catch — title containing 5+ consecutive katakana
 # ============================================================
-# Layer 2 (dict + NER) で取りこぼされる「カタカナ 5 文字以上連続」を Layer 3 が catch
-# fugashi が固有名詞として検出する短いカタカナは NER で消えるので、
-# 固有名詞辞書に**ない長いカタカナ列**を使う
+# Layer 3 catches "5+ consecutive katakana" missed by Layer 2 (dict + NER).
+# Short katakana detected as proper nouns by fugashi are removed by NER,
+# so we use a **long katakana sequence not in the proper noun dictionary**.
 
 DATA4="$TMP_DIR/data4-final-scan.json"
 cat > "$DATA4" <<'JSON'
@@ -173,9 +173,9 @@ cat > "$DATA4" <<'JSON'
 }
 JSON
 
-# まず: tokenizer が available なら、固有名詞として認識されない普通のカタカナ列を使う必要あり。
-# 上記 "プロジェクトメインボードフィードバック" は普通名詞列で、fugashi では固有名詞扱いされず、
-# 長いカタカナ run なので Layer 3 が catch する想定。
+# Note: if tokenizer is available, we need a katakana sequence not recognized as a proper noun.
+# "プロジェクトメインボードフィードバック" is a common-noun sequence; fugashi does not treat it as proper noun,
+# and as a long katakana run, Layer 3 is expected to catch it.
 
 OUT4="$TMP_DIR/out4.html"
 if bash "$SCRIPT" --template "$TEMPLATE" --data "$DATA4" --out "$OUT4" --with-redaction 2>"$TMP_DIR/c4-stderr.txt"; then
@@ -184,10 +184,10 @@ else
   CATCH_RESULT="aborted"
 fi
 
-# tokenizer によっては「メインボード」を 1 token / 「フィードバック」を 1 token と分割し、
-# それぞれが普通名詞 (固有名詞ではない) として扱われる。Layer 3 final scan は連続カタカナを
-# 1 つの run として見るため、`プロジェクト` `メインボード` `フィードバック` 等が連結された
-# 状態で 5+ 文字の run と判定される (sentinel 退避後に scan するので [Entity] 等は影響しない)
+# Depending on the tokenizer, "メインボード" may be 1 token and "フィードバック" 1 token,
+# each treated as a common noun (not proper noun). Layer 3 final scan sees consecutive katakana
+# as a single run, so `プロジェクト` `メインボード` `フィードバック` etc. concatenated
+# form a 5+ character run (scanned after sentinel escape, so [Entity] etc. are unaffected).
 if [[ "$CATCH_RESULT" == "aborted" ]]; then
   pass "Case 4 (final scan): exit 1 (HTML generation aborted)"
 else
@@ -213,7 +213,7 @@ else
 fi
 
 # ============================================================
-# Case 5 (additional): --with-redaction なし → 既存挙動を維持
+# Case 5 (additional): no --with-redaction → existing behavior preserved
 # ============================================================
 
 OUT5="$TMP_DIR/out5.html"

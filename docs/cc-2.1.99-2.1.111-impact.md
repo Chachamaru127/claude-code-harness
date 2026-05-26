@@ -1,88 +1,88 @@
-# Claude Code 2.1.99-2.1.111 影響整理
+# Claude Code 2.1.99-2.1.111 Impact Summary
 
-ひとことで:
-Phase 44 の docs 判断として、`2.1.99` から `2.1.111` までの公開 changelog を棚卸しし、Harness への影響を `A` と `C` に分類した結果、`B` は `0` 件です。
+In a nutshell:
+As the Phase 44 documentation decision, after reviewing the public changelog from `2.1.99` through `2.1.111` and classifying Harness impact into `A` and `C`, the count of `B` is `0`.
 
-たとえると:
-新しい道具箱が届いたときに、「そのまま使える道具」と「こちらで持ち手や収納を作り直す必要がある道具」を仕分けしたメモです。
+Analogy:
+This is a memo sorting through a newly delivered toolbox — identifying which tools can be used as-is, and which need new handles or storage made on our side.
 
-## 前提
+## Baseline
 
-- 一次情報は Anthropic 公開 `claude-code` リポジトリの `CHANGELOG.md` を使用
-- この文書の分類は Phase 44 の計画と対応付けるためのもの
-- `A`: Harness 側で明示的な追従が必要な項目
-- `C`: Claude Code 本体の更新だけで恩恵を受ける項目
-- `B`: 「書いただけ」は今回 `0`
+- Primary source: Anthropic's public `claude-code` repository `CHANGELOG.md`
+- The classifications in this document are intended to align with Phase 44 planning
+- `A`: Items requiring explicit follow-up on the Harness side
+- `C`: Items where Harness benefits from Claude Code's own update
+- `B`: "Docs only" — zero instances this time
 
-## 要約
+## Summary
 
-| 範囲 | 判定 | 補足 |
-|------|------|------|
-| `2.1.99`, `2.1.100`, `2.1.102`, `2.1.103`, `2.1.104`, `2.1.106` | `C` | 公開 changelog 上の個別項目なし。Phase 44 では追記対象なし |
-| `2.1.101` | `C` | UX 改善と安定性修正が中心で、Harness 固有のコード追加は不要 |
-| `2.1.105` | `A` | `PreCompact` hook と `monitors` manifest は Harness 側の統合が必要 |
-| `2.1.107` | `C` | thinking 表示改善。Harness は自動継承 |
-| `2.1.108` | `A` / `C` 混在 | 1 時間 prompt cache は明示追従対象、他は主に自動継承 |
-| `2.1.109` | `C` | thinking indicator 改善のみ |
-| `2.1.110` | `A` / `C` 混在 | permission 再評価まわりは明示追従対象、他は主に自動継承 |
-| `2.1.111` | `A` / `C` 混在 | `xhigh`、`/ultrareview`、Auto Mode flag 廃止は正式追従対象 |
+| Range | Verdict | Notes |
+|-------|---------|-------|
+| `2.1.99`, `2.1.100`, `2.1.102`, `2.1.103`, `2.1.104`, `2.1.106` | `C` | No individual entries in the public changelog. Not targeted for Phase 44 additions. |
+| `2.1.101` | `C` | Primarily UX improvements and stability fixes; no Harness-specific code additions required. |
+| `2.1.105` | `A` | `PreCompact` hook and `monitors` manifest require integration on the Harness side. |
+| `2.1.107` | `C` | Thinking display improvement. Harness inherits automatically. |
+| `2.1.108` | `A` / `C` mixed | 1-hour prompt cache requires explicit follow-up; most other items are auto-inherited. |
+| `2.1.109` | `C` | Thinking indicator improvement only. |
+| `2.1.110` | `A` / `C` mixed | Permission re-evaluation changes require explicit follow-up; other items are mainly auto-inherited. |
+| `2.1.111` | `A` / `C` mixed | `xhigh`, `/ultrareview`, and Auto Mode flag removal are formal follow-up targets. |
 
-## バージョン別一覧
+## Per-Version Breakdown
 
-| Version | 主要変更 | Harness 影響 | 分類 | Phase 44 トレース |
-|---------|----------|--------------|------|-------------------|
-| `2.1.99` | 公開 changelog 上の個別項目なし | 範囲起点として確認のみ。Harness 独自対応なし | `C` | - |
-| `2.1.100` | 公開 changelog 上の個別項目なし | 追加追従なし | `C` | - |
-| `2.1.101` | `/team-onboarding`、OS CA trust、`/ultraplan` 初期環境自動化、resume 安定化など | 既存 workflow がそのまま恩恵を受ける。Phase 44 での新規コードは不要 | `C` | - |
-| `2.1.102` | 公開 changelog 上の個別項目なし | 追加追従なし | `C` | - |
-| `2.1.103` | 公開 changelog 上の個別項目なし | 追加追従なし | `C` | - |
-| `2.1.104` | 公開 changelog 上の個別項目なし | 追加追従なし | `C` | - |
-| `2.1.105` | `PreCompact` hook、plugin `monitors` manifest、`/proactive` alias など | `hooks.json` と plugin manifest に実装統合が必要 | `A` | `44.2.1`, `44.2.2` |
-| `2.1.106` | 公開 changelog 上の個別項目なし | 追加追従なし | `C` | - |
-| `2.1.107` | thinking indicator 改善 | 表示改善を自動継承 | `C` | - |
-| `2.1.108` | `ENABLE_PROMPT_CACHING_1H`、recap、built-in slash command discovery など | 1 時間 cache は運用ポリシー整備が必要。他は概ね自動継承 | `A/C` | `44.6.1`, `44.7.1` |
-| `2.1.109` | extended-thinking indicator 改善 | UI 上の恩恵のみ。追従コード不要 | `C` | - |
-| `2.1.110` | permission deny 再評価 fix、`PreToolUse.additionalContext` fix、`/tui`、resume/scheduled task など | guardrail 再検証と docs 更新が必要。その他 UX 改善は自動継承 | `A/C` | `44.3.1`, `44.11.1` |
-| `2.1.111` | `xhigh`、`/ultrareview`、Auto mode no longer requires flag、`/effort` slider など | `xhigh` と `/ultrareview` は正式追従対象。Auto Mode の前提文言も更新が必要 | `A/C` | `44.5.1`, `44.8.1`, `44.11.1` |
+| Version | Key changes | Harness impact | Classification | Phase 44 trace |
+|---------|-------------|----------------|----------------|----------------|
+| `2.1.99` | No individual entries in the public changelog | Confirmed as range start only. No Harness-specific action. | `C` | - |
+| `2.1.100` | No individual entries in the public changelog | No additional follow-up. | `C` | - |
+| `2.1.101` | `/team-onboarding`, OS CA trust, `/ultraplan` initial environment automation, resume stabilization, etc. | Existing workflows benefit directly. No new code required in Phase 44. | `C` | - |
+| `2.1.102` | No individual entries in the public changelog | No additional follow-up. | `C` | - |
+| `2.1.103` | No individual entries in the public changelog | No additional follow-up. | `C` | - |
+| `2.1.104` | No individual entries in the public changelog | No additional follow-up. | `C` | - |
+| `2.1.105` | `PreCompact` hook, plugin `monitors` manifest, `/proactive` alias, etc. | Implementation integration required in `hooks.json` and plugin manifest. | `A` | `44.2.1`, `44.2.2` |
+| `2.1.106` | No individual entries in the public changelog | No additional follow-up. | `C` | - |
+| `2.1.107` | Thinking indicator improvement | Display improvement auto-inherited. | `C` | - |
+| `2.1.108` | `ENABLE_PROMPT_CACHING_1H`, recap, built-in slash command discovery, etc. | 1-hour cache requires operational policy. Others are largely auto-inherited. | `A/C` | `44.6.1`, `44.7.1` |
+| `2.1.109` | Extended-thinking indicator improvement | UI benefit only. No follow-up code required. | `C` | - |
+| `2.1.110` | Permission deny re-evaluation fix, `PreToolUse.additionalContext` fix, `/tui`, resume/scheduled task, etc. | Guardrail re-verification and docs update required. Other UX improvements are auto-inherited. | `A/C` | `44.3.1`, `44.11.1` |
+| `2.1.111` | `xhigh`, `/ultrareview`, Auto mode no longer requires flag, `/effort` slider, etc. | `xhigh` and `/ultrareview` are formal follow-up targets. Auto Mode prerequisite language also needs updating. | `A/C` | `44.5.1`, `44.8.1`, `44.11.1` |
 
-## 重点メモ
+## Key Notes
 
 ### `2.1.105`
 
-- `PreCompact` hook は Harness の長時間実行保護に直結します
-- `monitors` manifest は monitor 系スクリプトを「後付け」ではなく「起動時自動 arm」に変える起点です
-- どちらも Harness の付加価値を作るので `A` です
+- `PreCompact` hook is directly tied to Harness long-run protection
+- `monitors` manifest changes monitor scripts from "added later" to "auto-armed at startup"
+- Both create Harness-specific added value, so both are `A`
 
 ### `2.1.108`
 
-- `ENABLE_PROMPT_CACHING_1H` は、単に使えるだけではなく「どのフローで有効化するか」の方針が必要です
-- そのため docs と policy を伴う `A` に寄せます
-- 一方で recap や slash command discovery の多くは本体恩恵なので `C` です
+- `ENABLE_PROMPT_CACHING_1H` is not just something we can use — it requires a policy for "which flows to enable it in"
+- Therefore it leans toward `A`, accompanied by docs and policy
+- On the other hand, recap and much of slash command discovery are core-level benefits, so `C`
 
 ### `2.1.110`
 
-- `permissions.deny` の再評価修正は、Harness の guardrail 説明と期待動作に直接効きます
-- 「CC が直したから終わり」ではなく、Harness の説明とテスト観点を更新する必要があるため `A/C` 混在です
+- The `permissions.deny` re-evaluation fix directly affects Harness guardrail descriptions and expected behavior
+- It is not "CC fixed it, so we're done" — the Harness explanation and test perspective need updating, hence `A/C` mixed
 
 ### `2.1.111`
 
-- `xhigh` は見送りではなく正式対象です
-- `/ultrareview` も見送りではなく正式対象です
-- `Auto mode no longer requires --enable-auto-mode` は、Auto Mode の docs 前提を古いままにしないための明示追従対象です
+- `xhigh` is a formal follow-up target, not skipped
+- `/ultrareview` is a formal follow-up target, not skipped
+- `Auto mode no longer requires --enable-auto-mode` is an explicit follow-up target to prevent Auto Mode docs from becoming stale
 
-## B がゼロである理由
+## Why Category B Is Zero
 
-- 公開 changelog にない版は「無理に意味づけして行を増やさない」
-- 本体改善だけで終わるものは `C` に寄せる
-- Harness の判断・文言・設定・フックに影響するものだけを `A` に寄せる
+- Versions with no public changelog entries are not forced into rows to pad the table
+- Items that end at core improvements are placed in `C`
+- Only items that affect Harness decisions, wording, configuration, or hooks are placed in `A`
 
-この切り分けにより、「Feature Table に書いただけ」の `B` を作らずに済みます。
+This separation avoids creating `B` items that are "just written in the Feature Table."
 
-## 具体例
+## Concrete Example
 
-具体例:
-`2.1.111` の `xhigh` は、単に新しい effort 名が増えた話ではありません。Harness 側では reviewer/advisor の thinking 強度ポリシーや docs の説明に影響するため、`A` として扱います。
+Concrete example:
+`xhigh` in `2.1.111` is not simply "a new effort name was added." On the Harness side it affects the reviewer/advisor thinking intensity policy and the explanation in docs, so it is treated as `A`.
 
-## なぜこの整理にしたか
+## Why This Classification
 
-Phase 44 は「CC の changelog を要約する」ことが目的ではなく、「Harness がどこを自分で持つか」を明確にすることが目的だからです。
+Phase 44's purpose is not to "summarize the CC changelog" — it is to clarify "what Harness owns itself."

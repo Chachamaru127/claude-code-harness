@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// instructionsLoadedInput は instructions-loaded.sh に渡される stdin JSON。
+// instructionsLoadedInput is the stdin JSON passed to instructions-loaded.sh.
 type instructionsLoadedInput struct {
 	SessionID     string `json:"session_id"`
 	CWD           string `json:"cwd"`
@@ -20,21 +20,21 @@ type instructionsLoadedInput struct {
 	EventName     string `json:"event_name"`
 }
 
-// approveOutput は {"decision":"approve","reason":"..."} レスポンス。
+// approveOutput is the {"decision":"approve","reason":"..."} response.
 type approveOutput struct {
 	Decision string `json:"decision"`
 	Reason   string `json:"reason"`
 }
 
-// HandleInstructionsLoaded は instructions-loaded.sh の Go 移植。
+// HandleInstructionsLoaded is the Go port of instructions-loaded.sh.
 //
-// InstructionsLoaded イベントで呼び出され、以下を実行する:
-// 1. .claude/state/instructions-loaded.jsonl にイベントを記録
-// 2. hooks.json の存在を軽量に検証
+// Called on InstructionsLoaded events, it performs the following:
+// 1. Records the event to .claude/state/instructions-loaded.jsonl
+// 2. Lightly validates the presence of hooks.json
 //
-// 常に {"decision":"approve",...} を返す（ブロックしない）。
+// Always returns {"decision":"approve",...} (non-blocking).
 func HandleInstructionsLoaded(in io.Reader, out io.Writer) error {
-	// stdin から JSON を読み取る
+	// Read JSON from stdin.
 	data, err := io.ReadAll(in)
 	if err != nil {
 		return writeJSON(out, approveOutput{
@@ -51,7 +51,7 @@ func HandleInstructionsLoaded(in io.Reader, out io.Writer) error {
 		})
 	}
 
-	// ペイロードをパース
+	// Parse the payload.
 	var input instructionsLoadedInput
 	if jsonErr := json.Unmarshal([]byte(payload), &input); jsonErr != nil {
 		return writeJSON(out, approveOutput{
@@ -60,7 +60,7 @@ func HandleInstructionsLoaded(in io.Reader, out io.Writer) error {
 		})
 	}
 
-	// PROJECT_ROOT を解決（CWD フィールド優先、なければ env、なければ pwd）
+	// Resolve PROJECT_ROOT (CWD field takes priority, then env var, then pwd).
 	projectRoot := input.CWD
 	if projectRoot == "" {
 		projectRoot = os.Getenv("PROJECT_ROOT")
@@ -72,7 +72,7 @@ func HandleInstructionsLoaded(in io.Reader, out io.Writer) error {
 		}
 	}
 
-	// event_name を解決（hook_event_name 優先、event_name フォールバック）
+	// Resolve event_name (hook_event_name takes priority, event_name as fallback).
 	eventName := input.HookEventName
 	if eventName == "" {
 		eventName = input.EventName
@@ -81,7 +81,7 @@ func HandleInstructionsLoaded(in io.Reader, out io.Writer) error {
 		eventName = "InstructionsLoaded"
 	}
 
-	// .claude/state/instructions-loaded.jsonl にイベントを記録
+	// Record the event to .claude/state/instructions-loaded.jsonl.
 	stateDir := filepath.Join(projectRoot, ".claude", "state")
 	logFile := filepath.Join(stateDir, "instructions-loaded.jsonl")
 
@@ -104,7 +104,7 @@ func HandleInstructionsLoaded(in io.Reader, out io.Writer) error {
 		}
 	}
 
-	// hooks.json の存在を軽量に検証
+	// Lightly validate the presence of hooks.json.
 	hooksFound := fileExists(filepath.Join(projectRoot, "hooks", "hooks.json")) ||
 		fileExists(filepath.Join(projectRoot, ".claude-plugin", "hooks.json"))
 

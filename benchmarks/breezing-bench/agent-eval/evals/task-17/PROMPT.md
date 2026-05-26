@@ -1,3 +1,3 @@
-テンプレートエンジンに `registerHelper(name, fn)` メソッドを追加してください。
-`types.ts` にインターフェース定義があります。
-`{{#helper arg}}` 構文でカスタムヘルパー関数を呼び出せる機能です。
+Add a `registerHelper(name, fn)` method to the template engine.
+The interface definition is in `types.ts`.
+This enables calling custom helper functions using the `{{#helper arg}}` syntax.

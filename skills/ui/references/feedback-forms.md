@@ -1,39 +1,39 @@
 ---
 name: feedback
-description: "フィードバック収集機能の実装。ユーザーからの声を集めたい場合に使用します。"
+description: "Implement feedback collection features. Use when you want to gather user input."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 ---
 
 # Feedback Skill
 
-アプリ内フィードバックフォームを実装するスキル。
-最初に `../ui-skills.md` と `../frontend-design.md` の適用条件を確認する。
+Skill for implementing in-app feedback forms.
+Start by checking the application conditions in `../ui-skills.md` and `../frontend-design.md`.
 
 ---
 
-## トリガーフレーズ
+## Trigger Phrases
 
-- 「フィードバック機能を追加して」
-- 「ユーザーの声を集めたい」
-- 「バグ報告フォームを作って」
-- 「お問い合わせフォームを追加して」
-
----
-
-## 機能
-
-- フィードバックフォーム
-- バグ報告
-- 機能リクエスト
-- 満足度調査
+- "add a feedback feature"
+- "I want to collect user feedback"
+- "create a bug report form"
+- "add a contact form"
 
 ---
 
-## 実行フロー
+## Features
 
-1. 制約セットの適用条件を確認
-2. プロジェクト構成を確認
-3. フィードバックの種類を選択
-4. フォームUIを作成
-5. APIエンドポイントを作成
-6. データ保存先を設定
+- Feedback form
+- Bug report form
+- Feature request form
+- Satisfaction survey
+
+---
+
+## Execution Flow
+
+1. Check constraint set application conditions
+2. Inspect project structure
+3. Select the feedback type
+4. Build the form UI
+5. Create an API endpoint
+6. Configure the data storage destination

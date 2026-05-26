@@ -6,31 +6,31 @@ allowed-tools: [Read, Bash]
 
 # State Transition
 
-セッション状態の遷移を実行する。
+Executes session state transitions.
 
-## 入力
+## Input
 
-workflow 変数:
-- `target_state` (string): 遷移先の状態
-- `event_name` (string): トリガーイベント
-- `event_data` (string, optional): イベント付加データ (JSON)
+Workflow variables:
+- `target_state` (string): Target state to transition to
+- `event_name` (string): Trigger event
+- `event_data` (string, optional): Additional event data (JSON)
 
-## 有効な状態
+## Valid States
 
-| 状態 | 説明 |
-|------|------|
-| `idle` | セッション未開始 |
-| `initialized` | SessionStart 完了 |
-| `planning` | Plan/Work の準備 |
-| `executing` | /work 実行中 |
-| `reviewing` | review 実行中 |
-| `verifying` | build/test 実行中 |
-| `escalated` | 人間確認待ち |
-| `completed` | 成果物確定 |
-| `failed` | 回復不能 |
-| `stopped` | Stop hook 到達 |
+| State | Description |
+|-------|-------------|
+| `idle` | Session not started |
+| `initialized` | SessionStart complete |
+| `planning` | Preparing for Plan/Work |
+| `executing` | /work running |
+| `reviewing` | Review running |
+| `verifying` | Build/test running |
+| `escalated` | Awaiting human confirmation |
+| `completed` | Deliverable finalized |
+| `failed` | Unrecoverable error |
+| `stopped` | Stop hook reached |
 
-## 代表的な遷移
+## Representative Transitions
 
 | From | Event | To |
 |------|-------|----|
@@ -44,34 +44,34 @@ workflow 変数:
 | * | session.stop | stopped |
 | stopped | session.resume | initialized |
 
-## 実行
+## Execution
 
 ```bash
 ./scripts/session-state.sh --state <state> --event <event> [--data <json>]
 ```
 
-### 例: 実行状態への遷移
+### Example: Transition to executing state
 
 ```bash
 ./scripts/session-state.sh --state executing --event work.start
 ```
 
-### 例: エスカレーション（データ付き）
+### Example: Escalation (with data)
 
 ```bash
 ./scripts/session-state.sh --state escalated --event escalation.requested \
   --data '{"reason":"Build failed 3 times","retry_count":3}'
 ```
 
-## 期待される結果
+## Expected Results
 
-- `.claude/state/session.json` の `state`, `updated_at`, `last_event_id`, `event_seq` が更新される
-- `.claude/state/session.events.jsonl` にイベントが追記される
-- 不正な遷移は stderr にエラー出力 + 非ゼロ終了
+- `state`, `updated_at`, `last_event_id`, and `event_seq` in `.claude/state/session.json` are updated
+- The event is appended to `.claude/state/session.events.jsonl`
+- An invalid transition produces an error on stderr and a non-zero exit code
 
-## エラーハンドリング
+## Error Handling
 
-遷移が失敗した場合（不正な遷移など）:
-1. 現在の状態と許可された遷移を stderr に出力
-2. 非ゼロ終了コードを返す
-3. 呼び出し元（workflow）でエスカレーション処理を行う
+If a transition fails (e.g. invalid transition):
+1. Output the current state and allowed transitions to stderr
+2. Return a non-zero exit code
+3. The caller (workflow) handles escalation

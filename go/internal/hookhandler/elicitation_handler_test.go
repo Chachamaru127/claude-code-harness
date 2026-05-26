@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-// assertElicitationDecision は出力 JSON の decision と reason を検証するヘルパー。
+// assertElicitationDecision is a helper that validates the decision and reason fields of the output JSON.
 func assertElicitationDecision(t *testing.T, output, wantDecision, wantReasonContains string) {
 	t.Helper()
 	output = strings.TrimSpace(output)
@@ -50,7 +50,7 @@ func TestElicitationHandler_InvalidJSON(t *testing.T) {
 }
 
 func TestElicitationHandler_NormalSession_Approve(t *testing.T) {
-	// HARNESS_BREEZING_SESSION_ID が未設定 → 通常セッション → approve
+	// HARNESS_BREEZING_SESSION_ID not set → normal session → approve.
 	t.Setenv("HARNESS_BREEZING_SESSION_ID", "")
 
 	dir := t.TempDir()
@@ -69,7 +69,7 @@ func TestElicitationHandler_NormalSession_Approve(t *testing.T) {
 }
 
 func TestElicitationHandler_BreezingSession_Deny(t *testing.T) {
-	// HARNESS_BREEZING_SESSION_ID が設定されている → Breezing → deny
+	// HARNESS_BREEZING_SESSION_ID set → Breezing → deny.
 	t.Setenv("HARNESS_BREEZING_SESSION_ID", "session-breezing-42")
 
 	dir := t.TempDir()
@@ -143,7 +143,7 @@ func TestElicitationHandler_LogWritten(t *testing.T) {
 }
 
 func TestElicitationHandler_FallbackFields(t *testing.T) {
-	// server_name と id フォールバックのテスト
+	// Test server_name and id fallback.
 	t.Setenv("HARNESS_BREEZING_SESSION_ID", "")
 
 	dir := t.TempDir()

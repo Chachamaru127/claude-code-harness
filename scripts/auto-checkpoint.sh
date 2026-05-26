@@ -1,7 +1,7 @@
 #!/bin/bash
 # auto-checkpoint.sh
-# Phase B-5 で呼ばれ、harness-mem の checkpoint API を叩いて永続化 +
-# ローカル audit を書く。
+# Called in Phase B-5 to call the harness-mem checkpoint API for persistence
+# and write a local audit record.
 #
 # Usage: ./scripts/auto-checkpoint.sh task_id commit_hash sprint_contract_path review_result_path
 
@@ -10,26 +10,26 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="${PROJECT_ROOT:-$(cd "${SCRIPT_DIR}/.." && pwd)}"
 
-# ── 環境変数 ───────────────────────────────────────────────────────────────────
-# HARNESS_MEM_CLIENT: 旧 shell client (`scripts/harness-mem-client.sh`) へのパス。
-# Phase 60 (v2.20.10) で managed-companion 移行した際に
-# `scripts/harness-mem-client.sh` は claude-harness の配布から除外された。
-# 現行アーキテクチャでは:
-#   - 永続化は memory-bridge.sh 経由 (HTTP daemon API)
-#   - 管理操作は `bin/harness mem ...` (Phase 60 contract)
-# このパスは **テスト fixture 用** にのみ残されている:
-#   - 既定 (env 未指定): 空文字 → API 呼び出しを skip し audit のみ
-#   - HARNESS_MEM_CLIENT=/abs/path → fake client 等で record-checkpoint API を検証
-# 詳細: docs/harness-mem-companion-contract.md
+# ── Environment variables ───────────────────────────────────────────────────────────────────
+# HARNESS_MEM_CLIENT: path to the old shell client (`scripts/harness-mem-client.sh`).
+# When migrating to managed-companion in Phase 60 (v2.20.10),
+# `scripts/harness-mem-client.sh` was removed from the claude-harness distribution.
+# Current architecture:
+#   - persistence via memory-bridge.sh (HTTP daemon API)
+#   - management operations via `bin/harness mem ...` (Phase 60 contract)
+# This path is kept for **test fixture use only**:
+#   - default (env unset): empty string → skip API call, audit only
+#   - HARNESS_MEM_CLIENT=/abs/path → validate record-checkpoint API with a fake client, etc.
+# Details: docs/harness-mem-companion-contract.md
 HARNESS_MEM_CLIENT="${HARNESS_MEM_CLIENT:-}"
-# HARNESS_MEM_DISABLE: 1 のとき API 呼び出しをスキップ（フォールバック検証用）
+# HARNESS_MEM_DISABLE: when set to 1, skip API calls (for fallback validation)
 HARNESS_MEM_DISABLE="${HARNESS_MEM_DISABLE:-0}"
-# HARNESS_MEM_CLIENT_TIMEOUT_SEC: API 呼び出しタイムアウト秒数
+# HARNESS_MEM_CLIENT_TIMEOUT_SEC: API call timeout in seconds
 export HARNESS_MEM_CLIENT_TIMEOUT_SEC="${HARNESS_MEM_CLIENT_TIMEOUT_SEC:-8}"
-# CHECKPOINT_LOCK_TIMEOUT: flock/lockf 待機秒数
+# CHECKPOINT_LOCK_TIMEOUT: flock/lockf wait timeout in seconds
 CHECKPOINT_LOCK_TIMEOUT="${CHECKPOINT_LOCK_TIMEOUT:-10}"
 
-# ── 引数 ──────────────────────────────────────────────────────────────────────
+# ── Arguments ──────────────────────────────────────────────────────────────────────
 if [ $# -lt 4 ]; then
   echo "Usage: $0 task_id commit_hash sprint_contract_path review_result_path" >&2
   exit 1
@@ -40,20 +40,20 @@ COMMIT_HASH="$2"
 SPRINT_CONTRACT_PATH="$3"
 REVIEW_RESULT_PATH="$4"
 
-# ── 定数 ──────────────────────────────────────────────────────────────────────
+# ── Constants ──────────────────────────────────────────────────────────────────────
 STATE_DIR="${PROJECT_ROOT}/.claude/state"
 LOCKS_DIR="${STATE_DIR}/locks"
 LOCK_FILE="${LOCKS_DIR}/phase-b.lock"
 CHECKPOINT_EVENTS_FILE="${STATE_DIR}/checkpoint-events.jsonl"
 SESSION_EVENTS_FILE="${STATE_DIR}/session-events.jsonl"
 
-# ── ユーティリティ ────────────────────────────────────────────────────────────
+# ── Utilities ────────────────────────────────────────────────────────────
 timestamp_iso8601() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
 json_escape() {
-  # 基本的な JSON 文字列エスケープ（python3 経由）
+  # Basic JSON string escaping (via python3)
   printf '%s' "$1" | python3 -c 'import json,sys; sys.stdout.write(json.dumps(sys.stdin.read())[1:-1])' 2>/dev/null \
     || printf '%s' "$1" | sed 's/\\/\\\\/g;s/"/\\"/g;s/	/\\t/g'
 }
@@ -61,7 +61,7 @@ json_escape() {
 read_json_file() {
   local path="$1"
   if [ -f "$path" ]; then
-    # 改行を除去して 1 行にする
+    # Remove newlines and collapse to a single line
     tr -d '\n\r' < "$path" | tr -s ' '
   else
     printf '{}'
@@ -71,12 +71,12 @@ read_json_file() {
 append_jsonl() {
   local file="$1"
   local record="$2"
-  # ファイルが存在しない場合は作成
+  # Create file if it does not exist
   mkdir -p "$(dirname "$file")"
   printf '%s\n' "$record" >> "$file"
 }
 
-# ── ロック実装（flock/lockf/mkdir フォールバック） ────────────────────────────
+# ── Lock implementation (flock/lockf/mkdir fallback) ────────────────────────────
 _LOCK_ACQUIRED=0
 _LOCK_MUTEX_DIR="${LOCK_FILE}.dir"
 
@@ -98,8 +98,8 @@ acquire_lock() {
 
   if command -v lockf >/dev/null 2>&1; then
     # macOS: lockf -t timeout -k file shell -c "..."
-    # lockf はコマンドをラップする形式のため、FD ベースで使う
-    # lockf -s -t N fd 形式でブロック待機
+    # lockf wraps a command, so use FD-based form
+    # lockf -s -t N fd form for blocking wait
     exec 9>"${LOCK_FILE}"
     if lockf -s -t "${timeout}" 9; then
       _LOCK_ACQUIRED=2
@@ -110,7 +110,7 @@ acquire_lock() {
     fi
   fi
 
-  # フォールバック: mkdir による排他制御
+  # Fallback: mutual exclusion via mkdir
   local waited=0
   while ! mkdir "${_LOCK_MUTEX_DIR}" 2>/dev/null; do
     sleep 0.2
@@ -135,14 +135,14 @@ release_lock() {
       exec 9>&- 2>/dev/null || true
       ;;
     3)
-      # mkdir フォールバック
+      # mkdir fallback
       rmdir "${_LOCK_MUTEX_DIR}" 2>/dev/null || true
       ;;
   esac
   _LOCK_ACQUIRED=0
 }
 
-# ── メインロジック ─────────────────────────────────────────────────────────────
+# ── Main logic ─────────────────────────────────────────────────────────────
 main() {
   mkdir -p "${LOCKS_DIR}"
 
@@ -152,10 +152,10 @@ main() {
   local status="ok"
   local error_msg="null"
 
-  # ── ロックを取得（タイムアウト CHECKPOINT_LOCK_TIMEOUT 秒） ──────────────
+  # ── Acquire lock (timeout: CHECKPOINT_LOCK_TIMEOUT seconds) ──────────────
   if ! acquire_lock; then
-    echo "[auto-checkpoint] ERROR: phase-b.lock の取得がタイムアウトしました (${CHECKPOINT_LOCK_TIMEOUT}s)" >&2
-    # タイムアウトでも checkpoint-events.jsonl には失敗レコードを書く
+    echo "[auto-checkpoint] ERROR: timed out acquiring phase-b.lock (${CHECKPOINT_LOCK_TIMEOUT}s)" >&2
+    # Write a failure record to checkpoint-events.jsonl even on timeout
     local timeout_record
     timeout_record="$(printf \
       '{"type":"checkpoint","status":"failed","task":"%s","commit":"%s","sprint_contract":"%s","review_result":"%s","timestamp":"%s","error":"lock_timeout"}' \
@@ -168,10 +168,10 @@ main() {
     exit 1
   fi
 
-  # ── ロック取得成功。EXIT 時に解放する ──────────────────────────────────────
+  # ── Lock acquired. Release on EXIT ──────────────────────────────────────
   trap 'release_lock' EXIT
 
-  # ── harness-mem API 呼び出し ──────────────────────────────────────────────
+  # ── harness-mem API call ──────────────────────────────────────────────
   local api_success=0
   local api_error=""
 
@@ -182,7 +182,7 @@ main() {
     api_success=0
     api_error="harness-mem-client not found or not executable: ${HARNESS_MEM_CLIENT}"
   else
-    # session_id: 環境変数 CLAUDE_SESSION_ID から取得。なければ uuidgen
+    # session_id: read from CLAUDE_SESSION_ID env var, fall back to uuidgen
     local session_id
     session_id="${CLAUDE_SESSION_ID:-}"
     if [ -z "${session_id}" ]; then
@@ -191,12 +191,12 @@ main() {
         || printf 'fallback-%s' "${TASK_ID}")"
     fi
 
-    # sprint_contract と review_result を読み込み
+    # Load sprint_contract and review_result
     local contract_content result_content
     contract_content="$(read_json_file "${SPRINT_CONTRACT_PATH}")"
     result_content="$(read_json_file "${REVIEW_RESULT_PATH}")"
 
-    # content を JSON 文字列としてエスケープ
+    # Escape content as a JSON string
     local raw_content
     raw_content="$(printf '{"commit":"%s","sprint_contract":%s,"review_result":%s}' \
       "$(json_escape "${COMMIT_HASH}")" \
@@ -205,7 +205,7 @@ main() {
     local content_escaped
     content_escaped="$(json_escape "${raw_content}")"
 
-    # payload JSON を構築
+    # Build payload JSON
     local payload
     payload="$(printf \
       '{"session_id":"%s","title":"Phase checkpoint: %s","content":"%s","platform":"claude-code","project":"claude-code-harness","tags":["checkpoint","phase-b","task:%s"]}' \
@@ -214,10 +214,10 @@ main() {
       "${content_escaped}" \
       "$(json_escape "${TASK_ID}")")"
 
-    # API 呼び出し
+    # Call the API
     local api_response=""
     if api_response="$("${HARNESS_MEM_CLIENT}" record-checkpoint "${payload}" 2>&1)"; then
-      # ok フィールドが false でなければ成功扱い
+      # Treat as success if the ok field is not false
       if printf '%s' "${api_response}" | grep -q '"ok":false'; then
         api_success=0
         api_error="$(printf '%s' "${api_response}" | grep -o '"error":"[^"]*"' | head -1 | sed 's/"error":"//;s/"//' || printf 'api_error')"
@@ -230,7 +230,7 @@ main() {
     fi
   fi
 
-  # ── 失敗時: session-events.jsonl にデグレ出力 ────────────────────────────
+  # ── On failure: write degraded output to session-events.jsonl ────────────────────────────
   if [ "${api_success}" = "0" ]; then
     status="failed"
     error_msg="$(json_escape "${api_error}")"
@@ -244,10 +244,10 @@ main() {
       "${error_msg}")"
     append_jsonl "${SESSION_EVENTS_FILE}" "${session_event}"
 
-    echo "[auto-checkpoint] WARNING: harness-mem API 呼び出し失敗 — ${api_error}" >&2
+    echo "[auto-checkpoint] WARNING: harness-mem API call failed — ${api_error}" >&2
   fi
 
-  # ── 成功/失敗いずれでも checkpoint-events.jsonl に audit レコード追記 ─────
+  # ── Append audit record to checkpoint-events.jsonl regardless of success/failure ─────
   local error_field
   if [ "${error_msg}" = "null" ]; then
     error_field="null"

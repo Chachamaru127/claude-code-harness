@@ -28,7 +28,7 @@ func TestHandleConfigChange_EmptyInput(t *testing.T) {
 func TestHandleConfigChange_NoBreezingState(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	// PROJECT_ROOT を一時ディレクトリに設定
+	// Set PROJECT_ROOT to the temporary directory.
 	t.Setenv("PROJECT_ROOT", tmpDir)
 
 	input := `{"file_path":"/some/project/.eslintrc.json","change_type":"modified"}`
@@ -46,7 +46,7 @@ func TestHandleConfigChange_NoBreezingState(t *testing.T) {
 		t.Error("expected ok=true when breezing is not active")
 	}
 
-	// タイムラインファイルは作成されないこと
+	// The timeline file should not be created.
 	timelineFile := filepath.Join(tmpDir, ".claude", "state", "breezing-timeline.jsonl")
 	if _, statErr := os.Stat(timelineFile); statErr == nil {
 		t.Error("timeline file should not be created when breezing is not active")
@@ -57,7 +57,7 @@ func TestHandleConfigChange_BreezingInactive(t *testing.T) {
 	tmpDir := t.TempDir()
 	t.Setenv("PROJECT_ROOT", tmpDir)
 
-	// breezing.json を作成（inactive 状態）
+	// Create breezing.json (inactive status).
 	stateDir := filepath.Join(tmpDir, ".claude", "state")
 	if mkdirErr := os.MkdirAll(stateDir, 0o755); mkdirErr != nil {
 		t.Fatal(mkdirErr)
@@ -85,7 +85,7 @@ func TestHandleConfigChange_BreezingInactive(t *testing.T) {
 		t.Error("expected ok=true")
 	}
 
-	// タイムラインは記録されないこと
+	// The timeline should not be recorded.
 	timelineFile := filepath.Join(stateDir, "breezing-timeline.jsonl")
 	if _, statErr := os.Stat(timelineFile); statErr == nil {
 		t.Error("timeline file should not be created when breezing is inactive")
@@ -101,7 +101,7 @@ func TestHandleConfigChange_BreezingActive(t *testing.T) {
 		t.Fatal(mkdirErr)
 	}
 
-	// breezing.json を active 状態に設定
+	// Set breezing.json to active status.
 	if writeErr := os.WriteFile(
 		filepath.Join(stateDir, "breezing.json"),
 		[]byte(`{"status":"active"}`),
@@ -125,14 +125,14 @@ func TestHandleConfigChange_BreezingActive(t *testing.T) {
 		t.Error("expected ok=true when breezing is active")
 	}
 
-	// タイムラインファイルが作成されていること
+	// The timeline file should have been created.
 	timelineFile := filepath.Join(stateDir, "breezing-timeline.jsonl")
 	data, readErr := os.ReadFile(timelineFile)
 	if readErr != nil {
 		t.Fatalf("timeline file should be created when breezing is active: %v", readErr)
 	}
 
-	// JSONL の1行目をパース
+	// Parse the first line of the JSONL file.
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
 	if len(lines) == 0 {
 		t.Fatal("timeline file is empty")
@@ -163,7 +163,7 @@ func TestHandleConfigChange_BreezingRunning(t *testing.T) {
 		t.Fatal(mkdirErr)
 	}
 
-	// running 状態でも記録されること
+	// Should also be recorded when status is running.
 	if writeErr := os.WriteFile(
 		filepath.Join(stateDir, "breezing.json"),
 		[]byte(`{"status":"running"}`),
@@ -205,7 +205,7 @@ func TestHandleConfigChange_DefaultChangeType(t *testing.T) {
 		t.Fatal(writeErr)
 	}
 
-	// change_type を省略した場合はデフォルト "modified" になること
+	// When change_type is omitted, it should default to "modified".
 	input := `{"file_path":"config.json"}`
 	var out bytes.Buffer
 	if err := HandleConfigChange(strings.NewReader(input), &out); err != nil {
@@ -243,7 +243,7 @@ func TestHandleConfigChange_ProjectRootRelativePath(t *testing.T) {
 		t.Fatal(writeErr)
 	}
 
-	// PROJECT_ROOT を含む絶対パス → 相対パスに正規化されること
+	// Absolute path containing PROJECT_ROOT → should be normalised to a relative path.
 	absolutePath := filepath.Join(tmpDir, ".eslintrc.json")
 	input, _ := json.Marshal(map[string]string{
 		"file_path":   absolutePath,
@@ -261,7 +261,7 @@ func TestHandleConfigChange_ProjectRootRelativePath(t *testing.T) {
 		t.Fatalf("timeline file not created: %v", readErr)
 	}
 
-	// 絶対パスではなく相対パスが記録されていること
+	// A relative path, not an absolute path, should be recorded.
 	var entry map[string]string
 	if jsonErr := json.Unmarshal([]byte(strings.TrimSpace(string(data))), &entry); jsonErr != nil {
 		t.Fatalf("invalid JSONL: %v", jsonErr)

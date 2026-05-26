@@ -2,10 +2,11 @@
 # tests/test-plan-accept-flow-e2e.sh
 # Phase 65.2.4 - Plan Brief → impl simulation → Acceptance Demo end-to-end
 #
-# Phase A (65.1.x) と Phase B (65.2.x) の全 component を 1 つの fixture
-# project で順次走らせ、`personal-preference.v1` と `acceptance-decision.v1`
-# が同 `user_request_hash` で memory join 可能 + 同じ user_request を共有
-# する 2 種の HTML が生成されることを検証する。
+# Runs all Phase A (65.1.x) and Phase B (65.2.x) components sequentially
+# against a single fixture project, verifying that `personal-preference.v1`
+# and `acceptance-decision.v1` can be memory-joined via the same
+# `user_request_hash`, and that two HTML files sharing the same user_request
+# are generated.
 #
 # Stage 1 (Plan Brief, Phase 65.1.x):
 #   plan-brief-compile.sh   → plan-brief-context.v1 JSON
@@ -15,8 +16,8 @@
 #                                                    plan-brief-approval
 #
 # Stage 2 (impl simulation):
-#   何も実装しない (e2e は scaffold の整合性検証であり、実装ロジックの
-#   独立検証は各 Phase の test に委譲)
+#   No implementation (e2e is scaffold integrity verification;
+#   independent validation of implementation logic is delegated to each Phase test)
 #
 # Stage 3 (Acceptance Demo, Phase 65.2.x):
 #   accept-past-issues.sh   → past-issue.v1 JSON
@@ -27,11 +28,11 @@
 #
 # Cross-stage consistency (DoD b/c):
 #   - plan-record.data.user_request_hash == accept-record.data.user_request_hash
-#     (sha256 hex を独立再計算した値とも一致)
-#   - plan-brief.html / accept.html 両方に literal user_request が現れる
-#   - 両 record の project field が同じ
-#   - tags=personal-preference で検索すれば両 record が返る構造 (両者に
-#     personal-preference tag が付与されていることを検証)
+#     (also matches independently recomputed sha256 hex)
+#   - literal user_request appears in both plan-brief.html and accept.html
+#   - both records carry the same project field
+#   - searching tags=personal-preference returns both records
+#     (verified by checking both carry personal-preference tag)
 
 set -euo pipefail
 
@@ -71,7 +72,7 @@ fi
 
 # ---- Stage 0: Common ----
 
-USER_REQUEST="プラン → 受け入れの完全 trace を 1 セッションで検証する"
+USER_REQUEST="Verify the full Plan → Accept trace in a single session"
 PROJECT_NAME="claude-code-harness-flow-e2e"
 
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/plan-accept-flow.XXXXXX")"
@@ -105,7 +106,7 @@ PLAN_RECORD_JSON="$TMP_DIR/plan-record.json"
 if bash "$COMPILE" \
   --query "$USER_REQUEST" \
   --project "$PROJECT_NAME" \
-  --understanding "Plan→Accept trace を成立させる e2e 検証" \
+  --understanding "e2e verification that the Plan→Accept trace holds together" \
   --out "$PLAN_CONTEXT" 2>/dev/null; then
   pass "Stage 1a: plan-brief-compile.sh succeeded"
 else
@@ -137,7 +138,7 @@ if bash "$PLAN_RECORD" \
   --user-request "$USER_REQUEST" \
   --project "$PROJECT_NAME" \
   --chosen-option "Option A" \
-  --reasoning "MVP 設計で十分" \
+  --reasoning "MVP design is sufficient" \
   --out "$PLAN_RECORD_JSON" 2>/dev/null; then
   pass "Stage 1c: plan-brief-record-decision.sh (approve) succeeded"
 else
@@ -161,9 +162,9 @@ fi
 # Stage 2: impl simulation (no-op)
 # ===========================================================
 
-# 実装相当の作業はテスト対象外。e2e は scaffold の整合性検証に専念する。
-# このステージは将来 65.4 (Progress Tracker) で intermediate alert と
-# join するときに hook を挟む余地として残しておく。
+# Implementation work is out of scope for this test. e2e focuses solely on scaffold integrity verification.
+# This stage is kept as a hook insertion point for when 65.4 (Progress Tracker)
+# joins with intermediate alerts in the future.
 pass "Stage 2: impl simulation (no-op, scaffold integrity test)"
 
 # ===========================================================
@@ -190,23 +191,23 @@ else
   fail "Stage 3a: past-issue.v1 schema mismatch"
 fi
 
-# Acceptance Demo HTML を fixture から render (skill が組み立てる
-# acceptance-context.v1 と等価な fixture を流用)
+# Render Acceptance Demo HTML from fixture (reusing a fixture equivalent to
+# the acceptance-context.v1 that the skill assembles)
 if bash "$RENDER" --template accept --data "$ACCEPT_FIXTURE" --out "$ACCEPT_HTML" 2>/dev/null; then
   pass "Stage 3b: render-html.sh succeeded for accept template"
 else
   fail "Stage 3b: render-html.sh failed for accept"
 fi
 
-# accept HTML には fixture の user_request literal が現れる
-# (e2e の cross-stage assertion は record 側で行う)
+# accept HTML contains the fixture's user_request literal
+# (cross-stage assertion for e2e is done on the record side)
 if grep -qF "Plan Brief MVP を 5 タスクで完走" "$ACCEPT_HTML"; then
   pass "Stage 3b: accept.html contains its fixture user_request literal"
 else
   fail "Stage 3b: accept.html missing fixture user_request"
 fi
 
-# accept-record-decision: ship recommendation を accept
+# accept-record-decision: accept the ship recommendation
 if bash "$ACCEPT_RECORD" \
   --action accept \
   --user-request "$USER_REQUEST" \
@@ -269,18 +270,18 @@ else
   fail "Cross-stage: observation_type mismatch on at least one record"
 fi
 
-# DoD c part: HTML 2 種が同 task で生成されたことを project name で
-# 紐づけて検証 (両方とも fixture project name を含む)
+# DoD c part: verify both HTMLs were generated for the same task by
+# linking via project name (both must contain the fixture project name)
 if grep -qF "$PROJECT_NAME" "$PLAN_HTML"; then
   pass "Cross-stage: plan-brief.html carries fixture project name"
 else
   fail "Cross-stage: plan-brief.html missing fixture project name"
 fi
 
-# (accept.html は固定 fixture の project name "claude-code-harness" を含む。
-#  DoD c の意図 — 同 task で 2 HTML が生成された — は record 側 hash
-#  一致で構造的に既に立証済み。HTML literal text の一致は plan 側で
-#  既に確認済みなので冗長な assertion は省略)
+# (accept.html contains the fixed fixture project name "claude-code-harness".
+#  The DoD c intent — 2 HTMLs generated for the same task — is already structurally
+#  proven by the record-side hash match. HTML literal text consistency was already
+#  verified on the plan side, so the redundant assertion is omitted)
 
 # DoD c part: open dispatcher contract (CI-safe BROWSER skip)
 if [[ -x "$OPEN_HELPER" ]]; then

@@ -2,7 +2,6 @@
 name: principles
 description: "Explicit helper for development principles, safety guidelines, and diff-aware editing rules. Do NOT load for: implementation, review, workflow coaching, or VibeCoder onboarding."
 description-en: "Explicit helper for development principles, safety guidelines, and diff-aware editing rules. Do NOT load for: implementation, review, workflow coaching, or VibeCoder onboarding."
-description-ja: "開発原則、安全ガイドライン、差分尊重の編集ルールを確認する明示補助スキル。実装、レビュー、進め方相談、VibeCoder案内には使わない。"
 allowed-tools: ["Read"]
 user-invocable: false
 disable-model-invocation: true
@@ -10,19 +9,19 @@ disable-model-invocation: true
 
 # Principles Skills
 
-開発原則とガイドラインを提供するスキル群です。
+A set of skills providing development principles and guidelines.
 
-## 機能詳細
+## Feature Details
 
-| 機能 | 詳細 |
+| Feature | Details |
 |------|------|
-| **基本原則** | See [references/general-principles.md](${CLAUDE_SKILL_DIR}/references/general-principles.md) |
-| **差分編集** | See [references/diff-aware-editing.md](${CLAUDE_SKILL_DIR}/references/diff-aware-editing.md) |
-| **コンテキスト読み取り** | See [references/repo-context-reading.md](${CLAUDE_SKILL_DIR}/references/repo-context-reading.md) |
+| **General principles** | See [references/general-principles.md](${CLAUDE_SKILL_DIR}/references/general-principles.md) |
+| **Diff-aware editing** | See [references/diff-aware-editing.md](${CLAUDE_SKILL_DIR}/references/diff-aware-editing.md) |
+| **Context reading** | See [references/repo-context-reading.md](${CLAUDE_SKILL_DIR}/references/repo-context-reading.md) |
 | **VibeCoder** | See [references/vibecoder-guide.md](${CLAUDE_SKILL_DIR}/references/vibecoder-guide.md) |
 
-## 実行手順
+## Execution Steps
 
-1. ユーザーのリクエストを分類
-2. 上記の「機能詳細」から適切な参照ファイルを読む
-3. その内容を参照・適用
+1. Classify the user's request
+2. Read the appropriate reference file from "Feature Details" above
+3. Reference and apply its contents

@@ -3,92 +3,92 @@ _harness_template: "AGENTS.md.template"
 _harness_version: "4.3.3"
 ---
 
-# AGENTS.md - 開発フロー概要
+# AGENTS.md - Development Flow Overview
 
-> **プロジェクト**: {{PROJECT_NAME}}
-> **作成日**: {{DATE}}
-> **言語**: {{LANGUAGE}}
+> **Project**: {{PROJECT_NAME}}
+> **Created**: {{DATE}}
+> **Language**: {{LANGUAGE}}
 
 ---
 
-## 0. 開発フロー概要
+## 0. Development Flow Overview
 
-### 2エージェント体制
+### Two-Agent Operating Model
 
-| エージェント | 役割 | 主な責務 |
-|-------------|------|---------|
-| **Cursor** | PM（プロジェクトマネージャー） | タスク管理、レビュー、本番デプロイ判断 |
-| **Claude Code** | Worker（作業者） | 実装、テスト、CI修正、staging デプロイ |
+| Agent | Role | Main responsibilities |
+|-------|------|-----------------------|
+| **Cursor** | PM (project manager) | Task management, review, and production release decisions |
+| **Claude Code** | Worker | Implementation, tests, CI fixes, and staging deploys |
 
-### ワークフロー
+### Workflow
 
 ```
 Cursor (PM)          Claude Code (Worker)
     │                       │
-    │  1. タスク依頼        │
-    │  (/handoff-to-claude)      │
+    │  1. Request work      │
+    │  (/handoff-to-claude) │
     │──────────────────────>│
     │                       │
-    │                       │ 2. 状況把握→実装→コミット
+    │                       │ 2. Sync context -> implement -> commit
     │                       │    (/sync-status → /work)
     │                       │
-    │  3. 完了報告          │
+    │  3. Completion report │
     │  (/handoff-to-cursor) │
     │<──────────────────────│
     │                       │
-    │ 4. レビュー・本番判断  │
+    │ 4. Review and release │
     │  (/review-cc-work)    │
     │                       │
 ```
 
 ---
 
-## 1. ファイル構成
+## 1. File Map
 
-| ファイル | 用途 | 参照者 |
-|---------|------|--------|
-| `AGENTS.md` | 開発フロー概要（このファイル） | 両方 |
-| `CLAUDE.md` | Claude Code 固有設定 | Claude Code |
-| `Plans.md` | タスク管理 | 両方 |
-
----
-
-## 2. 役割分担
-
-### Cursor（PM）の責務
-
-- [ ] タスクの定義と Plans.md への追加
-- [ ] Claude Code への作業依頼
-- [ ] 完了報告のレビュー
-- [ ] 本番デプロイの判断と実行
-
-### Claude Code（Worker）の責務
-
-- [ ] タスクの実装
-- [ ] テストの実行
-- [ ] コミット & プッシュ
-- [ ] CI 失敗時の修正（3回まで）
-- [ ] staging デプロイ（該当する場合）
-- [ ] 完了報告の作成
+| File | Purpose | Readers |
+|------|---------|---------|
+| `AGENTS.md` | Shared development flow overview | Both agents |
+| `CLAUDE.md` | Claude Code-specific instructions | Claude Code |
+| `Plans.md` | Task tracking | Both agents |
 
 ---
 
-## 3. タスク管理（Plans.md）
+## 2. Responsibilities
 
-### マーカー一覧
+### Cursor (PM)
 
-| マーカー | 意味 | 設定者 |
-|---------|------|--------|
-| `pm:依頼中` | PM から依頼（互換: cursor:依頼中） | PM（Cursor/PM Claude） |
-| `cc:TODO` | Claude Code 未着手 | どちらでも |
-| `cc:WIP` | Claude Code 作業中 | Claude Code |
-| `cc:完了` | Claude Code 完了 | Claude Code |
-| `pm:確認済` | PM 確認完了（互換: cursor:確認済） | PM（Cursor/PM Claude） |
-| `cursor:依頼中` | （互換）pm:依頼中 と同義 | Cursor |
-| `cursor:確認済` | （互換）pm:確認済 と同義 | Cursor |
-| `blocked` | ブロック中 | どちらでも |
+- [ ] Define tasks and add them to `Plans.md`
+- [ ] Hand work to Claude Code
+- [ ] Review completion reports
+- [ ] Decide and run production deploys
 
-### 状態遷移
+### Claude Code (Worker)
+
+- [ ] Implement scoped tasks
+- [ ] Run tests and validation
+- [ ] Commit and push changes
+- [ ] Fix CI failures up to 3 attempts
+- [ ] Deploy to staging when applicable
+- [ ] Write completion reports
+
+---
+
+## 3. Task Tracking (`Plans.md`)
+
+### Marker List
+
+| Marker | Meaning | Set by |
+|--------|---------|--------|
+| `pm:依頼中` | PM requested work (compatible with `cursor:依頼中`) | PM (Cursor/PM Claude) |
+| `cc:TODO` | Not started by Claude Code | Either agent |
+| `cc:WIP` | Claude Code is working | Claude Code |
+| `cc:完了` | Claude Code completed the work | Claude Code |
+| `pm:確認済` | PM confirmed completion (compatible with `cursor:確認済`) | PM (Cursor/PM Claude) |
+| `cursor:依頼中` | Compatibility alias for `pm:依頼中` | Cursor |
+| `cursor:確認済` | Compatibility alias for `pm:確認済` | Cursor |
+| `blocked` | Blocked | Either agent |
+
+### State Flow
 
 ```
 pm:依頼中 → cc:WIP → cc:完了 → pm:確認済
@@ -96,66 +96,68 @@ pm:依頼中 → cc:WIP → cc:完了 → pm:確認済
 
 ---
 
-## 4. CI/CD ルール
+## 4. CI/CD Rules
 
-### Claude Code の対応範囲
+### Claude Code Scope
 
-- ✅ CI エラーの自動修正（3回まで）
-- ✅ staging 環境へのデプロイ
-- ❌ 本番デプロイは禁止（Cursor の責務）
+- CI error fixes up to 3 attempts
+- Staging deploys
+- Production deploys are owned by Cursor / PM
 
-### 3回ルール
+### Three-Attempt Rule
 
-CI が 3回連続で失敗した場合：
-1. 自動修正を中止
-2. エスカレーションレポートを作成
-3. Cursor に判断を委ねる
+If CI fails 3 times in a row:
+
+1. Stop automatic fixes.
+2. Create an escalation report.
+3. Ask Cursor / PM for a decision.
 
 ---
 
-## 5. コミットメッセージ規約
+## 5. Commit Message Convention
 
 ```
-feat: 新機能
-fix: バグ修正
-docs: ドキュメント
-refactor: リファクタリング
-test: テスト
-chore: その他
+feat: add a new feature
+fix: fix a bug
+docs: update documentation
+refactor: refactor code
+test: add or update tests
+chore: maintenance work
 ```
 
-例: `feat: ユーザー認証機能を追加`
+Example: `feat: add user authentication`
 
 ---
 
-## 6. 禁止事項
+## 6. Prohibited Actions
 
-### Claude Code の禁止事項
+### Claude Code Must Not
 
-- ❌ 本番環境への直接デプロイ
-- ❌ 4回以上の CI 自動修正
-- ❌ スコープ外の作業（依頼されていない機能追加など）
-- ❌ セキュリティに関わる設定変更（API キー、認証など）
+- Deploy directly to production
+- Attempt CI auto-fixes more than 3 times
+- Work outside the requested scope (e.g., adding unrequested features)
+- Change security-sensitive settings (API keys, authentication, etc.)
 
-### 共通の禁止事項
+### Shared Rules
 
-- ❌ force push（`--force` / `--force-with-lease`）
-- ❌ 機密情報のコミット
+- Do not force-push (`--force` / `--force-with-lease`)
+- Do not commit secrets
 
-> **Note**: 単独開発プロジェクトでは main への直接 push を許容。CI が push to main で検証を実行するため品質ゲートは維持される。共同開発者がいる場合は PR 必須に切り替えること。
-
----
-
-## 7. トラブルシューティング
-
-### よくある問題
-
-| 症状 | 対処法 |
-|------|--------|
-| CI が失敗し続ける | 3回試行後、Cursor にエスカレーション |
-| タスクが不明確 | Cursor に確認を依頼 |
-| Plans.md が更新されていない | `/sync-status` で状態確認 |
+> **Note**: Solo projects may allow direct pushes to `main` because CI still
+> runs on push and quality gates are maintained. For shared projects, switch to pull requests.
 
 ---
 
-*このドキュメントは Cursor と Claude Code の両方が参照します。*
+## 7. Troubleshooting
+
+### Common Issues
+
+| Symptom | Action |
+|---------|--------|
+| CI keeps failing | Try 3 fixes, then escalate to Cursor |
+| Task scope is unclear | Ask Cursor for clarification |
+| `Plans.md` is out of date | Run `/sync-status` to check current state |
+
+---
+
+*Both Cursor and Claude Code may read this document.*

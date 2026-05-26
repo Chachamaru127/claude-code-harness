@@ -10,29 +10,29 @@ import (
 	"time"
 )
 
-// stopFailureInput は StopFailure フックの stdin JSON ペイロード。
+// stopFailureInput is the stdin JSON payload for the StopFailure hook.
 type stopFailureInput struct {
 	Error     stopFailureError `json:"error"`
 	SessionID string           `json:"session_id"`
 }
 
-// stopFailureError は error フィールドの構造体と文字列の両方に対応する。
+// stopFailureError handles both struct and string forms of the error field.
 type stopFailureError struct {
 	Message string `json:"message"`
 	Status  string `json:"status"`
 	Code    string `json:"code"`
-	Raw     string // error が文字列だった場合
+	Raw     string // used when error is a string
 }
 
-// UnmarshalJSON は error フィールドが string / object 両方に対応する。
+// UnmarshalJSON handles the error field as either a string or an object.
 func (e *stopFailureError) UnmarshalJSON(data []byte) error {
-	// まず文字列として試みる
+	// Try as a string first
 	var s string
 	if err := json.Unmarshal(data, &s); err == nil {
 		e.Raw = s
 		return nil
 	}
-	// 次に object として試みる
+	// Then try as an object
 	type plain struct {
 		Message string `json:"message"`
 		Status  string `json:"status"`
@@ -48,7 +48,7 @@ func (e *stopFailureError) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// stopFailureLogEntry は stop-failures.jsonl に記録するエントリ。
+// stopFailureLogEntry is an entry recorded in stop-failures.jsonl.
 type stopFailureLogEntry struct {
 	Event     string `json:"event"`
 	Timestamp string `json:"timestamp"`
@@ -57,57 +57,57 @@ type stopFailureLogEntry struct {
 	Message   string `json:"message"`
 }
 
-// stopFailureSystemMessage は 429 レート制限時の systemMessage レスポンス。
+// stopFailureSystemMessage is the systemMessage response for 429 rate-limit events.
 type stopFailureSystemMessage struct {
 	SystemMessage string `json:"systemMessage"`
 }
 
-// StopFailureHandler は scripts/hook-handlers/stop-failure.sh の Go 移植。
+// StopFailureHandler is a Go port of scripts/hook-handlers/stop-failure.sh.
 //
-// StopFailure イベント（API エラーでセッション停止が失敗した際）を処理する。
-//   - エラー情報を .claude/state/stop-failures.jsonl に記録する
-//   - エラー種別を分類（rate_limit, auth_error, network_error, unknown）
-//   - 429 レート制限時は systemMessage で Lead に通知
+// Handles StopFailure events (when a session fails to stop due to an API error).
+//   - Records error information to .claude/state/stop-failures.jsonl
+//   - Classifies error type (rate_limit, auth_error, network_error, unknown)
+//   - Notifies Lead via systemMessage on 429 rate-limit events
 type StopFailureHandler struct {
-	// ProjectRoot はプロジェクトルートのパス。空の場合は環境変数/CWD から解決。
+	// ProjectRoot is the path to the project root. Resolved from env vars/CWD if empty.
 	ProjectRoot string
 }
 
-// Handle は StopFailure フックを処理する。
+// Handle processes the StopFailure hook.
 func (h *StopFailureHandler) Handle(in io.Reader, out io.Writer) error {
 	data, err := io.ReadAll(in)
 	if err != nil || len(strings.TrimSpace(string(data))) == 0 {
-		// ペイロードなし: ログ不要、何も出力しない
+		// No payload: no logging needed, output nothing
 		return nil
 	}
 
-	// プロジェクトルート解決
+	// Resolve project root
 	projectRoot := h.ProjectRoot
 	if projectRoot == "" {
 		projectRoot = resolveProjectRoot()
 	}
 	stateDir := resolveStopFailureStateDir(projectRoot)
 
-	// ステートディレクトリを確保
+	// Ensure state directory exists
 	if mkErr := os.MkdirAll(stateDir, 0o700); mkErr != nil {
-		// ディレクトリ作成失敗: stderr に出力して終了
+		// Failed to create directory: write to stderr and exit
 		fmt.Fprintf(os.Stderr, "[StopFailure] mkdir %s: %v\n", stateDir, mkErr)
 		return nil
 	}
 
 	logFile := stateDir + "/stop-failures.jsonl"
 
-	// シンボリックリンクチェック（セキュリティ）
+	// Symlink check (security)
 	if isStopFailureLogSymlink(logFile) {
 		fmt.Fprintf(os.Stderr, "[StopFailure] symlink detected at %s, aborting\n", logFile)
 		return nil
 	}
 
-	// JSON パース
+	// Parse JSON
 	var input stopFailureInput
 	_ = json.Unmarshal(data, &input)
 
-	// エラー情報の正規化
+	// Normalize error information
 	errorMsg, errorCode := normalizeStopFailureError(input.Error)
 	sessionID := input.SessionID
 	if sessionID == "" {
@@ -116,7 +116,7 @@ func (h *StopFailureHandler) Handle(in io.Reader, out io.Writer) error {
 
 	ts := time.Now().UTC().Format(time.RFC3339)
 
-	// JSONL ログ記録
+	// Write JSONL log
 	entry := stopFailureLogEntry{
 		Event:     "stop_failure",
 		Timestamp: ts,
@@ -133,10 +133,10 @@ func (h *StopFailureHandler) Handle(in io.Reader, out io.Writer) error {
 		}
 	}
 
-	// 429 レート制限時: systemMessage で Lead に通知
+	// On 429 rate-limit: notify Lead via systemMessage
 	if errorCode == "429" || errorCode == "rate_limit" {
 		msg := fmt.Sprintf(
-			"[StopFailure] Worker %s がレート制限 (429) で停止。Breezing Lead は指数バックオフ後に自動再開を試みてください。",
+			"[StopFailure] Worker %s stopped due to rate limit (429). Breezing Lead should attempt automatic restart after exponential backoff.",
 			sessionID,
 		)
 		if err := writeJSON(out, stopFailureSystemMessage{SystemMessage: msg}); err != nil {
@@ -144,20 +144,20 @@ func (h *StopFailureHandler) Handle(in io.Reader, out io.Writer) error {
 		}
 	}
 
-	// stderr にデバッグ出力
+	// Debug output to stderr
 	fmt.Fprintf(os.Stderr, "[StopFailure] session=%s code=%s msg=%s\n", sessionID, errorCode, errorMsg)
 
 	return nil
 }
 
-// normalizeStopFailureError はエラー情報を正規化し、メッセージとコードを返す。
-// エラー種別の分類:
-//   - "429" / メッセージに "rate" を含む → rate_limit
-//   - "401", "403" / メッセージに "auth" を含む → auth_error
-//   - メッセージに "network", "connection", "timeout" を含む → network_error
-//   - 上記以外 → unknown
+// normalizeStopFailureError normalizes error information and returns the message and code.
+// Error type classification:
+//   - "429" / message contains "rate" → rate_limit
+//   - "401", "403" / message contains "auth" → auth_error
+//   - message contains "network", "connection", "timeout" → network_error
+//   - otherwise → unknown
 func normalizeStopFailureError(e stopFailureError) (msg, code string) {
-	// Raw (文字列 error フィールド) を優先
+	// Prefer Raw (string error field)
 	if e.Raw != "" {
 		msg = e.Raw
 		code = classifyErrorCode("", msg)
@@ -178,9 +178,9 @@ func normalizeStopFailureError(e stopFailureError) (msg, code string) {
 	return
 }
 
-// classifyErrorCode はエラーコードとメッセージからエラー種別を分類する。
+// classifyErrorCode classifies the error type from the error code and message.
 func classifyErrorCode(rawCode, msg string) string {
-	// HTTP ステータスコードによる分類
+	// Classification by HTTP status code
 	switch rawCode {
 	case "429":
 		return "429"
@@ -188,7 +188,7 @@ func classifyErrorCode(rawCode, msg string) string {
 		return "auth_error"
 	}
 
-	// メッセージによる分類（コードが "unknown" の場合も含む）
+	// Classification by message (including when code is "unknown")
 	lower := strings.ToLower(msg)
 	if strings.Contains(lower, "rate") || strings.Contains(lower, "429") {
 		return "rate_limit"
@@ -206,24 +206,24 @@ func classifyErrorCode(rawCode, msg string) string {
 	return "unknown"
 }
 
-// isStopFailureLogSymlink はログファイルがシンボリックリンクかどうかを返す。
-// セキュリティチェック用。isSymlink は userprompt_track_command.go に定義済み。
+// isStopFailureLogSymlink returns whether the log file is a symbolic link.
+// Used for security checks. isSymlink is defined in userprompt_track_command.go.
 func isStopFailureLogSymlink(path string) bool {
 	return isSymlink(path)
 }
 
-// resolveStopFailureStateDir は stop-failures.jsonl の保存先ディレクトリを返す。
-// bash 版 stop-failure.sh と同様の動作:
-//   - CLAUDE_PLUGIN_DATA が設定されている場合: ${CLAUDE_PLUGIN_DATA}/projects/<hash>
-//     <hash> は CWD の SHA-256 上位 12 文字
-//   - 未設定の場合: ${projectRoot}/.claude/state
+// resolveStopFailureStateDir returns the directory where stop-failures.jsonl is stored.
+// Behaves the same as the bash version stop-failure.sh:
+//   - When CLAUDE_PLUGIN_DATA is set: ${CLAUDE_PLUGIN_DATA}/projects/<hash>
+//     where <hash> is the first 12 characters of the SHA-256 of CWD
+//   - When not set: ${projectRoot}/.claude/state
 func resolveStopFailureStateDir(projectRoot string) string {
 	pluginData := os.Getenv("CLAUDE_PLUGIN_DATA")
 	if pluginData == "" {
 		return projectRoot + "/.claude/state"
 	}
 
-	// CWD の SHA-256 先頭 12 文字をプロジェクトハッシュとして使用
+	// Use the first 12 characters of the SHA-256 of CWD as the project hash
 	hash := sha256.Sum256([]byte(projectRoot))
 	hashStr := fmt.Sprintf("%x", hash)
 	if len(hashStr) > 12 {

@@ -1,70 +1,70 @@
 ---
 name: ui-skills-summary
-description: "UI Skills の制約セット要約（実装品質優先）"
+description: "Summary of UI Skills constraint set (implementation quality first)"
 ---
 
 # UI Skills Summary
 
-UI 実装で破綻しやすいポイントを防ぐための制約セット。
+Constraint set to prevent common failure points in UI implementation.
 
 ## Stack
-- MUST: Tailwind CSS はデフォルト値を使う（既存カスタムか明示要求がある場合のみ例外）
-- MUST: JavaScript のアニメーションが必要なら `motion/react` を使う
-- SHOULD: Tailwind の入場/軽微アニメに `tw-animate-css`
-- MUST: class 制御は `cn`（`clsx` + `tailwind-merge`）
+- MUST: Use Tailwind CSS default values (exceptions only for existing custom values or explicit requests)
+- MUST: Use `motion/react` for JavaScript animations
+- SHOULD: Use `tw-animate-css` for Tailwind entry/minor animations
+- MUST: Use `cn` (`clsx` + `tailwind-merge`) for class control
 
 ## Components
-- MUST: キーボード/フォーカス挙動はアクセシブルなプリミティブを使う
-- MUST: 既存のプリミティブを優先
-- NEVER: 同一の操作面でプリミティブを混在させない
-- SHOULD: 互換があるなら Base UI を優先
-- MUST: アイコンのみボタンには `aria-label`
-- NEVER: キーボード/フォーカス挙動を手実装しない（明示要求がない限り）
+- MUST: Use accessible primitives for keyboard/focus behavior
+- MUST: Prefer existing primitives
+- NEVER: Mix primitives on the same interaction surface
+- SHOULD: Prefer Base UI when compatible
+- MUST: Icon-only buttons must have `aria-label`
+- NEVER: Handroll keyboard/focus behavior (unless explicitly requested)
 
 ## Interaction
-- MUST: 破壊的操作は AlertDialog
-- SHOULD: ローディングは構造的スケルトン
-- NEVER: `h-screen` は使わず `h-dvh`
-- MUST: fixed 要素は `safe-area-inset` を考慮
-- MUST: エラーは操作箇所の近くに出す
-- NEVER: input/textarea の貼り付けをブロックしない
+- MUST: Use AlertDialog for destructive actions
+- SHOULD: Use structural skeletons for loading states
+- NEVER: Use `h-screen`; use `h-dvh` instead
+- MUST: Account for `safe-area-inset` on fixed elements
+- MUST: Display errors near the point of interaction
+- NEVER: Block paste in input/textarea
 
 ## Animation
-- NEVER: 明示要求がない限りアニメーション追加しない
-- MUST: `transform` / `opacity` のみをアニメーション
-- NEVER: `width/height/top/left/margin/padding` をアニメーション
-- SHOULD: `background/color` のアニメは小さな局所 UI のみ
-- SHOULD: 入口は `ease-out`
-- NEVER: フィードバックは 200ms 超えない
-- MUST: ループはオフスクリーンで停止
-- SHOULD: `prefers-reduced-motion` を尊重
-- NEVER: カスタム easing は明示要求がない限り禁止
-- SHOULD: 大きな画像/全面面はアニメを避ける
+- NEVER: Do not add animations unless explicitly requested
+- MUST: Animate only `transform` / `opacity`
+- NEVER: Animate `width/height/top/left/margin/padding`
+- SHOULD: Animate `background/color` only for small, localized UI elements
+- SHOULD: Use `ease-out` for entry
+- NEVER: Feedback animations must not exceed 200ms
+- MUST: Stop loops when off-screen
+- SHOULD: Respect `prefers-reduced-motion`
+- NEVER: Custom easing is prohibited unless explicitly requested
+- SHOULD: Avoid animating large images or full-bleed surfaces
 
 ## Typography
-- MUST: 見出しは `text-balance`
-- MUST: 本文は `text-pretty`
-- MUST: 数値は `tabular-nums`
-- SHOULD: 密な UI は `truncate` or `line-clamp`
-- NEVER: `tracking-*` を勝手に変えない
+- MUST: Use `text-balance` for headings
+- MUST: Use `text-pretty` for body text
+- MUST: Use `tabular-nums` for numeric values
+- SHOULD: Use `truncate` or `line-clamp` for dense UI
+- NEVER: Do not change `tracking-*` arbitrarily
 
 ## Layout
-- MUST: 固定の `z-index` スケールを使う（任意の `z-*` は避ける）
-- SHOULD: 正方形は `size-*`
+- MUST: Use a fixed `z-index` scale (avoid arbitrary `z-*` values)
+- SHOULD: Use `size-*` for square elements
 
 ## Performance
-- NEVER: 大きな `blur()` / `backdrop-filter` をアニメしない
-- NEVER: `will-change` を常時付与しない
-- NEVER: `useEffect` で書かなくても良い処理は render で書く
+- NEVER: Do not animate large `blur()` / `backdrop-filter`
+- NEVER: Do not apply `will-change` persistently
+- NEVER: Write in render what doesn't need to be in `useEffect`
 
 ## Design
-- NEVER: 明示要求がない限りグラデーション禁止
-- NEVER: 紫/多色グラデーション禁止
-- NEVER: 主要な手掛かりに glow を使わない
-- SHOULD: 影は Tailwind のデフォルトスケール
-- MUST: 空状態には「次の一手」を 1 つ提示
-- SHOULD: アクセント色は 1 つに絞る
-- SHOULD: 新色より既存テーマ/トークンを優先
+- NEVER: Gradients are prohibited unless explicitly requested
+- NEVER: Purple/multi-color gradients are prohibited
+- NEVER: Do not use glow as a primary affordance
+- SHOULD: Use Tailwind's default shadow scale
+- MUST: Empty states must present exactly one "next action"
+- SHOULD: Use a single accent color
+- SHOULD: Prefer existing theme/tokens over introducing new colors
 
 ## Sources
 - https://www.ui-skills.com/

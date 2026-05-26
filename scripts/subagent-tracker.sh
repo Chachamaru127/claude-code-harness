@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
 # subagent-tracker.sh
-# Claude Code 2.1.0 SubagentStart/SubagentStop フック用トラッカー
+# Tracker for Claude Code 2.1.0 SubagentStart/SubagentStop hooks
 #
-# 使用方法:
-#   ./subagent-tracker.sh start   # サブエージェント開始時
-#   ./subagent-tracker.sh stop    # サブエージェント終了時
+# Usage:
+#   ./subagent-tracker.sh start   # On subagent start
+#   ./subagent-tracker.sh stop    # On subagent stop
 #
-# 環境変数（SubagentStop時に利用可能）:
-#   AGENT_ID              - サブエージェントの識別子
-#   AGENT_TRANSCRIPT_PATH - トランスクリプトファイルのパス
+# Environment variables (available on SubagentStop):
+#   AGENT_ID              - Subagent identifier
+#   AGENT_TRANSCRIPT_PATH - Path to the transcript file
 
 set -euo pipefail
 
-# === 設定 ===
+# === Configuration ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/path-utils.sh" 2>/dev/null || true
 
-# プロジェクトルートを検出
+# Detect project root
 PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 
-# ログディレクトリ
+# Log directory
 LOG_DIR="${PROJECT_ROOT}/.claude/logs"
 SUBAGENT_LOG="${LOG_DIR}/subagent-history.jsonl"
 
-# === ユーティリティ関数 ===
+# === Utility functions ===
 
 ensure_log_dir() {
   mkdir -p "${LOG_DIR}" 2>/dev/null || true
@@ -33,7 +33,7 @@ get_timestamp() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-# === メイン処理 ===
+# === Main ===
 
 action="${1:-}"
 
@@ -41,48 +41,48 @@ case "${action}" in
   start)
     ensure_log_dir
 
-    # 環境変数から情報を取得（利用可能な場合）
+    # Get information from environment variables (if available)
     agent_id="${AGENT_ID:-unknown}"
 
-    # ログエントリを作成
+    # Build log entry
     log_entry=$(cat <<EOF
 {"event":"subagent_start","timestamp":"$(get_timestamp)","agent_id":"${agent_id}"}
 EOF
 )
 
-    # JSONL形式で追記
+    # Append in JSONL format
     echo "${log_entry}" >> "${SUBAGENT_LOG}" 2>/dev/null || true
 
-    # 成功レスポンス（フックが期待するJSON形式）
+    # Success response (JSON format expected by hook)
     echo '{"decision":"approve","reason":"Subagent start tracked"}'
     ;;
 
   stop)
     ensure_log_dir
 
-    # 環境変数から情報を取得
+    # Get information from environment variables
     agent_id="${AGENT_ID:-unknown}"
     transcript_path="${AGENT_TRANSCRIPT_PATH:-}"
 
-    # トランスクリプトのサマリーを取得（存在する場合）
+    # Get transcript summary (if it exists)
     transcript_summary=""
     if [[ -n "${transcript_path}" && -f "${transcript_path}" ]]; then
-      # 最後の50行を取得してサマリー化
+      # Get last 50 lines for summary
       transcript_summary=$(tail -50 "${transcript_path}" 2>/dev/null | head -c 500 || echo "")
-      transcript_summary="${transcript_summary//\"/\\\"}"  # エスケープ
-      transcript_summary="${transcript_summary//$'\n'/\\n}"  # 改行をエスケープ
+      transcript_summary="${transcript_summary//\"/\\\"}"  # Escape quotes
+      transcript_summary="${transcript_summary//$'\n'/\\n}"  # Escape newlines
     fi
 
-    # ログエントリを作成
+    # Build log entry
     log_entry=$(cat <<EOF
 {"event":"subagent_stop","timestamp":"$(get_timestamp)","agent_id":"${agent_id}","transcript_path":"${transcript_path}","transcript_preview":"${transcript_summary:0:200}"}
 EOF
 )
 
-    # JSONL形式で追記
+    # Append in JSONL format
     echo "${log_entry}" >> "${SUBAGENT_LOG}" 2>/dev/null || true
 
-    # 成功レスポンス
+    # Success response
     echo '{"decision":"approve","reason":"Subagent stop tracked"}'
     ;;
 

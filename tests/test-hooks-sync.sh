@@ -1,25 +1,25 @@
 #!/bin/bash
 # test-hooks-sync.sh
-# hooks/hooks.json と .claude-plugin/hooks.json の同期を検証
+# Verify synchronization between hooks/hooks.json and .claude-plugin/hooks.json
 #
-# TDD: Phase 7 テストケース
+# TDD: Phase 7 test cases
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# テスト結果カウンター
+# Test result counters
 TESTS_RUN=0
 TESTS_PASSED=0
 TESTS_FAILED=0
 
-# カラー出力
+# Color output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
-# テスト関数
+# Test function
 run_test() {
   local test_name="$1"
   local test_func="$2"
@@ -37,7 +37,7 @@ run_test() {
 }
 
 # ==================================================
-# Test 1: 両方のファイルが存在するか
+# Test 1: Both files exist
 # ==================================================
 test_both_files_exist() {
   local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
@@ -57,7 +57,7 @@ test_both_files_exist() {
 }
 
 # ==================================================
-# Test 2: 両ファイルの内容が同一か
+# Test 2: Both files have identical content
 # ==================================================
 test_files_identical() {
   local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
@@ -73,7 +73,7 @@ test_files_identical() {
 }
 
 # ==================================================
-# Test 3: JSON が有効か
+# Test 3: JSON is valid
 # ==================================================
 test_valid_json() {
   local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
@@ -93,7 +93,7 @@ test_valid_json() {
 }
 
 # ==================================================
-# Test 4: 必須フックイベントが存在するか
+# Test 4: Required hook events exist
 # ==================================================
 test_required_hook_events() {
   local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
@@ -116,13 +116,13 @@ test_required_hook_events() {
 }
 
 # ==================================================
-# Test 5: 禁止パターン (type: "prompt" の不正使用) がないか
+# Test 5: No forbidden pattern (invalid use of type: "prompt")
 # ==================================================
 test_no_forbidden_prompt_usage() {
   local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
 
-  # PreToolUse, PostToolUse, UserPromptSubmit で prompt 型は禁止
-  # (セキュリティ上の理由 - D13)
+  # prompt type is forbidden in PreToolUse, PostToolUse, UserPromptSubmit
+  # (security reasons - D13)
   local forbidden_events=("PreToolUse" "PostToolUse" "UserPromptSubmit")
   local violations=""
 
@@ -142,7 +142,7 @@ test_no_forbidden_prompt_usage() {
 }
 
 # ==================================================
-# Test 6: CLAUDE_PLUGIN_ROOT 空時に /bin/harness へ落ちないか
+# Test 6: Does not fall through to /bin/harness when CLAUDE_PLUGIN_ROOT is empty
 # ==================================================
 test_no_raw_plugin_root_harness_paths() {
   local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
@@ -165,7 +165,7 @@ test_no_raw_plugin_root_harness_paths() {
 }
 
 # ==================================================
-# Test 7: CLAUDE_PLUGIN_ROOT 未設定でも hook command が root 解決できるか
+# Test 7: hook command resolves root even when CLAUDE_PLUGIN_ROOT is unset
 # ==================================================
 test_hook_command_resolves_without_plugin_root() {
   local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
@@ -220,31 +220,31 @@ test_hook_command_resolves_without_plugin_root() {
 }
 
 # ==================================================
-# メイン実行
+# Main execution
 # ==================================================
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo " Hooks 同期テスト"
+echo " Hooks sync test"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# jq が利用可能か確認
+# Verify jq is available
 if ! command -v jq &> /dev/null; then
   echo -e "${RED}Error: jq is required but not installed${NC}"
   exit 1
 fi
 
-run_test "両方の hooks.json が存在する" test_both_files_exist
-run_test "hooks.json の内容が同一" test_files_identical
-run_test "JSON が有効" test_valid_json
-run_test "必須フックイベントが存在" test_required_hook_events
-run_test "禁止された prompt 使用がない" test_no_forbidden_prompt_usage
-run_test "CLAUDE_PLUGIN_ROOT 空時に /bin/harness へ落ちない" test_no_raw_plugin_root_harness_paths
-run_test "CLAUDE_PLUGIN_ROOT 未設定でも hook command が root 解決できる" test_hook_command_resolves_without_plugin_root
+run_test "Both hooks.json files exist" test_both_files_exist
+run_test "hooks.json content is identical" test_files_identical
+run_test "JSON is valid" test_valid_json
+run_test "Required hook events exist" test_required_hook_events
+run_test "No forbidden prompt usage" test_no_forbidden_prompt_usage
+run_test "Does not fall through to /bin/harness when CLAUDE_PLUGIN_ROOT is empty" test_no_raw_plugin_root_harness_paths
+run_test "hook command resolves root even when CLAUDE_PLUGIN_ROOT is unset" test_hook_command_resolves_without_plugin_root
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo " テスト結果: $TESTS_PASSED/$TESTS_RUN passed"
+echo " Test results: $TESTS_PASSED/$TESTS_RUN passed"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 

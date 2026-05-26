@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # elicitation-result.sh
-# ElicitationResult フックハンドラ
-# Elicitation の結果が MCP サーバーに返された後に発火
-# 軽量ロギングのみ
+# ElicitationResult hook handler
+# Fires after the Elicitation result has been returned to the MCP server
+# Lightweight logging only
 #
 # Input: stdin JSON from Claude Code hooks
 # Output: JSON to approve the event
@@ -10,30 +10,30 @@
 
 set -euo pipefail
 
-# === 設定 ===
+# === Configuration ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# Load path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-# プロジェクトルートを検出
+# Detect project root
 PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 
-# ログファイル
+# Log file
 STATE_DIR="${PROJECT_ROOT}/.claude/state"
 LOG_FILE="${STATE_DIR}/elicitation-events.jsonl"
 
-# === ユーティリティ関数 ===
+# === Utility functions ===
 
 ensure_state_dir() {
   mkdir -p "${STATE_DIR}" 2>/dev/null || true
   chmod 700 "${STATE_DIR}" 2>/dev/null || true
 }
 
-# JSONL ローテーション（500 行超過時に 400 行に切り詰め）
+# JSONL rotation (trim to 400 lines when exceeding 500)
 rotate_jsonl() {
   local file="$1"
   local _lines
@@ -48,19 +48,19 @@ get_timestamp() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-# === stdin から JSON ペイロードを読み取り ===
+# === Read JSON payload from stdin ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
+# Skip if payload is empty
 if [ -z "${INPUT}" ]; then
   echo '{"decision":"approve","reason":"ElicitationResult: no payload"}'
   exit 0
 fi
 
-# === フィールド抽出 ===
+# === Field extraction ===
 MCP_SERVER=""
 ELICITATION_ID=""
 RESULT_STATUS=""
@@ -87,7 +87,7 @@ except:
   RESULT_STATUS="$(echo "${_parsed}" | sed -n '3p')"
 fi
 
-# === ログ記録 ===
+# === Logging ===
 ensure_state_dir
 TS="$(get_timestamp)"
 
@@ -118,6 +118,6 @@ if [ -n "${log_entry}" ]; then
   rotate_jsonl "${LOG_FILE}"
 fi
 
-# === レスポンス ===
+# === Response ===
 echo '{"decision":"approve","reason":"ElicitationResult tracked"}'
 exit 0

@@ -94,7 +94,7 @@ func TestHandleSessionAutoBroadcast_NoPatternMatch(t *testing.T) {
 }
 
 func TestHandleSessionAutoBroadcast_MatchesSrcAPI(t *testing.T) {
-	// テスト用の一時ディレクトリに移動
+	// Move to a temporary directory for testing
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
 	if err != nil {
@@ -117,18 +117,18 @@ func TestHandleSessionAutoBroadcast_MatchesSrcAPI(t *testing.T) {
 		t.Fatalf("invalid JSON output: %v, raw: %s", jsonErr, out.String())
 	}
 
-	// additionalContext にファイル名が含まれること
+	// additionalContext should contain the file name
 	if !strings.Contains(result.HookSpecificOutput.AdditionalContext, "users.ts") {
 		t.Errorf("expected additionalContext to contain 'users.ts', got %q",
 			result.HookSpecificOutput.AdditionalContext)
 	}
-	if !strings.Contains(result.HookSpecificOutput.AdditionalContext, "自動ブロードキャスト") {
-		t.Errorf("expected additionalContext to contain '自動ブロードキャスト', got %q",
+	if !strings.Contains(result.HookSpecificOutput.AdditionalContext, "auto-broadcast") {
+		t.Errorf("expected additionalContext to contain 'auto-broadcast', got %q",
 			result.HookSpecificOutput.AdditionalContext)
 	}
 
-	// broadcast.md が .claude/sessions/ に作成されていること
-	// （inbox_check が読む場所と同じ: .claude/sessions/broadcast.md）
+	// broadcast.md should be created under .claude/sessions/
+	// (same location that inbox_check reads: .claude/sessions/broadcast.md)
 	broadcastFile := filepath.Join(".claude", "sessions", "broadcast.md")
 	data, readErr := os.ReadFile(broadcastFile)
 	if readErr != nil {
@@ -137,8 +137,8 @@ func TestHandleSessionAutoBroadcast_MatchesSrcAPI(t *testing.T) {
 	if !strings.Contains(string(data), "src/api/users.ts") {
 		t.Errorf("broadcast.md should contain file path, got: %s", string(data))
 	}
-	// ヘッダーフォーマットが inbox_check パーサーと互換であること: ## <timestamp> [<sender>]
-	// session_id なしの場合は [unknown] にフォールバックする
+	// Header format should be compatible with the inbox_check parser: ## <timestamp> [<sender>]
+	// Falls back to [unknown] when there is no session_id
 	if !strings.Contains(string(data), "[unknown]") {
 		t.Errorf("broadcast.md should contain sender tag [unknown] (no session_id), got: %s", string(data))
 	}
@@ -182,7 +182,7 @@ func TestHandleSessionAutoBroadcast_MatchesPathField(t *testing.T) {
 	}
 	defer os.Chdir(origDir)
 
-	// file_path の代わりに path フィールドを使う
+	// Use the path field instead of file_path
 	input := `{"tool_input":{"path":"src/types/user.ts"}}`
 	var out bytes.Buffer
 	if handlerErr := HandleSessionAutoBroadcast(strings.NewReader(input), &out); handlerErr != nil {
@@ -210,7 +210,7 @@ func TestHandleSessionAutoBroadcast_DisabledByConfig(t *testing.T) {
 	}
 	defer os.Chdir(origDir)
 
-	// 設定ファイルで無効化
+	// Disable via config file
 	configDir := filepath.Join(".claude", "sessions")
 	if mkdirErr := os.MkdirAll(configDir, 0o755); mkdirErr != nil {
 		t.Fatal(mkdirErr)
@@ -233,7 +233,7 @@ func TestHandleSessionAutoBroadcast_DisabledByConfig(t *testing.T) {
 	if jsonErr := json.Unmarshal(out.Bytes(), &result); jsonErr != nil {
 		t.Fatalf("invalid JSON output: %v", jsonErr)
 	}
-	// 無効な場合は追加コンテキストなし
+	// No additional context when disabled
 	if result.HookSpecificOutput.AdditionalContext != "" {
 		t.Errorf("expected empty context when disabled, got %q",
 			result.HookSpecificOutput.AdditionalContext)
@@ -251,21 +251,21 @@ func TestHandleSessionAutoBroadcast_SessionIDInHeader(t *testing.T) {
 	}
 	defer os.Chdir(origDir) //nolint:errcheck
 
-	// session_id を含む入力
+	// Input containing session_id
 	input := `{"session_id":"abcdef1234567890","tool_input":{"file_path":"src/api/orders.ts"}}`
 	var out bytes.Buffer
 	if handlerErr := HandleSessionAutoBroadcast(strings.NewReader(input), &out); handlerErr != nil {
 		t.Fatalf("unexpected error: %v", handlerErr)
 	}
 
-	// broadcast.md のヘッダーに session_id の先頭 12 文字が含まれることを確認
+	// Verify that the broadcast.md header contains the first 12 characters of session_id
 	broadcastFile := filepath.Join(".claude", "sessions", "broadcast.md")
 	data, readErr := os.ReadFile(broadcastFile)
 	if readErr != nil {
 		t.Fatalf("broadcast.md not created: %v", readErr)
 	}
 	content := string(data)
-	// [auto-broadcast] ではなく [abcdef123456]（先頭12文字）が使われるはず
+	// Should use [abcdef123456] (first 12 chars) rather than [auto-broadcast]
 	if strings.Contains(content, "[auto-broadcast]") {
 		t.Errorf("header should NOT use [auto-broadcast] when session_id is set, got: %s", content)
 	}
@@ -285,7 +285,7 @@ func TestHandleSessionAutoBroadcast_EmptySessionIDFallback(t *testing.T) {
 	}
 	defer os.Chdir(origDir) //nolint:errcheck
 
-	// session_id なし（フォールバック: [unknown]）
+	// No session_id (fallback: [unknown])
 	input := `{"tool_input":{"file_path":"src/api/items.ts"}}`
 	var out bytes.Buffer
 	if handlerErr := HandleSessionAutoBroadcast(strings.NewReader(input), &out); handlerErr != nil {
@@ -314,7 +314,7 @@ func TestHandleSessionAutoBroadcast_CustomPattern(t *testing.T) {
 	}
 	defer os.Chdir(origDir)
 
-	// カスタムパターンを設定
+	// Configure custom pattern
 	configDir := filepath.Join(".claude", "sessions")
 	if mkdirErr := os.MkdirAll(configDir, 0o755); mkdirErr != nil {
 		t.Fatal(mkdirErr)

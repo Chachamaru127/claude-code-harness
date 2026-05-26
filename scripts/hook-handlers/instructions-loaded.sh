@@ -1,10 +1,10 @@
 #!/bin/bash
 # instructions-loaded.sh
-# InstructionsLoaded フックハンドラ（CC 2.1.69+）
+# InstructionsLoaded hook handler (CC 2.1.69+)
 #
-# 目的:
-# - セッション開始前に instructions 読み込みイベントを記録
-# - rules/hook 環境の前提を軽量に検証
+# Purpose:
+# - Record the instructions loading event before session start
+# - Lightly validate prerequisites for the rules/hook environment
 #
 # Input: stdin JSON
 # Output: {"decision":"approve", ...}
@@ -76,7 +76,7 @@ if command -v jq >/dev/null 2>&1; then
     >> "${LOG_FILE}" 2>/dev/null || true
 fi
 
-# 軽量な前提確認（欠落してもブロックしない）
+# Lightweight prerequisite check (missing items do not block)
 if [ ! -f "${PROJECT_ROOT}/hooks/hooks.json" ] && [ ! -f "${PROJECT_ROOT}/.claude-plugin/hooks.json" ]; then
   echo '{"decision":"approve","reason":"InstructionsLoaded: hooks.json not found in project root"}'
   exit 0

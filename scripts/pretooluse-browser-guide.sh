@@ -1,48 +1,48 @@
 #!/bin/bash
 # pretooluse-browser-guide.sh
-# MCP ブラウザツール使用時に agent-browser を提案するフック
+# Hook that suggests agent-browser when MCP browser tools are used.
 #
-# 対象ツール:
+# Target tools:
 #   - mcp__chrome-devtools__*
 #   - mcp__playwright__* / mcp__plugin_playwright__*
 #
-# 動作:
-#   - agent-browser がインストール済みの場合、使用を推奨
-#   - ブロックはしない（情報提供のみ）
+# Behavior:
+#   - Recommends agent-browser when it is installed
+#   - Does not block (informational only)
 #
-# Input: stdin JSON from Claude Code hooks (matcher で絞り込み済み)
+# Input: stdin JSON from Claude Code hooks (pre-filtered by matcher)
 # Output: JSON with hookSpecificOutput format
 
 set -euo pipefail
 
-# stdin から JSON を読み取り
+# Read JSON from stdin
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# 入力がない場合は何もしない
+# Do nothing if there is no input
 [ -z "$INPUT" ] && exit 0
 
-# agent-browser がインストールされているか確認
+# Check if agent-browser is installed
 if command -v agent-browser &> /dev/null; then
-  # 推奨メッセージを出力（hookSpecificOutput 形式）
-  # matcher で既に MCP ブラウザツールに絞り込まれているので、追加のツール名チェックは不要
+  # Output recommendation message (hookSpecificOutput format)
+  # The matcher already narrows to MCP browser tools, so no additional tool name check needed
   if command -v jq >/dev/null 2>&1; then
-    CONTEXT="💡 **agent-browser を先に試すことを推奨します**
+    CONTEXT="💡 **It is recommended to try agent-browser first**
 
-agent-browser は AI エージェント向けに最適化されたブラウザ自動化ツールです。
+agent-browser is a browser automation tool optimized for AI agents.
 
 \`\`\`bash
-# 基本的な使い方
+# Basic usage
 agent-browser open <url>
-agent-browser snapshot -i -c  # AI 向けスナップショット
-agent-browser click @e1        # 要素参照でクリック
+agent-browser snapshot -i -c  # AI-oriented snapshot
+agent-browser click @e1        # Click by element reference
 \`\`\`
 
-現在の MCP ツールも使用可能ですが、agent-browser の方がシンプルで高速です。
+The current MCP tool can also be used, but agent-browser is simpler and faster.
 
-詳細: \`docs/OPTIONAL_PLUGINS.md\`"
+Details: \`docs/OPTIONAL_PLUGINS.md\`"
 
     jq -nc --arg ctx "$CONTEXT" '{
       hookSpecificOutput: {
@@ -51,24 +51,24 @@ agent-browser click @e1        # 要素参照でクリック
       }
     }'
   else
-    # jq がない場合は Python を試行
+    # Fall back to Python when jq is unavailable
     if command -v python3 >/dev/null 2>&1; then
       python3 - <<'PY'
 import json
-context = """💡 **agent-browser を先に試すことを推奨します**
+context = """💡 **It is recommended to try agent-browser first**
 
-agent-browser は AI エージェント向けに最適化されたブラウザ自動化ツールです。
+agent-browser is a browser automation tool optimized for AI agents.
 
 ```bash
-# 基本的な使い方
+# Basic usage
 agent-browser open <url>
-agent-browser snapshot -i -c  # AI 向けスナップショット
-agent-browser click @e1        # 要素参照でクリック
+agent-browser snapshot -i -c  # AI-oriented snapshot
+agent-browser click @e1        # Click by element reference
 ```
 
-現在の MCP ツールも使用可能ですが、agent-browser の方がシンプルで高速です。
+The current MCP tool can also be used, but agent-browser is simpler and faster.
 
-詳細: `docs/OPTIONAL_PLUGINS.md`"""
+Details: `docs/OPTIONAL_PLUGINS.md`"""
 print(json.dumps({
     "hookSpecificOutput": {
         "hookEventName": "PreToolUse",
@@ -80,5 +80,5 @@ PY
   fi
 fi
 
-# agent-browser 未インストールまたは出力完了後は正常終了
+# Exit normally if agent-browser is not installed or after output is complete
 exit 0

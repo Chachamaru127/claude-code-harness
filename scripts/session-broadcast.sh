@@ -1,12 +1,12 @@
 #!/bin/bash
 # session-broadcast.sh
-# セッション間ブロードキャストメッセージ送信
+# Send broadcast messages between sessions
 #
-# 使用方法:
-#   ./session-broadcast.sh "メッセージ"
-#   ./session-broadcast.sh --auto "ファイル名" "変更内容"
+# Usage:
+#   ./session-broadcast.sh "message"
+#   ./session-broadcast.sh --auto "filename" "change description"
 #
-# 出力: ブロードキャストメッセージを .claude/sessions/broadcast.md に追記
+# Output: Appends broadcast message to .claude/sessions/broadcast.md
 
 set -euo pipefail
 
@@ -21,13 +21,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# ===== 設定 =====
+# ===== Configuration =====
 SESSIONS_DIR=".claude/sessions"
 BROADCAST_FILE="${SESSIONS_DIR}/broadcast.md"
 SESSION_FILE=".claude/state/session.json"
-MAX_MESSAGES=100  # 最大保持メッセージ数
+MAX_MESSAGES=100  # maximum number of messages to retain
 
-# ===== ヘルパー関数 =====
+# ===== Helper functions =====
 get_session_id() {
   if [ -f "$SESSION_FILE" ] && command -v jq >/dev/null 2>&1; then
     jq -r '.session_id // "unknown"' "$SESSION_FILE" 2>/dev/null
@@ -40,13 +40,13 @@ get_timestamp() {
   date -u +%Y-%m-%dT%H:%M:%SZ
 }
 
-# ===== メイン処理 =====
+# ===== Main processing =====
 main() {
   local mode="manual"
   local message=""
   local file_path=""
 
-  # 引数解析
+  # Argument parsing
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --auto)
@@ -81,33 +81,33 @@ main() {
     exit 1
   fi
 
-  # ディレクトリ作成
+  # Create directory
   mkdir -p "$SESSIONS_DIR"
 
-  # セッションIDとタイムスタンプを取得
+  # Get session ID and timestamp
   local session_id=$(get_session_id)
   local timestamp=$(get_timestamp)
   local short_id="${session_id:0:12}"
 
-  # メッセージ種別のプレフィックス
+  # Prefix based on message type
   local prefix=""
   if [ "$mode" = "auto" ]; then
     prefix="[AUTO] "
-    message="📁 \`${file_path}\` が変更されました: ${message}"
+    message="📁 \`${file_path}\` was changed: ${message}"
   fi
 
-  # ブロードキャストファイルに追記
+  # Append to broadcast file
   {
     echo ""
     echo "## ${timestamp} [${short_id}]"
     echo "${prefix}${message}"
   } >> "$BROADCAST_FILE"
 
-  # 古いメッセージを削除（MAX_MESSAGES を超えた場合）
+  # Delete old messages (when exceeding MAX_MESSAGES)
   if [ -f "$BROADCAST_FILE" ]; then
     local msg_count=$(grep -c "^## " "$BROADCAST_FILE" 2>/dev/null || echo "0")
     if [ "$msg_count" -gt "$MAX_MESSAGES" ]; then
-      # 最新の MAX_MESSAGES 件のみ保持
+      # Keep only the latest MAX_MESSAGES entries
       local temp_file=$(mktemp)
       TEMP_FILES+=("$temp_file")
       local skip_count=$((msg_count - MAX_MESSAGES))
@@ -119,13 +119,13 @@ main() {
     fi
   fi
 
-  # 成功メッセージを出力
+  # Output success message
   echo "📤 Broadcast sent: ${message:0:50}..."
 
-  # JSON 出力（hooks 用）
+  # JSON output (for hooks)
   if [ "${HOOK_OUTPUT:-}" = "true" ]; then
     cat <<EOF
-{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"📤 ブロードキャスト送信: ${message:0:50}..."}}
+{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"📤 Broadcast sent: ${message:0:50}..."}}
 EOF
   fi
 }

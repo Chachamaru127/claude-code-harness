@@ -1,41 +1,41 @@
-# コマンドリファレンス
+# Command Reference
 
-2エージェントワークフローで使用するコマンドの詳細。
+Details of commands used in the two-agent workflow.
 
 ---
 
-## Claude Code 側コマンド
+## Claude Code Commands
 
 ### /setup
 
-プロジェクトの初期セットアップ（旧 `/harness-init`）。
+Initial project setup (replaces `/harness-init`).
 
 ```
 /setup
 ```
 
-**生成されるファイル**:
-- Plans.md - タスク管理
-- AGENTS.md - 役割分担定義
-- CLAUDE.md - Claude Code 設定
-- .claude/rules/ - プロジェクトルール
+**Files generated**:
+- Plans.md - Task management
+- AGENTS.md - Role assignment definition
+- CLAUDE.md - Claude Code configuration
+- .claude/rules/ - Project rules
 
 ---
 
 ### /setup codex
 
-Codex CLI 用の Harness 設定を**ユーザーベース**（`${CODEX_HOME:-~/.codex}`）に導入・更新。
+Install/update Harness configuration for Codex CLI at the **user level** (`${CODEX_HOME:-~/.codex}`).
 
 ```
 /setup codex
 ```
 
-**生成されるファイル（デフォルト）**:
+**Files generated (default)**:
 - ${CODEX_HOME:-~/.codex}/skills/
 - ${CODEX_HOME:-~/.codex}/rules/
 - (optional) ${CODEX_HOME:-~/.codex}/config.toml
 
-**project モード時のみ**:
+**Project mode only**:
 - .codex/skills/
 - .codex/rules/
 - AGENTS.md
@@ -44,113 +44,113 @@ Codex CLI 用の Harness 設定を**ユーザーベース**（`${CODEX_HOME:-~/.
 
 ### /plan-with-agent
 
-タスクの計画・分解。
+Plan and break down tasks.
 
 ```
-/plan-with-agent [タスク説明]
+/plan-with-agent [task description]
 ```
 
-**例**:
+**Example**:
 ```
-/plan-with-agent ユーザー認証機能を実装したい
+/plan-with-agent I want to implement user authentication
 ```
 
-**出力**: Plans.md にタスクが追加される
+**Output**: Tasks are added to Plans.md
 
 ---
 
 ### /work
 
-Plans.md のタスクを実行。
+Execute tasks from Plans.md.
 
 ```
 /work
 ```
 
-**機能**:
-- `cc:TODO` または `pm:依頼中` のタスクを自動検出
-- 複数タスクの並列実行に対応
-- 完了時に `cc:完了` に自動更新
+**Features**:
+- Auto-detects `cc:TODO` or `pm:依頼中` tasks
+- Supports parallel execution of multiple tasks
+- Automatically updates to `cc:完了` on completion
 
 ---
 
 ### /sync-status
 
-現在の状態サマリーを出力。
+Output a summary of the current state.
 
 ```
 /sync-status
 ```
 
-**出力例**:
+**Example output**:
 ```
-📊 現在の状態
-- 進行中: 2件
-- 未着手: 5件
-- 完了（確認待ち）: 1件
+📊 Current Status
+- In progress: 2
+- Not started: 5
+- Complete (awaiting confirmation): 1
 ```
 
 ---
 
 ### /handoff-to-cursor
 
-Cursor PM への完了報告。
+Completion report to Cursor PM.
 
 ```
 /handoff-to-cursor
 ```
 
-**含まれる情報**:
-- 完了したタスク一覧
-- 変更されたファイル
-- テスト結果
-- 次のアクション提案
+**Included information**:
+- List of completed tasks
+- Changed files
+- Test results
+- Suggested next actions
 
 ---
 
-## Cursor 側コマンド（参考）
+## Cursor Commands (Reference)
 
 ### /handoff-to-claude
 
-Claude Code へのタスク依頼。
+Request tasks from Claude Code.
 
 ### /review-cc-work
 
-Claude Code の完了報告をレビュー。
-承認できない場合（request_changes）は Plans.md を更新し、**`/claude-code-harness/handoff-to-claude` で修正依頼文を生成してそのまま渡す**。
+Review Claude Code's completion reports.
+If changes are requested (request_changes), update Plans.md and **use `/claude-code-harness/handoff-to-claude` to generate a revision request and pass it along directly**.
 
 ---
 
-## スキル（会話で自動起動）
+## Skills (auto-invoked in conversation)
 
 ### handoff-to-pm
 
-**トリガー**: 「PMに完了報告」「作業完了を報告」
+**Trigger**: "Report completion to PM", "report that work is done"
 
-Worker → PM への完了報告を生成。
+Generates a completion report from Worker to PM.
 
 ### handoff-to-impl
 
-**トリガー**: 「実装役に渡して」「Claude Code に依頼」
+**Trigger**: "Hand off to the implementer", "request from Claude Code"
 
-PM → Worker へのタスク依頼を整形。
+Formats a task request from PM to Worker.
 
 ---
 
-## コマンド使用フロー
+## Command Usage Flow
 
 ```
-[セッション開始]
+[Session start]
     │
     ▼
-/sync-status  ←── 現状確認
+/sync-status  ←── Check current state
     │
     ▼
-/work  ←── タスク実行
+/work  ←── Execute tasks
     │
     ▼
-/handoff-to-cursor  ←── 完了報告
+/handoff-to-cursor  ←── Report completion
     │
     ▼
-[セッション終了]
+[Session end]
 ```

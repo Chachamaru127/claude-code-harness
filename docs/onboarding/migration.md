@@ -28,7 +28,7 @@ state, or harness-mem data.
 |---|---|---|---|
 | Claude plugin cache | Stale cached plugin versions can keep Claude Code on older Harness behavior. | Use Claude Code plugin manager commands; do not hand-delete cache entries as part of the report. | `/plugin update claude-code-harness` or uninstall/reinstall through the plugin manager. |
 | Claude slash entries | Missing `harness-*` skill entries can make `/harness-plan` or `/harness-work` unavailable. | Missing entries are evidence of install drift, not proof that the host is unsupported. | Update or reinstall the plugin, then run `/harness-setup`. |
-| harness-mem state | Memory continuity spans Claude Code sessions. | `memory DB を削除しない`; the report does not read or delete DB contents. | Keep `~/.harness-mem/` and project `.harness-mem/state/`; use `harness mem doctor`, and only run purge with explicit confirmation. |
+| harness-mem state | Memory continuity spans Claude Code sessions. | Do not delete the memory DB; the report does not read or delete DB contents. | Keep `~/.harness-mem/` and project `.harness-mem/state/`; use `harness mem doctor`, and only run purge with explicit confirmation. |
 
 ## Compatibility Contract
 

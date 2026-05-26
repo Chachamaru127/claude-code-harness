@@ -1,38 +1,39 @@
 # Skills Audit 2026-04-20
 
-Claude Code / Codex upstream 追従の再実施に合わせて、`skills/`, `codex/.codex/skills/`, `.agents/skills/` の `SKILL.md` を総点検した。
+In conjunction with re-running the Claude Code / Codex upstream tracking, a full inspection was performed on `SKILL.md` files across `skills/`, `codex/.codex/skills/`, and `.agents/skills/`.
 
 ## Summary
 
-- 対象: 3 系統の `SKILL.md`
-- 検出: 102 件
-- `skills/` -> `codex/.codex/skills/` は主要同期が概ね維持されている
-- `.agents/skills/` は別系統で、Claude/Codex の機械置換 drift が多い
-- 今回修正済み:
-  - `claude-codex-upstream-update` を PR 対象の `skills/`, `codex/.codex/skills/` で同期し、local-only `.agents/skills/` も作業環境上で更新
-  - `cc-update-review` を Claude/Codex upstream update review として再定義し、PR 対象 2 系統と local-only mirror で同期
-  - 存在しない Anthropic 側 Codex repo URL、旧 Codex plugin directory、旧 Codex feature-table path、旧 TypeScript guardrail path の参照を対象 2 Skills から削除
-  - Phase 51.2.1-51.2.3 / Worker 3: Codex native skill orchestration drift、session-memory / memory policy path drift、Codex loop state policy、harness-release-internal mirror policy を修正
-  - Phase 51.2.4 / Worker 4: media / announcement skill の起動契約、対話入力 tool 差分、harness-review mirror link drift を修正
+- Scope: 3 skill lineages of `SKILL.md`
+- Findings: 102 items
+- `skills/` -> `codex/.codex/skills/` major sync is largely maintained
+- `.agents/skills/` is a separate lineage with significant Claude/Codex mechanical-replacement drift
+- Fixed in this pass:
+  - Synced `claude-codex-upstream-update` across PR-target `skills/`, `codex/.codex/skills/`, and updated local-only `.agents/skills/` in the working environment
+  - Redefined `cc-update-review` as a Claude/Codex upstream update review, synced across the 2 PR-target lineages and the local-only mirror
+  - Removed references to non-existent Anthropic Codex repo URL, old Codex plugin directory, old Codex feature-table path, and old TypeScript guardrail path from the 2 target Skills
+  - Phase 51.2.1-51.2.3 / Worker 3: Fixed Codex native skill orchestration drift, session-memory / memory policy path drift, Codex loop state policy, and harness-release-internal mirror policy
+  - Phase 51.2.4 / Worker 4: Fixed media / announcement skill launch contracts, interactive input tool discrepancies, and harness-review mirror link drift
 
 ## Findings Tracker
 
 | Priority | Area | Finding | Next action | Status |
 |----------|------|---------|-------------|--------|
-| P0 | `codex/.codex/skills/harness-work` | Codex native としながら `Agent(...)`, `SendMessage`, `claude-code-harness:worker` 風の Claude Code 擬似コードが混在 | Codex tool model (`spawn_agent`, `send_input`, `wait_agent`, `close_agent`) に統一 | Done 2026-05-05 |
-| P0 | `codex/.codex/skills/breezing` | `user-invocable: true` なのに `allowed-tools` がなく、本文は subagent tools 前提 | metadata と allowed tool contract を揃える | Done 2026-05-05 |
-| P1 | `.agents/skills/memory` | `Codex / Codex / OpenCode`, `.Codex/memory/decisions.md` など置換 drift | `.claude/memory` 正本と Codex 側表現を分離 | Done 2026-05-05 |
-| P1 | `.agents/skills/session-memory` | `.Codex/memory`, `.Codex/state`, `~/.Codex` を正本扱い | session-state / memory の実在 path に更新 | Done 2026-05-05 |
-| P1 | `codex/.codex/skills/session-memory` | `${CLAUDE_SESSION_ID}` を Codex 側の固定前提にしている | Codex session id 取得規約を session-init と整合 | Done 2026-05-05 |
-| P1 | `skills/session-memory` | `docs/MEMORY_POLICY.md` 参照が存在しない | 参照先を作るか、既存 memory docs へ差し替え | Done 2026-05-05 |
-| P1 | `harness-review` mirrors | `../../docs/ultrareview-policy.md` が mirror 側で存在しない相対 path に解決される | repo root 基準または skill-local reference に変更 | Done 2026-05-05 |
-| P1 | `x-announce`, `x-article` | `allowed-tools` に `Agent` / `AskUserQuestion` があり Codex 側対応が曖昧 | Task / Codex input UI との対応表を追加 | Done 2026-05-05 |
-| P1 | `generate-slide`, `generate-video` | `disable-model-invocation` / `user-invocable` と本文トリガーが矛盾 | 実起動面に合わせて metadata を整理 | Done 2026-05-05 |
-| P1 | `harness-loop` Codex mirror | state 保存先が `.claude/state/codex-loop/` 固定 | `.claude` 共通 state と Codex native state の責務を明文化 | Done 2026-05-05 |
-| P2 | `harness-release-internal` | mirror policy が `.agents/skills/` を同期対象として扱っていない | `.agents` を生成物として除外するか、sync 対象に含める | Done 2026-05-05 |
-| P2 | `.agents/skills/harness-setup` | 旧 Codex state/plugin directory 名や `Codex-harness-worker` など荒い置換 drift | `.agents` 生成ルールの見直しでまとめて修正 | Open |
+| P0 | `codex/.codex/skills/harness-work` | Claims to be Codex native but mixes in Claude Code-style pseudo-code for `Agent(...)`, `SendMessage`, `claude-code-harness:worker` | Unify to Codex tool model (`spawn_agent`, `send_input`, `wait_agent`, `close_agent`) | Done 2026-05-05 |
+| P0 | `codex/.codex/skills/breezing` | `user-invocable: true` but no `allowed-tools`, and body assumes subagent tools | Align metadata and allowed tool contract | Done 2026-05-05 |
+| P1 | `.agents/skills/memory` | Replacement drift: `Codex / Codex / OpenCode`, `.Codex/memory/decisions.md`, etc. | Separate `.claude/memory` source of truth from Codex-side expressions | Done 2026-05-05 |
+| P1 | `.agents/skills/session-memory` | Treats `.Codex/memory`, `.Codex/state`, `~/.Codex` as canonical | Update to actual paths for session-state / memory | Done 2026-05-05 |
+| P1 | `codex/.codex/skills/session-memory` | Treats `${CLAUDE_SESSION_ID}` as fixed Codex-side assumption | Align Codex session id retrieval convention with session-init | Done 2026-05-05 |
+| P1 | `skills/session-memory` | Reference to `docs/MEMORY_POLICY.md` does not exist | Create the referenced target or replace with existing memory docs | Done 2026-05-05 |
+| P1 | `harness-review` mirrors | `../../docs/ultrareview-policy.md` resolves to a non-existent relative path in the mirror | Change to repo-root-based or skill-local reference | Done 2026-05-05 |
+| P1 | `x-announce`, `x-article` | `allowed-tools` includes `Agent` / `AskUserQuestion`, Codex-side handling is unclear | Add mapping table to Task / Codex input UI counterparts | Done 2026-05-05 |
+| P1 | `generate-slide`, `generate-video` | `disable-model-invocation` / `user-invocable` contradicts body trigger | Align metadata with actual launch surface | Done 2026-05-05 |
+| P1 | `harness-loop` Codex mirror | State storage is hardcoded to `.claude/state/codex-loop/` | Document the responsibility split between `.claude` shared state and Codex native state | Done 2026-05-05 |
+| P2 | `harness-release-internal` | Mirror policy does not treat `.agents/skills/` as a sync target | Either exclude `.agents` as generated output, or include in sync targets | Done 2026-05-05 |
+| P2 | `.agents/skills/harness-setup` | Rough replacement drift: old Codex state/plugin directory names, `Codex-harness-worker`, etc. | Fix together via revision of the `.agents` generation rules | Open |
 
 ## Tracking
 
-この監査結果は `Plans.md` Phase 51.2 に未完了タスクとして残す。
-今回の scope では upstream update の品質ゲートに直結する 2 Skills を修正し、それ以外は次回の skill mirror cleanup cycle に切り出す。
+This audit result is left as an incomplete task under `Plans.md` Phase 51.2.
+In this scope, the 2 Skills directly tied to the upstream update quality gate were fixed;
+all others are carved out to the next skill mirror cleanup cycle.

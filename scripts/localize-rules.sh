@@ -1,13 +1,13 @@
 #!/bin/bash
 # localize-rules.sh
-# プロジェクト構造に合わせてルールをローカライズ
+# Localizes rules to match the project structure
 #
 # Usage: ./scripts/localize-rules.sh [--dry-run]
 #
-# 機能:
-# - プロジェクト分析結果に基づいて paths: を調整
-# - 言語固有のルールを追加
-# - 既存のカスタマイズを保持
+# Features:
+# - Adjusts paths: based on project analysis results
+# - Adds language-specific rules
+# - Preserves existing customizations
 
 set -euo pipefail
 
@@ -16,7 +16,7 @@ DEFAULT_PLUGIN_PATH="$(cd "${SCRIPT_DIR}/.." && pwd)"
 PLUGIN_PATH="${CLAUDE_PLUGIN_ROOT:-${PLUGIN_PATH:-$DEFAULT_PLUGIN_PATH}}"
 DRY_RUN=false
 
-# 引数解析
+# Argument parsing
 while [[ $# -gt 0 ]]; do
   case $1 in
     --dry-run) DRY_RUN=true; shift ;;
@@ -25,9 +25,9 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ================================
-# プロジェクト分析
+# Project analysis
 # ================================
-echo "🔍 プロジェクト構造を分析中..."
+echo "🔍 Analyzing project structure..."
 
 # analyze-project.sh を実行
 ANALYSIS=$("$PLUGIN_PATH/scripts/analyze-project.sh" 2>/dev/null || echo '{"languages":["unknown"],"source_dirs":["."],"test_info":[],"extensions":[]}')
@@ -38,17 +38,17 @@ SOURCE_DIRS=$(echo "$ANALYSIS" | jq -r '.source_dirs[]' 2>/dev/null | tr '\n' ' 
 TEST_DIRS=$(echo "$ANALYSIS" | jq -r '.test_info.dirs[]' 2>/dev/null | tr '\n' ' ')
 HAS_COLOCATED_TESTS=$(echo "$ANALYSIS" | jq -r '.test_info.has_colocated_tests // false' 2>/dev/null)
 
-echo "  言語: $LANGUAGES"
-echo "  ソースディレクトリ: $SOURCE_DIRS"
+echo "  Languages: $LANGUAGES"
+echo "  Source directories: $SOURCE_DIRS"
 
 # ================================
-# paths パターン生成
+# paths pattern generation
 # ================================
 generate_code_paths() {
   local -a paths=()
   local src_dirs=($SOURCE_DIRS)
 
-  # 言語に応じた拡張子
+  # Extensions based on language
   local extensions=""
   if [[ "$LANGUAGES" == *"typescript"* ]] || [[ "$LANGUAGES" == *"react"* ]]; then
     extensions="ts,tsx,js,jsx"
@@ -68,7 +68,7 @@ generate_code_paths() {
     extensions="ts,tsx,js,jsx,py,rb,go,rs,java,kt"
   fi
 
-  # ソースディレクトリごとにパターン生成
+  # Generate patterns per source directory
   for dir in "${src_dirs[@]}"; do
     if [ "$dir" = "." ]; then
       paths+=("**/*.{$extensions}")
@@ -84,13 +84,13 @@ generate_test_paths() {
   local -a paths=()
   local test_dirs_arr=($TEST_DIRS)
 
-  # 検出されたテストディレクトリ
+  # Detected test directories
   if [ ${#test_dirs_arr[@]} -gt 0 ]; then
     for dir in "${test_dirs_arr[@]}"; do
       paths+=("$dir/**/*.*")
     done
   else
-    # デフォルトのテストディレクトリをチェック
+    # Check default test directories
     for dir in tests test __tests__ spec e2e; do
       if [ -d "$dir" ]; then
         paths+=("$dir/**/*.*")
@@ -103,7 +103,7 @@ generate_test_paths() {
     paths+=("**/*.{test,spec}.{ts,tsx,js,jsx,py}")
   fi
 
-  # デフォルト
+  # Default
   if [ ${#paths[@]} -eq 0 ]; then
     paths=(
       "**/*.{test,spec}.*"
@@ -142,142 +142,142 @@ CODE_PATHS_BLOCK="$(render_paths_block "paths:" "${CODE_PATHS[@]}")"
 TEST_PATHS_BLOCK="$(render_paths_block "paths:" "${TEST_PATHS[@]}")"
 
 echo ""
-echo "📝 生成される paths:"
-printf '  コード:\n%s\n' "$(printf '    - %s\n' "${CODE_PATHS[@]}")"
-printf '  テスト:\n%s\n' "$(printf '    - %s\n' "${TEST_PATHS[@]}")"
+echo "📝 Generated paths:"
+printf '  Code:\n%s\n' "$(printf '    - %s\n' "${CODE_PATHS[@]}")"
+printf '  Test:\n%s\n' "$(printf '    - %s\n' "${TEST_PATHS[@]}")"
 
 if [ "$DRY_RUN" = true ]; then
   echo ""
-  echo "🔍 [Dry Run] 実際の変更は行いません"
+  echo "🔍 [Dry Run] No actual changes will be made"
   exit 0
 fi
 
-# .claude/rules ディレクトリ確認
+# Ensure .claude/rules directory
 mkdir -p .claude/rules
 
 # ================================
-# coding-standards.md のローカライズ
+# Localize coding-standards.md
 # ================================
 echo ""
-echo "📁 ルールをローカライズ中..."
+echo "📁 Localizing rules..."
 
-# テンプレートから生成（既存ファイルがあれば上書き確認）
+# Generate from template (confirm overwrite if file already exists)
 CODING_STANDARDS=".claude/rules/coding-standards.md"
 
-# 言語固有のセクションを追加
+# Add language-specific sections
 LANG_SPECIFIC=""
 if [[ "$LANGUAGES" == *"typescript"* ]]; then
   LANG_SPECIFIC+="
-## TypeScript 固有
+## TypeScript specific
 
-- \`any\` は使用禁止（\`unknown\` を使用）
-- 戻り値の型は明示する
-- 厳密な null チェックを有効化
+- \`any\` is forbidden (use \`unknown\`)
+- Return types must be explicit
+- Strict null checking must be enabled
 "
 fi
 
 if [[ "$LANGUAGES" == *"python"* ]]; then
   LANG_SPECIFIC+="
-## Python 固有
+## Python specific
 
-- PEP 8 スタイルガイドに従う
-- 型ヒントを使用する
-- docstring は Google スタイル
+- Follow PEP 8 style guide
+- Use type hints
+- docstrings must use Google style
 "
 fi
 
 if [[ "$LANGUAGES" == *"react"* ]]; then
   LANG_SPECIFIC+="
-## React 固有
+## React specific
 
-- 関数コンポーネントを使用
-- カスタムフックは \`use\` プレフィックス
-- Props の型定義を必須
+- Use function components
+- Custom hooks must have a \`use\` prefix
+- Prop types must be defined
 "
 fi
 
-# coding-standards.md を生成
+# Generate coding-standards.md
 cat > "$CODING_STANDARDS" << EOF
 ---
-description: コーディング規約（コードファイル編集時のみ適用）
+description: Coding standards (applied only when editing code files)
 ${CODE_PATHS_BLOCK}
 ---
 
 # Coding Standards
 
-## コミットメッセージ規約
+## Commit message conventions
 
-| Prefix | 用途 | 例 |
-|--------|------|-----|
-| \`feat:\` | 新機能 | \`feat: ユーザー認証を追加\` |
-| \`fix:\` | バグ修正 | \`fix: ログインエラーを修正\` |
-| \`docs:\` | ドキュメント | \`docs: README を更新\` |
-| \`refactor:\` | リファクタリング | \`refactor: 認証ロジックを整理\` |
-| \`test:\` | テスト | \`test: 認証テストを追加\` |
-| \`chore:\` | その他 | \`chore: 依存関係を更新\` |
+| Prefix | Purpose | Example |
+|--------|---------|---------|
+| \`feat:\` | New feature | \`feat: add user authentication\` |
+| \`fix:\` | Bug fix | \`fix: fix login error\` |
+| \`docs:\` | Documentation | \`docs: update README\` |
+| \`refactor:\` | Refactoring | \`refactor: reorganize auth logic\` |
+| \`test:\` | Tests | \`test: add auth tests\` |
+| \`chore:\` | Other | \`chore: update dependencies\` |
 
-## コードスタイル
+## Code style
 
-- ✅ 既存のコードスタイルに従う
-- ✅ 変更に必要な最小限の修正のみ
-- ❌ 変更していないコードへの「改善」
-- ❌ 依頼されていないリファクタリング
-- ❌ 過剰なコメント追加
+- ✅ Follow the existing code style
+- ✅ Only the minimal changes required
+- ❌ "Improvements" to code you did not change
+- ❌ Unrequested refactoring
+- ❌ Excessive comment additions
 $LANG_SPECIFIC
 ## Pull Request
 
-- タイトル: 変更内容を簡潔に（50文字以内）
-- 説明: 「何を」「なぜ」を明記
-- テスト方法を必ず記載
+- Title: concise description of the change (under 50 characters)
+- Description: state "what" and "why"
+- Always include how to test
 EOF
 
 echo "  ✅ $CODING_STANDARDS"
 
 # ================================
-# testing.md のローカライズ
+# Localize testing.md
 # ================================
 TESTING_RULES=".claude/rules/testing.md"
 
 cat > "$TESTING_RULES" << EOF
 ---
-description: テストファイル作成・編集時のルール
+description: Rules when creating or editing test files
 ${TEST_PATHS_BLOCK}
 ---
 
 # Testing Rules
 
-## テスト作成の原則
+## Testing principles
 
-1. **境界テスト**: 入力の境界値を必ずテスト
-2. **正常系・異常系**: 両方のケースをカバー
-3. **独立性**: 各テストは他のテストに依存しない
-4. **明確な命名**: テスト名で何をテストしているか分かる
+1. **Boundary testing**: Always test boundary values of inputs
+2. **Happy path & error path**: Cover both cases
+3. **Independence**: Each test must not depend on other tests
+4. **Clear naming**: Test name must describe what is being tested
 
-## テスト命名規約
+## Test naming convention
 
 \`\`\`
-describe('機能名', () => {
-  it('should 期待する動作 when 条件', () => {
+describe('feature name', () => {
+  it('should expected behavior when condition', () => {
     // ...
   });
 });
 \`\`\`
 
-## 禁止事項
+## Prohibited
 
-- ❌ 実装の内部詳細に依存したテスト
-- ❌ 外部サービスへの実際の接続（モックを使用）
-- ❌ テスト間の状態共有
+- ❌ Tests that depend on internal implementation details
+- ❌ Real connections to external services (use mocks)
+- ❌ Shared state between tests
 EOF
 
 echo "  ✅ $TESTING_RULES"
 
 # ================================
-# 完了
+# Done
 # ================================
 echo ""
-echo "✅ ルールのローカライズが完了しました"
+echo "✅ Rule localization complete"
 echo ""
-echo "📋 生成されたルール:"
+echo "📋 Generated rules:"
 echo "  - .claude/rules/coding-standards.md (paths: YAML list)"
 echo "  - .claude/rules/testing.md (paths: YAML list)"

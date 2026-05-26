@@ -1,6 +1,6 @@
 #!/bin/bash
 # test-harness-loop-guard.sh
-# harness-loop の冪等性ガード (a) 多重起動防止ロックのテスト
+# Test for harness-loop idempotency guard (a) multiple-launch prevention lock
 #
 # Usage: bash tests/test-harness-loop-guard.sh
 
@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(dirname "${SCRIPT_DIR}")"
 LOCK_FILE="${PLUGIN_ROOT}/.claude/state/locks/loop-session.lock"
 
-# カラー出力
+# Color output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
@@ -29,22 +29,22 @@ fail_test() {
 }
 
 echo "=========================================="
-echo "harness-loop 冪等性ガード (a) テスト"
+echo "harness-loop idempotency guard (a) test"
 echo "=========================================="
 echo ""
 
-# クリーンアップ: テスト開始前に lock ファイルを削除
+# Cleanup: remove lock file before starting test
 cleanup() {
     rm -f "${LOCK_FILE}" 2>/dev/null || true
 }
 trap cleanup EXIT
 cleanup
 
-# テスト用の擬似 harness-loop 起動スクリプト（flow.md の Step 0 を再現）
+# Mock harness-loop launch script (reproduces Step 0 of flow.md)
 MOCK_LOOP_SCRIPT="$(mktemp /tmp/test-harness-loop-XXXXXX.sh)"
 cat > "${MOCK_LOOP_SCRIPT}" << 'SCRIPT'
 #!/bin/bash
-# flow.md Step 0 の多重起動防止ロックを再現
+# Reproduce multiple-launch prevention lock from flow.md Step 0
 LOCK_FILE="$1"
 mkdir -p "$(dirname "${LOCK_FILE}")"
 
@@ -63,69 +63,69 @@ cleanup_loop_lock() {
 }
 trap cleanup_loop_lock EXIT INT TERM
 
-# ロック保持中の処理（テスト用: 0.5秒スリープ）
+# Hold lock during operation (test: sleep 0.5s)
 sleep 0.5
 exit 0
 SCRIPT
 chmod +x "${MOCK_LOOP_SCRIPT}"
 
-# テスト 1: 初回起動は成功すること
-echo "--- テスト 1: 初回起動 ---"
+# Test 1: first launch should succeed
+echo "--- Test 1: first launch ---"
 bash "${MOCK_LOOP_SCRIPT}" "${LOCK_FILE}" &
 FIRST_PID=$!
-sleep 0.1  # lock ファイルが作成されるまで少し待機
+sleep 0.1  # Wait briefly for lock file to be created
 
 if [ -f "${LOCK_FILE}" ]; then
-    pass_test "初回起動: lock ファイルが作成されました"
+    pass_test "First launch: lock file created"
 else
-    fail_test "初回起動: lock ファイルが作成されませんでした"
+    fail_test "First launch: lock file not created"
 fi
 
-# テスト 2: 2 回目の起動は already running エラーになること
-echo "--- テスト 2: 多重起動防止 ---"
+# Test 2: second launch should return already running error
+echo "--- Test 2: multiple-launch prevention ---"
 SECOND_OUTPUT="$(bash "${MOCK_LOOP_SCRIPT}" "${LOCK_FILE}" 2>&1 || true)"
 if echo "${SECOND_OUTPUT}" | grep -q "already running"; then
-    pass_test "2 回目の起動: 'already running' エラーが返されました"
+    pass_test "Second launch: 'already running' error returned"
 else
-    fail_test "2 回目の起動: 'already running' エラーが返されませんでした（出力: ${SECOND_OUTPUT}）"
+    fail_test "Second launch: 'already running' error not returned (output: ${SECOND_OUTPUT})"
 fi
 
-# テスト 3: 2 回目の起動は exit code 1 で終了すること
-echo "--- テスト 3: 多重起動時の exit code ---"
+# Test 3: second launch should exit with code 1
+echo "--- Test 3: exit code on multiple launch ---"
 bash "${MOCK_LOOP_SCRIPT}" "${LOCK_FILE}" 2>/dev/null
 EXIT_CODE=$?
 if [ "${EXIT_CODE}" -eq 1 ]; then
-    pass_test "2 回目の起動: exit code 1 で終了しました"
+    pass_test "Second launch: exited with code 1"
 else
-    fail_test "2 回目の起動: exit code が ${EXIT_CODE} でした（期待: 1）"
+    fail_test "Second launch: exit code was ${EXIT_CODE} (expected: 1)"
 fi
 
-# 1 回目が終了するまで待機
+# Wait for first launch to finish
 wait "${FIRST_PID}" 2>/dev/null || true
 
-# テスト 4: 正常終了後 lock ファイルが削除されること
-echo "--- テスト 4: 正常終了後の lock 削除 ---"
+# Test 4: lock file should be removed after normal exit
+echo "--- Test 4: lock removal after normal exit ---"
 if [ ! -f "${LOCK_FILE}" ]; then
-    pass_test "正常終了後: lock ファイルが削除されました"
+    pass_test "After normal exit: lock file removed"
 else
-    fail_test "正常終了後: lock ファイルが残っています"
+    fail_test "After normal exit: lock file still exists"
 fi
 
-# テスト 5: lock ファイル削除後に再起動できること
-echo "--- テスト 5: lock 削除後の再起動 ---"
+# Test 5: should be able to relaunch after lock is removed
+echo "--- Test 5: relaunch after lock removal ---"
 bash "${MOCK_LOOP_SCRIPT}" "${LOCK_FILE}" &
 THIRD_PID=$!
 sleep 0.1
 
 if [ -f "${LOCK_FILE}" ]; then
-    pass_test "再起動: lock ファイルが作成されました（再利用可能）"
+    pass_test "Relaunch: lock file created (reusable)"
 else
-    fail_test "再起動: lock ファイルが作成されませんでした"
+    fail_test "Relaunch: lock file not created"
 fi
 wait "${THIRD_PID}" 2>/dev/null || true
 
-# テスト 6: lock ファイルの内容が正しい JSON であること
-echo "--- テスト 6: lock ファイルの JSON 形式 ---"
+# Test 6: lock file content should be valid JSON
+echo "--- Test 6: lock file JSON format ---"
 bash "${MOCK_LOOP_SCRIPT}" "${LOCK_FILE}" &
 FOURTH_PID=$!
 sleep 0.1
@@ -133,39 +133,39 @@ sleep 0.1
 if [ -f "${LOCK_FILE}" ]; then
     if command -v python3 >/dev/null 2>&1; then
         if python3 -c "import json; json.load(open('${LOCK_FILE}'))" 2>/dev/null; then
-            pass_test "lock ファイルの内容が有効な JSON です"
-            # pid, session_id, started_at, args の各フィールドを確認
+            pass_test "lock file content is valid JSON"
+            # Verify pid, session_id, started_at, args fields
             for field in pid session_id started_at args; do
                 if python3 -c "import json; d=json.load(open('${LOCK_FILE}')); assert '${field}' in d" 2>/dev/null; then
-                    pass_test "lock ファイルに '${field}' フィールドがあります"
+                    pass_test "lock file has '${field}' field"
                 else
-                    fail_test "lock ファイルに '${field}' フィールドがありません"
+                    fail_test "lock file missing '${field}' field"
                 fi
             done
         else
-            fail_test "lock ファイルの内容が有効な JSON ではありません"
+            fail_test "lock file content is not valid JSON"
         fi
     else
-        pass_test "python3 が利用不可のため JSON 検証をスキップします"
+        pass_test "python3 not available, skipping JSON validation"
     fi
 fi
 wait "${FOURTH_PID}" 2>/dev/null || true
 
-# クリーンアップ
+# Cleanup
 rm -f "${MOCK_LOOP_SCRIPT}" 2>/dev/null || true
 
 echo ""
 echo "=========================================="
-echo "テスト結果サマリー"
+echo "Test Result Summary"
 echo "=========================================="
-echo -e "${GREEN}合格:${NC} ${PASS_COUNT}"
-echo -e "${RED}失敗:${NC} ${FAIL_COUNT}"
+echo -e "${GREEN}Passed:${NC} ${PASS_COUNT}"
+echo -e "${RED}Failed:${NC} ${FAIL_COUNT}"
 echo ""
 
 if [ "${FAIL_COUNT}" -eq 0 ]; then
-    echo -e "${GREEN}✓ 全テスト合格${NC}"
+    echo -e "${GREEN}✓ All tests passed${NC}"
     exit 0
 else
-    echo -e "${RED}✗ ${FAIL_COUNT} 件のテストが失敗しました${NC}"
+    echo -e "${RED}✗ ${FAIL_COUNT} test(s) failed${NC}"
     exit 1
 fi

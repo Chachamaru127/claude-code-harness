@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// teammateIdleInput は TeammateIdle フックの stdin JSON ペイロード。
+// teammateIdleInput is the stdin JSON payload for the TeammateIdle hook.
 type teammateIdleInput struct {
 	TeammateeName string `json:"teammate_name"`
 	AgentName     string `json:"agent_name"`
@@ -22,7 +22,7 @@ type teammateIdleInput struct {
 	StopReasonAlt string `json:"stop_reason"`
 }
 
-// teammateIdleLogEntry は breezing-timeline.jsonl に記録するエントリ。
+// teammateIdleLogEntry is the entry recorded in breezing-timeline.jsonl.
 type teammateIdleLogEntry struct {
 	Event     string `json:"event"`
 	Teammate  string `json:"teammate"`
@@ -32,35 +32,35 @@ type teammateIdleLogEntry struct {
 	Timestamp string `json:"timestamp"`
 }
 
-// teammateIdleApprove は approve レスポンス。
+// teammateIdleApprove is the approve response.
 type teammateIdleApprove struct {
 	Decision string `json:"decision"`
 	Reason   string `json:"reason"`
 }
 
-// teammateIdleStop は停止レスポンス。
+// teammateIdleStop is the stop response.
 type teammateIdleStop struct {
 	Continue   bool   `json:"continue"`
 	StopReason string `json:"stopReason"`
 }
 
-// timelineRotateMaxLines は JSONL ローテーションのしきい値。
+// timelineRotateMaxLines is the rotation threshold for the JSONL file.
 const timelineRotateMaxLines = 500
 
-// timelineRotateKeepLines はローテーション後に保持する行数。
+// timelineRotateKeepLines is the number of lines to retain after rotation.
 const timelineRotateKeepLines = 400
 
-// dedupWindowSeconds は同一エージェントの重複抑制ウィンドウ（秒）。
+// dedupWindowSeconds is the deduplication window (in seconds) for the same agent.
 const dedupWindowSeconds = 5
 
-// HandleTeammateIdle は teammate-idle.sh の Go 移植。
+// HandleTeammateIdle is a Go port of teammate-idle.sh.
 //
-// TeammateIdle イベントの処理:
-//  1. stdin JSON ペイロードを読み取る
-//  2. 5秒 dedup（同一 agent_id で連続発火を抑制）
-//  3. breezing-timeline.jsonl にアイドル状態を記録
-//  4. continue:false または stop_reason がある場合は停止シグナルを送出
-//  5. それ以外は approve を返す
+// Processing TeammateIdle events:
+//  1. Read the stdin JSON payload
+//  2. 5-second dedup (suppress consecutive firings for the same agent_id)
+//  3. Record idle state in breezing-timeline.jsonl
+//  4. Send a stop signal when continue:false or stop_reason is present
+//  5. Otherwise return approve
 func HandleTeammateIdle(in io.Reader, out io.Writer) error {
 	data, err := io.ReadAll(in)
 	if err != nil || len(strings.TrimSpace(string(data))) == 0 {
@@ -72,25 +72,25 @@ func HandleTeammateIdle(in io.Reader, out io.Writer) error {
 		return writeTeammateIdleApprove(out, "TeammateIdle: no payload")
 	}
 
-	// teammate_name または agent_name を取得
+	// Retrieve teammate_name or agent_name
 	teammateName := input.TeammateeName
 	if teammateName == "" {
 		teammateName = input.AgentName
 	}
 
-	// stop_reason の正規化
+	// Normalize stop_reason
 	stopReason := input.StopReason
 	if stopReason == "" {
 		stopReason = input.StopReasonAlt
 	}
 
-	// continue フラグ
-	hookContinue := true // デフォルトは続行
+	// continue flag
+	hookContinue := true // default: continue
 	if input.Continue != nil {
 		hookContinue = *input.Continue
 	}
 
-	// プロジェクトルートを取得
+	// Retrieve project root
 	projectRoot := os.Getenv("PROJECT_ROOT")
 	if projectRoot == "" {
 		if cwd, err := os.Getwd(); err == nil {
@@ -98,15 +98,15 @@ func HandleTeammateIdle(in io.Reader, out io.Writer) error {
 		}
 	}
 
-	// 状態ディレクトリとタイムラインファイル
+	// State directory and timeline file
 	stateDir := filepath.Join(projectRoot, ".claude", "state")
 	if err := os.MkdirAll(stateDir, 0o700); err != nil {
-		// エラーは無視（続行）
+		// Ignore error (continue)
 		fmt.Fprintf(os.Stderr, "[claude-code-harness] teammate-idle: mkdir %s: %v\n", stateDir, err)
 	}
 	timelineFile := filepath.Join(stateDir, "breezing-timeline.jsonl")
 
-	// === 重複抑制（同一 teammate の 5 秒以内の idle をスキップ） ===
+	// === Deduplication (skip idle events for the same teammate within 5 seconds) ===
 	dedupKey := teammateName
 	if dedupKey == "" {
 		dedupKey = input.AgentID
@@ -118,7 +118,7 @@ func HandleTeammateIdle(in io.Reader, out io.Writer) error {
 		}
 	}
 
-	// === タイムライン記録 ===
+	// === Timeline recording ===
 	ts := time.Now().UTC().Format(time.RFC3339)
 	logEntry := teammateIdleLogEntry{
 		Event:     "teammate_idle",
@@ -133,8 +133,8 @@ func HandleTeammateIdle(in io.Reader, out io.Writer) error {
 		_ = rotateJSONL(timelineFile, timelineRotateMaxLines, timelineRotateKeepLines)
 	}
 
-	// === レスポンス ===
-	// continue:false または stop_reason がある場合は停止シグナルを送出
+	// === Response ===
+	// Send a stop signal when continue:false or stop_reason is present
 	if !hookContinue || stopReason != "" {
 		finalStopReason := stopReason
 		if finalStopReason == "" {
@@ -146,15 +146,15 @@ func HandleTeammateIdle(in io.Reader, out io.Writer) error {
 	return writeTeammateIdleApprove(out, "TeammateIdle tracked")
 }
 
-// checkTeammateIdleDedup は同一エージェントの最終 idle から dedupWindowSeconds 以内かどうかを確認する。
-// teammate-idle.sh の重複抑制ロジックに対応。
+// checkTeammateIdleDedup checks whether a new idle event for the same agent falls within
+// dedupWindowSeconds of the last one. Corresponds to the deduplication logic in teammate-idle.sh.
 func checkTeammateIdleDedup(timelineFile, dedupKey string) bool {
 	data, err := os.ReadFile(timelineFile)
 	if err != nil {
-		return false // ファイルがない場合はスキップしない
+		return false // No file — do not skip
 	}
 
-	// JSONL を逆順で走査して同一 teammate の最終 idle を探す
+	// Scan JSONL in reverse to find the last idle event for the same teammate
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
 	for i := len(lines) - 1; i >= 0; i-- {
 		line := strings.TrimSpace(lines[i])
@@ -162,7 +162,7 @@ func checkTeammateIdleDedup(timelineFile, dedupKey string) bool {
 			continue
 		}
 
-		// "teammate_idle" イベントかつ dedupKey を含む行を探す
+		// Look for a "teammate_idle" event line that contains the dedupKey
 		if !strings.Contains(line, `"teammate_idle"`) {
 			continue
 		}
@@ -175,12 +175,12 @@ func checkTeammateIdleDedup(timelineFile, dedupKey string) bool {
 			continue
 		}
 
-		// テンプレート名またはエージェントIDが一致するか確認
+		// Verify that the teammate name or agent ID matches
 		if entry.Teammate != dedupKey && entry.AgentID != dedupKey {
 			continue
 		}
 
-		// タイムスタンプを解析して5秒以内かどうかを確認
+		// Parse the timestamp and check whether it is within 5 seconds
 		lastTime, err := time.Parse(time.RFC3339, entry.Timestamp)
 		if err != nil {
 			continue
@@ -188,15 +188,15 @@ func checkTeammateIdleDedup(timelineFile, dedupKey string) bool {
 
 		elapsed := time.Since(lastTime)
 		if elapsed < dedupWindowSeconds*time.Second {
-			return true // スキップ
+			return true // Skip
 		}
-		return false // 5秒以上経過しているのでスキップしない
+		return false // More than 5 seconds have elapsed — do not skip
 	}
 
 	return false
 }
 
-// writeTeammateIdleApprove は approve レスポンスを書き込む。
+// writeTeammateIdleApprove writes an approve response.
 func writeTeammateIdleApprove(out io.Writer, reason string) error {
 	resp := teammateIdleApprove{
 		Decision: "approve",
@@ -205,7 +205,7 @@ func writeTeammateIdleApprove(out io.Writer, reason string) error {
 	return writeJSON(out, resp)
 }
 
-// writeTeammateIdleStop は停止シグナルのレスポンスを書き込む。
+// writeTeammateIdleStop writes a stop-signal response.
 func writeTeammateIdleStop(out io.Writer, stopReason string) error {
 	resp := teammateIdleStop{
 		Continue:   false,

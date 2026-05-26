@@ -1,6 +1,6 @@
 #!/bin/bash
 # stop-plans-reminder.sh
-# Stop Hook 用: Plans.md マーカー更新のリマインダー
+# For Stop hook: reminder to update Plans.md markers
 #
 # Claude Code 2.1.1 互換: prompt タイプの代わりに command タイプで実装
 # 出力: JSON 形式 {"decision": "approve", "reason": "...", "systemMessage": "..."}
@@ -53,15 +53,15 @@ count_plan_tasks() {
   ' "$file" 2>/dev/null || printf '0\n'
 }
 
-# 判定用変数
+# Decision variables
 NEED_REMINDER="false"
 REASON=""
 MESSAGE=""
 
-# 変更があるかチェック
+# Check if there are changes
 HAS_CHANGES="false"
 
-# Git 未コミット変更
+# Git uncommitted changes
 if [ -d ".git" ]; then
   GIT_UNCOMMITTED=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ' || echo "0")
   if [ "$GIT_UNCOMMITTED" -gt 0 ]; then
@@ -69,7 +69,7 @@ if [ -d ".git" ]; then
   fi
 fi
 
-# セッション中の変更
+# Changes during session
 if [ -f ".claude/state/session.json" ] && command -v jq >/dev/null 2>&1; then
   SESSION_CHANGES=$(jq '.changes_this_session // 0' .claude/state/session.json 2>/dev/null || echo "0")
   if [ "$SESSION_CHANGES" != "0" ] && [ "$SESSION_CHANGES" != "null" ]; then
@@ -77,27 +77,27 @@ if [ -f ".claude/state/session.json" ] && command -v jq >/dev/null 2>&1; then
   fi
 fi
 
-# 変更がある場合のみ Plans.md をチェック
+# Check Plans.md only if there are changes
 if [ "$HAS_CHANGES" = "true" ] && [ -f "$PLANS_PATH" ]; then
   PM_PENDING=$(count_plan_tasks "(pm:(requested|依頼中)|cursor:依頼中)" "$PLANS_PATH")
   CC_WIP=$(count_plan_tasks "cc:(wip|WIP)" "$PLANS_PATH")
   CC_DONE=$(count_plan_tasks "cc:(done|完了)" "$PLANS_PATH")
 
-  # PM からの依頼がある場合
+  # PM-requested tasks exist
   if [ "$PM_PENDING" -gt 0 ]; then
     NEED_REMINDER="true"
     REASON="pm_pending_tasks > 0"
     MESSAGE="Plans.md: ${PM_PENDING} pm:requested task(s) remain. Start work with cc:wip and mark completion with cc:done."
   fi
 
-  # WIP タスクがある場合
+  # WIP tasks exist
   if [ "$CC_WIP" -gt 0 ]; then
     NEED_REMINDER="true"
     REASON="cc_wip_tasks > 0"
     MESSAGE="Plans.md: ${CC_WIP} cc:wip task(s) remain. Mark completed work with cc:done."
   fi
 
-  # 完了タスクがある場合（PM確認待ち）
+  # Completed tasks exist (awaiting PM review)
   if [ "$CC_DONE" -gt 0 ]; then
     NEED_REMINDER="true"
     REASON="cc_done_tasks > 0"
@@ -105,7 +105,7 @@ if [ "$HAS_CHANGES" = "true" ] && [ -f "$PLANS_PATH" ]; then
   fi
 fi
 
-# JSON 出力
+# JSON output
 if [ "$NEED_REMINDER" = "true" ]; then
   cat << EOF
 {"decision": "approve", "reason": "$REASON", "systemMessage": "$MESSAGE"}

@@ -45,7 +45,7 @@ func TestBreezingSignalInjector_NoActiveFile(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// breezing 非アクティブ時は何も出力しない
+	// Nothing is output when breezing is inactive.
 	if out.Len() != 0 {
 		t.Errorf("expected no output when breezing is inactive, got: %s", out.String())
 	}
@@ -63,7 +63,7 @@ func TestBreezingSignalInjector_NoSignalsFile(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// シグナルファイルなし → 何も出力しない
+	// No signals file → nothing is output.
 	if out.Len() != 0 {
 		t.Errorf("expected no output when signals file absent, got: %s", out.String())
 	}
@@ -84,7 +84,7 @@ func TestBreezingSignalInjector_AllConsumed(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// 全消費済み → 何も出力しない
+	// All consumed → nothing is output.
 	if out.Len() != 0 {
 		t.Errorf("expected no output when all signals consumed, got: %s", out.String())
 	}
@@ -129,7 +129,7 @@ func TestBreezingSignalInjector_RetakeRequestedSignal(t *testing.T) {
 	dir := t.TempDir()
 	writeActiveFile(t, dir)
 	writeSignalsFile(t, dir, []string{
-		`{"signal":"retake_requested","task_id":"32.1","reason":"テスト失敗"}`,
+		`{"signal":"retake_requested","task_id":"32.1","reason":"test failure"}`,
 	})
 
 	h := &BreezingSignalInjectorHandler{ProjectRoot: dir}
@@ -151,7 +151,7 @@ func TestBreezingSignalInjector_RetakeRequestedSignal(t *testing.T) {
 	if !strings.Contains(resp.SystemMessage, "32.1") {
 		t.Errorf("expected task_id in message")
 	}
-	if !strings.Contains(resp.SystemMessage, "テスト失敗") {
+	if !strings.Contains(resp.SystemMessage, "test failure") {
 		t.Errorf("expected reason in message")
 	}
 }
@@ -188,7 +188,7 @@ func TestBreezingSignalInjector_EscalationRequiredSignal(t *testing.T) {
 	dir := t.TempDir()
 	writeActiveFile(t, dir)
 	writeSignalsFile(t, dir, []string{
-		`{"signal":"escalation_required","task_id":"34","reason":"3回失敗"}`,
+		`{"signal":"escalation_required","task_id":"34","reason":"3 failures"}`,
 	})
 
 	h := &BreezingSignalInjectorHandler{ProjectRoot: dir}
@@ -229,7 +229,7 @@ func TestBreezingSignalInjector_UnknownSignal(t *testing.T) {
 		t.Fatalf("invalid JSON: %s", out.String())
 	}
 
-	// 未知のシグナルはそのまま通知
+	// Unknown signals are forwarded as-is.
 	if !strings.Contains(resp.SystemMessage, "[SIGNAL:custom_signal]") {
 		t.Errorf("expected custom_signal in message, got: %s", resp.SystemMessage)
 	}
@@ -251,7 +251,7 @@ func TestBreezingSignalInjector_SignalsMarkedConsumedAfterInjection(t *testing.T
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// 注入後、シグナルが consumed_at マーク済みになっているか確認
+	// After injection, verify that signals are marked with consumed_at.
 	signals, err := h.readUnconsumedSignals(signalsFile)
 	if err != nil {
 		t.Fatalf("error reading signals: %v", err)
@@ -267,7 +267,7 @@ func TestBreezingSignalInjector_MultipleUnconsumedSignals(t *testing.T) {
 	writeSignalsFile(t, dir, []string{
 		`{"signal":"ci_failure_detected","conclusion":"failure"}`,
 		`{"signal":"reviewer_approved","task_id":"5"}`,
-		`{"signal":"retake_requested","task_id":"6","reason":"型エラー"}`,
+		`{"signal":"retake_requested","task_id":"6","reason":"type error"}`,
 	})
 
 	h := &BreezingSignalInjectorHandler{ProjectRoot: dir}
@@ -283,8 +283,8 @@ func TestBreezingSignalInjector_MultipleUnconsumedSignals(t *testing.T) {
 		t.Fatalf("invalid JSON: %s", out.String())
 	}
 
-	// 3件のシグナルがヘッダーに反映されること
-	if !strings.Contains(resp.SystemMessage, "3 件") {
-		t.Errorf("expected '3 件' in header, got: %s", resp.SystemMessage)
+	// The header should reflect 3 signals.
+	if !strings.Contains(resp.SystemMessage, "3 unconsumed") {
+		t.Errorf("expected '3 unconsumed' in header, got: %s", resp.SystemMessage)
 	}
 }

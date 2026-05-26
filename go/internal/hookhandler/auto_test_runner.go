@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// autoTestRunnerInput は PostToolUse フックから渡される stdin JSON。
+// autoTestRunnerInput is the stdin JSON passed from the PostToolUse hook.
 type autoTestRunnerInput struct {
 	ToolName  string `json:"tool_name"`
 	CWD       string `json:"cwd"`
@@ -26,7 +26,7 @@ type autoTestRunnerInput struct {
 	} `json:"tool_response"`
 }
 
-// autoTestResult は .claude/state/test-result.json に書き出す構造体。
+// autoTestResult is written to .claude/state/test-result.json.
 type autoTestResult struct {
 	Timestamp   string `json:"timestamp"`
 	ChangedFile string `json:"changed_file"`
@@ -36,7 +36,7 @@ type autoTestResult struct {
 	Output      string `json:"output"`
 }
 
-// autoTestRecommendation は .claude/state/test-recommendation.json に書き出す構造体。
+// autoTestRecommendation is written to .claude/state/test-recommendation.json.
 type autoTestRecommendation struct {
 	Timestamp      string `json:"timestamp"`
 	ChangedFile    string `json:"changed_file"`
@@ -45,7 +45,7 @@ type autoTestRecommendation struct {
 	Recommendation string `json:"recommendation"`
 }
 
-// autoTestHookOutput は additionalContext 付きの hookSpecificOutput。
+// autoTestHookOutput is the hookSpecificOutput with an additionalContext field.
 type autoTestHookOutput struct {
 	HookSpecificOutput struct {
 		HookEventName     string `json:"hookEventName"`
@@ -53,12 +53,12 @@ type autoTestHookOutput struct {
 	} `json:"hookSpecificOutput"`
 }
 
-// sourceFileExtensions はテスト実行が必要なファイル拡張子。
+// sourceFileExtensions lists file extensions that require test execution.
 var sourceFileExtensions = []string{
 	".ts", ".tsx", ".js", ".jsx", ".py", ".go", ".rs",
 }
 
-// excludedDirs はテスト対象から除外するディレクトリプレフィックス。
+// excludedDirs lists directory prefixes excluded from test runs.
 var excludedDirs = []string{
 	"node_modules/",
 	"dist/",
@@ -66,19 +66,19 @@ var excludedDirs = []string{
 	".next/",
 }
 
-// excludedExtensions はテスト対象から除外するファイル拡張子。
+// excludedExtensions lists file extensions excluded from test runs.
 var excludedExtensions = []string{
 	".md", ".json", ".yml", ".yaml", ".lock",
 }
 
-// HandleAutoTestRunner は auto-test-runner.sh の Go 移植。
+// HandleAutoTestRunner is a Go port of auto-test-runner.sh.
 //
-// PostToolUse Write/Edit イベントでソースファイル変更を検出し、
-// テストフレームワークを自動検出してテストを実行する。
+// On PostToolUse Write/Edit events it detects source file changes,
+// auto-detects the test framework, and runs tests.
 //
-// 動作モード:
-//   - HARNESS_AUTO_TEST=run → テストを実際に実行し、additionalContext で通知
-//   - デフォルト (recommend) → テスト推奨を .claude/state/ に記録
+// Modes:
+//   - HARNESS_AUTO_TEST=run → actually runs tests and reports via additionalContext
+//   - default (recommend)  → records a test recommendation in .claude/state/
 func HandleAutoTestRunner(in io.Reader, out io.Writer) error {
 	data, err := io.ReadAll(in)
 	if err != nil || len(bytes.TrimSpace(data)) == 0 {
@@ -90,7 +90,7 @@ func HandleAutoTestRunner(in io.Reader, out io.Writer) error {
 		return emptyPostToolOutput(out)
 	}
 
-	// 変更ファイルを取得
+	// Get the changed file.
 	changedFile := input.ToolInput.FilePath
 	if changedFile == "" {
 		changedFile = input.ToolResponse.FilePath
@@ -99,31 +99,31 @@ func HandleAutoTestRunner(in io.Reader, out io.Writer) error {
 		return emptyPostToolOutput(out)
 	}
 
-	// プロジェクト相対パスへ正規化
+	// Normalize to a project-relative path.
 	changedFile = normalizePathSeparators(changedFile)
 	if input.CWD != "" {
 		cwd := normalizePathSeparators(input.CWD)
 		changedFile = makeRelativePath(changedFile, cwd)
 	}
 
-	// プロジェクトルートを決定（CWD またはカレントディレクトリ）
+	// Determine the project root (CWD or current directory).
 	projectRoot := input.CWD
 	if projectRoot == "" {
 		projectRoot, _ = os.Getwd()
 	}
 
-	// テスト実行が必要か判定
+	// Determine whether tests need to be run.
 	if !shouldRunTests(changedFile) {
 		return emptyPostToolOutput(out)
 	}
 
-	// テストコマンドを検出
+	// Detect the test command.
 	testCmd := detectTestCommand(projectRoot)
 	if testCmd == "" {
 		return emptyPostToolOutput(out)
 	}
 
-	// 関連テストファイルを検出（P2 修正: projectRoot を渡す）
+	// Detect related test files (P2 fix: pass projectRoot).
 	relatedTest := findRelatedTests(changedFile, projectRoot)
 
 	stateDir := filepath.Join(projectRoot, ".claude", "state")
@@ -131,29 +131,29 @@ func HandleAutoTestRunner(in io.Reader, out io.Writer) error {
 		return emptyPostToolOutput(out)
 	}
 
-	// HARNESS_AUTO_TEST=run の場合は実際にテストを実行
+	// If HARNESS_AUTO_TEST=run, actually run the tests.
 	if os.Getenv("HARNESS_AUTO_TEST") == "run" {
 		return runTestsAndReport(out, projectRoot, stateDir, changedFile, testCmd, relatedTest)
 	}
 
-	// デフォルト: recommend モード
+	// Default: recommend mode.
 	return writeTestRecommendation(out, stateDir, changedFile, testCmd, relatedTest)
 }
 
-// shouldRunTests はファイルがテスト実行が必要かどうかを判定する。
+// shouldRunTests reports whether the file requires a test run.
 func shouldRunTests(file string) bool {
 	if file == "" {
 		return false
 	}
 
-	// 除外ディレクトリチェック
+	// Excluded directory check.
 	for _, dir := range excludedDirs {
 		if strings.HasPrefix(file, dir) {
 			return false
 		}
 	}
 
-	// 除外拡張子チェック
+	// Excluded extension check.
 	for _, ext := range excludedExtensions {
 		if strings.HasSuffix(file, ext) {
 			return false
@@ -165,12 +165,12 @@ func shouldRunTests(file string) bool {
 		return false
 	}
 
-	// テストファイル自体の変更
+	// Changes to test files themselves.
 	if strings.Contains(file, ".test.") || strings.Contains(file, ".spec.") || strings.Contains(file, "__tests__") {
 		return true
 	}
 
-	// ソースコードファイルの変更
+	// Changes to source code files.
 	for _, ext := range sourceFileExtensions {
 		if strings.HasSuffix(file, ext) {
 			return true
@@ -180,17 +180,17 @@ func shouldRunTests(file string) bool {
 	return false
 }
 
-// detectTestCommand はプロジェクトルートからテストコマンドを自動検出する。
+// detectTestCommand auto-detects the test command from the project root.
 //
-// 検出優先順（P2 修正: JS フレームワーク → Python → Rust → Go の順に並べ、
-// tests/ の pytest 判定は package.json がない場合のみ適用する）:
+// Detection priority (P2 fix: JS frameworks → Python → Rust → Go,
+// pytest detection via tests/ applies only when no package.json is present):
 //  1. vitest.config.* → npx vitest run --reporter=verbose
 //  2. jest.config.* → npx jest --verbose
-//  3. package.json の jest キー/scripts.test に jest → npx jest --verbose
-//  4. package.json の scripts.test（npm test フォールバック）→ npm test
+//  3. package.json jest key / scripts.test containing jest → npx jest --verbose
+//  4. package.json scripts.test (npm test fallback) → npm test
 //  5. pytest.ini → pytest -v
-//  6. pyproject.toml の [tool.pytest] → pytest -v
-//  7. tests/ ディレクトリ（package.json がない場合のみ）→ pytest -v
+//  6. pyproject.toml [tool.pytest] → pytest -v
+//  7. tests/ directory (only when no package.json) → pytest -v
 //  8. Cargo.toml → cargo test
 //  9. go.mod → go test ./...
 func detectTestCommand(projectRoot string) string {
@@ -204,7 +204,7 @@ func detectTestCommand(projectRoot string) string {
 		}
 	}
 
-	// jest: config ファイルによる検出（誤検出なし）
+	// jest: detection via config file (no false positives).
 	jestConfigs := []string{
 		"jest.config.ts", "jest.config.js", "jest.config.mjs", "jest.config.cjs",
 	}
@@ -214,37 +214,37 @@ func detectTestCommand(projectRoot string) string {
 		}
 	}
 
-	// package.json が存在する JS/Node プロジェクトの検出
-	// jest 判定と npm test フォールバックをまとめて処理し、
-	// tests/ の pytest 誤判定（P2）を防ぐために package.json チェックを先に行う。
+	// Detect JS/Node projects that have a package.json.
+	// Check package.json first to handle jest detection and the npm test fallback together,
+	// and to prevent false pytest detection (P2) for tests/ directories.
 	pkgPath := filepath.Join(projectRoot, "package.json")
 	hasPkgJSON := autoTestFileExists(pkgPath)
 	if hasPkgJSON {
 		content, err := os.ReadFile(pkgPath)
 		if err == nil {
-			// jest: package.json の JSON パースによる検出
-			// "jest" キーがトップレベルオブジェクトとして存在するか、
-			// または scripts.test に "jest" を含む場合のみ Jest と判定する。
-			// @types/jest や jest-junit のような依存パッケージ名による誤検出を防ぐ。
+			// jest: detect via JSON parse of package.json.
+			// Treat as Jest only when a top-level "jest" key exists as an object,
+			// or when scripts.test contains the string "jest".
+			// Prevents false positives from dependency package names like @types/jest or jest-junit.
 			if hasJestConfig(content) {
 				return "npx jest --verbose"
 			}
-			// npm test フォールバック
+			// npm test fallback.
 			if hasNpmTestScript(content) {
 				return "npm test"
 			}
 		}
 	}
 
-	// pytest 系フレームワーク: pytest バイナリが PATH 上に存在する場合のみ返す。
-	// インストールされていない環境でフレームワーク設定ファイルだけ存在しても
-	// コマンドが実行できないため、LookPath で事前に確認する。
+	// pytest-family frameworks: return only when the pytest binary is on PATH.
+	// Even if a framework config file exists, the command cannot run without an install,
+	// so check with LookPath first.
 	if _, pytestErr := exec.LookPath("pytest"); pytestErr == nil {
 		// pytest.ini
 		if autoTestFileExists(filepath.Join(projectRoot, "pytest.ini")) {
 			return "pytest -v"
 		}
-		// pyproject.toml の [tool.pytest]
+		// pyproject.toml [tool.pytest]
 		pyprojectPath := filepath.Join(projectRoot, "pyproject.toml")
 		if autoTestFileExists(pyprojectPath) {
 			content, err := os.ReadFile(pyprojectPath)
@@ -252,8 +252,8 @@ func detectTestCommand(projectRoot string) string {
 				return "pytest -v"
 			}
 		}
-		// tests/ ディレクトリが存在する Python プロジェクト（設定ファイルなし）
-		// package.json がある JS プロジェクトには適用しない。
+		// Python project with a tests/ directory but no config file.
+		// Do not apply to JS projects that have package.json.
 		if !hasPkgJSON {
 			if autoTestFileExists(filepath.Join(projectRoot, "tests")) {
 				if info, err := os.Stat(filepath.Join(projectRoot, "tests")); err == nil && info.IsDir() {
@@ -263,12 +263,12 @@ func detectTestCommand(projectRoot string) string {
 		}
 	}
 
-	// Cargo.toml が存在する Rust プロジェクト
+	// Rust project with Cargo.toml.
 	if autoTestFileExists(filepath.Join(projectRoot, "Cargo.toml")) {
 		return "cargo test"
 	}
 
-	// go test: go.mod が存在するか確認
+	// go test: check whether go.mod exists.
 	if autoTestFileExists(filepath.Join(projectRoot, "go.mod")) {
 		return "go test ./..."
 	}
@@ -276,29 +276,30 @@ func detectTestCommand(projectRoot string) string {
 	return ""
 }
 
-// hasJestConfig は package.json の内容から Jest が設定されているかを JSON パースで確認する。
+// hasJestConfig checks via JSON parsing whether Jest is configured in the package.json content.
 //
-// 以下のいずれかを満たす場合に true を返す:
-//   - トップレベルに "jest" キーがオブジェクトとして存在する（Jest 設定オブジェクト）
-//   - scripts.test の値に "jest" という文字列が含まれる
+// Returns true when any of the following hold:
+//   - A top-level "jest" key exists as an object (Jest configuration object).
+//   - The value of scripts.test contains the string "jest".
 //
-// @types/jest や jest-junit のような依存パッケージ名を単純文字列検索した場合の誤検出を防ぐ。
+// Prevents false positives that would occur with a plain string search on
+// dependency package names such as @types/jest or jest-junit.
 func hasJestConfig(content []byte) bool {
 	var pkg map[string]json.RawMessage
 	if err := json.Unmarshal(content, &pkg); err != nil {
 		return false
 	}
 
-	// "jest" キーがトップレベルオブジェクトとして存在するか確認
+	// Check whether a "jest" key exists as a top-level object.
 	if jestRaw, ok := pkg["jest"]; ok {
-		// 値がオブジェクト（Jest 設定）かどうかを確認
+		// Check whether the value is an object (Jest configuration).
 		var jestObj map[string]json.RawMessage
 		if json.Unmarshal(jestRaw, &jestObj) == nil {
 			return true
 		}
 	}
 
-	// scripts.test に "jest" が含まれるか確認
+	// Check whether scripts.test contains "jest".
 	scriptsRaw, ok := pkg["scripts"]
 	if !ok {
 		return false
@@ -316,7 +317,7 @@ func hasJestConfig(content []byte) bool {
 	return false
 }
 
-// hasNpmTestScript は package.json の内容に scripts.test が定義されているか確認する。
+// hasNpmTestScript checks whether scripts.test is defined in the package.json content.
 func hasNpmTestScript(content []byte) bool {
 	var pkg map[string]json.RawMessage
 	if err := json.Unmarshal(content, &pkg); err != nil {
@@ -334,26 +335,27 @@ func hasNpmTestScript(content []byte) bool {
 	if !ok {
 		return false
 	}
-	// "test" キーが存在しても空文字や npm init のプレースホルダーは除外
+	// Exclude empty strings and npm init placeholders even when the "test" key exists.
 	testStr, ok := testVal.(string)
 	if !ok || strings.TrimSpace(testStr) == "" {
 		return false
 	}
-	// npm init が生成するデフォルト値はテスト有りと見なさない
+	// Do not treat the default value generated by npm init as a real test script.
 	if strings.Contains(testStr, "Error: no test specified") {
 		return false
 	}
 	return true
 }
 
-// findRelatedTests は変更ファイルに対応するテストファイルを探す。
+// findRelatedTests finds the test file corresponding to the changed file.
 //
-// P2 修正: projectRoot を受け取り、ファイルが相対パスの場合は
-// filepath.Join(projectRoot, file) を基準にテストファイルを探索する。
-// harness バイナリがリポルート外から起動された場合でも正しくテストを検出できる。
+// P2 fix: accepts projectRoot; when the file is a relative path,
+// uses filepath.Join(projectRoot, file) as the base for locating test files.
+// This ensures correct test detection even when the harness binary is launched
+// from outside the repository root.
 func findRelatedTests(file, projectRoot string) string {
-	// file が絶対パスでない場合は projectRoot と結合して絶対パスを求め、
-	// パターン生成の基準とする。
+	// When file is not an absolute path, join with projectRoot to obtain an
+	// absolute path to use as the pattern base.
 	absFile := file
 	if !filepath.IsAbs(file) && projectRoot != "" {
 		absFile = filepath.Join(projectRoot, file)
@@ -387,15 +389,16 @@ func findRelatedTests(file, projectRoot string) string {
 	return ""
 }
 
-// buildExecCommand はテストランナーごとにファイル引数の渡し方を分岐して実行コマンドを返す。
+// buildExecCommand returns the execution command, branching on how each test
+// runner accepts file arguments.
 //
-// P1 修正: `go test` は `-- <file>` 引数を受け付けないため、ランナーごとに分岐する。
+// P1 fix: `go test` does not accept `-- <file>` arguments, so branch per runner.
 //
-//   - go test    : go test ./path/to/pkg/... (パッケージパスに変換)
+//   - go test    : go test ./path/to/pkg/... (converted to a package path)
 //   - pytest     : pytest path/to/test_file.py
-//   - cargo test : cargo test (ファイル指定なし)
+//   - cargo test : cargo test (no file argument)
 //   - jest/vitest: npx jest -- path/to/test.ts / npx vitest run -- path/to/test.ts
-//   - npm test   : npm test (ファイル指定なし)
+//   - npm test   : npm test (no file argument)
 func buildExecCommand(testCmd, relatedTest, projectRoot string) string {
 	if relatedTest == "" {
 		return testCmd
@@ -403,50 +406,51 @@ func buildExecCommand(testCmd, relatedTest, projectRoot string) string {
 
 	switch {
 	case strings.HasPrefix(testCmd, "go test"):
-		// go test は <package path> を引数に取る。
-		// relatedTest が絶対パスの場合は projectRoot からの相対パスに戻してパッケージパスへ変換する。
+		// go test takes a <package path> argument.
+		// When relatedTest is an absolute path, convert it back to a relative path from
+		// projectRoot before turning it into a package path.
 		rel := relatedTest
 		if filepath.IsAbs(relatedTest) && projectRoot != "" {
 			if r, err := filepath.Rel(projectRoot, relatedTest); err == nil {
 				rel = r
 			}
 		}
-		// _test.go ファイルが属するディレクトリのパッケージパスを生成する。
-		// 例: internal/foo/bar_test.go → go test ./internal/foo/...
+		// Build the package path for the directory that contains the _test.go file.
+		// Example: internal/foo/bar_test.go → go test ./internal/foo/...
 		pkgDir := filepath.Dir(rel)
 		return "go test ./" + filepath.ToSlash(pkgDir) + "/..."
 
 	case strings.HasPrefix(testCmd, "pytest"):
-		// pytest はファイルパスを直接引数に渡せる。
+		// pytest accepts a file path directly as an argument.
 		return testCmd + " " + relatedTest
 
 	case strings.HasPrefix(testCmd, "cargo test"):
-		// cargo test はファイル単位の指定をサポートしないため、ファイル指定なしで実行する。
+		// cargo test does not support per-file specification; run without a file argument.
 		return testCmd
 
 	case strings.HasPrefix(testCmd, "npx jest"),
 		strings.HasPrefix(testCmd, "npx vitest"):
-		// jest/vitest は `-- <file>` 形式でテストファイルを絞り込める。
+		// jest/vitest can narrow down test files with the `-- <file>` form.
 		return testCmd + " -- " + relatedTest
 
 	case strings.HasPrefix(testCmd, "npm test"):
-		// npm test はファイル指定のインターフェースが不定のため、ファイル指定なしで実行する。
+		// The file-specification interface for npm test is undefined; run without a file argument.
 		return testCmd
 
 	default:
-		// 不明なランナーはファイル指定なしで安全側に倒す。
+		// For unknown runners, fall back to the safe side with no file argument.
 		return testCmd
 	}
 }
 
-// runTestsAndReport はテストを実行して結果を記録し、additionalContext で通知する。
+// runTestsAndReport runs the tests, records the result, and reports via additionalContext.
 func runTestsAndReport(out io.Writer, projectRoot, stateDir, changedFile, testCmd, relatedTest string) error {
-	// 実行コマンドを決定（P1 修正: ランナーごとにファイル引数を分岐）
+	// Determine the execution command (P1 fix: branch file argument per runner).
 	execCmd := buildExecCommand(testCmd, relatedTest, projectRoot)
 
 	ts := time.Now().UTC().Format(time.RFC3339)
 
-	// タイムアウト付きでテスト実行（最大 60 秒）
+	// Run tests with a timeout (maximum 60 seconds).
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
@@ -473,10 +477,10 @@ func runTestsAndReport(out io.Writer, projectRoot, stateDir, changedFile, testCm
 		status = "failed"
 	}
 
-	// 出力を最大 200 行に制限
+	// Limit output to a maximum of 200 lines.
 	output := limitLines(buf.String(), 200)
 
-	// 結果を JSON で書き出す
+	// Write the result as JSON.
 	resultPath := filepath.Join(stateDir, "test-result.json")
 	result := autoTestResult{
 		Timestamp:   ts,
@@ -490,19 +494,19 @@ func runTestsAndReport(out io.Writer, projectRoot, stateDir, changedFile, testCm
 		fmt.Fprintf(os.Stderr, "[auto-test-runner] write result: %v\n", err)
 	}
 
-	// additionalContext を構築
+	// Build the additionalContext message.
 	var contextMsg string
 	outputSnippet := limitLines(output, 30)
 
 	switch status {
 	case "passed":
-		contextMsg = fmt.Sprintf("[Auto Test Runner] Tests passed / テスト成功\nCommand: %s\nFile: %s\nStatus: PASSED (exit=0)",
+		contextMsg = fmt.Sprintf("[Auto Test Runner] Tests passed\nCommand: %s\nFile: %s\nStatus: PASSED (exit=0)",
 			testCmd, changedFile)
 	case "timeout":
-		contextMsg = fmt.Sprintf("[Auto Test Runner] Tests timed out / テストがタイムアウトしました (60s)\nCommand: %s\nFile: %s\nStatus: TIMEOUT\n\nOutput:\n%s",
+		contextMsg = fmt.Sprintf("[Auto Test Runner] Tests timed out (60s)\nCommand: %s\nFile: %s\nStatus: TIMEOUT\n\nOutput:\n%s",
 			testCmd, changedFile, outputSnippet)
 	default:
-		contextMsg = fmt.Sprintf("[Auto Test Runner] Tests failed / テスト失敗\nCommand: %s\nFile: %s\nStatus: FAILED (exit=%d)\n\nOutput:\n%s\n\nFix the implementation to make the tests pass. / テストが通るように実装を修正してください。",
+		contextMsg = fmt.Sprintf("[Auto Test Runner] Tests failed\nCommand: %s\nFile: %s\nStatus: FAILED (exit=%d)\n\nOutput:\n%s\n\nFix the implementation to make the tests pass.",
 			testCmd, changedFile, exitCode, outputSnippet)
 	}
 
@@ -513,7 +517,7 @@ func runTestsAndReport(out io.Writer, projectRoot, stateDir, changedFile, testCm
 	return json.NewEncoder(out).Encode(hookOut)
 }
 
-// writeTestRecommendation はテスト推奨を記録する（recommend モード）。
+// writeTestRecommendation records a test recommendation (recommend mode).
 func writeTestRecommendation(out io.Writer, stateDir, changedFile, testCmd, relatedTest string) error {
 	ts := time.Now().UTC().Format(time.RFC3339)
 	recPath := filepath.Join(stateDir, "test-recommendation.json")
@@ -522,23 +526,23 @@ func writeTestRecommendation(out io.Writer, stateDir, changedFile, testCmd, rela
 		ChangedFile:    changedFile,
 		TestCommand:    testCmd,
 		RelatedTest:    relatedTest,
-		Recommendation: "テストの実行を推奨します",
+		Recommendation: "Running tests is recommended",
 	}
 	if err := autoTestWriteJSONFile(recPath, rec); err != nil {
 		fmt.Fprintf(os.Stderr, "[auto-test-runner] write recommendation: %v\n", err)
 	}
 
-	// recommend モードでは空の PostToolUse 出力を返す
+	// In recommend mode, return an empty PostToolUse output.
 	return emptyPostToolOutput(out)
 }
 
-// autoTestFileExists はファイルが存在するかどうかを確認する。
+// autoTestFileExists reports whether the file at path exists.
 func autoTestFileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil
 }
 
-// limitLines はテキストを最大 n 行に制限する。
+// limitLines limits text to a maximum of n lines.
 func limitLines(text string, n int) string {
 	scanner := bufio.NewScanner(strings.NewReader(text))
 	var lines []string
@@ -551,7 +555,7 @@ func limitLines(text string, n int) string {
 	return strings.Join(lines, "\n")
 }
 
-// autoTestWriteJSONFile は v を JSON エンコードしてファイルに書き出す。
+// autoTestWriteJSONFile JSON-encodes v and writes it to the file at path.
 func autoTestWriteJSONFile(path string, v interface{}) error {
 	data, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {

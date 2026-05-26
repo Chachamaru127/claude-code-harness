@@ -1,44 +1,42 @@
 ---
 name: init-memory-ssot
-description: "プロジェクトのSSOTメモリ（decisions/patterns）と任意のsession-logを初期化する。初回セットアップ時や、.claude/memory が未整備のプロジェクトで使用します。"
+description: "Initialize the project's SSOT memory (decisions/patterns) and optional session-log. Use during first-time setup or in projects where .claude/memory is not yet in place."
 allowed-tools: ["Read", "Write"]
 ---
 
 # Init Memory SSOT
 
-`.claude/memory/` 配下の **SSOT** を初期化します。
+Initializes the **SSOT** files under `.claude/memory/`.
 
-- `decisions.md`（重要な意思決定のSSOT）
-- `patterns.md`（再利用できる解法のSSOT）
-- `session-log.md`（セッションログ。ローカル運用推奨）
+- `decisions.md` (SSOT for important decisions)
+- `patterns.md` (SSOT for reusable solutions)
+- `session-log.md` (session log; local-only operation recommended)
 
-詳細方針: `docs/MEMORY_POLICY.md`
+Policy details: `docs/MEMORY_POLICY.md`
 
 ---
 
-## 実行手順
+## Execution Steps
 
-### Step 1: 既存ファイルの確認
+### Step 1: Check for Existing Files
 
 - `.claude/memory/decisions.md`
 - `.claude/memory/patterns.md`
 - `.claude/memory/session-log.md`
 
-存在するものは**上書きしない**。
+Any that already exist are **not overwritten**.
 
-### Step 2: テンプレートから初期化（存在しない場合のみ）
+### Step 2: Initialize from Templates (only if absent)
 
-テンプレート:
+Templates:
 
 - `templates/memory/decisions.md.template`
 - `templates/memory/patterns.md.template`
 - `templates/memory/session-log.md.template`
 
-`{{DATE}}` は当日（例: `2025-12-13`）で置換して生成する。
+Replace `{{DATE}}` with today's date (e.g., `2025-12-13`) when generating.
 
-### Step 3: 完了報告
+### Step 3: Completion Report
 
-- 作成したファイル一覧
-- Git方針（`decisions/patterns`は共有推奨、`session-log/.claude/state`はローカル推奨）
-
-
+- List of created files
+- Git policy (`decisions/patterns` recommended for sharing; `session-log/.claude/state` recommended as local-only)

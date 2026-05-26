@@ -17,7 +17,7 @@ func TestTodoSyncHandler_EmptyInput(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// 空入力は出力なし
+	// Empty input produces no output
 	if out.Len() != 0 {
 		t.Errorf("expected no output, got %q", out.String())
 	}
@@ -33,7 +33,7 @@ func TestTodoSyncHandler_NotTodoWrite(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// TodoWrite 以外はスキップ
+	// Tools other than TodoWrite are skipped
 	if out.Len() != 0 {
 		t.Errorf("expected no output for non-TodoWrite tool, got %q", out.String())
 	}
@@ -49,7 +49,7 @@ func TestTodoSyncHandler_EmptyTodos(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// 空 todos は出力なし
+	// Empty todos produce no output
 	if out.Len() != 0 {
 		t.Errorf("expected no output for empty todos, got %q", out.String())
 	}
@@ -57,7 +57,7 @@ func TestTodoSyncHandler_EmptyTodos(t *testing.T) {
 
 func TestTodoSyncHandler_CountsInOutput(t *testing.T) {
 	dir := t.TempDir()
-	// Plans.md が存在しないとスキップされるため作成する
+	// Create Plans.md so the handler does not skip
 	if err := os.WriteFile(filepath.Join(dir, "Plans.md"), []byte("# Plans\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestTodoSyncHandler_CountsInOutput(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// JSON 出力の additionalContext を確認
+	// Verify the additionalContext in the JSON output
 	type hookOutput struct {
 		AdditionalContext string `json:"additionalContext"`
 	}
@@ -102,7 +102,7 @@ func TestTodoSyncHandler_CountsInOutput(t *testing.T) {
 
 func TestTodoSyncHandler_SavesSyncState(t *testing.T) {
 	dir := t.TempDir()
-	// Plans.md が存在しないとスキップされるため作成する
+	// Create Plans.md so the handler does not skip
 	if err := os.WriteFile(filepath.Join(dir, "Plans.md"), []byte("# Plans\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func TestTodoSyncHandler_SavesSyncState(t *testing.T) {
 	var out bytes.Buffer
 	_ = h.Handle(strings.NewReader(input), &out)
 
-	// 状態ファイルが作成されているか確認
+	// Verify that the state file was created
 	stateFile := filepath.Join(dir, ".claude", "state", todoSyncStateFile)
 	data, err := os.ReadFile(stateFile)
 	if err != nil {
@@ -140,7 +140,7 @@ func TestTodoSyncHandler_SavesSyncState(t *testing.T) {
 
 func TestTodoSyncHandler_AppendsEventLog(t *testing.T) {
 	dir := t.TempDir()
-	// Plans.md が存在しないとスキップされるため作成する
+	// Create Plans.md so the handler does not skip
 	if err := os.WriteFile(filepath.Join(dir, "Plans.md"), []byte("# Plans\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -149,7 +149,7 @@ func TestTodoSyncHandler_AppendsEventLog(t *testing.T) {
 	stateDir := filepath.Join(dir, ".claude", "state")
 	_ = os.MkdirAll(stateDir, 0700)
 
-	// session.events.jsonl を事前に作成（存在する場合のみ追記）
+	// Pre-create session.events.jsonl (appended only when it exists)
 	eventLog := filepath.Join(stateDir, "session.events.jsonl")
 	_ = os.WriteFile(eventLog, []byte(""), 0600)
 
@@ -161,7 +161,7 @@ func TestTodoSyncHandler_AppendsEventLog(t *testing.T) {
 	var out bytes.Buffer
 	_ = h.Handle(strings.NewReader(input), &out)
 
-	// イベントログに追記されているか確認
+	// Verify that the event was appended to the event log
 	data, err := os.ReadFile(eventLog)
 	if err != nil {
 		t.Fatalf("event log not found: %v", err)
@@ -190,13 +190,13 @@ func TestTodoSyncHandler_AppendsEventLog(t *testing.T) {
 
 func TestTodoSyncHandler_NoEventLog_NoError(t *testing.T) {
 	dir := t.TempDir()
-	// Plans.md が存在しないとスキップされるため作成する
+	// Create Plans.md so the handler does not skip
 	if err := os.WriteFile(filepath.Join(dir, "Plans.md"), []byte("# Plans\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	h := &TodoSyncHandler{ProjectRoot: dir}
 
-	// session.events.jsonl が存在しない場合はスキップ（エラーにならない）
+	// When session.events.jsonl does not exist, skip gracefully (no error)
 	input := `{"tool_name":"TodoWrite","tool_input":{"todos":[
 		{"status":"completed"}
 	]}}`
@@ -210,7 +210,7 @@ func TestTodoSyncHandler_NoEventLog_NoError(t *testing.T) {
 
 func TestTodoSyncHandler_WorkModeWarning_AllComplete(t *testing.T) {
 	dir := t.TempDir()
-	// Plans.md が存在しないとスキップされるため作成する
+	// Create Plans.md so the handler does not skip
 	if err := os.WriteFile(filepath.Join(dir, "Plans.md"), []byte("# Plans\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -219,11 +219,11 @@ func TestTodoSyncHandler_WorkModeWarning_AllComplete(t *testing.T) {
 	stateDir := filepath.Join(dir, ".claude", "state")
 	_ = os.MkdirAll(stateDir, 0700)
 
-	// work-active.json を作成（review_status=pending）
+	// Create work-active.json (review_status=pending)
 	workFile := filepath.Join(stateDir, "work-active.json")
 	_ = os.WriteFile(workFile, []byte(`{"review_status":"pending"}`), 0600)
 
-	// 全タスク完了（pending=0, in_progress=0, completed>0）
+	// All tasks complete (pending=0, in_progress=0, completed>0)
 	input := `{"tool_name":"TodoWrite","tool_input":{"todos":[
 		{"status":"completed"},
 		{"status":"completed"}
@@ -249,7 +249,7 @@ func TestTodoSyncHandler_WorkModeWarning_AllComplete(t *testing.T) {
 
 func TestTodoSyncHandler_WorkModeWarning_ReviewPassed(t *testing.T) {
 	dir := t.TempDir()
-	// Plans.md が存在しないとスキップされるため作成する
+	// Create Plans.md so the handler does not skip
 	if err := os.WriteFile(filepath.Join(dir, "Plans.md"), []byte("# Plans\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -258,7 +258,7 @@ func TestTodoSyncHandler_WorkModeWarning_ReviewPassed(t *testing.T) {
 	stateDir := filepath.Join(dir, ".claude", "state")
 	_ = os.MkdirAll(stateDir, 0700)
 
-	// review_status=passed の場合は警告しない
+	// No warning when review_status=passed
 	workFile := filepath.Join(stateDir, "work-active.json")
 	_ = os.WriteFile(workFile, []byte(`{"review_status":"passed"}`), 0600)
 
@@ -286,7 +286,7 @@ func TestTodoSyncHandler_WorkModeWarning_ReviewPassed(t *testing.T) {
 
 func TestTodoSyncHandler_WorkModeWarning_StillHasPending(t *testing.T) {
 	dir := t.TempDir()
-	// Plans.md が存在しないとスキップされるため作成する
+	// Create Plans.md so the handler does not skip
 	if err := os.WriteFile(filepath.Join(dir, "Plans.md"), []byte("# Plans\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -298,7 +298,7 @@ func TestTodoSyncHandler_WorkModeWarning_StillHasPending(t *testing.T) {
 	workFile := filepath.Join(stateDir, "work-active.json")
 	_ = os.WriteFile(workFile, []byte(`{"review_status":"pending"}`), 0600)
 
-	// pending タスクがある場合は警告しない
+	// No warning when there are pending tasks
 	input := `{"tool_name":"TodoWrite","tool_input":{"todos":[
 		{"status":"pending"},
 		{"status":"completed"}
@@ -322,11 +322,11 @@ func TestTodoSyncHandler_WorkModeWarning_StillHasPending(t *testing.T) {
 	}
 }
 
-// TestTodoSyncHandler_SkipWhenNoPlansFile は Plans.md が存在しない場合に
-// 出力なしでスキップされることを確認する（bash 版の動作と一致）。
+// TestTodoSyncHandler_SkipWhenNoPlansFile verifies that when Plans.md does not exist
+// the handler skips without producing output (matches bash version behaviour).
 func TestTodoSyncHandler_SkipWhenNoPlansFile(t *testing.T) {
 	dir := t.TempDir()
-	// Plans.md を意図的に作成しない
+	// Intentionally do not create Plans.md
 	h := &TodoSyncHandler{ProjectRoot: dir}
 
 	input := `{"tool_name":"TodoWrite","tool_input":{"todos":[
@@ -339,27 +339,27 @@ func TestTodoSyncHandler_SkipWhenNoPlansFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// Plans.md がない場合は何も出力せずスキップ
+	// When Plans.md is absent, skip without any output
 	if out.Len() != 0 {
 		t.Errorf("expected no output when Plans.md does not exist, got: %s", out.String())
 	}
 }
 
-// TestTodoSyncHandler_UsesResolveProjectRoot は ProjectRoot が空のとき
-// resolveProjectRoot() が使われ HARNESS_PROJECT_ROOT 環境変数が参照されることを確認する。
-// os.Getwd() を使っていた場合、cwd != project root なら .claude/state が見つからず
-// 状態ファイルが書き込まれないため、本テストで解決を検証する。
+// TestTodoSyncHandler_UsesResolveProjectRoot verifies that when ProjectRoot is empty,
+// resolveProjectRoot() is used and the HARNESS_PROJECT_ROOT env variable is consulted.
+// If os.Getwd() were used instead, .claude/state would not be found when cwd != project root,
+// and no state file would be written — this test validates the resolution.
 func TestTodoSyncHandler_UsesResolveProjectRoot(t *testing.T) {
 	dir := t.TempDir()
-	// HARNESS_PROJECT_ROOT を設定（resolveProjectRoot はこれを最優先で使う）
+	// Set HARNESS_PROJECT_ROOT (resolveProjectRoot uses this with highest priority)
 	t.Setenv("HARNESS_PROJECT_ROOT", dir)
 
-	// Plans.md を作成
+	// Create Plans.md
 	if err := os.WriteFile(filepath.Join(dir, "Plans.md"), []byte("# Plans\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	// ProjectRoot を空にすることで resolveProjectRoot() を経由させる
+	// Leave ProjectRoot empty to route through resolveProjectRoot()
 	h := &TodoSyncHandler{ProjectRoot: ""}
 
 	input := `{"tool_name":"TodoWrite","tool_input":{"todos":[
@@ -372,30 +372,30 @@ func TestTodoSyncHandler_UsesResolveProjectRoot(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// 処理が通り出力があること（resolveProjectRoot で dir が解決されたため）
+	// Processing should succeed and produce output (dir was resolved by resolveProjectRoot)
 	if out.Len() == 0 {
 		t.Errorf("expected output when HARNESS_PROJECT_ROOT is set, got none")
 	}
 
-	// 状態ファイルが HARNESS_PROJECT_ROOT 配下に作成されていること
+	// State file should be created under HARNESS_PROJECT_ROOT
 	stateFile := filepath.Join(dir, ".claude", "state", todoSyncStateFile)
 	if _, err := os.Stat(stateFile); err != nil {
 		t.Errorf("sync state file should be created at %s: %v", stateFile, err)
 	}
 }
 
-// TestTodoSyncHandler_CustomPlansDirectory は plansDirectory 設定があるとき
-// カスタムディレクトリの Plans.md が存在する場合に処理が通ることを確認する。
+// TestTodoSyncHandler_CustomPlansDirectory verifies that when plansDirectory is configured,
+// processing succeeds when Plans.md exists in the custom directory.
 func TestTodoSyncHandler_CustomPlansDirectory(t *testing.T) {
 	dir := t.TempDir()
 
-	// 設定ファイルを作成（plansDirectory: work）
+	// Create config file (plansDirectory: work)
 	configContent := "plansDirectory: work\n"
 	if err := os.WriteFile(filepath.Join(dir, harnessConfigFileName), []byte(configContent), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	// work/Plans.md を作成
+	// Create work/Plans.md
 	workDir := filepath.Join(dir, "work")
 	if err := os.MkdirAll(workDir, 0o755); err != nil {
 		t.Fatal(err)
@@ -416,7 +416,7 @@ func TestTodoSyncHandler_CustomPlansDirectory(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// 処理が通り出力があること（Plans.md が存在するので処理される）
+	// Processing should succeed and produce output (Plans.md exists in the custom dir)
 	if out.Len() == 0 {
 		t.Errorf("expected output when custom-dir Plans.md exists, got none")
 	}

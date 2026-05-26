@@ -8,10 +8,10 @@ TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 cat > "${TMP_DIR}/Plans.md" <<'EOF'
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
-| 32.2.2 | browser evaluator を追加する | browser で UI フローを確認する | 32.2.1 | cc:TODO |
-| 32.2.5 | browser_mode: exploratory を扱う | exploratory mode で AgentBrowser を優先する | 32.2.2 | cc:TODO |
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
+| 32.2.2 | add browser evaluator | verify UI flow in browser | 32.2.1 | cc:TODO |
+| 32.2.5 | handle browser_mode: exploratory | prefer AgentBrowser in exploratory mode | 32.2.2 | cc:TODO |
 EOF
 
 CONTRACT_PATH="${TMP_DIR}/browser-contract.json"
@@ -42,7 +42,7 @@ jq -e '
   (.tool_matcher | contains("mcp__playwright__"))
 ' "${TMP_DIR}/playwright/browser-review.json" >/dev/null
 
-# agent-browser スタブを PATH に追加（CI/開発環境に agent-browser が無くてもテスト可能に）
+# Add agent-browser stub to PATH (so tests work even without agent-browser in CI/dev environments)
 STUB_BIN="${TMP_DIR}/stub-bin"
 mkdir -p "$STUB_BIN"
 printf '#!/bin/sh\nexit 0\n' > "${STUB_BIN}/agent-browser"

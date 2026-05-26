@@ -1,24 +1,24 @@
 #!/bin/bash
 # test-workflow-skill-references.sh
-# ワークフローが参照するスキル/エージェントが実在するかを検証
+# Validates that skills/agents referenced by workflows actually exist
 #
 # Usage: ./tests/test-workflow-skill-references.sh
-#        ./tests/test-workflow-skill-references.sh --strict  # 未実装スキルを失敗扱い
+#        ./tests/test-workflow-skill-references.sh --strict  # treat unimplemented skills as failures
 #
-# 検証内容:
-# - workflows/**/*.yaml から `skill:` を抽出
-# - 各スキルが skills/**/ または agents/**/ に存在することを確認
+# Validation coverage:
+# - Extracts `skill:` entries from workflows/**/*.yaml
+# - Verifies each skill exists under skills/**/ or agents/**/
 #
-# デフォルト動作:
-# - 存在するスキル → PASS
-# - 存在しないスキル → WARN（警告のみ、テスト失敗にしない）
+# Default behavior:
+# - Skill exists → PASS
+# - Skill missing → WARN (warning only, does not fail the test)
 #
-# --strict モード:
-# - 存在しないスキル → FAIL（テスト失敗）
+# --strict mode:
+# - Skill missing → FAIL (test failure)
 
 set -euo pipefail
 
-# 引数解析
+# Argument parsing
 STRICT_MODE=false
 if [ "${1:-}" = "--strict" ]; then
   STRICT_MODE=true
@@ -27,13 +27,13 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# カラー出力
+# Color output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
-# カウンター
+# Counters
 PASSED=0
 FAILED=0
 WARNINGS=0
@@ -55,30 +55,30 @@ log_warn() {
 }
 
 # ================================
-# スキル/エージェントの存在確認
+# Skill/agent existence check
 # ================================
 
 skill_exists() {
   local skill_name="$1"
 
-  # skills/**/ 配下にディレクトリとして存在するか
+  # Check if it exists as a directory under skills/**/
   if [ -d "$PROJECT_ROOT/skills/$skill_name" ]; then
     return 0
   fi
 
-  # skills/*/$skill_name/ 配下にディレクトリとして存在するか（ネストされたスキル）
+  # Check if it exists as a directory under skills/*/$skill_name/ (nested skill)
   for parent_dir in "$PROJECT_ROOT/skills"/*; do
     if [ -d "$parent_dir/$skill_name" ]; then
       return 0
     fi
   done
 
-  # agents/**/ 配下に .md ファイルとして存在するか
+  # Check if it exists as a .md file under agents/**/
   if [ -f "$PROJECT_ROOT/agents/$skill_name.md" ]; then
     return 0
   fi
 
-  # skills/**/references/ 配下に参照スキルとして存在するか
+  # Check if it exists as a reference skill under skills/**/references/
   if [ -f "$PROJECT_ROOT/skills/$skill_name.md" ]; then
     return 0
   fi
@@ -91,15 +91,15 @@ skill_exists() {
     fi
   done
 
-  # スキル名がハイフン区切りの場合、親スキルの存在を確認
-  # 例: "ask-project-type" → "setup" 親スキルの下に存在
+  # If the skill name is hyphen-separated, check for the parent skill
+  # e.g. "ask-project-type" → exists under the "setup" parent skill
   local parent_skill
   parent_skill=$(echo "$skill_name" | cut -d'-' -f1)
   if [ -d "$PROJECT_ROOT/skills/$parent_skill/$skill_name" ]; then
     return 0
   fi
 
-  # frontmatter の name: で定義されているか（参照スキル含む）
+  # Check if defined via frontmatter name: (including reference skills)
   if grep -R --include="*.md" -n "name: $skill_name" "$PROJECT_ROOT/skills" "$PROJECT_ROOT/agents" >/dev/null 2>&1; then
     return 0
   fi
@@ -108,38 +108,38 @@ skill_exists() {
 }
 
 # ================================
-# メイン処理
+# Main processing
 # ================================
 
 echo "================================"
-echo "ワークフロー参照整合性テスト"
+echo "Workflow reference consistency test"
 echo "================================"
 echo ""
 
-# ワークフローファイルを検索
+# Search for workflow files
 WORKFLOW_FILES=$(find "$PROJECT_ROOT/workflows" -name "*.yaml" -o -name "*.yml" 2>/dev/null || true)
 
 if [ -z "$WORKFLOW_FILES" ]; then
-  log_warn "ワークフローファイルが見つかりません"
+  log_warn "No workflow files found"
   exit 0
 fi
 
-# 各ワークフローファイルを処理
+# Process each workflow file
 for workflow_file in $WORKFLOW_FILES; do
   workflow_name=$(basename "$workflow_file")
   echo "--- $workflow_name ---"
 
-  # `skill:` 行を抽出（YAML インデントを考慮）
+  # Extract `skill:` lines (accounting for YAML indentation)
   SKILLS=$(grep -E "^\s*skill:\s*" "$workflow_file" 2>/dev/null | sed 's/.*skill:\s*//g' | tr -d '"' | tr -d "'" || true)
 
   if [ -z "$SKILLS" ]; then
-    echo "  (スキル参照なし)"
+    echo "  (no skill references)"
     continue
   fi
 
-  # 各スキルの存在を確認
+  # Check existence of each skill
   for skill in $SKILLS; do
-    # コメント行や空行をスキップ
+    # Skip comment lines and empty lines
     if [[ "$skill" =~ ^# ]] || [ -z "$skill" ]; then
       continue
     fi
@@ -148,9 +148,9 @@ for workflow_file in $WORKFLOW_FILES; do
       log_pass "skill: $skill"
     else
       if [ "$STRICT_MODE" = true ]; then
-        log_fail "skill: $skill" "スキル '$skill' が skills/ または agents/ に見つかりません"
+        log_fail "skill: $skill" "Skill '$skill' not found in skills/ or agents/"
       else
-        log_warn "skill: $skill - 未実装（将来追加予定）"
+        log_warn "skill: $skill - not implemented (planned for future)"
       fi
     fi
   done
@@ -159,39 +159,39 @@ done
 echo ""
 
 # ================================
-# エージェント参照のチェック（agents/ 配下の .md ファイル）
+# Agent reference check (.md files under agents/)
 # ================================
 
-echo "--- エージェント定義の確認 ---"
+echo "--- Agent definition check ---"
 
 AGENT_FILES=$(find "$PROJECT_ROOT/agents" -name "*.md" 2>/dev/null || true)
 
 if [ -n "$AGENT_FILES" ]; then
   AGENT_COUNT=$(echo "$AGENT_FILES" | wc -l | tr -d ' ')
-  log_pass "agents/ に $AGENT_COUNT 個のエージェント定義"
+  log_pass "agents/ has $AGENT_COUNT agent definition(s)"
 else
-  log_warn "agents/ にエージェント定義がありません"
+  log_warn "No agent definitions found in agents/"
 fi
 
 echo ""
 
 # ================================
-# 結果サマリー
+# Results summary
 # ================================
 
 echo "================================"
-echo "テスト結果サマリー"
+echo "Test results summary"
 echo "================================"
-echo -e "合格: ${GREEN}${PASSED}${NC}"
-echo -e "警告: ${YELLOW}${WARNINGS}${NC}"
-echo -e "失敗: ${RED}${FAILED}${NC}"
+echo -e "Passed: ${GREEN}${PASSED}${NC}"
+echo -e "Warnings: ${YELLOW}${WARNINGS}${NC}"
+echo -e "Failed: ${RED}${FAILED}${NC}"
 
 if [ "$FAILED" -gt 0 ]; then
   echo ""
-  echo -e "${RED}参照整合性エラーがあります。修正してください。${NC}"
+  echo -e "${RED}Reference consistency errors found. Please fix them.${NC}"
   exit 1
 else
   echo ""
-  echo -e "${GREEN}すべての参照が有効です！${NC}"
+  echo -e "${GREEN}All references are valid!${NC}"
   exit 0
 fi

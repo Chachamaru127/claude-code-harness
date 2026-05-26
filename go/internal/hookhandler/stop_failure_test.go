@@ -20,7 +20,7 @@ func TestStopFailureHandler_EmptyInput(t *testing.T) {
 	if err := h.Handle(strings.NewReader(""), &out); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// 空入力の場合は何も出力しない
+	// Empty input should produce no output
 	if out.Len() != 0 {
 		t.Errorf("expected empty output, got: %s", out.String())
 	}
@@ -28,7 +28,7 @@ func TestStopFailureHandler_EmptyInput(t *testing.T) {
 
 func TestStopFailureHandler_LogsEntry(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("CLAUDE_PLUGIN_DATA", "") // CLAUDE_PLUGIN_DATA をアンセットしてデフォルトパスを使用
+	t.Setenv("CLAUDE_PLUGIN_DATA", "") // Unset CLAUDE_PLUGIN_DATA to use the default path
 	h := &StopFailureHandler{ProjectRoot: dir}
 
 	payload := `{
@@ -56,7 +56,7 @@ func TestStopFailureHandler_LogsEntry(t *testing.T) {
 
 func TestStopFailureHandler_RateLimit429_SystemMessage(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("CLAUDE_PLUGIN_DATA", "") // CLAUDE_PLUGIN_DATA をアンセットしてデフォルトパスを使用
+	t.Setenv("CLAUDE_PLUGIN_DATA", "") // Unset CLAUDE_PLUGIN_DATA to use the default path
 	h := &StopFailureHandler{ProjectRoot: dir}
 
 	payload := `{
@@ -68,7 +68,7 @@ func TestStopFailureHandler_RateLimit429_SystemMessage(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// 429 の場合は systemMessage が出力される
+	// systemMessage should be output for 429
 	output := strings.TrimSpace(out.String())
 	if output == "" {
 		t.Fatal("expected systemMessage output for 429, got empty")
@@ -87,7 +87,7 @@ func TestStopFailureHandler_RateLimit429_SystemMessage(t *testing.T) {
 
 func TestStopFailureHandler_NonRateLimit_NoSystemMessage(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("CLAUDE_PLUGIN_DATA", "") // CLAUDE_PLUGIN_DATA をアンセットしてデフォルトパスを使用
+	t.Setenv("CLAUDE_PLUGIN_DATA", "") // Unset CLAUDE_PLUGIN_DATA to use the default path
 	h := &StopFailureHandler{ProjectRoot: dir}
 
 	payload := `{
@@ -99,7 +99,7 @@ func TestStopFailureHandler_NonRateLimit_NoSystemMessage(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// 429 以外は systemMessage を出力しない
+	// Non-429 errors should not output a systemMessage
 	output := strings.TrimSpace(out.String())
 	if output != "" {
 		t.Errorf("expected no output for non-429, got: %s", output)
@@ -107,9 +107,9 @@ func TestStopFailureHandler_NonRateLimit_NoSystemMessage(t *testing.T) {
 }
 
 func TestStopFailureHandler_StringError(t *testing.T) {
-	// error フィールドが文字列の場合のテスト
+	// Test when the error field is a string
 	dir := t.TempDir()
-	t.Setenv("CLAUDE_PLUGIN_DATA", "") // CLAUDE_PLUGIN_DATA をアンセットしてデフォルトパスを使用
+	t.Setenv("CLAUDE_PLUGIN_DATA", "") // Unset CLAUDE_PLUGIN_DATA to use the default path
 	h := &StopFailureHandler{ProjectRoot: dir}
 
 	payload := `{"error": "rate limit exceeded", "session_id": "str-sess"}`
@@ -160,17 +160,17 @@ func TestIsStopFailureLogSymlink(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// 実ファイルは false
+	// Real file should return false
 	if isStopFailureLogSymlink(realFile) {
 		t.Error("real file reported as symlink")
 	}
 
-	// 存在しないファイルは false
+	// Non-existent file should return false
 	if isStopFailureLogSymlink(filepath.Join(dir, "noexist")) {
 		t.Error("nonexistent file reported as symlink")
 	}
 
-	// シンボリックリンクは true
+	// Symbolic link should return true
 	linkFile := filepath.Join(dir, "link.txt")
 	if err := os.Symlink(realFile, linkFile); err != nil {
 		t.Skip("symlink creation not supported:", err)
@@ -181,9 +181,9 @@ func TestIsStopFailureLogSymlink(t *testing.T) {
 }
 
 func TestStopFailureHandler_Idempotent(t *testing.T) {
-	// 複数回呼び出しで JSONL に複数行が追記されることを確認
+	// Verify that multiple calls append multiple lines to the JSONL
 	dir := t.TempDir()
-	t.Setenv("CLAUDE_PLUGIN_DATA", "") // CLAUDE_PLUGIN_DATA をアンセットしてデフォルトパスを使用
+	t.Setenv("CLAUDE_PLUGIN_DATA", "") // Unset CLAUDE_PLUGIN_DATA to use the default path
 	h := &StopFailureHandler{ProjectRoot: dir}
 
 	payload := `{"error": {"message": "err", "status": "500"}, "session_id": "s1"}`
@@ -205,7 +205,7 @@ func TestStopFailureHandler_Idempotent(t *testing.T) {
 	}
 }
 
-// --- 指摘3: CLAUDE_PLUGIN_DATA 対応テスト ---
+// --- Finding 3: CLAUDE_PLUGIN_DATA support tests ---
 
 func TestResolveStopFailureStateDir_Default(t *testing.T) {
 	t.Setenv("CLAUDE_PLUGIN_DATA", "")
@@ -223,7 +223,7 @@ func TestResolveStopFailureStateDir_WithPluginData(t *testing.T) {
 
 	projectRoot := "/some/project"
 
-	// 期待するハッシュ: CWD の SHA-256 先頭 12 文字
+	// Expected hash: first 12 characters of the SHA-256 of CWD
 	hash := sha256.Sum256([]byte(projectRoot))
 	expectedHash := fmt.Sprintf("%x", hash)[:12]
 	want := pluginData + "/projects/" + expectedHash
@@ -235,7 +235,7 @@ func TestResolveStopFailureStateDir_WithPluginData(t *testing.T) {
 }
 
 func TestStopFailureHandler_CLAUDE_PLUGIN_DATA_UsesHashedPath(t *testing.T) {
-	// CLAUDE_PLUGIN_DATA が設定されている場合、ログがハッシュパスに書かれることを確認
+	// Verify that when CLAUDE_PLUGIN_DATA is set, the log is written to the hashed path
 	dir := t.TempDir()
 	pluginData := t.TempDir()
 	t.Setenv("CLAUDE_PLUGIN_DATA", pluginData)
@@ -247,7 +247,7 @@ func TestStopFailureHandler_CLAUDE_PLUGIN_DATA_UsesHashedPath(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// ハッシュパスにログが書かれていることを確認
+	// Verify that the log was written to the hashed path
 	hash := sha256.Sum256([]byte(dir))
 	hashStr := fmt.Sprintf("%x", hash)[:12]
 	logFile := filepath.Join(pluginData, "projects", hashStr, "stop-failures.jsonl")
@@ -261,10 +261,10 @@ func TestStopFailureHandler_CLAUDE_PLUGIN_DATA_UsesHashedPath(t *testing.T) {
 	}
 }
 
-// --- 指摘1+2: fireWebhook 同期化・ペイロード/ヘッダー一致テスト ---
+// --- Findings 1+2: fireWebhook synchronization / payload and header matching tests ---
 
 func TestFireWebhook_SynchronousWithCorrectHeaderAndBody(t *testing.T) {
-	// テスト用 HTTP サーバーを立てて、リクエストの内容を検証する
+	// Start a test HTTP server and validate the request content
 	var receivedBody []byte
 	var receivedHeader string
 
@@ -281,7 +281,7 @@ func TestFireWebhook_SynchronousWithCorrectHeaderAndBody(t *testing.T) {
 	h := &taskCompletedHandler{}
 	rawPayload := []byte(`{"teammate_name":"worker-1","task_id":"T1"}`)
 
-	// 同期実行なので return 後にはサーバーに届いているはず
+	// Synchronous execution: the request should have reached the server after return
 	h.fireWebhook(rawPayload)
 
 	if receivedHeader != "task-completed" {
@@ -295,7 +295,7 @@ func TestFireWebhook_SynchronousWithCorrectHeaderAndBody(t *testing.T) {
 func TestFireWebhook_NoURL_NoOp(t *testing.T) {
 	t.Setenv("HARNESS_WEBHOOK_URL", "")
 	h := &taskCompletedHandler{}
-	// パニックしないこと、タイムアウトしないことを確認
+	// Verify that this does not panic or time out
 	h.fireWebhook([]byte(`{"event":"test"}`))
 }
 
@@ -311,7 +311,7 @@ func TestFireWebhook_EmptyPayload_FallsBackToEmptyObject(t *testing.T) {
 	t.Setenv("HARNESS_WEBHOOK_URL", server.URL)
 
 	h := &taskCompletedHandler{}
-	h.fireWebhook(nil) // nil ペイロード → "{}" にフォールバック
+	h.fireWebhook(nil) // nil payload → falls back to "{}"
 
 	if string(receivedBody) != "{}" {
 		t.Errorf("body = %q, want {}", receivedBody)

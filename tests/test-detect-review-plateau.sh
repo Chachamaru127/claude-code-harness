@@ -1,6 +1,6 @@
 #!/bin/bash
 # test-detect-review-plateau.sh
-# detect-review-plateau.sh のゴールデンフィクスチャテスト
+# Golden fixture tests for detect-review-plateau.sh
 #
 # Usage: ./tests/test-detect-review-plateau.sh
 
@@ -11,7 +11,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 SCRIPT="$PROJECT_ROOT/scripts/detect-review-plateau.sh"
 FIXTURE_DIR="$PROJECT_ROOT/tests/fixtures/review-calibration"
 
-# --- ユーティリティ ---
+# --- utilities ---
 PASS=0
 FAIL=0
 
@@ -34,42 +34,42 @@ run_case() {
 
   local actual_output actual_exit actual_status
 
-  # detect-review-plateau.sh を実行（set -e を回避するため || で exit code を捕捉）
+  # run detect-review-plateau.sh (capture exit code with || to bypass set -e)
   actual_output="$(bash "$SCRIPT" "$task_id" --calibration-file "$fixture" 2>&1)" || actual_exit=$?
   actual_exit="${actual_exit:-0}"
 
-  # stdout から STATUS 行を抽出
+  # extract STATUS line from stdout
   actual_status="$(echo "$actual_output" | grep '^STATUS:' | awk '{print $2}')"
 
-  # exit code チェック
+  # check exit code
   if [ "$actual_exit" = "$expected_exit" ]; then
     pass "$label: exit code = $expected_exit"
   else
     fail "$label: exit code expected=$expected_exit actual=$actual_exit"
   fi
 
-  # STATUS チェック
+  # check STATUS
   if [ "$actual_status" = "$expected_status" ]; then
     pass "$label: STATUS = $expected_status"
   else
     fail "$label: STATUS expected=$expected_status actual=$actual_status"
   fi
 
-  # ENTRIES 行が存在するかチェック
+  # check ENTRIES line is present
   if echo "$actual_output" | grep -q '^ENTRIES:'; then
     pass "$label: ENTRIES line present"
   else
     fail "$label: ENTRIES line missing"
   fi
 
-  # REASON 行が存在するかチェック
+  # check REASON line is present
   if echo "$actual_output" | grep -q '^REASON:'; then
     pass "$label: REASON line present"
   else
     fail "$label: REASON line missing"
   fi
 
-  # N>=3 の場合は JACCARD_AVG 行も期待
+  # JACCARD_AVG line is also expected when N>=3
   if [ "$expected_exit" != "1" ]; then
     if echo "$actual_output" | grep -q '^JACCARD_AVG:'; then
       pass "$label: JACCARD_AVG line present"
@@ -79,8 +79,8 @@ run_case() {
   fi
 }
 
-# --- テストケース ---
-echo "=== detect-review-plateau.sh テスト ==="
+# --- test cases ---
+echo "=== detect-review-plateau.sh tests ==="
 echo ""
 
 echo "--- Case 1: plateau.jsonl → PIVOT_REQUIRED (exit 2) ---"
@@ -110,8 +110,8 @@ run_case \
   "1"
 echo ""
 
-# --- task_id 未指定エラー ---
-echo "--- Case 4: task_id 未指定 → エラー終了 ---"
+# --- task_id not provided error ---
+echo "--- Case 4: no task_id → error exit ---"
 if bash "$SCRIPT" 2>/dev/null; then
   fail "no-task-id: should exit non-zero"
 else
@@ -119,8 +119,8 @@ else
 fi
 echo ""
 
-# --- 存在しないファイル ---
-echo "--- Case 5: calibration file が存在しない → INSUFFICIENT_DATA (exit 1) ---"
+# --- file does not exist ---
+echo "--- Case 5: calibration file does not exist → INSUFFICIENT_DATA (exit 1) ---"
 actual_output="$(bash "$SCRIPT" "some-task" --calibration-file "/nonexistent/file.jsonl" 2>&1)" || actual_exit=$?
 actual_exit="${actual_exit:-0}"
 actual_status="$(echo "$actual_output" | grep '^STATUS:' | awk '{print $2}')"
@@ -131,11 +131,11 @@ else
 fi
 echo ""
 
-# --- サマリ ---
+# --- summary ---
 TOTAL=$(( PASS + FAIL ))
-echo "=== 結果: $PASS/$TOTAL PASS ==="
+echo "=== Result: $PASS/$TOTAL PASS ==="
 if [ "$FAIL" -gt 0 ]; then
-  echo "FAILED: $FAIL テストが失敗しました"
+  echo "FAILED: $FAIL test(s) failed"
   exit 1
 fi
 echo "All tests passed."

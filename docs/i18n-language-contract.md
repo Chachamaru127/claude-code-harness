@@ -12,9 +12,13 @@ Updated: 2026-05-24 for Issue #147
 
 ## Purpose
 
-Claude Code Harness must ship with English as the user-facing default while
-preserving the existing Japanese user experience for users who opt in to
-Japanese or who issue Japanese instructions.
+Claude Code Harness ships with English as the only user-facing language going
+forward. All new documentation, skill body text, runtime messages, templates,
+and agent prompts must be written in English.
+
+The Japanese opt-in path (locale infrastructure, `description-ja` frontmatter,
+and `templates/locales/ja/` files) is preserved for backwards compatibility with
+existing Japanese users, but no new Japanese-language content will be added.
 
 This contract is intentionally about state and compatibility first. Translation
 work, runtime message rewrites, setup template rewrites, and CI gates must use

@@ -1,196 +1,196 @@
-# 典型的なワークフロー例
+# Typical Workflow Examples
 
-2エージェントワークフローの実際の流れ。
+Real-world flow of the two-agent workflow.
 
 ---
 
-## 例1: 新機能開発
+## Example 1: New Feature Development
 
-### Phase 1: PM（Cursor）がタスクを作成
+### Phase 1: PM (Cursor) creates a task
 
 ```markdown
 # Plans.md
 
-## 🟡 未着手のタスク
+## 🟡 Pending Tasks
 
-- [ ] ユーザープロフィール編集機能 `pm:依頼中`
-  - 名前、メール、アバター画像の編集
-  - バリデーション付き
-  - 変更履歴の保存
+- [ ] User profile editing feature `pm:依頼中`
+  - Edit name, email, and avatar image
+  - With validation
+  - Save change history
 ```
 
-**PM の発言**: 「Claude Code にプロフィール編集機能をお願いします」
+**PM says**: "Claude Code, please implement the profile editing feature."
 
 ---
 
-### Phase 2: Claude Code が作業開始
+### Phase 2: Claude Code begins work
 
 ```bash
-# Claude Code で実行
+# Run in Claude Code
 /work
 ```
 
-**Claude Code の作業**:
-1. Plans.md を読み込み
-2. `pm:依頼中` タスクを検出
-3. マーカーを `cc:WIP` に更新
-4. 実装開始
-5. `/harness-review` で品質レビュー
-6. 指摘があれば修正 → 再レビュー（ループ、最大3回）
+**Claude Code actions**:
+1. Read Plans.md
+2. Detect `pm:依頼中` task
+3. Update marker to `cc:WIP`
+4. Begin implementation
+5. Quality review with `/harness-review`
+6. Fix any findings → re-review (loop, up to 3 times)
 7. Review OK → Auto-commit
 
 ```markdown
-# Plans.md（更新後）
+# Plans.md (after update)
 
-## 🔴 進行中のタスク
+## 🔴 In-Progress Tasks
 
-- [ ] ユーザープロフィール編集機能 `cc:WIP`
-  - 名前、メール、アバター画像の編集
-  - バリデーション付き
-  - 変更履歴の保存
-  - 関連ファイル:
+- [ ] User profile editing feature `cc:WIP`
+  - Edit name, email, and avatar image
+  - With validation
+  - Save change history
+  - Related files:
     - `src/components/ProfileForm.tsx`
     - `src/lib/api/profile.ts`
 ```
 
 ---
 
-### Phase 3: Claude Code が完了報告（2-Agent のみ）
+### Phase 3: Claude Code reports completion (2-Agent mode only)
 
-Review OK かつ Auto-commit 完了後、2-Agent モードでは `/handoff-to-cursor` を実行して PM に報告する。
+After Review OK and Auto-commit, in 2-Agent mode run `/handoff-to-cursor` to report to the PM.
 
-> **Solo モードでは handoff は不要** — Review OK → Auto-commit で /work は完了。
+> **Handoff is not needed in Solo mode** — /work is complete once Review OK → Auto-commit.
 
 ```bash
-# Claude Code で実行（2-Agent モードのみ）
+# Run in Claude Code (2-Agent mode only)
 /handoff-to-cursor
 ```
 
-**生成されるレポート**:
+**Generated report**:
 
 ```markdown
-## 📋 完了報告: ユーザープロフィール編集機能
+## 📋 Completion Report: User Profile Editing Feature
 
-### 実装内容
-- ProfileForm コンポーネント作成
-- プロフィール API エンドポイント
-- Zod によるバリデーション
-- 変更履歴テーブル追加
+### What was implemented
+- ProfileForm component created
+- Profile API endpoint
+- Validation with Zod
+- Change history table added
 
-### 変更ファイル
+### Changed files
 - src/components/ProfileForm.tsx (+150 lines)
 - src/lib/api/profile.ts (+80 lines)
 - src/lib/validations/profile.ts (+25 lines)
 - prisma/schema.prisma (+10 lines)
 
-### レビュー結果
-✅ harness-review APPROVE（Critical/High 指摘なし）
+### Review result
+✅ harness-review APPROVE (no Critical/High findings)
 
-### テスト結果
-✅ 全テスト合格 (12/12)
+### Test result
+✅ All tests passed (12/12)
 
-### 次のアクション
-- [ ] staging 環境で動作確認
-- [ ] デザインレビュー
+### Next actions
+- [ ] Verify behavior in staging environment
+- [ ] Design review
 ```
 
 ---
 
-### Phase 4: PM が確認
+### Phase 4: PM confirms
 
 ```markdown
-# Plans.md（PM 更新後）
+# Plans.md (after PM update)
 
-## 🟢 完了タスク
+## 🟢 Completed Tasks
 
-- [x] ユーザープロフィール編集機能 `pm:確認済` (2024-01-15)
+- [x] User profile editing feature `pm:確認済` (2024-01-15)
 ```
 
 ---
 
-## 例2: バグ修正の緊急対応
+## Example 2: Urgent Bug Fix
 
-### PM からの緊急依頼
+### Urgent request from PM
 
 ```markdown
-## 🟡 未着手のタスク
+## 🟡 Pending Tasks
 
-- [ ] 🔥 【緊急】ログインエラー修正 `pm:依頼中`
-  - 症状: 特定ユーザーがログインできない
-  - エラー: "Invalid token format"
-  - 優先度: 最優先
+- [ ] 🔥 [URGENT] Fix login error `pm:依頼中`
+  - Symptom: certain users cannot log in
+  - Error: "Invalid token format"
+  - Priority: highest
 ```
 
-### Claude Code の対応
+### Claude Code response
 
-1. `/work` で着手
-2. エラーログ調査
-3. 原因特定・修正
-4. テスト追加
-5. `/harness-review` でレビュー（指摘あれば修正→再レビュー）
+1. Pick up the task with `/work`
+2. Investigate error logs
+3. Identify root cause and fix
+4. Add tests
+5. Review with `/harness-review` (fix findings → re-review if needed)
 6. Review OK → Auto-commit
-7. `/handoff-to-cursor` で完了報告（2-Agent のみ。Solo では省略）
+7. Report completion with `/handoff-to-cursor` (2-Agent mode only; skip in Solo)
 
 ---
 
-## 例3: CI 失敗時の自動修正
+## Example 3: Auto-Fix on CI Failure
 
-### CI が失敗
+### CI fails
 
 ```
 GitHub Actions: ❌ Build failed
 - TypeScript error in src/utils/date.ts:45
 ```
 
-### Claude Code の自動対応
+### Claude Code auto-response
 
-1. エラー検出
-2. 型エラー修正
-3. 再コミット・プッシュ
+1. Detect the error
+2. Fix the type error
+3. Re-commit and push
 
-**3回失敗した場合**:
+**If all 3 attempts fail**:
 
 ```markdown
-## ⚠️ CI エスカレーション
+## ⚠️ CI Escalation
 
-3回修正を試みましたが解決できませんでした。
+3 fix attempts were made but the issue could not be resolved.
 
-### 試した修正
-1. 型アノテーション追加 → 失敗
-2. 型定義ファイル更新 → 失敗
-3. tsconfig 調整 → 失敗
+### Fixes tried
+1. Added type annotations → failed
+2. Updated type definition file → failed
+3. Adjusted tsconfig → failed
 
-### 推定原因
-外部ライブラリの型定義が古い可能性
+### Probable cause
+The type definitions for an external library may be outdated
 
-### 推奨アクション
-- [ ] @types/xxx を最新版に更新
-- [ ] ライブラリ自体のバージョン確認
+### Recommended actions
+- [ ] Update @types/xxx to the latest version
+- [ ] Check the library version itself
 ```
 
 ---
 
-## 例4: 並列タスク実行
+## Example 4: Parallel Task Execution
 
-### 複数タスクがある場合
+### Multiple tasks exist
 
 ```markdown
-## 🟡 未着手のタスク
+## 🟡 Pending Tasks
 
-- [ ] ヘッダーコンポーネントのリファクタリング `cc:TODO`
-- [ ] フッターコンポーネントのリファクタリング `cc:TODO`
-- [ ] テスト追加: ユーティリティ関数 `cc:TODO`
+- [ ] Refactor header component `cc:TODO`
+- [ ] Refactor footer component `cc:TODO`
+- [ ] Add tests: utility functions `cc:TODO`
 ```
 
-### /work 実行時
+### When /work is run
 
-Claude Code が並列実行可能か判断:
-- 独立したタスク → 並列実行
-- 依存関係あり → 直列実行
+Claude Code determines whether parallel execution is possible:
+- Independent tasks → parallel execution
+- Tasks with dependencies → sequential execution
 
 ```
-🚀 並列実行開始
-├─ Agent 1: ヘッダーリファクタリング
-├─ Agent 2: フッターリファクタリング
-└─ Agent 3: テスト追加
+🚀 Starting parallel execution
+├─ Agent 1: Header refactor
+├─ Agent 2: Footer refactor
+└─ Agent 3: Add tests
 ```

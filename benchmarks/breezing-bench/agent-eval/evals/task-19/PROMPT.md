@@ -1,2 +1,2 @@
-`Stack<T>` クラスを実装してください。`types.ts` にインターフェース定義があります。
-push, pop, peek, size, isEmpty, toArray, clear メソッドを実装してください。
+Implement the `Stack<T>` class. The interface definition is in `types.ts`.
+Implement the push, pop, peek, size, isEmpty, toArray, and clear methods.

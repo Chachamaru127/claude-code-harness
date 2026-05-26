@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>{{title}}</title>
 <style>
   /* Claude Harness Brand palette
-     - 白地に黒文字、ハーネスオレンジを 1 点だけ差すミニマル構成 */
+     - minimal: white background, black text, single accent of harness orange */
   :root {
     --harness-bg:     #FAFAFA;  /* off-white background */
-    --harness-fg:     #0F0F0F;  /* near-black text (logo wordmark と一致) */
-    --harness-orange: #F58A4A;  /* Claude Harness Orange (logo の harness 色) */
+    --harness-fg:     #0F0F0F;  /* near-black text (matches logo wordmark) */
+    --harness-orange: #F58A4A;  /* Claude Harness Orange (harness color in logo) */
   }
   * { box-sizing: border-box; }
   html, body {

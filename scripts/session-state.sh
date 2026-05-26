@@ -1,22 +1,22 @@
 #!/bin/bash
 # session-state.sh
-# セッション状態を強制的に遷移させる
+# Forcibly transition session state
 #
 # Usage: ./scripts/session-state.sh --state <state> --event <event> [--data <json>]
 #
-# 入力:
-#   --state <state>  : 遷移先の状態 (idle, initialized, planning, executing, reviewing, verifying, escalated, completed, failed, stopped)
-#   --event <event>  : 遷移トリガーのイベント (session.start, plan.ready, work.start, etc.)
-#   --data <json>    : イベント付加データ (オプション)
+# Input:
+#   --state <state>  : Target state (idle, initialized, planning, executing, reviewing, verifying, escalated, completed, failed, stopped)
+#   --event <event>  : Transition trigger event (session.start, plan.ready, work.start, etc.)
+#   --data <json>    : Optional event payload (optional)
 #
-# 出力:
-#   成功時: exit 0
-#   失敗時: stderr にエラー出力 + exit 1
+# Output:
+#   On success: exit 0
+#   On failure: error output to stderr + exit 1
 
 set -euo pipefail
 
 # ================================
-# 定数
+# Constants
 # ================================
 STATE_DIR=".claude/state"
 SESSION_FILE="$STATE_DIR/session.json"
@@ -24,11 +24,11 @@ EVENT_LOG_FILE="$STATE_DIR/session.events.jsonl"
 LOCK_FILE="$STATE_DIR/session-state.lock"
 CONFIG_FILE=".claude-code-harness.config.yaml"
 
-# 有効な状態リスト (docs/SESSION_ORCHESTRATION.md の States と同期)
+# Valid state list (synced with States in docs/SESSION_ORCHESTRATION.md)
 VALID_STATES=(idle initialized planning executing reviewing verifying escalated completed failed stopped)
 
-# 遷移ルール (from:event -> to)
-# フォーマット: "from_state:event_name:to_state"
+# Transition rules (from:event -> to)
+# Format: "from_state:event_name:to_state"
 TRANSITION_RULES=(
   "idle:session.start:initialized"
   "initialized:plan.ready:planning"
@@ -40,26 +40,26 @@ TRANSITION_RULES=(
   "reviewing:verify.start:verifying"
   "verifying:verify.passed:completed"
   "verifying:verify.failed:escalated"
-  # エスカレーション
+  # Escalation
   "executing:escalation.requested:escalated"
   "reviewing:escalation.requested:escalated"
   "verifying:escalation.requested:escalated"
   "planning:escalation.requested:escalated"
   "escalated:escalation.resolved:initialized"
-  # 停止 (任意の状態から)
+  # Stop (from any state)
   "*:session.stop:stopped"
-  # 再開
+  # Resume
   "stopped:session.resume:initialized"
-  # 完了
+  # Completion
   "completed:session.stop:stopped"
   "reviewing:work.all_complete:completed"
 )
 
 # ================================
-# ヘルパー関数
+# Helper functions
 # ================================
 
-# 使用方法を表示
+# Display usage
 usage() {
   echo "Usage: $0 --state <state> --event <event> [--data <json>]" >&2
   echo "" >&2
@@ -68,11 +68,11 @@ usage() {
   echo "Options:" >&2
   echo "  --state <state>   Target state" >&2
   echo "  --event <event>   Trigger event" >&2
-  echo "  --data <json>     Optional JSON data for the event" >&2
+  echo "  --data <json>     Optional JSON payload for the event" >&2
   exit 1
 }
 
-# 状態の有効性チェック
+# Validate state
 is_valid_state() {
   local state="$1"
   for valid in "${VALID_STATES[@]}"; do
@@ -83,7 +83,7 @@ is_valid_state() {
   return 1
 }
 
-# 遷移ルールのチェック
+# Check transition rule
 is_valid_transition() {
   local from="$1"
   local event="$2"
@@ -95,7 +95,7 @@ is_valid_transition() {
     local rule_event="${rest%%:*}"
     local rule_to="${rest#*:}"
 
-    # ワイルドカード対応（任意の状態から）
+    # Wildcard support (from any state)
     if [[ "$rule_from" == "*" || "$rule_from" == "$from" ]]; then
       if [[ "$rule_event" == "$event" && "$rule_to" == "$to" ]]; then
         return 0
@@ -105,7 +105,7 @@ is_valid_transition() {
   return 1
 }
 
-# ロック取得
+# Acquire lock
 acquire_lock() {
   local timeout=5
   local waited=0
@@ -128,7 +128,7 @@ acquire_lock() {
   return 0
 }
 
-# ロック解放
+# Release lock
 release_lock() {
   if command -v flock >/dev/null 2>&1; then
     exec 200>&-
@@ -137,7 +137,7 @@ release_lock() {
   fi
 }
 
-# 現在の状態を取得
+# Get current state
 get_current_state() {
   if [ ! -f "$SESSION_FILE" ]; then
     echo "idle"
@@ -153,7 +153,7 @@ get_current_state() {
   fi
 }
 
-# 最大リトライ数を取得
+# Get maximum retry count
 get_max_retries() {
   local default=3
 
@@ -173,7 +173,7 @@ get_max_retries() {
   echo "$default"
 }
 
-# リトライバックオフ秒数を取得 (SESSION_ORCHESTRATION.md準拠)
+# Get retry backoff seconds (compliant with SESSION_ORCHESTRATION.md)
 get_retry_backoff() {
   local retry_num="${1:-1}"
   local defaults=(5 15 30)
@@ -182,7 +182,7 @@ get_retry_backoff() {
     local backoff_line
     backoff_line=$(grep -E "retry_backoff_seconds:" "$CONFIG_FILE" 2>/dev/null | head -n 1 || true)
     if [ -n "$backoff_line" ]; then
-      # YAML配列 [5, 15, 30] からパース
+      # Parse YAML array [5, 15, 30]
       local arr
       arr=$(echo "$backoff_line" | sed 's/.*: *\[//' | sed 's/\].*//' | tr ',' ' ')
       local index=$((retry_num - 1))
@@ -197,7 +197,7 @@ get_retry_backoff() {
     fi
   fi
 
-  # デフォルト値
+  # Default values
   local idx=$((retry_num - 1))
   if [ "$idx" -ge 0 ] && [ "$idx" -lt ${#defaults[@]} ]; then
     echo "${defaults[$idx]}"
@@ -207,14 +207,14 @@ get_retry_backoff() {
 }
 
 # ================================
-# メイン処理
+# Main
 # ================================
 
 TARGET_STATE=""
 EVENT_NAME=""
 EVENT_DATA=""
 
-# 引数解析
+# Argument parsing
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --state)
@@ -239,29 +239,29 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# 必須引数チェック
+# Required argument check
 if [ -z "$TARGET_STATE" ] || [ -z "$EVENT_NAME" ]; then
   echo "Error: --state and --event are required" >&2
   usage
 fi
 
-# 状態の有効性チェック
+# Validate state
 if ! is_valid_state "$TARGET_STATE"; then
   echo "Error: Invalid state '$TARGET_STATE'" >&2
   echo "Valid states: ${VALID_STATES[*]}" >&2
   exit 1
 fi
 
-# ロック取得
+# Acquire lock
 if ! acquire_lock; then
   echo "Error: Failed to acquire lock" >&2
   exit 1
 fi
 
-# 現在の状態を取得
+# Get current state
 CURRENT_STATE=$(get_current_state)
 
-# 遷移ルールのチェック
+# Check transition rule
 if ! is_valid_transition "$CURRENT_STATE" "$EVENT_NAME" "$TARGET_STATE"; then
   release_lock
   echo "Error: Invalid transition from '$CURRENT_STATE' via '$EVENT_NAME' to '$TARGET_STATE'" >&2
@@ -275,18 +275,18 @@ if ! is_valid_transition "$CURRENT_STATE" "$EVENT_NAME" "$TARGET_STATE"; then
   exit 1
 fi
 
-# タイムスタンプ
+# Timestamp
 TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-# セッションファイルの更新
+# Update session file
 if [ -f "$SESSION_FILE" ]; then
   if command -v jq >/dev/null 2>&1; then
-    # event_seq を増加
+    # Increment event_seq
     EVENT_SEQ=$(jq -r '.event_seq // 0' "$SESSION_FILE" 2>/dev/null)
     EVENT_SEQ=$((EVENT_SEQ + 1))
     EVENT_ID=$(printf "event-%06d" "$EVENT_SEQ")
 
-    # session.json を更新
+    # Update session.json
     tmp_file=$(mktemp)
     jq --arg state "$TARGET_STATE" \
        --arg updated_at "$TIMESTAMP" \
@@ -295,7 +295,7 @@ if [ -f "$SESSION_FILE" ]; then
        '.state = $state | .updated_at = $updated_at | .last_event_id = $event_id | .event_seq = $event_seq' \
        "$SESSION_FILE" > "$tmp_file" && mv "$tmp_file" "$SESSION_FILE"
 
-    # イベントログに追記
+    # Append to event log
     mkdir -p "$(dirname "$EVENT_LOG_FILE")" 2>/dev/null || true
     if [ -n "$EVENT_DATA" ]; then
       echo "{\"id\":\"$EVENT_ID\",\"type\":\"$EVENT_NAME\",\"ts\":\"$TIMESTAMP\",\"state\":\"$TARGET_STATE\",\"data\":$EVENT_DATA}" >> "$EVENT_LOG_FILE"
@@ -352,7 +352,7 @@ PY
     exit 1
   fi
 else
-  # セッションファイルがない場合は新規作成
+  # Create new session file if it does not exist
   mkdir -p "$STATE_DIR" 2>/dev/null || true
 
   SESSION_ID="session-$(date +%s)"
@@ -360,7 +360,7 @@ else
   EVENT_ID="event-000001"
   MAX_RETRIES=$(get_max_retries)
 
-  # バックオフ秒数を配列として取得
+  # Get backoff seconds as an array
   BACKOFF_1=$(get_retry_backoff 1)
   BACKOFF_2=$(get_retry_backoff 2)
   BACKOFF_3=$(get_retry_backoff 3)
@@ -384,7 +384,7 @@ else
 }
 EOF
 
-  # イベントログに追記
+  # Append to event log
   if [ -n "$EVENT_DATA" ]; then
     echo "{\"id\":\"$EVENT_ID\",\"type\":\"$EVENT_NAME\",\"ts\":\"$TIMESTAMP\",\"state\":\"$TARGET_STATE\",\"data\":$EVENT_DATA}" >> "$EVENT_LOG_FILE"
   else

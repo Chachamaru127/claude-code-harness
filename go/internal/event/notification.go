@@ -8,17 +8,17 @@ import (
 	"path/filepath"
 )
 
-// NotificationHandler は Notification フックハンドラ。
-// Claude Code が通知を発行する際に発火し、イベントを JSONL ログに記録する。
+// NotificationHandler is the Notification hook handler.
+// Fires when Claude Code issues a notification, and records the event to a JSONL log.
 //
-// shell 版: scripts/hook-handlers/notification-handler.sh
+// Shell version: scripts/hook-handlers/notification-handler.sh
 type NotificationHandler struct {
-	// StateDir はログファイルの保存先。
-	// 空の場合は ResolveStateDir(projectRoot) を使う。
+	// StateDir is the destination for log files.
+	// If empty, uses ResolveStateDir(projectRoot).
 	StateDir string
 }
 
-// notificationInput は Notification フックの stdin JSON。
+// notificationInput is the stdin JSON for the Notification hook.
 type notificationInput struct {
 	NotificationType string `json:"notification_type,omitempty"`
 	Type             string `json:"type,omitempty"`
@@ -28,7 +28,7 @@ type notificationInput struct {
 	CWD              string `json:"cwd,omitempty"`
 }
 
-// notificationLogEntry は notification-events.jsonl に書き出すエントリ。
+// notificationLogEntry is the entry written to notification-events.jsonl.
 type notificationLogEntry struct {
 	Event            string `json:"event"`
 	NotificationType string `json:"notification_type"`
@@ -37,9 +37,9 @@ type notificationLogEntry struct {
 	Timestamp        string `json:"timestamp"`
 }
 
-// Handle は stdin から Notification ペイロードを読み取り、
-// ログに記録して stdout には何も返さない。
-// エラーは無視して処理を継続する（Breezing のバックグラウンド動作に影響しないため）。
+// Handle reads a Notification payload from stdin,
+// records it to the log, and returns nothing to stdout.
+// Errors are ignored and processing continues (to avoid impacting Breezing background operation).
 func (h *NotificationHandler) Handle(r io.Reader, w io.Writer) error {
 	data, err := io.ReadAll(r)
 	if err != nil || len(data) == 0 {
@@ -51,7 +51,7 @@ func (h *NotificationHandler) Handle(r io.Reader, w io.Writer) error {
 		return nil
 	}
 
-	// notification_type を正規化（複数フィールドに同じ情報が入る場合がある）
+	// Normalize notification_type (the same information may appear in multiple fields)
 	notificationType := inp.NotificationType
 	if notificationType == "" {
 		notificationType = inp.Type
@@ -60,7 +60,7 @@ func (h *NotificationHandler) Handle(r io.Reader, w io.Writer) error {
 		notificationType = inp.Matcher
 	}
 
-	// ステートディレクトリを決定
+	// Determine the state directory
 	projectRoot := inp.CWD
 	if projectRoot == "" {
 		projectRoot = resolveProjectRoot(data)
@@ -90,16 +90,16 @@ func (h *NotificationHandler) Handle(r io.Reader, w io.Writer) error {
 
 	h.appendLog(logFile, entry)
 
-	// Breezing のバックグラウンド Worker への重要通知検出
-	// stdout への出力は行わない（ログへの記録のみ）
+	// Detect important notifications for Breezing background Workers.
+	// No output to stdout (log recording only).
 	h.handleBreezingNotifications(notificationType, inp.AgentType)
 
-	// Notification フックは出力不要（approve は暗黙）
+	// Notification hook requires no output (approve is implicit)
 	_ = w
 	return nil
 }
 
-// appendLog は通知ログに 1 エントリ追記する。
+// appendLog appends one entry to the notification log.
 func (h *NotificationHandler) appendLog(path string, entry notificationLogEntry) {
 	data, err := json.Marshal(entry)
 	if err != nil {
@@ -116,8 +116,8 @@ func (h *NotificationHandler) appendLog(path string, entry notificationLogEntry)
 	RotateJSONL(path)
 }
 
-// handleBreezingNotifications は Breezing バックグラウンド Worker への
-// 重要通知を stderr に出力する（デバッグ・観測性のため）。
+// handleBreezingNotifications outputs important notifications for Breezing
+// background Workers to stderr (for debugging and observability).
 func (h *NotificationHandler) handleBreezingNotifications(notificationType, agentType string) {
 	if agentType == "" {
 		return
@@ -125,12 +125,12 @@ func (h *NotificationHandler) handleBreezingNotifications(notificationType, agen
 
 	switch notificationType {
 	case "permission_prompt":
-		// Worker が権限ダイアログに応答できない
+		// Worker cannot respond to permission dialogs
 		fmt.Fprintf(os.Stderr,
 			"Notification: permission_prompt for agent_type=%s\n", agentType)
 	case "elicitation_dialog":
-		// MCP サーバーからの入力要求（v2.1.76+）
-		// バックグラウンド Worker では Elicitation フォームに応答不能
+		// Input request from MCP server (v2.1.76+)
+		// Background Workers cannot respond to Elicitation forms
 		fmt.Fprintf(os.Stderr,
 			"Notification: elicitation_dialog for agent_type=%s (auto-skipped in background)\n",
 			agentType)

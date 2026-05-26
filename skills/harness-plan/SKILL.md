@@ -2,7 +2,6 @@
 name: harness-plan
 description: "HAR: Research-backed task planning, Plans.md management, progress sync. Trigger: create a plan, add tasks, update Plans.md, mark complete, check progress. Do NOT load for: implementation, review, release."
 description-en: "HAR: Research-backed task planning, Plans.md management, progress sync. Trigger: create a plan, add tasks, update Plans.md, mark complete, check progress. Do NOT load for: implementation, review, release."
-description-ja: "HAR:調査・採点・記憶確認つきのタスク計画、Plans.md管理、進捗同期を担当。計画作って、タスク追加、Plans.md更新、完了マーク、進捗確認で起動。実装・レビュー・リリースには使わない。"
 kind: workflow
 purpose: "Maintain co-required planning output for the spec.md product contract and Plans.md task contract"
 trigger: "create a plan, add tasks, update Plans.md, check progress"

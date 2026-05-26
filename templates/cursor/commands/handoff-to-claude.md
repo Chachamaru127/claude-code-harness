@@ -1,58 +1,57 @@
 ---
-description: Claude Codeへの作業依頼プロンプトを生成
+description: Generate a work request prompt to hand off to Claude Code
 ---
 
 # /handoff-to-claude
 
-あなたは **Cursor (PM)** です。Claude Code に渡す依頼文を、コピー&ペーストできる形で生成してください。
+You are **Cursor (PM)**. Generate a work request to pass to Claude Code in a copy-and-paste-ready format.
 
-## 入力
+## Input
 
-- @Plans.md（対象タスクを特定）
-- 可能なら `git status -sb` と `git diff --name-only`
+- @Plans.md (to identify the target task)
+- If possible: `git status -sb` and `git diff --name-only`
 
-## 出力（そのままClaude Codeに貼る）
+## Output (paste directly into Claude Code)
 
-次の Markdown を出力してください：
+Output the following Markdown:
 
 ```markdown
 /claude-code-harness:core:work
-<!-- ultrathink: PM からの依頼は原則重要タスクのため、常に high effort を指定 -->
+<!-- ultrathink: requests from PM are generally important tasks, always specify high effort -->
 ultrathink
 
-## 依頼
-以下を実装してください。
+## Request
+Please implement the following.
 
-- 対象タスク:
-  - （Plans.md から該当タスクを列挙）
+- Target tasks:
+  - (list relevant tasks from Plans.md)
 
-## 制約
-- 既存のコードスタイルに従う
-- 変更は必要最小限
-- テスト/ビルド手順があれば提示
+## Constraints
+- Follow the existing code style
+- Keep changes to the minimum necessary
+- Provide test/build steps if available
 
-## 受入条件
-- （3〜5個）
+## Acceptance Criteria
+- (3–5 items)
 
-## Evals（採点/検証）
-Plans.md の「評価（Evals）」に従って、**outcome/transcript を採点できる形**で進めてください。
+## Evals (grading/verification)
+Follow the "Evaluation (Evals)" section in Plans.md and proceed in a way that allows **outcome/transcript to be graded**.
 
-- tasks（シナリオ）:
-  - （例: 具体的な入力/手順/期待結果）
-- trials（回数/集計）:
-  - （例: 3回、成功率 + 中央値）
-- graders（採点）:
+- tasks (scenarios):
+  - (example: specific input / steps / expected result)
+- trials (count/aggregation):
+  - (example: 3 runs, success rate + median)
+- graders (scoring):
   - outcome:
-    - （例: unit tests / typecheck / ファイル状態）
+    - (example: unit tests / typecheck / file state)
   - transcript:
-    - （例: 禁止行為なし / 余計な変更なし）
-- 実行コマンド（可能なら）:
-  - （例: `npm test`, `./tests/validate-plugin.sh` など）
+    - (example: no prohibited actions / no unnecessary changes)
+- execution command (if possible):
+  - (example: `npm test`, `./tests/validate-plugin.sh`, etc.)
 
-## 参考
-- 関連ファイル（あれば）
+## References
+- Related files (if any)
 
-**作業完了後**: `/handoff-to-cursor` を実行して完了報告すること
+**After completing work**: run `/handoff-to-cursor` to report completion
 ```
-
 

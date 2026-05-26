@@ -1,8 +1,6 @@
 ---
 name: agent-browser
 description: "Browser automation through the repo agent-browser CLI. Explicit helper for navigation, forms, screenshots, scraping, and web-app checks. Prefer Browser Use or Playwright when available. Do NOT load for: sharing URLs, embedding links, or editing screenshot files."
-description-en: "Browser automation through the repo agent-browser CLI. Explicit helper for navigation, forms, screenshots, scraping, and web-app checks. Prefer Browser Use or Playwright when available. Do NOT load for: sharing URLs, embedding links, or editing screenshot files."
-description-ja: "repo の agent-browser CLI でブラウザ操作を行う明示補助スキル。ページ遷移、フォーム、スクショ、スクレイピング、Webアプリ確認向け。利用可能なら Browser Use / Playwright を優先。URL共有、リンク埋め込み、スクショ画像編集には使わない。"
 allowed-tools: ["Bash", "Read"]
 user-invocable: false
 disable-model-invocation: true
@@ -12,176 +10,176 @@ argument-hint: "[url] [--headless]"
 
 # Agent Browser Skill
 
-ブラウザ自動化を行うスキル。agent-browser CLI を使用して、UI デバッグ・検証・自動操作を実行します。
+A skill for browser automation. Uses the agent-browser CLI to perform UI debugging, verification, and automated interactions.
 
 ---
 
-## トリガーフレーズ
+## Trigger Phrases
 
-このスキルは以下のフレーズで自動起動します：
+This skill is automatically activated by the following phrases:
 
-- 「ページを開いて」「URLを確認して」
-- 「クリックして」「入力して」「フォームに」
-- 「スクリーンショットを撮って」
-- 「UIを確認して」「画面をテストして」
+- "open this page", "check the URL"
+- "click on", "fill in", "fill the form"
+- "take a screenshot"
+- "check the UI", "test the screen"
 - "open this page", "click on", "fill the form", "screenshot"
 
 ---
 
-## 機能詳細
+## Features
 
-| 機能 | 詳細 |
-|------|------|
-| **ブラウザ自動化** | See [references/browser-automation.md](${CLAUDE_SKILL_DIR}/references/browser-automation.md) |
-| **AI スナップショットワークフロー** | See [references/ai-snapshot-workflow.md](${CLAUDE_SKILL_DIR}/references/ai-snapshot-workflow.md) |
+| Feature | Details |
+|---------|---------|
+| **Browser automation** | See [references/browser-automation.md](${CLAUDE_SKILL_DIR}/references/browser-automation.md) |
+| **AI snapshot workflow** | See [references/ai-snapshot-workflow.md](${CLAUDE_SKILL_DIR}/references/ai-snapshot-workflow.md) |
 
-## 実行手順
+## Execution Steps
 
-### Step 0: agent-browser の確認
+### Step 0: Verify agent-browser
 
 ```bash
-# インストール確認
+# Check installation
 which agent-browser
 
-# 未インストールの場合
+# If not installed
 npm install -g agent-browser
 agent-browser install
 ```
 
-### Step 1: ユーザーのリクエストを分類
+### Step 1: Classify the user's request
 
-| リクエストタイプ | 対応アクション |
-|----------------|---------------|
-| URL を開く | `agent-browser open <url>` |
-| 要素をクリック | スナップショット → `agent-browser click @ref` |
-| フォーム入力 | スナップショット → `agent-browser fill @ref "text"` |
-| 状態確認 | `agent-browser snapshot -i -c` |
-| スクリーンショット | `agent-browser screenshot <path>` |
-| デバッグ | `agent-browser --headed open <url>` |
+| Request type | Action |
+|--------------|--------|
+| Open a URL | `agent-browser open <url>` |
+| Click an element | snapshot → `agent-browser click @ref` |
+| Fill a form | snapshot → `agent-browser fill @ref "text"` |
+| Check state | `agent-browser snapshot -i -c` |
+| Take a screenshot | `agent-browser screenshot <path>` |
+| Debug | `agent-browser --headed open <url>` |
 
-### Step 2: AI スナップショットワークフロー（推奨）
+### Step 2: AI Snapshot Workflow (recommended)
 
-ほとんどの操作で、まず**スナップショットを取得**してから要素参照で操作します：
+For most operations, first **get a snapshot**, then interact via element references:
 
 ```bash
-# 1. ページを開く
+# 1. Open the page
 agent-browser open https://example.com
 
-# 2. スナップショット取得（AI 向け、インタラクティブ要素のみ）
+# 2. Get a snapshot (AI-optimized, interactive elements only)
 agent-browser snapshot -i -c
 
-# 出力例:
+# Sample output:
 # - link "Home" [ref=e1]
 # - button "Login" [ref=e2]
 # - input "Email" [ref=e3]
 # - input "Password" [ref=e4]
 # - button "Submit" [ref=e5]
 
-# 3. 要素参照で操作
-agent-browser click @e2           # Login ボタンをクリック
+# 3. Interact via element references
+agent-browser click @e2           # Click Login button
 agent-browser fill @e3 "user@example.com"
 agent-browser fill @e4 "password123"
 agent-browser click @e5           # Submit
 ```
 
-### Step 3: 結果の確認
+### Step 3: Verify results
 
 ```bash
-# 現在の状態をスナップショットで確認
+# Check current state with a snapshot
 agent-browser snapshot -i -c
 
-# または URL を確認
+# Or check the URL
 agent-browser get url
 
-# スクリーンショットを取得
+# Take a screenshot
 agent-browser screenshot result.png
 ```
 
 ---
 
-## クイックリファレンス
+## Quick Reference
 
-### 基本操作
+### Basic operations
 
-| コマンド | 説明 |
-|---------|------|
-| `open <url>` | URL を開く |
-| `snapshot -i -c` | AI 向けスナップショット |
-| `click @e1` | 要素をクリック |
-| `fill @e1 "text"` | フォームに入力 |
-| `type @e1 "text"` | テキストを入力 |
-| `press Enter` | キーを押す |
-| `screenshot [path]` | スクリーンショット |
-| `close` | ブラウザを閉じる |
+| Command | Description |
+|---------|-------------|
+| `open <url>` | Open a URL |
+| `snapshot -i -c` | AI-optimized snapshot |
+| `click @e1` | Click an element |
+| `fill @e1 "text"` | Fill a form field |
+| `type @e1 "text"` | Type text |
+| `press Enter` | Press a key |
+| `screenshot [path]` | Take a screenshot |
+| `close` | Close the browser |
 
-### ナビゲーション
+### Navigation
 
-| コマンド | 説明 |
-|---------|------|
-| `back` | 戻る |
-| `forward` | 進む |
-| `reload` | リロード |
+| Command | Description |
+|---------|-------------|
+| `back` | Go back |
+| `forward` | Go forward |
+| `reload` | Reload the page |
 
-### 情報取得
+### Getting information
 
-| コマンド | 説明 |
-|---------|------|
-| `get text @e1` | テキスト取得 |
-| `get html @e1` | HTML 取得 |
-| `get url` | 現在の URL |
-| `get title` | ページタイトル |
+| Command | Description |
+|---------|-------------|
+| `get text @e1` | Get text content |
+| `get html @e1` | Get HTML |
+| `get url` | Get current URL |
+| `get title` | Get page title |
 
-### 待機
+### Waiting
 
-| コマンド | 説明 |
-|---------|------|
-| `wait @e1` | 要素を待機 |
-| `wait 1000` | 1秒待機 |
+| Command | Description |
+|---------|-------------|
+| `wait @e1` | Wait for an element |
+| `wait 1000` | Wait 1 second |
 
-### デバッグ
+### Debugging
 
-| コマンド | 説明 |
-|---------|------|
-| `--headed` | ブラウザを表示 |
-| `console` | コンソールログ |
-| `errors` | ページエラー |
-| `highlight @e1` | 要素をハイライト |
+| Command | Description |
+|---------|-------------|
+| `--headed` | Show the browser window |
+| `console` | Console logs |
+| `errors` | Page errors |
+| `highlight @e1` | Highlight an element |
 
 ---
 
-## セッション管理
+## Session management
 
-複数のタブ/セッションを並列管理：
+Manage multiple tabs/sessions in parallel:
 
 ```bash
-# セッションを指定
+# Specify a session
 agent-browser --session admin open https://admin.example.com
 agent-browser --session user open https://example.com
 
-# セッション一覧
+# List sessions
 agent-browser session list
 
-# 特定セッションで操作
+# Operate in a specific session
 agent-browser --session admin snapshot -i -c
 ```
 
 ---
 
-## MCP ブラウザツールとの使い分け
+## Choosing between agent-browser and MCP browser tools
 
-| ツール | 推奨度 | 用途 |
-|--------|--------|------|
-| **agent-browser** | ★★★ | 第一選択。AI 向けスナップショットが強力 |
-| chrome-devtools MCP | ★★☆ | Chrome が既に開いている場合 |
-| playwright MCP | ★★☆ | 複雑な E2E テスト |
+| Tool | Priority | Use case |
+|------|----------|---------|
+| **agent-browser** | ★★★ | First choice. AI snapshot capability is powerful |
+| chrome-devtools MCP | ★★☆ | When Chrome is already open |
+| playwright MCP | ★★☆ | Complex E2E tests |
 
-**原則**: まず agent-browser を試し、うまくいかない場合のみ MCP ツールを使用。
+**Principle**: Try agent-browser first; only fall back to MCP tools if it doesn't work.
 
 ---
 
-## 注意事項
+## Notes
 
-- agent-browser はヘッドレスモードがデフォルト
-- `--headed` オプションでブラウザを表示可能
-- セッションは明示的に `close` するまで維持される
-- 認証が必要なサイトはセッションを活用
+- agent-browser defaults to headless mode
+- Use `--headed` to show the browser window
+- Sessions persist until explicitly `close`d
+- Use sessions to maintain authentication state

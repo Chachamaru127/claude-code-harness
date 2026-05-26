@@ -1,52 +1,53 @@
-# 長時間タスク実行ガイド
+# Long-Running Task Execution Guide
 
-この文書は、Claude Code で **1 回では終わらない作業** を安全に回すための実務ガイドです。
-ここでいう「長時間タスク」は、`/loop` と `ScheduleWakeup` を使って、少しずつ進める仕事のことです。
-この文書は Phase 41.4.1 の成果物です。
+This document is a practical guide for safely running **tasks that cannot finish in a single session** with Claude Code.
+"Long-running tasks" here refers to work that progresses incrementally using `/loop` and `ScheduleWakeup`.
+This document is the output of Phase 41.4.1.
 
-対象は **Phase 41 の同一セッション内の運用** です。別ホストをまたいだ自動再入は、この段階では扱いません。
+The scope is **operation within the same Phase 41 session**. Automatic re-entry across separate hosts is not covered at this stage.
 
-参考: [skills/harness-loop/SKILL.md](../skills/harness-loop/SKILL.md) / [skills/harness-loop/references/flow.md](../skills/harness-loop/references/flow.md) / [docs/CLAUDE-feature-table.md](CLAUDE-feature-table.md)
+Reference: [skills/harness-loop/SKILL.md](../skills/harness-loop/SKILL.md) / [skills/harness-loop/references/flow.md](../skills/harness-loop/references/flow.md) / [docs/CLAUDE-feature-table.md](CLAUDE-feature-table.md)
 
 ---
 
-## 1. まず全体像をつかむ
+## 1. Getting the big picture
 
-長時間タスクは、次の 4 つをくり返して進めます。
+Long-running tasks proceed by repeating these 4 steps:
 
-1. 今やる 1 単位の作業を決める
-2. 小さく実装または確認する
-3. 結果を checkpoint として残す
-4. 次の wake-up を予約する
+1. Decide the 1 unit of work to do now
+2. Implement or verify in small steps
+3. Leave the result as a checkpoint
+4. Schedule the next wake-up
 
-ここで大事なのは、**毎回「新しい視点」で入り直す** ことです。
-前回の会話をそのまま引きずるのではなく、resume pack で必要な情報だけを再注入して再開します。
+The key here is to **re-enter with "fresh eyes" each time**.
+Rather than carrying forward the previous conversation, re-inject only the necessary information
+from the resume pack and resume from there.
 
-### B1-B12 の 12 軸で見る対応表
+### Mapping to the 12 B-axes
 
-| 軸 | 何を決めるか | Harness での対応 |
+| Axis | What to decide | How Harness handles it |
 |---|---|---|
-| B1 | 何を達成したいか | Plans.md の対象タスクと DoD を読む |
-| B2 | 1 回でどこまでやるか | 1 サイクル = 1 タスク単位で進める |
-| B3 | どこから始めるか | `/loop` を入口にする |
-| B4 | どう再開するか | `ScheduleWakeup` で次回 wake-up を予約する |
-| B5 | 何を引き継ぐか | `harness-mem resume-pack` で必要情報だけ戻す |
-| B6 | どれくらい待つか | `pacing` で間隔を選ぶ |
-| B7 | いつ止めるか | `--max-cycles` で上限を設ける |
-| B8 | どう衝突を避けるか | lock と冪等性ガードで多重起動を防ぐ |
-| B9 | どう進捗を残すか | `harness_mem_record_checkpoint` で checkpoint を記録する |
-| B10 | うまく進んでいるか | plateau 検知で停滞を見つける |
-| B11 | どこまでを対象にするか | Phase 41 は同一セッション内に限定する |
-| B12 | 何に注意するか | `bypassPermissions` と Plans.md flock の限界を理解する |
+| B1 | What to achieve | Read the target task and DoD from Plans.md |
+| B2 | How far to go in one run | Advance 1 cycle = 1 task unit |
+| B3 | Where to start | Use `/loop` as the entry point |
+| B4 | How to resume | Schedule the next wake-up with `ScheduleWakeup` |
+| B5 | What to carry forward | Restore only needed info with `harness-mem resume-pack` |
+| B6 | How long to wait | Choose the interval with `pacing` |
+| B7 | When to stop | Set a ceiling with `--max-cycles` |
+| B8 | How to avoid conflicts | Prevent multiple launches with locks and idempotency guards |
+| B9 | How to record progress | Record checkpoints with `harness_mem_record_checkpoint` |
+| B10 | Whether progress is being made | Find stalls with plateau detection |
+| B11 | What to scope | Phase 41 is limited to the same session |
+| B12 | What to watch out for | Understand the limits of `bypassPermissions` and Plans.md flock |
 
 ---
 
-## 2. `/loop` + `ScheduleWakeup` の使い方
+## 2. Using `/loop` + `ScheduleWakeup`
 
-`/loop` は、Claude Code に「作業を続ける前提」を伝える入口です。
-`ScheduleWakeup` は、次の再開時刻を予約する仕組みです。
+`/loop` signals Claude Code to "continue working."
+`ScheduleWakeup` schedules when to resume next.
 
-### 使い方の基本
+### Basic usage
 
 ```text
 /loop all
@@ -54,215 +55,226 @@
 /loop all --pacing night
 ```
 
-### 1 回の流れ
+### One cycle flow
 
-1. `Plans.md` から次の対象タスクを 1 件選ぶ
-2. そのタスクに必要な最小作業だけを実行する
-3. checkpoint を残す
-4. 次の wake-up を `ScheduleWakeup` で予約する
+1. Select 1 task from `Plans.md`
+2. Execute only the minimum work needed for that task
+3. Leave a checkpoint
+4. Schedule the next wake-up with `ScheduleWakeup`
 
-### 予約のイメージ
+### Example schedule
 
 ```text
 ScheduleWakeup(
   delaySeconds=270,
   prompt="/harness-loop all --cycles-done 1 --pacing worker",
-  reason="1 サイクル完了。次のタスクに進むため"
+  reason="1 cycle complete. Proceeding to next task."
 )
 ```
 
-`delaySeconds` は「何秒後に戻ってくるか」です。
-短すぎると慌ただしく、長すぎると前回の流れを忘れやすくなります。
-実際には 60 〜 3600 秒の範囲に収めます。
+`delaySeconds` is "how many seconds until returning."
+Too short feels rushed; too long makes it easy to forget the previous flow.
+In practice, keep it in the range of 60 to 3600 seconds.
 
 ---
 
-## 3. pacing プリセットの選び方
+## 3. Choosing a pacing preset
 
-`pacing` は、次の wake-up をどれくらい空けるかの設定です。
+`pacing` controls how long to wait before the next wake-up.
 
-| pacing | delaySeconds | 向いている場面 | ひとこと |
+| pacing | delaySeconds | When to use | One-liner |
 |---|---:|---|---|
-| `worker` | 270 | 直前の作業からすぐ続けたい | 標準設定 |
-| `ci` | 270 | CI の結果待ちがある | 待ち時間を短く保つ |
-| `plateau` | 1200 | 進みが止まりやすい | 少し長めに冷ます |
-| `night` | 3600 | 夜間にまとめて回したい | いちばん長い待機 |
+| `worker` | 270 | Continue immediately from the previous work | Standard setting |
+| `ci` | 270 | Waiting for CI results | Keep the wait short |
+| `plateau` | 1200 | Prone to stalling | Let it cool down a bit longer |
+| `night` | 3600 | Running overnight in batch | Longest wait |
 
-### cache 境界の考え方
+### Cache boundary considerations
 
-Claude Code には、直前の流れを短時間だけ覚えておける「短期キャッシュ」があります。
-`worker` と `ci` の 270 秒は、この短期キャッシュにまだ乗りやすい長さです。
+Claude Code has a "short-term cache" that remembers the previous flow for a brief period.
+`worker` and `ci` at 270 seconds are still within the short-term cache window.
 
-一方で `plateau` や `night` は、短期キャッシュが切れやすいので、**resume pack を必ず前提にする** のが安全です。
-つまり、待ち時間が長いほど「自力で思い出す」のではなく「必要情報を再注入する」設計に寄せます。
+On the other hand, `plateau` and `night` are likely to expire the short-term cache,
+so **always depend on the resume pack** to be safe.
+In other words, the longer the wait, the more you design for "re-injecting needed info"
+rather than "remembering on your own."
 
-### 1時間キャッシュを使う時
+### Using the 1-hour cache
 
-Claude Code `2.1.108` 以降では、`ENABLE_PROMPT_CACHING_1H=1` を付けると、
-通常の 5 分キャッシュより長い **1 時間キャッシュ** を opt-in できます。
+Since Claude Code `2.1.108`, you can opt into a **1-hour cache** (longer than the standard 5-minute
+cache) by setting `ENABLE_PROMPT_CACHING_1H=1`.
 
-これは「毎回ほぼ同じ前提を読み直すが、次の入力が 5 分を超えやすい」時に向いています。
-このドキュメントで扱う長時間タスクでは、特に次の場面と相性が良いです。
+This is useful for cases where "almost the same premise is re-read each time, but the next
+input tends to exceed 5 minutes." For the long-running tasks covered in this document,
+it works particularly well in these situations:
 
-1. `/harness-loop` で 1 サイクルごとに待機が入る
-2. `/resume` や `/continue` をまたいで同じ前提を使い回す
-3. レビューや advisor consult をはさみ、5 分を超えて戻ることがある
+1. `/harness-loop` with wait intervals between each cycle
+2. Reusing the same premise across `/resume` or `/continue`
+3. Review or advisor consult is interleaved and returns after more than 5 minutes
 
-逆に、数十秒から数分の短い往復が連続するだけなら、既定の 5 分キャッシュのままで十分です。
+Conversely, if it's just a short back-and-forth of a few seconds to a few minutes, the default
+5-minute cache is sufficient.
 
-### 1h vs 5m cache の選択基準
+### Choosing between 1h vs 5m cache
 
-| 判定軸 | 1h cache を選ぶ | 5m cache（既定）で足りる |
+| Decision axis | Choose 1h cache | 5m cache (default) is sufficient |
 |--------|----------------|------------------------|
-| セッション長の見込み | **30 分を超える** | 30 分以内 |
-| wake-up 間隔 | `plateau`（1200s）や `night`（3600s） | `worker`/`ci`（270s） |
-| 前提情報の再利用 | 毎サイクルほぼ同じ SKILL.md・Plans.md を読む | 前提が毎回変わる短い往復 |
-| 対象スキル | `/breezing` / `/harness-loop` の多タスク実行 | 単発の `/work` や対話 |
+| Expected session length | **Over 30 minutes** | Within 30 minutes |
+| Wake-up interval | `plateau` (1200s) or `night` (3600s) | `worker`/`ci` (270s) |
+| Premise information reuse | Reading almost the same SKILL.md / Plans.md each cycle | Premises change each time in short back-and-forth |
+| Target skill | `/breezing` / `/harness-loop` multi-task runs | Single `/work` or conversational |
 
-**判定ルール**: セッション長が **30 分を超える見込み** なら 1h cache を選ぶ。それ以外は既定の 5 分 cache で十分。
+**Decision rule**: If the expected session length **exceeds 30 minutes**, choose 1h cache. Otherwise, the default 5-minute cache is sufficient.
 
-opt-in 手順:
+Opt-in procedure:
 
 ```bash
 bash scripts/enable-1h-cache.sh
 ```
 
-このコマンドは `env.local` に `ENABLE_PROMPT_CACHING_1H=1` を追記します（冪等）。
-グローバル設定は変えません。すでに設定済みの場合は何もしません。
+This command appends `ENABLE_PROMPT_CACHING_1H=1` to `env.local` (idempotent).
+It does not change global settings. Does nothing if already configured.
 
-### 推奨導入方針
+### Recommended adoption policy
 
-このリポジトリでは、**全セッション常時オンにはしません**。
-理由は、1 時間キャッシュは便利ですが、追加コスト前提であり、短い対話には過剰になりやすいからです。
+This repository **does not enable this globally for all sessions**.
+The reason is that the 1-hour cache is useful but involves additional cost and tends to be
+overkill for short interactions.
 
-代わりに、長時間タスク専用の薄い起動ラッパーを使います。
+Instead, use a thin launch wrapper dedicated to long-running tasks:
 
 ```bash
 bash scripts/claude-longrun.sh
 ```
 
-そのまま引数も渡せます。
+You can also pass arguments directly:
 
 ```bash
 bash scripts/claude-longrun.sh --resume
 bash scripts/claude-longrun.sh --model claude-opus-4-6
 ```
 
-このスクリプトは、内部で `ENABLE_PROMPT_CACHING_1H=1` を付けて `claude` を起動するだけです。
-グローバル設定は変えないので、通常作業への影響を広げません。
+This script simply launches `claude` with `ENABLE_PROMPT_CACHING_1H=1` internally.
+It does not change global settings, so the impact on normal work is minimized.
 
-### 子プロセスへの env 継承（Codex CLI 連携）
+### Env inheritance by child processes (Codex CLI integration)
 
-`/breezing --codex` や `scripts/codex-companion.sh task --write` 経由で Codex CLI を呼び出すケースでは、
-`ENABLE_PROMPT_CACHING_1H` が子プロセスに継承されるかどうかを確認しておく必要があります。
+When calling Codex CLI via `/breezing --codex` or `scripts/codex-companion.sh task --write`,
+verify whether `ENABLE_PROMPT_CACHING_1H` is inherited by child processes.
 
-| 経路 | 継承するか | 注意点 |
+| Path | Inherited | Notes |
 |------|------------|--------|
-| `bash scripts/codex-companion.sh task --write "..."` | する | 通常の bash subprocess は親 env を継承する |
-| `bash scripts/codex-companion.sh review --base "${REF}"` | する | 同上 |
-| `claude-longrun.sh` 起動の親プロセス | する | scripts が内部で export してから claude を起動 |
-| `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1` 有効時 | **scrub される可能性あり** | scrub 対象 env リストに `ENABLE_PROMPT_CACHING_1H` を含めない設計が必要 |
+| `bash scripts/codex-companion.sh task --write "..."` | Yes | Normal bash subprocesses inherit the parent env |
+| `bash scripts/codex-companion.sh review --base "${REF}"` | Yes | Same as above |
+| Parent process launched via `claude-longrun.sh` | Yes | The script exports before launching claude |
+| When `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1` is enabled | **May be scrubbed** | Ensure `ENABLE_PROMPT_CACHING_1H` is not included in the scrub target env list |
 
-`.claude-plugin/settings.json` の `env.CLAUDE_CODE_SUBPROCESS_ENV_SCRUB="1"` は subprocess の汚染環境変数を一掃する目的のため、
-本来 `ENABLE_PROMPT_CACHING_1H` のような Claude Code 自身の挙動制御 env は残されます。
-新規の hook script や wrapper を追加する場合は、明示的に `export ENABLE_PROMPT_CACHING_1H` を保持するか、
-`env -i bash` で env を切り捨てない実装にしておきます。
-
----
-
-## 4. wake-up 回数上限・lock・冪等性ガード
-
-長時間タスクは、気づかないうちに同じ処理を二重に走らせることがあります。
-これを防ぐために、3 層で守ります。
-
-### 4-1. 回数上限
-
-`--max-cycles` で、何回まで続けるかを決めます。
-上限に達したら、そこでいったん止めます。
-
-### 4-2. lock
-
-同じタスクが同時に 2 回動かないように、lock を取ります。
-このリポジトリでは `.claude/state/locks/loop-session.lock.d` を使います。
-
-lock は「ここは今すでに動いている」という目印です。
-もし既に lock があれば、新しい実行は止めます。
-これで、並行実行による競合を防ぎます。
-
-### 4-3. 冪等性ガード
-
-冪等性は、同じ操作を 2 回やっても壊れない性質です。
-`tests/validate-plugin.sh --quick` のような軽い確認を先に入れることで、壊れた状態で無理に進まないようにします。
-
-また、lock は終了時に必ず片付けます。
-正常終了でも異常終了でも、残骸が次回の邪魔をしないようにするためです。
+The `env.CLAUDE_CODE_SUBPROCESS_ENV_SCRUB="1"` in `.claude-plugin/settings.json` is intended to
+purge contaminated subprocess environments, so Claude Code's own behavioral control env vars like
+`ENABLE_PROMPT_CACHING_1H` should be preserved.
+When adding new hook scripts or wrappers, either explicitly `export ENABLE_PROMPT_CACHING_1H`
+or avoid cutting env with `env -i bash`.
 
 ---
 
-## 5. plateau 検知と golden fixture
+## 4. Wake-up count limit, locks, and idempotency guards
 
-plateau は、作業が進んでいるように見えて、実は同じ所をぐるぐる回っている状態です。
-たとえば、同じ修正を何度も繰り返す、判断材料が増えないのに再実行だけ増える、というときに起こります。
+Long-running tasks can inadvertently run the same process twice.
+Three layers of protection prevent this.
 
-### 閾値の考え方
+### 4-1. Count limit
 
-実際の判定は `scripts/detect-review-plateau.sh` の結果で見ます。
-ここでは「何回失敗したら止めるか」よりも、**新しい情報が増えているか** を重視します。
+Use `--max-cycles` to decide how many times to continue.
+When the limit is reached, stop there.
 
-### 何を fixture にするか
+### 4-2. Locks
 
-回帰を防ぐための golden fixture は、`tests/fixtures/` 配下に置くのが分かりやすいです。
-たとえば `tests/fixtures/long-running-harness/` のように、長時間タスク専用のまとまりにすると見つけやすくなります。
-特に plateau 関連は、次のようなケースを固定化すると役に立ちます。
+Take a lock so the same task doesn't run twice simultaneously.
+This repository uses `.claude/state/locks/loop-session.lock.d`.
 
-1. 失敗理由が毎回同じケース
-2. 条件を変えても判定が変わらないケース
-3. 一見進んでいるようで実際は停滞しているケース
+The lock is a marker meaning "this is already running here."
+If a lock already exists, a new execution stops.
+This prevents conflicts from parallel execution.
 
-fixture は「この判定が今後も同じであるべき」という見本です。
-これがあると、後でロジックを触ったときに、停滞検知が壊れていないか確認しやすくなります。
+### 4-3. Idempotency guard
 
----
+Idempotency means an operation can run twice without breaking things.
+By adding a lightweight check like `tests/validate-plugin.sh --quick` upfront, you avoid
+forcing progress in a broken state.
 
-## 6. Phase 41 のスコープ
-
-この Phase 41 で扱うのは、**同じ Claude Code セッションの中で完結する長時間タスク** です。
-
-やることは次の 2 点に絞ります。
-
-1. いまのセッション内で安全に再入できること
-2. wake-up をまたいでも、同じ作業を続けられること
-
-やらないことは、別ホストをまたいだ自動再入です。
-それは将来の Phase 42 以降で考える範囲です。
+Also, always clean up the lock at exit.
+Whether it exits normally or abnormally, this ensures the remnant doesn't interfere with the next run.
 
 ---
 
-## 7. 既知の制約
+## 5. Plateau detection and golden fixtures
 
-### `bypassPermissions` との関係
+A plateau is a state where work appears to be progressing but is actually going in circles.
+For example: applying the same fix repeatedly, running more re-executions without gaining
+more decision information.
 
-`/loop` は、権限を増やす仕組みではありません。
-既存の権限ガードがある前提で動きます。
-つまり、`bypassPermissions` を使っていても、危険な操作が無制限になるわけではありません。
+### Thinking about thresholds
 
-長時間タスクでは、むしろ「勝手に強いことをしない」ほうが大切です。
-必要な操作だけを、必要なタイミングで、必要な回数だけ行います。
+Actual judgment is based on the results of `scripts/detect-review-plateau.sh`.
+The focus here is **whether new information is accumulating**, rather than "how many failures
+before stopping."
 
-### Plans.md flock の限界
+### What to use as fixtures
 
-`Plans.md` は複数の実行主体が触ることがあります。
-そこで flock で順番待ちをする設計になっていますが、これは **同じファイルを同時に書き壊さないための仕組み** であって、万能ではありません。
+Golden fixtures to prevent regressions belong in `tests/fixtures/`.
+For example, an organized bundle like `tests/fixtures/long-running-harness/` makes them
+easy to find. Especially for plateau-related cases, fixing these cases is useful:
 
-特に、別セッションや別プロセスが同時に読んでいると、見えている状態が少し遅れることがあります。
-そのため、`Plans.md` を読むときは「今見えている内容が最新とは限らない」前提を持ち、checkpoint や contract と合わせて判断します。
+1. Cases where the failure reason is the same every time
+2. Cases where the judgment doesn't change even if conditions change
+3. Cases that appear to be progressing but are actually stalled
+
+Fixtures are examples of "this judgment should stay the same going forward."
+With these in place, you can easily verify that stall detection hasn't broken when the logic is modified later.
 
 ---
 
-## 8. すぐ見るリンク
+## 6. Scope of Phase 41
 
-- 実行フローの詳細: [skills/harness-loop/references/flow.md](../skills/harness-loop/references/flow.md)
-- コマンド入口: [skills/harness-loop/SKILL.md](../skills/harness-loop/SKILL.md)
-- Claude Code の機能一覧: [docs/CLAUDE-feature-table.md](CLAUDE-feature-table.md)
+Phase 41 covers **long-running tasks that complete within the same Claude Code session**.
 
-> **Note (v4.2.0+)**: `HARNESS_WEBHOOK_URL` は env 変数として設定する。`harness.toml` の `[telemetry] webhook_url` は廃止された (2026-04-18 dead config 整理)。
+The two things to accomplish:
+
+1. Safe re-entry within the current session
+2. Continuing the same work across wake-ups
+
+What is not covered: automatic re-entry across separate hosts.
+That is for future Phase 42+.
+
+---
+
+## 7. Known constraints
+
+### Relationship with `bypassPermissions`
+
+`/loop` does not increase permissions.
+It operates under the assumption that existing permission guards are in place.
+In other words, even if `bypassPermissions` is enabled, dangerous operations are not unlimited.
+
+In long-running tasks, it is more important to "not do strong things on your own."
+Perform only necessary operations, at the necessary timing, for the necessary number of times.
+
+### Limitations of Plans.md flock
+
+`Plans.md` can be touched by multiple execution entities.
+It is designed with flock for sequential access, but this is **a mechanism to prevent simultaneous writes to the same file**, not a perfect solution.
+
+In particular, if another session or process is reading simultaneously, the visible state may
+be slightly delayed.
+Therefore, when reading `Plans.md`, hold the premise that "the content currently visible may
+not be the latest" and make judgments in combination with checkpoints and contracts.
+
+---
+
+## 8. Quick links
+
+- Execution flow details: [skills/harness-loop/references/flow.md](../skills/harness-loop/references/flow.md)
+- Command entry point: [skills/harness-loop/SKILL.md](../skills/harness-loop/SKILL.md)
+- Claude Code feature list: [docs/CLAUDE-feature-table.md](CLAUDE-feature-table.md)
+
+> **Note (v4.2.0+)**: `HARNESS_WEBHOOK_URL` is set as an environment variable. `[telemetry] webhook_url` in `harness.toml` is deprecated (dead config cleanup on 2026-04-18).

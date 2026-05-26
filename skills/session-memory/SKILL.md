@@ -1,8 +1,6 @@
 ---
 name: session-memory
 description: "Internal sub-skill for cross-session handoff, durable learning, and memory persistence. Invoked by session/memory workflows only. Do NOT load for: implementation, review, ad-hoc notes, or SSOT editing."
-description-en: "Internal sub-skill for cross-session handoff, durable learning, and memory persistence. Invoked by session/memory workflows only. Do NOT load for: implementation, review, ad-hoc notes, or SSOT editing."
-description-ja: "セッション間引き継ぎ、永続学習、memory persistence を扱う内部サブスキル。session/memory 系からのみ呼ぶ。実装、レビュー、単発メモ、SSOT編集には使わない。"
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 user-invocable: false
 disable-model-invocation: true
@@ -10,118 +8,116 @@ disable-model-invocation: true
 
 # Session Memory Skill
 
-セッション間の学習と記憶を管理するスキル。
-過去の作業内容、決定事項、学んだパターンを記録・参照します。
+Manages learning and memory across sessions.
+Records and retrieves past work, decisions, and learned patterns.
 
 ---
 
-## トリガーフレーズ
+## Trigger Phrases
 
-このスキルは以下のフレーズで自動起動します：
+This skill is invoked automatically by the following phrases:
 
-- 「前回何をした？」「前回の続きから」
-- 「履歴を見せて」「過去の作業」
-- 「このプロジェクトについて教えて」
-- "what did we do last time?", "continue from before"
-
----
-
-## 概要
-
-このスキルは `.claude/memory/` に作業履歴を保存し、
-セッション間での知識の継続を実現します。
-
-あわせて、重要な情報は「どこに残すべきか」を明確にします（詳細: `docs/MEMORY_POLICY.md`）。
+- "what did we do last time?", "continue from last session"
+- "show me the history", "past work"
+- "tell me about this project"
 
 ---
 
-## メモリ構造
+## Overview
+
+This skill saves work history to `.claude/memory/` and enables knowledge continuity across sessions.
+
+It also clarifies where important information should be stored (see `docs/MEMORY_POLICY.md` for details).
+
+---
+
+## Memory Structure
 
 ```
 .claude/
 ├── memory/
-│   ├── session-log.md      # セッションごとのログ
-│   ├── decisions.md        # 重要な決定事項
-│   ├── patterns.md         # 学んだパターン
-│   └── context.json        # プロジェクトコンテキスト
+│   ├── session-log.md      # Per-session log
+│   ├── decisions.md        # Important decisions
+│   ├── patterns.md         # Learned patterns
+│   └── context.json        # Project context
 └── state/
-    └── agent-trace.jsonl   # Agent Trace（ツール実行履歴）
+    └── agent-trace.jsonl   # Agent Trace (tool execution history)
 ```
 
-### 推奨運用（SSOT/ローカル分離）
+### Recommended Usage (SSOT / Local Separation)
 
-- **SSOT（共有推奨）**: `decisions.md` / `patterns.md`  
-  - 「決定（Why）」と「再利用できる解法（How）」を集約する
-  - 各エントリは **タイトル + タグ**（例: `#decision #db`）を付け、先頭に **Index** を置く
-- **ローカル推奨**: `session-log.md` / `context.json` / `.claude/state/`  
-  - ノイズ/肥大化しやすいため、基本は Git 管理しない（必要なら個別に判断）
+- **SSOT (recommended for sharing)**: `decisions.md` / `patterns.md`
+  - Consolidates "decisions (Why)" and "reusable solutions (How)"
+  - Each entry should have a **title + tags** (e.g. `#decision #db`) with an **Index** at the top
+- **Local only (not shared)**: `session-log.md` / `context.json` / `.claude/state/`
+  - Prone to noise and bloat; generally not tracked in Git (decide on a case-by-case basis)
 
 ---
 
-## 自動記録される情報
+## Automatically Recorded Information
 
 ### session-log.md
 
-各セッション記録には、実行環境から取得できるセッションIDを付与します。
-Claude Code では `${CLAUDE_SESSION_ID}` を優先し、Codex では Codex runtime が渡す session / thread ID を優先します。
-どちらも取得できない場合は `.claude/state/session.json` の `.session_id` を読み、最後の fallback として日時ベースのIDを生成します。
-これにより、セッション間のトレーサビリティが向上します。
+Each session record is stamped with the session ID from the runtime environment.
+In Claude Code, `${CLAUDE_SESSION_ID}` is preferred; in Codex, the session / thread ID provided by the Codex runtime is preferred.
+If neither is available, read `.session_id` from `.claude/state/session.json`, and as a last fallback generate a datetime-based ID.
+This improves cross-session traceability.
 
 ```markdown
-## セッション: 2024-01-15 14:30 (session: abc123def)
+## Session: 2024-01-15 14:30 (session: abc123def)
 
-### 実行したタスク
-- [x] ユーザー認証機能の実装
-- [x] ログインページの作成
+### Tasks Completed
+- [x] Implemented user authentication
+- [x] Created login page
 
-### 生成したファイル
+### Files Generated
 - src/lib/auth.ts
 - src/app/login/page.tsx
 
-### 重要な決定
-- 認証方式: Supabase Auth を採用
+### Key Decisions
+- Auth method: Adopted Supabase Auth
 
-### 次回への引き継ぎ
-- ログアウト機能が未実装
-- パスワードリセットも必要
+### Handoff to Next Session
+- Logout feature not yet implemented
+- Password reset also needed
 ```
 
-> **Note**: `${CLAUDE_SESSION_ID}` は Claude Code が自動設定する環境変数です。
-> Codex 側ではこの変数が存在しない場合があるため、固定前提にせず、Codex runtime の session / thread ID または `.claude/state/session.json` を使います。
+> **Note**: `${CLAUDE_SESSION_ID}` is an environment variable set automatically by Claude Code.
+> Because this variable may not exist in the Codex runtime, do not assume it is always present; fall back to the Codex runtime session / thread ID or `.claude/state/session.json`.
 
 ### decisions.md
 
 ```markdown
-## 技術選定
+## Technology Choices
 
-| 日付 | 決定事項 | 理由 |
-|------|---------|------|
-| 2024-01-15 | Supabase Auth | 無料枠あり、セットアップ簡単 |
-| 2024-01-14 | Next.js App Router | 最新のベストプラクティス |
+| Date | Decision | Reason |
+|------|----------|--------|
+| 2024-01-15 | Supabase Auth | Free tier available, easy setup |
+| 2024-01-14 | Next.js App Router | Current best practice |
 
-## アーキテクチャ
+## Architecture
 
-- コンポーネント: `src/components/`
-- ユーティリティ: `src/lib/`
-- 型定義: `src/types/`
+- Components: `src/components/`
+- Utilities: `src/lib/`
+- Type definitions: `src/types/`
 ```
 
 ### patterns.md
 
 ```markdown
-## このプロジェクトのパターン
+## Project Patterns
 
-### コンポーネント命名
+### Component Naming
 - PascalCase
-- 例: `UserProfile.tsx`, `LoginForm.tsx`
+- Examples: `UserProfile.tsx`, `LoginForm.tsx`
 
-### API エンドポイント
-- `/api/v1/` プレフィックス
-- RESTful 設計
+### API Endpoints
+- `/api/v1/` prefix
+- RESTful design
 
-### エラーハンドリング
-- try-catch で囲む
-- エラーメッセージは日本語
+### Error Handling
+- Wrap in try-catch
+- Error messages in English
 ```
 
 ### context.json
@@ -136,162 +132,160 @@ Claude Code では `${CLAUDE_SESSION_ID}` を優先し、Codex では Codex runt
     "database": "supabase",
     "styling": "tailwind"
   },
-  "current_phase": "フェーズ2: コア機能",
+  "current_phase": "Phase 2: Core Features",
   "last_session": "2024-01-15T14:30:00Z"
 }
 ```
 
 ---
 
-## 処理フロー
+## Processing Flow
 
-### セッション開始時
+### At Session Start
 
-1. `.claude/memory/context.json` を読み込み
-2. 前回のセッションログを確認
-3. **Agent Trace から直近の編集履歴を取得**
-4. 未完了タスクを特定
-5. コンテキストサマリーを生成
+1. Load `.claude/memory/context.json`
+2. Review the previous session log
+3. **Retrieve recent edit history from Agent Trace**
+4. Identify incomplete tasks
+5. Generate a context summary
 
-**Agent Trace 活用**:
+**Using Agent Trace**:
 ```bash
-# 前回の編集ファイル一覧を取得
+# Get list of files edited in the previous session
 tail -50 .claude/state/agent-trace.jsonl | jq -r '.files[].path' | sort -u
 
-# プロジェクト情報を取得
+# Get project metadata
 tail -1 .claude/state/agent-trace.jsonl | jq '.metadata'
 ```
 
-### セッション中
+### During Session
 
-1. 重要な決定を `decisions.md` に記録
-2. 新しいパターンを `patterns.md` に追加
-3. ファイル生成を `session-log.md` に記録
+1. Record important decisions in `decisions.md`
+2. Add new patterns to `patterns.md`
+3. Record file generation in `session-log.md`
 
-### セッション終了時
+### At Session End
 
-1. セッションサマリーを生成
-2. `context.json` を更新
-3. 次回への引き継ぎ事項を記録
+1. Generate a session summary
+2. Update `context.json`
+3. Record handoff items for the next session
 
 ---
 
-## メモリ最適化（CC 2.1.49+）
+## Memory Optimization (CC 2.1.49+)
 
-Claude Code 2.1.49 以降、セッション再開時のメモリ使用量が **68% 削減** されました。
+Since Claude Code 2.1.49, memory usage on session resume has been reduced by **68%**.
 
-### 推奨ワークフロー
+### Recommended Workflow
 
 ```bash
-# 長時間作業は --resume を活用
+# Use --resume for long-running work
 claude --resume
 
-# 大規模タスクは分割してセッション再開
-claude --resume "続きから"
+# Split large tasks across sessions with resume
+claude --resume "continue from here"
 ```
 
-| シナリオ | 推奨 |
-|---------|------|
-| 長時間実装 | 1-2時間ごとにセッション再開 |
-| 大規模リファクタ | 機能単位でセッション分割 |
-| メモリ不足警告 | 即座に `--resume` で再開 |
+| Scenario | Recommendation |
+|----------|----------------|
+| Long implementation | Resume session every 1–2 hours |
+| Large-scale refactor | Split by feature unit |
+| Low-memory warning | Resume immediately with `--resume` |
 
-> メモリ効率が大幅に改善されたため、セッション再開を積極的に活用してください。
+> Memory efficiency has improved significantly — use session resume proactively.
 
-### /recap — セッション中の状況確認（CC 2.1.108+）
+### /recap — Check Status During Session (CC 2.1.108+)
 
-CC 2.1.108 で追加された `/recap` コマンド（`/rewind` のエイリアス）は、現在のセッション内で
-これまでに何をしたかを素早く振り返るために使用します。
-`--resume` で別セッションに戻る前や、長時間作業の途中確認に組み合わせると効果的です。
+The `/recap` command added in CC 2.1.108 (alias of `/rewind`) is used to quickly review what has been done so far in the current session.
+It is most effective when used before resuming a previous session with `--resume`, or as a mid-point check during long work.
 
-**推奨タイミング**:
+**Recommended timing**:
 
-| タイミング | 使い方 |
-|---------|------|
-| `--resume` で再開する直前 | `/recap` でコンテキストを整理してから `claude --resume` |
-| Breezing の Worker 再開前 | セッション内の進捗を `/recap` で確認してから次タスクへ |
-| 長時間実装 (1時間超) の中間点 | `/recap` で状況確認 → 必要なら `session-log.md` に手動追記 |
+| Timing | Usage |
+|--------|-------|
+| Just before resuming with `--resume` | Use `/recap` to organize context, then run `claude --resume` |
+| Before a Breezing Worker resumes | Check in-session progress with `/recap` before moving to the next task |
+| Midpoint of long implementation (over 1 hour) | Use `/recap` to check status → manually append to `session-log.md` if needed |
 
 ```bash
-# 典型的な使用フロー
-# 1. 現在の作業状況を確認
+# Typical usage flow
+# 1. Check current work status
 /recap
 
-# 2. 必要に応じて session-log.md に手動追記後、セッションを再開
+# 2. Optionally append to session-log.md, then resume the session
 claude --resume
 ```
 
-> `/recap` はセッション内の振り返りのみ。前回セッションの内容は `session-log.md` または
-> `claude --resume` でのコンテキスト継承で確認する。
+> `/recap` only covers the current session. To review previous session content, use `session-log.md` or context inheritance via `claude --resume`.
 
 ---
 
-## 使用例
+## Examples
 
-### 前回の続きから開始
+### Continuing from Last Session
 
 ```
-ユーザー: 「前回の続きから」
+User: "continue from last session"
 
 Claude Code:
-📋 前回のセッション（2024-01-15）
+📋 Previous Session (2024-01-15)
 
-完了したタスク:
-- ユーザー認証機能
-- ログインページ
+Completed tasks:
+- User authentication
+- Login page
 
-未完了:
-- ログアウト機能
-- パスワードリセット
+Incomplete:
+- Logout feature
+- Password reset
 
-「ログアウト機能を作って」と言えば続きを実装します。
+Say "implement the logout feature" to continue.
 ```
 
-### プロジェクトの状況確認
+### Checking Project Status
 
 ```
-ユーザー: 「このプロジェクトについて教えて」
+User: "tell me about this project"
 
 Claude Code:
-📁 プロジェクト: my-blog
+📁 Project: my-blog
 
-技術スタック:
+Tech stack:
 - Next.js + Tailwind CSS + Supabase
 
-現在のフェーズ: コア機能開発
-進捗: 40% 完了
+Current phase: Core Feature Development
+Progress: 40% complete
 
-最近の決定:
-- Supabase Auth を採用
-- App Router を使用
+Recent decisions:
+- Adopted Supabase Auth
+- Using App Router
 ```
 
 ---
 
-## Claude Code 自動メモリとの関係（D22）
+## Relationship with Claude Code Auto-Memory (D22)
 
-Claude Code 2.1.32+ には「自動メモリ」機能があり、`~/.claude/projects/<project>/memory/MEMORY.md` にセッション間の学習を自動保存します。
+Claude Code 2.1.32+ has an "auto-memory" feature that automatically saves cross-session learning to `~/.claude/projects/<project>/memory/MEMORY.md`.
 
-Harness のメモリシステムとは**3層アーキテクチャ**として共存します:
+It coexists with the Harness memory system as a **3-layer architecture**:
 
-| 層 | システム | 内容 | 管理 |
-|----|---------|------|------|
-| **Layer 1** | Claude Code 自動メモリ | 汎用的な学習（ミス回避、ツール使い方） | 暗黙的・自動 |
-| **Layer 2** | Harness SSOT | プロジェクト固有の決定事項・パターン | 明示的・手動 |
-| **Layer 3** | Agent Memory | エージェント別のタスク学習 | エージェント定義 |
+| Layer | System | Content | Management |
+|-------|--------|---------|------------|
+| **Layer 1** | Claude Code auto-memory | General learning (avoiding mistakes, tool usage) | Implicit / automatic |
+| **Layer 2** | Harness SSOT | Project-specific decisions and patterns | Explicit / manual |
+| **Layer 3** | Agent Memory | Per-agent task learning | Agent-defined |
 
-**使い分け**:
-- Layer 1 の知見がプロジェクト全体に重要 → `/memory ssot` で Layer 2 に昇格
-- 日常的な学習は Layer 1 に任せる（無効化しない）
-- Agent Teams 使用時は並列書き込みに注意
+**When to use which**:
+- If Layer 1 insights are important project-wide → promote to Layer 2 with `/memory ssot`
+- Leave everyday learning to Layer 1 (do not disable it)
+- When using Agent Teams, be careful about concurrent writes
 
-詳細: [D22: 3層メモリアーキテクチャ](../../.claude/memory/decisions.md#d22-3層メモリアーキテクチャ)
+Details: [D22: 3-Layer Memory Architecture](../../.claude/memory/decisions.md#d22-3層メモリアーキテクチャ)
 
 ---
 
-## 注意事項
+## Notes
 
-- **自動保存**: `hooks/Stop` により、セッション終了時に `session-log.md` へ要約を自動追記する運用を推奨（未導入の場合は手動運用でOK）
-- **プライバシー**: 機密情報は記録しない
-- **Git方針**: `decisions.md`/`patterns.md`は共有推奨、`session-log.md`/`context.json`/`.claude/state/`はローカル推奨（詳細: `docs/MEMORY_POLICY.md`）
-- **容量管理**: ログが大きくなったら「セッションログを整理して」を推奨
+- **Auto-save**: Recommended to configure `hooks/Stop` to automatically append a summary to `session-log.md` at session end (manual operation is fine if not set up)
+- **Privacy**: Do not record confidential information
+- **Git policy**: `decisions.md`/`patterns.md` are recommended for sharing; `session-log.md`/`context.json`/`.claude/state/` are local-only (see `docs/MEMORY_POLICY.md`)
+- **Size management**: If the log grows large, recommend running "clean up session log"

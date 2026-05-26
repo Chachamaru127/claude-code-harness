@@ -20,7 +20,7 @@ assert_contains "$DOC" 'bin/harness doctor --migration-report'
 assert_contains "$DOC" "Claude plugin cache"
 assert_contains "$DOC" "Claude slash entries"
 assert_contains "$DOC" "harness-mem state"
-assert_contains "$DOC" 'memory DB を削除しない'
+assert_contains "$DOC" 'do not delete memory DB'
 assert_contains "$DOC" "explicit confirmation"
 assert_contains "$DOC" "not_observed != absent"
 

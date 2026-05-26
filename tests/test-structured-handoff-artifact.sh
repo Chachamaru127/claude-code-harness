@@ -1,5 +1,5 @@
 #!/bin/bash
-# structured handoff artifact が pre-compact / post-compact / session start-resume で共有されることを確認
+# Verify that the structured handoff artifact is shared across pre-compact / post-compact / session start-resume
 
 set -euo pipefail
 
@@ -21,7 +21,7 @@ cp "${ROOT_DIR}/scripts/session-init.sh" "${TMP_DIR}/scripts/session-init.sh"
 cp "${ROOT_DIR}/scripts/session-resume.sh" "${TMP_DIR}/scripts/session-resume.sh"
 
 cat > "${TMP_DIR}/Plans.md" <<'EOF'
-| Task | 内容 | DoD | Depends | Status |
+| Task | Content | DoD | Depends | Status |
 |------|------|-----|---------|--------|
 | 32.1.2 | structured handoff artifact | preserve previous_state + next_action | - | cc:WIP |
 | 32.1.3 | context reset | consume handoff artifact | 32.1.2 | cc:TODO |

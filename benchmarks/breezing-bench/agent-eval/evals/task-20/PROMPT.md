@@ -1,2 +1,2 @@
-`DoublyLinkedList<T>` クラスを実装してください。`types.ts` にインターフェース定義があります。
-append, prepend, delete, find, toArray, size, reverse メソッドを実装してください。
+Implement the `DoublyLinkedList<T>` class. The interface definition is in `types.ts`.
+Implement the append, prepend, delete, find, toArray, size, and reverse methods.

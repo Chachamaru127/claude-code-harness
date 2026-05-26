@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # scripts/progress-past-judgments.sh
-# Phase 65.4.4 - Progress Tracker 「過去の判断パターン」 read side
+# Phase 65.4.4 - Progress Tracker "past judgment patterns" read side
 #
 # Purpose:
-#   alert kind と現プロジェクト名で過去の judgment 履歴を集計し、
-#   「過去 N 件中 M 件で同様の提案を断っています」を JSON 出力する。
+#   Aggregate past judgment history by alert kind and current project name,
+#   and output JSON such as "out of N past cases, M rejected the same suggestion".
 #
 # Usage:
 #   progress-past-judgments.sh \
 #     --alert-kind <kind> \
 #     --project <name> \
-#     --records-file <jsonl-path>      # mock 用 / skill 経由の MCP search 結果
-#     [--cross-project-group <name>]   # default OFF (Phase 65.3.5 と同じ flag mechanism)
+#     --records-file <jsonl-path>      # for mocking / MCP search results via skill
+#     [--cross-project-group <name>]   # default OFF (same flag mechanism as Phase 65.3.5)
 #
 # Input record format (JSONL of alert-judgment.v1):
 #   {"data": {
@@ -34,8 +34,8 @@
 #   }
 #
 # Default behavior (cross-project default OFF):
-#   --cross-project-group なし → records-file の records を project filter してから集計
-#   --cross-project-group あり → project filter 無効化 (records 全件集計)
+#   --cross-project-group absent → filter records-file records by project before aggregation
+#   --cross-project-group present → disable project filter (aggregate all records)
 #
 # Exit code: 0=success / 1=runtime error / 2=usage error
 
@@ -51,13 +51,13 @@ Usage: progress-past-judgments.sh \
 
 Required:
   --alert-kind <kind>        scope-creep|time-overrun|repeated-failure|cost-warning|high-risk-file
-  --project <name>           現プロジェクト名
-  --records-file <path>      mock 入力 (JSONL of alert-judgment.v1)
-                              本来は skill 経由で MCP search 結果を渡す
+  --project <name>           Current project name
+  --records-file <path>      Mock input (JSONL of alert-judgment.v1)
+                              Normally passed as MCP search results via skill
 
 Optional:
-  --cross-project-group <name>  default OFF (現プロジェクトのみ)
-                                 指定時は project filter を解除し全 records 集計
+  --cross-project-group <name>  default OFF (current project only)
+                                 When specified, disables project filter and aggregates all records
 
 Exit: 0=success / 1=runtime error / 2=usage error
 USAGE
@@ -85,7 +85,7 @@ if [[ -z "$ALERT_KIND" || -z "$PROJECT" || -z "$RECORDS_FILE" ]]; then
   usage
 fi
 
-# alert-kind 列挙値検証
+# Validate alert-kind enumeration value
 case "$ALERT_KIND" in
   scope-creep|time-overrun|repeated-failure|cost-warning|high-risk-file) ;;
   *)
@@ -109,38 +109,38 @@ if [[ -n "$CROSS_GROUP" ]]; then
   CROSS_USED="true"
 fi
 
-# JSONL を 1 行ずつ jq で filter
-# - alert_kind が一致
-# - cross-project OFF なら project が一致
-# - decision が follow_suggestion / reject_suggestion / ignore のいずれか
+# Filter JSONL line by line with jq
+# - alert_kind matches
+# - if cross-project OFF, project also matches
+# - decision is one of: follow_suggestion / reject_suggestion / ignore
 
 if [[ "$CROSS_USED" == "true" ]]; then
-  # cross-project ON: project filter 解除
+  # cross-project ON: disable project filter
   FILTERED="$(jq -c --arg ak "$ALERT_KIND" '
     select(.data.alert_kind == $ak)
   ' "$RECORDS_FILE" 2>/dev/null || true)"
 else
-  # default: project 一致のみ
+  # default: match project only
   FILTERED="$(jq -c --arg ak "$ALERT_KIND" --arg proj "$PROJECT" '
     select(.data.alert_kind == $ak and .data.project == $proj)
   ' "$RECORDS_FILE" 2>/dev/null || true)"
 fi
 
-# 集計
+# Aggregate
 TOTAL=0
 REJECTED=0
 TOP_3="[]"
 
 if [[ -n "$FILTERED" ]]; then
-  # 件数 (grep -c は 0 件時に exit 1 で "0" を出力する。
-  # `|| echo 0` を付けると "0\n0" になるため、`|| true` で exit code を抑える)
+  # Count records (grep -c exits 1 when there are 0 matches and outputs "0".
+  # Adding `|| echo 0` would produce "0\n0", so use `|| true` to suppress the exit code)
   TOTAL=$(printf '%s\n' "$FILTERED" | grep -c '^{' || true)
   REJECTED=$(printf '%s\n' "$FILTERED" | jq -c 'select(.data.decision == "reject_suggestion")' 2>/dev/null | grep -c '^{' || true)
-  # 数値以外になるケースを抑える
+  # Guard against non-numeric values
   [[ "$TOTAL" =~ ^[0-9]+$ ]] || TOTAL=0
   [[ "$REJECTED" =~ ^[0-9]+$ ]] || REJECTED=0
 
-  # top 3 (timestamp 降順 = 新しい順)
+  # top 3 (descending by timestamp = newest first)
   TOP_3=$(printf '%s\n' "$FILTERED" | jq -s -c '
     sort_by(.data.timestamp) | reverse | .[0:3] | map({
       decision:  .data.decision,
@@ -150,7 +150,7 @@ if [[ -n "$FILTERED" ]]; then
   ' 2>/dev/null || echo '[]')
 fi
 
-# rejection rate %
+# Rejection rate %
 RATE=0
 if [[ "$TOTAL" -gt 0 ]]; then
   RATE=$(( REJECTED * 100 / TOTAL ))

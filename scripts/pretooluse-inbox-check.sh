@@ -1,33 +1,33 @@
 #!/bin/bash
 # pretooluse-inbox-check.sh
-# PreToolUse Hook: ツール実行前に未読メッセージをチェック
+# PreToolUse Hook: Check unread messages before tool execution
 #
-# Write|Edit 実行前に他セッションからのメッセージを確認し、
-# 重要な変更通知を見逃さないようにする
+# Before Write|Edit, check for messages from other sessions
+# so that important change notifications are not missed.
 #
-# 入力: stdin から JSON
-# 出力: JSON (hookSpecificOutput)
+# Input: JSON from stdin
+# Output: JSON (hookSpecificOutput)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ===== 設定 =====
+# ===== Configuration =====
 SESSIONS_DIR=".claude/sessions"
 BROADCAST_FILE="${SESSIONS_DIR}/broadcast.md"
 SESSION_FILE=".claude/state/session.json"
 CHECK_INTERVAL_FILE="${SESSIONS_DIR}/.last_inbox_check"
-CHECK_INTERVAL=300  # 5分ごとにチェック（頻繁すぎる通知を防ぐ）
+CHECK_INTERVAL=300  # Check every 5 minutes (prevents too-frequent notifications)
 
-# ===== stdin から JSON 入力を読み取り =====
+# ===== Read JSON input from stdin =====
 INPUT=""
 if [ -t 0 ]; then
-  : # stdin が TTY の場合は入力なし
+  : # No input when stdin is a TTY
 else
   INPUT=$(cat 2>/dev/null || true)
 fi
 
-# ===== チェック間隔の確認 =====
+# ===== Check interval verification =====
 current_time=$(date +%s)
 last_check=0
 
@@ -37,46 +37,46 @@ fi
 
 time_since_check=$((current_time - last_check))
 
-# チェック間隔内の場合はスキップ（何も出力しない → 権限判定に影響しない）
+# Skip if within check interval (no output → does not affect permission decisions)
 if [ "$time_since_check" -lt "$CHECK_INTERVAL" ]; then
   exit 0
 fi
 
-# チェック時刻を更新
+# Update last check timestamp
 mkdir -p "$SESSIONS_DIR"
 echo "$current_time" > "$CHECK_INTERVAL_FILE"
 
-# ===== 未読メッセージをチェック =====
+# ===== Check for unread messages =====
 if [ ! -f "$BROADCAST_FILE" ]; then
   exit 0
 fi
 
-# inbox-check スクリプトを使用
+# Use inbox-check script
 UNREAD_COUNT=$(bash "$SCRIPT_DIR/session-inbox-check.sh" --count 2>/dev/null || echo "0")
 
 if [ "$UNREAD_COUNT" -gt 0 ]; then
-  # 未読メッセージの内容を取得（最大5件）
-  # session-inbox-check.sh の出力から実際のメッセージ行を抽出
+  # Fetch unread message contents (up to 5)
+  # Extract actual message lines from session-inbox-check.sh output
   INBOX_MESSAGES=$(bash "$SCRIPT_DIR/session-inbox-check.sh" 2>/dev/null | grep -E '^\[' | head -5 || echo "")
 
   if [ -n "$INBOX_MESSAGES" ]; then
     bash "$SCRIPT_DIR/session-inbox-check.sh" --mark >/dev/null 2>/dev/null || true
 
-    # メッセージ内容をエスケープ処理
+    # Escape message content
     ESCAPED_MESSAGES=$(echo "$INBOX_MESSAGES" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
 
-    # メッセージ内容を直接表示（permissionDecision: "allow" で権限判定に影響しない）
+    # Display message content directly (permissionDecision: "allow" does not affect permission decisions)
     cat <<EOF
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"📨 他セッションからのメッセージ ${UNREAD_COUNT}件:\\n---\\n${ESCAPED_MESSAGES}\\n---"}}
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"📨 Messages from other sessions (${UNREAD_COUNT}):\\n---\\n${ESCAPED_MESSAGES}\\n---"}}
 EOF
   else
-    # メッセージ抽出に失敗した場合はフォールバック
+    # Fallback when message extraction fails
     cat <<EOF
-{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"📨 他セッションからのメッセージが ${UNREAD_COUNT}件 あります"}}
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","additionalContext":"📨 You have ${UNREAD_COUNT} unread message(s) from other sessions"}}
 EOF
   fi
 else
-  # 未読なし → 何も出力しない（権限判定に影響しない）
+  # No unread messages → output nothing (does not affect permission decisions)
   :
 fi
 

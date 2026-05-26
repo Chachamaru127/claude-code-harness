@@ -13,16 +13,16 @@ import (
 	"time"
 )
 
-// exitFailClosed は lock 取得失敗など fail-closed パスで呼び出す。
-// PostToolUse フック仕様では exit code 非ゼロがフックエラー扱いになる。
-// これにより Plans 更新が静かに drop される「ロストアップデート」を防ぐ。
-// テストから直接呼ばれることはない（モック可能な変数で差し替える）。
+// exitFailClosed is called on fail-closed paths such as lock acquisition failures.
+// Per the PostToolUse hook spec, a non-zero exit code is treated as a hook error.
+// This prevents Plans updates from being silently dropped ("lost update").
+// Not called directly from tests (replaced via a mockable variable).
 var exitFailClosed = func(msg string) {
 	fmt.Fprintf(os.Stderr, "[plans-watcher] fail-closed exit: %s\n", msg)
 	os.Exit(1)
 }
 
-// plansWatcherInput は plans-watcher.sh に渡される stdin JSON。
+// plansWatcherInput is the stdin JSON passed to plans-watcher.sh.
 type plansWatcherInput struct {
 	ToolName  string `json:"tool_name"`
 	CWD       string `json:"cwd"`
@@ -34,36 +34,36 @@ type plansWatcherInput struct {
 	} `json:"tool_response"`
 }
 
-// plansStateFile は前回の状態を保存するファイルのパス。
+// plansStateFile is the path to the file that stores the previous state.
 const plansStateFile = ".claude/state/plans-state.json"
 
-// plansLockFile は plans-state.json の排他制御に使用する flock ファイルのパス。
-// shell 版 scripts/plans-watcher.sh の 3-tier fallback と意味的に同等。
+// plansLockFile is the path to the flock file used for exclusive access to plans-state.json.
+// Semantically equivalent to the 3-tier fallback in the shell version scripts/plans-watcher.sh.
 const plansLockFile = ".claude/state/locks/plans.flock"
 
-// plansLockDirSuffix は flock が利用できない環境で使う mkdir ベースのフォールバックロック名。
+// plansLockDirSuffix is the name of the mkdir-based fallback lock used when flock is unavailable.
 const plansLockDirSuffix = ".dir"
 
-// plansLockMaxRetries は lock 取得の最大リトライ回数。
+// plansLockMaxRetries is the maximum number of lock acquisition retries.
 const plansLockMaxRetries = 3
 
-// flockCall と sleepCall はテスト差し替え用。
+// flockCall and sleepCall are replaceable for tests.
 var flockCall = func(fd int, how int) error {
 	return fileLock(fd, how)
 }
 
 var sleepCall = time.Sleep
 
-// plansLockHandle は flock または mkdir fallback のどちらかを表す。
+// plansLockHandle represents either an flock or a mkdir fallback lock.
 type plansLockHandle struct {
 	file    *os.File
 	lockDir string
 	mode    string
 }
 
-// acquirePlansLock は plans-state.json を保護する排他ロックを取得する。
-// 通常は flock を使い、共有ストレージなどで flock が使えない場合のみ
-// mkdir ベースのアトミックロックへフォールバックする。
+// acquirePlansLock acquires an exclusive lock protecting plans-state.json.
+// Normally uses flock; falls back to a mkdir-based atomic lock only when
+// flock is unavailable (e.g. on shared storage).
 func acquirePlansLock(lockPath string) (*plansLockHandle, error) {
 	if err := os.MkdirAll(filepath.Dir(lockPath), 0o755); err != nil {
 		return nil, fmt.Errorf("mkdir for plans lock: %w", err)
@@ -115,7 +115,7 @@ func isPlansLockBusy(err error) bool {
 	return fileLockBusy(err)
 }
 
-// releasePlansLock はロックを解放してファイルをクローズする。
+// releasePlansLock releases the lock and closes the file.
 func releasePlansLock(lock *plansLockHandle) {
 	if lock == nil {
 		return
@@ -132,13 +132,13 @@ func releasePlansLock(lock *plansLockHandle) {
 	}
 }
 
-// pmNotificationFile は PM 通知ファイルのパス。
+// pmNotificationFile is the path to the PM notification file.
 const pmNotificationFile = ".claude/state/pm-notification.md"
 
-// cursorNotificationFile は互換用 cursor 通知ファイルのパス。
+// cursorNotificationFile is the path to the cursor notification file for compatibility.
 const cursorNotificationFile = ".claude/state/cursor-notification.md"
 
-// plansState は Plans.md のマーカー集計状態。
+// plansState holds the aggregated marker counts for Plans.md.
 type plansState struct {
 	Timestamp   string `json:"timestamp"`
 	PmPending   int    `json:"pm_pending"`
@@ -148,14 +148,14 @@ type plansState struct {
 	PmConfirmed int    `json:"pm_confirmed"`
 }
 
-// plansFileNames は検索対象の Plans.md ファイル名候補。
+// plansFileNames is the list of candidate filenames to search for Plans.md.
 var plansFileNames = []string{"Plans.md", "plans.md", "PLANS.md", "PLANS.MD"}
 
-// HandlePlansWatcher は plans-watcher.sh の Go 移植。
+// HandlePlansWatcher is the Go port of plans-watcher.sh.
 //
-// PostToolUse Write/Edit イベントで呼び出され、Plans.md への変更を検出する。
-// WIP/TODO/done マーカーの集計サマリを生成し、PM 通知ファイルに書き込む。
-// Plans.md 以外のファイルはスキップ。
+// Called on PostToolUse Write/Edit events to detect changes to Plans.md.
+// Generates an aggregated summary of WIP/TODO/done markers and writes it
+// to the PM notification file. Files other than Plans.md are skipped.
 func HandlePlansWatcher(in io.Reader, out io.Writer) error {
 	data, err := io.ReadAll(in)
 	if err != nil {
@@ -171,7 +171,7 @@ func HandlePlansWatcher(in io.Reader, out io.Writer) error {
 		return emptyPostToolOutput(out)
 	}
 
-	// 変更されたファイルパスを取得
+	// Get the changed file path
 	changedFile := input.ToolInput.FilePath
 	if changedFile == "" {
 		changedFile = input.ToolResponse.FilePath
@@ -181,7 +181,7 @@ func HandlePlansWatcher(in io.Reader, out io.Writer) error {
 		return emptyPostToolOutput(out)
 	}
 
-	// CWD があれば相対パスに変換
+	// Convert to relative path when CWD is available
 	if input.CWD != "" {
 		changedFile = makeRelativePath(
 			normalizePathSeparators(changedFile),
@@ -189,9 +189,10 @@ func HandlePlansWatcher(in io.Reader, out io.Writer) error {
 		)
 	}
 
-	// Plans.md ファイルを探す（設定ファイルの plansDirectory 対応）
-	// input.CWD が存在する場合はそれを projectRoot として使用する。
-	// フックプロセスの CWD が input.CWD と異なる場合に誤った Plans.md を参照する問題を修正。
+	// Find the Plans.md file (respects plansDirectory config setting).
+	// When input.CWD is present, use it as projectRoot.
+	// This fixes the issue where the hook process CWD differs from input.CWD
+	// and would otherwise reference the wrong Plans.md.
 	projectRoot := input.CWD
 	if projectRoot == "" {
 		projectRoot = resolveProjectRoot()
@@ -201,16 +202,16 @@ func HandlePlansWatcher(in io.Reader, out io.Writer) error {
 		return emptyPostToolOutput(out)
 	}
 
-	// 変更されたファイルが Plans.md でない場合はスキップ（完全パスで厳密比較）
+	// Skip if the changed file is not Plans.md (strict full-path comparison)
 	if !isPlansFileWithRoot(changedFile, plansFile, projectRoot) {
 		return emptyPostToolOutput(out)
 	}
 
-	// CWD を一つの変数に決定する。
-	// lock path と state file path を同じ CWD から導出することで、
-	// 異なる worktree（CWD A / CWD B）で hook が同時に走っても
-	// 「同じ CWD → 同じ lock + 同じ state」「異なる CWD → 別 lock + 別 state」となり
-	// プロジェクトごとに独立した排他制御が機能する。
+	// Settle CWD into a single variable.
+	// Deriving both lock path and state file path from the same CWD ensures
+	// that when hooks run concurrently in different worktrees (CWD A / CWD B),
+	// "same CWD → same lock + same state" and "different CWD → separate lock + separate state",
+	// giving each project its own independent exclusive control.
 	cwd := input.CWD
 	if cwd == "" {
 		var cwdErr error
@@ -220,47 +221,49 @@ func HandlePlansWatcher(in io.Reader, out io.Writer) error {
 		}
 	}
 
-	// lock path と state file path を同じ cwd から導出する
+	// Derive lock path and state file path from the same cwd
 	lockPath := plansLockFile
 	stateFilePath := plansStateFile
 	if cwd != "" {
 		lockPath = filepath.Join(cwd, plansLockFile)
-		// plansStateFile は相対パス定数なので cwd と結合して絶対パス化
+		// plansStateFile is a relative-path constant; join with cwd to get an absolute path
 		stateFilePath = filepath.Join(cwd, plansStateFile)
 	}
 
-	// plans-state.json の read-modify-write を flock で保護する。
-	// Worker との競合で state を失わないよう fail-closed: lock 取得失敗時は処理を中断。
-	// PostToolUse フック仕様では exit code 非ゼロがフックエラー扱いになる。
-	// emptyPostToolOutput（= 空成功応答）を返すと hook framework は成功と解釈するため、
-	// ロストアップデートが発生する。exitFailClosed で exit code 1 を返すことで
-	// Plans 更新の drop を hook framework に明示的にエラーとして通知する。
+	// Protect the read-modify-write on plans-state.json with flock.
+	// Fail-closed to avoid losing state due to races with Workers:
+	// abort if lock acquisition fails.
+	// Per the PostToolUse hook spec, a non-zero exit code signals a hook error.
+	// Returning emptyPostToolOutput (= empty success response) would be interpreted
+	// as success by the hook framework, causing lost updates.
+	// exitFailClosed returns exit code 1 to explicitly signal to the hook framework
+	// that a Plans update was dropped.
 	lockFile, lockErr := acquirePlansLock(lockPath)
 	if lockErr != nil {
 		fmt.Fprintf(os.Stderr, "[plans-watcher] lock acquisition failed (fail-closed): %v\n", lockErr)
 		exitFailClosed("lock acquisition timed out (3 retries exhausted)")
-		// exitFailClosed は通常 os.Exit(1) するが、テスト時にモック差し替えで
-		// 通過する場合に備えて空応答にフォールバックする。
+		// exitFailClosed normally calls os.Exit(1), but fall back to an empty
+		// response in case the mock replacement allows execution to continue in tests.
 		return emptyPostToolOutput(out)
 	}
 	defer releasePlansLock(lockFile)
 
-	// 現在の状態を集計
+	// Aggregate the current state
 	current, err := collectPlansState(plansFile)
 	if err != nil {
 		return emptyPostToolOutput(out)
 	}
 
-	// 前回の状態を読み込む（CWD ベースの絶対パスを使用）
+	// Load the previous state (using CWD-based absolute path)
 	prev := loadPrevPlansState(stateFilePath)
 
-	// 状態を保存（CWD ベースの絶対パスを使用）
+	// Save the state (using CWD-based absolute path)
 	stateDir := filepath.Dir(stateFilePath)
 	if mkErr := os.MkdirAll(stateDir, 0o755); mkErr == nil {
 		savePlansState(stateFilePath, current)
 	}
 
-	// 変更の種類を判定
+	// Determine the type of change
 	hasNewTasks := current.PmPending > prev.PmPending
 	hasCompletedTasks := current.CcDone > prev.CcDone
 
@@ -268,12 +271,12 @@ func HandlePlansWatcher(in io.Reader, out io.Writer) error {
 		return emptyPostToolOutput(out)
 	}
 
-	// PM 通知ファイルを生成
+	// Generate the PM notification file
 	if err := writePMNotification(cwd, current, hasNewTasks, hasCompletedTasks); err != nil {
 		fmt.Fprintf(os.Stderr, "[plans-watcher] write notification: %v\n", err)
 	}
 
-	// systemMessage で通知サマリを出力
+	// Output the notification summary via systemMessage
 	summary := buildSummaryMessage(current, hasNewTasks, hasCompletedTasks)
 	o := postToolOutput{}
 	o.HookSpecificOutput.HookEventName = "PostToolUse"
@@ -281,7 +284,7 @@ func HandlePlansWatcher(in io.Reader, out io.Writer) error {
 	return writeJSON(out, o)
 }
 
-// findPlansFile は現在のディレクトリで Plans.md を探す。
+// findPlansFile searches the current directory for Plans.md.
 func findPlansFile() string {
 	for _, name := range plansFileNames {
 		if _, err := os.Stat(name); err == nil {
@@ -291,36 +294,36 @@ func findPlansFile() string {
 	return ""
 }
 
-// isPlansFile は変更されたファイルが Plans.md かどうかを判定する。
+// isPlansFile reports whether the changed file is Plans.md.
 //
-// 判定ロジック:
-//  1. filepath.Clean による完全一致（相対パス・絶対パス双方に対応）
-//  2. changedFile が相対パスの場合、projectRoot で絶対パスに変換して再比較
+// Matching logic:
+//  1. Exact match after filepath.Clean (handles both relative and absolute paths)
+//  2. If changedFile is relative, convert to absolute using projectRoot and compare again
 //
-// 旧実装にあった basename による大文字小文字を区別しないフォールバックは削除した。
-// basename のみの比較では別ディレクトリにある同名ファイル（例: /tmp/other/Plans.md）
-// が誤ってマッチするため、フルパスでの厳密一致のみを採用する。
+// The case-insensitive basename fallback present in the old implementation was removed.
+// Matching on basename alone could falsely match a same-named file in a different
+// directory (e.g. /tmp/other/Plans.md), so only a strict full-path match is used.
 func isPlansFile(changedFile, plansFile string) bool {
-	// filepath.Clean で正規化して完全一致
+	// Normalize with filepath.Clean and compare for exact match
 	if filepath.Clean(changedFile) == filepath.Clean(plansFile) {
 		return true
 	}
 	return false
 }
 
-// isPlansFileWithRoot は changedFile が相対パスの場合に projectRoot を補完して比較する。
-// HandlePlansWatcher から呼び出す際に使用する。
+// isPlansFileWithRoot resolves changedFile against projectRoot when it is relative,
+// then compares. Used when calling from HandlePlansWatcher.
 func isPlansFileWithRoot(changedFile, plansFile, projectRoot string) bool {
-	// changedFile が絶対パスの場合はそのまま比較
+	// If changedFile is absolute, compare directly
 	if filepath.IsAbs(changedFile) {
 		return isPlansFile(changedFile, plansFile)
 	}
-	// 相対パスの場合は projectRoot を基点に絶対パスへ変換
+	// If relative, convert to absolute using projectRoot as the base
 	absChanged := filepath.Join(projectRoot, changedFile)
 	return isPlansFile(absChanged, plansFile)
 }
 
-// countMarker は Plans.md 内の marker 文字列の出現回数を返す。
+// countMarker returns the number of occurrences of the marker string in Plans.md.
 func countMarker(plansFile, marker string) int {
 	data, err := os.ReadFile(plansFile)
 	if err != nil {
@@ -330,7 +333,7 @@ func countMarker(plansFile, marker string) int {
 	return len(re.FindAllIndex(data, -1))
 }
 
-// collectPlansState は Plans.md のマーカーを集計する。
+// collectPlansState aggregates the markers in Plans.md.
 func collectPlansState(plansFile string) (plansState, error) {
 	if _, err := os.Stat(plansFile); err != nil {
 		return plansState{}, fmt.Errorf("plans file not found: %w", err)
@@ -352,8 +355,8 @@ func collectPlansState(plansFile string) (plansState, error) {
 	}, nil
 }
 
-// loadPrevPlansState は前回保存した状態を読み込む。存在しない場合はゼロ値を返す。
-// stateFilePath は絶対パスまたは相対パスを受け付ける。
+// loadPrevPlansState loads the previously saved state. Returns zero value if not found.
+// stateFilePath accepts both absolute and relative paths.
 func loadPrevPlansState(stateFilePath string) plansState {
 	data, err := os.ReadFile(stateFilePath)
 	if err != nil {
@@ -366,8 +369,8 @@ func loadPrevPlansState(stateFilePath string) plansState {
 	return state
 }
 
-// savePlansState は現在の状態をファイルに保存する。
-// stateFilePath は絶対パスまたは相対パスを受け付ける。
+// savePlansState saves the current state to a file.
+// stateFilePath accepts both absolute and relative paths.
 func savePlansState(stateFilePath string, state plansState) {
 	data, err := json.MarshalIndent(state, "", "  ")
 	if err != nil {
@@ -376,36 +379,36 @@ func savePlansState(stateFilePath string, state plansState) {
 	os.WriteFile(stateFilePath, append(data, '\n'), 0o644) //nolint:errcheck
 }
 
-// buildSummaryMessage は通知サマリ文字列を構築する。
+// buildSummaryMessage constructs the notification summary string.
 func buildSummaryMessage(state plansState, hasNewTasks, hasCompletedTasks bool) string {
 	var sb strings.Builder
 
 	sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
-	sb.WriteString("Plans.md 更新検知\n")
+	sb.WriteString("Plans.md update detected\n")
 	sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
 
 	if hasNewTasks {
-		sb.WriteString("新規タスク: PM から依頼あり\n")
-		sb.WriteString("   → /sync-status で状況を確認し、/work で着手してください\n")
+		sb.WriteString("New tasks: request from PM\n")
+		sb.WriteString("   → Check status with /sync-status and start work with /work\n")
 	}
 
 	if hasCompletedTasks {
-		sb.WriteString("タスク完了: PM へ報告可能\n")
-		sb.WriteString("   → /handoff-to-pm-claude（または /handoff-to-cursor）で報告してください\n")
+		sb.WriteString("Tasks completed: ready to report to PM\n")
+		sb.WriteString("   → Report with /handoff-to-pm-claude (or /handoff-to-cursor)\n")
 	}
 
-	sb.WriteString("\n現在のステータス:\n")
-	sb.WriteString("   pm:依頼中      : " + strconv.Itoa(state.PmPending) + " 件\n")
-	sb.WriteString("   cc:TODO        : " + strconv.Itoa(state.CcTodo) + " 件\n")
-	sb.WriteString("   cc:WIP         : " + strconv.Itoa(state.CcWip) + " 件\n")
-	sb.WriteString("   cc:完了        : " + strconv.Itoa(state.CcDone) + " 件\n")
-	sb.WriteString("   pm:確認済      : " + strconv.Itoa(state.PmConfirmed) + " 件\n")
+	sb.WriteString("\nCurrent status:\n")
+	sb.WriteString("   pm:pending      : " + strconv.Itoa(state.PmPending) + "\n")
+	sb.WriteString("   cc:TODO         : " + strconv.Itoa(state.CcTodo) + "\n")
+	sb.WriteString("   cc:WIP          : " + strconv.Itoa(state.CcWip) + "\n")
+	sb.WriteString("   cc:done         : " + strconv.Itoa(state.CcDone) + "\n")
+	sb.WriteString("   pm:confirmed    : " + strconv.Itoa(state.PmConfirmed) + "\n")
 	sb.WriteString("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 	return sb.String()
 }
 
-// writePMNotification は PM 通知ファイルを生成する。
+// writePMNotification generates the PM notification file.
 func writePMNotification(cwd string, state plansState, hasNewTasks, hasCompletedTasks bool) error {
 	pmPath := pmNotificationFile
 	cursorPath := cursorNotificationFile
@@ -422,29 +425,29 @@ func writePMNotification(cwd string, state plansState, hasNewTasks, hasCompleted
 	ts := time.Now().Format("2006-01-02 15:04:05")
 
 	var sb strings.Builder
-	sb.WriteString("# PM への通知\n\n")
-	sb.WriteString("**生成日時**: " + ts + "\n\n")
-	sb.WriteString("## ステータス変更\n\n")
+	sb.WriteString("# Notification to PM\n\n")
+	sb.WriteString("**Generated at**: " + ts + "\n\n")
+	sb.WriteString("## Status change\n\n")
 
 	if hasNewTasks {
-		sb.WriteString("### 新規タスク\n\n")
-		sb.WriteString("PM から新しいタスクが依頼されました（pm:依頼中 / 互換: cursor:依頼中）。\n\n")
+		sb.WriteString("### New tasks\n\n")
+		sb.WriteString("New tasks have been requested by PM (pm:pending / compat: cursor:pending).\n\n")
 	}
 
 	if hasCompletedTasks {
-		sb.WriteString("### 完了タスク\n\n")
-		sb.WriteString("Impl Claude がタスクを完了しました。レビューをお願いします（cc:完了）。\n\n")
+		sb.WriteString("### Completed tasks\n\n")
+		sb.WriteString("Impl Claude has completed tasks. Please review (cc:done).\n\n")
 	}
 
 	sb.WriteString("---\n\n")
-	sb.WriteString("**次のアクション**: PM Claude でレビューし、必要なら再依頼（/handoff-to-impl-claude）。\n")
+	sb.WriteString("**Next action**: Review in PM Claude and re-request if necessary (/handoff-to-impl-claude).\n")
 
 	content := []byte(sb.String())
 	if err := os.WriteFile(pmPath, content, 0o644); err != nil {
 		return fmt.Errorf("write pm-notification.md: %w", err)
 	}
 
-	// 互換: cursor-notification.md にもコピー
+	// Compat: also copy to cursor-notification.md
 	_ = os.WriteFile(cursorPath, content, 0o644)
 
 	return nil

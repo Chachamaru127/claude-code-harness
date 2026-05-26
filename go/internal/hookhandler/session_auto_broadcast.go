@@ -11,8 +11,8 @@ import (
 	"time"
 )
 
-// autoBroadcastPatterns は自動ブロードキャスト対象のパターン一覧。
-// session-auto-broadcast.sh の AUTO_BROADCAST_PATTERNS に対応。
+// autoBroadcastPatterns is the list of patterns targeted for auto-broadcast.
+// Corresponds to AUTO_BROADCAST_PATTERNS in session-auto-broadcast.sh.
 var autoBroadcastPatterns = []string{
 	"src/api/",
 	"src/types/",
@@ -25,7 +25,7 @@ var autoBroadcastPatterns = []string{
 	".graphql",
 }
 
-// autoBroadcastInput は session-auto-broadcast.sh に渡される stdin JSON。
+// autoBroadcastInput is the stdin JSON passed to session-auto-broadcast.sh.
 type autoBroadcastInput struct {
 	SessionID string `json:"session_id"`
 	CWD       string `json:"cwd"`
@@ -35,13 +35,13 @@ type autoBroadcastInput struct {
 	} `json:"tool_input"`
 }
 
-// autoBroadcastConfig は .claude/sessions/auto-broadcast.json の設定。
+// autoBroadcastConfig is the configuration from .claude/sessions/auto-broadcast.json.
 type autoBroadcastConfig struct {
 	Enabled  *bool    `json:"enabled"`
 	Patterns []string `json:"patterns"`
 }
 
-// postToolOutput は PostToolUse フックのレスポンス形式。
+// postToolOutput is the response format for the PostToolUse hook.
 type postToolOutput struct {
 	HookSpecificOutput struct {
 		HookEventName     string `json:"hookEventName"`
@@ -49,7 +49,7 @@ type postToolOutput struct {
 	} `json:"hookSpecificOutput"`
 }
 
-// emptyPostToolOutput は追加コンテキストなしの PostToolUse レスポンスを返す。
+// emptyPostToolOutput returns a PostToolUse response with no additional context.
 func emptyPostToolOutput(w io.Writer) error {
 	out := postToolOutput{}
 	out.HookSpecificOutput.HookEventName = "PostToolUse"
@@ -57,23 +57,23 @@ func emptyPostToolOutput(w io.Writer) error {
 	return writeJSON(w, out)
 }
 
-// HandleSessionAutoBroadcast は session-auto-broadcast.sh の Go 移植。
+// HandleSessionAutoBroadcast is a Go port of session-auto-broadcast.sh.
 //
-// PostToolUse Write/Edit イベントで呼び出され、重要なファイルの変更を
-// .claude/sessions/broadcast.md にチームメイト通知として書き込む。
-// inbox_check が読む broadcast.md と同じファイルに書き込むことで
-// プロデューサー/コンシューマーのパスが一致する。
+// Called on PostToolUse Write/Edit events; writes important file changes
+// as teammate notifications to .claude/sessions/broadcast.md.
+// By writing to the same broadcast.md that inbox_check reads,
+// the producer/consumer paths are kept consistent.
 //
-// 対象パターン: src/api/, src/types/, src/interfaces/, api/, types/,
+// Target patterns: src/api/, src/types/, src/interfaces/, api/, types/,
 // schema.prisma, openapi, swagger, .graphql
 func HandleSessionAutoBroadcast(in io.Reader, out io.Writer) error {
-	// stdin から JSON を読み取る
+	// Read JSON from stdin
 	data, err := io.ReadAll(in)
 	if err != nil {
 		return emptyPostToolOutput(out)
 	}
 
-	// 入力がない場合は空レスポンスを返す
+	// Return empty response if there is no input
 	if len(strings.TrimSpace(string(data))) == 0 {
 		return emptyPostToolOutput(out)
 	}
@@ -90,18 +90,18 @@ func HandleSessionAutoBroadcast(in io.Reader, out io.Writer) error {
 		}
 	}
 
-	// file_path または path を取得
+	// Obtain file_path or path
 	filePath := input.ToolInput.FilePath
 	if filePath == "" {
 		filePath = input.ToolInput.Path
 	}
 
-	// ファイルパスがない場合は終了
+	// Exit if there is no file path
 	if filePath == "" {
 		return emptyPostToolOutput(out)
 	}
 
-	// 設定ファイルを読み込む
+	// Load the configuration file
 	configFile := ".claude/sessions/auto-broadcast.json"
 	enabled := true
 	var customPatterns []string
@@ -116,12 +116,12 @@ func HandleSessionAutoBroadcast(in io.Reader, out io.Writer) error {
 		}
 	}
 
-	// 自動ブロードキャストが無効な場合は終了
+	// Exit if auto-broadcast is disabled
 	if !enabled {
 		return emptyPostToolOutput(out)
 	}
 
-	// パターンマッチング（組み込みパターン）
+	// Pattern matching (built-in patterns)
 	matchedPattern := ""
 	for _, pattern := range autoBroadcastPatterns {
 		if strings.Contains(filePath, pattern) {
@@ -130,7 +130,7 @@ func HandleSessionAutoBroadcast(in io.Reader, out io.Writer) error {
 		}
 	}
 
-	// カスタムパターンもチェック
+	// Also check custom patterns
 	if matchedPattern == "" {
 		for _, pattern := range customPatterns {
 			if pattern != "" && strings.Contains(filePath, pattern) {
@@ -140,33 +140,33 @@ func HandleSessionAutoBroadcast(in io.Reader, out io.Writer) error {
 		}
 	}
 
-	// マッチしない場合は空レスポンスを返す
+	// Return empty response if no pattern matches
 	if matchedPattern == "" {
 		return emptyPostToolOutput(out)
 	}
 
-	// ブロードキャスト実行: .claude/state/broadcast.md に書き込む
+	// Execute broadcast: write to .claude/state/broadcast.md
 	fileName := filepath.Base(filePath)
 	if broadcastErr := writeBroadcastNotification(filePath, matchedPattern, input.SessionID); broadcastErr != nil {
-		// 書き込み失敗は無視（フォールバックとして空レスポンスを返す）
+		// Write failure is ignored (return empty response as fallback)
 		return emptyPostToolOutput(out)
 	}
 
-	// 通知メッセージを出力
+	// Output the notification message
 	o := postToolOutput{}
 	o.HookSpecificOutput.HookEventName = "PostToolUse"
 	o.HookSpecificOutput.AdditionalContext = fmt.Sprintf(
-		"自動ブロードキャスト: %s の変更を他セッションに通知しました", fileName,
+		"auto-broadcast: notified other sessions of change to %s", fileName,
 	)
 	return writeJSON(out, o)
 }
 
-// writeBroadcastNotification は .claude/sessions/broadcast.md にチームメイト通知を書き込む。
-// inbox_check が読む .claude/sessions/broadcast.md と同じファイルに書き込む。
-// ヘッダーフォーマット: ## <RFC3339 timestamp> [<session_id_prefix_8chars>]
-// これは inbox_check の broadcastMsgRe パーサーが期待する形式に準拠する。
-// sessionID を sender として使うことで、inbox_check が自セッションのメッセージを
-// フィルタできるようになる（bash 版の動作と一致）。
+// writeBroadcastNotification writes a teammate notification to .claude/sessions/broadcast.md.
+// Writes to the same .claude/sessions/broadcast.md file that inbox_check reads.
+// Header format: ## <RFC3339 timestamp> [<session_id_prefix_8chars>]
+// This conforms to the format expected by the inbox_check broadcastMsgRe parser.
+// Using sessionID as the sender allows inbox_check to filter out messages
+// from the current session (consistent with bash version behavior).
 func writeBroadcastNotification(filePath, matchedPattern, sessionID string) error {
 	sessionsDir := ".claude/sessions"
 	if err := os.MkdirAll(sessionsDir, 0o755); err != nil {
@@ -175,8 +175,8 @@ func writeBroadcastNotification(filePath, matchedPattern, sessionID string) erro
 
 	broadcastFile := filepath.Join(sessionsDir, "broadcast.md")
 
-	// sender タグ: session_id の先頭 12 文字を使用（bash 版に合わせた長さ）。
-	// 空の場合は "unknown" にフォールバック（bash 版の動作と一致）。
+	// Sender tag: use the first 12 characters of session_id (length matches bash version).
+	// Falls back to "unknown" if empty (consistent with bash version behavior).
 	senderTag := sessionID
 	if senderTag == "" {
 		senderTag = "unknown"
@@ -184,10 +184,10 @@ func writeBroadcastNotification(filePath, matchedPattern, sessionID string) erro
 		senderTag = senderTag[:12]
 	}
 
-	// ヘッダーフォーマット: ## <timestamp> [<session_id_prefix>]
-	// session-inbox-check.sh のパーサーが期待する形式に合わせる。
+	// Header format: ## <timestamp> [<session_id_prefix>]
+	// Matches the format expected by the session-inbox-check.sh parser.
 	ts := time.Now().UTC().Format("2006-01-02T15:04:05Z")
-	entry := fmt.Sprintf("\n## %s [%s]\n📁 `%s` が変更されました: パターン '%s' にマッチ\n",
+	entry := fmt.Sprintf("\n## %s [%s]\n📁 `%s` was changed: matched pattern '%s'\n",
 		ts, senderTag, filePath, matchedPattern)
 
 	f, err := os.OpenFile(broadcastFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)

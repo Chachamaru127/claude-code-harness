@@ -1,18 +1,18 @@
 #!/bin/bash
 # tests/test-cross-project-audit.sh
-# Phase 65.3.6 - cross-project audit log + HTML サマリの機械検証
+# Phase 65.3.6 - mechanical validation of cross-project audit log + HTML summary
 #
-# 検証ケース (Plans.md §65.3.6 DoD e に対応):
+# Validation cases (Plans.md §65.3.6 DoD e):
 #   1. redaction 0    - clean text → audit line with dict:0, ner:0, passed:true
-#   2. 複数 redaction - dict + NER hit → audit line with non-zero counts, passed:true
-#   3. final scan 失敗 - residue 検出 → audit line with passed:false, HTML 未生成
+#   2. multiple redactions - dict + NER hit → audit line with non-zero counts, passed:true
+#   3. final scan failure - residue detected → audit line with passed:false, HTML not generated
 #
-# 共通検証:
-#   (a) cross-project-audit-log.sh が単体で動作
-#   (b) JSON Lines schema 準拠 (cross-project-audit.v1)
-#   (c) クエリ文字列を直接記録しない (hash のみ)
-#   (d) HTML 最下部に "redacted: dict X 件 + NER Y 件" が表示
-#   (e) --audit-group なしなら audit log は append されない
+# Common validation:
+#   (a) cross-project-audit-log.sh works standalone
+#   (b) JSON Lines schema compliant (cross-project-audit.v1)
+#   (c) raw query string not recorded (hash only)
+#   (d) HTML footer shows "redacted: dict X items + NER Y items"
+#   (e) without --audit-group, audit log is not appended
 
 set -euo pipefail
 
@@ -61,7 +61,7 @@ domains: []
 YAML
 
 # ============================================================
-# 共通 (a)(b)(c): audit-log.sh 単体動作
+# Common (a)(b)(c): audit-log.sh standalone operation
 # ============================================================
 
 AUDIT1="$TMP_DIR/audit1.jsonl"
@@ -103,14 +103,14 @@ else
   fail "audit-log.sh: query_hash mismatch"
 fi
 
-# クエリ生記録なし: line に "test-query-1" が含まれていないこと
+# verify raw query string not recorded: line must not contain "test-query-1"
 if grep -q "test-query-1" "$AUDIT1"; then
   fail "audit-log.sh: raw query string leaked!"
 else
   pass "audit-log.sh: raw query NOT recorded (hash only)"
 fi
 
-# 2 回目の append (append-only 確認)
+# 2nd append (verify append-only)
 HASH2="$(HASH_OF "test-query-2")"
 bash "$AUDIT_SCRIPT" \
   --group "G2" --members "p4" \
@@ -172,13 +172,13 @@ else
 fi
 
 # ============================================================
-# Case 2: 複数 redaction — dict + NER hit
+# Case 2: multiple redactions — dict + NER hit
 # ============================================================
 
 if [[ "$TOKENIZER_AVAILABLE" == "true" ]]; then
   DATA2="$TMP_DIR/data2-multi-hit.json"
   cat > "$DATA2" <<'JSON'
-{"title":"NoraiCorp と 田中太郎 が会議","sections":[{"name":"Foo"}]}
+{"title":"NoraiCorp and Tanaka Taro in a meeting","sections":[{"name":"Foo"}]}
 JSON
 
   OUT2="$TMP_DIR/out2.html"
@@ -187,7 +187,7 @@ JSON
   if bash "$RENDER_SCRIPT" --template test-fixture --data "$DATA2" --out "$OUT2" \
       --with-redaction --client-dict "$DICT_TEST" \
       --audit-group "C2" --audit-members "p1,p2" --audit-query-hash "$HASH_C2" 2>"$TMP_DIR/c2-stderr.txt"; then
-    pass "Case 2 (複数 redaction): exit 0"
+    pass "Case 2 (multiple redactions): exit 0"
   else
     fail "Case 2: unexpected non-zero exit. stderr: $(cat "$TMP_DIR/c2-stderr.txt")"
   fi
@@ -211,19 +211,19 @@ JSON
     fail "Case 2: HTML footer missing"
   fi
 else
-  pass "Case 2 (複数 redaction): SKIPPED (tokenizer unavailable)"
+  pass "Case 2 (multiple redactions): SKIPPED (tokenizer unavailable)"
   pass "Case 2 dict count: SKIPPED"
   pass "Case 2 ner count: SKIPPED"
   pass "Case 2 footer: SKIPPED"
 fi
 
 # ============================================================
-# Case 3: final scan 失敗 — residue → exit 1, audit line passed:false
+# Case 3: final scan failure — residue → exit 1, audit line passed:false
 # ============================================================
 
 DATA3="$TMP_DIR/data3-final-scan-fail.json"
 cat > "$DATA3" <<'JSON'
-{"title":"プロジェクトメインボードフィードバック","sections":[{"name":"Foo"}]}
+{"title":"project main board feedback","sections":[{"name":"Foo"}]}
 JSON
 
 OUT3="$TMP_DIR/out3.html"
@@ -232,9 +232,9 @@ HASH_C3="$(HASH_OF "case-3")"
 if bash "$RENDER_SCRIPT" --template test-fixture --data "$DATA3" --out "$OUT3" \
     --with-redaction \
     --audit-group "C3" --audit-members "p1" --audit-query-hash "$HASH_C3" 2>"$TMP_DIR/c3-stderr.txt"; then
-  fail "Case 3: expected exit 1 (final scan fail), got 0"
+  fail "Case 3: expected exit 1 (final scan failure), got 0"
 else
-  pass "Case 3 (final scan 失敗): exit 1 as expected"
+  pass "Case 3 (final scan failure): exit 1 as expected"
 fi
 
 if [[ ! -f "$OUT3" ]]; then
@@ -243,7 +243,7 @@ else
   fail "Case 3: HTML should not exist after final scan fail"
 fi
 
-# audit log には failed として記録される
+# verify audit log records failure
 LATEST_C3="$(tail -1 "$DEFAULT_AUDIT")"
 if echo "$LATEST_C3" | jq -e '.output_passed_final_scan == false' >/dev/null; then
   pass "Case 3: audit log passed_final_scan = false"
@@ -252,7 +252,7 @@ else
 fi
 
 # ============================================================
-# 共通 (e): --audit-group なしなら audit log は append されない
+# Common (e): without --audit-group, audit log is not appended
 # ============================================================
 
 PRE_LINE_COUNT="$(wc -l < "$DEFAULT_AUDIT" | tr -d ' ')"
@@ -269,7 +269,7 @@ else
 fi
 
 # ============================================================
-# 共通: schema validation - すべての line が schema 準拠
+# Common: schema validation - all lines must be schema compliant
 # ============================================================
 
 ALL_VALID="true"

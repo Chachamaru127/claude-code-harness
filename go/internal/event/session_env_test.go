@@ -8,7 +8,7 @@ import (
 )
 
 func TestSessionEnvHandler_Handle_NoEnvFile(t *testing.T) {
-	// CLAUDE_ENV_FILE が設定されていない場合は何もしない
+	// Does nothing when CLAUDE_ENV_FILE is not set
 	t.Setenv("CLAUDE_ENV_FILE", "")
 
 	h := &SessionEnvHandler{}
@@ -54,7 +54,7 @@ func TestSessionEnvHandler_Handle_WritesEnvVars(t *testing.T) {
 			t.Errorf("expected %q in env file, got:\n%s", want, content)
 		}
 	}
-	// BREEZING_SESSION_ID は空なので含まれていないはず
+	// BREEZING_SESSION_ID is empty, so it should not be present
 	if strings.Contains(content, "HARNESS_BREEZING_SESSION_ID") {
 		t.Errorf("expected no HARNESS_BREEZING_SESSION_ID, got:\n%s", content)
 	}
@@ -101,7 +101,7 @@ func TestSessionEnvHandler_Handle_MissingVersionFile(t *testing.T) {
 	t.Setenv("BREEZING_SESSION_ID", "")
 	t.Setenv("CLAUDE_CODE_REMOTE", "")
 
-	// VERSION ファイルなし
+	// No VERSION file
 	h := &SessionEnvHandler{PluginRoot: dir}
 	if err := h.Handle(strings.NewReader(`{}`), os.Stdout); err != nil {
 		t.Fatalf("unexpected error: %v", err)

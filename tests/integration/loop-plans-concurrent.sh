@@ -1,6 +1,6 @@
 #!/bin/bash
 # loop-plans-concurrent.sh
-# harness-loop と plans 更新が同時に走っても取りこぼしがないことを確認する
+# Verify that no updates are lost when harness-loop and plans updates run concurrently
 
 set -euo pipefail
 
@@ -96,24 +96,24 @@ for pid in "${PIDS[@]}"; do
 done
 
 if [ "${FAILED}" -ne 0 ]; then
-  echo "worker が ${FAILED} 件失敗しました"
+  echo "${FAILED} worker(s) failed"
   exit 1
 fi
 
 FINAL_COUNT="$(cat "${STATE_FILE}" 2>/dev/null || echo 0)"
 if [ "${FINAL_COUNT}" -ne "${WORKER_COUNT}" ]; then
-  echo "最終カウントが一致しません: ${FINAL_COUNT} / ${WORKER_COUNT}"
+  echo "final count mismatch: ${FINAL_COUNT} / ${WORKER_COUNT}"
   exit 1
 fi
 
 LOG_COUNT="$(wc -l < "${STATE_FILE}.log" | tr -d ' ')"
 if [ "${LOG_COUNT}" -ne "${WORKER_COUNT}" ]; then
-  echo "ログ件数が一致しません: ${LOG_COUNT} / ${WORKER_COUNT}"
+  echo "log entry count mismatch: ${LOG_COUNT} / ${WORKER_COUNT}"
   exit 1
 fi
 
 [ ! -d "${LOCK_DIR}" ] || {
-  echo "lock directory が残っています"
+  echo "lock directory still exists"
   exit 1
 }
 

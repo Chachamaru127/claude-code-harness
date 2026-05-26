@@ -10,14 +10,14 @@ import (
 	"testing"
 )
 
-// memHealthResult は runMemHealth が返す JSON のスキーマ（テスト用）。
+// memHealthResult is the JSON schema returned by runMemHealth (for tests).
 type memHealthResult struct {
 	Healthy bool   `json:"healthy"`
 	Reason  string `json:"reason"`
 }
 
-// withStubbedDaemonProbe は daemonProbe を一時的に差し替えるテストヘルパー。
-// 戻り値の restore を defer で呼ぶと元の実装に戻る。
+// withStubbedDaemonProbe is a test helper that temporarily replaces daemonProbe.
+// Call the returned restore function via defer to revert to the original implementation.
 func withStubbedDaemonProbe(t *testing.T, stub func() error) func() {
 	t.Helper()
 	orig := daemonProbe
@@ -30,7 +30,7 @@ func TestRunMemHealth_Healthy(t *testing.T) {
 	t.Setenv("HOME", home)
 	defer withStubbedDaemonProbe(t, func() error { return nil })()
 
-	// ~/.claude-mem/ と settings.json を作成
+	// Create ~/.claude-mem/ and settings.json
 	claudeMem := filepath.Join(home, ".claude-mem")
 	if err := os.MkdirAll(claudeMem, 0700); err != nil {
 		t.Fatal(err)
@@ -58,7 +58,7 @@ func TestRunMemHealth_DaemonUnreachable(t *testing.T) {
 	t.Setenv("HOME", home)
 	defer withStubbedDaemonProbe(t, func() error { return fmt.Errorf("connection refused") })()
 
-	// ファイルは揃っているが daemon probe が失敗するケース
+	// Files are in place but the daemon probe fails
 	claudeMem := filepath.Join(home, ".claude-mem")
 	if err := os.MkdirAll(claudeMem, 0700); err != nil {
 		t.Fatal(err)
@@ -84,15 +84,15 @@ func TestRunMemHealth_DaemonUnreachable(t *testing.T) {
 	}
 }
 
-// TestRunMemHealth_NotConfigured は harness-mem 未インストール環境を想定する。
-// `~/.claude-mem/` が無い = opt-in 未使用 なので、壊れている扱い (unhealthy) では
-// なく監視対象外 (healthy + reason="not-configured") として扱う。
-// これにより MonitorHandler 側の `⚠️ harness-mem unhealthy` 警告が
-// harness-mem を使っていないユーザーのセッションで誤発火しない。
+// TestRunMemHealth_NotConfigured assumes an environment where harness-mem is not installed.
+// `~/.claude-mem/` absent means opt-in is unused, so the state is treated as
+// not monitored (healthy + reason="not-configured") rather than broken (unhealthy).
+// This prevents the MonitorHandler `⚠️ harness-mem unhealthy` warning from
+// firing spuriously in sessions where harness-mem is not used.
 func TestRunMemHealth_NotConfigured(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
-	// ~/.claude-mem/ を作成しない (harness-mem 未インストール状態)
+	// Do not create ~/.claude-mem/ (harness-mem not installed)
 
 	out, exitCode := captureMemHealth()
 	if exitCode != 0 {
@@ -230,12 +230,12 @@ func TestRunMemHealth_Corrupted(t *testing.T) {
 	home := t.TempDir()
 	t.Setenv("HOME", home)
 
-	// ~/.claude-mem/ は存在するが settings.json も supervisor.json もない
+	// ~/.claude-mem/ exists but neither settings.json nor supervisor.json is present
 	claudeMem := filepath.Join(home, ".claude-mem")
 	if err := os.MkdirAll(claudeMem, 0700); err != nil {
 		t.Fatal(err)
 	}
-	// config ファイルは作成しない
+	// Do not create any config files
 
 	out, exitCode := captureMemHealth()
 	if exitCode == 0 {
@@ -254,8 +254,8 @@ func TestRunMemHealth_Corrupted(t *testing.T) {
 	}
 }
 
-// captureMemHealth は runMemHealth の stdout と exit code を文字列で返す。
-// 内部関数のためシグネチャを直接呼ぶ。
+// captureMemHealth returns the stdout and exit code of runMemHealth as strings.
+// Calls the internal function directly since it is not exported.
 func captureMemHealth() (string, int) {
 	result, code := runMemHealthCheck()
 	data, _ := json.Marshal(result)

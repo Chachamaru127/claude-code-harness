@@ -1,37 +1,38 @@
 # Review Calibration
 
-レビューの drift を抑えるための保存形式と運用ルール。
+Storage format and operational rules for suppressing review drift.
 
-## 保存先
+## Storage Locations
 
 - `.claude/state/review-result.json`
 - `.claude/state/review-calibration.jsonl`
 - `.claude/state/review-few-shot-bank.json`
 
-## 記録ルール
+## Recording Rules
 
-`review-result.json` に `calibration` が付いている場合、`record-review-calibration.sh`
-が `review-calibration.jsonl` に 1 行追記する。
+When `review-result.json` includes a `calibration` field, `record-review-calibration.sh`
+appends one line to `review-calibration.jsonl`.
 
-`calibration.label` は次のいずれかに限定する。
+`calibration.label` must be one of the following:
 
 - `false_positive`
 - `false_negative`
 - `missed_bug`
 - `overstrict_rule`
 
-Phase 61 の weak-supervision observations は `review-calibration.jsonl` に混ぜない。
-`weak_label`, `judge_verdict`, `eval_result`, `counterexample` は
-`.claude/state/elicitation/events.jsonl` に `elicitation-event.v1` として分離して記録する。
-レビュー calibration は Reviewer の判定ドリフト補正、elicitation ledger は次回 Advisor/Reviewer への証拠 cue という役割分担にする。
+Phase 61 weak-supervision observations must not be mixed into `review-calibration.jsonl`.
+`weak_label`, `judge_verdict`, `eval_result`, and `counterexample` are recorded separately
+in `.claude/state/elicitation/events.jsonl` as `elicitation-event.v1`.
+Review calibration handles correction of Reviewer judgment drift;
+the elicitation ledger serves as evidence cues for the next Advisor/Reviewer run.
 
-## few-shot 更新
+## Few-Shot Updates
 
-`build-review-few-shot-bank.sh` は calibration log から最新のサンプルを抽出し、
-few-shot 用の JSON bank を再生成する。
+`build-review-few-shot-bank.sh` extracts the latest samples from the calibration log
+and regenerates the few-shot JSON bank.
 
-## 品質姿勢
+## Quality Posture
 
-- 重大な不具合だけを `REQUEST_CHANGES` にする
-- 証拠のない違和感は `minor` か `recommendation` に留める
-- 指摘は後で few-shot に使える程度に短く具体的に書く
+- Only flag critical defects as `REQUEST_CHANGES`
+- Keep unsubstantiated suspicions at `minor` or `recommendation`
+- Write findings concisely and concretely enough to be usable as few-shot examples later

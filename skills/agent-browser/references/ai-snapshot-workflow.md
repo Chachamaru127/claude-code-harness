@@ -1,38 +1,38 @@
 # AI Snapshot Workflow
 
-agent-browser の `snapshot` コマンドを活用した AI エージェント向けワークフロー。
+An AI agent-oriented workflow leveraging the `snapshot` command of agent-browser.
 
 ---
 
-## 概要
+## Overview
 
-`snapshot` コマンドは、ページのアクセシビリティツリーを取得し、各要素に参照 ID（`@e1`, `@e2` など）を付与します。これにより：
+The `snapshot` command retrieves a page's accessibility tree and assigns reference IDs (`@e1`, `@e2`, etc.) to each element. This provides:
 
-1. **CSS セレクタ不要**: 動的な ID やクラス名に依存しない
-2. **コンテキスト把握**: 要素の役割（button, input, link）が明確
-3. **決定的操作**: `@e1` などの参照で確実に操作可能
+1. **No CSS selectors needed**: No dependency on dynamic IDs or class names
+2. **Context awareness**: Each element's role (button, input, link) is explicit
+3. **Deterministic interactions**: References like `@e1` allow reliable targeting
 
 ---
 
-## 基本ワークフロー
+## Basic Workflow
 
-### Step 1: ページを開く
+### Step 1: Open the page
 
 ```bash
 agent-browser open https://example.com
 ```
 
-### Step 2: スナップショット取得
+### Step 2: Get a snapshot
 
 ```bash
 agent-browser snapshot -i -c
 ```
 
-**オプション説明**:
-- `-i, --interactive`: インタラクティブな要素（ボタン、リンク、入力フィールド等）のみ表示
-- `-c, --compact`: 空の構造要素を除去してコンパクトに
+**Option descriptions**:
+- `-i, --interactive`: Show only interactive elements (buttons, links, input fields, etc.)
+- `-c, --compact`: Remove empty structural elements for a compact output
 
-**出力例**:
+**Sample output**:
 ```
 ✓ Example Domain
   https://example.com/
@@ -44,253 +44,253 @@ agent-browser snapshot -i -c
 - button "Search" [ref=e5]
 ```
 
-### Step 3: 要素参照で操作
+### Step 3: Interact via element references
 
 ```bash
-# リンクをクリック
+# Click a link
 agent-browser click @e1
 
-# 検索フォームに入力
+# Fill the search form
 agent-browser fill @e4 "search query"
 
-# 検索ボタンをクリック
+# Click the search button
 agent-browser click @e5
 ```
 
-### Step 4: 結果を確認
+### Step 4: Verify results
 
 ```bash
-# 新しい状態をスナップショット
+# Get a new snapshot of the updated state
 agent-browser snapshot -i -c
 ```
 
 ---
 
-## Snapshot オプション詳細
+## Snapshot Options in Detail
 
 ### `-i, --interactive`
 
-インタラクティブな要素のみを表示。操作対象を絞り込む際に有効。
+Show only interactive elements. Useful for narrowing down targets.
 
 ```bash
-# インタラクティブ要素のみ
+# Interactive elements only
 agent-browser snapshot -i
 
-# 全要素（テキストノード含む）
+# All elements (including text nodes)
 agent-browser snapshot
 ```
 
 ### `-c, --compact`
 
-空の構造要素（div, span など内容のないもの）を除去。
+Remove empty structural elements (div, span with no content, etc.).
 
 ```bash
-# コンパクト出力
+# Compact output
 agent-browser snapshot -c
 
-# 構造も含めて表示
+# Show full structure
 agent-browser snapshot
 ```
 
 ### `-d, --depth <n>`
 
-ツリーの深さを制限。大きなページで概要を把握する際に有効。
+Limit tree depth. Useful for getting an overview of large pages.
 
 ```bash
-# 深さ3まで
+# Up to depth 3
 agent-browser snapshot -d 3
 ```
 
 ### `-s, --selector <sel>`
 
-特定のセレクタにスコープを絞る。
+Scope the snapshot to a specific selector.
 
 ```bash
-# フォーム内のみ
+# Only within a form
 agent-browser snapshot -s "form.login"
 
-# ナビゲーション内のみ
+# Only within navigation
 agent-browser snapshot -s "nav"
 ```
 
-### 組み合わせ
+### Combining options
 
 ```bash
-# 推奨: インタラクティブ + コンパクト
+# Recommended: interactive + compact
 agent-browser snapshot -i -c
 
-# フォーム内のインタラクティブ要素のみ
+# Interactive elements only within a form
 agent-browser snapshot -i -c -s "form"
 
-# 浅いツリーで概要把握
+# Shallow tree for an overview
 agent-browser snapshot -i -d 2
 ```
 
 ---
 
-## ユースケース別ワークフロー
+## Use-Case Workflows
 
-### ログインフロー
+### Login flow
 
 ```bash
-# 1. ログインページを開く
+# 1. Open the login page
 agent-browser open https://example.com/login
 
-# 2. スナップショット取得
+# 2. Get a snapshot
 agent-browser snapshot -i -c
-# 出力:
+# Output:
 # - input "Email" [ref=e1]
 # - input "Password" [ref=e2]
 # - button "Login" [ref=e3]
 # - link "Forgot password?" [ref=e4]
 
-# 3. ログイン情報を入力
+# 3. Enter login credentials
 agent-browser fill @e1 "user@example.com"
 agent-browser fill @e2 "password123"
 
-# 4. ログインボタンをクリック
+# 4. Click the Login button
 agent-browser click @e3
 
-# 5. 結果を確認
+# 5. Verify result
 agent-browser snapshot -i -c
 agent-browser get url
 ```
 
-### フォーム送信
+### Form submission
 
 ```bash
-# 1. フォームページを開く
+# 1. Open the form page
 agent-browser open https://example.com/contact
 
-# 2. フォーム内のスナップショット
+# 2. Snapshot scoped to the form
 agent-browser snapshot -i -c -s "form"
-# 出力:
+# Output:
 # - input "Name" [ref=e1]
 # - input "Email" [ref=e2]
 # - textarea "Message" [ref=e3]
 # - button "Send" [ref=e4]
 
-# 3. フォームに入力
+# 3. Fill in the form
 agent-browser fill @e1 "John Doe"
 agent-browser fill @e2 "john@example.com"
 agent-browser fill @e3 "Hello, this is a test message."
 
-# 4. 送信
+# 4. Submit
 agent-browser click @e4
 
-# 5. 確認
+# 5. Verify
 agent-browser snapshot -i -c
 ```
 
-### ナビゲーション探索
+### Navigation exploration
 
 ```bash
-# 1. トップページを開く
+# 1. Open the home page
 agent-browser open https://example.com
 
-# 2. ナビゲーションを確認
+# 2. Check navigation
 agent-browser snapshot -i -c -s "nav"
-# 出力:
+# Output:
 # - link "Home" [ref=e1]
 # - link "Products" [ref=e2]
 # - link "About" [ref=e3]
 # - link "Contact" [ref=e4]
 
-# 3. Products ページへ
+# 3. Go to Products page
 agent-browser click @e2
 
-# 4. 新しいページの構造を確認
+# 4. Check the new page structure
 agent-browser snapshot -i -c
 ```
 
-### 動的コンテンツの操作
+### Dynamic content interaction
 
 ```bash
-# 1. ページを開く
+# 1. Open the page
 agent-browser open https://example.com/dashboard
 
-# 2. 初期スナップショット
+# 2. Initial snapshot
 agent-browser snapshot -i -c
 
-# 3. ドロップダウンを開く
+# 3. Open a dropdown
 agent-browser click @e5
 
-# 4. 待機（動的コンテンツのロード）
+# 4. Wait for dynamic content to load
 agent-browser wait 500
 
-# 5. 新しいスナップショット（ドロップダウンメニューが表示される）
+# 5. New snapshot (dropdown menu should now appear)
 agent-browser snapshot -i -c
-# 新しい要素が出現:
+# New elements appear:
 # - menuitem "Option 1" [ref=e10]
 # - menuitem "Option 2" [ref=e11]
 # - menuitem "Option 3" [ref=e12]
 
-# 6. オプションを選択
+# 6. Select an option
 agent-browser click @e11
 ```
 
 ---
 
-## トラブルシューティング
+## Troubleshooting
 
-### 要素が見つからない
+### Element not found
 
 ```bash
-# フルスナップショット（すべての要素）
+# Full snapshot (all elements)
 agent-browser snapshot
 
-# 特定セレクタで絞り込み
+# Narrow down with a specific selector
 agent-browser snapshot -s "#target-element"
 
-# 待機してから再試行
+# Wait then retry
 agent-browser wait 2000
 agent-browser snapshot -i -c
 ```
 
-### 動的ページ
+### Dynamic pages
 
 ```bash
-# JavaScript 実行後にスナップショット
+# Get snapshot after JavaScript execution
 agent-browser eval "document.querySelector('#load-more').click()"
 agent-browser wait 1000
 agent-browser snapshot -i -c
 ```
 
-### iframe 内の要素
+### Elements inside an iframe
 
 ```bash
-# メインフレームのスナップショット
+# Snapshot of the main frame
 agent-browser snapshot -i -c
 
-# iframe 内は直接アクセスできないため、
-# eval で iframe 内の操作を行う
+# Elements inside iframes cannot be accessed directly;
+# use eval to interact with iframe content
 agent-browser eval "document.querySelector('iframe').contentDocument.querySelector('button').click()"
 ```
 
 ---
 
-## ベストプラクティス
+## Best Practices
 
-### 1. 常にスナップショットから開始
+### 1. Always start with a snapshot
 
-操作前に必ずスナップショットを取得し、現在の状態を把握する。
+Always get a snapshot before interacting to understand the current state.
 
-### 2. インタラクティブ + コンパクトをデフォルトに
+### 2. Use interactive + compact as defaults
 
 ```bash
 agent-browser snapshot -i -c
 ```
 
-### 3. 操作後は状態を確認
+### 3. Verify state after each interaction
 
 ```bash
 agent-browser click @e1
-agent-browser snapshot -i -c  # 結果を確認
+agent-browser snapshot -i -c  # Verify result
 ```
 
-### 4. 適切な待機を入れる
+### 4. Insert appropriate waits
 
-動的コンテンツがある場合は待機を入れる：
+When there is dynamic content, add waits:
 
 ```bash
 agent-browser click @e1
@@ -298,13 +298,13 @@ agent-browser wait 500
 agent-browser snapshot -i -c
 ```
 
-### 5. セッションを活用
+### 5. Use sessions
 
-認証状態を維持するためにセッションを使用：
+Use sessions to maintain authentication state:
 
 ```bash
 agent-browser --session myapp open https://example.com/login
-# ... ログイン操作 ...
-# 以降、同じセッションで操作を継続
+# ... login interactions ...
+# Continue using the same session
 agent-browser --session myapp open https://example.com/dashboard
 ```

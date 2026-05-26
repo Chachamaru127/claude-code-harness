@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-// DependencyGraph はタスク間の依存関係を管理し、実行可能なタスクを判定する。
+// DependencyGraph manages inter-task dependencies and determines which tasks are ready to run.
 type DependencyGraph struct {
 	mu    sync.RWMutex
 	tasks map[string]*depNode
@@ -18,19 +18,19 @@ type DependencyGraph struct {
 
 type depNode struct {
 	task     *Task
-	deps     []string // 依存先タスク ID
+	deps     []string // dependency task IDs
 	status   TaskStatus
-	resolved bool // 全依存が completed になった
+	resolved bool // all dependencies have completed
 }
 
-// NewDependencyGraph は新しい DependencyGraph を生成する。
+// NewDependencyGraph creates a new DependencyGraph.
 func NewDependencyGraph() *DependencyGraph {
 	return &DependencyGraph{
 		tasks: make(map[string]*depNode),
 	}
 }
 
-// Add はタスクを依存グラフに追加する。
+// Add adds a task to the dependency graph.
 func (dg *DependencyGraph) Add(task *Task) {
 	dg.mu.Lock()
 	defer dg.mu.Unlock()
@@ -41,8 +41,8 @@ func (dg *DependencyGraph) Add(task *Task) {
 	}
 }
 
-// Ready は依存が全て解決され、実行可能なタスクのリストを返す。
-// 返されるタスクは ID の昇順でソートされる。
+// Ready returns the list of tasks whose dependencies are all resolved and that are ready to run.
+// The returned tasks are sorted in ascending ID order.
 func (dg *DependencyGraph) Ready() []*Task {
 	dg.mu.RLock()
 	defer dg.mu.RUnlock()
@@ -63,8 +63,8 @@ func (dg *DependencyGraph) Ready() []*Task {
 	return ready
 }
 
-// MarkCompleted はタスクを完了としてマークし、依存チェーンを再評価する。
-// 返される []*Task は新たに unblock されたタスク。
+// MarkCompleted marks a task as completed and re-evaluates the dependency chain.
+// The returned []*Task contains newly unblocked tasks.
 func (dg *DependencyGraph) MarkCompleted(taskID string) []*Task {
 	dg.mu.Lock()
 	defer dg.mu.Unlock()
@@ -73,7 +73,7 @@ func (dg *DependencyGraph) MarkCompleted(taskID string) []*Task {
 		node.status = TaskCompleted
 	}
 
-	// 新たに ready になったタスクを検出
+	// Detect tasks that are newly ready
 	var unblocked []*Task
 	for _, node := range dg.tasks {
 		if node.status != TaskPending {
@@ -87,8 +87,8 @@ func (dg *DependencyGraph) MarkCompleted(taskID string) []*Task {
 	return unblocked
 }
 
-// MarkFailed はタスクを失敗としてマークする。
-// このタスクに依存する全てのタスクは blocked になる。
+// MarkFailed marks a task as failed.
+// All tasks that depend on this task become blocked.
 func (dg *DependencyGraph) MarkFailed(taskID string) []string {
 	dg.mu.Lock()
 	defer dg.mu.Unlock()
@@ -97,7 +97,7 @@ func (dg *DependencyGraph) MarkFailed(taskID string) []string {
 		node.status = TaskFailed
 	}
 
-	// 連鎖的にブロックされるタスクを特定
+	// Identify tasks that become blocked in a chain reaction
 	var blocked []string
 	changed := true
 	for changed {
@@ -120,15 +120,15 @@ func (dg *DependencyGraph) MarkFailed(taskID string) []string {
 	return blocked
 }
 
-// DetectCycle は依存グラフに循環参照がないかを検出する。
-// 循環がある場合は循環に含まれるタスク ID のスライスを返す。
+// DetectCycle checks the dependency graph for circular references.
+// Returns a slice of task IDs involved in the cycle when one is found.
 func (dg *DependencyGraph) DetectCycle() []string {
 	dg.mu.RLock()
 	defer dg.mu.RUnlock()
 	return dg.detectCycleLocked()
 }
 
-// detectCycleLocked はロック取得済み前提の cycle 検出。
+// detectCycleLocked performs cycle detection assuming the lock is already held.
 func (dg *DependencyGraph) detectCycleLocked() []string {
 	visited := make(map[string]bool)
 	inStack := make(map[string]bool)
@@ -171,9 +171,9 @@ func (dg *DependencyGraph) detectCycleLocked() []string {
 	return nil
 }
 
-// TopologicalOrder は依存関係に基づくトポロジカルソート順を返す。
-// 循環がある場合はエラーを返す。
-// 単一ロック内で cycle 検出 + ソートを行い TOCTOU を防ぐ。
+// TopologicalOrder returns the topological sort order based on dependencies.
+// Returns an error if a cycle exists.
+// Performs cycle detection and sorting within a single lock to prevent TOCTOU.
 func (dg *DependencyGraph) TopologicalOrder() ([]string, error) {
 	dg.mu.RLock()
 	defer dg.mu.RUnlock()
@@ -210,14 +210,14 @@ func (dg *DependencyGraph) TopologicalOrder() ([]string, error) {
 		queue = queue[1:]
 		order = append(order, id)
 
-		// この task に依存しているタスクの in-degree を減らす
+		// Decrement the in-degree of tasks that depend on this task
 		for othID, node := range dg.tasks {
 			for _, depID := range node.deps {
 				if depID == id {
 					inDegree[othID]--
 					if inDegree[othID] == 0 {
 						queue = append(queue, othID)
-						sort.Strings(queue) // 安定ソート
+						sort.Strings(queue) // stable sort
 					}
 				}
 			}
@@ -227,13 +227,13 @@ func (dg *DependencyGraph) TopologicalOrder() ([]string, error) {
 	return order, nil
 }
 
-// allDepsCompleted は指定ノードの全依存が completed かを返す。
-// ロック取得済み前提。
+// allDepsCompleted returns whether all dependencies of the given node are completed.
+// Assumes the lock is already held.
 func (dg *DependencyGraph) allDepsCompleted(node *depNode) bool {
 	for _, depID := range node.deps {
 		dep, exists := dg.tasks[depID]
 		if !exists {
-			// 外部依存（グラフに存在しない）は完了済みとみなす
+			// External dependency (not in the graph) is considered completed
 			continue
 		}
 		if dep.status != TaskCompleted {
@@ -247,8 +247,8 @@ func (dg *DependencyGraph) allDepsCompleted(node *depNode) bool {
 // File-Lock Claiming
 // ============================================================
 
-// FileLock はファイルベースのロックを管理する。
-// Worker が特定のファイルに対する排他的な変更権を主張するために使用する。
+// FileLock manages file-based locks.
+// Used by Workers to claim exclusive write rights over specific files.
 type FileLock struct {
 	mu      sync.Mutex
 	lockDir string
@@ -256,8 +256,8 @@ type FileLock struct {
 	now     func() time.Time
 }
 
-// NewFileLock は新しい FileLock を生成する。
-// lockDir は .harness-locks/ ディレクトリのパス。
+// NewFileLock creates a new FileLock.
+// lockDir is the path to the .harness-locks/ directory.
 func NewFileLock(lockDir string) *FileLock {
 	return &FileLock{
 		lockDir: lockDir,
@@ -266,19 +266,19 @@ func NewFileLock(lockDir string) *FileLock {
 	}
 }
 
-// Claim はファイルに対するロックを取得する。
-// 既に他のオーナーがロックしている場合はエラーを返す。
+// Claim acquires a lock on a file.
+// Returns an error if another owner already holds the lock.
 func (fl *FileLock) Claim(filePath, ownerID string) error {
 	filePath = filepath.Clean(filePath)
 	fl.mu.Lock()
 	defer fl.mu.Unlock()
 
-	// メモリ上で他オーナーが保持していれば即エラー
+	// Immediately fail if another owner holds the lock in memory
 	if existing, exists := fl.locks[filePath]; exists && existing != ownerID {
 		return fmt.Errorf("file %q is locked by %q", filePath, existing)
 	}
 
-	// ファイルシステムで原子的排他（O_CREATE|O_EXCL）
+	// Atomically exclusive on the filesystem (O_CREATE|O_EXCL)
 	lockFile := fl.lockFilePath(filePath)
 	if err := os.MkdirAll(filepath.Dir(lockFile), 0o755); err != nil {
 		return fmt.Errorf("create lock dir: %w", err)
@@ -287,12 +287,12 @@ func (fl *FileLock) Claim(filePath, ownerID string) error {
 	f, err := os.OpenFile(lockFile, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
 	if err != nil {
 		if os.IsExist(err) {
-			// ロックファイルが既存 — 同一オーナーの再 claim か確認
+			// Lock file already exists — check whether it is a re-claim by the same owner
 			existing, readErr := os.ReadFile(lockFile)
 			if readErr == nil {
 				lines := strings.SplitN(string(existing), "\n", 2)
 				if len(lines) > 0 && strings.TrimSpace(lines[0]) == ownerID {
-					// 同一オーナー — ロックファイルを更新して再 claim を許可
+					// Same owner — update the lock file and allow the re-claim
 					_ = os.WriteFile(lockFile, []byte(content), 0o644)
 					fl.locks[filePath] = ownerID
 					return nil
@@ -304,7 +304,7 @@ func (fl *FileLock) Claim(filePath, ownerID string) error {
 	}
 	if _, err := f.WriteString(content); err != nil {
 		f.Close()
-		os.Remove(lockFile) // ロールバック: 不完全なロックファイルを削除
+		os.Remove(lockFile) // rollback: remove the incomplete lock file
 		return fmt.Errorf("write lock file: %w", err)
 	}
 	if err := f.Close(); err != nil {
@@ -312,24 +312,24 @@ func (fl *FileLock) Claim(filePath, ownerID string) error {
 		return fmt.Errorf("close lock file: %w", err)
 	}
 
-	// ファイルロック成功後にメモリ状態を更新（失敗時はここに到達しない）
+	// Update in-memory state after successfully acquiring the file lock (unreachable on failure)
 	fl.locks[filePath] = ownerID
 	return nil
 }
 
-// Release はファイルのロックを解放する。
-// メモリとディスク両方でオーナーを検証し、一致しない場合はエラーを返す。
+// Release releases the lock on a file.
+// Validates the owner in both memory and on disk; returns an error if they do not match.
 func (fl *FileLock) Release(filePath, ownerID string) error {
 	filePath = filepath.Clean(filePath)
 	fl.mu.Lock()
 	defer fl.mu.Unlock()
 
-	// メモリ上のオーナーチェック
+	// Check the in-memory owner
 	if existing, exists := fl.locks[filePath]; exists && existing != ownerID {
 		return fmt.Errorf("file %q is locked by %q, not %q", filePath, existing, ownerID)
 	}
 
-	// ディスク上のロックファイルのオーナーも検証（プロセス間安全性）
+	// Also verify the owner of the on-disk lock file (cross-process safety)
 	lockFile := fl.lockFilePath(filePath)
 	if data, err := os.ReadFile(lockFile); err == nil {
 		lines := strings.SplitN(string(data), "\n", 2)
@@ -347,8 +347,8 @@ func (fl *FileLock) Release(filePath, ownerID string) error {
 	return nil
 }
 
-// ReleaseAll は指定オーナーの全ロックを解放する。
-// メモリ上の所有分のみ解放し、ディスク上のオーナーも検証する。
+// ReleaseAll releases all locks held by the specified owner.
+// Only releases locks owned in memory; also verifies the on-disk owner.
 func (fl *FileLock) ReleaseAll(ownerID string) {
 	fl.mu.Lock()
 	defer fl.mu.Unlock()
@@ -356,11 +356,11 @@ func (fl *FileLock) ReleaseAll(ownerID string) {
 	for filePath, owner := range fl.locks {
 		if owner == ownerID {
 			lockFile := fl.lockFilePath(filePath)
-			// ディスク上のオーナーも検証してから削除
+			// Verify the on-disk owner before deleting
 			if data, err := os.ReadFile(lockFile); err == nil {
 				lines := strings.SplitN(string(data), "\n", 2)
 				if len(lines) > 0 && strings.TrimSpace(lines[0]) != ownerID {
-					continue // ディスク上のオーナーが異なる — 削除しない
+					continue // On-disk owner differs — do not delete
 				}
 			}
 			delete(fl.locks, filePath)
@@ -369,7 +369,7 @@ func (fl *FileLock) ReleaseAll(ownerID string) {
 	}
 }
 
-// Owner はファイルのロックオーナーを返す。ロックされていない場合は空文字列。
+// Owner returns the lock owner of a file, or an empty string if the file is not locked.
 func (fl *FileLock) Owner(filePath string) string {
 	filePath = filepath.Clean(filePath)
 	fl.mu.Lock()
@@ -377,9 +377,9 @@ func (fl *FileLock) Owner(filePath string) string {
 	return fl.locks[filePath]
 }
 
-// lockFilePath はロックファイルのパスを返す。
+// lockFilePath returns the path to the lock file.
 func (fl *FileLock) lockFilePath(filePath string) string {
-	// ファイルパスをフラットなファイル名に変換
+	// Convert the file path to a flat filename
 	safe := strings.NewReplacer("/", "__", "\\", "__", ":", "_").Replace(filePath)
 	return filepath.Join(fl.lockDir, safe+".lock")
 }

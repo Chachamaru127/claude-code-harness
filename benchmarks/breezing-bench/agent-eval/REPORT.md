@@ -9,43 +9,43 @@
 
 ## 1. Executive Summary
 
-本実験は、明示的なバリデーション指示（`npm run validate` + 修正指示）が AI コーディングエージェントのタスク成功率に与える効果を検証した探索的研究である。GLM-4.5-air を用い、3 タスク × 5 runs × 2 条件 = 30 runs を実施した結果、バリデーション指示ありの条件で 93.3% (14/15)、なしで 20.0% (3/15) のパス率を観測した (Fisher's exact p < 0.001, Cohen's h = 1.69)。
+This experiment is an exploratory study that examined the effect of explicit validation instructions (`npm run validate` + fix instructions) on the task success rate of AI coding agents. Using GLM-4.5-air, 3 tasks × 5 runs × 2 conditions = 30 runs were conducted. The results showed a pass rate of 93.3% (14/15) with validation instructions and 20.0% (3/15) without (Fisher's exact p < 0.001, Cohen's h = 1.69).
 
-ただし本実験はタスク数 3、モデル 1 種、かつバリデーションに有利なタスク設計を用いた探索的研究であり、結論の汎化には追加検証が必要である。
+However, this experiment is an exploratory study using only 3 tasks, a single model, and a task design favorable to validation; additional verification is required to generalize the conclusions.
 
 ---
 
 ## 2. Experimental Design
 
-### 2.1 Independent Variable (条件)
+### 2.1 Independent Variable (Condition)
 
-| 条件 | CLAUDE.md の内容 |
+| Condition | CLAUDE.md content |
 |------|-----------------|
 | **Validate** (Breezing) | "Complete PROMPT.md" + "Read src/" + "Run `npm run validate`" + "Fix issues" |
 | **Baseline** (Vanilla) | "Complete PROMPT.md" + "Read src/" |
 
-唯一の差分は `npm run validate` の実行と修正指示の 2 行。これは Breezing v2 フルパイプライン (Agent Teams, code-reviewer, retake loop) の一部要素のみの ablation であり、フルパイプラインの効果とは区別する必要がある。
+The only difference is the 2 lines for running `npm run validate` and the fix instruction. This is an ablation of only a subset of the full Breezing v2 pipeline (Agent Teams, code-reviewer, retake loop) and must be distinguished from the effect of the full pipeline.
 
-### 2.2 Tasks (タスク設計)
+### 2.2 Tasks (Task Design)
 
-「新機能 + 隠しバグ」パターンを採用。PROMPT は新機能の実装を指示し、既存コードに validate.ts で検出可能なバグが埋め込まれている。EVAL.ts (エージェントからは不可視) が最終的な合否判定を行う。
+The "new feature + hidden bug" pattern was adopted. The PROMPT instructs implementation of a new feature, while a bug detectable by validate.ts is embedded in the existing code. EVAL.ts (invisible to the agent) makes the final pass/fail judgment.
 
-| Task | 新機能 (PROMPT) | 隠しバグ | バグカテゴリ |
+| Task | New Feature (PROMPT) | Hidden Bug | Bug Category |
 |------|----------------|---------|-------------|
-| task-02 | TodoStore `getByStatus()` | `updatedAt` ステイルコピー | データ鮮度 |
-| task-09 | CSV `stringifyCsv()` | カラム不一致行の非除外 | バリデーション不足 |
-| task-10 | BookStore `search()` | `updatedAt` ステイルコピー | データ鮮度 |
+| task-02 | TodoStore `getByStatus()` | `updatedAt` stale copy | Data freshness |
+| task-09 | CSV `stringifyCsv()` | Non-exclusion of column-mismatch rows | Insufficient validation |
+| task-10 | BookStore `search()` | `updatedAt` stale copy | Data freshness |
 
-**注意**: task-02 と task-10 は同一カテゴリのバグパターン（ステイルコピー）を共有しており、実質的に独立したバグカテゴリは 2 種類のみである。
+**Note**: task-02 and task-10 share the same bug pattern (stale copy), so there are effectively only 2 independent bug categories.
 
 ### 2.3 Runs
 
-- 各タスク × 各条件 = 5 runs
-- 合計: 3 tasks × 5 runs × 2 conditions = **30 runs**
+- Each task × each condition = 5 runs
+- Total: 3 tasks × 5 runs × 2 conditions = **30 runs**
 
 ### 2.4 Environment
 
-| 項目 | 値 |
+| Item | Value |
 |------|-----|
 | Agent | `vercel-ai-gateway/claude-code` |
 | Model | `haiku` tier → GLM-4.5-air (Z.AI API) |
@@ -53,21 +53,21 @@
 | Timeout | 300s per run |
 | Concurrency | 15 runs simultaneously per condition |
 
-### 2.5 Adaptive Design (開示)
+### 2.5 Adaptive Design (Disclosure)
 
-本実験は 2 段階で実施した:
+This experiment was conducted in 2 phases:
 1. **Calibration (Phase 1)**: 3 tasks × 3 runs × 2 conditions = 18 runs
-2. **Full benchmark (Phase 3)**: Calibration で差が確認されたため、5 runs に拡張
+2. **Full benchmark (Phase 3)**: Expanded to 5 runs after a difference was observed in Calibration
 
-この適応的設計は optional stopping に類するバイアスを導入する可能性がある。本レポートの統計分析は Phase 3 のデータのみに基づくが、Calibration データとの一貫性は確認済みである。
+This adaptive design may introduce a bias similar to optional stopping. The statistical analysis in this report is based solely on Phase 3 data, but consistency with the Calibration data has been confirmed.
 
 ---
 
 ## 3. Results
 
-### 3.1 Raw Data (全 30 runs)
+### 3.1 Raw Data (all 30 runs)
 
-#### Validate (Breezing) 条件
+#### Validate (Breezing) condition
 
 | Task | Run | Status | Duration | Turns | Tool Calls | Shell Cmds |
 |------|-----|--------|----------|-------|------------|------------|
@@ -87,7 +87,7 @@
 | task-10 | 4 | passed | 147.8s | 6 | 12 | 1 |
 | task-10 | 5 | passed | 129.8s | 11 | 9 | 2 |
 
-#### Baseline (Vanilla) 条件
+#### Baseline (Vanilla) condition
 
 | Task | Run | Status | Duration | Turns | Tool Calls | Shell Cmds |
 |------|-----|--------|----------|-------|------------|------------|
@@ -107,30 +107,30 @@
 | task-10 | 4 | failed | 124.4s | 3 | 4 | 0 |
 | task-10 | 5 | failed | 127.8s | 6 | 7 | 0 |
 
-**除外・リトライ**: なし（全 30 runs を分析に含めた）
+**Exclusions/Retries**: None (all 30 runs included in analysis)
 
 ### 3.2 Summary
 
-| 条件 | task-02 | task-09 | task-10 | 合計 |
+| Condition | task-02 | task-09 | task-10 | Total |
 |------|---------|---------|---------|------|
 | **Validate** | 5/5 (100%) | 5/5 (100%) | 4/5 (80%) | **14/15 (93.3%)** |
 | **Baseline** | 0/5 (0%) | 2/5 (40%) | 1/5 (20%) | **3/15 (20.0%)** |
-| **差分** | +100%pt | +60%pt | +60%pt | **+73.3%pt** |
+| **Delta** | +100%pt | +60%pt | +60%pt | **+73.3%pt** |
 
-### 3.3 Calibration (Phase 1: 参考)
+### 3.3 Calibration (Phase 1: Reference)
 
-| 条件 | task-02 | task-09 | task-10 | 合計 |
+| Condition | task-02 | task-09 | task-10 | Total |
 |------|---------|---------|---------|------|
 | Validate | 3/3 (100%) | 3/3 (100%) | 3/3 (100%) | 9/9 (100%) |
 | Baseline | 0/3 (0%) | 1/3 (33%) | 1/3 (33%) | 2/9 (22%) |
 
-Phase 3 の結果と方向性が一致。
+Direction is consistent with Phase 3 results.
 
 ### 3.4 Behavioral Observations
 
-- Baseline 条件で pass した 3 runs (task-09 run-2/4, task-10 run-2) はいずれも **shell commands を自発的に実行** (4-9 回) しており、エージェントが自主的にテストを試みた可能性がある
-- Baseline 条件で fail した全 12 runs は **shell commands = 0** で、バリデーションを試みていない
-- task-02 は Baseline で **全 5 runs が fail (0%)** — このタスクは Baseline エージェントにとって特に困難であった可能性がある（フロア効果）
+- The 3 runs that passed under the Baseline condition (task-09 run-2/4, task-10 run-2) all **voluntarily ran shell commands** (4-9 times), suggesting the agent may have attempted tests on its own
+- All 12 runs that failed under the Baseline condition had **shell commands = 0**, indicating no validation was attempted
+- task-02 had **all 5 runs fail (0%)** under Baseline — this task may have been particularly difficult for the Baseline agent (floor effect)
 
 ---
 
@@ -138,68 +138,68 @@ Phase 3 の結果と方向性が一致。
 
 ### 4.1 Primary Test: Fisher's Exact Test (one-sided)
 
-| 検定 | p値 | 判定 |
+| Test | p-value | Judgment |
 |------|-----|------|
 | **Fisher's exact** (H1: Validate > Baseline) | **p = 0.000058** | *** (p<0.001) |
 
-片側検定の理由: Validate 条件がバグ検出・修正の追加機会を提供するため、Validate >= Baseline の仮説に理論的根拠がある。
+Rationale for one-sided test: Since the Validate condition provides additional opportunities for bug detection and fixing, there is theoretical justification for the hypothesis Validate >= Baseline.
 
 ### 4.2 Task-Stratified Analysis: Cochran-Mantel-Haenszel Test
 
-タスク間のクラスタ効果を考慮した層別分析:
+Stratified analysis accounting for between-task cluster effects:
 
-| 検定 | 統計量 | p値 | 判定 |
+| Test | Statistic | p-value | Judgment |
 |------|--------|-----|------|
 | **CMH** (task-stratified) | chi2 = 15.34 | **p = 0.000090** | *** (p<0.001) |
 
-タスクで層別化しても有意性は維持される。
+Significance is maintained even when stratifying by task.
 
 ### 4.3 Per-Task Fisher's Exact Test
 
-| Task | Validate | Baseline | p-value | 判定 |
+| Task | Validate | Baseline | p-value | Judgment |
 |------|----------|----------|---------|------|
 | task-02 | 5/5 | 0/5 | 0.0040 | ** |
 | task-09 | 5/5 | 2/5 | 0.0833 | n.s. |
 | task-10 | 4/5 | 1/5 | 0.1032 | n.s. |
 
-task-09, task-10 は n=5 のため個別での検出力が不足。Holm 補正を適用すると task-02 のみ有意 (0.0040 × 3 = 0.012 < 0.05)。
+task-09 and task-10 have insufficient individual power at n=5. Applying Holm correction, only task-02 remains significant (0.0040 × 3 = 0.012 < 0.05).
 
 ### 4.4 Robustness Checks
 
-| 検定 | 統計量 | p値 | 備考 |
+| Test | Statistic | p-value | Note |
 |------|--------|-----|------|
-| Welch's t-test | t = 5.82 | p = 0.000003 | 二値データへの適用は参考値 |
-| Chi-squared | chi2 = 13.57 | p = 0.000229 | 期待度数 < 5 のセルあり、参考値 |
+| Welch's t-test | t = 5.82 | p = 0.000003 | Reference value only; application to binary data is non-standard |
+| Chi-squared | chi2 = 13.57 | p = 0.000229 | Cells with expected count < 5 exist; reference value only |
 
-これらは同一データに対する検定であり、「独立した検証」ではなく頑健性チェックである。
+These are tests on the same data and serve as robustness checks, not "independent validations".
 
 ### 4.5 Effect Sizes
 
-| 指標 | 値 | 解釈 | 備考 |
+| Metric | Value | Interpretation | Note |
 |------|-----|------|------|
-| **Cohen's h** | **1.69** | Large (基準: 0.2/0.5/0.8) | 二値データの標準的な効果量 |
-| **Odds Ratio** | **56.0** | — | Haldane 補正後 47.7 [5.1, 611.7] |
+| **Cohen's h** | **1.69** | Large (thresholds: 0.2/0.5/0.8) | Standard effect size for binary data |
+| **Odds Ratio** | **56.0** | — | After Haldane correction: 47.7 [5.1, 611.7] |
 | **Risk Difference** | **73.3%pt** | — | — |
-| Hedges' g | 2.07 | 参考値 | 二値データへの適用は非標準 |
+| Hedges' g | 2.07 | Reference value | Application to binary data is non-standard |
 
 ### 4.6 Confidence Interval (Newcombe method)
 
-| 指標 | 値 |
+| Metric | Value |
 |------|-----|
-| **Risk Difference の 95% CI** | **39.1%pt ~ 87.4%pt** |
+| **95% CI for Risk Difference** | **39.1%pt ~ 87.4%pt** |
 
-Newcombe 法は小標本・極端な比率での正確性が高い（Wald 法の [49.5%, 97.2%] より保守的）。
+The Newcombe method is more accurate for small samples and extreme proportions (more conservative than the Wald method's [49.5%, 97.2%]).
 
 ### 4.7 Cost Analysis
 
-| 指標 | Validate (Breezing) | Baseline (Vanilla) | 差分 |
+| Metric | Validate (Breezing) | Baseline (Vanilla) | Delta |
 |------|---------------------|-------------------|------|
 | Mean duration | 141.0s (SD 31.6) | 134.5s (SD 30.9) | +6.5s |
 | Mean turns | 8.1 (SD 3.5) | 5.7 (SD 4.3) | +2.4 |
 | Mean tool calls | 12.7 (SD 2.8) | 8.5 (SD 5.6) | +4.2 |
 | Mean shell cmds | 2.3 (SD 1.4) | 1.2 (SD 2.7) | +1.1 |
 
-Validate 条件はターン数・ツール呼び出し数が多い。これは validate 実行と修正サイクルの反映と考えられる。wall-clock time の差は比較的小さい (+4.8%) が、トークン消費量は本実験では取得できていない。
+The Validate condition has more turns and tool calls, which is considered a reflection of the validate execution and fix cycle. The difference in wall-clock time is relatively small (+4.8%), but token consumption was not captured in this experiment.
 
 ---
 
@@ -207,35 +207,35 @@ Validate 条件はターン数・ツール呼び出し数が多い。これは v
 
 ### 5.1 Internal Validity
 
-- **適応的設計**: Calibration (Phase 1) の結果に基づいて本番実行 (Phase 3) を決定しており、optional stopping に類するバイアスの可能性がある。Phase 3 のデータのみで分析しているが、事前登録されたプロトコルではない。
-- **同時実行の独立性**: 15 runs を同時実行しており、APIスロットリングやDocker リソース競合による相関が生じうる。CMH による層別分析では有意性が維持されたが、完全な独立性は保証できない。
-- **タスク数の制約**: 実質 3 タスク (うち 2 タスクが同一バグパターン) であり、タスクレベルでの汎化は限定的。
+- **Adaptive design**: The main run (Phase 3) was decided based on the Calibration (Phase 1) results, which may introduce a bias similar to optional stopping. Analysis is based solely on Phase 3 data, but the protocol was not pre-registered.
+- **Independence of concurrent runs**: 15 runs were executed simultaneously, potentially causing correlations due to API throttling or Docker resource contention. Significance was maintained in CMH stratified analysis, but complete independence cannot be guaranteed.
+- **Limited task count**: Effectively 3 tasks (2 of which share the same bug pattern), limiting task-level generalizability.
 
 ### 5.2 External Validity
 
-- **モデルの限定**: GLM-4.5-air (haiku tier) の 1 モデルのみ。Anthropic haiku, sonnet や他のモデルでの再現は未検証。
-- **タスクの代表性**: 単純な CRUD タスク (TodoStore, CSV, BookStore) のみ。複雑なアーキテクチャ変更、UI、マルチファイル変更への汎化は不明。
-- **バグパターンの多様性**: ステイルコピーとバリデーション不足の 2 カテゴリのみ。ロジックバグ、セキュリティバグ、パフォーマンスバグ、型エラー等への汎化は未検証。
-- **タスク設計のバイアス**: 「隠しバグ」パターンは validate.ts で検出可能なバグを意図的に埋め込んでおり、バリデーション指示に有利な設計である。バグのないタスクや、validate では検出困難なバグでの効果は不明。
+- **Single model**: Only one model, GLM-4.5-air (haiku tier). Reproduction with Anthropic haiku, sonnet, or other models has not been verified.
+- **Task representativeness**: Only simple CRUD tasks (TodoStore, CSV, BookStore). Generalizability to complex architectural changes, UI, or multi-file modifications is unknown.
+- **Limited bug pattern diversity**: Only 2 categories: stale copy and insufficient validation. Generalizability to logic bugs, security bugs, performance bugs, type errors, etc. is unverified.
+- **Task design bias**: The "hidden bug" pattern intentionally embeds bugs detectable by validate.ts, which is a design favorable to the validation instruction. The effect on bug-free tasks or tasks with bugs difficult to detect via validate is unknown.
 
 ### 5.3 Construct Validity
 
-- **操作的定義の狭さ**: 本実験の「Breezing」は `npm run validate` + 修正指示の 2 行のみ。実際の Breezing v2 フルパイプライン (Agent Teams, code-reviewer, retake loop) の効果は測定していない。結果は「明示的バリデーション指示の効果」として解釈すべきであり、「Breezing v2 の効果」とは区別する必要がある。
-- **成功の定義**: EVAL.ts による二値判定 (pass/fail) のみ。部分的な成功（新機能は実装できたがバグ修正は未完了）は fail として扱われる。
+- **Narrow operational definition**: "Breezing" in this experiment is only the 2 lines of `npm run validate` + fix instruction. The effect of the actual full Breezing v2 pipeline (Agent Teams, code-reviewer, retake loop) was not measured. Results should be interpreted as "the effect of explicit validation instructions" and distinguished from "the effect of Breezing v2".
+- **Definition of success**: Binary judgment (pass/fail) by EVAL.ts only. Partial success (new feature implemented but bug fix incomplete) is treated as fail.
 
 ---
 
 ## 6. Conclusion
 
-本探索的研究の範囲内で、以下が観測された:
+Within the scope of this exploratory study, the following was observed:
 
-1. **明示的バリデーション指示は、本タスクセットにおいて GLM-4.5-air のタスク成功率を改善した** (14/15 vs 3/15, Fisher's exact p < 0.001)。
+1. **Explicit validation instructions improved GLM-4.5-air's task success rate on this task set** (14/15 vs 3/15, Fisher's exact p < 0.001).
 
-2. **効果量は大きい** (Cohen's h = 1.69, Risk Difference = 73.3%pt [39.1, 87.4])。タスク層別分析 (CMH) でも有意性は維持される。
+2. **Effect size is large** (Cohen's h = 1.69, Risk Difference = 73.3%pt [39.1, 87.4]). Significance is maintained in task-stratified analysis (CMH).
 
-3. **追加コスト**: wall-clock time +4.8%、ターン数 +42%、ツール呼び出し +49%。
+3. **Additional cost**: wall-clock time +4.8%, turns +42%, tool calls +49%.
 
-4. **汎化の限界**: 本結果は 3 タスク (2 バグカテゴリ)、1 モデル、バリデーションに有利なタスク設計に基づく探索的知見であり、異なるタスク・モデル・バグパターンでの確認的研究が必要である。
+4. **Generalizability limitations**: These results are exploratory findings based on 3 tasks (2 bug categories), 1 model, and a task design favorable to validation. Confirmatory studies with different tasks, models, and bug patterns are required.
 
 ---
 
@@ -243,7 +243,7 @@ Validate 条件はターン数・ツール呼び出し数が多い。これは v
 
 ### 7.1 File Locations
 
-| ファイル | パス |
+| File | Path |
 |---------|------|
 | Validate results | `results/glm-breezing/2026-02-07T05-04-18.873Z/` |
 | Baseline results | `results/glm-vanilla/2026-02-07T05-10-22.726Z/` |
@@ -253,18 +253,18 @@ Validate 条件はターン数・ツール呼び出し数が多い。これは v
 
 ### 7.2 Calibration Results (Phase 1)
 
-| ファイル | パス |
+| File | Path |
 |---------|------|
 | Validate calibration | `results/glm-breezing/` (first timestamp) |
 | Baseline calibration | `results/glm-vanilla/` (first timestamp) |
 
 ### 7.3 Reproducibility
 
-再現に必要な node_modules パッチ:
-1. `shared.js`: `AI_GATEWAY.baseUrl` を `https://api.z.ai/api/anthropic` に変更
-2. `claude-code.js`: `ANTHROPIC_DEFAULT_*_MODEL` env vars を Docker コンテナに pass-through
+Required node_modules patches for reproduction:
+1. `shared.js`: Change `AI_GATEWAY.baseUrl` to `https://api.z.ai/api/anthropic`
+2. `claude-code.js`: Pass-through `ANTHROPIC_DEFAULT_*_MODEL` env vars to the Docker container
 
-`.env` に必要な変数:
+Required `.env` variables:
 ```
 AI_GATEWAY_API_KEY=<GLM_API_KEY>
 ANTHROPIC_DEFAULT_HAIKU_MODEL=glm-4.5-air
@@ -288,62 +288,62 @@ ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.7
 
 ### 8.1 Motivation
 
-探索的研究 (Sections 1-6) で観測された大きな効果 (Cohen's h = 1.69, +73.3%pt) を、以下の弱点を解消した独立タスクセットで確認する:
+Confirm the large effect observed in the exploratory study (Sections 1-6) (Cohen's h = 1.69, +73.3%pt) using an independent task set that addresses the following weaknesses:
 
-| 探索的研究の弱点 | 確認的研究での対処 |
+| Weakness of exploratory study | Response in confirmatory study |
 |-----------------|-------------------|
-| タスク数 3 | タスク数 10 |
-| バグカテゴリ 2 種 (うち重複あり) | バグカテゴリ 8 種 (全て独立) |
-| ドメイン偏り (CRUD のみ) | 8 ドメイン (EventEmitter, Queue, Parser, Cache, Validator, Config, Template, Invoice) |
-| コントロールなし | コントロール 2 タスク (バグなし、新規実装のみ) |
-| BUG コメントあり | BUG コメント全除去 |
-| 天井/床効果の検証なし | キャリブレーション実施 + 難易度調整 |
+| 3 tasks | 10 tasks |
+| 2 bug categories (with overlap) | 8 bug categories (all independent) |
+| Domain bias (CRUD only) | 8 domains (EventEmitter, Queue, Parser, Cache, Validator, Config, Template, Invoice) |
+| No controls | 2 control tasks (no bugs, new implementation only) |
+| BUG comments present | All BUG comments removed |
+| No ceiling/floor effect verification | Calibration conducted + difficulty adjustment |
 
 ### 8.2 Pre-registered Analysis Plan
 
-確認的研究の分析計画は実験実施前に策定:
+The analysis plan for the confirmatory study was established before conducting the experiment:
 
 1. **Primary**: Fisher's exact test (overall, one-sided)
 2. **Stratified**: Cochran-Mantel-Haenszel test (controlling for task)
 3. **Effect size**: Cohen's h + Newcombe 95% CI
 4. **Per-task**: Fisher's exact with Holm-Bonferroni correction (10 comparisons)
-5. **Subgroup**: Bug tasks (8) vs Control tasks (2) の分離分析
+5. **Subgroup**: Separate analysis of Bug tasks (8) vs Control tasks (2)
 
 ### 8.3 Task Design
 
-「新機能 + 隠しバグ」パターンを踏襲。各タスクは独立したバグカテゴリと異なるドメインを持つ。
+The "new feature + hidden bug" pattern is followed. Each task has an independent bug category and a different domain.
 
-| Task | ドメイン | 新機能 (PROMPT) | 隠しバグ | バグカテゴリ | タイプ |
+| Task | Domain | New Feature (PROMPT) | Hidden Bug | Bug Category | Type |
 |------|----------|----------------|---------|-------------|--------|
-| task-11 | EventEmitter | `once()` | `off()` の splice idx+1 | Off-by-one | Bug |
-| task-12 | PriorityQueue | `peek()` | `!priority` で 0 が falsy | Null/falsy | Bug |
-| task-13 | HTTP Parser | `parseSetCookie()` | `split(':')` でヘッダー値切り詰め | String truncation | Bug |
-| task-14 | TTL Cache | `getOrSet()` | `size()` が期限切れエントリを含む | Stale count | Bug |
+| task-11 | EventEmitter | `once()` | `off()` splice idx+1 | Off-by-one | Bug |
+| task-12 | PriorityQueue | `peek()` | `!priority` makes 0 falsy | Null/falsy | Bug |
+| task-13 | HTTP Parser | `parseSetCookie()` | Header value truncation via `split(':')` | String truncation | Bug |
+| task-14 | TTL Cache | `getOrSet()` | `size()` includes expired entries | Stale count | Bug |
 | task-15 | Form Validator | `validateEmail/Url()` | `isValid: allErrors.length > 0` | Logic inversion | Bug |
-| task-16 | Config Merger | `mergeWithStrategy()` | `deepMerge` がオブジェクトを直接変異 | Mutation side-effect | Bug |
-| task-17 | Template Engine | `registerHelper()` | `render` が HTML エスケープしない | XSS/Encoding | Bug |
-| task-18 | Invoice Calc | `applyDiscount()` | 浮動小数点比較 `===` | Float precision | Bug |
-| task-19 | Stack | 全メソッド実装 | なし | — | Control |
-| task-20 | Linked List | 全メソッド実装 | なし | — | Control |
+| task-16 | Config Merger | `mergeWithStrategy()` | `deepMerge` mutates object directly | Mutation side-effect | Bug |
+| task-17 | Template Engine | `registerHelper()` | `render` does not HTML-escape | XSS/Encoding | Bug |
+| task-18 | Invoice Calc | `applyDiscount()` | Floating-point comparison with `===` | Float precision | Bug |
+| task-19 | Stack | Implement all methods | None | — | Control |
+| task-20 | Linked List | Implement all methods | None | — | Control |
 
 ### 8.4 Calibration & Difficulty Adjustment
 
-確認的研究の前にキャリブレーション (2 runs x 10 tasks) を実施:
+Calibration was conducted (2 runs x 10 tasks) before the confirmatory study:
 
-| Task | Calibration (2 runs) | 調整 |
+| Task | Calibration (2 runs) | Adjustment |
 |------|---------------------|------|
-| task-11 | 1/2 (50%) | 調整不要 |
-| task-12 | 0/2 (0%) | 調整不要 (設計通り) |
-| task-13 | **2/2 (100%)** | **バグ変更**: `==` → `split(':')` (より影響の大きいバグに) |
-| task-14 | **2/2 (100%)** | `size()` テスト追加、BUG コメント除去。再キャリブレーション 3/3 → 受容 (天井効果タスク) |
-| task-15 | 1/2 (50%) | 調整不要 |
-| task-16 | 0/2 (0%) | 調整不要 (設計通り) |
-| task-17 | 1/2 (50%) | 調整不要 |
-| task-18 | 1/2 (50%) | 調整不要 |
-| task-19 | 2/2 (100%) | Control — 調整不要 |
-| task-20 | 1/2 (50%) | 調整不要 |
+| task-11 | 1/2 (50%) | No adjustment needed |
+| task-12 | 0/2 (0%) | No adjustment needed (as designed) |
+| task-13 | **2/2 (100%)** | **Bug changed**: `==` → `split(':')` (switched to a higher-impact bug) |
+| task-14 | **2/2 (100%)** | Added `size()` test, removed BUG comment. Re-calibration 3/3 → accepted (ceiling-effect task) |
+| task-15 | 1/2 (50%) | No adjustment needed |
+| task-16 | 0/2 (0%) | No adjustment needed (as designed) |
+| task-17 | 1/2 (50%) | No adjustment needed |
+| task-18 | 1/2 (50%) | No adjustment needed |
+| task-19 | 2/2 (100%) | Control — no adjustment needed |
+| task-20 | 1/2 (50%) | No adjustment needed |
 
-追加調整: 全 8 バグタスクのソースコードから `// BUG:` コメントを除去（エージェントへのヒント排除）。
+Additional adjustment: `// BUG:` comments were removed from source code of all 8 bug tasks (to eliminate hints to the agent).
 
 ### 8.5 Results
 
@@ -361,11 +361,11 @@ ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.7
 | task-18 Invoice Calc | Float precision | 5/5 (100%) | 4/5 (80%) | -20%pt | 1.0000 | -0.93 |
 | task-19 Stack | Control | 3/5 (60%) | 5/5 (100%) | +40%pt | 0.2222 | +1.37 |
 | task-20 Linked List | Control | 2/5 (40%) | 5/5 (100%) | +60%pt | 0.0833 | +1.77 |
-| **合計** | | **20/50 (40.0%)** | **42/50 (84.0%)** | **+44.0%pt** | | |
+| **Total** | | **20/50 (40.0%)** | **42/50 (84.0%)** | **+44.0%pt** | | |
 
 #### 8.5.2 Overall
 
-| 指標 | Validate | Baseline | Delta |
+| Metric | Validate | Baseline | Delta |
 |------|----------|----------|-------|
 | Pass rate | **42/50 (84.0%)** | **20/50 (40.0%)** | **+44.0%pt** |
 | Bug tasks only | 32/40 (80.0%) | 15/40 (37.5%) | +42.5%pt |
@@ -375,30 +375,30 @@ ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.7
 
 #### 8.6.1 Primary: Fisher's Exact Test
 
-| 検定 | Odds Ratio | p値 | 判定 |
+| Test | Odds Ratio | p-value | Judgment |
 |------|-----------|-----|------|
 | **Fisher's exact** (H1: Validate > Baseline) | 7.875 | **p = 0.000005** | *** (p<0.001) |
 
 #### 8.6.2 Stratified: Cochran-Mantel-Haenszel Test
 
-| 検定 | 統計量 | p値 | 判定 |
+| Test | Statistic | p-value | Judgment |
 |------|--------|-----|------|
 | **CMH** (task-stratified) | chi2 = 20.89 | **p = 0.000005** | *** (p<0.001) |
 
-タスクで層別化しても有意性は維持される。タスク間の異質性を制御しても効果は頑健。
+Significance is maintained even when stratifying by task. The effect is robust even when controlling for between-task heterogeneity.
 
 #### 8.6.3 Effect Sizes
 
-| 指標 | 値 | 解釈 |
+| Metric | Value | Interpretation |
 |------|-----|------|
-| **Cohen's h** (overall) | **0.95** | Large (基準: 0.2/0.5/0.8) |
+| **Cohen's h** (overall) | **0.95** | Large (thresholds: 0.2/0.5/0.8) |
 | **Hedges' g** (overall) | **1.00** | Large |
-| **Newcombe 95% CI** | **[+25.4%pt, +58.6%pt]** | 下限が +25%pt を超える |
+| **Newcombe 95% CI** | **[+25.4%pt, +58.6%pt]** | Lower bound exceeds +25%pt |
 | Risk Difference | +44.0%pt | — |
 
 #### 8.6.4 Per-Task with Holm-Bonferroni Correction
 
-| Task | Raw p | Adjusted p | 判定 |
+| Task | Raw p | Adjusted p | Judgment |
 |------|-------|-----------|------|
 | task-12 PriorityQueue | 0.0040 | **0.0397** | * |
 | task-13 HTTP Parser | 0.0238 | 0.2143 | n.s. |
@@ -411,76 +411,76 @@ ANTHROPIC_DEFAULT_OPUS_MODEL=glm-4.7
 | task-14 TTL Cache | 1.0000 | 1.0000 | n.s. |
 | task-18 Invoice Calc | 1.0000 | 1.0000 | n.s. |
 
-n=5 per task のため個別タスクでの検出力は限定的。task-12 のみ Holm 補正後も有意。
+Individual task power is limited at n=5 per task. Only task-12 remains significant after Holm correction.
 
 #### 8.6.5 Bug Tasks vs Control Tasks
 
-| サブグループ | Validate | Baseline | Delta | Cohen's h | Fisher p |
+| Subgroup | Validate | Baseline | Delta | Cohen's h | Fisher p |
 |-------------|----------|----------|-------|-----------|----------|
 | Bug tasks (8) | 32/40 (80.0%) | 15/40 (37.5%) | +42.5%pt | +0.90 | p = 0.000112 *** |
 | Control tasks (2) | 10/10 (100.0%) | 5/10 (50.0%) | +50.0%pt | +1.57 | p = 0.016254 * |
 
-コントロールタスクでも有意な改善が見られた。これは validate が新規実装の品質向上にも寄与することを示唆する。
+A significant improvement was also observed for control tasks. This suggests that validate contributes to improving the quality of new implementations as well.
 
 ### 8.7 Cost Analysis
 
-| 指標 | Validate | Baseline | Delta |
+| Metric | Validate | Baseline | Delta |
 |------|----------|----------|-------|
 | Mean duration | 228.6s (SD 41.1) | 170.6s (SD 56.8) | +58.0s (+34.0%) |
 | Mean turns | 7.7 | 6.1 | +1.6 |
 | Mean tool calls | 12.3 | 8.0 | +4.3 |
 | Mean shell calls | 2.4 | 1.2 | +1.2 |
 
-確認的研究では Validate 条件の duration 増加が探索的研究 (+4.8%) より大きい (+34.0%)。タスクの複雑性が高いため、validate → fix のサイクルにより多くの時間を要した可能性がある。
+In the confirmatory study, the duration increase for the Validate condition (+34.0%) is larger than in the exploratory study (+4.8%). The higher task complexity may have required more time for the validate → fix cycle.
 
 ### 8.8 Behavioral Observations
 
-1. **Baseline の自発的テスト**: Baseline で pass した 20 runs のうち、多くは shell calls > 0 であり自発的にテストを試みていた。特に task-14 (5/5 pass), task-18 (5/5 pass) は Baseline でも高い成功率を示した — これらのバグは比較的直感的に修正可能であった。
+1. **Spontaneous testing in Baseline**: Many of the 20 runs that passed under the Baseline condition had shell calls > 0, indicating the agent voluntarily attempted tests. In particular, task-14 (5/5 pass) and task-18 (5/5 pass) showed high success rates even under Baseline — these bugs were relatively intuitive to fix.
 
-2. **天井効果タスク**: task-14 (TTL Cache) と task-18 (Invoice Calc) は両条件で高い成功率 (100%, 80-100%) を示し、Validate 指示の付加価値が小さかった。`size()` の stale count バグと浮動小数点精度は、コードを注意深く書くだけで回避可能なバグカテゴリである可能性がある。
+2. **Ceiling-effect tasks**: task-14 (TTL Cache) and task-18 (Invoice Calc) showed high success rates (100%, 80-100%) in both conditions, and the added value of the Validate instruction was small. The stale count bug in `size()` and floating-point precision may be bug categories that can be avoided simply by writing code carefully.
 
-3. **Validate が特に効果的なバグ**: task-12 (null/falsy, +100%pt), task-13 (string truncation, +80%pt), task-15 (logic inversion, +60%pt), task-16 (mutation, +60%pt) では大きな効果が見られた。これらはコードを読むだけでは発見困難で、実行時テストで初めて顕在化するバグカテゴリである。
+3. **Bugs where Validate is particularly effective**: Large effects were seen in task-12 (null/falsy, +100%pt), task-13 (string truncation, +80%pt), task-15 (logic inversion, +60%pt), and task-16 (mutation, +60%pt). These are bug categories that are difficult to find by reading code alone and only become apparent through runtime testing.
 
-4. **コントロールタスクの改善**: コントロール (task-19, task-20) でも +40%pt, +60%pt の改善。validate.ts によるスモークテストが、新規実装の正確性を高めることを示唆する。
+4. **Improvement in control tasks**: Improvements of +40%pt and +60%pt were also seen in control tasks (task-19, task-20). This suggests that smoke testing via validate.ts improves the correctness of new implementations.
 
 ### 8.9 Comparison: Exploratory vs Confirmatory
 
-| 指標 | 探索的 | 確認的 | 備考 |
+| Metric | Exploratory | Confirmatory | Note |
 |------|--------|--------|------|
-| タスク数 | 3 | 10 | 3.3x |
-| バグカテゴリ | 2 (重複あり) | 8 (全て独立) | 4x |
+| Task count | 3 | 10 | 3.3x |
+| Bug categories | 2 (with overlap) | 8 (all independent) | 4x |
 | Total runs | 30 | 100 | 3.3x |
-| Validate pass rate | 93.3% | 84.0% | 低下（タスク多様性増加のため） |
-| Baseline pass rate | 20.0% | 40.0% | 上昇（天井効果タスク 2 つ含む） |
-| Delta | +73.3%pt | +44.0%pt | 効果量は縮小したが方向は一致 |
-| Cohen's h | 1.69 | 0.95 | Large → Large (基準維持) |
-| Hedges' g | 2.07 | 1.00 | Large → Large (基準維持) |
-| Fisher p | 0.000058 | 0.000005 | 検出力増加により p 値は改善 |
-| CMH p | 0.000090 | 0.000005 | 同上 |
-| 95% CI (Newcombe) | [39.1, 87.4] | [25.4, 58.6] | CI 幅が縮小 (精度向上) |
+| Validate pass rate | 93.3% | 84.0% | Decreased (due to increased task diversity) |
+| Baseline pass rate | 20.0% | 40.0% | Increased (includes 2 ceiling-effect tasks) |
+| Delta | +73.3%pt | +44.0%pt | Effect size reduced but direction consistent |
+| Cohen's h | 1.69 | 0.95 | Large → Large (threshold maintained) |
+| Hedges' g | 2.07 | 1.00 | Large → Large (threshold maintained) |
+| Fisher p | 0.000058 | 0.000005 | p-value improved due to increased power |
+| CMH p | 0.000090 | 0.000005 | Same as above |
+| 95% CI (Newcombe) | [39.1, 87.4] | [25.4, 58.6] | CI narrowed (improved precision) |
 
-効果量の縮小は以下の要因で説明可能:
-- タスクの多様性増加 (2 → 8 バグカテゴリ)
-- 天井効果タスク 2 つ (task-14, task-18) の包含
-- BUG コメント除去によるバグ発見困難化
-- より難しいバグパターン (mutation, XSS, float precision)
+The reduction in effect size can be explained by:
+- Increased task diversity (2 → 8 bug categories)
+- Inclusion of 2 ceiling-effect tasks (task-14, task-18)
+- Increased difficulty of bug detection by removing BUG comments
+- More difficult bug patterns (mutation, XSS, float precision)
 
 ### 8.10 Threats to Validity (Confirmatory-specific)
 
 #### Internal Validity
-- **キャリブレーション駆動の調整**: task-13 のバグを変更、BUG コメントを除去した。これはデータドリブンな調整であり、事前登録されたプロトコルではない。ただし調整はキャリブレーションデータ (20 runs) に対してのみ行い、本番データ (100 runs) は未確認の状態で分析計画を確定した。
-- **天井効果**: task-14 (100%/100%) と task-18 (80%/100%) は条件間で差がなく、分析の検出力を低下させている。これらを除外した 8 タスク分析でも有意性は維持される (bug tasks only: p = 0.000112)。
+- **Calibration-driven adjustments**: The bug in task-13 was changed and BUG comments were removed. These are data-driven adjustments and not a pre-registered protocol. However, adjustments were made only based on calibration data (20 runs), and the analysis plan was finalized with the main data (100 runs) unexamined.
+- **Ceiling effects**: task-14 (100%/100%) and task-18 (80%/100%) show no difference between conditions, reducing analysis power. Significance is maintained even in the 8-task analysis excluding these tasks (bug tasks only: p = 0.000112).
 
 #### External Validity
-- **モデルの限定**: 探索的研究と同じ GLM-4.5-air のみ。他モデルでの再現は依然として未検証。
-- **タスク規模**: 単一ファイル、100-200 行のタスクのみ。大規模マルチファイル変更への汎化は不明。
+- **Single model**: Only GLM-4.5-air, same as the exploratory study. Reproduction with other models remains unverified.
+- **Task scale**: Only single-file, 100-200 line tasks. Generalizability to large-scale multi-file changes is unknown.
 
 #### Construct Validity
-- **探索的研究と同一**: 「Breezing」の操作的定義は `npm run validate` + 修正指示の 2 行のみ (ablation)。
+- **Same as exploratory study**: The operational definition of "Breezing" is only the 2 lines of `npm run validate` + fix instruction (ablation).
 
 ### 8.11 Raw Data
 
-#### Validate 条件 (50 runs)
+#### Validate (Breezing) condition
 
 | Task | Run | Status | Duration | Turns | Tools | Shell |
 |------|-----|--------|----------|-------|-------|-------|
@@ -535,7 +535,7 @@ n=5 per task のため個別タスクでの検出力は限定的。task-12 の�
 | task-20 | 4 | passed | 180.0s | 9 | 14 | 2 |
 | task-20 | 5 | passed | 220.9s | 6 | 9 | 2 |
 
-#### Baseline 条件 (50 runs)
+#### Baseline condition (50 runs)
 
 | Task | Run | Status | Duration | Turns | Tools | Shell |
 |------|-----|--------|----------|-------|-------|-------|
@@ -590,11 +590,11 @@ n=5 per task のため個別タスクでの検出力は限定的。task-12 の�
 | task-20 | 4 | passed | 195.8s | 11 | 15 | 5 |
 | task-20 | 5 | passed | 182.7s | 7 | 14 | 2 |
 
-**除外・リトライ**: なし（全 100 runs を分析に含めた）。Timeout (300s) に達した runs は failed として扱った。
+**Exclusions/Retries**: None (all 100 runs included in analysis). Runs that reached the timeout (300s) were treated as failed.
 
 ### 8.12 File Locations (Confirmatory)
 
-| ファイル | パス |
+| File | Path |
 |---------|------|
 | Baseline A results | `results/confirm-baseline-a/2026-02-07T07-39-55.799Z/` |
 | Baseline B results | `results/confirm-baseline-b/2026-02-07T07-44-01.810Z/` |
@@ -611,24 +611,24 @@ n=5 per task のため個別タスクでの検出力は限定的。task-12 の�
 
 ### 9.1 Summary of Evidence
 
-| 研究 | 条件差 | p値 (Fisher) | Cohen's h | 95% CI (Newcombe) |
+| Study | Condition Delta | p-value (Fisher) | Cohen's h | 95% CI (Newcombe) |
 |------|--------|-------------|-----------|-------------------|
-| 探索的 (3 tasks, 30 runs) | +73.3%pt | 0.000058 | 1.69 | [39.1, 87.4] |
-| 確認的 (10 tasks, 100 runs) | +44.0%pt | 0.000005 | 0.95 | [25.4, 58.6] |
+| Exploratory (3 tasks, 30 runs) | +73.3%pt | 0.000058 | 1.69 | [39.1, 87.4] |
+| Confirmatory (10 tasks, 100 runs) | +44.0%pt | 0.000005 | 0.95 | [25.4, 58.6] |
 
 ### 9.2 Conclusion
 
-1. **明示的バリデーション指示は、AI コーディングエージェントのタスク成功率を改善する**。この効果は探索的研究で発見され、独立した 10 タスクセットの確認的研究で再現された (Fisher p < 0.001, CMH p < 0.001)。
+1. **Explicit validation instructions improve the task success rate of AI coding agents**. This effect was discovered in the exploratory study and reproduced in a confirmatory study with an independent 10-task set (Fisher p < 0.001, CMH p < 0.001).
 
-2. **効果量は Large** (Cohen's h = 0.95)。タスクの多様性を大幅に増加させても効果量は Large 基準 (0.8) を維持した。Newcombe 95% CI の下限は +25.4%pt であり、実用的に意味のある最低改善幅を超えている。
+2. **Effect size is Large** (Cohen's h = 0.95). The effect size maintained the Large threshold (0.8) even when task diversity was substantially increased. The lower bound of the Newcombe 95% CI is +25.4%pt, exceeding the minimum practically meaningful improvement.
 
-3. **効果はバグの種類を問わない**。8 種の独立したバグカテゴリ (off-by-one, null/falsy, string truncation, stale count, logic inversion, mutation, XSS, float precision) で方向が一致。ただし実行時テストで顕在化しにくいバグ (mutation, XSS) は改善幅が小さい傾向がある。
+3. **The effect is consistent across bug types**. Direction is consistent across 8 independent bug categories (off-by-one, null/falsy, string truncation, stale count, logic inversion, mutation, XSS, float precision). However, bugs that are difficult to surface through runtime testing (mutation, XSS) tend to show smaller improvement.
 
-4. **コントロールタスク (バグなし) でも改善が見られた** (50% → 100%)。validate は既存バグの修正だけでなく、新規実装の品質向上にも寄与する。
+4. **Improvement was also observed for control tasks (no bugs)** (50% → 100%). Validate contributes not only to fixing existing bugs but also to improving the quality of new implementations.
 
-5. **コスト**: Validate 条件は duration +34%, tool calls +54% の追加コストを要する。パス率 +44%pt の改善に対して妥当なトレードオフと考えられる。
+5. **Cost**: The Validate condition requires additional cost of duration +34% and tool calls +54%. This is considered a reasonable trade-off for the +44%pt improvement in pass rate.
 
-6. **残る限界**: GLM-4.5-air 1 モデルのみ、単一ファイル 100-200 行のタスクのみ。他モデル・大規模タスクでの検証が次のステップである。
+6. **Remaining limitations**: Only 1 model (GLM-4.5-air), only single-file 100-200 line tasks. Verification with other models and large-scale tasks is the next step.
 
 ---
 

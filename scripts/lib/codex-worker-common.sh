@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 #
 # codex-worker-common.sh
-# Codex Worker スクリプト共通ライブラリ
+# Codex Worker script shared library
 #
 # Usage: source "$SCRIPT_DIR/lib/codex-worker-common.sh"
 #
 
-# 二重読み込み防止
+# Prevent double-loading
 if [[ -n "${_CODEX_WORKER_COMMON_LOADED:-}" ]]; then
     return 0
 fi
 _CODEX_WORKER_COMMON_LOADED=1
 
 # ============================================
-# 色定義
+# Color definitions
 # ============================================
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
@@ -22,7 +22,7 @@ readonly BLUE='\033[0;34m'
 readonly NC='\033[0m'
 
 # ============================================
-# ログ関数
+# Log functions
 # ============================================
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
@@ -32,15 +32,15 @@ log_gate() { echo -e "${BLUE}[GATE]${NC} $1"; }
 log_merge() { echo -e "${BLUE}[MERGE]${NC} $1"; }
 
 # ============================================
-# 時刻関数
+# Time functions
 # ============================================
 
-# ISO8601 UTC 現在時刻
+# ISO8601 UTC current time
 now_utc() {
     date -u +%Y-%m-%dT%H:%M:%SZ
 }
 
-# ISO8601 UTC をエポック秒に変換（macOS/Linux 互換）
+# Convert ISO8601 UTC to epoch seconds (macOS/Linux compatible)
 parse_utc_to_epoch() {
     local ts="$1"
     local ts_no_z="${ts%Z}"
@@ -55,21 +55,21 @@ parse_utc_to_epoch() {
         return 0
     fi
 
-    # フォールバック
+    # Fallback
     echo 0
 }
 
 # ============================================
-# ハッシュ計算（クロスプラットフォーム）
+# Hash calculation (cross-platform)
 # ============================================
 
-# SHA256 ハッシュ計算
+# SHA256 hash calculation
 # Usage:
-#   calculate_sha256 "input string" [chars]   # 引数から
-#   echo "input" | calculate_sha256 "" [chars] # stdin から
+#   calculate_sha256 "input string" [chars]   # from argument
+#   echo "input" | calculate_sha256 "" [chars] # from stdin
 calculate_sha256() {
     local input="${1:-}"
-    local chars="${2:-64}"  # デフォルト: 全64文字
+    local chars="${2:-64}"  # Default: all 64 characters
 
     # shasum (macOS / Linux with coreutils)
     if command -v shasum &>/dev/null; then
@@ -91,21 +91,21 @@ calculate_sha256() {
         return 0
     fi
 
-    log_error "SHA256 コマンドが見つかりません (shasum / sha256sum)"
+    log_error "SHA256 command not found (shasum / sha256sum)"
     return 1
 }
 
-# ファイルの SHA256 ハッシュ計算（BOM/CR 正規化付き）
+# File SHA256 hash calculation (with BOM/CR normalization)
 calculate_file_hash() {
     local file="$1"
-    local chars="${2:-8}"  # デフォルト: 先頭8文字
+    local chars="${2:-8}"  # Default: first 8 characters
 
     if [[ ! -f "$file" ]]; then
-        log_error "ファイルが存在しません: $file"
+        log_error "File does not exist: $file"
         return 1
     fi
 
-    # BOM 除去 + CR 除去 + SHA256（クロスプラットフォーム）
+    # Remove BOM + remove CR + SHA256 (cross-platform)
     local content
     content=$(sed '1s/^\xEF\xBB\xBF//' "$file" | tr -d '\r')
 
@@ -121,39 +121,39 @@ calculate_file_hash() {
         return 0
     fi
 
-    log_error "SHA256 コマンドが見つかりません"
+    log_error "SHA256 command not found"
     return 1
 }
 
 # ============================================
-# パス検証（Security 強化）
+# Path validation (security hardening)
 # ============================================
 
-# リポジトリルート取得
+# Get repository root
 get_repo_root() {
     git rev-parse --show-toplevel 2>/dev/null || {
-        log_error "Git リポジトリ外です"
+        log_error "Outside a Git repository"
         return 1
     }
 }
 
-# パスがリポジトリ内かを検証
-# Security: symlink攻撃を防止
-# Note: ファイルが存在しなくても、親ディレクトリが存在すれば検証可能
-# Note: worktree など repo 外パスは validate_worktree_path() を使用
+# Validate that a path is inside the repository
+# Security: prevents symlink attacks
+# Note: validation is possible even if the file does not exist, as long as the parent directory does
+# Note: for paths outside the repo such as worktrees, use validate_worktree_path()
 validate_repo_path() {
     local path="$1"
     local repo_root
 
     repo_root=$(get_repo_root) || return 1
 
-    # 空パスチェック
+    # Empty path check
     if [[ -z "$path" ]]; then
-        log_error "パスが空です"
+        log_error "Path is empty"
         return 1
     fi
 
-    # パスを実パスに解決
+    # Resolve path to real path
     local real_path
     local target_path
 
@@ -163,75 +163,75 @@ validate_repo_path() {
         target_path="$repo_root/$path"
     fi
 
-    # ファイル/ディレクトリが存在する場合は直接解決
+    # Resolve directly when file/directory exists
     if [[ -e "$target_path" ]]; then
         real_path=$(realpath "$target_path" 2>/dev/null) || {
-            log_error "パスを解決できません: $path"
+            log_error "Cannot resolve path: $path"
             return 1
         }
     else
-        # 存在しない場合は親ディレクトリを解決して basename を追加
+        # Resolve parent directory and append basename when path does not exist
         local parent_dir
         local base_name
         parent_dir=$(dirname "$target_path")
         base_name=$(basename "$target_path")
 
-        # 親ディレクトリが存在するか確認
+        # Check whether parent directory exists
         if [[ -d "$parent_dir" ]]; then
             local real_parent
             real_parent=$(realpath "$parent_dir" 2>/dev/null) || {
-                log_error "親ディレクトリを解決できません: $parent_dir"
+                log_error "Cannot resolve parent directory: $parent_dir"
                 return 1
             }
             real_path="$real_parent/$base_name"
         else
-            # 親も存在しない場合、論理的なパス検証のみ
-            # 絶対パス変換して repo_root からの相対位置を確認
+            # Parent also absent: logical path validation only
+            # Convert to absolute path and verify position relative to repo_root
             real_path=$(cd "$repo_root" && realpath -m "$path" 2>/dev/null) || {
-                # realpath -m がない環境（一部 BSD）用フォールバック
+                # Fallback for environments without realpath -m (some BSD systems)
                 real_path="$repo_root/$path"
             }
         fi
     fi
 
-    # リポジトリルートも解決
+    # Resolve repository root as well
     local real_repo_root
     real_repo_root=$(realpath "$repo_root" 2>/dev/null) || real_repo_root="$repo_root"
 
-    # 実パスがリポジトリ内か確認（Security: /repo と /repo2 を区別するため / を含めて比較）
+    # Verify that the real path is inside the repository (Security: include / to distinguish /repo from /repo2)
     if [[ "$real_path" != "$real_repo_root" && "$real_path" != "$real_repo_root/"* ]]; then
-        log_error "リポジトリ外のパス: $path (resolved: $real_path)"
+        log_error "Path is outside the repository: $path (resolved: $real_path)"
         return 1
     fi
 
     return 0
 }
 
-# worktree パスの検証
-# Note: worktree は repo 外（../worktrees など）にあることが多いため、repo 内制限は行わない
-# 代わりに、git worktree list で同一リポジトリの worktree であることを検証
+# Validate a worktree path
+# Note: worktrees are often outside the repo (e.g. ../worktrees), so no in-repo restriction is applied.
+# Instead, verify via git worktree list that it belongs to the same repository.
 validate_worktree_path() {
     local worktree="$1"
 
-    # 空パスチェック
+    # Empty path check
     if [[ -z "$worktree" ]]; then
-        log_error "worktree パスが空です"
+        log_error "Worktree path is empty"
         return 1
     fi
 
-    # ディレクトリ存在確認
+    # Directory existence check
     if [[ ! -d "$worktree" ]]; then
-        log_error "worktree ディレクトリが存在しません: $worktree"
+        log_error "Worktree directory does not exist: $worktree"
         return 1
     fi
 
-    # Git リポジトリか確認
+    # Check whether it is a Git repository
     if ! (cd "$worktree" && git rev-parse --show-toplevel >/dev/null 2>&1); then
-        log_error "worktree が Git リポジトリではありません: $worktree"
+        log_error "Worktree is not a Git repository: $worktree"
         return 1
     fi
 
-    # 同一リポジトリの worktree か確認（厳密一致）
+    # Verify it is a worktree of the same repository (exact match)
     local worktree_abs
     worktree_abs=$(cd "$worktree" && pwd)
 
@@ -245,15 +245,15 @@ validate_worktree_path() {
     done < <(git worktree list --porcelain 2>/dev/null)
 
     if [[ "$found" != "true" ]]; then
-        log_error "指定されたパスはこのリポジトリの worktree ではありません: $worktree"
-        log_error "git worktree list で確認してください"
+        log_error "The specified path is not a worktree of this repository: $worktree"
+        log_error "Please verify with: git worktree list"
         return 1
     fi
 
     return 0
 }
 
-# パス正規化（./ 除去、\ → / 変換）
+# Path normalization (strip ./, convert \ to /)
 normalize_path() {
     local path="$1"
     path="${path#./}"
@@ -262,13 +262,13 @@ normalize_path() {
 }
 
 # ============================================
-# 設定ファイル管理
+# Configuration file management
 # ============================================
 
-# 設定ファイルパス
+# Config file path
 readonly CONFIG_FILE="${CONFIG_FILE:-.claude/state/codex-worker-config.json}"
 
-# デフォルト設定（Security: fail-closed defaults）
+# Default configuration (Security: fail-closed defaults)
 declare -A CONFIG_DEFAULTS=(
     [ttl_minutes]="30"
     [heartbeat_minutes]="10"
@@ -276,22 +276,22 @@ declare -A CONFIG_DEFAULTS=(
     [approval_policy]="never"
     [sandbox]="workspace-write"
     [base_branch]=""
-    [require_gate_pass_for_merge]="true"  # Security: default to true
+    [require_gate_pass_for_merge]="true"  # Security: defaults to true
     [gate_skip_allowlist]="[]"
 )
 
-# 設定値取得
+# Retrieve a configuration value
 get_config() {
     local key="$1"
     local default="${CONFIG_DEFAULTS[$key]:-}"
 
-    # 設定ファイルが存在しない場合はデフォルト
+    # Use default when config file does not exist
     if [[ ! -f "$CONFIG_FILE" ]]; then
         echo "$default"
         return 0
     fi
 
-    # jq で値を取得、なければデフォルト
+    # Get value via jq; fall back to default if absent
     local value
     value=$(jq -r --arg key "$key" '.[$key] // empty' "$CONFIG_FILE" 2>/dev/null)
 
@@ -302,7 +302,7 @@ get_config() {
     fi
 }
 
-# 設定ファイル全体を読み込み
+# Load the entire config file
 load_config() {
     if [[ -f "$CONFIG_FILE" ]]; then
         cat "$CONFIG_FILE"
@@ -311,23 +311,23 @@ load_config() {
     fi
 }
 
-# 設定ファイルの検証（スキーマベース）
+# Validate config file (schema-based)
 # Returns: 0 if valid, 1 if invalid
 validate_config() {
     local config_file="${1:-$CONFIG_FILE}"
 
     if [[ ! -f "$config_file" ]]; then
-        # 設定ファイルがない場合はデフォルトを使用するため valid
+        # No config file means defaults will be used, which is valid
         return 0
     fi
 
-    # JSON 構文チェック
+    # JSON syntax check
     if ! jq empty "$config_file" 2>/dev/null; then
-        log_error "設定ファイルが不正な JSON です: $config_file"
+        log_error "Config file contains invalid JSON: $config_file"
         return 1
     fi
 
-    # 必須フィールドの型チェック（基本的な検証）
+    # Type check for required fields (basic validation)
     local validation_errors=()
 
     # ttl_minutes: integer, 1-1440
@@ -366,7 +366,7 @@ validate_config() {
     fi
 
     if [[ ${#validation_errors[@]} -gt 0 ]]; then
-        log_error "設定ファイル検証エラー:"
+        log_error "Config file validation errors:"
         for err in "${validation_errors[@]}"; do
             log_error "  - $err"
         done
@@ -377,19 +377,19 @@ validate_config() {
 }
 
 # ============================================
-# 依存コマンドチェック
+# Dependency command check
 # ============================================
 
-# 必須コマンドの存在確認
-# 引数なしの場合はデフォルトの依存コマンドをチェック
+# Verify that required commands exist
+# When called with no arguments, checks the default dependencies
 check_dependencies() {
     local commands=("$@")
     local missing=()
 
-    # 引数なしの場合はデフォルトの依存コマンドを設定
+    # Set default dependencies when called with no arguments
     if [[ ${#commands[@]} -eq 0 ]]; then
         commands=("git" "jq")
-        # SHA256 コマンドは shasum か sha256sum のどちらかがあればOK
+        # Either shasum or sha256sum is sufficient for SHA256
         if ! command -v shasum &>/dev/null && ! command -v sha256sum &>/dev/null; then
             missing+=("shasum or sha256sum")
         fi
@@ -402,7 +402,7 @@ check_dependencies() {
     done
 
     if [[ ${#missing[@]} -gt 0 ]]; then
-        log_error "必須コマンドが見つかりません: ${missing[*]}"
+        log_error "Required commands not found: ${missing[*]}"
         return 1
     fi
 
@@ -410,15 +410,15 @@ check_dependencies() {
 }
 
 # ============================================
-# パッケージマネージャ検出
+# Package manager detection
 # ============================================
 
-# プロジェクトのパッケージマネージャを検出
+# Detect the project's package manager
 detect_package_manager() {
     local project_dir="${1:-.}"
     local pkg_json="$project_dir/package.json"
 
-    # 1. package.json の packageManager フィールド
+    # 1. packageManager field in package.json
     if [[ -f "$pkg_json" ]]; then
         local pm
         pm=$(jq -r '.packageManager // empty' "$pkg_json" 2>/dev/null | cut -d@ -f1)
@@ -428,7 +428,7 @@ detect_package_manager() {
         fi
     fi
 
-    # 2. ロックファイルで判定
+    # 2. Determine from lock file
     if [[ -f "$project_dir/pnpm-lock.yaml" ]]; then
         echo "pnpm"
     elif [[ -f "$project_dir/yarn.lock" ]]; then
@@ -438,12 +438,12 @@ detect_package_manager() {
     elif [[ -f "$project_dir/package-lock.json" ]]; then
         echo "npm"
     else
-        # デフォルト
+        # Default
         echo "npm"
     fi
 }
 
-# パッケージマネージャの run コマンド
+# Run command for the package manager
 get_pm_run_command() {
     local pm="${1:-npm}"
 
@@ -457,21 +457,21 @@ get_pm_run_command() {
 }
 
 # ============================================
-# ベースブランチ取得
+# Base branch retrieval
 # ============================================
 
-# デフォルトブランチ取得
+# Get default branch
 get_default_branch() {
     local config_branch
     config_branch=$(get_config "base_branch")
 
-    # 1. 設定ファイルで指定されている場合
+    # 1. Specified in the config file
     if [[ -n "$config_branch" ]]; then
         echo "$config_branch"
         return 0
     fi
 
-    # 2. Git の symbolic-ref から取得
+    # 2. Retrieve from Git symbolic-ref
     local remote_head
     remote_head=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@')
 
@@ -480,17 +480,17 @@ get_default_branch() {
         return 0
     fi
 
-    # 3. フォールバック
+    # 3. Fallback
     echo "main"
 }
 
 # ============================================
-# Worktree メタデータ管理
+# Worktree metadata management
 # ============================================
 
 readonly WORKTREE_META_FILE=".codex-worker-meta.json"
 
-# メタデータ保存
+# Save metadata
 save_worktree_meta() {
     local worktree="$1"
     local task_id="$2"
@@ -513,11 +513,11 @@ save_worktree_meta() {
             created_at: $created_at
         }' > "$meta_file"
 
-    # 権限設定（Security）
+    # Set permissions (Security)
     chmod 600 "$meta_file"
 }
 
-# メタデータ読み込み
+# Load metadata
 load_worktree_meta() {
     local worktree="$1"
     local meta_file="$worktree/$WORKTREE_META_FILE"
@@ -529,7 +529,7 @@ load_worktree_meta() {
     fi
 }
 
-# メタデータ更新
+# Update metadata
 update_worktree_meta() {
     local worktree="$1"
     local key="$2"
@@ -538,7 +538,7 @@ update_worktree_meta() {
     local meta_file="$worktree/$WORKTREE_META_FILE"
 
     if [[ ! -f "$meta_file" ]]; then
-        log_error "メタデータが存在しません: $meta_file"
+        log_error "Metadata file does not exist: $meta_file"
         return 1
     fi
 
@@ -551,39 +551,39 @@ update_worktree_meta() {
 }
 
 # ============================================
-# ゲート結果管理（Security: worktree 外で中央管理）
+# Gate result management (Security: centrally managed outside the worktree)
 # ============================================
 
 readonly GATE_RESULTS_DIR=".claude/state/gates"
 
-# ゲート結果保存（Worker 改ざん防止のため worktree 外に保存）
+# Save gate result (stored outside worktree to prevent Worker tampering)
 # Usage: save_gate_result "$worktree" "$status" "$details"
-# Note: CWD に依存せず、worktree から中央リポジトリを解決
+# Note: resolves central repository from worktree without depending on CWD
 save_gate_result() {
     local worktree="$1"
     local status="$2"
     local details="${3:-}"
 
-    # worktree から中央リポジトリのルートを解決（CWD 依存排除）
+    # Resolve central repository root from worktree (no CWD dependency)
     local repo_root
     repo_root=$(cd "$worktree" && git rev-parse --path-format=absolute --git-common-dir 2>/dev/null | sed 's|/.git$||') || {
-        # フォールバック: 現在の repo root を使用
+        # Fallback: use current repo root
         repo_root=$(get_repo_root) || return 1
     }
 
-    # worktree の HEAD コミットハッシュを取得
+    # Retrieve HEAD commit hash of the worktree
     local head_commit
     head_commit=$(cd "$worktree" && git rev-parse HEAD 2>/dev/null) || {
-        log_error "worktree の HEAD を取得できません: $worktree"
+        log_error "Cannot retrieve HEAD of worktree: $worktree"
         return 1
     }
 
-    # ゲート結果ディレクトリ作成
+    # Create gate result directory
     local gate_dir="$repo_root/$GATE_RESULTS_DIR"
     mkdir -p "$gate_dir"
     chmod 700 "$gate_dir"
 
-    # 結果ファイル（コミットハッシュで識別）
+    # Result file (identified by commit hash)
     local result_file="$gate_dir/${head_commit}.json"
 
     jq -n \
@@ -601,65 +601,65 @@ save_gate_result() {
         }' > "$result_file"
 
     chmod 600 "$result_file"
-    log_info "ゲート結果保存: $result_file (status=$status)"
+    log_info "Gate result saved: $result_file (status=$status)"
 }
 
-# ゲート結果検証（merge 時に使用）
+# Verify gate result (used at merge time)
 # Usage: verify_gate_result "$worktree"
 # Returns: 0 if passed, 1 if not passed or not found
-# Note: CWD に依存せず、worktree から中央リポジトリを解決
+# Note: resolves central repository from worktree without depending on CWD
 verify_gate_result() {
     local worktree="$1"
 
-    # worktree から中央リポジトリのルートを解決（CWD 依存排除）
+    # Resolve central repository root from worktree (no CWD dependency)
     local repo_root
     repo_root=$(cd "$worktree" && git rev-parse --path-format=absolute --git-common-dir 2>/dev/null | sed 's|/.git$||') || {
-        # フォールバック: 現在の repo root を使用
+        # Fallback: use current repo root
         repo_root=$(get_repo_root) || return 1
     }
 
-    # worktree の HEAD コミットハッシュを取得
+    # Retrieve HEAD commit hash of the worktree
     local head_commit
     head_commit=$(cd "$worktree" && git rev-parse HEAD 2>/dev/null) || {
-        log_error "worktree の HEAD を取得できません: $worktree"
+        log_error "Cannot retrieve HEAD of worktree: $worktree"
         return 1
     }
 
-    # ゲート結果ファイル
+    # Gate result file
     local result_file="$repo_root/$GATE_RESULTS_DIR/${head_commit}.json"
 
     if [[ ! -f "$result_file" ]]; then
-        log_error "ゲート結果が見つかりません: $result_file"
-        log_error "品質ゲートを実行してください: ./scripts/codex-worker-quality-gate.sh --worktree $worktree"
+        log_error "Gate result not found: $result_file"
+        log_error "Please run the quality gate: ./scripts/codex-worker-quality-gate.sh --worktree $worktree"
         return 1
     fi
 
-    # ステータス確認
+    # Check status
     local status
     status=$(jq -r '.status' "$result_file" 2>/dev/null)
 
     if [[ "$status" == "passed" ]]; then
-        log_info "ゲート結果検証OK: commit=$head_commit, status=$status"
+        log_info "Gate result verification OK: commit=$head_commit, status=$status"
         return 0
     else
-        log_error "ゲート未通過: commit=$head_commit, status=$status"
+        log_error "Gate not passed: commit=$head_commit, status=$status"
         return 1
     fi
 }
 
 # ============================================
-# ファイル権限管理（Security）
+# File permission management (Security)
 # ============================================
 
-# セキュアなファイル作成
+# Create a secure file
 create_secure_file() {
     local file="$1"
     local content="${2:-}"
 
-    # ディレクトリ作成
+    # Create directory
     mkdir -p "$(dirname "$file")"
 
-    # umask 077 で作成（本人のみ読み書き可能）
+    # Create with umask 077 (owner read/write only)
     (
         umask 077
         if [[ -n "$content" ]]; then
@@ -670,14 +670,14 @@ create_secure_file() {
     )
 }
 
-# 一時ファイル作成（trap で自動削除、既存 trap を保持）
+# Create a temp file (auto-deleted via trap, preserving existing traps)
 create_temp_file() {
     local prefix="${1:-codex-worker}"
     local tmp_file
 
     tmp_file=$(mktemp "/tmp/${prefix}.XXXXXX")
 
-    # 既存の EXIT trap を保持して追加
+    # Preserve existing EXIT trap and append
     local prev_trap
     prev_trap=$(trap -p EXIT 2>/dev/null | sed "s/trap -- '\\(.*\\)' EXIT/\\1/" || echo "")
 
@@ -692,10 +692,10 @@ create_temp_file() {
 }
 
 # ============================================
-# 初期化
+# Initialization
 # ============================================
 
-# スクリプトディレクトリ取得ヘルパー
+# Helper to get the script directory
 get_script_dir() {
     local source="${BASH_SOURCE[1]:-$0}"
     local dir

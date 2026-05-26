@@ -1,38 +1,38 @@
 #!/bin/bash
 # tdd-order-check.sh
-# TDD はデフォルトで有効。テスト先行を推奨する警告を出す（ブロックはしない）
+# TDD is enabled by default. Emits a warning recommending test-first order (does not block).
 #
-# 用途: PostToolUse で Write|Edit 後に実行
-# 動作:
-#   - Plans.md に cc:WIP タスクがある場合（TDD はデフォルト有効）
-#   - ただし [skip:tdd] マーカーがある WIP タスクはスキップ
-#   - 本体ファイル（*.ts, *.tsx, *.js, *.jsx）が編集された
-#   - 対応するテストファイル（*.test.*, *.spec.*）がまだ編集されていない
-#   → 警告メッセージを出力（ブロックはしない）
+# Purpose: Run after Write|Edit in PostToolUse
+# Behavior:
+#   - When Plans.md has a cc:WIP task (TDD is enabled by default)
+#   - But skip WIP tasks that have a [skip:tdd] marker
+#   - A source file (*.ts, *.tsx, *.js, *.jsx) was edited
+#   - The corresponding test file (*.test.*, *.spec.*) has not yet been edited
+#   -> Output a warning message (does not block)
 
 set -euo pipefail
 
-# 編集されたファイル情報を取得
+# Get edited file information
 TOOL_INPUT="${TOOL_INPUT:-}"
 FILE_PATH=""
 
-# TOOL_INPUT から file_path を抽出（macOS/Linux 両対応）
+# Extract file_path from TOOL_INPUT (supports both macOS and Linux)
 if [[ -n "$TOOL_INPUT" ]]; then
-    # jq が利用可能な場合は jq を使用（最も安全）
+    # Use jq when available (safest)
     if command -v jq &>/dev/null; then
         FILE_PATH=$(echo "$TOOL_INPUT" | jq -r '.file_path // empty' 2>/dev/null || true)
     else
-        # フォールバック: sed で抽出（POSIX 互換）
+        # Fallback: extract with sed (POSIX-compatible)
         FILE_PATH=$(echo "$TOOL_INPUT" | sed -n 's/.*"file_path"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' 2>/dev/null || true)
     fi
 fi
 
-# ファイルパスがなければ終了
+# Exit if file path is absent
 if [[ -z "$FILE_PATH" ]]; then
     exit 0
 fi
 
-# テストファイルかどうかをチェック
+# Check if the file is a test file
 is_test_file() {
     local file="$1"
     [[ "$file" =~ \.(test|spec)\.(ts|tsx|js|jsx)$ ]] || \
@@ -40,13 +40,13 @@ is_test_file() {
     [[ "$file" =~ /tests?/ ]]
 }
 
-# ソースファイルかどうかをチェック（テストファイルを除く）
+# Check if the file is a source file (excluding test files)
 is_source_file() {
     local file="$1"
     [[ "$file" =~ \.(ts|tsx|js|jsx)$ ]] && ! is_test_file "$file"
 }
 
-# アクティブな WIP タスクがあるかチェック
+# Check if there is an active WIP task
 has_active_wip_task() {
     if [[ -f "Plans.md" ]]; then
         grep -q 'cc:WIP' Plans.md 2>/dev/null
@@ -55,7 +55,7 @@ has_active_wip_task() {
     return 1
 }
 
-# WIP タスクに [skip:tdd] マーカーがあるかチェック
+# Check if the WIP task has a [skip:tdd] marker
 is_tdd_skipped() {
     if [[ -f "Plans.md" ]]; then
         grep -q '\[skip:tdd\].*cc:WIP\|cc:WIP.*\[skip:tdd\]' Plans.md 2>/dev/null
@@ -64,7 +64,7 @@ is_tdd_skipped() {
     return 1
 }
 
-# セッション中にテストファイルが編集されたかチェック（簡易版）
+# Check if a test file was edited during this session (simplified)
 test_edited_this_session() {
     # .claude/state/session-changes.json があればチェック
     local state_file=".claude/state/session-changes.json"
@@ -75,39 +75,39 @@ test_edited_this_session() {
     return 1
 }
 
-# メイン処理
+# Main
 main() {
-    # ソースファイルでなければスキップ
+    # Skip if not a source file
     if ! is_source_file "$FILE_PATH"; then
         exit 0
     fi
 
-    # テストファイルならスキップ
+    # Skip if it is a test file
     if is_test_file "$FILE_PATH"; then
         exit 0
     fi
 
-    # WIP タスクがなければスキップ
+    # Skip if there is no WIP task
     if ! has_active_wip_task; then
         exit 0
     fi
 
-    # [skip:tdd] マーカーがあればスキップ
+    # Skip if [skip:tdd] marker is present
     if is_tdd_skipped; then
         exit 0
     fi
 
-    # テストファイルが既に編集されていればスキップ
+    # Skip if a test file has already been edited
     if test_edited_this_session; then
         exit 0
     fi
 
-    # 警告を出力（ブロックはしない）
+    # Output warning (does not block)
     cat << 'EOF'
 {
   "decision": "approve",
   "reason": "TDD reminder",
-  "systemMessage": "💡 TDD はデフォルトで有効です。テストを先に書くことを推奨します。\n\n現在、本体ファイルを編集しましたが、対応するテストファイルがまだ編集されていません。\n\n推奨: テストファイル（*.test.ts, *.spec.ts）を先に作成してから、本体を実装してください。\n\nスキップする場合は Plans.md の該当タスクに [skip:tdd] マーカーを追加してください。\n\nこれは警告であり、ブロックはしません。"
+  "systemMessage": "💡 TDD is enabled by default. Writing tests first is recommended.\n\nA source file was edited but the corresponding test file has not been edited yet.\n\nRecommendation: create the test file (*.test.ts, *.spec.ts) before implementing the source.\n\nTo skip, add the [skip:tdd] marker to the relevant task in Plans.md.\n\nThis is a warning only and does not block execution."
 }
 EOF
 }

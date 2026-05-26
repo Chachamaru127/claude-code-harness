@@ -17,7 +17,7 @@ func TestNotificationHandler_EmptyInput(t *testing.T) {
 	if err := h.Handle(strings.NewReader(""), &buf); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// Notification は stdout に何も出さない
+	// Notification outputs nothing to stdout
 	if buf.Len() != 0 {
 		t.Errorf("expected empty output, got: %s", buf.String())
 	}
@@ -37,7 +37,7 @@ func TestNotificationHandler_LogsEvent(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// ログファイルを確認
+	// Verify the log file
 	logFile := filepath.Join(dir, "notification-events.jsonl")
 	data, err := os.ReadFile(logFile)
 	if err != nil {
@@ -66,7 +66,7 @@ func TestNotificationHandler_TypeFallback(t *testing.T) {
 	dir := t.TempDir()
 	h := &NotificationHandler{StateDir: dir}
 
-	// notification_type ではなく type フィールドを使用
+	// Using the type field instead of notification_type
 	input := `{"type": "idle_prompt", "session_id": "s1"}`
 	var buf bytes.Buffer
 	if err := h.Handle(strings.NewReader(input), &buf); err != nil {
@@ -90,7 +90,7 @@ func TestNotificationHandler_MatcherFallback(t *testing.T) {
 	dir := t.TempDir()
 	h := &NotificationHandler{StateDir: dir}
 
-	// matcher フィールドを使用
+	// Using the matcher field
 	input := `{"matcher": "auth_success", "session_id": "s2"}`
 	var buf bytes.Buffer
 	if err := h.Handle(strings.NewReader(input), &buf); err != nil {
@@ -119,7 +119,7 @@ func TestNotificationHandler_NoOutput(t *testing.T) {
 	if err := h.Handle(strings.NewReader(input), &buf); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// Notification フックは stdout に何も出さない
+	// Notification hook outputs nothing to stdout
 	if buf.Len() != 0 {
 		t.Errorf("expected no stdout output, got: %s", buf.String())
 	}
@@ -131,7 +131,7 @@ func TestNotificationHandler_LogRotation(t *testing.T) {
 
 	logFile := filepath.Join(dir, "notification-events.jsonl")
 
-	// 510 行のダミーログを作成（ローテーション閾値 500 行を超える）
+	// Create a dummy log of 510 lines (exceeds the rotation threshold of 500 lines)
 	var existing strings.Builder
 	for i := 0; i < 510; i++ {
 		existing.WriteString(`{"event":"notification","notification_type":"old","session_id":"x","agent_type":"","timestamp":"2026-01-01T00:00:00Z"}`)
@@ -152,7 +152,7 @@ func TestNotificationHandler_LogRotation(t *testing.T) {
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-	// ローテーション後は 401 行以下（400 + 新規 1）
+	// After rotation: 401 lines or fewer (400 + 1 new)
 	if len(lines) > 401 {
 		t.Errorf("expected rotation to ~401 lines, got %d", len(lines))
 	}

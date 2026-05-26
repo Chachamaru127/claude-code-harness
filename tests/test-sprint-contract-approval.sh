@@ -8,9 +8,9 @@ TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 cat > "${TMP_DIR}/Plans.md" <<'EOF'
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
-| 32.1.1 | contract を作る | runtime validation を contract に載せる | 32.0.1 | cc:TODO |
+| Task | Content | DoD | Depends | Status |
+|------|---------|-----|---------|--------|
+| 32.1.1 | create contract | add runtime validation to contract | 32.0.1 | cc:TODO |
 EOF
 
 CONTRACT_PATH="${TMP_DIR}/contract.json"
@@ -22,8 +22,8 @@ if "${PROJECT_ROOT}/scripts/ensure-sprint-contract-ready.sh" "$CONTRACT_PATH" >/
 fi
 
 "${PROJECT_ROOT}/scripts/enrich-sprint-contract.sh" "$CONTRACT_PATH" \
-  --check "DoD を reviewer 観点で再確認" \
-  --non-goal "UI polish は今回やらない" \
+  --check "Re-confirm DoD from reviewer perspective" \
+  --non-goal "UI polish is out of scope for this round" \
   --risk "needs-spike" \
   --note "reviewer checked runtime path" \
   --approve >/dev/null

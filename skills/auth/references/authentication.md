@@ -1,40 +1,40 @@
 ---
 name: auth
-description: "認証機能の実装（Clerk / Supabase Auth 等）。ログイン機能を追加したい場合に使用します。"
+description: "Authentication implementation (Clerk / Supabase Auth, etc.). Use when you want to add a login feature."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 ---
 
 # Auth Skill
 
-Clerk または Supabase Auth を使用した認証機能を実装するスキル。
+A skill for implementing authentication using Clerk or Supabase Auth.
 
 ---
 
-## トリガーフレーズ
+## Trigger Phrases
 
-- 「ログイン機能を付けて」
-- 「認証を追加して」
-- 「Clerkで認証を実装して」
-- 「Supabase Authを設定して」
-- 「Googleログインを追加して」
-
----
-
-## 機能
-
-- サインアップ/ログイン
-- ソーシャルログイン（Google, GitHub）
-- メール認証
-- パスワードリセット
-- ユーザープロフィール管理
+- "Add login functionality"
+- "Add authentication"
+- "Implement auth with Clerk"
+- "Set up Supabase Auth"
+- "Add Google login"
 
 ---
 
-## 実行フロー
+## Features
 
-1. プロジェクト構成を確認
-2. Clerk または Supabase Auth を選択
-3. 必要なパッケージをインストール
-4. 認証設定ファイルを生成
-5. ログイン/サインアップUIを作成
-6. ミドルウェア/保護ルートを設定
+- Sign up / log in
+- Social login (Google, GitHub)
+- Email verification
+- Password reset
+- User profile management
+
+---
+
+## Execution Flow
+
+1. Check project structure
+2. Choose Clerk or Supabase Auth
+3. Install required packages
+4. Generate auth configuration files
+5. Create login/sign-up UI
+6. Configure middleware / protected routes

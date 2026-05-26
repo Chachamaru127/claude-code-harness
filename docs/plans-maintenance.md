@@ -1,32 +1,33 @@
 # Plans Maintenance
 
-最終更新: 2026-03-06
+Last updated: 2026-03-06
 
-`Plans.md` は正本ですが、長期間そのまま伸ばし続けると「過去の完了表現」と「現在の repo 状態」がずれやすくなります。
-この文書は drift を減らすための最小運用ルールです。
+`Plans.md` is the source of truth, but if extended indefinitely without maintenance, "past completion
+expressions" and the "current repo state" tend to drift apart.
+This document contains minimal operational rules to reduce drift.
 
 ## Lightweight Rule
 
-1. 新しい大きな改善フェーズを始める前に、直近 1〜2 phase だけを active zone として扱う
-2. それより古い完了フェーズは、必要なら `docs/plans-history/` などの履歴置き場へ退避する
-3. 「削除」「移行完了」など current tree と衝突しやすい文言は、後続フェーズで状態が変わった時点で補正文を入れる
-4. README / docs / `.gitignore` / build scripts の扱いを変えたときは、同じ commit で `Plans.md` の表現も直す
+1. Before starting a major new improvement phase, treat only the most recent 1–2 phases as the active zone
+2. Older completed phases can optionally be moved to an archive location such as `docs/plans-history/`
+3. Wording that tends to conflict with the current tree — such as "deleted" or "migration complete" — should have a correction note added when the state changes in a subsequent phase
+4. When changing how README / docs / `.gitignore` / build scripts are handled, fix the wording in `Plans.md` in the same commit
 
 ## When to Archive
 
-次のどれかを満たしたら、古い完了フェーズのアーカイブを検討する。
+Consider archiving old completed phases if any of the following conditions are met:
 
-- `Plans.md` の主要作業対象が 3 phase 以上前まで見に行かないと分からない
-- 「削除済み」「統合済み」などの語が current repo と誤解を生む
-- sync-status のたびに過去履歴の読み込みコストが気になる
+- Understanding the current primary work in `Plans.md` requires going back 3 or more phases
+- Words like "deleted" or "consolidated" create misunderstandings about the current repo
+- The cost of reading historical phases on every sync-status run becomes noticeable
 
 ## Recommended Shape
 
-- `Plans.md`: 現在の active phase と、直近の完了 phase のみ
-- `docs/plans-history/`: 過去 phase の固定スナップショット
-- `docs/distribution-scope.md`: 残置物や配布境界の current truth
+- `Plans.md`: Current active phase and only the most recently completed phase
+- `docs/plans-history/`: Fixed snapshots of past phases
+- `docs/distribution-scope.md`: Current truth about retained items and distribution boundaries
 
 ## Phase 21 Decision
 
-- 今回は archive までは実施せず、まずは **誤解を生む完了表現の補正** を優先した
-- 次の大きな phase 追加前に、Phase 17 以前の完了履歴を `docs/plans-history/` へ退避するのが推奨
+- For this phase, archiving was not performed — instead, **correcting misleading completion expressions** was prioritized
+- Before the next major phase addition, it is recommended to move completed history from Phase 17 onward to `docs/plans-history/`

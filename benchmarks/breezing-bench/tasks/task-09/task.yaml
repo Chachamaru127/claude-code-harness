@@ -1,7 +1,7 @@
 id: "task-09"
-name: "データ変換 - CSV パーサー"
+name: "Data transformation - CSV parser"
 difficulty: "Hard"
-prompt: "types.ts のインターフェースに従って CSV パーサーを実装してください。ヘッダ行の処理、クォートされた値、エラーハンドリングを適切に実装してください。"
+prompt: "Implement a CSV parser following the interface in types.ts. Properly implement header row processing, quoted values, and error handling."
 hidden_test_count: 12
 setup_files:
   - src/types.ts

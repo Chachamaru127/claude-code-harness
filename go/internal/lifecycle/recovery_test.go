@@ -5,11 +5,11 @@ import (
 	"testing"
 )
 
-// errTest はテスト用の汎用エラー。
+// errTest is a generic error for tests.
 var errTest = errors.New("test failure")
 
-// TestSelfHealFirst3Attempts は自己修復が 3 回（attempts 0, 1, 2）まで
-// SelfHeal + Retry=true を返すことを検証する。
+// TestSelfHealFirst3Attempts verifies that self-healing returns
+// SelfHeal + Retry=true for 3 attempts (attempts 0, 1, 2).
 func TestSelfHealFirst3Attempts(t *testing.T) {
 	t.Parallel()
 
@@ -31,21 +31,21 @@ func TestSelfHealFirst3Attempts(t *testing.T) {
 		if action.Error == nil {
 			t.Errorf("attempt %d: Error is nil, want non-nil", i+1)
 		}
-		// 次の HandleFailure のために StateMachine を FAILED に戻す
+		// Reset StateMachine to FAILED for the next HandleFailure call
 		if i < 2 {
 			resetToFailed(sm)
 		}
 	}
 }
 
-// TestPeerHealAt4thAttempt は 4 回目（attempts=3）で PeerHeal に切り替わることを検証する。
+// TestPeerHealAt4thAttempt verifies that PeerHeal is selected on the 4th attempt (attempts=3).
 func TestPeerHealAt4thAttempt(t *testing.T) {
 	t.Parallel()
 
 	sm := newRecoveringStateMachine()
 	rm := NewRecoveryManager(sm)
 
-	// 1〜3 回目: SelfHeal を消費する
+	// Attempts 1-3: consume SelfHeal
 	for i := range 3 {
 		rm.HandleFailure(errTest)
 		if i < 2 {
@@ -53,7 +53,7 @@ func TestPeerHealAt4thAttempt(t *testing.T) {
 		}
 	}
 
-	// 4 回目: PeerHeal のはず
+	// 4th attempt: should be PeerHeal
 	resetToFailed(sm)
 	action := rm.HandleFailure(errTest)
 
@@ -69,15 +69,15 @@ func TestPeerHealAt4thAttempt(t *testing.T) {
 	}
 }
 
-// TestLeadEscalationAfterPeerHealFailure は PeerHeal 失敗後に
-// LeadEscalation になることを検証する（5 回目 = attempts=4）。
+// TestLeadEscalationAfterPeerHealFailure verifies that LeadEscalation
+// is selected after PeerHeal failure (5th attempt = attempts=4).
 func TestLeadEscalationAfterPeerHealFailure(t *testing.T) {
 	t.Parallel()
 
 	sm := newRecoveringStateMachine()
 	rm := NewRecoveryManager(sm)
 
-	// 1〜4 回目: SelfHeal × 3 + PeerHeal × 1 を消費する
+	// Attempts 1-4: consume SelfHeal × 3 + PeerHeal × 1
 	for i := range 4 {
 		rm.HandleFailure(errTest)
 		if i < 3 {
@@ -85,7 +85,7 @@ func TestLeadEscalationAfterPeerHealFailure(t *testing.T) {
 		}
 	}
 
-	// 5 回目: LeadEscalation のはず
+	// 5th attempt: should be LeadEscalation
 	resetToFailed(sm)
 	action := rm.HandleFailure(errTest)
 
@@ -101,14 +101,14 @@ func TestLeadEscalationAfterPeerHealFailure(t *testing.T) {
 	}
 }
 
-// TestAbortAtFinalStage は最終段階で Abort が返ることを検証する（6 回目以降）。
+// TestAbortAtFinalStage verifies that Abort is returned at the final stage (6th attempt and beyond).
 func TestAbortAtFinalStage(t *testing.T) {
 	t.Parallel()
 
 	sm := newRecoveringStateMachine()
 	rm := NewRecoveryManager(sm)
 
-	// 1〜5 回目を消費する
+	// Consume attempts 1-5
 	for i := range 5 {
 		rm.HandleFailure(errTest)
 		if i < 4 {
@@ -116,7 +116,7 @@ func TestAbortAtFinalStage(t *testing.T) {
 		}
 	}
 
-	// 6 回目: Abort のはず
+	// 6th attempt: should be Abort
 	resetToFailed(sm)
 	action := rm.HandleFailure(errTest)
 
@@ -132,12 +132,12 @@ func TestAbortAtFinalStage(t *testing.T) {
 	}
 }
 
-// TestStateMachineTransitionOnFailure は HandleFailure が
-// StateMachine を FAILED → RECOVERING → (必要なら ABORTED) へ遷移させることを検証する。
+// TestStateMachineTransitionOnFailure verifies that HandleFailure
+// transitions StateMachine from FAILED → RECOVERING → (ABORTED if needed).
 func TestStateMachineTransitionOnFailure(t *testing.T) {
 	t.Parallel()
 
-	t.Run("SelfHeal段階でRECOVERINGへ遷移", func(t *testing.T) {
+	t.Run("TransitionsToRECOVERINGAtSelfHealStage", func(t *testing.T) {
 		t.Parallel()
 
 		sm := newFailedStateMachine()
@@ -150,13 +150,13 @@ func TestStateMachineTransitionOnFailure(t *testing.T) {
 		}
 	})
 
-	t.Run("Abort段階でABORTEDへ遷移", func(t *testing.T) {
+	t.Run("TransitionsToABORTEDAtAbortStage", func(t *testing.T) {
 		t.Parallel()
 
 		sm := newRecoveringStateMachine()
 		rm := NewRecoveryManager(sm)
 
-		// 1〜5 回目を消費して attempts=5 にする
+		// Consume attempts 1-5 to reach attempts=5
 		for i := range 5 {
 			rm.HandleFailure(errTest)
 			if i < 4 {
@@ -164,7 +164,7 @@ func TestStateMachineTransitionOnFailure(t *testing.T) {
 			}
 		}
 
-		// 6 回目: Abort → ABORTED へ遷移する
+		// 6th attempt: Abort → transition to ABORTED
 		resetToFailed(sm)
 		action := rm.HandleFailure(errTest)
 
@@ -177,7 +177,7 @@ func TestStateMachineTransitionOnFailure(t *testing.T) {
 	})
 }
 
-// TestAttemptsCounter は Attempts() が正確に呼び出し回数を返すことを検証する。
+// TestAttemptsCounter verifies that Attempts() accurately returns the call count.
 func TestAttemptsCounter(t *testing.T) {
 	t.Parallel()
 
@@ -197,7 +197,7 @@ func TestAttemptsCounter(t *testing.T) {
 	}
 }
 
-// TestReset は Reset() 後に Attempts が 0 に戻ることを検証する。
+// TestReset verifies that Attempts returns 0 after Reset().
 func TestReset(t *testing.T) {
 	t.Parallel()
 
@@ -214,8 +214,8 @@ func TestReset(t *testing.T) {
 	}
 }
 
-// TestErrorPropagation は HandleFailure に渡したエラーが RecoveryAction.Error に
-// 正しく伝播することを検証する。
+// TestErrorPropagation verifies that the error passed to HandleFailure
+// is correctly propagated to RecoveryAction.Error.
 func TestErrorPropagation(t *testing.T) {
 	t.Parallel()
 
@@ -230,7 +230,7 @@ func TestErrorPropagation(t *testing.T) {
 	}
 }
 
-// TestRecoveryLevelString は RecoveryLevel.String() が正しい文字列を返すことを検証する。
+// TestRecoveryLevelString verifies that RecoveryLevel.String() returns the correct string.
 func TestRecoveryLevelString(t *testing.T) {
 	t.Parallel()
 
@@ -251,10 +251,10 @@ func TestRecoveryLevelString(t *testing.T) {
 	}
 }
 
-// ---- ヘルパー関数 --------------------------------------------------------
+// ---- Helper functions --------------------------------------------------------
 
-// newFailedStateMachine は FAILED 状態の StateMachine を返す。
-// SPAWNING → RUNNING → FAILED の遷移を経て作成する。
+// newFailedStateMachine returns a StateMachine in the FAILED state.
+// It is created by transitioning through SPAWNING → RUNNING → FAILED.
 func newFailedStateMachine() *StateMachine {
 	sm := NewStateMachine()
 	must(sm.Transition(StateRunning, "test: start"))
@@ -262,24 +262,24 @@ func newFailedStateMachine() *StateMachine {
 	return sm
 }
 
-// newRecoveringStateMachine は RECOVERING 状態の StateMachine を返す。
-// SPAWNING → RUNNING → FAILED → RECOVERING の遷移を経て作成する。
+// newRecoveringStateMachine returns a StateMachine in the RECOVERING state.
+// It is created by transitioning through SPAWNING → RUNNING → FAILED → RECOVERING.
 func newRecoveringStateMachine() *StateMachine {
 	sm := newFailedStateMachine()
 	must(sm.Transition(StateRecovering, "test: start recovery"))
 	return sm
 }
 
-// resetToFailed は RECOVERING 状態の StateMachine を RUNNING → FAILED と辿って
-// FAILED にリセットする。
-// HandleFailure が FAILED → RECOVERING を行うため、複数回の失敗シミュレーションに使う。
-// RECOVERING → RUNNING → FAILED の遷移を使用する。
+// resetToFailed resets a StateMachine in the RECOVERING state to FAILED
+// by transitioning through RUNNING → FAILED.
+// Used to simulate multiple failures since HandleFailure performs FAILED → RECOVERING.
+// Uses the RECOVERING → RUNNING → FAILED transition path.
 func resetToFailed(sm *StateMachine) {
 	must(sm.Transition(StateRunning, "test: retry"))
 	must(sm.Transition(StateFailed, "test: fail again"))
 }
 
-// must は error が nil でない場合にパニックする。テスト用ヘルパー。
+// must panics if err is non-nil. Test helper.
 func must(err error) {
 	if err != nil {
 		panic(err)

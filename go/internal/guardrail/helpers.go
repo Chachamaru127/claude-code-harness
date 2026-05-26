@@ -195,14 +195,14 @@ func bashProtectedWriteHookResult(ctx hookproto.RuleContext, command string) *ho
 				}
 				continue
 			}
-			return protectedPathHookResult(match, match.Path, "保護パスへのシェル書き込み")
+			return protectedPathHookResult(match, match.Path, "shell write to protected path")
 		case protectedPathAsk:
 			if askResult == nil {
-				askResult = protectedPathHookResult(match, match.Path, "保護パスへのシェル書き込み")
+				askResult = protectedPathHookResult(match, match.Path, "shell write to protected path")
 			}
 		case protectedPathWarn:
 			if warnResult == nil {
-				warnResult = protectedPathHookResult(match, match.Path, "保護パスへのシェル書き込み")
+				warnResult = protectedPathHookResult(match, match.Path, "shell write to protected path")
 			}
 		}
 	}
@@ -221,7 +221,7 @@ func bashProtectedWriteHookResult(ctx hookproto.RuleContext, command string) *ho
 // ---------------------------------------------------------------------------
 
 func isUnderProjectRoot(filePath, projectRoot string) bool {
-	// 相対パスは projectRoot を基準に解決
+	// Resolve relative paths against projectRoot
 	resolved := filePath
 	if !filepath.IsAbs(filePath) {
 		resolved = filepath.Join(projectRoot, filePath)

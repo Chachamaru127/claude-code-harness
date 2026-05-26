@@ -1,6 +1,6 @@
 package hookhandler
 
-// task_completed_escalation.go - テスト失敗エスカレーション・Fix Proposal 管理
+// task_completed_escalation.go - Test failure escalation and Fix Proposal management
 
 import (
 	"bufio"
@@ -11,14 +11,14 @@ import (
 	"strings"
 )
 
-// qualityGateEntry は task-quality-gate.json の各タスクエントリ。
+// qualityGateEntry is each task entry in task-quality-gate.json.
 type qualityGateEntry struct {
 	FailureCount int    `json:"failure_count"`
 	LastAction   string `json:"last_action"`
 	UpdatedAt    string `json:"updated_at"`
 }
 
-// fixProposal は pending-fix-proposals.jsonl の1行分エントリ。
+// fixProposal is a single-line entry in pending-fix-proposals.jsonl.
 type fixProposal struct {
 	SourceTaskID      string `json:"source_task_id"`
 	FixTaskID         string `json:"fix_task_id"`
@@ -32,19 +32,19 @@ type fixProposal struct {
 	Status            string `json:"status"`
 }
 
-// testResultFile は .claude/state/test-result.json のスキーマ。
+// testResultFile is the schema for .claude/state/test-result.json.
 type testResultFile struct {
 	Status  string `json:"status"`
 	Command string `json:"command"`
 	Output  string `json:"output"`
 }
 
-// checkTestResultAndEscalate はテスト結果を確認し、失敗カウントを管理する。
-// testOK=false の場合は failCount も返す。
+// checkTestResultAndEscalate checks the test result and manages the failure count.
+// Also returns failCount when testOK=false.
 func (h *taskCompletedHandler) checkTestResultAndEscalate(taskID, taskSubject, teammateName, ts string) (testOK bool, failCount int) {
 	resultFile := h.stateDir + "/test-result.json"
 
-	// 結果ファイルがない場合は成功扱い（テスト不要なプロジェクト）
+	// Treat as success if the result file is missing (projects without tests)
 	if _, err := os.Stat(resultFile); err != nil {
 		return true, 0
 	}
@@ -59,15 +59,15 @@ func (h *taskCompletedHandler) checkTestResultAndEscalate(taskID, taskSubject, t
 	}
 
 	if result.Status != "failed" {
-		// 成功またはタイムアウト: 失敗カウントをリセット
+		// Success or timeout: reset failure count
 		h.updateFailureCount(taskID, "reset", ts)
 		return true, 0
 	}
 
-	// テスト失敗
+	// Test failure
 	failCount = h.updateFailureCount(taskID, "increment", ts)
 
-	// 失敗をタイムラインに記録
+	// Record failure to timeline
 	h.appendTimeline(timelineEntry{
 		Event:        "test_result_failed",
 		Teammate:     teammateName,
@@ -80,15 +80,15 @@ func (h *taskCompletedHandler) checkTestResultAndEscalate(taskID, taskSubject, t
 	return false, failCount
 }
 
-// updateFailureCount は quality-gate.json のタスク別失敗カウントを更新する。
-// 戻り値は新しいカウント値。
+// updateFailureCount updates the per-task failure count in quality-gate.json.
+// Returns the new count value.
 func (h *taskCompletedHandler) updateFailureCount(taskID, action, ts string) int {
 	gatePath := h.stateDir + "/task-quality-gate.json"
 
-	// 既存データを読み込む
+	// Load existing data
 	existing := make(map[string]qualityGateEntry)
 	if data, err := os.ReadFile(gatePath); err == nil {
-		// シンボルリンクチェック
+		// Symlink check
 		if info, err := os.Lstat(gatePath); err == nil && info.Mode()&os.ModeSymlink == 0 {
 			_ = json.Unmarshal(data, &existing)
 		}
@@ -104,7 +104,7 @@ func (h *taskCompletedHandler) updateFailureCount(taskID, action, ts string) int
 	entry.UpdatedAt = ts
 	existing[taskID] = entry
 
-	// ファイルに書き戻す（シンボルリンクを拒否）
+	// Write back to file (reject symlinks)
 	if info, err := os.Lstat(gatePath); err == nil && info.Mode()&os.ModeSymlink != 0 {
 		return entry.FailureCount
 	}
@@ -120,10 +120,10 @@ func (h *taskCompletedHandler) updateFailureCount(taskID, action, ts string) int
 	return entry.FailureCount
 }
 
-// buildFixTaskID は元タスク ID から fix タスク ID を生成する。
-// 例: "26.1" → "26.1.fix", "26.1.fix" → "26.1.fix2", "26.1.fix2" → "26.1.fix3"
+// buildFixTaskID generates a fix task ID from the source task ID.
+// e.g. "26.1" → "26.1.fix", "26.1.fix" → "26.1.fix2", "26.1.fix2" → "26.1.fix3"
 func buildFixTaskID(sourceTaskID string) string {
-	// .fix{N} パターン
+	// .fix{N} pattern
 	if idx := strings.LastIndex(sourceTaskID, ".fix"); idx >= 0 {
 		suffix := sourceTaskID[idx+4:]
 		base := sourceTaskID[:idx]
@@ -138,28 +138,28 @@ func buildFixTaskID(sourceTaskID string) string {
 	return sourceTaskID + ".fix"
 }
 
-// classifyFailure はテスト出力から失敗カテゴリと推奨アクションを分類する。
+// classifyFailure classifies the failure category and recommended action from test output.
 func classifyFailure(output string) (category, action string) {
 	lower := strings.ToLower(output)
 	switch {
 	case containsAny(lower, "syntax", "syntaxerror", "parse error", "unexpected token"):
-		return "syntax_error", "構文エラーを修正してください。コードの文法を確認してください。"
+		return "syntax_error", "Fix the syntax error. Check the code grammar."
 	case containsAny(lower, "cannot find module", "module not found", "import.*error", "modulenotfounderror"):
-		return "import_error", "モジュール/インポートエラーを修正してください。依存関係を確認してください（npm install / pip install）。"
+		return "import_error", "Fix the module/import error. Check your dependencies (npm install / pip install)."
 	case containsAny(lower, "type.*error", "typeerror", "is not assignable", "property.*does not exist"):
-		return "type_error", "型エラーを修正してください。型定義と実装の不一致を確認してください。"
+		return "type_error", "Fix the type error. Check for mismatches between type definitions and implementation."
 	case containsAny(lower, "assertion", "assertionerror", "expect.*received", "tobe", "toequal", "fail", "failed"):
-		return "assertion_error", "テストアサーションが失敗しています。期待値と実際の値の差分を確認してください。"
+		return "assertion_error", "Test assertion failed. Check the diff between expected and actual values."
 	case containsAny(lower, "timeout", "etimedout", "timed out"):
-		return "timeout", "タイムアウトが発生しました。非同期処理やネットワーク依存を確認してください。"
+		return "timeout", "A timeout occurred. Check async processing and network dependencies."
 	case containsAny(lower, "permission", "eacces", "eperm", "access denied"):
-		return "permission_error", "権限エラーが発生しています。ファイルのパーミッションを確認してください。"
+		return "permission_error", "A permission error occurred. Check file permissions."
 	default:
-		return "runtime_error", "ランタイムエラーが発生しています。テスト出力を詳しく確認してください。"
+		return "runtime_error", "A runtime error occurred. Review the test output in detail."
 	}
 }
 
-// containsAny はテキストが candidates のいずれかを含むか確認する。
+// containsAny checks whether text contains any of the candidates.
 func containsAny(text string, candidates ...string) bool {
 	for _, c := range candidates {
 		if strings.Contains(text, c) {
@@ -169,11 +169,11 @@ func containsAny(text string, candidates ...string) bool {
 	return false
 }
 
-// emitEscalationResponse は3-strike エスカレーションレスポンスを出力する。
+// emitEscalationResponse outputs the 3-strike escalation response.
 func (h *taskCompletedHandler) emitEscalationResponse(out io.Writer, taskID, taskSubject string, failCount int) error {
 	ts := utcNow()
 
-	// テスト出力を読み込む
+	// Load test output
 	var lastCmd, lastOutput string
 	resultFile := h.stateDir + "/test-result.json"
 	if data, err := os.ReadFile(resultFile); err == nil {
@@ -186,22 +186,22 @@ func (h *taskCompletedHandler) emitEscalationResponse(out io.Writer, taskID, tas
 
 	category, action := classifyFailure(lastOutput)
 
-	// エスカレーションレポートを stderr に出力
+	// Output escalation report to stderr
 	fmt.Fprintf(os.Stderr, "\n==========================================\n")
-	fmt.Fprintf(os.Stderr, "[ESCALATION] 3回連続失敗を検知 - 自動修正ループを停止\n")
+	fmt.Fprintf(os.Stderr, "[ESCALATION] 3 consecutive failures detected - stopping auto-fix loop\n")
 	fmt.Fprintf(os.Stderr, "==========================================\n")
-	fmt.Fprintf(os.Stderr, "  タスク ID  : %s\n", taskID)
-	fmt.Fprintf(os.Stderr, "  タスク名   : %s\n", taskSubject)
-	fmt.Fprintf(os.Stderr, "  連続失敗数 : %d\n", failCount)
-	fmt.Fprintf(os.Stderr, "  検知時刻   : %s\n", ts)
+	fmt.Fprintf(os.Stderr, "  Task ID         : %s\n", taskID)
+	fmt.Fprintf(os.Stderr, "  Task name       : %s\n", taskSubject)
+	fmt.Fprintf(os.Stderr, "  Consecutive fail: %d\n", failCount)
+	fmt.Fprintf(os.Stderr, "  Detected at     : %s\n", ts)
 	fmt.Fprintf(os.Stderr, "------------------------------------------\n")
-	fmt.Fprintf(os.Stderr, "  [原因分類]\n  カテゴリ   : %s\n\n", category)
-	fmt.Fprintf(os.Stderr, "  [推奨アクション]\n  %s\n\n", action)
+	fmt.Fprintf(os.Stderr, "  [Failure category]\n  Category        : %s\n\n", category)
+	fmt.Fprintf(os.Stderr, "  [Recommended action]\n  %s\n\n", action)
 	if lastCmd != "" {
-		fmt.Fprintf(os.Stderr, "  [最後に実行したコマンド]\n  %s\n\n", lastCmd)
+		fmt.Fprintf(os.Stderr, "  [Last command executed]\n  %s\n\n", lastCmd)
 	}
 	if lastOutput != "" {
-		fmt.Fprintf(os.Stderr, "  [テスト出力（最大20行）]\n")
+		fmt.Fprintf(os.Stderr, "  [Test output (max 20 lines)]\n")
 		scanner := bufio.NewScanner(strings.NewReader(lastOutput))
 		for scanner.Scan() {
 			fmt.Fprintf(os.Stderr, "    %s\n", scanner.Text())
@@ -210,7 +210,7 @@ func (h *taskCompletedHandler) emitEscalationResponse(out io.Writer, taskID, tas
 	}
 	fmt.Fprintf(os.Stderr, "==========================================\n\n")
 
-	// エスカレーション記録をタイムラインに追記
+	// Append escalation record to timeline
 	h.appendTimeline(timelineEntry{
 		Event:        "escalation_triggered",
 		TaskID:       taskID,
@@ -219,10 +219,10 @@ func (h *taskCompletedHandler) emitEscalationResponse(out io.Writer, taskID, tas
 		FailureCount: fmt.Sprintf("%d", failCount),
 	})
 
-	// Fix Proposal を生成・保存
+	// Generate and save Fix Proposal
 	fixTaskID := buildFixTaskID(taskID)
 	proposalSubject := sanitizeInlineText("fix: " + taskSubject + " - " + category)
-	dod := sanitizeInlineText("失敗カテゴリ (" + category + ") を解消し、直近のテスト/CI が通ること")
+	dod := sanitizeInlineText("Resolve failure category (" + category + ") and ensure recent tests/CI pass")
 
 	proposal := fixProposal{
 		SourceTaskID:      taskID,
@@ -239,10 +239,10 @@ func (h *taskCompletedHandler) emitEscalationResponse(out io.Writer, taskID, tas
 
 	proposalSaved := h.upsertFixProposal(proposal)
 
-	fixMessage := fmt.Sprintf("[FIX PROPOSAL] タスク %s が3回連続で失敗しました。\n提案: %s — %s\nDoD: %s\n承認: approve fix %s\n却下: reject fix %s",
+	fixMessage := fmt.Sprintf("[FIX PROPOSAL] Task %s failed 3 times consecutively.\nProposal: %s — %s\nDoD: %s\nApprove: approve fix %s\nReject: reject fix %s",
 		taskID, fixTaskID, proposalSubject, dod, taskID, taskID)
 	if !proposalSaved {
-		fixMessage += "\n警告: proposal 保存に失敗しました。手動で Plans.md に追加してください。"
+		fixMessage += "\nWarning: failed to save proposal. Please add it to Plans.md manually."
 	}
 
 	return writeJSON(out, map[string]string{
@@ -252,10 +252,10 @@ func (h *taskCompletedHandler) emitEscalationResponse(out io.Writer, taskID, tas
 	})
 }
 
-// upsertFixProposal は pending-fix-proposals.jsonl に proposal を追加または更新する。
-// 同一 source_task_id のエントリがあれば置き換える。
+// upsertFixProposal adds or updates a proposal in pending-fix-proposals.jsonl.
+// Replaces any existing entry with the same source_task_id.
 func (h *taskCompletedHandler) upsertFixProposal(proposal fixProposal) bool {
-	// シンボルリンクチェック
+	// Symlink check
 	if info, err := os.Lstat(h.pendingFixFile); err == nil && info.Mode()&os.ModeSymlink != 0 {
 		return false
 	}
@@ -263,7 +263,7 @@ func (h *taskCompletedHandler) upsertFixProposal(proposal fixProposal) bool {
 		return false
 	}
 
-	// 既存エントリを読み込む（同一 source_task_id を除外）
+	// Load existing entries (excluding the same source_task_id)
 	var rows []fixProposal
 	if f, err := os.Open(h.pendingFixFile); err == nil {
 		scanner := bufio.NewScanner(f)
@@ -284,7 +284,7 @@ func (h *taskCompletedHandler) upsertFixProposal(proposal fixProposal) bool {
 	}
 	rows = append(rows, proposal)
 
-	// ファイルに書き戻す
+	// Write back to file
 	if err := os.MkdirAll(h.stateDir, 0o700); err != nil {
 		return false
 	}

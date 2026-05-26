@@ -1,18 +1,18 @@
 #!/bin/bash
 # scripts/accept-past-issues.sh
-# Phase 65.2.2 - Acceptance Demo 用 「過去の問題パターン」取得 (read side)
+# Phase 65.2.2 - Acceptance Demo: retrieve "past issue patterns" (read side)
 #
 # Usage:
 #   accept-past-issues.sh --project <name> --task <description>
 #                         [--issues-source <path>] [--out -|<path>]
 #
-# 役割:
-#   harness-accept skill が `mcp__harness__harness_mem_search` で
-#   patterns.md (P1-P33) と過去の `acceptance-context.v1` record を
-#   semantic search した結果を入力に取り、上位 3 件に整形して
-#   `past-issue.v1` schema で出力する。
+# Role:
+#   Takes the results of a semantic search performed by the harness-accept skill
+#   via `mcp__harness__harness_mem_search` over patterns.md (P1-P33) and past
+#   `acceptance-context.v1` records, formats the top 3 results, and outputs
+#   them as a `past-issue.v1` schema JSON.
 #
-# 入力 schema (--issues-source が指す JSON ファイル):
+# Input schema (JSON file pointed to by --issues-source):
 #   {
 #     "items": [
 #       {
@@ -26,15 +26,15 @@
 #       ...
 #     ]
 #   }
-#   --issues-source 省略時は items=[] 扱い (該当なしのケース)。
+#   If --issues-source is omitted, items=[] is assumed (no past issues case).
 #
 # Project enforcement (DoD b):
-#   --project は必須。空文字列 / 未指定は exit 2。
-#   cross-project search は本スクリプトでは**呼ばない** (Phase 65.3 で解放)。
-#   skill 側で `mcp__harness__harness_mem_search` を `strict_project: true`
-#   で呼ぶ前提。
+#   --project is required. Empty string or missing value exits with code 2.
+#   Cross-project search is NOT called in this script (enabled in Phase 65.3).
+#   Assumes the skill side calls `mcp__harness__harness_mem_search` with
+#   `strict_project: true`.
 #
-# 出力 schema: past-issue.v1
+# Output schema: past-issue.v1
 #   {
 #     "schema": "past-issue.v1",
 #     "items": [
@@ -58,15 +58,15 @@ Usage: $0 --project <name> --task <description>
           [--issues-source <path>] [--out -|<path>]
 
 Required:
-  --project <name>            project 名 (basename of toplevel)
-  --task <description>        現タスクの説明 (semantic search query 相当)
+  --project <name>            project name (basename of toplevel)
+  --task <description>        current task description (equivalent to semantic search query)
 
 Optional:
-  --issues-source <path>      mem search 結果を保持する JSON ファイル
-                              (省略時は items=[]、すなわち過去 issue なし)
-  --out -|<path>              出力先 (- = stdout, default: stdout)
+  --issues-source <path>      JSON file holding mem search results
+                              (if omitted, items=[] — no past issues)
+  --out -|<path>              output destination (- = stdout, default: stdout)
 
-出力: past-issue.v1 schema 準拠の JSON
+Output: JSON conforming to past-issue.v1 schema
 USAGE
   exit 2
 }
@@ -103,7 +103,7 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 3
 fi
 
-# ---- 入力 source の正規化 ----
+# ---- normalize input source ----
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/accept-past-issues.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
 NORM_SRC="$TMP_DIR/source.json"
@@ -122,9 +122,9 @@ else
   echo '{"items":[]}' > "$NORM_SRC"
 fi
 
-# ---- top 3 を relevance_score 降順で抽出 + 既定値補完 ----
-# verified_in_current_task が欠けていれば false を補完。
-# relevance_score が欠けていれば 0 を補完。
+# ---- extract top 3 sorted by relevance_score descending + fill defaults ----
+# If verified_in_current_task is missing, default to false.
+# If relevance_score is missing, default to 0.
 
 TOP_ITEMS_JSON="$(jq '
   [.items[] | {
@@ -139,7 +139,7 @@ TOP_ITEMS_JSON="$(jq '
   | .[0:3]
 ' "$NORM_SRC")"
 
-# ---- 出力 JSON 組み立て ----
+# ---- assemble output JSON ----
 GENERATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 OUT_JSON="$(jq -n \

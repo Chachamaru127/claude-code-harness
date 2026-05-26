@@ -1,20 +1,20 @@
 #!/bin/bash
 # posttooluse-tampering-detector.sh
-# テスト改ざんパターンを検出して警告する（ブロックはしない）
+# Detect test-tampering patterns and emit warnings (does not block).
 #
-# 用途: PostToolUse で Write|Edit 後に実行
-# 動作:
-#   - テストファイル（*.test.*, *.spec.*）への変更を監視
-#   - 改ざんパターン（skip化、アサーション削除、eslint-disable）を検出
-#   - 検出した場合は警告を additionalContext として出力
-#   - ログに記録（.claude/state/tampering.log）
+# Purpose: Run after Write|Edit in PostToolUse
+# Behavior:
+#   - Monitor changes to test files (*.test.*, *.spec.*)
+#   - Detect tampering patterns (skip, assertion removal, eslint-disable)
+#   - Output warnings as additionalContext when detected
+#   - Log to .claude/state/tampering.log
 #
-# 出力: JSON形式で hookSpecificOutput.additionalContext に警告を出力
-#       → Claude Code が system-reminder として表示
+# Output: Emit warnings via hookSpecificOutput.additionalContext in JSON format
+#         → Claude Code displays them as system-reminder
 
 set +e
 
-# ===== 入力の取得 =====
+# ===== Read input =====
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null || true)"
@@ -22,7 +22,7 @@ fi
 
 [ -z "$INPUT" ] && exit 0
 
-# ===== JSON パース =====
+# ===== Parse JSON =====
 TOOL_NAME=""
 FILE_PATH=""
 OLD_STRING=""
@@ -56,13 +56,13 @@ print(f"CONTENT={shlex.quote(content)}")
 ' 2>/dev/null)"
 fi
 
-# Write/Edit 以外はスキップ
+# Skip if not Write/Edit
 [[ "$TOOL_NAME" != "Write" && "$TOOL_NAME" != "Edit" ]] && exit 0
 
-# ファイルパスがなければスキップ
+# Skip if no file path
 [ -z "$FILE_PATH" ] && exit 0
 
-# ===== テストファイル判定 =====
+# ===== Test file detection =====
 is_test_file() {
   local path="$1"
   case "$path" in
@@ -75,7 +75,7 @@ is_test_file() {
   return 1
 }
 
-# lint/CI 設定ファイル判定
+# lint/CI config file detection
 is_config_file() {
   local path="$1"
   case "$path" in
@@ -90,113 +90,113 @@ is_config_file() {
   return 1
 }
 
-# テストファイルでも設定ファイルでもなければスキップ
+# Skip if neither a test file nor a config file
 if ! is_test_file "$FILE_PATH" && ! is_config_file "$FILE_PATH"; then
   exit 0
 fi
 
-# ===== 改ざんパターン検出 =====
+# ===== Tampering pattern detection =====
 WARNINGS=""
 
-# 検出対象のコンテンツ
+# Content to check
 CHECK_CONTENT="${NEW_STRING}${CONTENT}"
 
-# テストファイルの改ざん検出
+# Tampering detection for test files
 if is_test_file "$FILE_PATH"; then
-  # skip 化検出 (JS/TS) / Test skip detected
+  # Test skip detected (JS/TS)
   if [[ "$CHECK_CONTENT" =~ (^|[^a-zA-Z_])(it|describe|test)\.skip[[:space:]]*\(|(^|[^a-zA-Z_])xit[[:space:]]*\(|(^|[^a-zA-Z_])xdescribe[[:space:]]*\( ]]; then
-    WARNINGS="${WARNINGS}⚠️ Test skip detected / テストの skip 化を検出 (it.skip/describe.skip/xit)\n"
+    WARNINGS="${WARNINGS}⚠️ Test skip detected (it.skip/describe.skip/xit)\n"
   fi
 
-  # skip 化検出 (Python) / Python test skip detected
+  # Python test skip detected
   # @pytest.mark.skip, @pytest.mark.skipIf, @unittest.skip, @unittest.skipIf, self.skipTest()
   if [[ "$CHECK_CONTENT" =~ @pytest\.mark\.skip|@unittest\.skip|self\.skipTest[[:space:]]*\( ]]; then
-    WARNINGS="${WARNINGS}⚠️ Python test skip detected / Python テストの skip 化を検出 (@pytest.mark.skip / @unittest.skip / self.skipTest)\n"
+    WARNINGS="${WARNINGS}⚠️ Python test skip detected (@pytest.mark.skip / @unittest.skip / self.skipTest)\n"
   fi
 
-  # .only 化検出 / Test .only detected
+  # Test .only detected
   if [[ "$CHECK_CONTENT" =~ (^|[^a-zA-Z_])(it|describe|test)\.only[[:space:]]*\(|(^|[^a-zA-Z_])fit[[:space:]]*\(|(^|[^a-zA-Z_])fdescribe[[:space:]]*\( ]]; then
-    WARNINGS="${WARNINGS}⚠️ Test .only detected / テストの .only 化を検出（他のテストが実行されなくなります）\n"
+    WARNINGS="${WARNINGS}⚠️ Test .only detected (other tests will not run)\n"
   fi
 
-  # eslint-disable 追加検出 / Lint/type suppression detected
+  # Lint/type suppression detected
   if [[ "$CHECK_CONTENT" =~ eslint-disable|@ts-ignore|@ts-expect-error|@ts-nocheck ]]; then
-    WARNINGS="${WARNINGS}⚠️ Lint/type suppression detected / lint/型チェック無効化コメントを検出\n"
+    WARNINGS="${WARNINGS}⚠️ Lint/type suppression detected\n"
   fi
 
-  # expect 削除検出（Edit の場合）/ Assertion removal detected
+  # Assertion removal detected (Edit case)
   if [ -n "$OLD_STRING" ] && [ -n "$NEW_STRING" ]; then
     OLD_EXPECTS=$(printf '%s' "$OLD_STRING" | grep -c 'expect\s*(' || true)
     NEW_EXPECTS=$(printf '%s' "$NEW_STRING" | grep -c 'expect\s*(' || true)
     if [ "$OLD_EXPECTS" -gt 0 ] && [ "$NEW_EXPECTS" -lt "$OLD_EXPECTS" ]; then
-      WARNINGS="${WARNINGS}⚠️ Assertion removal detected / アサーション削除を検出 (expect: ${OLD_EXPECTS} → ${NEW_EXPECTS})\n"
+      WARNINGS="${WARNINGS}⚠️ Assertion removal detected (expect: ${OLD_EXPECTS} → ${NEW_EXPECTS})\n"
     fi
   fi
 
-  # assert 削除検出（Python）/ Assertion removal detected
+  # Assertion removal detection (Python)
   if [ -n "$OLD_STRING" ] && [ -n "$NEW_STRING" ]; then
     OLD_ASSERTS=$(printf '%s' "$OLD_STRING" | grep -cE '\bassert\b|self\.assert' || true)
     NEW_ASSERTS=$(printf '%s' "$NEW_STRING" | grep -cE '\bassert\b|self\.assert' || true)
     if [ "$OLD_ASSERTS" -gt 0 ] && [ "$NEW_ASSERTS" -lt "$OLD_ASSERTS" ]; then
-      WARNINGS="${WARNINGS}⚠️ Assertion removal detected / アサーション削除を検出 (assert: ${OLD_ASSERTS} → ${NEW_ASSERTS})\n"
+      WARNINGS="${WARNINGS}⚠️ Assertion removal detected (assert: ${OLD_ASSERTS} → ${NEW_ASSERTS})\n"
     fi
   fi
 
-  # assertion weakening 検出（Edit の場合）/ Assertion weakening detected
-  # toBe → toBeTruthy/toBeDefined/toBeUndefined/toBeNull/toBeFalsy のような緩いアサーションへの置き換えを検出
+  # Assertion weakening detection (Edit only)
+  # Detect replacement with weaker assertions such as toBe → toBeTruthy/toBeDefined/toBeUndefined/toBeNull/toBeFalsy
   if [ -n "$OLD_STRING" ] && [ -n "$NEW_STRING" ]; then
-    # OLD に厳格なアサーションがあり、NEW で弱いアサーションに置き換えられたか確認
+    # Check whether OLD had strict assertions that were replaced by weak ones in NEW
     OLD_STRICT=$(printf '%s' "$OLD_STRING" | grep -cE '\.toBe\(|\.toEqual\(|\.toStrictEqual\(|\.toHaveBeenCalledWith\(' || true)
     NEW_WEAK=$(printf '%s' "$NEW_STRING" | grep -cE '\.toBeTruthy\(|\.toBeDefined\(|\.toBeUndefined\(|\.toBeNull\(|\.toBeFalsy\(|\.toBeGreaterThanOrEqual\(0\)|\.toHaveBeenCalled\(\)' || true)
     NEW_STRICT=$(printf '%s' "$NEW_STRING" | grep -cE '\.toBe\(|\.toEqual\(|\.toStrictEqual\(|\.toHaveBeenCalledWith\(' || true)
-    # 厳格なアサーションが減り、弱いアサーションが増えた場合に警告
+    # Warn when strict assertions decreased and weak assertions increased
     if [ "$OLD_STRICT" -gt 0 ] && [ "$NEW_STRICT" -lt "$OLD_STRICT" ] && [ "$NEW_WEAK" -gt 0 ]; then
-      WARNINGS="${WARNINGS}⚠️ Assertion weakening detected / アサーション弱体化を検出 (strict: ${OLD_STRICT} → ${NEW_STRICT}, weak: +${NEW_WEAK}). e.g. toBe → toBeTruthy, toEqual → toBeDefined\n"
+      WARNINGS="${WARNINGS}⚠️ Assertion weakening detected (strict: ${OLD_STRICT} → ${NEW_STRICT}, weak: +${NEW_WEAK}). e.g. toBe → toBeTruthy, toEqual → toBeDefined\n"
     fi
   fi
 
-  # timeout 値の大幅引き上げ検出 / Large timeout increase detected
-  # jest.setTimeout(N), jasmine.DEFAULT_TIMEOUT_INTERVAL = N, { timeout: N } 等の大きな値 (30000ms 以上) を検出
+  # Large timeout increase detection
+  # Detect large values (≥30000ms) in jest.setTimeout(N), jasmine.DEFAULT_TIMEOUT_INTERVAL = N, { timeout: N }, etc.
   TIMEOUT_THRESHOLD=30000
   TIMEOUT_HIT=$(printf '%s' "$CHECK_CONTENT" | grep -E 'jest\.setTimeout\(|jasmine\.DEFAULT_TIMEOUT_INTERVAL|[[:space:]]timeout[[:space:]]*:' | grep -oE '[0-9]+' | awk -v thr="$TIMEOUT_THRESHOLD" '$1 >= thr {found=1} END {print found+0}' || true)
   if [ "${TIMEOUT_HIT:-0}" -gt 0 ]; then
-    WARNINGS="${WARNINGS}⚠️ Large timeout detected / タイムアウト値の大幅引き上げを検出 (≥${TIMEOUT_THRESHOLD}ms). e.g. jest.setTimeout(30000)\n"
+    WARNINGS="${WARNINGS}⚠️ Large timeout detected (≥${TIMEOUT_THRESHOLD}ms). e.g. jest.setTimeout(30000)\n"
   fi
 
-  # catch-all assertion 検出 / Catch-all assertion detected
-  # expect(true).toBe(true), expect(1).toBe(1) 等の常に成功する無意味なアサーションを検出
+  # Catch-all assertion detection
+  # Detect always-passing trivial assertions such as expect(true).toBe(true), expect(1).toBe(1)
   if [[ "$CHECK_CONTENT" =~ expect\((true|false|1|0|null|undefined|[\"\']{2})\)\.(toBe|toEqual|toStrictEqual)\((true|false|1|0|null|undefined|[\"\']{2})\) ]]; then
-    WARNINGS="${WARNINGS}⚠️ Catch-all assertion detected / 常に成功する無意味なアサーションを検出 (e.g. expect(true).toBe(true))\n"
+    WARNINGS="${WARNINGS}⚠️ Catch-all assertion detected (e.g. expect(true).toBe(true))\n"
   fi
 
-  # toBeUndefined/toBeNull/toBeFalsy/toBeTruthy を定数値に適用するパターン
+  # Pattern: applying toBeUndefined/toBeNull/toBeFalsy/toBeTruthy to constant values
   if [[ "$CHECK_CONTENT" =~ expect\((true|false|null|undefined|0)\)\.(toBeUndefined|toBeNull|toBeFalsy|toBeTruthy)\(\) ]]; then
-    WARNINGS="${WARNINGS}⚠️ Catch-all assertion detected / 定数に対する弱いアサーションを検出 (e.g. expect(false).toBeFalsy())\n"
+    WARNINGS="${WARNINGS}⚠️ Catch-all assertion detected: weak assertion applied to constant value (e.g. expect(false).toBeFalsy())\n"
   fi
 fi
 
-# 設定ファイルの緩和検出
+# Config file weakening detection
 if is_config_file "$FILE_PATH"; then
-  # eslint ルール無効化 / Lint rule disabled
+  # Lint rule disable detection
   if [[ "$CHECK_CONTENT" =~ \"off\"|:[[:space:]]*0|\"warn\".*→.*\"off\" ]]; then
-    WARNINGS="${WARNINGS}⚠️ Lint rule disabled / lint ルールの無効化を検出\n"
+    WARNINGS="${WARNINGS}⚠️ Lint rule disabled\n"
   fi
 
-  # CI continue-on-error / CI continue-on-error detected
+  # CI continue-on-error detection
   if [[ "$CHECK_CONTENT" =~ continue-on-error:[[:space:]]*true ]]; then
-    WARNINGS="${WARNINGS}⚠️ CI continue-on-error detected / CI の continue-on-error 追加を検出\n"
+    WARNINGS="${WARNINGS}⚠️ CI continue-on-error detected\n"
   fi
 
-  # strict モードの緩和 / TypeScript strict mode weakened
+  # TypeScript strict mode weakening detection
   if [[ "$CHECK_CONTENT" =~ \"strict\"[[:space:]]*:[[:space:]]*false|\"noImplicitAny\"[[:space:]]*:[[:space:]]*false ]]; then
-    WARNINGS="${WARNINGS}⚠️ TypeScript strict mode weakened / TypeScript strict モードの緩和を検出\n"
+    WARNINGS="${WARNINGS}⚠️ TypeScript strict mode weakened\n"
   fi
 fi
 
-# ===== 警告がなければ終了 =====
+# ===== Exit if no warnings =====
 [ -z "$WARNINGS" ] && exit 0
 
-# ===== ログに記録 =====
+# ===== Write to log =====
 STATE_DIR=".claude/state"
 LOG_FILE="$STATE_DIR/tampering.log"
 
@@ -205,26 +205,24 @@ if [ -d "$STATE_DIR" ] || mkdir -p "$STATE_DIR" 2>/dev/null; then
   printf '%b' "$WARNINGS" | sed 's/^/  /' >> "$LOG_FILE" 2>/dev/null || true
 fi
 
-# ===== 警告を出力 =====
-# Claude が次のターンで見られるように additionalContext として出力
+# ===== Output warnings =====
+# Output as additionalContext so Claude sees it in the next turn
 WARNING_MSG="[Tampering Detector] Suspicious patterns detected in test/config file changes:
-[Tampering Detector] テスト/設定ファイルの変更で以下のパターンを検出しました：
 
 $(printf '%b' "$WARNINGS")
-File / ファイル: $FILE_PATH
+File: $FILE_PATH
 
 If this is an intentional change, no action is needed.
-これが意図的な変更であれば問題ありませんが、テスト改ざんの可能性があります。
 
-⚠️ Fix the implementation, not the tests. / テスト改ざん（skip化、アサーション削除）ではなく、実装の修正が正しい対応です。
-⚠️ Fix the code, not the config. / 設定の緩和ではなく、コードの修正が正しい対応です。"
+⚠️ Fix the implementation, not the tests. Skipping tests or removing assertions is not the right fix.
+⚠️ Fix the code, not the config. Weakening lint/type settings is not the right fix."
 
-# JSON 出力
+# JSON output
 if command -v jq >/dev/null 2>&1; then
   jq -nc --arg ctx "$WARNING_MSG" \
     '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$ctx}}'
 else
-  # jq がない場合は最小限のエスケープで出力
+  # Fallback when jq is unavailable: minimal escaping
   ESCAPED_MSG=$(echo "$WARNING_MSG" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
   echo "{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"${ESCAPED_MSG}\"}}"
 fi

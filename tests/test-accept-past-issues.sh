@@ -1,18 +1,18 @@
 #!/bin/bash
 # tests/test-accept-past-issues.sh
-# Phase 65.2.2 - accept-past-issues.sh の機械検証
+# Phase 65.2.2 - mechanical validation of accept-past-issues.sh
 #
-# 検証ケース (DoD d):
-#   1. case-zero-issues       : items=[] → 0 件出力
-#   2. case-three-verified    : items 3 件全 verified → 3 件出力、全 true
-#   3. case-mixed-verified    : items 4 件 (verified mix) → top 3 出力 (relevance 順)、verified 半数
+# Validation cases (DoD d):
+#   1. case-zero-issues       : items=[] → 0 items output
+#   2. case-three-verified    : 3 items all verified → 3 items output, all true
+#   3. case-mixed-verified    : 4 items (verified mix) → top 3 output (by relevance), half verified
 #
-# 共通検証:
-#   (a) --project / --task 必須、欠落時は exit 2
-#   (b) cross-project 検索を呼ばない (project parameter 必須を確認)
-#   (c) 出力 schema = "past-issue.v1" + project / task_description / generated_at が含まれる
-#   (d) 上位 3 件取得 + verified_in_current_task が各 item にある
-#   (e) relevance_score 降順でソートされている
+# Common validation:
+#   (a) --project / --task required; exit 2 when missing
+#   (b) does not call cross-project search (verify project parameter is required)
+#   (c) output schema = "past-issue.v1" + project / task_description / generated_at included
+#   (d) fetch top 3 + verified_in_current_task present on each item
+#   (e) sorted by relevance_score descending
 
 set -euo pipefail
 
@@ -38,7 +38,7 @@ if [[ ! -x "$SCRIPT" ]]; then
 fi
 pass "accept-past-issues.sh exists and is executable"
 
-# ---- (a) 必須引数 ----
+# ---- (a) required arguments ----
 
 set +e
 bash "$SCRIPT" 2>/dev/null
@@ -70,8 +70,8 @@ else
   fail "Script should exit 2 when --task missing (got $exit_code)"
 fi
 
-# ---- ヘルパー: 1 ケース実行 ----
-# 引数: <case_label> <fixture_basename> <expected_items_count> <expected_verified_count>
+# ---- helper: run one case ----
+# args: <case_label> <fixture_basename> <expected_items_count> <expected_verified_count>
 
 run_case() {
   local label="$1"
@@ -87,7 +87,7 @@ run_case() {
   fi
 
   local out
-  out="$(bash "$SCRIPT" --project "demo-project" --task "Plan Brief MVP の検収" --issues-source "$fixture" 2>&1)" || {
+  out="$(bash "$SCRIPT" --project "demo-project" --task "Plan Brief MVP acceptance" --issues-source "$fixture" 2>&1)" || {
     fail "[$label] script failed: $out"
     return
   }
@@ -118,7 +118,7 @@ run_case() {
   else
     fail "[$label] project mismatch: $proj"
   fi
-  if [[ "$task" == "Plan Brief MVP の検収" ]]; then
+  if [[ "$task" == "Plan Brief MVP acceptance" ]]; then
     pass "[$label] task_description propagates"
   else
     fail "[$label] task_description mismatch: $task"
@@ -142,7 +142,7 @@ run_case() {
     fail "[$label] items count: got $items_count, expected $exp_items"
   fi
 
-  # verified count (DoD c: verified_in_current_task 付与)
+  # verified count (DoD c: verified_in_current_task assigned)
   if [[ "$items_count" -gt 0 ]]; then
     # Each item has verified_in_current_task field
     local missing_field
@@ -161,7 +161,7 @@ run_case() {
       fail "[$label] verified count: got $actual_verified, expected $exp_verified"
     fi
 
-    # relevance_score 降順チェック
+    # relevance_score descending order check
     local sorted_check
     sorted_check="$(printf '%s' "$out" | jq '
       .items
@@ -189,7 +189,7 @@ run_case "three-verified" "case-three-verified" 3 3
 # ---- Case 3: mixed verified ----
 # fixture has 4 items (verified true/false/true/false) → top 3 by relevance:
 #   P5 (0.92, true), P12 (0.80, false), AR-2026-04-30 (0.75, true)
-# expected: 3 items, 2 verified true ("半数" of 3 を切り上げ)
+# expected: 3 items, 2 verified true (half of 3, rounded up)
 run_case "mixed-verified" "case-mixed-verified" 3 2
 
 # ---- Summary ----

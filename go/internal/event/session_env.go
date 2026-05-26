@@ -8,44 +8,44 @@ import (
 	"strings"
 )
 
-// SessionEnvHandler は SessionStart フックハンドラ。
-// CLAUDE_ENV_FILE を活用してハーネス環境変数を設定する。
+// SessionEnvHandler is the SessionStart hook handler.
+// It uses CLAUDE_ENV_FILE to set harness environment variables.
 //
-// shell 版: scripts/hook-handlers/session-env-setup.sh
+// Shell version: scripts/hook-handlers/session-env-setup.sh
 type SessionEnvHandler struct {
-	// PluginRoot はバージョンファイルを探すルートディレクトリ。
-	// 空の場合は環境変数 CLAUDE_PLUGIN_ROOT から取得する。
+	// PluginRoot is the root directory to search for the version file.
+	// If empty, it is obtained from the CLAUDE_PLUGIN_ROOT environment variable.
 	PluginRoot string
 }
 
-// SessionEnvVars はハーネス環境変数のセット。
+// SessionEnvVars is the set of harness environment variables.
 type SessionEnvVars struct {
 	HarnessVersion           string
 	HarnessEffortDefault     string
 	HarnessAgentType         string
 	HarnessIsRemote          string
-	HarnessBreezingSessionID string // 空の場合は書き出さない
+	HarnessBreezingSessionID string // Not written if empty
 }
 
-// Handle は stdin から SessionStart ペイロードを読み取り、
-// CLAUDE_ENV_FILE にハーネス環境変数を書き出す。
-// CLAUDE_ENV_FILE が設定されていない場合は何もしない。
+// Handle reads a SessionStart payload from stdin and
+// writes harness environment variables to CLAUDE_ENV_FILE.
+// Does nothing if CLAUDE_ENV_FILE is not set.
 func (h *SessionEnvHandler) Handle(r io.Reader, _ io.Writer) error {
-	// CLAUDE_ENV_FILE が設定されていない場合はスキップ
+	// Skip if CLAUDE_ENV_FILE is not set
 	envFile := os.Getenv("CLAUDE_ENV_FILE")
 	if envFile == "" {
 		return nil
 	}
 
-	// stdin は読み取るが、SessionStart では tool_name が不要
-	// (エラーは無視して処理を継続)
+	// Read stdin, but tool_name is not needed for SessionStart
+	// (ignore errors and continue processing)
 	_, _ = io.ReadAll(r)
 
 	vars := h.buildEnvVars()
 	return h.writeEnvFile(envFile, vars)
 }
 
-// buildEnvVars は現在の環境変数から SessionEnvVars を構築する。
+// buildEnvVars constructs SessionEnvVars from the current environment variables.
 func (h *SessionEnvHandler) buildEnvVars() SessionEnvVars {
 	pluginRoot := h.PluginRoot
 	if pluginRoot == "" {
@@ -73,7 +73,7 @@ func (h *SessionEnvHandler) buildEnvVars() SessionEnvVars {
 	}
 }
 
-// readVersion は VERSION ファイルからバージョン文字列を読み取る。
+// readVersion reads the version string from the VERSION file.
 func (h *SessionEnvHandler) readVersion(pluginRoot string) string {
 	if pluginRoot == "" {
 		return "unknown"
@@ -91,9 +91,9 @@ func (h *SessionEnvHandler) readVersion(pluginRoot string) string {
 	return v
 }
 
-// writeEnvFile は CLAUDE_ENV_FILE にハーネス環境変数を追記する。
+// writeEnvFile appends harness environment variables to CLAUDE_ENV_FILE.
 func (h *SessionEnvHandler) writeEnvFile(envFile string, vars SessionEnvVars) error {
-	// シンボリックリンクチェック（セキュリティ）
+	// Symlink check (security)
 	if isSymlink(envFile) {
 		return fmt.Errorf("security: symlinked env file refused: %s", envFile)
 	}

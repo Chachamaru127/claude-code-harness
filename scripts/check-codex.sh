@@ -1,72 +1,72 @@
 #!/bin/bash
-# check-codex.sh - Codex 利用可能性チェック（once hook 用）
-# /harness-review 初回実行時に一度だけ実行される
+# check-codex.sh - Codex availability check (for once hook)
+# Runs once on first /harness-review invocation
 #
 # Usage: ./scripts/check-codex.sh
 
 set -euo pipefail
 
-# プロジェクト設定ファイルのパス
+# Path to the project configuration file
 CONFIG_FILE=".claude-code-harness.config.yaml"
 
-# 既に codex.enabled が設定されているか確認
+# Check if codex.enabled is already configured
 if [[ -f "$CONFIG_FILE" ]]; then
     if grep -q "codex:" "$CONFIG_FILE" 2>/dev/null; then
-        # 既に設定済みの場合は何もしない
+        # Already configured, nothing to do
         exit 0
     fi
 fi
 
-# Codex CLI がインストールされているか確認
+# Check if Codex CLI is installed
 if ! command -v codex &> /dev/null; then
-    # Codex がない場合は何もしない
+    # Codex not present, nothing to do
     exit 0
 fi
 
-# Codex のバージョンを取得
+# Get Codex version
 CODEX_VERSION=$(codex --version 2>/dev/null | head -1 || echo "unknown")
 
-# 最新バージョンを npm から取得（ネットワーク不可の場合は unknown）
+# Get the latest version from npm (unknown if network is unavailable)
 LATEST_VERSION=$(npm show @openai/codex version 2>/dev/null || echo "unknown")
 
-# バージョン比較用の関数
+# Version comparison function
 version_lt() {
     [ "$1" != "$2" ] && [ "$(printf '%s\n' "$1" "$2" | sort -V | head -n1)" = "$1" ]
 }
 
-# Codex が見つかった場合、ユーザーに通知
+# Notify user that Codex was found
 cat << EOF
 
-🤖 Codex が検出されました
+🤖 Codex detected
 
-**インストール済みバージョン**: ${CODEX_VERSION}
-**最新バージョン**: ${LATEST_VERSION}
+**Installed version**: ${CODEX_VERSION}
+**Latest version**: ${LATEST_VERSION}
 EOF
 
-# バージョンが古い場合は警告
+# Warn if version is outdated
 if [[ "$LATEST_VERSION" != "unknown" && "$CODEX_VERSION" != "unknown" ]]; then
-    # バージョン文字列から数字部分を抽出
+    # Extract numeric version from version string
     CURRENT_NUM=$(echo "$CODEX_VERSION" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "0.0.0")
     LATEST_NUM=$(echo "$LATEST_VERSION" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "0.0.0")
 
     if version_lt "$CURRENT_NUM" "$LATEST_NUM"; then
         cat << EOF
 
-⚠️ **Codex CLI が古いバージョンです**
+⚠️ **Codex CLI is outdated**
 
-アップデートするには:
+To update:
 \`\`\`bash
 codex update
 \`\`\`
 
-`codex update` が使えない古いインストールだけ、package manager の
-`npm update -g @openai/codex` などにフォールバックしてください。
+Only fall back to a package manager (e.g. \`npm update -g @openai/codex\`)
+if your installation is too old to support \`codex update\`.
 
 EOF
     fi
 fi
 
-# timeout / gtimeout チェック（macOS 互換性）
+# Check for timeout / gtimeout (macOS compatibility)
 TIMEOUT_CMD=""
 if command -v timeout &> /dev/null; then
     TIMEOUT_CMD="timeout"
@@ -77,40 +77,40 @@ fi
 if [[ -z "$TIMEOUT_CMD" ]]; then
     cat << 'EOF'
 
-⚠️ **timeout コマンドが見つかりません**
+⚠️ **timeout command not found**
 
-Codex CLI の並列レビューではタイムアウト制御に `timeout` コマンドを使用します。
-macOS にはデフォルトで含まれていないため、以下でインストールしてください:
+Codex CLI parallel review uses the `timeout` command for timeout control.
+macOS does not include it by default; install it with:
 
 ```bash
 brew install coreutils
 ```
 
-これにより `gtimeout` が使えるようになり、Harness が自動検出します。
-未インストールでも Codex は動作しますが、タイムアウト制御が効きません。
+This provides `gtimeout`, which Harness detects automatically.
+Codex still works without it, but timeout control will be disabled.
 
 EOF
 else
     echo ""
-    echo "**タイムアウトコマンド**: \`${TIMEOUT_CMD}\` ✅"
+    echo "**Timeout command**: \`${TIMEOUT_CMD}\` ✅"
 fi
 
 cat << 'EOF'
 
-セカンドオピニオンレビューを有効化するには:
+To enable second-opinion review:
 
 ```yaml
 # .claude-code-harness.config.yaml
 review:
   codex:
     enabled: true
-    # model は通常省略し、Codex CLI の current default metadata に任せる
-    # 固定が必要な検証や組織 allowlist がある場合だけ明示する
+    # model is usually omitted, letting Codex CLI default metadata decide
+    # specify only when a fixed model is required for validation or org allowlist
 ```
 
-または `/codex-review` で個別に Codex レビューを実行
+Or run `/codex-review` to trigger a Codex review individually
 
-詳細: skills/codex-review/SKILL.md
+Details: skills/codex-review/SKILL.md
 
 EOF
 

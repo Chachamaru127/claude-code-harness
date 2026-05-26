@@ -1,16 +1,18 @@
 # Phase 58 Follow-up Decisions - 2026-05-03
 
-この文書は、Phase 58 の未対応 upstream を「今すぐ実装する前に設計すべきもの」と
-「自動継承でよいもの」に分けるための判断メモです。
+This document is a decision memo for separating Phase 58's unaddressed upstream items into
+"things that should be designed before implementing now" and "things that can be automatically inherited."
 
-## ひとことで
+## In one sentence
 
-Harness は、**Claude Code / Codex 本体の新機能をすぐ wrapper 化せず、安全境界とユーザー導線を先に固定します。**
+**Harness does not immediately wrap Claude Code / Codex new features; it first fixes safety
+boundaries and user navigation paths.**
 
-## たとえると
+## Analogy
 
-新しい工具が届いた時に、いきなり全員に配るのではなく、
-危ない刃物には保護カバーを付け、使う棚と名前を決めてから現場に出す、という整理です。
+When a new tool arrives, rather than distributing it to everyone immediately, you attach
+a protective cover to sharp blades and decide which shelf and label to use before bringing
+it to the floor.
 
 ## Official References
 
@@ -26,88 +28,88 @@ Harness は、**Claude Code / Codex 本体の新機能をすぐ wrapper 化せ�
 
 | Surface | Current state | Gap from upstream |
 |---------|---------------|-------------------|
-| `go/internal/guardrail/helpers.go` | `.git/`, `.env`, keys, `.husky/` などを protected path として扱う | Claude Code 2.1.121 / 2.1.126 の skip mode は `.claude/`, `.vscode/`, shell config files なども prompt bypass 対象にした |
-| `go/internal/guardrail/rules.go` | Write/Edit/MultiEdit と Bash write を block / ask / warn する | `.claude/` 全体を即 deny すると rules / memory / setup 更新も壊れる可能性がある |
-| `.claude-plugin/settings.json` / `harness.toml` | sandbox denied domains などを sync している | `allowManagedDomainsOnly` / `allowManagedReadPathsOnly` precedence bug fix 後の managed sandbox 境界を再確認する必要がある |
+| `go/internal/guardrail/helpers.go` | Treats `.git/`, `.env`, keys, `.husky/` as protected paths | Claude Code 2.1.121 / 2.1.126 skip mode added prompt bypass for `.claude/`, `.vscode/`, shell config files, etc. |
+| `go/internal/guardrail/rules.go` | Blocks / asks / warns for Write/Edit/MultiEdit and Bash writes | Immediately denying all of `.claude/` could break rules / memory / setup updates |
+| `.claude-plugin/settings.json` / `harness.toml` | Syncs sandbox denied domains etc. | Need to recheck managed sandbox boundary after `allowManagedDomainsOnly` / `allowManagedReadPathsOnly` precedence bug fix |
 
 ### Decision
 
-- **即時に `.claude/` 全体 deny はしない**
-- 先に protected path taxonomy を作る
+- **Do not immediately deny all of `.claude/`**
+- First create a protected path taxonomy:
   - deny: `.git/`, secrets, shell rc / profile files, destructive hook entrypoints
   - ask: `.claude/skills/`, `.claude/agents/`, `.claude/commands/`, `.vscode/`
   - warn: `.claude/rules/`, `.claude/memory/`, project-local setup metadata
-- `--dangerously-skip-permissions` を使う session でも、Harness hook が動く範囲では guardrail を緩めない
-- managed sandbox は `harness.toml` -> generated settings -> template -> tests の順で確認する
+- Even in sessions using `--dangerously-skip-permissions`, do not relax guardrails within the Harness hook scope
+- Verify managed sandbox in the order: `harness.toml` → generated settings → template → tests
 
 ### Acceptance target
 
-- protected path table が docs または rule comment にある
-- Go guardrail tests に `.claude/skills`, `.claude/agents`, `.claude/commands`, `.vscode`, shell config files の deny / ask / warn 期待値がある
-- `tests/test-claude-upstream-integration.sh` が Phase 58 hardening coverage を検出する
-- normal setup / memory / rules 更新を過剰 deny しない
+- Protected path table is in docs or rule comment
+- Go guardrail tests have deny/ask/warn expectations for `.claude/skills`, `.claude/agents`, `.claude/commands`, `.vscode`, shell config files
+- `tests/test-claude-upstream-integration.sh` detects Phase 58 hardening coverage
+- Does not over-deny normal setup / memory / rules updates
 
 ## 58.2.2 `PostToolUse.updatedToolOutput` output governance
 
 ### Current Harness surface
 
-Phase 56 では `PostToolUse.duration_ms` を no-op にしました。
-理由は per-tool telemetry sink がなく、session duration と tool duration を混ぜると分かりにくくなるためです。
+Phase 56 made `PostToolUse.duration_ms` a no-op.
+The reason was that there is no per-tool telemetry sink and mixing session duration with tool duration creates confusion.
 
-Claude Code 2.1.121 では、`PostToolUse` が全 tool で `hookSpecificOutput.updatedToolOutput` を返せるようになりました。
+Claude Code 2.1.121 allows `PostToolUse` to return `hookSpecificOutput.updatedToolOutput` for all tools.
 
 ### Decision
 
-- **既定では tool output を書き換えない**
-- 使う場合は opt-in にする
-- 最初の候補は redaction / compaction / machine-readable normalization に限定する
-- 元の output と更新後 output の traceability を失わない
-- review や test の証拠を消す用途には使わない
+- **Do not rewrite tool output by default**
+- Use opt-in only
+- First candidates are limited to redaction / compaction / machine-readable normalization
+- Do not lose traceability between original output and updated output
+- Do not use for purposes that erase review or test evidence
 
 ### Acceptance target
 
-- `updatedToolOutput` の許可用途 / 禁止用途が docs にある
-- 実装する場合は before / after / audit record を test する
-- stdout が JSON 契約の tool では、人間向け説明を stdout に混ぜない
+- Permitted / prohibited uses of `updatedToolOutput` are documented
+- When implementing: test before/after/audit record
+- For tools with JSON-contract stdout, do not mix human-readable explanations into stdout
 
 ## 58.2.3 Claude setup / MCP / telemetry refresh
 
 ### Decision
 
-以下は runtime wrapper ではなく setup / docs / validation の候補として扱う。
+Treat the following as setup / docs / validation candidates, not runtime wrappers:
 
 | Item | Decision |
 |------|----------|
-| `claude ultrareview [target] --json` | `/harness-review` と競合させず、CI second-opinion として comparison task に残す |
-| `${CLAUDE_EFFORT}` | skill prompt tuning に使う価値はあるが、全 skill に機械追加しない |
-| `claude plugin validate` schema acceptance | release / marketplace validation docs で確認する |
-| MCP `alwaysLoad` | always-load と deferred discovery の使い分けを setup docs に残す |
-| `claude plugin prune` | stale dependency cleanup として docs 化候補。ただし uninstall/prune は破壊的なので dry-run 相当の説明を優先する |
-| `ANTHROPIC_BEDROCK_SERVICE_TIER` | Claude Code Bedrock guidance として扱い、Codex provider policy と混ぜない |
-| `claude project purge` | Harness state cleanup と混ぜず、`--dry-run` first の maintenance guidance にする |
-| `claude_code.skill_activated.invocation_trigger` | skill analytics に入れる価値はあるが、telemetry sink 設計が先 |
+| `claude ultrareview [target] --json` | Do not compete with `/harness-review`; keep in comparison task as CI second-opinion |
+| `${CLAUDE_EFFORT}` | Has value for skill prompt tuning, but do not mechanically add to all skills |
+| `claude plugin validate` schema acceptance | Confirm in release / marketplace validation docs |
+| MCP `alwaysLoad` | Keep usage distinction between always-load and deferred discovery in setup docs |
+| `claude plugin prune` | Candidate for documentation as stale dependency cleanup. However, prioritize dry-run equivalent explanations since uninstall/prune is destructive |
+| `ANTHROPIC_BEDROCK_SERVICE_TIER` | Treat as Claude Code Bedrock guidance; do not mix with Codex provider policy |
+| `claude project purge` | Do not mix with Harness state cleanup; make it maintenance guidance with `--dry-run` first |
+| `claude_code.skill_activated.invocation_trigger` | Has value for skill analytics, but telemetry sink design comes first |
 
 ## 58.3.1 Codex permission profiles and `--full-auto` migration
 
 ### Current Harness surface
 
-`codex/.codex/config.toml` は Phase 56 で no-inline-hooks 方針を記録しています。
-Codex `0.125.0` / `0.128.0` は permission profiles と sandbox profile controls を大きく進めました。
+`codex/.codex/config.toml` has the no-inline-hooks policy recorded in Phase 56.
+Codex `0.125.0` / `0.128.0` made significant advances with permission profiles and sandbox profile controls.
 
 ### Decision
 
-- `--full-auto` を新規 docs の default として増やさない
-- explicit permission profiles / trust flows を主導線に寄せる
-- `requirements.toml` は org-managed policy の置き場として扱い、配布 default には推測で入れない
-- `codex exec --json` reasoning token usage は loop / report telemetry 候補にする
-- rollout tracing と existing AgentTrace の重複を確認する
+- Do not add `--full-auto` as the default in new docs
+- Steer toward explicit permission profiles / trust flows as the primary path
+- Treat `requirements.toml` as a place for org-managed policy; do not speculatively add to distribution defaults
+- Make `codex exec --json` reasoning token usage a loop / report telemetry candidate
+- Confirm rollout tracing doesn't duplicate existing AgentTrace
 
 ### Acceptance target
 
-- stale `--full-auto` guidance を `rg` で棚卸しする
-- Codex permission profile examples が config surface と矛盾しない
-- `codex/.codex/config.toml` に即時 hook を足す場合は Codex package test を追加する
-- no-op 継続の場合は理由を config comment / docs / tests に残す
+- Inventory stale `--full-auto` guidance with `rg`
+- Codex permission profile examples do not contradict config surface
+- If adding immediate hooks to `codex/.codex/config.toml`, add Codex package tests
+- If continuing as no-op, leave reason in config comment / docs / tests
 
 ## 58.3.2 Codex plugin hooks, `/goal`, MultiAgentV2, app-server updates
 
@@ -115,17 +117,18 @@ Codex `0.125.0` / `0.128.0` は permission profiles と sandbox profile controls
 
 | Item | Decision |
 |------|----------|
-| `/goal` workflows | `Plans.md` SSOT と二重化しない。goal は runtime continuation 候補として調査する |
-| plugin-bundled hooks / hook enablement state | Phase 56 の no-inline-hooks 方針を再評価するが、配布 default では無効化状態と opt-in を優先する |
-| external agent import | Claude / Codex / external agent の ownership 境界を決めてから使う |
-| MultiAgentV2 thread caps / wait controls | `agents.max_threads = 8` と v2-specific controls の関係を検証する |
-| sticky environments / remote thread config | one primary environment per write turn は維持し、remote は read-only first にする |
-| app-server release artifacts / Python SDK | Harness が SDK を同梱しない限り docs-only に留める |
+| `/goal` workflows | Do not duplicate `Plans.md` SSOT. Treat goal as runtime continuation candidate for investigation |
+| Plugin-bundled hooks / hook enablement state | Re-evaluate Phase 56 no-inline-hooks policy, but prioritize disabled-by-default and opt-in in distribution defaults |
+| External agent import | Determine ownership boundaries between Claude / Codex / external agents before using |
+| MultiAgentV2 thread caps / wait controls | Verify relationship between `agents.max_threads = 8` and v2-specific controls |
+| Sticky environments / remote thread config | Maintain one primary environment per write turn; remote is read-only first |
+| App-server release artifacts / Python SDK | Keep as docs-only unless Harness bundles the SDK |
 
-## Why This Way
+## Why this way
 
-Phase 58 の upstream は、単純な docs refresh ではありません。
-Claude 側は permission / hook output mutation、Codex 側は permission profiles / plugin hooks / goal workflow が大きく変わっています。
+Phase 58's upstream is not a simple docs refresh.
+On the Claude side, permission / hook output mutation changed significantly; on the Codex side,
+permission profiles / plugin hooks / goal workflow changed significantly.
 
-そのため、この snapshot では runtime を急いで増やさず、
-まず「何を守るか」「どこまで自動継承するか」「どの task で実装するか」を固定します。
+Therefore, in this snapshot, rather than rushing to add runtime features, we first fix
+"what to protect," "how far to auto-inherit," and "which task to implement in."

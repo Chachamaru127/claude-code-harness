@@ -1,6 +1,6 @@
 #!/bin/bash
 # test-breezing-advisor-protocol.sh
-# breezing / harness-work スキルの advisor protocol contract を固定する
+# Locks in the advisor protocol contract for breezing / harness-work skills
 # Phase 1.5: codex/opencode mirror checks removed (runtimes archived)
 
 set -euo pipefail

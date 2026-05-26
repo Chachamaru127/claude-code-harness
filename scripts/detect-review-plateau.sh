@@ -1,6 +1,6 @@
 #!/bin/bash
 # detect-review-plateau.sh
-# レビュー修正ループで行き詰まっているかを判定し、Lead に戦略転換（pivot）を促す。
+# Determine whether the review correction loop is stuck and prompt Lead to pivot strategy.
 #
 # Usage: ./scripts/detect-review-plateau.sh <task_id> [--calibration-file <path>]
 #
@@ -12,8 +12,8 @@
 # Output (stdout):
 #   STATUS: PIVOT_REQUIRED | PIVOT_NOT_REQUIRED | INSUFFICIENT_DATA
 #   ENTRIES: <N>
-#   JACCARD_AVG: <0.XX>  (N>=3 のみ)
-#   REASON: <説明>
+#   JACCARD_AVG: <0.XX>  (only when N>=3)
+#   REASON: <explanation>
 
 set -euo pipefail
 
@@ -22,7 +22,7 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 1
 fi
 
-# --- 引数解析 ---
+# --- Argument parsing ---
 TASK_ID=""
 CALIBRATION_FILE=".claude/state/review-calibration.jsonl"
 
@@ -34,7 +34,7 @@ while [ "$#" -gt 0 ]; do
       CALIBRATION_FILE="${1:-}"
       ;;
     --*)
-      # 未知のオプションは無視
+      # Ignore unknown options
       ;;
     *)
       _positional+=("$1")
@@ -59,14 +59,14 @@ if [ ! -f "$CALIBRATION_FILE" ]; then
   exit 1
 fi
 
-# --- 同一 task_id のエントリを抽出（直近 N 件）---
+# --- Extract entries with the same task_id (most recent N entries) ---
 ENTRIES_JSON="$(jq -c --arg tid "$TASK_ID" \
   'select(.task.id == $tid)' \
   "$CALIBRATION_FILE" 2>/dev/null | tail -3)"
 
 ENTRY_COUNT="$(printf '%s\n' "$ENTRIES_JSON" | jq -s 'length' 2>/dev/null || printf '0')"
 
-# 全件数も取得（件数チェックは全件で行う）
+# Also get the total count (count check is done on all entries)
 ALL_ENTRIES_JSON="$(jq -c --arg tid "$TASK_ID" \
   'select(.task.id == $tid)' \
   "$CALIBRATION_FILE" 2>/dev/null)"
@@ -81,13 +81,13 @@ if [ "$TOTAL_COUNT" -lt 3 ]; then
   exit 1
 fi
 
-# --- N >= 3: 直近 3 件を分析 ---
+# --- N >= 3: analyze the most recent 3 entries ---
 
-# 各エントリからファイル集合を抽出する関数
-# 優先順位:
+# Function to extract the file set from each entry
+# Priority:
 #   1. review_result_snapshot.files_changed[]
-#   2. gaps[].location から ':' 区切り先頭
-#   3. どちらもなければ空集合
+#   2. Leading part before ':' separator in gaps[].location
+#   3. Empty set if neither is present
 extract_files() {
   local entry="$1"
   local files=""
@@ -98,7 +98,7 @@ extract_files() {
   ' 2>/dev/null)"
 
   if [ -z "$files" ]; then
-    # 2. gaps[].location から ':' 区切り先頭
+    # 2. Leading part before ':' separator in gaps[].location
     files="$(echo "$entry" | jq -r '
       (.gaps // [])
       | map(select(.location != null and .location != ""))
@@ -110,42 +110,42 @@ extract_files() {
   echo "$files"
 }
 
-# 直近 3 件のエントリを配列に格納
+# Store the most recent 3 entries in an array
 ENTRY1="$(echo "$ENTRIES_JSON" | sed -n '1p')"
 ENTRY2="$(echo "$ENTRIES_JSON" | sed -n '2p')"
 ENTRY3="$(echo "$ENTRIES_JSON" | sed -n '3p')"
 
-# ファイル集合を抽出（重複排除・ソート済み）
+# Extract file sets (deduplicated and sorted)
 FILES1="$(extract_files "$ENTRY1" | sort -u)"
 FILES2="$(extract_files "$ENTRY2" | sort -u)"
 FILES3="$(extract_files "$ENTRY3" | sort -u)"
 
-# Jaccard 類似度計算関数
+# Jaccard similarity function
 # |A ∩ B| / |A ∪ B|
 jaccard() {
   local set_a="$1"
   local set_b="$2"
 
-  # どちらも空なら類似度 1.0（同じ空集合）
+  # Both empty → similarity 1.0 (same empty set)
   if [ -z "$set_a" ] && [ -z "$set_b" ]; then
     echo "1.0"
     return
   fi
 
-  # 片方のみ空なら類似度 0.0
+  # Only one empty → similarity 0.0
   if [ -z "$set_a" ] || [ -z "$set_b" ]; then
     echo "0.0"
     return
   fi
 
-  # 共通要素数（intersection）
+  # Intersection element count
   local intersection
   intersection="$(comm -12 \
     <(echo "$set_a" | sort -u) \
     <(echo "$set_b" | sort -u) \
     | wc -l | tr -d ' ')"
 
-  # 和集合数（union = |A| + |B| - |intersection|）
+  # Union count (union = |A| + |B| - |intersection|)
   local count_a count_b union
   count_a="$(echo "$set_a" | sort -u | wc -l | tr -d ' ')"
   count_b="$(echo "$set_b" | sort -u | wc -l | tr -d ' ')"
@@ -156,19 +156,19 @@ jaccard() {
     return
   fi
 
-  # 小数点計算（bash は整数のみなので awk を使用）
+  # Floating-point calculation (bash is integers-only, so use awk)
   awk "BEGIN { printf \"%.4f\", $intersection / $union }"
 }
 
-# 3 ペアの Jaccard 類似度を計算
+# Calculate Jaccard similarity for 3 pairs
 J12="$(jaccard "$FILES1" "$FILES2")"
 J13="$(jaccard "$FILES1" "$FILES3")"
 J23="$(jaccard "$FILES2" "$FILES3")"
 
-# 平均 Jaccard
+# Average Jaccard
 JACCARD_AVG="$(awk "BEGIN { printf \"%.4f\", ($J12 + $J13 + $J23) / 3 }")"
 
-# 条件 (b): 全ペアの平均 Jaccard > 0.7
+# Condition (b): average Jaccard across all pairs > 0.7
 THRESHOLD="0.7"
 IS_PLATEAU="$(awk "BEGIN { print ($JACCARD_AVG > $THRESHOLD) ? \"yes\" : \"no\" }")"
 

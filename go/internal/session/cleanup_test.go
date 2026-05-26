@@ -38,7 +38,7 @@ func TestCleanupHandler_DeletesTempFiles(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// 一時ファイルを作成
+	// Create temporary files
 	tempFiles := []string{
 		"pending-skill.json",
 		"current-operation.json",
@@ -51,7 +51,7 @@ func TestCleanupHandler_DeletesTempFiles(t *testing.T) {
 		}
 	}
 
-	// 削除すべきでないファイルも作成
+	// Also create a file that should not be deleted
 	keepFile := filepath.Join(stateDir, "session.json")
 	if err := os.WriteFile(keepFile, []byte("{}"), 0600); err != nil {
 		t.Fatal(err)
@@ -72,14 +72,14 @@ func TestCleanupHandler_DeletesTempFiles(t *testing.T) {
 		t.Errorf("expected continue=true")
 	}
 
-	// 一時ファイルが削除されているか確認
+	// Verify that temporary files were deleted
 	for _, name := range tempFiles {
 		if _, err := os.Stat(filepath.Join(stateDir, name)); err == nil {
 			t.Errorf("expected %s to be deleted", name)
 		}
 	}
 
-	// session.json は保持されているか確認
+	// Verify that session.json was preserved
 	if _, err := os.Stat(keepFile); err != nil {
 		t.Errorf("session.json should not be deleted: %v", err)
 	}
@@ -122,14 +122,14 @@ func TestCleanupHandler_InboxGlobPattern(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// inbox-*.tmp パターンのみを作成
+	// Create only inbox-*.tmp pattern files
 	tmpFiles := []string{"inbox-1.tmp", "inbox-2.tmp", "inbox-3.tmp"}
 	for _, name := range tmpFiles {
 		if err := os.WriteFile(filepath.Join(stateDir, name), []byte("data"), 0600); err != nil {
 			t.Fatal(err)
 		}
 	}
-	// inbox-*.tmp に一致しないファイル（削除しないはず）
+	// File that does not match inbox-*.tmp (should not be deleted)
 	otherFile := filepath.Join(stateDir, "inbox-data.json")
 	if err := os.WriteFile(otherFile, []byte("{}"), 0600); err != nil {
 		t.Fatal(err)

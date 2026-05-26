@@ -13,7 +13,7 @@ cat > "${TMP_DIR}/input.json" <<'EOF'
   "reviewer_profile": "runtime",
   "task": {
     "id": "32.0.2",
-    "title": "review artifact を統一する"
+    "title": "Unify review artifacts"
   },
   "critical_issues": [],
   "major_issues": [],
@@ -52,7 +52,7 @@ cat > "${TMP_DIR}/browser-input.json" <<'EOF'
   "checks": [
     {
       "id": "browser-smoke",
-      "description": "主要 UI フローを確認する"
+      "description": "Verify the main UI flow"
     }
   ]
 }
@@ -112,18 +112,18 @@ cat > "${TMP_DIR}/calibration-input.json" <<'EOF'
   "calibration": {
     "label": "false_negative",
     "source": "post-review",
-    "notes": "見逃した major を後で拾えた",
-    "prompt_hint": "major の根拠を diff で確認する",
+    "notes": "Caught a missed major issue later",
+    "prompt_hint": "Verify the basis for major findings in the diff",
     "few_shot_ready": true
   },
   "gaps": [
     {
       "severity": "major",
-      "issue": "主要な差分確認が抜けていた",
-      "suggestion": "diff を再確認する"
+      "issue": "Key diff review was missing",
+      "suggestion": "Re-check the diff"
     }
   ],
-  "followups": ["reviewer prompt を見直す"]
+  "followups": ["Revisit reviewer prompt"]
 }
 EOF
 

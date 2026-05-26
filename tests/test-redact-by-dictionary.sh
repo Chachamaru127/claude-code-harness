@@ -1,17 +1,17 @@
 #!/bin/bash
 # tests/test-redact-by-dictionary.sh
-# Phase 65.3.2 - redact-by-dictionary.sh の機械検証
+# Phase 65.3.2 - redact-by-dictionary.sh mechanical validation
 #
-# 検証ケース (Plans.md §65.3.2 DoD d に対応):
-#   1. ヒット 0      - 該当なし、原文そのまま、stderr なし
-#   2. ヒット 1      - 1 件置換、stderr に "redacted: 1 tokens"
-#   3. 複数ヒット    - 1 entry の name が 2 回出現で 2 ヒット
-#   4. aliases ヒット - 主名と alias 両方が同じ replace_with
-#   5. 重複 redact_as - 複数 entry が同じ replace_with、件数正しい
+# Validation cases (corresponding to Plans.md §65.3.2 DoD d):
+#   1. 0 hits       - no match, original text unchanged, no stderr
+#   2. 1 hit        - 1 replacement, stderr shows "redacted: 1 tokens"
+#   3. multiple hits - 1 entry's name appears 2 times → 2 hits
+#   4. aliases hit  - both main name and alias use the same replace_with
+#   5. duplicate redact_as - multiple entries with same replace_with, correct count
 #
-# 追加検証 (D43 判断 4 二重置換ガード):
-#   6. sentinel mark ([REDACTED_*], [Entity], [Client_*], [Person_*], [Domain_*])
-#      は redact 対象から除外される
+# Additional validation (D43 decision 4 double-replacement guard):
+#   6. sentinel marks ([REDACTED_*], [Entity], [Client_*], [Person_*], [Domain_*])
+#      are excluded from redaction targets
 
 set -euo pipefail
 
@@ -48,7 +48,7 @@ TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/test-redact-by-dict.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 # ============================================================
-# Case 1: ヒット 0 (該当なし、原文そのまま、stderr なし)
+# Case 1: 0 hits (no match, original text unchanged, no stderr)
 # ============================================================
 
 DICT1="$TMP_DIR/dict1-with-clients.yaml"
@@ -62,8 +62,8 @@ people: []
 domains: []
 YAML
 
-OUTPUT="$(bash "$SCRIPT" --input "全く関係ないテキスト" --dict "$DICT1" 2>"$TMP_DIR/c1-stderr.txt")"
-if [[ "$OUTPUT" == "全く関係ないテキスト" ]]; then
+OUTPUT="$(bash "$SCRIPT" --input "completely unrelated text" --dict "$DICT1" 2>"$TMP_DIR/c1-stderr.txt")"
+if [[ "$OUTPUT" == "completely unrelated text" ]]; then
   pass "Case 1 (no hit): stdout = original text"
 else
   fail "Case 1 (no hit): stdout != original. got: $OUTPUT"
@@ -76,11 +76,11 @@ else
 fi
 
 # ============================================================
-# Case 2: ヒット 1 (NoraiCorp が 1 回登場)
+# Case 2: 1 hit (NoraiCorp appears once)
 # ============================================================
 
-OUTPUT="$(bash "$SCRIPT" --input "NoraiCorp と提携した話" --dict "$DICT1" 2>"$TMP_DIR/c2-stderr.txt")"
-if [[ "$OUTPUT" == "[Client_A] と提携した話" ]]; then
+OUTPUT="$(bash "$SCRIPT" --input "NoraiCorp partnership story" --dict "$DICT1" 2>"$TMP_DIR/c2-stderr.txt")"
+if [[ "$OUTPUT" == "[Client_A] partnership story" ]]; then
   pass "Case 2 (1 hit): NoraiCorp → [Client_A]"
 else
   fail "Case 2 (1 hit): unexpected output. got: $OUTPUT"
@@ -93,11 +93,11 @@ else
 fi
 
 # ============================================================
-# Case 3: 複数ヒット (NoraiCorp が 3 回)
+# Case 3: multiple hits (NoraiCorp appears 3 times)
 # ============================================================
 
-OUTPUT="$(bash "$SCRIPT" --input "NoraiCorp と NoraiCorp と NoraiCorp が連携" --dict "$DICT1" 2>"$TMP_DIR/c3-stderr.txt")"
-if [[ "$OUTPUT" == "[Client_A] と [Client_A] と [Client_A] が連携" ]]; then
+OUTPUT="$(bash "$SCRIPT" --input "NoraiCorp and NoraiCorp and NoraiCorp collaborate" --dict "$DICT1" 2>"$TMP_DIR/c3-stderr.txt")"
+if [[ "$OUTPUT" == "[Client_A] and [Client_A] and [Client_A] collaborate" ]]; then
   pass "Case 3 (3 hits): all 3 NoraiCorp replaced"
 else
   fail "Case 3 (3 hits): unexpected output. got: $OUTPUT"
@@ -110,7 +110,7 @@ else
 fi
 
 # ============================================================
-# Case 4: aliases ヒット (主名 + alias 両方が同じ replace)
+# Case 4: aliases hit (both main name and alias use same replace)
 # ============================================================
 
 DICT4="$TMP_DIR/dict4-aliases.yaml"
@@ -127,7 +127,7 @@ people:
 domains: []
 YAML
 
-# 主名ヒット
+# Main name hit
 OUTPUT="$(bash "$SCRIPT" --input "田中太郎が来ました" --dict "$DICT4" 2>"$TMP_DIR/c4a-stderr.txt")"
 if [[ "$OUTPUT" == "[Person_A]が来ました" ]]; then
   pass "Case 4-a (main name): 田中太郎 → [Person_A]"
@@ -135,7 +135,7 @@ else
   fail "Case 4-a (main name): unexpected output. got: $OUTPUT"
 fi
 
-# alias ヒット (田中)
+# Alias hit (田中)
 OUTPUT="$(bash "$SCRIPT" --input "田中だけ来ました" --dict "$DICT4" 2>"$TMP_DIR/c4b-stderr.txt")"
 if [[ "$OUTPUT" == "[Person_A]だけ来ました" ]]; then
   pass "Case 4-b (alias 田中): 田中 → [Person_A]"
@@ -143,7 +143,7 @@ else
   fail "Case 4-b (alias 田中): unexpected output. got: $OUTPUT"
 fi
 
-# alias ヒット (Mr. Tanaka)
+# Alias hit (Mr. Tanaka)
 OUTPUT="$(bash "$SCRIPT" --input "Mr. Tanaka came" --dict "$DICT4" 2>"$TMP_DIR/c4c-stderr.txt")"
 if [[ "$OUTPUT" == "[Person_A] came" ]]; then
   pass "Case 4-c (alias Mr. Tanaka): replaced"
@@ -151,7 +151,7 @@ else
   fail "Case 4-c (alias Mr. Tanaka): unexpected output. got: $OUTPUT"
 fi
 
-# 主名 + alias 混在: 「田中太郎と田中」 (length DESC sort で 田中太郎 が先に処理される)
+# Mixed main name + alias: "田中太郎と田中" (length DESC sort processes 田中太郎 first)
 OUTPUT="$(bash "$SCRIPT" --input "田中太郎と田中が話した" --dict "$DICT4" 2>"$TMP_DIR/c4d-stderr.txt")"
 if [[ "$OUTPUT" == "[Person_A]と[Person_A]が話した" ]]; then
   pass "Case 4-d (mixed name + alias): both → [Person_A]"
@@ -166,7 +166,7 @@ else
 fi
 
 # ============================================================
-# Case 5: 重複 redact_as (複数 entry が同じ replace_with)
+# Case 5: duplicate redact_as (multiple entries with same replace_with)
 # ============================================================
 
 DICT5="$TMP_DIR/dict5-duplicate-replace.yaml"
@@ -183,8 +183,8 @@ people: []
 domains: []
 YAML
 
-OUTPUT="$(bash "$SCRIPT" --input "NoraiCorp と YorozuPro が競合" --dict "$DICT5" 2>"$TMP_DIR/c5-stderr.txt")"
-if [[ "$OUTPUT" == "[Client_X] と [Client_X] が競合" ]]; then
+OUTPUT="$(bash "$SCRIPT" --input "NoraiCorp and YorozuPro compete" --dict "$DICT5" 2>"$TMP_DIR/c5-stderr.txt")"
+if [[ "$OUTPUT" == "[Client_X] and [Client_X] compete" ]]; then
   pass "Case 5 (duplicate replace_with): both → [Client_X]"
 else
   fail "Case 5: unexpected output. got: $OUTPUT"
@@ -197,10 +197,10 @@ else
 fi
 
 # ============================================================
-# Case 6 (D43 判断 4): 二重置換ガード — sentinel mark 保護
+# Case 6 (D43 decision 4): double-replacement guard — sentinel mark protection
 # ============================================================
 
-# 6-a: 既存の [REDACTED_*] が input にあるとき、それは保持
+# 6-a: when existing [REDACTED_*] is in input, it is preserved
 OUTPUT="$(bash "$SCRIPT" --input "Already [REDACTED_email] in text" --dict "$DICT1" 2>"$TMP_DIR/c6a-stderr.txt")"
 if [[ "$OUTPUT" == "Already [REDACTED_email] in text" ]]; then
   pass "Case 6-a (sentinel guard): [REDACTED_email] preserved"
@@ -208,10 +208,10 @@ else
   fail "Case 6-a: sentinel was modified. got: $OUTPUT"
 fi
 
-# 6-b: dict 該当語と sentinel mark の混在
-#   "NoraiCorp と [Client_X] が混在" — NoraiCorp は redact、[Client_X] は保持
-OUTPUT="$(bash "$SCRIPT" --input "NoraiCorp と [Client_X] が混在" --dict "$DICT1" 2>"$TMP_DIR/c6b-stderr.txt")"
-if [[ "$OUTPUT" == "[Client_A] と [Client_X] が混在" ]]; then
+# 6-b: mixed dict match and sentinel mark
+#   "NoraiCorp and [Client_X] mixed" — NoraiCorp is redacted, [Client_X] is preserved
+OUTPUT="$(bash "$SCRIPT" --input "NoraiCorp and [Client_X] mixed" --dict "$DICT1" 2>"$TMP_DIR/c6b-stderr.txt")"
+if [[ "$OUTPUT" == "[Client_A] and [Client_X] mixed" ]]; then
   pass "Case 6-b (sentinel + dict mix): [Client_X] preserved, NoraiCorp redacted"
 else
   fail "Case 6-b: unexpected output. got: $OUTPUT"
@@ -223,20 +223,20 @@ else
   fail "Case 6-b: count should be 1. got: $(cat "$TMP_DIR/c6b-stderr.txt")"
 fi
 
-# 6-c: [Entity], [Person_*], [Domain_*] も同様に保護
-OUTPUT="$(bash "$SCRIPT" --input "[Entity] と [Person_A] と [Domain_X] が登場" --dict "$DICT1" 2>"$TMP_DIR/c6c-stderr.txt")"
-if [[ "$OUTPUT" == "[Entity] と [Person_A] と [Domain_X] が登場" ]]; then
+# 6-c: [Entity], [Person_*], [Domain_*] are similarly protected
+OUTPUT="$(bash "$SCRIPT" --input "[Entity] and [Person_A] and [Domain_X] appear" --dict "$DICT1" 2>"$TMP_DIR/c6c-stderr.txt")"
+if [[ "$OUTPUT" == "[Entity] and [Person_A] and [Domain_X] appear" ]]; then
   pass "Case 6-c (multi sentinel): all preserved"
 else
   fail "Case 6-c: unexpected output. got: $OUTPUT"
 fi
 
 # ============================================================
-# 共通: stdin モード
+# Common: stdin mode
 # ============================================================
 
 OUTPUT="$(echo "NoraiCorp test" | bash "$SCRIPT" --stdin --dict "$DICT1" 2>"$TMP_DIR/stdin-stderr.txt")"
-# echo は末尾改行を付ける
+# echo appends trailing newline
 if [[ "$OUTPUT" == "[Client_A] test" ]]; then
   pass "stdin mode: redacts correctly"
 else
@@ -244,7 +244,7 @@ else
 fi
 
 # ============================================================
-# 共通: default dict (空 SSOT) でも valid
+# Common: default dict (empty SSOT) is still valid
 # ============================================================
 
 OUTPUT="$(bash "$SCRIPT" --input "default empty dict test" 2>"$TMP_DIR/default-stderr.txt")"
@@ -255,7 +255,7 @@ else
 fi
 
 # ============================================================
-# 共通: dict file not found は exit 1
+# Common: dict file not found → exit 1
 # ============================================================
 
 if bash "$SCRIPT" --input "x" --dict "/nonexistent/missing.yaml" >/dev/null 2>"$TMP_DIR/missing-stderr.txt"; then
@@ -271,7 +271,7 @@ else
 fi
 
 # ============================================================
-# 共通: schema_version mismatch は exit 1
+# Common: schema_version mismatch → exit 1
 # ============================================================
 
 DICT_BAD="$TMP_DIR/bad-schema.yaml"
@@ -289,7 +289,7 @@ else
 fi
 
 # ============================================================
-# 共通: duplicate rule_id は exit 1
+# Common: duplicate rule_id → exit 1
 # ============================================================
 
 DICT_DUP="$TMP_DIR/dup-rule-id.yaml"

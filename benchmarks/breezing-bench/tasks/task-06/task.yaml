@@ -1,7 +1,7 @@
 id: "task-06"
-name: "型安全リファクタ - any 排除"
+name: "Type-safe refactor - eliminate any"
 difficulty: "Hard"
-prompt: "data-processor.ts の any を全て排除し、適切な型定義を追加してください。tsc --noEmit が通るようにし、既存のロジックは変更しないでください。"
+prompt: "Remove all uses of any from data-processor.ts and add appropriate type definitions. Make tsc --noEmit pass without changing the existing logic."
 hidden_test_count: 10
 setup_files:
   - src/data-processor.ts

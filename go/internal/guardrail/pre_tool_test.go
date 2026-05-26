@@ -59,7 +59,7 @@ func TestPreToolToOutput_ApproveNoMessage(t *testing.T) {
 func TestPreToolToOutput_ApproveWithSystemMessage(t *testing.T) {
 	result := hookproto.HookResult{
 		Decision:      hookproto.DecisionApprove,
-		SystemMessage: "警告: 機密ファイルを読み取っています",
+		SystemMessage: "Warning: reading sensitive file",
 	}
 	out := PreToolToOutput(result)
 	if out == nil {

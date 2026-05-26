@@ -1,23 +1,23 @@
 #!/bin/bash
 # tests/test-plan-brief-compile.sh
-# Phase 65.1.3 - plan-brief-compile.sh の機械検証
+# Phase 65.1.3 - plan-brief-compile.sh mechanical validation
 #
-# 検証ケース (DoD c に対応):
-#   1. case-empty           : 類似案件 0 件 + D/P 0 件 + request 数値あり 1 文
-#                              => confidence ≈ DoD 成分のみ
-#   2. case-5-all-done      : 類似案件 5 件全完了 + D 4 + P 2 (=6 → 30pt)
+# Test cases (corresponds to DoD c):
+#   1. case-empty           : 0 similar cases + 0 D/P + request has 1 sentence with number
+#                              => confidence ≈ DoD component only
+#   2. case-5-all-done      : 5 similar cases all done + D 4 + P 2 (=6 → 30pt)
 #                              => confidence = 40 + 30 + 30 = 100
-#   3. case-5-half-failed   : 類似案件 5 件中 2 完了 (40%) + D 2 + P 1 (=3 → 20pt)
+#   3. case-5-half-failed   : 2/5 similar cases done (40%) + D 2 + P 1 (=3 → 20pt)
 #                              => confidence = 16 + 30 + 20 = 66
-#   4. case-5-all-done-no-dp: 類似案件 5 件全完了 + D/P 0 件
+#   4. case-5-all-done-no-dp: 5 similar cases all done + 0 D/P
 #                              => confidence = 40 + 30 + 0 = 70
 #
-# 共通検証:
-#   (a) --query / --project 必須、欠けたら exit 2
-#   (b) confidence は 0-100 の整数
-#   (c) confidence_evidence に「N 件中 M 件 (X%) が cc:完了」形式の行が 1 行以上
-#   (d) 出力 schema が "plan-brief-context.v1"
-#   (e) 関連 D/P の各 element が related_decisions に渡る (件数一致)
+# Common validation:
+#   (a) --query / --project required; exit 2 if missing
+#   (b) confidence is integer in 0-100
+#   (c) confidence_evidence has at least 1 line in "M of N (X%) cc:done" format
+#   (d) output schema is "plan-brief-context.v1"
+#   (e) each related D/P element is passed to related_decisions (count matches)
 
 set -euo pipefail
 
@@ -43,7 +43,7 @@ if [[ ! -x "$COMPILE_SCRIPT" ]]; then
 fi
 pass "plan-brief-compile.sh exists and is executable"
 
-# ---- (a) 必須引数チェック ----
+# ---- (a) Required argument check ----
 
 set +e
 bash "$COMPILE_SCRIPT" 2>/dev/null
@@ -65,8 +65,8 @@ else
   fail "Compile script should exit 2 when --project missing (got $exit_code)"
 fi
 
-# ---- ヘルパー: 1 ケース実行 ----
-# 引数: <case_label> <fixture_path> <expected_confidence_min> <expected_confidence_max>
+# ---- Helper: run 1 case ----
+# Args: <case_label> <fixture_path> <expected_confidence_min> <expected_confidence_max>
 #       <query_text> <expected_decisions_count> <expected_plans_count>
 
 run_case() {
@@ -109,10 +109,10 @@ run_case() {
     fail "[$label] confidence out of [0, 100]: $conf"
   fi
 
-  # confidence_evidence has past plans line with "N 件中 M 件 (X%)" or "0 件 (シグナル不足)"
+  # confidence_evidence has past plans line with "M of N (X%)" or "0 items (insufficient signal)"
   local evidence_text
   evidence_text="$(printf '%s' "$out" | jq -r '.confidence_evidence | join("\n")')"
-  if printf '%s' "$evidence_text" | grep -qE '件中.*件 \([0-9]+%\) が cc:完了|0 件 \(シグナル不足\)'; then
+  if printf '%s' "$evidence_text" | grep -qE '[0-9]+ of [0-9]+ \([0-9]+%\) cc:done|0 items \(insufficient signal\)'; then
     pass "[$label] confidence_evidence contains past plans rate evidence"
   else
     fail "[$label] confidence_evidence missing past plans rate line"
@@ -147,31 +147,31 @@ run_case() {
 }
 
 # ---- Case 1: empty mem results ----
-# query: 1 文に数字 1 個 → DoD 100% × 30 = 30
-# 過去 0 件 → 0、 D/P 0 件 → 0
+# query: 1 sentence with 1 number → DoD 100% × 30 = 30
+# past 0 items → 0, D/P 0 items → 0
 # expected confidence: 30 (only DoD contributes)
-run_case "empty" "$FIX_DIR/case-empty.json" 28 32 "Plan Brief を 1 つ作りたい" 0 0
+run_case "empty" "$FIX_DIR/case-empty.json" 28 32 "I want to create 1 Plan Brief" 0 0
 
 # ---- Case 2: 5 all done + D 4 + P 2 (= 6 D/P) ----
-# 過去 5 件全完了 → 40
-# query: 1 文 数字 1 個 → 30
-# D/P 6 件以上 → 30
+# past 5 items all done → 40
+# query: 1 sentence with 1 number → 30
+# D/P 6+ items → 30
 # expected: 100
-run_case "5-all-done" "$FIX_DIR/case-5-all-done.json" 98 100 "全 5 タスクを完走したい" 4 5
+run_case "5-all-done" "$FIX_DIR/case-5-all-done.json" 98 100 "I want to complete all 5 tasks" 4 5
 
 # ---- Case 3: 5 half failed + D 2 + P 1 (= 3 D/P) ----
-# 過去 5 件中 2 件完了 (40%) → 16
-# query: 1 文 数字あり → 30
-# D/P 3 件 → 20
+# 2/5 past items done (40%) → 16
+# query: 1 sentence with number → 30
+# D/P 3 items → 20
 # expected: 66 (allow 64-68 for rounding)
-run_case "5-half-failed" "$FIX_DIR/case-5-half-failed.json" 64 68 "5 タスクを進める" 2 5
+run_case "5-half-failed" "$FIX_DIR/case-5-half-failed.json" 64 68 "Advance 5 tasks" 2 5
 
 # ---- Case 4: 5 all done + 0 D/P ----
-# 過去 5 件全完了 → 40
-# query: 1 文 数字あり → 30
-# D/P 0 件 → 0
+# past 5 items all done → 40
+# query: 1 sentence with number → 30
+# D/P 0 items → 0
 # expected: 70
-run_case "5-all-done-no-dp" "$FIX_DIR/case-5-all-done-no-dp.json" 68 72 "5 タスクを進める" 0 5
+run_case "5-all-done-no-dp" "$FIX_DIR/case-5-all-done-no-dp.json" 68 72 "Advance 5 tasks" 0 5
 
 # ---- Summary ----
 

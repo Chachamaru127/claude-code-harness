@@ -1,7 +1,7 @@
 export interface RateLimiterOptions {
-  maxTokens: number;       // バケット容量
-  refillRate: number;      // 1秒あたりのリフィル数
-  refillInterval?: number; // リフィル間隔 (ms), default 1000
+  maxTokens: number;       // bucket capacity
+  refillRate: number;      // number of tokens refilled per second
+  refillInterval?: number; // refill interval (ms), default 1000
 }
 
 export interface RateLimiter {

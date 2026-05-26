@@ -24,16 +24,16 @@ SENTINELS = [
     re.compile(r"\[Domain_[A-Za-z0-9_]+\]"),
 ]
 
-# 残骸 pattern: カタカナ 5 文字以上連続 (人名 / 社名 / ブランド名の典型)
+# Residue pattern: 5 or more consecutive Katakana characters (typical of person names / company names / brand names)
 KATAKANA_RUN = re.compile(r"[ァ-ヶー]{5,}")
 
 
 def _strip_template_chrome(text: str) -> str:
-    """Template の static chrome を scan 対象から除外する。
+    """Exclude template static chrome from the scan target.
 
-    HTML コメント / CSS コメント / <style> ブロック / <script> ブロックは
-    template 著者の意図的な内容で、データ由来の leak ではない。
-    Layer 3 は data 由来の残骸 detection が目的なので、ここを exclude する。
+    HTML comments / CSS comments / <style> blocks / <script> blocks are
+    intentional content from the template author and are not data-derived leaks.
+    Layer 3 aims to detect data-derived residues, so these are excluded.
     """
     out = text
     # HTML comments
@@ -50,10 +50,10 @@ def _strip_template_chrome(text: str) -> str:
 def main() -> int:
     text = sys.stdin.read()
 
-    # Template chrome (HTML/CSS comments, <style>, <script>) を除去
+    # Remove template chrome (HTML/CSS comments, <style>, <script>)
     scrubbed = _strip_template_chrome(text)
 
-    # Sentinel mark を一時的に消して scan する (false positive 防止)
+    # Temporarily remove sentinel marks before scanning (to prevent false positives)
     for pat in SENTINELS:
         scrubbed = pat.sub("", scrubbed)
 

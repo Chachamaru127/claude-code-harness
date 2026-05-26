@@ -91,7 +91,7 @@ func HandleInboxCheck(in io.Reader, out io.Writer) error {
 	lastReadTime := lastInboxReadTime(sessionsDir, inp.SessionID)
 
 	// Read messages from broadcast.md newer than lastReadTime.
-	// 自セッションの broadcast をフィルタするため session_id を渡す。
+	// Pass session_id to filter out broadcasts from the current session.
 	broadcastMessages, err := readBroadcastMessagesSinceDetailed(broadcastFile, 5, lastReadTime, inp.SessionID)
 	messages := broadcastMessageLines(broadcastMessages)
 	if err != nil || len(messages) == 0 {
@@ -108,7 +108,7 @@ func HandleInboxCheck(in io.Reader, out io.Writer) error {
 	}
 
 	// Build additionalContext string.
-	ctx := fmt.Sprintf("📨 他セッションからのメッセージ %d件:\n---\n%s\n---",
+	ctx := fmt.Sprintf("📨 Messages from other sessions (%d):\n---\n%s\n---",
 		len(messages), strings.Join(messages, "\n"))
 
 	output := preToolAllowOutput{}
@@ -124,8 +124,8 @@ func HandleInboxCheck(in io.Reader, out io.Writer) error {
 	return err
 }
 
-// lastInboxReadFile はセッション固有の既読タイムスタンプファイルパスを返す。
-// bash 版 session-inbox-check.sh の get_last_read_file() に相当。
+// lastInboxReadFile returns the session-specific last-read timestamp file path.
+// Equivalent to get_last_read_file() in the bash version session-inbox-check.sh.
 func lastInboxReadFile(sessionsDir, sessionID string) string {
 	if sessionID == "" {
 		sessionID = "unknown"
@@ -133,8 +133,8 @@ func lastInboxReadFile(sessionsDir, sessionID string) string {
 	return sessionsDir + "/.last_inbox_read_" + sessionID
 }
 
-// lastInboxReadTime はセッション固有の最終既読タイムスタンプを返す。
-// ファイルが存在しない場合は time.Time{} (zero) を返す。
+// lastInboxReadTime returns the session-specific last-read timestamp.
+// Returns time.Time{} (zero) if the file does not exist.
 func lastInboxReadTime(sessionsDir, sessionID string) time.Time {
 	f := lastInboxReadFile(sessionsDir, sessionID)
 	raw, err := os.ReadFile(f)
@@ -149,8 +149,8 @@ func lastInboxReadTime(sessionsDir, sessionID string) time.Time {
 	return t
 }
 
-// updateLastInboxRead はセッション固有の既読タイムスタンプを現在時刻で更新する。
-// bash 版 session-inbox-check.sh の mark_as_read() に相当。
+// updateLastInboxRead updates the session-specific last-read timestamp to the current time.
+// Equivalent to mark_as_read() in the bash version session-inbox-check.sh.
 func updateLastInboxRead(sessionsDir, sessionID string) {
 	updateLastInboxReadTo(sessionsDir, sessionID, time.Now().UTC())
 }
@@ -163,8 +163,8 @@ func updateLastInboxReadTo(sessionsDir, sessionID string, ts time.Time) {
 	_ = os.WriteFile(f, []byte(ts.UTC().Format("2006-01-02T15:04:05Z")+"\n"), 0o644)
 }
 
-// readBroadcastMessagesSince は broadcast.md から since 以降のメッセージを最大 maxCount 件読む。
-// since が zero の場合は全メッセージを返す（初回読み込み相当）。
+// readBroadcastMessagesSince reads up to maxCount messages from broadcast.md that are newer than since.
+// If since is zero, all messages are returned (equivalent to first-time read).
 func readBroadcastMessagesSince(path string, maxCount int, since time.Time, currentSessionID string) ([]string, error) {
 	msgs, err := readBroadcastMessagesSinceDetailed(path, maxCount, since, currentSessionID)
 	return broadcastMessageLines(msgs), err
@@ -177,8 +177,8 @@ func readBroadcastMessagesSinceDetailed(path string, maxCount int, since time.Ti
 	}
 	defer f.Close()
 
-	// 自セッションのフィルタ用プレフィックス（12文字）。
-	// session_auto_broadcast.go の senderTag と同じ長さ（bash 版に合わせて 12 文字）。
+	// Self-session filter prefix (12 characters).
+	// Same length as senderTag in session_auto_broadcast.go (12 characters, matching the bash version).
 	selfPrefix := ""
 	if len(currentSessionID) >= 12 {
 		selfPrefix = currentSessionID[:12]
@@ -194,14 +194,14 @@ func readBroadcastMessagesSinceDetailed(path string, maxCount int, since time.Ti
 		if !inMessage || currentContent == "" || len(msgs) >= maxCount {
 			return
 		}
-		// 自セッションが送った broadcast はスキップ（自己エコー防止）。
+		// Skip broadcasts sent by the current session (prevent self-echo).
 		if selfPrefix != "" && currentSender == selfPrefix {
 			return
 		}
-		// タイムスタンプをパース
+		// Parse the timestamp.
 		msgTime, parseErr := time.Parse("2006-01-02T15:04:05Z", currentTimestamp)
 		if parseErr == nil && !since.IsZero() && !msgTime.After(since) {
-			// since 以前のメッセージはスキップ
+			// Skip messages at or before since.
 			return
 		}
 		ts := currentTimestamp

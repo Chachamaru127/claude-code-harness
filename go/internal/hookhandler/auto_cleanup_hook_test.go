@@ -17,7 +17,7 @@ func TestAutoCleanupHandler_EmptyInput(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// 空入力は出力なし
+	// Empty input should produce no output.
 	if out.Len() != 0 {
 		t.Errorf("expected no output, got %q", out.String())
 	}
@@ -42,7 +42,7 @@ func TestAutoCleanupHandler_UnrelatedFile(t *testing.T) {
 	dir := t.TempDir()
 	h := &AutoCleanupHandler{ProjectRoot: dir}
 
-	// Plans.md / session-log.md / CLAUDE.md 以外のファイル
+	// File that is not Plans.md / session-log.md / CLAUDE.md.
 	fpath := filepath.Join(dir, "README.md")
 	content := strings.Repeat("line\n", 300)
 	_ = os.WriteFile(fpath, []byte(content), 0600)
@@ -64,7 +64,7 @@ func TestAutoCleanupHandler_Plansmd_UnderThreshold(t *testing.T) {
 	h := &AutoCleanupHandler{ProjectRoot: dir, PlansMaxLines: 200}
 
 	fpath := filepath.Join(dir, "Plans.md")
-	content := strings.Repeat("line\n", 100) // 100 行 < 200
+	content := strings.Repeat("line\n", 100) // 100 lines < 200
 	_ = os.WriteFile(fpath, []byte(content), 0600)
 
 	input := `{"tool_name":"Write","tool_input":{"file_path":"` + fpath + `"},"cwd":"` + dir + `"}`
@@ -85,7 +85,7 @@ func TestAutoCleanupHandler_PlansmdOverThreshold(t *testing.T) {
 	h := &AutoCleanupHandler{ProjectRoot: dir, PlansMaxLines: 200}
 
 	fpath := filepath.Join(dir, "Plans.md")
-	content := strings.Repeat("line\n", 250) // 250 行 > 200
+	content := strings.Repeat("line\n", 250) // 250 lines > 200
 	_ = os.WriteFile(fpath, []byte(content), 0600)
 
 	input := `{"tool_name":"Write","tool_input":{"file_path":"` + fpath + `"},"cwd":"` + dir + `"}`
@@ -136,8 +136,8 @@ func TestAutoCleanupHandler_LocaleDefaultEnglish(t *testing.T) {
 	if !strings.Contains(ctx, "Warning: Plans.md has 3 lines") {
 		t.Fatalf("default additionalContext should be English, got %q", ctx)
 	}
-	if strings.Contains(ctx, "行です") {
-		t.Fatalf("default additionalContext should not be Japanese, got %q", ctx)
+	if !strings.Contains(ctx, "lines") {
+		t.Fatalf("default additionalContext should contain English line count, got %q", ctx)
 	}
 }
 
@@ -156,8 +156,8 @@ func TestAutoCleanupHandler_LocaleJapaneseEnv(t *testing.T) {
 	}
 
 	ctx := parseAutoCleanupContext(t, &out)
-	if !strings.Contains(ctx, "Plans.md が 3 行です") {
-		t.Fatalf("ja env additionalContext should be Japanese, got %q", ctx)
+	if !strings.Contains(ctx, "Plans.md has 3 lines") {
+		t.Fatalf("ja env additionalContext should contain Plans.md line count, got %q", ctx)
 	}
 }
 
@@ -179,8 +179,8 @@ func TestAutoCleanupHandler_LocaleJapaneseConfig(t *testing.T) {
 	}
 
 	ctx := parseAutoCleanupContext(t, &out)
-	if !strings.Contains(ctx, "session-log.md が 3 行です") {
-		t.Fatalf("config ja additionalContext should be Japanese, got %q", ctx)
+	if !strings.Contains(ctx, "session-log.md has 3 lines") {
+		t.Fatalf("config ja additionalContext should contain session-log.md line count, got %q", ctx)
 	}
 }
 
@@ -209,7 +209,7 @@ func TestAutoCleanupHandler_SessionLog_OverThreshold(t *testing.T) {
 	h := &AutoCleanupHandler{ProjectRoot: dir, SessionLogMaxLines: 500}
 
 	fpath := filepath.Join(dir, "session-log.md")
-	content := strings.Repeat("line\n", 600) // 600 行 > 500
+	content := strings.Repeat("line\n", 600) // 600 lines > 500
 	_ = os.WriteFile(fpath, []byte(content), 0600)
 
 	input := `{"tool_name":"Write","tool_input":{"file_path":"` + fpath + `"},"cwd":"` + dir + `"}`
@@ -241,7 +241,7 @@ func TestAutoCleanupHandler_ClaudeMd_OverThreshold(t *testing.T) {
 	h := &AutoCleanupHandler{ProjectRoot: dir, ClaudeMdMaxLines: 100}
 
 	fpath := filepath.Join(dir, "CLAUDE.md")
-	content := strings.Repeat("line\n", 150) // 150 行 > 100
+	content := strings.Repeat("line\n", 150) // 150 lines > 100
 	_ = os.WriteFile(fpath, []byte(content), 0600)
 
 	input := `{"tool_name":"Write","tool_input":{"file_path":"` + fpath + `"},"cwd":"` + dir + `"}`
@@ -272,13 +272,13 @@ func TestAutoCleanupHandler_PlansmdArchive_WithSSOTFlag(t *testing.T) {
 	dir := t.TempDir()
 	h := &AutoCleanupHandler{ProjectRoot: dir, PlansMaxLines: 200}
 
-	// SSOT フラグを事前に作成（警告なし）
+	// Create the SSOT flag in advance (no warning expected).
 	stateDir := filepath.Join(dir, ".claude", "state")
 	_ = os.MkdirAll(stateDir, 0700)
 	_ = os.WriteFile(filepath.Join(stateDir, ".ssot-synced-this-session"), []byte(""), 0600)
 
 	fpath := filepath.Join(dir, "Plans.md")
-	content := "## アーカイブ\n" + strings.Repeat("line\n", 10)
+	content := "## Archive\n" + strings.Repeat("line\n", 10)
 	_ = os.WriteFile(fpath, []byte(content), 0600)
 
 	input := `{"tool_name":"Write","tool_input":{"file_path":"` + fpath + `"},"cwd":"` + dir + `"}`
@@ -288,7 +288,7 @@ func TestAutoCleanupHandler_PlansmdArchive_WithSSOTFlag(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// SSOT フラグあり → アーカイブ警告は出ない
+	// SSOT flag present → no archive warning expected
 	if out.Len() != 0 {
 		var result struct {
 			HookSpecificOutput struct {
@@ -306,9 +306,9 @@ func TestAutoCleanupHandler_PlansmdArchive_NoSSOTFlag(t *testing.T) {
 	dir := t.TempDir()
 	h := &AutoCleanupHandler{ProjectRoot: dir, PlansMaxLines: 200}
 
-	// SSOT フラグなし
+	// No SSOT flag.
 	fpath := filepath.Join(dir, "Plans.md")
-	content := "## アーカイブ\n" + strings.Repeat("line\n", 10)
+	content := "## Archive\n" + strings.Repeat("line\n", 10)
 	_ = os.WriteFile(fpath, []byte(content), 0600)
 
 	input := `{"tool_name":"Write","tool_input":{"file_path":"` + fpath + `"},"cwd":"` + dir + `"}`
@@ -343,7 +343,7 @@ func TestAutoCleanupHandler_ToolResponseFilePath(t *testing.T) {
 	content := strings.Repeat("line\n", 150)
 	_ = os.WriteFile(fpath, []byte(content), 0600)
 
-	// tool_response.filePath を使用するケース
+	// Case where tool_response.filePath is used.
 	input := `{"tool_name":"Edit","tool_input":{},"tool_response":{"filePath":"` + fpath + `"},"cwd":"` + dir + `"}`
 
 	var out bytes.Buffer
@@ -368,7 +368,7 @@ func TestCountLines(t *testing.T) {
 		{"", 0},
 		{"line1\n", 1},
 		{"line1\nline2\n", 2},
-		{"line1\nline2\nline3", 3}, // 末尾改行なし
+		{"line1\nline2\nline3", 3}, // no trailing newline
 	}
 
 	for _, tt := range tests {
@@ -392,8 +392,8 @@ func TestContainsArchiveSection(t *testing.T) {
 		want    bool
 	}{
 		{"# Tasks\n## TODO\n", false},
-		{"## アーカイブ\n", true},
-		{"📦 アーカイブ済み\n", true},
+		{"## Archive\n", true},
+		{"📦 Archive\n", true},
 		{"## Archive\n", true},
 		{"# Normal\nsome text\n", false},
 	}

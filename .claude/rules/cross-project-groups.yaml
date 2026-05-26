@@ -1,48 +1,48 @@
 # cross-project-groups.yaml
 #
 # Purpose:
-#   Phase 65.3 (Cross-Project Group + 3-Layer Redaction) で導入された
-#   横断プロジェクト検索の対象グループ定義。
-#   harness-plan-brief / harness-accept / harness-progress skill から
-#   --cross-project-group <name> flag で opt-in 利用される。
+#   Definition of cross-project search target groups introduced in
+#   Phase 65.3 (Cross-Project Group + 3-Layer Redaction).
+#   Used opt-in via the --cross-project-group <name> flag from
+#   the harness-plan-brief / harness-accept / harness-progress skills.
 #
 # Schema: cross-project-group.v1
 #   {schema_version, groups: [{name, members[], description?}]}
 #
 # Default:
-#   groups: []  ← 横断検索は無効化 (明示的な opt-in)
+#   groups: []  <- cross-project search is disabled (requires explicit opt-in)
 #
 # Update Rules:
-#   1. group は明示的に opt-in、default 空 (誤って横断検索が走らないよう)
-#   2. groups[].name は groups 内で unique
-#   3. groups[].members 内の要素は unique (重複不可)
-#   4. 不正な schema は scripts/load-cross-project-groups.sh が exit 1
-#   5. 詳細仕様: docs/cross-project-groups-schema.md
+#   1. Groups must be explicitly opted in; default is empty (prevents accidental cross-project searches)
+#   2. groups[].name must be unique within groups
+#   3. Elements within groups[].members must be unique (no duplicates)
+#   4. Invalid schema causes scripts/load-cross-project-groups.sh to exit 1
+#   5. Full specification: docs/cross-project-groups-schema.md
 #
-# Cross-Project Search Flow (D43 Option α):
-#   client (skill) → load-cross-project-groups.sh で yaml → JSON 化
-#   → 各 member project に対して mcp__harness__harness_mem_search を
-#     1 回ずつ発行 (MCP に projects 配列が無いため N-call 必須)
-#   → client 側で結果をマージ・dedupe・relevance_score sort
-#   → Layer 2 (dict + NER) と Layer 3 (final scan) で固有名詞 redact
+# Cross-Project Search Flow (D43 Option alpha):
+#   client (skill) -> load-cross-project-groups.sh converts yaml -> JSON
+#   -> Issues mcp__harness__harness_mem_search once per member project
+#      (N-call required because MCP has no projects array)
+#   -> client merges, deduplicates, and sorts results by relevance_score
+#   -> Layer 2 (dict + NER) and Layer 3 (final scan) redact proper nouns
 #
 
 schema_version: cross-project-group.v1
 
 groups: []
 
-# ---- 設定例 (コメントアウト雛形) ----
+# ---- Configuration examples (commented-out templates) ----
 #
 # groups:
 #   - name: Personal Tools
-#     description: 自作ツール群。コードや学びを横断検索可能。
+#     description: A collection of personal tools. Enables cross-project search of code and learnings.
 #     members:
 #       - my-cli
 #       - my-dotfiles
 #       - my-scripts
 #
 #   - name: Client-Sample
-#     description: クライアント案件の汎用ナレッジ。固有名詞は client-redaction.yaml で redact 必須。
+#     description: General knowledge from client projects. Proper nouns must be redacted via client-redaction.yaml.
 #     members:
 #       - sample-project-a
 #       - sample-project-b

@@ -16,11 +16,11 @@
 //	harness hook session-monitor   — SessionStart: project state collection + session.json
 //	harness hook session-summary   — Stop: session summary to session-log.md
 //	harness hook ci-status         — PostToolUse: CI status check after push/PR
-//	harness hook subagent-start    — SubagentStart: エージェント起動追跡
-//	harness hook subagent-stop     — SubagentStop: エージェント停止追跡
+//	harness hook subagent-start    — SubagentStart: agent lifecycle start tracking
+//	harness hook subagent-stop     — SubagentStop: agent lifecycle stop tracking
 //	harness evidence collect       — Collect evidence (test results, build logs)
 //	harness sprint-contract       — Generate sprint-contract from Plans.md
-//	harness status                 — 全追跡エージェントの状態表示
+//	harness status                 — Show all tracked agent states
 //	harness version                — Print version
 //
 // Usage in hooks.json:
@@ -133,7 +133,7 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "  version                 Print version")
 }
 
-// runEvidence は evidence サブコマンドを実行する。
+// runEvidence executes the evidence subcommand.
 func runEvidence(args []string) {
 	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, "Usage: harness evidence <collect>")
@@ -149,8 +149,8 @@ func runEvidence(args []string) {
 	}
 }
 
-// runEvidenceCollect は evidence collect サブコマンドを実行する。
-// stdin からコンテンツを読み取って .claude/state/evidence/{label}/ に保存する。
+// runEvidenceCollect executes the evidence collect subcommand.
+// Reads content from stdin and saves it to .claude/state/evidence/{label}/.
 func runEvidenceCollect(args []string) {
 	var label string
 	var contentFile string
@@ -177,7 +177,7 @@ func runEvidenceCollect(args []string) {
 	}
 
 	if contentFile != "" {
-		// ファイルから収集する場合
+		// Collecting from a file
 		result := c.Collect(opts)
 		if result.Error != "" {
 			fmt.Fprintln(os.Stderr, "evidence collect error:", result.Error)
@@ -187,7 +187,7 @@ func runEvidenceCollect(args []string) {
 		return
 	}
 
-	// stdin から収集する場合
+	// Collecting from stdin
 	if err := c.CollectFromStdin(os.Stdin, os.Stdout, opts); err != nil {
 		fmt.Fprintln(os.Stderr, "evidence collect error:", err)
 		os.Exit(1)
@@ -222,7 +222,7 @@ func runHook(hookType string) {
 		if err := h.Handle(os.Stdin, os.Stdout); err != nil {
 			fmt.Fprintf(os.Stderr, "permission-denied handler error: %v\n", err)
 		}
-	// --- CI ハンドラ ---
+	// --- CI handler ---
 	case "ci-status":
 		h := &ci.CIStatusHandler{}
 		if err := h.Handle(os.Stdin, os.Stdout); err != nil {
@@ -493,25 +493,25 @@ func runPermission(input hookproto.HookInput) {
 	// No output = pass through to user prompt
 }
 
-// openTracker は SQLite ストアを使った AgentTracker を開いて返す。
-// DB 開放に失敗した場合はインメモリ tracker (store=nil) にフォールバックする。
+// openTracker opens an AgentTracker backed by the SQLite store.
+// Falls back to an in-memory tracker (store=nil) if the DB cannot be opened.
 func openTracker() (*lifecycle.AgentTracker, func()) {
 	dbPath := state.ResolveStatePath("")
 	store, err := state.NewHarnessStore(dbPath)
 	if err != nil {
-		// DB が使えなくてもフックは継続できる（インメモリのみ）
+		// Hooks can continue without a DB (in-memory only)
 		return lifecycle.NewAgentTracker(nil), func() {}
 	}
 	tracker := lifecycle.NewAgentTracker(store)
 	return tracker, func() { store.Close() }
 }
 
-// runSubagentStart は SubagentStart フックを処理する。
-// stdin から HookInput を読み取り、AgentTracker にエージェントを登録する。
+// runSubagentStart handles the SubagentStart hook.
+// Reads HookInput from stdin and registers the agent in the AgentTracker.
 func runSubagentStart() {
 	input, err := hook.ReadInput(os.Stdin)
 	if err != nil {
-		// 入力パースエラーは無視して通過（フックの安全原則）
+		// Ignore input parse errors and pass through (hook safety principle)
 		return
 	}
 
@@ -521,11 +521,11 @@ func runSubagentStart() {
 	if err := tracker.HandleStart(input); err != nil {
 		fmt.Fprintf(os.Stderr, "subagent-start handler error: %v\n", err)
 	}
-	// SubagentStart は出力不要（通過フック）
+	// SubagentStart requires no output (pass-through hook)
 }
 
-// runSubagentStop は SubagentStop フックを処理する。
-// stdin から HookInput を読み取り、AgentTracker にエージェントの停止を記録する。
+// runSubagentStop handles the SubagentStop hook.
+// Reads HookInput from stdin and records the agent stop in the AgentTracker.
 func runSubagentStop() {
 	input, err := hook.ReadInput(os.Stdin)
 	if err != nil {
@@ -538,11 +538,11 @@ func runSubagentStop() {
 	if err := tracker.HandleStop(input); err != nil {
 		fmt.Fprintf(os.Stderr, "subagent-stop handler error: %v\n", err)
 	}
-	// SubagentStop は出力不要（通過フック）
+	// SubagentStop requires no output (pass-through hook)
 }
 
-// runStatus は全追跡中エージェントの状態テーブルを表示する。
-// SQLite ストアが利用可能な場合、永続化済みレコードを表示する。
+// runStatus displays a status table for all tracked agents.
+// Shows persisted records when the SQLite store is available.
 func runStatus(_ []string) {
 	dbPath := state.ResolveStatePath("")
 	store, err := state.NewHarnessStore(dbPath)
@@ -562,7 +562,7 @@ func runStatus(_ []string) {
 	printStatusTable(records)
 }
 
-// printStatusTable はエージェント状態テーブルを stdout に表示する。
+// printStatusTable prints the agent status table to stdout.
 func printStatusTable(records []state.AgentStateRecord) {
 	if len(records) == 0 {
 		fmt.Println("Tracked Agents: (none)")
@@ -599,8 +599,8 @@ func printStatusTable(records []state.AgentStateRecord) {
 	fmt.Printf("\nTotal: %d active, %d failed, %d completed\n", active, failed, completed)
 }
 
-// formatDuration は AgentStateRecord から経過時間の文字列を生成する。
-// stopped_at があればその時刻まで、なければ現在時刻との差を返す。
+// formatDuration generates an elapsed time string from an AgentStateRecord.
+// Uses stopped_at if present, otherwise computes the diff from the current time.
 func formatDuration(rec state.AgentStateRecord) string {
 	startStr := rec.StartedAt
 	if startStr == "" {
@@ -640,8 +640,8 @@ func formatDuration(rec state.AgentStateRecord) string {
 	return fmt.Sprintf("%ds", s)
 }
 
-// formatRecovery はリカバリ試行回数を "N/3" 形式で返す。
-// リカバリがない場合は "-" を返す。
+// formatRecovery returns the recovery attempt count in "N/3" format.
+// Returns "-" when there have been no recovery attempts.
 func formatRecovery(rec state.AgentStateRecord) string {
 	if rec.RecoveryAttempts == 0 {
 		return "-"

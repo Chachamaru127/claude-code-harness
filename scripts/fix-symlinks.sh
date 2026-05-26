@@ -1,14 +1,14 @@
 #!/bin/bash
 # fix-symlinks.sh
-# Windows 環境で壊れた symlink / plain-text link projection を検出し、実体コピーで自動修復する
+# Detects broken symlinks / plain-text link projections in Windows environments and auto-repairs them with real copies.
 #
-# 用途: session-init.sh から呼び出し
-# 動作:
-#   - codex/.codex/skills/ および opencode/skills/ 内の harness-* skill mirror を検証
-#   - skills/ (SSOT) から実体コピーで修復する
-#   - 修復件数を stdout に出力（JSON 形式）
+# Usage: called from session-init.sh
+# Behavior:
+#   - Validates harness-* skill mirrors in codex/.codex/skills/ and opencode/skills/
+#   - Repairs them with real copies from skills/ (SSOT)
+#   - Outputs the number of repaired entries to stdout (JSON format)
 #
-# 出力:
+# Output:
 #   {"fixed": N, "checked": M, "details": ["codex/harness-work", ...]}
 
 set -euo pipefail
@@ -18,10 +18,10 @@ PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 SKILLS_DIR="$PLUGIN_ROOT/skills"
 
-# harness skill 一覧
+# List of harness skills
 HARNESS_SKILLS=("harness-plan" "harness-work" "harness-review" "harness-setup" "harness-release" "harness-sync")
 
-# ミラー先（skills/ は SSOT なのでチェック対象外）
+# Mirror targets (skills/ is the SSOT and is excluded from checks)
 MIRROR_ROOTS=(
   "codex/.codex/skills"
   "opencode/skills"
@@ -40,15 +40,15 @@ for mirror_root in "${MIRROR_ROOTS[@]}"; do
     mirror_path="$mirror_dir/$skill"
     source_path="$SKILLS_DIR/$skill"
 
-    # ソースが存在しない場合はスキップ
+    # Skip if source does not exist
     [ -d "$source_path" ] || continue
 
-    # 正常: ディレクトリとして存在 → スキップ
+    # OK: exists as a directory → skip
     if [ -d "$mirror_path" ] && [ ! -L "$mirror_path" ]; then
       continue
     fi
 
-    # 壊れた plain-text link: 通常ファイルとして存在（Windows git clone で発生）
+    # Broken plain-text link: exists as a regular file (occurs on Windows git clone)
     if [ -f "$mirror_path" ]; then
       rm -f "$mirror_path"
       cp -r "$source_path" "$mirror_path"
@@ -57,7 +57,7 @@ for mirror_root in "${MIRROR_ROOTS[@]}"; do
       continue
     fi
 
-    # symlink の場合も実体コピーに置換
+    # Replace symlinks with real copies as well
     if [ -L "$mirror_path" ]; then
       rm -f "$mirror_path"
       cp -r "$source_path" "$mirror_path"
@@ -66,7 +66,7 @@ for mirror_root in "${MIRROR_ROOTS[@]}"; do
       continue
     fi
 
-    # 存在しない場合もコピー
+    # Also copy when the path does not exist
     if [ ! -e "$mirror_path" ]; then
       cp -r "$source_path" "$mirror_path"
       FIXED=$((FIXED + 1))
@@ -75,7 +75,7 @@ for mirror_root in "${MIRROR_ROOTS[@]}"; do
   done
 done
 
-# JSON 出力
+# JSON output
 NAMES_JSON="[]"
 if [ ${#FIXED_NAMES[@]} -gt 0 ]; then
   NAMES_JSON="["

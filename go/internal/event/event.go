@@ -1,11 +1,11 @@
-// Package event は worker-runtime 側のフックハンドラを実装する。
+// Package event implements the worker-runtime side hook handlers.
 //
-// 各ハンドラは stdin から CC フック JSON を受け取り、
-// 必要な処理を行い、stdout に結果を返す。
-// shell スクリプト (hook-handlers/*.sh) と同じ I/O プロトコルを維持する。
+// Each handler reads the CC hook JSON from stdin,
+// performs the necessary processing, and returns the result to stdout.
+// Maintains the same I/O protocol as the shell scripts (hook-handlers/*.sh).
 //
-// SPEC.md §12 パッケージ境界: これらは worker-runtime 側のハンドラであり、
-// internal/guard/ (hook-fastpath) とは分離する。
+// SPEC.md §12 package boundary: these are worker-runtime side handlers
+// and are separate from internal/guard/ (hook-fastpath).
 package event
 
 import (
@@ -19,11 +19,11 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// 共通型
+// Common types
 // ---------------------------------------------------------------------------
 
-// Input は CC フックから stdin 経由で受け取る JSON ペイロード。
-// tool_name のような必須フィールドなし（guard パッケージとは異なる）。
+// Input is the JSON payload received from CC hooks via stdin.
+// No required fields like tool_name (unlike the guard package).
 type Input struct {
 	SessionID  string `json:"session_id,omitempty"`
 	HookEvent  string `json:"hook_event_name,omitempty"`
@@ -35,41 +35,41 @@ type Input struct {
 	CWD        string `json:"cwd,omitempty"`
 	PluginRoot string `json:"plugin_root,omitempty"`
 
-	// PermissionDenied 用
+	// For PermissionDenied
 	Tool         string `json:"tool,omitempty"`
 	DeniedReason string `json:"denied_reason,omitempty"`
 	Reason       string `json:"reason,omitempty"`
 
-	// Notification 用
+	// For Notification
 	NotificationType string `json:"notification_type,omitempty"`
 	Type             string `json:"type,omitempty"`
 	Matcher          string `json:"matcher,omitempty"`
 }
 
-// ApproveResponse は基本的な approve レスポンス。
+// ApproveResponse is the basic approve response.
 type ApproveResponse struct {
 	Decision          string `json:"decision"`
 	Reason            string `json:"reason,omitempty"`
 	AdditionalContext string `json:"additionalContext,omitempty"`
 }
 
-// SystemMessageResponse は systemMessage を含むレスポンス。
+// SystemMessageResponse is a response that contains a systemMessage.
 type SystemMessageResponse struct {
 	SystemMessage string `json:"systemMessage,omitempty"`
 }
 
-// RetryResponse は retry フラグを含むレスポンス。
+// RetryResponse is a response that contains a retry flag.
 type RetryResponse struct {
 	Retry         bool   `json:"retry"`
 	SystemMessage string `json:"systemMessage,omitempty"`
 }
 
 // ---------------------------------------------------------------------------
-// 共通ユーティリティ
+// Common utilities
 // ---------------------------------------------------------------------------
 
-// ReadInput は r から JSON を読み取り Input に変換する。
-// 空の入力はエラーを返す。
+// ReadInput reads JSON from r and converts it to Input.
+// Returns an error for empty input.
 func ReadInput(r io.Reader) (Input, error) {
 	data, err := io.ReadAll(r)
 	if err != nil {
@@ -86,7 +86,7 @@ func ReadInput(r io.Reader) (Input, error) {
 	return input, nil
 }
 
-// WriteJSON は v を JSON として w に書き出す（末尾に改行付き）。
+// WriteJSON writes v as JSON to w (with a trailing newline).
 func WriteJSON(w io.Writer, v interface{}) error {
 	data, err := json.Marshal(v)
 	if err != nil {
@@ -96,27 +96,27 @@ func WriteJSON(w io.Writer, v interface{}) error {
 	return err
 }
 
-// Now は現在時刻を ISO 8601 UTC 形式で返す。
+// Now returns the current time in ISO 8601 UTC format.
 func Now() string {
 	return time.Now().UTC().Format(time.RFC3339)
 }
 
-// ResolveStateDir は PROJECT_ROOT からステートディレクトリのパスを返す。
-// CLAUDE_PLUGIN_DATA が設定されている場合はプロジェクト別ハッシュでスコープする。
+// ResolveStateDir returns the path to the state directory from PROJECT_ROOT.
+// If CLAUDE_PLUGIN_DATA is set, scopes by a per-project hash.
 func ResolveStateDir(projectRoot string) string {
 	pluginData := os.Getenv("CLAUDE_PLUGIN_DATA")
 	if pluginData != "" {
-		// プロジェクトルートのハッシュ（先頭12文字）でスコープ
+		// Scope by hash of the project root (first 12 chars)
 		h := simpleHash(projectRoot)
 		return filepath.Join(pluginData, "projects", h)
 	}
 	return filepath.Join(projectRoot, ".claude", "state")
 }
 
-// simpleHash はプロジェクトルートパスから 12 文字の単純なハッシュを生成する。
-// shasum に依存しないため pure Go で実装する。
+// simpleHash generates a 12-character simple hash from the project root path.
+// Implemented in pure Go to avoid depending on shasum.
 func simpleHash(s string) string {
-	// FNV-like ハッシュ（セキュリティ不要、識別子として使用）
+	// FNV-like hash (not for security, used as an identifier)
 	var h uint64 = 14695981039346656037
 	for i := 0; i < len(s); i++ {
 		h ^= uint64(s[i])
@@ -125,12 +125,12 @@ func simpleHash(s string) string {
 	return fmt.Sprintf("%012x", h)
 }
 
-// EnsureStateDir はステートディレクトリを作成する。
-// シンボリックリンクの場合はエラーを返す（セキュリティ対策）。
+// EnsureStateDir creates the state directory.
+// Returns an error if the path is a symbolic link (security measure).
 func EnsureStateDir(stateDir string) error {
 	parent := filepath.Dir(stateDir)
 
-	// シンボリックリンクチェック
+	// Symbolic link check
 	if isSymlink(parent) || isSymlink(stateDir) {
 		return fmt.Errorf("security: symlinked state path refused: %s", stateDir)
 	}
@@ -141,7 +141,7 @@ func EnsureStateDir(stateDir string) error {
 	return nil
 }
 
-// isSymlink はパスがシンボリックリンクかどうかを返す。
+// isSymlink returns whether the path is a symbolic link.
 func isSymlink(path string) bool {
 	fi, err := os.Lstat(path)
 	if err != nil {
@@ -150,7 +150,7 @@ func isSymlink(path string) bool {
 	return fi.Mode()&os.ModeSymlink != 0
 }
 
-// RotateJSONL は JSONL ファイルが 500 行を超えた場合に 400 行に切り詰める。
+// RotateJSONL truncates a JSONL file to 400 lines when it exceeds 500 lines.
 func RotateJSONL(path string) {
 	if isSymlink(path) || isSymlink(path+".tmp") {
 		return
@@ -161,20 +161,20 @@ func RotateJSONL(path string) {
 		return
 	}
 
-	// 行数カウント
+	// Count lines
 	lines := splitLines(data)
 	if len(lines) <= 500 {
 		return
 	}
 
-	// 末尾 400 行を保持
+	// Keep the last 400 lines
 	kept := lines[len(lines)-400:]
 	content := joinLines(kept)
 	_ = os.WriteFile(path+".tmp", []byte(content), 0600)
 	_ = os.Rename(path+".tmp", path)
 }
 
-// splitLines は改行で分割し、空行は除外する。
+// splitLines splits by newline, excluding empty lines.
 func splitLines(data []byte) []string {
 	var lines []string
 	start := 0
@@ -196,7 +196,7 @@ func splitLines(data []byte) []string {
 	return lines
 }
 
-// joinLines は行のスライスを改行で結合する（末尾に改行付き）。
+// joinLines joins a slice of lines with newlines (with a trailing newline).
 func joinLines(lines []string) string {
 	return strings.Join(lines, "\n") + "\n"
 }

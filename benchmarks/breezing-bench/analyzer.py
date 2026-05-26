@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Breezing Benchmark Analyzer
-統計分析 + Markdown レポート生成
+Statistical analysis + Markdown report generation
 """
 
 import json
@@ -12,7 +12,7 @@ from datetime import datetime
 
 
 def load_results(results_dir: Path) -> List[Dict[str, Any]]:
-    """結果 JSON を全て読み込む"""
+    """Load all result JSON files"""
     results = []
     for json_file in sorted(results_dir.rglob("result.json")):
         with open(json_file, "r", encoding="utf-8") as f:
@@ -21,14 +21,14 @@ def load_results(results_dir: Path) -> List[Dict[str, Any]]:
 
 
 def split_by_condition(results: List[Dict[str, Any]]) -> Tuple[List[Dict], List[Dict]]:
-    """Vanilla と Breezing に分割"""
+    """Split into Vanilla and Breezing groups"""
     vanilla = [r for r in results if r.get("condition") == "vanilla"]
     breezing = [r for r in results if r.get("condition") == "breezing"]
     return vanilla, breezing
 
 
 def extract_scores(results: List[Dict[str, Any]]) -> List[float]:
-    """primary score を抽出"""
+    """Extract primary scores"""
     return [r.get("grading", {}).get("primary", {}).get("score", 0.0) for r in results]
 
 
@@ -47,7 +47,7 @@ def std(values: List[float]) -> float:
 
 
 def hedges_g(group1: List[float], group2: List[float]) -> float:
-    """Hedges' g (小標本補正付き効果量)"""
+    """Hedges' g (effect size with small-sample correction)"""
     n1, n2 = len(group1), len(group2)
     if n1 < 2 or n2 < 2:
         return 0.0
@@ -71,7 +71,7 @@ def hedges_g(group1: List[float], group2: List[float]) -> float:
 
 
 def welch_t_test(group1: List[float], group2: List[float]) -> Tuple[float, float]:
-    """Welch の t 検定 (両側)"""
+    """Welch's t-test (two-sided)"""
     n1, n2 = len(group1), len(group2)
     if n1 < 2 or n2 < 2:
         return 0.0, 1.0
@@ -91,20 +91,20 @@ def welch_t_test(group1: List[float], group2: List[float]) -> Tuple[float, float
     # Welch-Satterthwaite df
     df = se_total**2 / (se1**2 / (n1 - 1) + se2**2 / (n2 - 1))
 
-    # 簡易 p 値 (scipy なしの近似)
-    # scipy がある場合はそちらを使う
+    # Approximate p-value (without scipy)
+    # Use scipy when available
     try:
         from scipy import stats
         p_value = stats.t.sf(abs(t_stat), df) * 2
     except ImportError:
-        # 近似: 正規分布で代用 (df が大きい場合に妥当)
+        # Approximation: substitute normal distribution (valid when df is large)
         p_value = 2 * (1 - _normal_cdf(abs(t_stat)))
 
     return t_stat, p_value
 
 
 def _normal_cdf(x: float) -> float:
-    """標準正規分布の CDF (近似)"""
+    """Standard normal CDF (approximation)"""
     return 0.5 * (1 + math.erf(x / math.sqrt(2)))
 
 
@@ -115,7 +115,7 @@ def bootstrap_ci(
     ci: float = 0.95,
     seed: int = 42,
 ) -> Tuple[float, float, float]:
-    """階層ブートストラップで効果量の CI を算出"""
+    """Compute effect size CI via hierarchical bootstrap"""
     import random
     rng = random.Random(seed)
 
@@ -124,7 +124,7 @@ def bootstrap_ci(
     n1, n2 = len(group1), len(group2)
 
     for _ in range(n_bootstrap):
-        # タスク単位でリサンプリング
+        # Resample per task
         sample1 = [rng.choice(group1) for _ in range(n1)]
         sample2 = [rng.choice(group2) for _ in range(n2)]
         g = hedges_g(sample1, sample2)
@@ -139,7 +139,7 @@ def bootstrap_ci(
 
 
 def analyze_by_task(results: List[Dict[str, Any]]) -> Dict[str, Dict[str, List[float]]]:
-    """タスク別にスコアを整理"""
+    """Organize scores by task"""
     by_task: Dict[str, Dict[str, List[float]]] = {}
     for r in results:
         task_id = r.get("task_id", "unknown")
@@ -154,7 +154,7 @@ def analyze_by_task(results: List[Dict[str, Any]]) -> Dict[str, Dict[str, List[f
 
 
 def generate_report(results_dir: Path) -> str:
-    """Markdown レポートを生成"""
+    """Generate Markdown report"""
     results = load_results(results_dir)
     if not results:
         return "# Breezing v2 Benchmark Report\n\nNo results found."
@@ -163,7 +163,7 @@ def generate_report(results_dir: Path) -> str:
     v_scores = extract_scores(vanilla)
     b_scores = extract_scores(breezing)
 
-    # 全体統計
+    # Overall statistics
     t_stat, p_value = welch_t_test(v_scores, b_scores)
     g = hedges_g(v_scores, b_scores)
 
@@ -173,24 +173,24 @@ def generate_report(results_dir: Path) -> str:
     except Exception:
         ci_str = "N/A"
 
-    # 判定
+    # Verdict
     if p_value < 0.05 and g > 0.5:
-        verdict = "有意にプラス"
+        verdict = "Significantly positive"
     elif p_value < 0.10 or g > 0.3:
-        verdict = "傾向あり"
+        verdict = "Trend detected"
     elif p_value < 0.05 and g < -0.5:
-        verdict = "有意にマイナス"
+        verdict = "Significantly negative"
     else:
-        verdict = "差なし"
+        verdict = "No difference"
 
-    # 効率指標
+    # Efficiency metrics
     v_durations = [r.get("execution", {}).get("duration_seconds", 0) for r in vanilla]
     b_durations = [r.get("execution", {}).get("duration_seconds", 0) for r in breezing]
 
-    # タスク別分析
+    # Per-task analysis
     by_task = analyze_by_task(results)
 
-    # レポート生成
+    # Generate report
     lines = [
         f"# Breezing v2 Benchmark Report",
         f"",

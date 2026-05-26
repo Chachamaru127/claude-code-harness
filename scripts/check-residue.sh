@@ -2,18 +2,18 @@
 # check-residue.sh — Migration Residue Scanner (Phase 40)
 #
 # Purpose:
-#   .claude/rules/deleted-concepts.yaml を読み込み、
-#   削除済みパス・概念がリポジトリ内に残存していないかを検出する。
-#   0 件なら exit 0、1 件以上なら exit 1。
+#   Reads .claude/rules/deleted-concepts.yaml and detects whether any
+#   deleted paths or concepts still exist in the repository.
+#   Exits 0 if none found, exits 1 if one or more are found.
 #
 # Usage:
 #   bash scripts/check-residue.sh
 #
-# Python3 が primary parser として動作する。bash はランチャーに徹する。
+# Python3 acts as the primary parser; bash is just a launcher.
 
 set -euo pipefail
 
-# リポジトリルートを特定（スクリプトの位置から相対解決）
+# Identify repository root (resolved relative to this script's location)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
@@ -31,14 +31,14 @@ REPO_ROOT = os.path.normpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 ) if False else os.environ.get("REPO_ROOT_PY", "")
 
-# bash から exec python3 - で呼ばれる場合、__file__ が使えないため
-# 環境変数で渡す代わりに argv[0] から推定する
-# ただし heredoc exec の場合は sys.argv[0] == '-' なので getcwd() ベースで解決
+# When called via exec python3 - from bash, __file__ is unavailable.
+# Infer the path from argv[0] instead of passing via environment variable.
+# In heredoc exec mode, sys.argv[0] == '-', so resolve from getcwd().
 if not REPO_ROOT:
-    # スクリプトは scripts/ から呼ばれる想定。cwd は任意なので
-    # sys.argv に渡ってくる場合は使う。なければ cwd から解決
+    # The script is expected to be called from scripts/. cwd can be anything,
+    # so use sys.argv if available; otherwise resolve from cwd.
     REPO_ROOT = os.getcwd()
-    # check-residue.sh が scripts/ にあるため、scripts/ が cwd であれば parent に
+    # check-residue.sh lives in scripts/, so if scripts/ is cwd, go up one level
     if os.path.basename(REPO_ROOT) == "scripts":
         REPO_ROOT = os.path.dirname(REPO_ROOT)
 
@@ -46,9 +46,9 @@ YAML_PATH = os.path.join(REPO_ROOT, ".claude/rules/deleted-concepts.yaml")
 
 start_time = time.time()
 
-# ─── YAML 読み込み ─────────────────────────────────────────────────────────────
+# ─── Load YAML ─────────────────────────────────────────────────────────────
 if not os.path.exists(YAML_PATH):
-    print(f"ERROR: {YAML_PATH} が見つかりません", file=sys.stderr)
+    print(f"ERROR: {YAML_PATH} not found", file=sys.stderr)
     sys.exit(2)
 
 with open(YAML_PATH, "r", encoding="utf-8") as f:
@@ -57,7 +57,7 @@ with open(YAML_PATH, "r", encoding="utf-8") as f:
 deleted_paths    = config.get("deleted_paths", [])
 deleted_concepts = config.get("deleted_concepts", [])
 
-# scan_disabled フラグが立っているエントリはスキップ
+# Skip entries with the scan_disabled flag set
 deleted_concepts = [c for c in deleted_concepts if not c.get("_scan_disabled", False)]
 
 n_paths    = len(deleted_paths)
@@ -68,14 +68,14 @@ print(f"Loaded: .claude/rules/deleted-concepts.yaml")
 print(f"Entries: {n_paths} deleted_paths + {n_concepts} deleted_concepts")
 print()
 
-# ─── allowlist 判定 ─────────────────────────────────────────────────────────
+# ─── Allowlist check ─────────────────────────────────────────────────────────
 def is_allowlisted(filepath: str, allowlist: list) -> bool:
     """
-    filepath が allowlist のいずれかのプレフィックスにマッチするか判定。
-    allowlist エントリは prefix match。
-    filepath はリポジトリルートからの相対パス（./ なし）。
+    Check whether filepath matches any prefix in the allowlist.
+    Allowlist entries are prefix-matched.
+    filepath is relative to the repository root (no ./ prefix).
     """
-    # ./ を除去して正規化
+    # Strip ./ and normalize
     rel = filepath.lstrip("./")
     for entry in allowlist:
         entry_clean = entry.lstrip("./")
@@ -83,11 +83,11 @@ def is_allowlisted(filepath: str, allowlist: list) -> bool:
             return True
     return False
 
-# ─── grep 実行ユーティリティ ─────────────────────────────────────────────────
+# ─── grep execution utility ─────────────────────────────────────────────────
 def grep_files(term: str, repo_root: str) -> list:
     """
-    term を固定文字列として tracked files から検索。
-    ヒットしたファイルの相対パスリストを返す。
+    Search tracked files for term as a fixed string.
+    Returns a list of relative paths of matching files.
     """
     try:
         result = subprocess.run(
@@ -121,12 +121,12 @@ def grep_files(term: str, repo_root: str) -> list:
         if result.returncode in (0, 1):
             return [f.strip() for f in result.stdout.splitlines() if f.strip()]
     except Exception as e:
-        print(f"  WARNING: grep 実行エラー: {e}", file=sys.stderr)
+        print(f"  WARNING: grep execution error: {e}", file=sys.stderr)
     return []
 
 def grep_line_numbers(term: str, filepath: str, repo_root: str) -> list:
     """
-    filepath 内で term がヒットする行番号と行内容を返す。
+    Returns line numbers and content of lines in filepath that match term.
     Returns: list of (lineno, line_content)
     """
     try:
@@ -155,9 +155,9 @@ def grep_line_numbers(term: str, filepath: str, repo_root: str) -> list:
 
 def grep_h1_v3_files(repo_root: str) -> list:
     """
-    SKILL.md / agents/*.md の H1 タイトルに '(v3)' サフィックスがあるファイルを検索。
-    パターン: 行頭が '# ' で始まり '(v3)' を含む行。
-    grep -rln は使えないため grep -rl を使う。
+    Search for files whose H1 title in SKILL.md / agents/*.md has a '(v3)' suffix.
+    Pattern: lines starting with '# ' that contain '(v3)'.
+    Uses grep -rl because grep -rln is not available.
     """
     try:
         result = subprocess.run(
@@ -206,35 +206,35 @@ def grep_h1_v3_files(repo_root: str) -> list:
         pass
     return []
 
-# ─── スキャン実行 ─────────────────────────────────────────────────────────────
+# ─── Run scan ─────────────────────────────────────────────────────────────
 violations = 0
 violation_files = set()
 
-# ── deleted_paths のスキャン ──
+# ── Scan deleted_paths ──
 print("[scanning deleted_paths...]")
 for entry in deleted_paths:
     path_term = entry["path"]
     allowlist  = entry.get("allowlist", [])
     reason     = entry.get("reason", "")
 
-    # allowlist にデフォルト追加（全エントリ共通）
+    # Default allowlist additions (common to all entries)
     default_allowlist = [
         "CHANGELOG.md",
         ".claude/memory/archive/",
         ".claude/worktrees/",
         ".claude/state/",
         "out/",
-        "output/",          # 診断出力・生成物
+        "output/",          # diagnostic output / generated artifacts
         "benchmarks/",
-        "tests/validate-plugin-v3.sh",  # v3 互換テスト（明示的に残存）
-        ".claude/rules/deleted-concepts.yaml",  # 本ファイル自身
-        "scripts/check-residue.sh",             # スキャナ自身
+        "tests/validate-plugin-v3.sh",  # v3 compatibility test (intentionally retained)
+        ".claude/rules/deleted-concepts.yaml",  # this file itself
+        "scripts/check-residue.sh",             # the scanner itself
     ]
     effective_allowlist = list(set(allowlist + default_allowlist))
 
     matched_files = grep_files(path_term, REPO_ROOT)
 
-    # allowlist でフィルタ
+    # Filter against allowlist
     filtered = [f for f in matched_files if not is_allowlisted(f, effective_allowlist)]
 
     if filtered:
@@ -244,14 +244,14 @@ for entry in deleted_paths:
         for f in filtered:
             lines = grep_line_numbers(path_term, f, REPO_ROOT)
             if lines:
-                for lineno, content in lines[:3]:  # 最大 3 行表示
+                for lineno, content in lines[:3]:  # show up to 3 lines
                     print(f"    {f}:L{lineno} — \"{content}\"")
             else:
                 print(f"    {f}")
         print(f"    (matched entry: {path_term}, reason: \"{reason[:60]}...\")" if len(reason) > 60 else f"    (matched entry: {path_term}, reason: \"{reason}\")")
         print()
 
-# ── deleted_concepts のスキャン ──
+# ── Scan deleted_concepts ──
 print("[scanning deleted_concepts...]")
 for entry in deleted_concepts:
     if entry.get("_scan_disabled", False):
@@ -269,15 +269,15 @@ for entry in deleted_concepts:
         ".claude/worktrees/",
         ".claude/state/",
         "out/",
-        "output/",          # 診断出力・生成物
+        "output/",          # diagnostic output / generated artifacts
         "benchmarks/",
-        ".claude/rules/deleted-concepts.yaml",  # 本ファイル自身は除外
-        "scripts/check-residue.sh",             # スキャナ自身は除外
-        "tests/validate-plugin-v3.sh",          # v3 互換テスト（明示的に残存）
+        ".claude/rules/deleted-concepts.yaml",  # exclude this file itself
+        "scripts/check-residue.sh",             # exclude the scanner itself
+        "tests/validate-plugin-v3.sh",          # v3 compatibility test (intentionally retained)
     ]
     effective_allowlist = list(set(allowlist + default_allowlist))
 
-    # 英語 term でスキャン
+    # Scan with English term
     terms_to_scan = [term]
     if term_ja:
         terms_to_scan.append(term_ja)
@@ -302,7 +302,7 @@ for entry in deleted_concepts:
             print(f"    (matched entry: {display_term}{display_replacement})")
             print()
 
-# ── H1 (v3) サフィックスのスキャン（特別処理）──
+# ── Scan H1 (v3) suffix (special handling) ──
 print("[scanning H1 (v3) suffix in skills/ and agents/...]")
 h1_allowlist = [
     "CHANGELOG.md",
@@ -312,10 +312,10 @@ h1_allowlist = [
     "out/",
     "output/",
     "benchmarks/",
-    ".claude/rules/",  # rules/ 内の歴史ドキュメント
+    ".claude/rules/",  # historical documents inside rules/
     "scripts/check-residue.sh",
     ".claude/rules/deleted-concepts.yaml",
-    "tests/validate-plugin-v3.sh",  # v3 互換テスト（明示的に残存）
+    "tests/validate-plugin-v3.sh",  # v3 compatibility test (intentionally retained)
 ]
 
 h1_files = grep_h1_v3_files(REPO_ROOT)
@@ -326,7 +326,7 @@ if h1_filtered:
     violation_files.update(h1_filtered)
     print(f"  ✗ H1 title with (v3) suffix")
     for f in h1_filtered:
-        # 該当行を表示
+        # Show the matching line
         try:
             result = subprocess.run(
                 ["grep", "-n", r"^# .*(v3)", f],
@@ -343,7 +343,7 @@ if h1_filtered:
     print("    (matched entry: H1 (v3) suffix → remove version suffix from H1 titles)")
     print()
 
-# ─── サマリ出力 ────────────────────────────────────────────────────────────────
+# ─── Summary output ────────────────────────────────────────────────────────────────
 elapsed = time.time() - start_time
 
 print("=== Summary ===")

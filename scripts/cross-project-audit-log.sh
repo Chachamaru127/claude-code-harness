@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # scripts/cross-project-audit-log.sh
-# Phase 65.3.6 - Cross-project search 監査ログ append
+# Phase 65.3.6 - Cross-project search audit log append
 #
 # Purpose:
-#   Cross-project search が走った時に .claude/state/audit/cross-project-search.jsonl
-#   に 1 行追加する (append-only JSON Lines)。プライバシー保護のため、実際の
-#   クエリ文字列は記録せず sha256 hash のみ。
+#   Appends 1 line to .claude/state/audit/cross-project-search.jsonl
+#   whenever a cross-project search runs (append-only JSON Lines).
+#   For privacy, only the sha256 hash of the query string is recorded,
+#   not the raw query itself.
 #
 # Usage:
 #   cross-project-audit-log.sh \
@@ -29,7 +30,7 @@
 #   }
 #
 # Default --out: $REPO_ROOT/.claude/state/audit/cross-project-search.jsonl
-#   (ディレクトリは存在しない場合自動作成)
+#   (directory is created automatically if it does not exist)
 #
 # Exit code: 0=success, 2=usage error, 3=runtime error
 
@@ -48,15 +49,15 @@ Usage:
     [--out <jsonl-path>]
 
 Required:
-  --group <name>             cross-project group 名
-  --members <csv>            comma-separated member project 名のリスト (例: "p1,p2,p3")
-  --query-hash <hex>         クエリ文字列の sha256 hash (生クエリは記録しない)
-  --dict-count <int>         dict-redaction でヒットした件数
-  --ner-count <int>          NER-redaction でヒットした件数
-  --passed-final-scan <bool> Layer 3 final scan を passed=true / failed=false
+  --group <name>             cross-project group name
+  --members <csv>            comma-separated list of member project names (e.g. "p1,p2,p3")
+  --query-hash <hex>         sha256 hash of the query string (raw query is not recorded)
+  --dict-count <int>         number of dict-redaction hits
+  --ner-count <int>          number of NER-redaction hits
+  --passed-final-scan <bool> Layer 3 final scan: passed=true / failed=false
 
 Optional:
-  --out <jsonl-path>         出力先 (default: .claude/state/audit/cross-project-search.jsonl)
+  --out <jsonl-path>         output path (default: .claude/state/audit/cross-project-search.jsonl)
 
 Exit code: 0=success / 2=usage error / 3=runtime error
 USAGE
@@ -85,28 +86,28 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# 必須引数チェック
+# Required argument check
 for var_name in GROUP MEMBERS_CSV QUERY_HASH DICT_COUNT NER_COUNT PASSED_FINAL_SCAN; do
   if [[ -z "${!var_name}" ]]; then
-    echo "ERROR: --${var_name,,} は必須です (got empty)" >&2
+    echo "ERROR: --${var_name,,} is required (got empty)" >&2
     usage
   fi
 done
 
-# 検証
+# Validation
 if ! [[ "$DICT_COUNT" =~ ^[0-9]+$ ]]; then
-  echo "ERROR: --dict-count は非負整数 (got: $DICT_COUNT)" >&2
+  echo "ERROR: --dict-count must be a non-negative integer (got: $DICT_COUNT)" >&2
   exit 2
 fi
 if ! [[ "$NER_COUNT" =~ ^[0-9]+$ ]]; then
-  echo "ERROR: --ner-count は非負整数 (got: $NER_COUNT)" >&2
+  echo "ERROR: --ner-count must be a non-negative integer (got: $NER_COUNT)" >&2
   exit 2
 fi
 case "$PASSED_FINAL_SCAN" in
   true|false) ;;
   *) echo "ERROR: --passed-final-scan must be 'true' or 'false' (got: $PASSED_FINAL_SCAN)" >&2; exit 2 ;;
 esac
-# query_hash は 64 chars hex を期待
+# query_hash is expected to be 64-char hex
 if ! [[ "$QUERY_HASH" =~ ^[0-9a-fA-F]{64}$ ]]; then
   echo "ERROR: --query-hash must be sha256 hex (64 chars, got length=${#QUERY_HASH})" >&2
   exit 2
@@ -119,7 +120,7 @@ if [[ -z "$OUT_PATH" ]]; then
   OUT_PATH="${REPO_ROOT}/.claude/state/audit/cross-project-search.jsonl"
 fi
 
-# 親ディレクトリを作成
+# Create parent directory
 OUT_DIR="$(dirname "$OUT_PATH")"
 mkdir -p "$OUT_DIR"
 
@@ -130,7 +131,7 @@ fi
 
 TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-# CSV → JSON array (空文字は [] にする)
+# CSV → JSON array (empty string becomes [])
 if [[ -z "$MEMBERS_CSV" ]]; then
   MEMBERS_JSON='[]'
 else
@@ -146,7 +147,7 @@ else
   }')"
 fi
 
-# JSON line を組み立て (compact、改行なし)
+# Build JSON line (compact, no newlines)
 LINE="$(jq -n -c \
   --arg ts "$TIMESTAMP" \
   --arg group "$GROUP" \
@@ -165,10 +166,10 @@ LINE="$(jq -n -c \
     output_passed_final_scan: $passed
   }')"
 
-# append 1 行
+# Append 1 line
 printf '%s\n' "$LINE" >> "$OUT_PATH"
 
-# stderr に audit summary
+# Print audit summary to stderr
 echo "audit logged: group=$GROUP, members=$(jq -r 'length' <<< "$MEMBERS_JSON") projects, dict=$DICT_COUNT, ner=$NER_COUNT, passed=$PASSED_FINAL_SCAN -> $OUT_PATH" >&2
 
 exit 0

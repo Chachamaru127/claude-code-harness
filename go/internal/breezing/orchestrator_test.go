@@ -51,7 +51,7 @@ func TestOrchestratorParallelLimit(t *testing.T) {
 			n := atomic.AddInt64(&current, 1)
 			defer atomic.AddInt64(&current, -1)
 
-			// 最大並列数を記録
+			// Record the maximum concurrency
 			for {
 				old := atomic.LoadInt64(&maxConcurrent)
 				if n <= old || atomic.CompareAndSwapInt64(&maxConcurrent, old, n) {

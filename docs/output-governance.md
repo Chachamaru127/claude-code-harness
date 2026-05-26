@@ -1,85 +1,88 @@
 # Output Governance Policy
 
-最終更新: 2026-05-05
+Last updated: 2026-05-05
 
-この文書は、Hook や自動整形処理が Claude Code の tool output を扱う時の安全方針を定義する。
+This document defines the safety policy for hooks and automated formatting processes
+when handling Claude Code tool output.
 
-## ひとことで
+## In a nutshell
 
-`PostToolUse.hookSpecificOutput.updatedToolOutput` は既定では使わない。
-使う場合は opt-in の redaction / compaction / normalization に限り、監査証跡と review / test evidence を消さない。
+`PostToolUse.hookSpecificOutput.updatedToolOutput` is not used by default.
+When used, it is limited to opt-in redaction, compaction, or normalization, and must
+never erase audit trails or review / test evidence.
 
-## たとえると
+## By analogy
 
-tool output は、作業現場の監視カメラ映像のようなもの。
-見やすく要約することはあっても、事故の証拠になる部分を勝手に切り落としてはいけない。
+Tool output is like security camera footage from a work site.
+You may summarize for readability, but you must not cut out sections that constitute
+evidence of an incident.
 
-## 方針
+## Policy
 
-| 項目 | 判断 |
-|------|------|
-| 既定動作 | `updatedToolOutput` は返さない |
-| 許可用途 | 明示 opt-in の redaction、compaction、normalization |
-| 禁止用途 | test failure、review finding、security finding、command error の隠蔽 |
-| 監査証跡 | 元出力の保存先、変換理由、変換ルールを残す |
-| 出力契約 | stdout は単一 JSON object。説明ログは stderr へ出す |
+| Item | Decision |
+|------|---------|
+| Default behavior | Do not return `updatedToolOutput` |
+| Permitted uses | Explicitly opt-in redaction, compaction, normalization |
+| Prohibited uses | Concealing test failures, review findings, security findings, or command errors |
+| Audit trail | Preserve the storage location of the original output, the reason for the transformation, and the transformation rule |
+| Output contract | stdout is a single JSON object. Explanatory logs go to stderr |
 
-## 許可する変換
+## Permitted transformations
 
 ### Redaction
 
-秘密情報を伏せるための変換。
+Transformations that mask secret information.
 
-例:
+Examples:
 
-- API key を `<REDACTED:api-key>` に置換する
-- access token を `<REDACTED:token>` に置換する
-- 個人情報を `<REDACTED:personal-data>` に置換する
+- Replace API keys with `<REDACTED:api-key>`
+- Replace access tokens with `<REDACTED:token>`
+- Replace personal data with `<REDACTED:personal-data>`
 
-禁止:
+Prohibited:
 
-- エラー行ごと削除する
-- failing test name を消す
-- review finding の file:line を消す
+- Deleting entire error lines
+- Removing failing test names
+- Removing file:line references from review findings
 
 ### Compaction
 
-巨大出力を短くするための変換。
+Transformations that shorten large outputs.
 
-例:
+Examples:
 
-- 成功ログの重複行を折りたたむ
-- 1000 行以上の dependency install log を要約する
-- 末尾に `full_output_path` を残して全文をファイル保存する
+- Collapse duplicate lines from success logs
+- Summarize dependency install logs longer than 1000 lines
+- Save the full output to a file and leave only `full_output_path` in the output
 
-禁止:
+Prohibited:
 
-- failure summary を省略する
-- stack trace の先頭と最後を両方消す
-- `pytest`, `vitest`, `go test`, `npm test` の失敗箇所を消す
+- Omitting failure summaries
+- Removing both the beginning and end of a stack trace
+- Removing failing test locations from `pytest`, `vitest`, `go test`, or `npm test`
 
 ### Normalization
 
-表示ゆれを揃えるための変換。
+Transformations that smooth out display variations.
 
-例:
+Examples:
 
-- absolute temp path を stable placeholder にする
-- timestamp を `<TIMESTAMP>` にする
-- progress spinner の制御文字を除く
+- Replace absolute temp paths with stable placeholders
+- Replace timestamps with `<TIMESTAMP>`
+- Remove control characters from progress spinners
 
-禁止:
+Prohibited:
 
-- exit code の意味を変える
-- stderr を成功扱いに見せる
-- review / test の判定語を置換する
+- Changing the meaning of an exit code
+- Making stderr appear to indicate success
+- Replacing verdict words from reviews or tests
 
 ## JSON stdout contract
 
-Hook が Claude Code に構造化出力を返す場合、stdout は JSON だけにする。
-人間向けログは stderr に出す。
+When a hook returns structured output to Claude Code, stdout must contain JSON only.
+Human-readable logs go to stderr.
 
-最小形:
+Minimal form:
 
 ```json
 {
@@ -89,7 +92,7 @@ Hook が Claude Code に構造化出力を返す場合、stdout は JSON だけ�
 }
 ```
 
-`updatedToolOutput` を使う場合:
+When using `updatedToolOutput`:
 
 ```json
 {
@@ -101,20 +104,21 @@ Hook が Claude Code に構造化出力を返す場合、stdout は JSON だけ�
 }
 ```
 
-必須条件:
+Required conditions:
 
-1. stdout に JSON 以外を混ぜない。
-2. `updatedToolOutput` を返す時は opt-in 設定を確認する。
-3. full output または復元可能な audit record を保存する。
-4. 変換理由と変換種別を `additionalContext` または audit record に残す。
-5. review / test evidence を削除しない。
+1. Do not mix anything other than JSON into stdout.
+2. Confirm opt-in configuration before returning `updatedToolOutput`.
+3. Save the full output or a recoverable audit record.
+4. Record the reason and type of transformation in `additionalContext` or the audit record.
+5. Do not delete review / test evidence.
 
 ## Harness default
 
-Harness の既定では `updatedToolOutput` を使わない。
-理由は、review や test の根拠を勝手に短くすると、あとで「本当に失敗していたのか」「何を直したのか」が追えなくなるため。
+Harness does not use `updatedToolOutput` by default.
+The reason is that shortening the basis for reviews and tests without authorization makes
+it impossible to later determine "was there actually a failure?" or "what was fixed?".
 
-必要な時だけ、個別 hook で次を明示する。
+When needed, enable it explicitly per individual hook:
 
 ```json
 {
@@ -126,5 +130,7 @@ Harness の既定では `updatedToolOutput` を使わない。
 }
 ```
 
-この設定名は policy 上の例であり、実装側は同等の opt-in を持てばよい。
-重要なのは「既定で改変しない」「改変したら追跡できる」「品質証拠を消さない」の 3 点。
+This configuration name is a policy-level example; the implementation only needs to
+have an equivalent opt-in mechanism.
+The three key principles are: "do not modify by default", "modifications must be
+traceable", and "do not erase quality evidence".

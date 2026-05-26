@@ -1,9 +1,9 @@
 #!/bin/bash
 # test-hook-event-names.sh
-# hookEventName がフックイベントタイプと一致しているか検証
+# Verify that hookEventName matches the hook event type
 #
-# PostToolUse フック → hookEventName: "PostToolUse"
-# PreToolUse フック  → hookEventName: "PreToolUse"
+# PostToolUse hook → hookEventName: "PostToolUse"
+# PreToolUse hook  → hookEventName: "PreToolUse"
 # etc.
 
 set -euo pipefail
@@ -11,23 +11,23 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# テスト結果カウンター
+# Test result counters
 TESTS_RUN=0
 TESTS_PASSED=0
 TESTS_FAILED=0
 
-# カラー出力
+# Color output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
-# POSIX 互換の抽出関数（grep -P を避ける）
+# POSIX-compatible extraction function (avoids grep -P)
 extract_hook_event_names() {
   local file="$1"
   sed -n 's/.*"hookEventName"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$file"
 }
 
-# テスト関数
+# Test function
 run_test() {
   local test_name="$1"
   local test_func="$2"
@@ -45,7 +45,7 @@ run_test() {
 }
 
 # ==================================================
-# Test 1: session-auto-broadcast.sh が PostToolUse を返す
+# Test 1: session-auto-broadcast.sh returns PostToolUse
 # ==================================================
 test_auto_broadcast_event_name() {
   local script="$PROJECT_ROOT/scripts/session-auto-broadcast.sh"
@@ -55,7 +55,7 @@ test_auto_broadcast_event_name() {
     return 1
   fi
 
-  # hookEventName が PostToolUse 以外のものを含んでいないか
+  # Check that hookEventName does not contain anything other than PostToolUse
   local bad_names
   bad_names=$(extract_hook_event_names "$script" | grep -v '^PostToolUse$' || true)
 
@@ -64,7 +64,7 @@ test_auto_broadcast_event_name() {
     return 1
   fi
 
-  # hookEventName が少なくとも1つ存在するか
+  # Check that at least one hookEventName exists
   local count
   count=$(grep -c '"hookEventName"' "$script" || echo "0")
   if [ "$count" -eq 0 ]; then
@@ -76,7 +76,7 @@ test_auto_broadcast_event_name() {
 }
 
 # ==================================================
-# Test 2: PostToolUse 登録スクリプトの hookEventName 一貫性
+# Test 2: hookEventName consistency for PostToolUse-registered scripts
 # ==================================================
 test_posttooluse_scripts_consistency() {
   local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
@@ -92,7 +92,7 @@ test_posttooluse_scripts_consistency() {
     return 0
   fi
 
-  # PostToolUse に登録されたスクリプト名を抽出
+  # Extract script names registered under PostToolUse
   local scripts
   scripts=$(jq -r '
     .hooks.PostToolUse[]?.hooks[]?.command // empty
@@ -105,7 +105,7 @@ test_posttooluse_scripts_consistency() {
       continue
     fi
 
-    # hookEventName が含まれるスクリプトのみチェック
+    # Only check scripts that contain hookEventName
     if grep -q '"hookEventName"' "$script_path" 2>/dev/null; then
       local bad
       bad=$(extract_hook_event_names "$script_path" | grep -v '^PostToolUse$' || true)
@@ -124,7 +124,7 @@ test_posttooluse_scripts_consistency() {
 }
 
 # ==================================================
-# Test 3: session-auto-broadcast の stdout が clean JSON のみ
+# Test 3: session-auto-broadcast stdout is clean JSON only
 # ==================================================
 test_auto_broadcast_clean_output() {
   local script="$PROJECT_ROOT/scripts/session-auto-broadcast.sh"
@@ -134,7 +134,7 @@ test_auto_broadcast_clean_output() {
     return 1
   fi
 
-  # subprocess stdout が /dev/null にリダイレクトされているか
+  # Check that subprocess stdout is redirected to /dev/null
   if grep -q 'session-broadcast\.sh' "$script"; then
     if ! grep 'session-broadcast\.sh' "$script" | grep -q '>/dev/null'; then
       echo "    Error: session-broadcast.sh stdout not redirected to /dev/null"
@@ -146,7 +146,7 @@ test_auto_broadcast_clean_output() {
 }
 
 # ==================================================
-# Test 4: 空入力時にバリデーションエラーが出ないことを確認
+# Test 4: No validation error on empty input
 # ==================================================
 test_auto_broadcast_empty_input() {
   local script="$PROJECT_ROOT/scripts/session-auto-broadcast.sh"
@@ -156,11 +156,11 @@ test_auto_broadcast_empty_input() {
     return 1
   fi
 
-  # 空入力で実行
+  # Run with empty input
   local output
   output=$(echo '' | bash "$script" 2>/dev/null || true)
 
-  # 出力が正しい JSON で PostToolUse を含むか
+  # Check that output is valid JSON with PostToolUse hookEventName
   if ! echo "$output" | grep -q '"hookEventName":"PostToolUse"'; then
     echo "    Error: Empty input should return PostToolUse hookEventName"
     echo "    Got: $output"
@@ -171,7 +171,7 @@ test_auto_broadcast_empty_input() {
 }
 
 # ==================================================
-# Test 5: パターン不一致時にバリデーションエラーが出ないことを確認
+# Test 5: No validation error on non-matching pattern
 # ==================================================
 test_auto_broadcast_no_match() {
   local script="$PROJECT_ROOT/scripts/session-auto-broadcast.sh"
@@ -186,11 +186,11 @@ test_auto_broadcast_no_match() {
     return 0
   fi
 
-  # パターンに一致しないファイルパスで実行
+  # Run with a file path that does not match any pattern
   local output
   output=$(echo '{"tool_input":{"file_path":"src/components/Button.tsx"}}' | bash "$script" 2>/dev/null || true)
 
-  # 出力が正しい JSON で PostToolUse を含むか
+  # Check that output is valid JSON with PostToolUse hookEventName
   if ! echo "$output" | grep -q '"hookEventName":"PostToolUse"'; then
     echo "    Error: Non-matching path should return PostToolUse hookEventName"
     echo "    Got: $output"
@@ -201,23 +201,23 @@ test_auto_broadcast_no_match() {
 }
 
 # ==================================================
-# メイン実行
+# Main execution
 # ==================================================
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo " hookEventName 一貫性テスト"
+echo " hookEventName consistency test"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-run_test "session-auto-broadcast.sh が PostToolUse を返す" test_auto_broadcast_event_name
-run_test "PostToolUse スクリプトの hookEventName 一貫性" test_posttooluse_scripts_consistency
-run_test "session-auto-broadcast の stdout が clean" test_auto_broadcast_clean_output
-run_test "空入力時に PostToolUse を返す" test_auto_broadcast_empty_input
-run_test "パターン不一致時に PostToolUse を返す" test_auto_broadcast_no_match
+run_test "session-auto-broadcast.sh returns PostToolUse" test_auto_broadcast_event_name
+run_test "hookEventName consistency for PostToolUse scripts" test_posttooluse_scripts_consistency
+run_test "session-auto-broadcast stdout is clean" test_auto_broadcast_clean_output
+run_test "returns PostToolUse on empty input" test_auto_broadcast_empty_input
+run_test "returns PostToolUse on non-matching pattern" test_auto_broadcast_no_match
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo " テスト結果: $TESTS_PASSED/$TESTS_RUN passed"
+echo " Test results: $TESTS_PASSED/$TESTS_RUN passed"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 

@@ -2,9 +2,9 @@
 # permission-denied-handler.sh
 # PermissionDenied hook handler (v2.1.89+)
 #
-# auto mode classifier がコマンドを拒否した際に発火。
-# 拒否イベントを telemetry に記録し、Breezing モードでは Lead への通知を含む。
-# {retry: true} を返すことで、モデルにリトライ可能であることを伝えられる。
+# Fires when the auto mode classifier denies a command.
+# Records the denial event in telemetry; in Breezing mode includes a notification to the Lead.
+# Returning {retry: true} signals to the model that it can retry.
 #
 # Input:  stdin (JSON: { tool, input, denied_reason, session_id, agent_id, ... })
 # Output: JSON (systemMessage for awareness, optional retry hint)
@@ -15,19 +15,19 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# Load path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-# プロジェクトルートを検出
+# Detect project root
 if declare -F detect_project_root > /dev/null 2>&1; then
   PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 else
   PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
 fi
 
-# ステートディレクトリ（CLAUDE_PLUGIN_DATA 使用時はプロジェクト別にスコープ）
+# State directory (scoped per project when CLAUDE_PLUGIN_DATA is set)
 if [ -n "${CLAUDE_PLUGIN_DATA:-}" ]; then
   _project_hash="$(printf '%s' "${PROJECT_ROOT}" | { shasum -a 256 2>/dev/null || sha256sum 2>/dev/null || echo "default  -"; } | cut -c1-12)"
   [ -z "${_project_hash}" ] && _project_hash="default"
@@ -37,7 +37,7 @@ else
 fi
 LOG_FILE="${STATE_DIR}/permission-denied.jsonl"
 
-# === ユーティリティ関数 ===
+# === Utility functions ===
 
 ensure_state_dir() {
   local state_parent
@@ -56,7 +56,7 @@ ensure_state_dir() {
   return 0
 }
 
-# JSONL ローテーション（500 行超過時に 400 行に切り詰め）
+# JSONL rotation (trim to 400 lines when exceeding 500)
 rotate_jsonl() {
   local file="$1"
 
@@ -73,23 +73,23 @@ rotate_jsonl() {
   fi
 }
 
-# === stdin から入力を読み取り ===
+# === Read input from stdin ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)" || true
 fi
 
-# ペイロードが空の場合はスキップ
+# Skip if payload is empty
 if [ -z "${INPUT}" ]; then
   exit 0
 fi
 
-# === ステートディレクトリの確保 ===
+# === Ensure state directory ===
 if ! ensure_state_dir; then
   exit 0
 fi
 
-# === 拒否情報を抽出 ===
+# === Extract denial information ===
 TOOL_NAME="unknown"
 DENIED_REASON="unknown"
 SESSION_ID="unknown"
@@ -126,7 +126,7 @@ fi
 
 TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date +"%Y-%m-%dT%H:%M:%SZ")"
 
-# === JSONL にログ記録 ===
+# === Log to JSONL ===
 log_entry=""
 if command -v jq > /dev/null 2>&1; then
   log_entry="$(jq -nc \
@@ -162,21 +162,21 @@ if [ -n "${log_entry}" ]; then
   rotate_jsonl "${LOG_FILE}"
 fi
 
-# === Breezing Worker の場合: Lead への通知 + retry 指示 ===
-# Worker が拒否された場合、Lead に状況を伝えて代替手段を検討させる
-# retry: true を返すことで、モデルがリトライ可能であることを伝える
-_notification_text="[PermissionDenied] Worker のツール ${TOOL_NAME} が auto mode で拒否されました。理由: ${DENIED_REASON}。代替アプローチを検討するか、必要なら手動承認してください。"
+# === For Breezing Workers: notify Lead + retry instruction ===
+# When a Worker is denied, inform the Lead so it can consider an alternative approach
+# Returning retry: true signals to the model that it can retry
+_notification_text="[PermissionDenied] Worker tool ${TOOL_NAME} was denied in auto mode. Reason: ${DENIED_REASON}. Consider an alternative approach or manually approve if needed."
 _is_worker=false
 if [ "${AGENT_TYPE}" = "worker" ] || [ "${AGENT_TYPE}" = "task-worker" ] || echo "${AGENT_TYPE}" | grep -qE ':worker$'; then
   _is_worker=true
 
-  # broadcast ファイルに書き込み（Lead セッションが読み取れるように）
+  # Write to broadcast file (so the Lead session can read it)
   _broadcast_script="${SCRIPT_DIR}/../session-broadcast.sh"
   if [ -f "${_broadcast_script}" ]; then
     bash "${_broadcast_script}" "${_notification_text}" >/dev/null 2>&1 || true
   fi
 
-  # retry: true + systemMessage を返す
+  # Return retry: true + systemMessage
   if command -v jq > /dev/null 2>&1; then
     jq -nc \
       --arg msg "${_notification_text}" \
@@ -186,12 +186,12 @@ if [ "${AGENT_TYPE}" = "worker" ] || [ "${AGENT_TYPE}" = "task-worker" ] || echo
   fi
 fi
 
-# Worker 以外の場合はそのまま通過（retry しない — ユーザーに判断を委ねる）
+# Non-Worker: pass through without retry — defer judgment to the user
 if [ "${_is_worker}" = "false" ]; then
   echo '{"decision":"approve","reason":"PermissionDenied logged"}'
 fi
 
-# stderr にも出力（デバッグ用）
+# Also output to stderr (for debugging)
 echo "[PermissionDenied] agent=${AGENT_ID} type=${AGENT_TYPE} tool=${TOOL_NAME} reason=${DENIED_REASON}" >&2
 
 exit 0

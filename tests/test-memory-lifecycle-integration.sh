@@ -111,8 +111,8 @@ chmod +x \
   "${MEM_TMP}/scripts/harness-memd"
 
 cat > "${CLAUDE_TMP}/Plans.md" <<'EOF'
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
 | 1.0 | sample | done | - | cc:WIP |
 EOF
 
@@ -135,7 +135,7 @@ EOF
 
 START_PAYLOAD='{"session_id":"claude-session-1","source":"startup","hook_event_name":"SessionStart"}'
 PROMPT_PAYLOAD='{"session_id":"claude-session-1","hook_event_name":"UserPromptSubmit","prompt":"Can you continue the previous discussion?"}'
-STOP_PAYLOAD='{"session_id":"claude-session-1","summary_mode":"standard","last_assistant_message":"1. 問題: 新しいセッションを開くと前の会話の文脈が途切れる 2. 決定: continuity briefing を最初のターンで必ず表示する 3. 次にやるべきこと: adapter delivery を Claude / Codex 両方で揃える"}'
+STOP_PAYLOAD='{"session_id":"claude-session-1","summary_mode":"standard","last_assistant_message":"1. Problem: Opening a new session breaks the context of the previous conversation 2. Decision: Always show continuity briefing on the first turn 3. Next action: Align adapter delivery for both Claude and Codex"}'
 
 printf '%s' "${START_PAYLOAD}" | (
   cd "${CLAUDE_TMP}" &&

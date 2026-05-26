@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # post-compact.sh
-# PostCompact フックハンドラ
-# コンテキストコンパクション完了後に発火（PreCompact の対）
-# WIP タスクがある場合は PreCompact が保存した状態を復元し、systemMessage として注入する
-# structured handoff artifact があれば、そちらを優先して高信号の要点を再注入する
+# PostCompact hook handler
+# Fires after context compaction completes (counterpart to PreCompact)
+# If WIP tasks exist, restores the state saved by PreCompact and injects it as a systemMessage
+# If a structured handoff artifact is available, it takes priority for re-injecting high-signal key points
 #
 # Input: stdin JSON from Claude Code hooks
 # Output: JSON with optional systemMessage for context re-injection
@@ -11,33 +11,33 @@
 
 set -euo pipefail
 
-# === 設定 ===
+# === Configuration ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# Load path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-# プロジェクトルートを検出
+# Detect project root
 PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 
-# ファイルパス
+# File paths
 STATE_DIR="${PROJECT_ROOT}/.claude/state"
 COMPACTION_LOG="${STATE_DIR}/compaction-events.jsonl"
 PLANS_FILE="${PROJECT_ROOT}/Plans.md"
 HANDOFF_ARTIFACT="${STATE_DIR}/handoff-artifact.json"
 PRECOMPACT_SNAPSHOT="${STATE_DIR}/precompact-snapshot.json"
 
-# === ユーティリティ関数 ===
+# === Utility functions ===
 
 ensure_state_dir() {
   mkdir -p "${STATE_DIR}" 2>/dev/null || true
   chmod 700 "${STATE_DIR}" 2>/dev/null || true
 }
 
-# JSONL ローテーション（500 行超過時に 400 行に切り詰め）
+# JSONL rotation (trim to 400 lines when exceeding 500)
 rotate_jsonl() {
   local file="$1"
   local _lines
@@ -52,7 +52,7 @@ get_timestamp() {
   date -u +"%Y-%m-%dT%H:%M:%SZ"
 }
 
-# Plans.md から WIP タスクを抽出してサマリーを生成
+# Extract WIP tasks from Plans.md and generate a summary
 get_wip_summary() {
   if [ ! -f "${PLANS_FILE}" ]; then
     return 0
@@ -79,14 +79,14 @@ except Exception:
     pass
 " "${PLANS_FILE}" 2>/dev/null)" || wip_lines=""
   else
-    # python3 がない場合は grep でフォールバック
+    # Fallback to grep if python3 is not available
     wip_lines="$(grep -E 'cc:WIP|cc:TODO' "${PLANS_FILE}" 2>/dev/null | head -20)" || wip_lines=""
   fi
 
   printf '%s' "${wip_lines}"
 }
 
-# PreCompact スナップショットからコンテキストを復元
+# Restore context from PreCompact snapshot
 get_handoff_artifact_path() {
   if [ -f "${HANDOFF_ARTIFACT}" ]; then
     printf '%s' "${HANDOFF_ARTIFACT}"
@@ -273,33 +273,33 @@ except Exception:
   printf '%s' "${context}"
 }
 
-# === stdin から JSON ペイロードを読み取り ===
+# === Read JSON payload from stdin ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
+# Skip if payload is empty
 if [ -z "${INPUT}" ]; then
   echo '{"decision":"approve","reason":"PostCompact: no payload"}'
   exit 0
 fi
 
-# === コンパクション後のコンテキスト再注入 ===
+# === Context re-injection after compaction ===
 ensure_state_dir
 TS="$(get_timestamp)"
 
-# WIP タスクサマリーを取得
+# Get WIP task summary
 WIP_SUMMARY="$(get_wip_summary)"
 
-# structured handoff artifact を優先して復元
+# Restore, prioritizing the structured handoff artifact
 HANDOFF_ARTIFACT_PATH="$(get_handoff_artifact_path)"
 STRUCTURED_HANDOFF_CONTEXT="$(get_structured_handoff_context "${HANDOFF_ARTIFACT_PATH}")"
 
-# 互換用の薄いスナップショット復元
+# Lightweight snapshot restore for compatibility
 PRECOMPACT_CONTEXT="$(get_precompact_context)"
 
-# === イベント記録 ===
+# === Event logging ===
 log_entry=""
 if command -v jq >/dev/null 2>&1; then
   log_entry="$(jq -nc \
@@ -327,10 +327,10 @@ if [ -n "${log_entry}" ]; then
   rotate_jsonl "${COMPACTION_LOG}"
 fi
 
-# === レスポンス生成 ===
+# === Response generation ===
 
-# systemMessage を構築
-# PreCompact が保存した WIP 情報を復元し、圧縮後もモデルがタスク状態を把握できるようにする
+# Build systemMessage
+# Restore WIP info saved by PreCompact so the model can track task state even after compaction
 SYSTEM_MESSAGE=""
 
 if [ -z "${STRUCTURED_HANDOFF_CONTEXT}" ] && [ -n "${WIP_SUMMARY}" ]; then
@@ -359,7 +359,7 @@ ${PRECOMPACT_CONTEXT}"
   fi
 fi
 
-# additionalContext がある場合はレスポンスに含める（既存テスト・消費者が .additionalContext を読む）
+# Include additionalContext in the response when present (existing tests/consumers read .additionalContext)
 if [ -n "${SYSTEM_MESSAGE}" ]; then
   if command -v jq >/dev/null 2>&1; then
     jq -nc \
@@ -367,7 +367,7 @@ if [ -n "${SYSTEM_MESSAGE}" ]; then
       --arg ctx "${SYSTEM_MESSAGE}" \
       '{"decision":"approve","reason":$reason,"additionalContext":$ctx}'
   else
-    # jq がない場合のフォールバック
+    # Fallback when jq is not available
     _escaped_msg="${SYSTEM_MESSAGE//\\/\\\\}"
     _escaped_msg="${_escaped_msg//\"/\\\"}"
     _escaped_msg="${_escaped_msg//$'\n'/\\n}"

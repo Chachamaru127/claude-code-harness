@@ -29,36 +29,32 @@ hooks/hooks.json           ← Source file (for development)
 
 ## Hook Types
 
-4 つのタイプが利用可能です: `command`（汎用）、`http`（外部連携）、`prompt`（LLM 単一判断）、`agent`（LLM エージェント判断）。後者2つは v2.1.63+ で全イベント対応。
+4 types are available: `command` (general purpose), `http` (external integration), `prompt` (single LLM decision), `agent` (LLM agent decision). The latter two support all events as of v2.1.63+.
 
-> **CC v2.1.69+**: `InstructionsLoaded` イベント、`agent_id` / `agent_type` フィールド、`{"continue": false, "stopReason": "..."}` レスポンスが追加されました。
+> **CC v2.1.69+**: The `InstructionsLoaded` event, `agent_id` / `agent_type` fields, and the `{"continue": false, "stopReason": "..."}` response were added.
 >
-> **CC v2.1.76+**: `Elicitation`、`ElicitationResult`、`PostCompact` イベントが追加されました。
-> MCP Elicitation はバックグラウンドエージェントでは UI 対話不能なため、フックで自動処理が必要です。
-> PostCompact は PreCompact と対になり、コンパクション後のコンテキスト再注入に使用します。
+> **CC v2.1.76+**: The `Elicitation`, `ElicitationResult`, and `PostCompact` events were added.
+> MCP Elicitation requires hook-based automatic handling for background agents because they cannot interact with the UI.
+> PostCompact pairs with PreCompact and is used for context re-injection after compaction.
 >
-> **CC v2.1.77+**: PreToolUse フックが `"allow"` を返しても、settings.json の `deny` ルールが優先されるようになりました。
-> フック内で allow しても deny 設定があれば拒否されます。guardrail 設計時はこの優先順位に注意してください。
+> **CC v2.1.77+**: Even when a PreToolUse hook returns `"allow"`, the `deny` rules in settings.json now take precedence.
+> If a deny rule exists, the action is rejected even if the hook allows it. Keep this priority order in mind when designing guardrails.
 >
-> **CC v2.1.78+**: `StopFailure` イベントが追加されました。API エラー（レート制限、認証失敗等）で
-> セッション停止が失敗した際に発火します。エラーログと復旧処理に使用します。
+> **CC v2.1.78+**: The `StopFailure` event was added. It fires when a session stop fails due to an API error (rate limiting, authentication failure, etc.). Use it for error logging and recovery processing.
 >
-> **CC v2.1.89+**: `PermissionDenied` イベントが追加されました。auto mode classifier がコマンドを拒否した際に発火します。
-> `{retry: true}` を返すとモデルにリトライ可能であることを伝えられます。Breezing Worker の拒否追跡に使用。
+> **CC v2.1.89+**: The `PermissionDenied` event was added. It fires when the auto mode classifier rejects a command.
+> Returning `{retry: true}` tells the model that a retry is possible. Used for tracking rejections in Breezing Workers.
 >
-> **CC v2.1.89+**: PreToolUse フックの `permissionDecision` に `"defer"` が追加されました。
-> ヘッドレスセッション（`-p` モード）でフックが `"defer"` を返すとセッションが一時停止し、
-> `claude -p --resume` で再開時にフックが再評価されます。Breezing Worker が判断困難な操作に遭遇した際の安全弁に活用できます。
+> **CC v2.1.89+**: `"defer"` was added to the `permissionDecision` field of PreToolUse hooks.
+> When a hook returns `"defer"` in a headless session (`-p` mode), the session pauses and the hook is re-evaluated when resumed with `claude -p --resume`. This serves as a safety valve when a Breezing Worker encounters an operation it cannot decide on.
 >
-> **CC v2.1.89+**: PreToolUse の `updatedInput` を `AskUserQuestion` と組み合わせると、
-> ヘッドレスセッションが質問を外部 UI で収集して `permissionDecision: "allow"` と一緒に回答を注入できます。
+> **CC v2.1.89+**: Combining PreToolUse's `updatedInput` with `AskUserQuestion` lets a headless session collect a question via an external UI and inject the answer along with `permissionDecision: "allow"`.
 >
-> **CC v2.1.89+**: フック出力が 50K 文字を超える場合、ディスクに保存されてファイルパス＋プレビューとしてコンテキストに注入されます。
-> 大量の出力を返すフックを設計する際はこの挙動を前提にしてください。
+> **CC v2.1.89+**: When hook output exceeds 50K characters, it is saved to disk and injected into context as a file path + preview.
+> Keep this behavior in mind when designing hooks that return large amounts of output.
 >
-> **CC v2.1.90+**: PreToolUse フックが JSON を stdout に出力して exit code 2 で終了する際のブロック動作が修正されました。
-> 以前はこのパターンでブロックが正しく機能しないバグがありました。Harness の pre-tool.sh は exit 2 パターンを使用しているため、
-> v2.1.90 以降でガードレールの deny がより確実に動作します。
+> **CC v2.1.90+**: A bug was fixed where blocking behavior did not work correctly when a PreToolUse hook output JSON to stdout and exited with code 2.
+> Previously, this pattern caused blocking to not function correctly. Since Harness's pre-tool.sh uses the exit 2 pattern, guardrail deny now works more reliably from v2.1.90 onwards.
 
 ### command Type (General Purpose)
 
@@ -94,7 +90,7 @@ Available for all events:
 
 ### agent Type (v2.1.63+)
 
-LLM エージェントにフックの判断を委任する新しいフック形式。Read, Grep, Glob ツールを使ってコードを分析し、許可/拒否を判断できる。
+A new hook form that delegates hook decisions to an LLM agent. The agent can use Read, Grep, and Glob tools to analyze code and determine allow/deny.
 
 ```json
 {
@@ -105,33 +101,33 @@ LLM エージェントにフックの判断を委任する新しいフック形�
 }
 ```
 
-#### agent hook 専用フィールド
+#### agent hook-specific fields
 
-| フィールド | 必須 | 説明 |
+| Field | Required | Description |
 |-----------|------|------|
-| `prompt` | Yes | エージェントに送るプロンプト。`$ARGUMENTS` でフック入力 JSON を参照 |
-| `model` | No | 使用モデル（デフォルト: fast model）。コスト管理のため `haiku` 推奨 |
+| `prompt` | Yes | Prompt sent to the agent. Reference the hook input JSON with `$ARGUMENTS` |
+| `model` | No | Model to use (default: fast model). `haiku` recommended for cost control |
 
-#### command hook との主な違い
+#### Key differences from command hooks
 
-| 項目 | command hook | agent hook |
+| Item | command hook | agent hook |
 |------|-------------|-----------|
-| 判断方式 | ルールベース（正規表現・条件分岐） | LLM がコンテキストを理解して判断 |
-| ツール | シェルコマンド | Read, Grep, Glob（副作用なし） |
-| コスト | 低（プロセス起動のみ） | 高（LLM 推論トークン消費） |
-| 適用場面 | 確定的なルール | コンテキスト依存の品質判断 |
-| 非同期 | `async: true` 対応 | 非対応 |
+| Decision method | Rule-based (regex, conditional branches) | LLM understands context and makes decisions |
+| Tools | Shell commands | Read, Grep, Glob (no side effects) |
+| Cost | Low (process startup only) | High (LLM inference token consumption) |
+| Use cases | Deterministic rules | Context-dependent quality judgment |
+| Async | `async: true` supported | Not supported |
 
-#### コスト管理ガイドライン
+#### Cost management guidelines
 
-- matcher で対象を最小限に絞る（例: `Write|Edit` のみ）
-- `model: "haiku"` でコストを抑制
-- 1回あたりの推奨トークン上限: 2,000
-- 月間コスト超過時は command 型に rollback を検討
+- Minimize targets with the matcher (e.g., `Write|Edit` only)
+- Use `model: "haiku"` to keep costs down
+- Recommended token limit per call: 2,000
+- When monthly costs exceed limits, consider rolling back to the command type
 
 ### http Type (v2.1.63+)
 
-JSON を URL に POST する新しいフック形式。外部サービスとの連携に使用。
+A new hook form that POSTs JSON to a URL. Used for integration with external services.
 
 ```json
 {
@@ -145,36 +141,36 @@ JSON を URL に POST する新しいフック形式。外部サービスとの�
 }
 ```
 
-#### HTTP hook 専用フィールド
+#### HTTP hook-specific fields
 
-| フィールド | 必須 | 説明 |
+| Field | Required | Description |
 |-----------|------|------|
-| `url` | Yes | POST 先の URL |
-| `headers` | No | 追加 HTTP ヘッダー。`$VAR` / `${VAR}` で環境変数展開可 |
-| `allowedEnvVars` | No | `headers` で展開を許可する環境変数名リスト。未指定時は展開されない |
+| `url` | Yes | URL to POST to |
+| `headers` | No | Additional HTTP headers. Env vars can be expanded with `$VAR` / `${VAR}` |
+| `allowedEnvVars` | No | List of env var names whose expansion is allowed in `headers`. If unspecified, expansion does not occur |
 
-#### レスポンス仕様
+#### Response specification
 
-| レスポンス | 動作 |
+| Response | Behavior |
 |-----------|------|
-| `2xx` + 空ボディ | 成功、続行 |
-| `2xx` + JSON ボディ | 成功、JSON は command hook と同じスキーマで解析 |
-| `非 2xx` / タイムアウト | ノンブロッキングエラー、実行続行 |
+| `2xx` + empty body | Success, continue |
+| `2xx` + JSON body | Success, JSON is parsed using the same schema as command hooks |
+| Non-`2xx` / timeout | Non-blocking error, execution continues |
 
-#### command hook との主な違い
+#### Key differences from command hooks
 
-| 項目 | command hook | http hook |
+| Item | command hook | http hook |
 |------|-------------|-----------|
-| 入力 | stdin (JSON) | POST body (JSON) |
-| 成功判定 | exit code 0 | 2xx ステータス |
-| ブロッキング | exit 2 | 2xx + `permissionDecision: "deny"` の JSON |
-| 非同期実行 | `async: true` 対応 | 非対応 |
-| `/hooks` メニュー | 追加可能 | 不可（JSON 直接編集のみ） |
-| 環境変数 | シェル環境で自動展開 | `allowedEnvVars` に明示リスト必要 |
+| Input | stdin (JSON) | POST body (JSON) |
+| Success determination | exit code 0 | 2xx status |
+| Blocking | exit 2 | 2xx + JSON with `permissionDecision: "deny"` |
+| Async execution | `async: true` supported | Not supported |
+| `/hooks` menu | Can be added | Not possible (direct JSON editing only) |
+| Environment variables | Auto-expanded in shell environment | Must be explicitly listed in `allowedEnvVars` |
 
-#### サンプルテンプレート
+#### Sample templates
 
-**Slack 通知**:
+**Slack notification**:
 ```json
 {
   "type": "http",
@@ -183,7 +179,7 @@ JSON を URL に POST する新しいフック形式。外部サービスとの�
 }
 ```
 
-**メトリクス収集**:
+**Metrics collection**:
 ```json
 {
   "type": "http",
@@ -193,7 +189,7 @@ JSON を URL に POST する新しいフック形式。外部サービスとの�
 }
 ```
 
-**外部ダッシュボード更新**:
+**External dashboard update**:
 ```json
 {
   "type": "http",
@@ -228,41 +224,41 @@ Execute command type via `run-script.js`:
 | Normal processing (cleanup) | 30-60s | File operations, git operations |
 | Heavy processing (test) | 60-120s | Test execution, builds |
 | External API integration | 60-180s | Codex reviews, etc. |
-| agent hook（LLM判断） | 30-60s | モデルとプロンプト量に依存。haiku なら30秒、sonnet なら60秒 |
-| http hook（外部連携） | 5-15s | ローカルサーバーは5秒、外部サービスは15秒。タイムアウト時はノンブロッキング |
+| agent hook (LLM decision) | 30-60s | Depends on model and prompt size. 30s for haiku, 60s for sonnet |
+| http hook (external integration) | 5-15s | 5s for local server, 15s for external services. Timeout is non-blocking |
 
 **Note**: Set timeouts according to processing nature. Don't make them unnecessarily long.
 
-#### agent hook 実測ガイドライン（haiku モデル）
+#### agent hook measured guidelines (haiku model)
 
-| プロンプト量 | 想定レイテンシ | 推奨 timeout |
+| Prompt size | Expected latency | Recommended timeout |
 |------------|-------------|------------|
-| 〜500 tokens | 3-8s | 15s |
-| 〜1,000 tokens | 5-15s | 30s |
-| 〜2,000 tokens | 10-25s | 45s |
-| 2,000 tokens 超 | 非推奨 | — |
+| ~500 tokens | 3-8s | 15s |
+| ~1,000 tokens | 5-15s | 30s |
+| ~2,000 tokens | 10-25s | 45s |
+| Over 2,000 tokens | Not recommended | — |
 
-コスト目安（haiku）: 100回/日のセッションで〜$0.01-0.05/日。月間$1-2未満が正常範囲。
+Cost estimate (haiku): ~$0.01-0.05/day for 100 sessions/day. Under $1-2/month is normal range.
 
 ### Recommended Values by Event Type
 
 | Hook Type | Recommended | Reason |
 |-----------|-------------|--------|
-| InstructionsLoaded | 5-10s | 初期コンテキストの軽量検証のみ |
+| InstructionsLoaded | 5-10s | Lightweight validation of initial context only |
 | SessionStart | 30s | Initialization may take time |
 | SubagentStart/Stop | 10s | Tracking only, lightweight processing |
-| TeammateIdle / TaskCompleted | 10-20s | チーム進捗と停止判定（必要なら `continue:false`） |
+| TeammateIdle / TaskCompleted | 10-20s | Team progress and stop decisions (use `continue:false` if needed) |
 | PreToolUse | 30s | Guard processing, file validation |
 | PostToolUse | 5-30s | Depends on processing content |
 | Stop | 20s | Ensure completion of termination processing |
-| SessionEnd | 30s | セッション終了処理。`CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` で制御可能 |
+| SessionEnd | 30s | Session end processing. Controllable via `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` |
 | UserPromptSubmit | 10-30s | Policy injection, tracking |
-| Elicitation | 10s | MCP elicitation のインターセプト。Breezing では自動スキップ |
-| ElicitationResult | 5s | 結果のログ記録のみ、軽量処理 |
-| PostCompact | 15s | コンテキスト再注入。WIP タスク状態の復元を含む |
-| PermissionDenied | 10s | auto mode 拒否の記録・通知。軽量処理（v2.1.89+） |
-| StopFailure | 10s | API エラーログ記録のみ。復旧処理は不要（v2.1.78+） |
-| ConfigChange | 10s | 設定変更の監査記録 |
+| Elicitation | 10s | Intercepting MCP elicitation. Auto-skipped in Breezing |
+| ElicitationResult | 5s | Result logging only, lightweight processing |
+| PostCompact | 15s | Context re-injection. Includes restoring WIP task state |
+| PermissionDenied | 10s | Record and notify auto mode denials. Lightweight processing (v2.1.89+) |
+| StopFailure | 10s | API error logging only. No recovery processing needed (v2.1.78+) |
+| ConfigChange | 10s | Audit record for configuration changes |
 
 ### Special Considerations for Stop Hooks
 
@@ -272,16 +268,16 @@ Stop hooks execute at session termination, so:
 
 ### Special Considerations for SessionEnd Hooks
 
-**CC v2.1.74+**: SessionEnd hooks のタイムアウトは `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` 環境変数で制御可能になった。
-以前は `hook.timeout` の設定に関わらず固定 1.5 秒で kill されていた。
+**CC v2.1.74+**: The timeout for SessionEnd hooks can now be controlled via the `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` environment variable.
+Previously, hooks were killed after a fixed 1.5 seconds regardless of the `hook.timeout` setting.
 
 ```bash
-# Harness 推奨: session-cleanup（timeout: 30s）に対して 45 秒を設定
+# Harness recommendation: set 45 seconds for session-cleanup (timeout: 30s)
 export CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=45000
 ```
 
-- Harness の `session-cleanup` フック（hooks.json で timeout: 30s 指定）が確実に完了するために、45 秒以上を推奨
-- 環境変数を設定しない場合、CC のデフォルト値が適用される（v2.1.74+ では hook.timeout 設定を尊重）
+- To ensure Harness's `session-cleanup` hook (specified as timeout: 30s in hooks.json) completes reliably, 45 seconds or more is recommended
+- If the environment variable is not set, CC's default value is applied (v2.1.74+ respects the hook.timeout setting)
 
 ## Hook Structure
 
@@ -317,23 +313,23 @@ export CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS=45000
 
 ### Teammate Event Fields (v2.1.69+)
 
-`TeammateIdle` / `TaskCompleted` / 関連イベントでは、次のフィールドを優先して扱う:
+In `TeammateIdle` / `TaskCompleted` / related events, prioritize the following fields:
 
-- `agent_id`（推奨キー）
-- `agent_type`（worker/reviewer など）
-- `session_id`（後方互換キー）
+- `agent_id` (recommended key)
+- `agent_type` (worker/reviewer, etc.)
+- `session_id` (backward-compatible key)
 
-`session_id` のみを前提にせず、`agent_id` を先に参照して fallback する実装を推奨。
+Do not assume `session_id` alone; implement to reference `agent_id` first with a fallback.
 
 ### Stop Response Pattern (v2.1.69+)
 
-チームイベントで処理を停止したい場合は、以下の形式を返す:
+To stop processing in team events, return the following format:
 
 ```json
 {"continue": false, "stopReason": "all_tasks_completed"}
 ```
 
-従来どおり続行する場合は `{"decision":"approve"}` を返してよい。
+To continue as before, return `{"decision":"approve"}`.
 
 ### matcher Patterns
 

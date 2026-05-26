@@ -41,7 +41,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 HARNESS_ROOT="$(dirname "$SCRIPT_DIR")"
 
 if [ ! -f "$HARNESS_ROOT/scripts/path-utils.sh" ]; then
-  echo -e "${RED}エラー${NC}: path-utils.sh が見つかりません: $HARNESS_ROOT/scripts/path-utils.sh"
+  echo -e "${RED}Error${NC}: path-utils.sh not found: $HARNESS_ROOT/scripts/path-utils.sh"
   exit 1
 fi
 
@@ -49,7 +49,7 @@ fi
 source "$HARNESS_ROOT/scripts/path-utils.sh"
 
 echo "=========================================="
-echo "クロスプラットフォーム パスユーティリティ テスト"
+echo "Cross-platform path utility tests"
 echo "=========================================="
 echo ""
 
@@ -336,16 +336,16 @@ echo ""
 # Summary
 # ============================================
 echo "=========================================="
-echo "テスト結果サマリー"
+echo "Test result summary"
 echo "=========================================="
-echo -e "合格: ${GREEN}$TESTS_PASSED${NC}"
-echo -e "失敗: ${RED}$TESTS_FAILED${NC}"
+echo -e "Passed: ${GREEN}$TESTS_PASSED${NC}"
+echo -e "Failed: ${RED}$TESTS_FAILED${NC}"
 echo ""
 
 if [ "$TESTS_FAILED" -eq 0 ]; then
-  echo -e "${GREEN}すべてのテストが合格しました！${NC}"
+  echo -e "${GREEN}All tests passed!${NC}"
   exit 0
 else
-  echo -e "${RED}一部のテストが失敗しました。${NC}"
+  echo -e "${RED}Some tests failed.${NC}"
   exit 1
 fi

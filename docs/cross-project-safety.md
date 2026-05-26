@@ -1,20 +1,23 @@
-# プロジェクトをまたいで検索するときの 3 層防御 (Phase 65.3)
+# 3-Layer Defense for Cross-Project Search (Phase 65.3)
 
-別のプロジェクトの過去の判断や知見を引き出したいけれど、クライアント名・人名・会社名などの **固有名詞が混ざってほしくない**。
-そのために 3 層に分けて固有名詞を黒塗り (=redact) する仕組み。
+When pulling in past decisions and knowledge from other projects, you may not want
+**proper nouns — client names, personal names, company names — to leak in**.
+To address this, a 3-layer system redacts proper nouns before rendering HTML.
 
-## やりたいこと
+## Goal
 
-通常、Claude harness の検索は **現プロジェクトのみ** に限定される (default 安全)。
+By default, Claude harness search is **limited to the current project** (safe default).
 
-ただし類似案件の知見を持ち寄りたいときは、`--cross-project-group <name>` flag を指定して横断検索を有効化できる。
-このとき、**他プロジェクトの固有名詞が現プロジェクトの HTML に漏れない** ように、3 層で防御する。
+When you want to bring in knowledge from similar projects, specify the
+`--cross-project-group <name>` flag to enable cross-project search.
+At that point, 3 layers of defense ensure that **proper nouns from other projects
+do not leak into the current project's HTML**.
 
-## やり方
+## How to Use
 
-### グループ定義 (前提準備)
+### Group definition (prerequisite)
 
-`.claude/rules/cross-project-groups.yaml` に member project を列挙:
+List member projects in `.claude/rules/cross-project-groups.yaml`:
 
 ```yaml
 schema_version: cross-project-group.v1
@@ -26,51 +29,51 @@ groups:
       - my-scripts
 ```
 
-詳細: [cross-project-groups-schema.md](cross-project-groups-schema.md)
+Details: [cross-project-groups-schema.md](cross-project-groups-schema.md)
 
-### 横断検索の有効化
+### Enabling cross-project search
 
 ```bash
-# Plan Brief で横断検索を使う
+# Use cross-project search in Plan Brief
 /harness-plan-brief --cross-project-group "PersonalTools"
 ```
 
-または skill 側 SKILL.md の Step 2 (alt) で記述された MCP N-call フローが自動適用。
+Or use the MCP N-call flow described in Step 2 (alt) of the skill's SKILL.md, which is applied automatically.
 
-### 3 層 redaction の働き
+### How the 3-layer redaction works
 
-横断検索が有効化された場合、HTML 生成時に以下が自動実行:
+When cross-project search is enabled, the following are applied automatically during HTML generation:
 
-#### Layer 1: harness-mem サーバー側 (Cross-Contract、別 repo)
+#### Layer 1: harness-mem server side (Cross-Contract, separate repo)
 
-- `<private>` ブロックの strip (server 出口で必ず実行、opt-out 不可)
-- `strict_project: true` がデフォルト (ただし MCP 経由では現在不変、Phase 65.3.5 で N-call 対応)
-- 実装: `harness-mem/memory-server/src/core/privacy-tags.ts`
+- Strip `<private>` blocks (always applied at server exit, cannot be opted out)
+- `strict_project: true` is default (currently immutable via MCP; N-call support added in Phase 65.3.5)
+- Implementation: `harness-mem/memory-server/src/core/privacy-tags.ts`
 
-#### Layer 2a: 辞書ベース固有名詞 redaction (client 側)
+#### Layer 2a: Dictionary-based proper noun redaction (client side)
 
-- `.claude/rules/client-redaction.yaml` の dict から literal string match
-- 例: `NoraiCorp` → `[Client_A]`、`田中太郎` → `[Person_A]`
-- 実装: `scripts/redact-by-dictionary.sh` (PiiRule 互換 schema)
+- Literal string matching from the dict in `.claude/rules/client-redaction.yaml`
+- Example: `NoraiCorp` → `[Client_A]`, `John Smith` → `[Person_A]`
+- Implementation: `scripts/redact-by-dictionary.sh` (PiiRule-compatible schema)
 
-#### Layer 2b: NER (Named Entity Recognition) redaction (client 側)
+#### Layer 2b: NER (Named Entity Recognition) redaction (client side)
 
-- Japanese tokenizer (fugashi + UniDic-lite) で形態素解析
-- pos2 == "固有名詞" の token を `[Entity]` に置換
-- 連続する固有名詞 token は 1 つの [Entity] にマージ
-- tokenizer 不在時は **fail-open** (原文そのまま + stderr 警告)
-- 実装: `scripts/redact-by-ner.sh`
+- Morphological analysis using Japanese tokenizer (fugashi + UniDic-lite)
+- Tokens where pos2 == "proper noun" are replaced with `[Entity]`
+- Consecutive proper noun tokens are merged into a single `[Entity]`
+- If the tokenizer is absent: **fail-open** (original text + stderr warning)
+- Implementation: `scripts/redact-by-ner.sh`
 
-#### Layer 3: 最終 sanity scan (client 側)
+#### Layer 3: Final sanity scan (client side)
 
-- HTML 生成直前に template chrome (CSS/HTML comment) を除外して scan
-- カタカナ 5 文字以上連続を「残骸」として検出
-- 検出時は **HTML を生成せず exit 1** (fail-safe)
-- 実装: `scripts/render-html.sh --with-redaction` + `scripts/final-scan-redaction.py`
+- Scan before HTML generation, excluding template chrome (CSS/HTML comments)
+- Detect 5 or more consecutive katakana characters as "residue"
+- On detection: **HTML is not generated and exits with 1** (fail-safe)
+- Implementation: `scripts/render-html.sh --with-redaction` + `scripts/final-scan-redaction.py`
 
-### 監査ログ
+### Audit log
 
-横断検索が走るたびに `.claude/state/audit/cross-project-search.jsonl` に 1 行追加:
+Every time a cross-project search runs, one line is appended to `.claude/state/audit/cross-project-search.jsonl`:
 
 ```json
 {
@@ -84,64 +87,66 @@ groups:
 }
 ```
 
-実際のクエリ文字列は **記録しない** (privacy)、sha256 hash のみ。
+The actual query string is **not recorded** (for privacy) — only the sha256 hash.
 
-生成 HTML 末尾には「redacted: dict X 件 + NER Y 件」が表示。
+The generated HTML footer shows "redacted: dict X items + NER Y items."
 
-## 気をつけること
+## Things to be aware of
 
-### 1. Layer 1 は server 側 (別 repo)、claude-code-harness からは触らない
+### 1. Layer 1 is on the server side (separate repo) — do not touch it from claude-code-harness
 
-cross-repo handoff workflow (D42) の境界として、Layer 1 は harness-mem 側で完結。
-client 側で `<private>` を含む新規 fixture を作っても、server 経由なら必ず strip される (opt-out 不可)。
+Per the cross-repo handoff workflow (D42) boundary, Layer 1 is fully handled by harness-mem.
+Even if a new fixture containing `<private>` is created on the client side, it will always be stripped
+via the server (cannot be opted out).
 
-### 2. NER tokenizer は opt-in 依存
+### 2. NER tokenizer is an opt-in dependency
 
-`scripts/redact-by-ner.sh` は fugashi (Python tokenizer) を使う。
-インストール状況:
-- 環境にあれば自動使用 (確認: `python3 -c "from fugashi import Tagger"`)
-- 不在なら fail-open (Layer 2a + Layer 3 のみで動作)
+`scripts/redact-by-ner.sh` uses fugashi (Python tokenizer).
+Installation status:
+- Automatically used if available (check: `python3 -c "from fugashi import Tagger"`)
+- Fail-open if absent (only Layer 2a + Layer 3 operate)
 
-完全な NER カバレッジが必要な場合は `pip install fugashi unidic-lite` を実行。
+For full NER coverage, run `pip install fugashi unidic-lite`.
 
-### 3. Layer 3 final scan は fail-safe
+### 3. Layer 3 final scan is fail-safe
 
-カタカナ 5 文字以上連続を検出した場合、HTML は **生成されず exit 1**。
-生成されない方が「漏れた HTML が公開される」より安全という判断。
+If 5 or more consecutive katakana characters are detected, HTML is **not generated and exits with 1**.
+Not generating is safer than "generated HTML with leaks going public."
 
-template 著者の意図的な branding (例: `ハーネスオレンジ` in CSS comment) は除外される
-(template chrome strip で `<!-- -->` `/* */` `<style>` `<script>` を scan 対象外に)。
+Intentional branding by the template author (e.g., `harness-orange` in a CSS comment) is excluded
+(template chrome strip excludes `<!-- -->` `/* */` `<style>` `<script>` from the scan scope).
 
-### 4. 既存 server 側 sentinel `[REDACTED_*]` の二重置換ガード
+### 4. Double-replacement guard for existing server-side sentinel `[REDACTED_*]`
 
-mem 側 `event-recorder.ts:redactContent` が出力する `[REDACTED_EMAIL]` `[REDACTED_KEY]` `[REDACTED_SECRET]` `[REDACTED_HEX]` を、
-client Layer 2 が再 redact しないよう sentinel 退避 → redact → 復元の 3 段で実装。
-regex `[A-Za-z0-9_]+` で大文字小文字両対応。
+The `[REDACTED_EMAIL]` `[REDACTED_KEY]` `[REDACTED_SECRET]` `[REDACTED_HEX]` output
+by `event-recorder.ts:redactContent` on the mem side must not be re-redacted by client Layer 2.
+This is implemented in 3 stages: sentinel escape → redact → restore.
+The regex `[A-Za-z0-9_]+` handles both upper and lower case.
 
-### 5. cross-project default は OFF
+### 5. Cross-project default is OFF
 
-`--cross-project-group` flag を指定しない限り、検索は現プロジェクトのみ (Phase 65.1.x の挙動)。
-明示的に opt-in しないと横断検索は走らない。
+Unless the `--cross-project-group` flag is specified, search is limited to the current project
+(Phase 65.1.x behavior). Cross-project search only runs with an explicit opt-in.
 
-### 6. 監査ログには生クエリを残さない
+### 6. Raw queries are not stored in the audit log
 
-`query_hash` は sha256 (64 chars hex) のみ記録。
-復元不可能なため、漏洩時も実クエリ内容は守られる。
+Only `query_hash` (sha256, 64-char hex) is recorded.
+Since it cannot be reversed, the actual query content is protected even in the event of a leak.
 
-## 関連
+## Related
 
-- [cross-project-groups-schema.md](cross-project-groups-schema.md) — グループ設定方法
-- [cognitive-load-surfaces.md](cognitive-load-surfaces.md) — 3 surface の役割
-- `.claude/rules/cross-repo-handoff.md` — D42 (claude-code-harness ↔ harness-mem 境界)
-- `.claude/memory/decisions.md` D43 (本機能の設計判断、4 判断パッケージ)
+- [cross-project-groups-schema.md](cross-project-groups-schema.md) — Group configuration
+- [cognitive-load-surfaces.md](cognitive-load-surfaces.md) — Role of the 3 surfaces
+- `.claude/rules/cross-repo-handoff.md` — D42 (claude-code-harness ↔ harness-mem boundary)
+- `.claude/memory/decisions.md` D43 (design decisions for this feature, 4-decision package)
 
-## 関連スクリプト
+## Related scripts
 
-| スクリプト | 役割 |
+| Script | Role |
 |----------|------|
-| `scripts/load-cross-project-groups.sh` | yaml SSOT を読んで member projects を解決 |
-| `scripts/redact-by-dictionary.sh` | Layer 2a 辞書 redaction |
+| `scripts/load-cross-project-groups.sh` | Read yaml SSOT and resolve member projects |
+| `scripts/redact-by-dictionary.sh` | Layer 2a dictionary redaction |
 | `scripts/redact-by-ner.sh` | Layer 2b NER redaction |
-| `scripts/final-scan-redaction.py` | Layer 3 最終 scan |
-| `scripts/render-html.sh --with-redaction` | 3 層を順次適用して HTML 生成 |
-| `scripts/cross-project-audit-log.sh` | 監査ログ append |
+| `scripts/final-scan-redaction.py` | Layer 3 final scan |
+| `scripts/render-html.sh --with-redaction` | Apply all 3 layers sequentially and generate HTML |
+| `scripts/cross-project-audit-log.sh` | Append to audit log |

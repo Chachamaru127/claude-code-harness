@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
-# Verify every shipped skill surface keeps bilingual metadata and ships with
-# description set to the English default.
+# Verify every shipped skill surface uses English-only metadata.
+# The project is now English-only: description-ja fields must NOT exist.
 # Phase 1.5: restricted to active skills/ surface only (codex/opencode archived).
 
 set -euo pipefail
@@ -46,23 +46,24 @@ def frontmatter(path: Path) -> dict[str, str]:
 
 
 skill_count = 0
-all_text = []
 for surface in SURFACES:
     files = [path for path in sorted(surface.glob("*/SKILL.md")) if not is_git_ignored(path)]
     assert files, f"{surface}: no SKILL.md files found"
     for path in files:
         skill_count += 1
         meta = frontmatter(path)
-        for key in ("description", "description-en", "description-ja"):
+        # English-only: description and description-en must exist and be equal
+        for key in ("description", "description-en"):
             assert meta.get(key), f"{path}: missing or empty {key}"
-        assert meta["description"] == meta["description-en"], f"{path}: description must equal description-en"
-        all_text.append(path.read_text(encoding="utf-8"))
+        assert meta["description"] == meta["description-en"], (
+            f"{path}: description must equal description-en (English-only)"
+        )
+        # English-only: description-ja must NOT be present
+        assert "description-ja" not in meta, (
+            f"{path}: description-ja must not exist in English-only mode"
+        )
 
-joined = "\n".join(all_text)
-for phrase in ("実装して", "レビューして", "計画作って"):
-    assert phrase in joined, f"Japanese trigger phrase disappeared: {phrase}"
-
-print(f"validated {skill_count} shipped skill files")
+print(f"validated {skill_count} shipped skill files (English-only)")
 PY
 
-echo "✓ shipped skill frontmatter preserves English default and Japanese routing"
+echo "✓ shipped skill frontmatter is English-only (no description-ja)"

@@ -1,46 +1,46 @@
 # Optional Briefs and Skill Manifest
 
-`harness-plan create` は、必要なときだけ brief を付ける。brief は Plans.md を置き換えず、実装の前提を短く固定する補助資料。
+`harness-plan create` attaches a brief only when needed. A brief does not replace Plans.md; it is a short supporting document that locks in the preconditions for a specific implementation task.
 
-project spec SSOT は brief より上位の正本として扱う。brief は画面や API など個別タスクの短い前提を固定し、spec SSOT は project 全体の正解条件を固定する。
+The project spec SSOT is treated as the authoritative source above any brief. A brief locks in the short-form preconditions for individual tasks such as screens or APIs, while the spec SSOT locks in the acceptance criteria for the project as a whole.
 
-詳細: `docs/plans/spec-ssot.md`
+Details: `docs/plans/spec-ssot.md`
 
 ## Design Brief
 
-UI を含むタスクでは `design brief` を作る。
+For tasks that involve UI, create a `design brief`.
 
-最低限入れる内容:
+Minimum required content:
 
-- 何を達成したいか
-- 誰が使うか
-- 重要な画面状態
-- 見た目や操作感の制約
-- 完了条件
+- What needs to be achieved
+- Who will use it
+- Key screen states
+- Visual and interaction constraints
+- Acceptance criteria
 
 ## Contract Brief
 
-API を含むタスクでは `contract brief` を作る。
+For tasks that involve an API, create a `contract brief`.
 
-最低限入れる内容:
+Minimum required content:
 
-- 何を受け取るか / 返すか
-- 入力検証の条件
-- 失敗時の振る舞い
-- 外部依存
-- 完了条件
+- What is received / returned
+- Input validation rules
+- Failure behavior
+- External dependencies
+- Acceptance criteria
 
 ## Skill Manifest
 
-`scripts/generate-skill-manifest.sh` は、repo 内の `SKILL.md` frontmatter を stable JSON にする。
+`scripts/generate-skill-manifest.sh` converts the `SKILL.md` frontmatter in the repo into stable JSON.
 
-使いどころ:
+Use cases:
 
-- skill surface の監査
-- mirror 間の比較
-- 自動 docs 生成の入力
+- Auditing the skill surface
+- Comparing across mirrors
+- Input for automated docs generation
 
-出力には次を含める。
+The output includes the following fields:
 
 - `name`
 - `description`
@@ -52,9 +52,9 @@ API を含むタスクでは `contract brief` を作る。
 - `surface`
 - `related_surfaces`
 
-`related_surfaces` には `skills`, `codex/.codex/skills`, `opencode/skills` のような mirror 情報も含まれる。
+`related_surfaces` also includes mirror information such as `skills`, `codex/.codex/skills`, and `opencode/skills`.
 
-## 実行例
+## Example
 
 ```bash
 scripts/generate-skill-manifest.sh --output .claude/state/skill-manifest.json

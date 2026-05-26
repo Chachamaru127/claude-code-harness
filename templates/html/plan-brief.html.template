@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Plan Brief: {{user_request}}</title>
@@ -159,12 +159,12 @@
   </header>
 
   <section class="brief-section">
-    <h2>理解</h2>
+    <h2>Understanding</h2>
     <div class="body">{{my_understanding}}</div>
   </section>
 
   <section class="brief-section">
-    <h2>選択肢</h2>
+    <h2>Options</h2>
     <ul class="cards">{{#options}}
       <li>
         <div class="name">{{name}}</div>
@@ -174,7 +174,7 @@
   </section>
 
   <section class="brief-section">
-    <h2>リスク</h2>
+    <h2>Risks</h2>
     <ul class="cards risks">{{#risks}}
       <li>
         <span class="severity">{{severity}}</span>
@@ -185,7 +185,7 @@
   </section>
 
   <section class="brief-section">
-    <h2>受け入れ条件</h2>
+    <h2>Acceptance Criteria</h2>
     <ul class="cards">{{#acceptance_criteria}}
       <li>
         <div class="name">{{id}}</div>
@@ -195,7 +195,7 @@
   </section>
 
   <section class="brief-section">
-    <h2>確信度</h2>
+    <h2>Confidence</h2>
     <div class="confidence-bar">
       <div class="num">{{confidence}}<small> / 100</small></div>
       <div class="track"><div class="fill" style="width: {{confidence}}%"></div></div>
@@ -206,7 +206,7 @@
   </section>
 
   <section class="brief-section">
-    <h2>関連する過去 Decision</h2>
+    <h2>Related Past Decisions</h2>
     <ul class="cards refs">{{#related_decisions}}
       <li>
         <span class="id">{{id}}</span>
@@ -217,7 +217,7 @@
   </section>
 
   <section class="brief-section">
-    <h2>類似する過去 Plans</h2>
+    <h2>Similar Past Plans</h2>
     <ul class="cards refs">{{#similar_past_plans}}
       <li>
         <span class="id">{{phase}}</span>
@@ -228,12 +228,12 @@
   </section>
 
   <section class="audit-trail" style="margin-top:32px;padding:16px 20px;background:#F5F4F1;border:1px solid #E5E5E5;border-radius:4px;font-size:0.85em;color:#52524C;">
-    <h2 style="margin:0 0 8px;font-size:0.9em;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#52524C;">🔍 この artifact の根拠</h2>
+    <h2 style="margin:0 0 8px;font-size:0.9em;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#52524C;">🔍 Basis for this artifact</h2>
     <ul style="list-style:none;margin:0;padding:0;line-height:1.8;">
-      <li><strong>検索範囲</strong>: {{audit_search_scope}}</li>
-      <li><strong>参照 ID</strong>: {{audit_referenced_ids}}</li>
-      <li><strong>redact 件数</strong>: {{audit_redaction_summary}}</li>
-      <li><strong>audit log</strong>: {{audit_log_path}}</li>
+      <li><strong>Search scope</strong>: {{audit_search_scope}}</li>
+      <li><strong>Referenced IDs</strong>: {{audit_referenced_ids}}</li>
+      <li><strong>Redaction count</strong>: {{audit_redaction_summary}}</li>
+      <li><strong>Audit log</strong>: {{audit_log_path}}</li>
     </ul>
   </section>
 

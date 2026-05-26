@@ -36,7 +36,7 @@ func TestHandleAskUserQuestionNormalize_NoExplicitAnswers(t *testing.T) {
 }
 
 func TestHandleAskUserQuestionNormalize_EnvAnswersCanonicalizedToOptionLabel(t *testing.T) {
-	t.Setenv("HARNESS_ASK_USER_QUESTION_ANSWERS", `{"Execution mode?":"個人"}`)
+	t.Setenv("HARNESS_ASK_USER_QUESTION_ANSWERS", `{"Execution mode?":"individual"}`)
 
 	input := `{
 		"tool_name":"AskUserQuestion",
@@ -112,7 +112,7 @@ func TestHandleAskUserQuestionNormalize_InvalidAnswerDoesNotAutoAnswer(t *testin
 }
 
 func TestHandleAskUserQuestionNormalize_MultiSelectAnswers(t *testing.T) {
-	t.Setenv("HARNESS_ASK_USER_QUESTION_ANSWERS", `{"Workflow style?":["探索","playwright"]}`)
+	t.Setenv("HARNESS_ASK_USER_QUESTION_ANSWERS", `{"Workflow style?":["exploratory","playwright"]}`)
 
 	input := `{
 		"tool_name":"AskUserQuestion",
@@ -135,7 +135,7 @@ func TestHandleAskUserQuestionNormalize_MultiSelectAnswers(t *testing.T) {
 }
 
 func TestHandleAskUserQuestionNormalize_MultiValueRejectedForSingleSelect(t *testing.T) {
-	t.Setenv("HARNESS_ASK_USER_QUESTION_ANSWERS", `{"Workflow style?":["探索","playwright"]}`)
+	t.Setenv("HARNESS_ASK_USER_QUESTION_ANSWERS", `{"Workflow style?":["exploratory","playwright"]}`)
 
 	input := `{
 		"tool_name":"AskUserQuestion",

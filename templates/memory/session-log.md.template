@@ -5,31 +5,31 @@ _harness_version: "2.5.27"
 
 # Session Log
 
-セッション単位の作業ログ（基本はローカル運用向け）。
-重要な意思決定は `.claude/memory/decisions.md`、再利用できる解法は `.claude/memory/patterns.md` に昇格してください。
+Per-session work log (primarily for local use).
+Promote important decisions to `.claude/memory/decisions.md` and reusable solutions to `.claude/memory/patterns.md`.
 
 ## Index
 
-- {{DATE}} (session: {{SESSION_ID}}): （要約を1行で）
+- {{DATE}} (session: {{SESSION_ID}}): (one-line summary)
 
 ---
 
-## セッション: {{DATE}} (session: {{SESSION_ID}})
+## Session: {{DATE}} (session: {{SESSION_ID}})
 
-### 実行したこと
+### What Was Done
 
-- （箇条書きで）
+- (bullet points)
 
-### 重要な決定（昇格候補）
+### Key Decisions (promotion candidates)
 
-- （`decisions.md`へ書くべきもの）
+- (items to write to `decisions.md`)
 
-### 学んだパターン（昇格候補）
+### Learned Patterns (promotion candidates)
 
-- （`patterns.md`へ書くべきもの）
+- (items to write to `patterns.md`)
 
-### 次回への引き継ぎ
+### Handoff to Next Session
 
-- （未完了/注意点）
+- (incomplete items / notes)
 
 

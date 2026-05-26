@@ -1,88 +1,90 @@
 # Claude Code / Codex upstream snapshot - 2026-04-25
 
-この snapshot は、2026-04-25 時点の公式 upstream を確認し、Claude Code Harness に直接取り込むべき項目と、自動継承 / 将来タスクに留める項目を分解したもの。
+This snapshot confirms the official upstream as of 2026-04-25 and breaks down items
+to be directly integrated into Claude Code Harness versus those to be left as
+automatic inheritance / future tasks.
 
-確認日:
+Confirmed on:
 
 - 2026-04-25 (Asia/Tokyo)
 
-一次情報:
+Primary sources:
 
 - Claude Code docs changelog: <https://code.claude.com/docs/en/changelog>
 - Claude Code GitHub changelog: <https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md>
 - OpenAI Codex releases: <https://github.com/openai/codex/releases>
 - OpenAI Codex `rust-v0.124.0` release tag: <https://github.com/openai/codex/releases/tag/rust-v0.124.0>
 
-確認対象:
+Confirmed versions:
 
 - Claude Code `2.1.119`
 - Codex `0.124.0` stable
 - Codex `0.125.0-alpha.2` pre-release
 
-分類:
+Classifications:
 
-- `A: 検証強化`: Harness の実装を変えず、snapshot / Feature Table / CHANGELOG / tests で upstream 追従判断を固定する。
-- `C: 自動継承`: Claude Code / Codex 本体の改善をそのまま受ける。Harness wrapper を重ねると二重責務になるもの。
-- `P: 将来タスク`: 今回は実装しないが、Plans に次回候補として残す。alpha や仕様未安定の項目は推測実装しない。
+- `A: Validation strengthening`: Fix the upstream tracking decision in the current snapshot / Feature Table / CHANGELOG / tests without changing Harness implementation.
+- `C: Automatic inheritance`: Receive improvements from Claude Code / Codex core as-is. Overlaying Harness wrappers would create dual responsibilities.
+- `P: Future task`: Do not implement this time, but leave as a next-round candidate in Plans. Do not implement speculatively from alpha or unstable specs.
 
 ## Version-by-version breakdown
 
-| Version | Upstream item | どうよくなる | Category | Harness surface | Harness action |
-|---------|---------------|--------------|----------|-----------------|----------------|
-| Claude Code 2.1.119 | `/config` settings persist to `~/.claude/settings.json` and join project/local/policy precedence | 手元の theme / editor / verbose 設定が再起動後も残り、managed settings との優先順位が分かりやすくなる | P | setup / managed settings docs | Phase 53 の plugin-managed-settings policy と重複するため、次回 setup docs の precedence 表へ統合する |
-| Claude Code 2.1.119 | `prUrlTemplate` customizes footer PR badge URLs | GitHub Enterprise / GitLab / Bitbucket review URL を使うチームでも footer から正しいレビュー面へ飛びやすい | P | review / release docs | GitHub 固定の PR guidance を点検し、企業 git host 対応として後続候補に残す |
-| Claude Code 2.1.119 | `--print` honors agent `tools:` and `disallowedTools:` frontmatter | CI / script 実行でも interactive と同じ tool 制限が効きやすい | A | upstream snapshot / tests | `--print` の frontmatter parity を Phase 56 で記録し、将来 CI review runner の gate 候補にする |
-| Claude Code 2.1.119 | `--agent <name>` honors `permissionMode` for built-in agents | main-thread agent 実行でも built-in agent の permission 方針が反映されやすい | P | agents / permission docs | Phase 53 の `--agent` + `mcpServers` follow-up と一緒に agents audit へ残す |
-| Claude Code 2.1.119 | `PostToolUse` and `PostToolUseFailure` inputs include `duration_ms` | hook 側で tool 実行時間を測り、遅い処理の診断に使える | P | hooks / session monitor | Session Monitor や hook telemetry に取り込む価値が高いが、既存 hook JSON shape を変える前に別 task 化する |
-| Claude Code 2.1.119 | OTEL `tool_result` / `tool_decision` include `tool_use_id`, and `tool_result` includes `tool_input_size_bytes` | trace と tool input size を紐付けやすくなる | P | telemetry docs | Harness telemetry を扱う時の後続候補。現状は schema wrapper を追加しない |
-| Claude Code 2.1.119 | Status line stdin JSON includes `effort.level` and `thinking.enabled` | status line から思考強度や thinking 状態を表示できる | P | statusline / session monitor | Harness status line に載せる価値があるが、UI 表示方針を別 task にする |
-| Claude Code 2.1.119 | Subagent and SDK MCP server reconfiguration connects servers in parallel; MCP OAuth / headers / client secret / env placeholder fixes | MCP の再設定と認証が安定する | C | MCP runtime | 本体改善を自動継承。Harness が reconfiguration wrapper や OAuth workaround を追加しない |
-| Claude Code 2.1.119 | `blockedMarketplaces` correctly enforces `hostPattern` and `pathPattern` entries | managed marketplace policy の抜け道が減る | C | managed settings | Phase 53 policy の本体修正として自動継承 |
-| Claude Code 2.1.119 | Glob/Grep tools no longer disappear on native macOS/Linux when Bash is denied; auto mode no longer overrides plan mode | Bash deny / plan mode 下の挙動が安定する | C | permissions / search / Auto Mode | 本体修正を自動継承。Harness は Bash deny を緩めず、Auto Mode guidance も増やさない |
-| Codex 0.124.0 | TUI quick reasoning controls and model-upgrade reasoning reset | TUI から reasoning level を素早く調整でき、model 変更時の stale reasoning を避けやすい | C | Codex TUI | 本体 UX として自動継承。Harness skill frontmatter は変更しない |
-| Codex 0.124.0 | App-server sessions manage multiple environments and choose environment / working directory per turn | 複数 workspace / remote environment を同じ session で扱いやすい | P | Codex workflow / branch policy | Phase 56 follow-up として multi-environment branch/workdir policy を切る |
-| Codex 0.124.0 | First-class Amazon Bedrock support for OpenAI-compatible providers with AWS SigV4 auth | Codex 側の Bedrock 利用が公式 provider として扱いやすい | C | Codex provider docs | Phase 53 provider policy を自動継承で維持し、必要時に docs refresh |
-| Codex 0.124.0 | Remote plugin marketplaces can be listed and read directly | remote plugin source の確認がしやすい | P | plugin mirror policy | Harness plugin mirror / marketplace source policy の後続候補にする |
-| Codex 0.124.0 | Hooks are stable, configurable inline in `config.toml` and managed `requirements.toml`, and can observe MCP tools, `apply_patch`, and long-running Bash | Codex 側でも stable hook policy を組める | P | Codex hooks / guardrails / tests | Claude Code hooks と Codex hooks の parity を別 task に切る。推測で config.toml を変えない |
-| Codex 0.124.0 | Eligible ChatGPT plans default to Fast service tier unless explicitly opted out | 対象 plan で応答が速くなる | C | runtime UX | 本体 / plan 側の挙動として自動継承。Harness が service tier を固定しない |
-| Codex 0.124.0 | Permission-mode drift, `wait_agent` queued mailbox timeout, relative stdio MCP command resolution, managed config startup edge cases | permissions / subagent wait / MCP startup / managed config が安定する | C | Codex runtime | 本体修正を自動継承。Harness worker prompt や setup defaults は変更しない |
-| Codex 0.125.0-alpha.2 | Pre-release tag exists, release body is thin | 次の stable で入る変更候補を早く検知できる | P | upstream watch | alpha から推測実装しない。stable release か十分な release notes が出たら再確認 |
+| Version | Upstream item | How it improves | Category | Harness surface | Harness action |
+|---------|---------------|-----------------|----------|-----------------|----------------|
+| Claude Code 2.1.119 | `/config` settings persist to `~/.claude/settings.json` and join project/local/policy precedence | Local theme / editor / verbose settings survive restarts, and priority order with managed settings becomes clearer | P | setup / managed settings docs | Overlaps with Phase 53's plugin-managed-settings policy; consolidate into a precedence table in next setup docs update |
+| Claude Code 2.1.119 | `prUrlTemplate` customizes footer PR badge URLs | Teams using GitHub Enterprise / GitLab / Bitbucket can navigate to the correct review page from the footer | P | review / release docs | Review GitHub-fixed PR guidance and keep as a future candidate for enterprise git host support |
+| Claude Code 2.1.119 | `--print` honors agent `tools:` and `disallowedTools:` frontmatter | The same tool restrictions that apply in interactive mode work in CI / script execution | A | upstream snapshot / tests | Record `--print` frontmatter parity in Phase 56 as a gate candidate for future CI review runners |
+| Claude Code 2.1.119 | `--agent <name>` honors `permissionMode` for built-in agents | Built-in agent permission policy is reflected in main-thread agent execution | P | agents / permission docs | Leave together with Phase 53's `--agent` + `mcpServers` follow-up in the agents audit |
+| Claude Code 2.1.119 | `PostToolUse` and `PostToolUseFailure` inputs include `duration_ms` | Can measure tool execution time from the hook side and use it for diagnosing slow processes | P | hooks / session monitor | High value to incorporate into Session Monitor or hook telemetry, but separate into another task before changing existing hook JSON shape |
+| Claude Code 2.1.119 | OTEL `tool_result` / `tool_decision` include `tool_use_id`, and `tool_result` includes `tool_input_size_bytes` | Easier to correlate traces with tool input size | P | telemetry docs | Follow-up candidate when working with Harness telemetry. Do not add schema wrapper for now |
+| Claude Code 2.1.119 | Status line stdin JSON includes `effort.level` and `thinking.enabled` | Can display thinking intensity and thinking state from the status line | P | statusline / session monitor | Worth including in Harness status line but separate into another task for UI display policy |
+| Claude Code 2.1.119 | Subagent and SDK MCP server reconfiguration connects servers in parallel; MCP OAuth / headers / client secret / env placeholder fixes | MCP reconfiguration and auth become stable | C | MCP runtime | Auto-inherit core improvement. Do not add reconfiguration wrapper or OAuth workaround on Harness side |
+| Claude Code 2.1.119 | `blockedMarketplaces` correctly enforces `hostPattern` and `pathPattern` entries | Fewer loopholes in managed marketplace policy | C | managed settings | Auto-inherit as core fix to Phase 53 policy |
+| Claude Code 2.1.119 | Glob/Grep tools no longer disappear on native macOS/Linux when Bash is denied; auto mode no longer overrides plan mode | Behavior under Bash deny / plan mode becomes stable | C | permissions / search / Auto Mode | Auto-inherit core fix. Harness does not relax Bash deny or add more Auto Mode guidance |
+| Codex 0.124.0 | TUI quick reasoning controls and model-upgrade reasoning reset | Can quickly adjust reasoning level from TUI; avoid stale reasoning on model change | C | Codex TUI | Auto-inherit as core UX. Do not change Harness skill frontmatter |
+| Codex 0.124.0 | App-server sessions manage multiple environments and choose environment / working directory per turn | Easier to handle multiple workspaces / remote environments in the same session | P | Codex workflow / branch policy | Cut multi-environment branch/workdir policy as a Phase 56 follow-up |
+| Codex 0.124.0 | First-class Amazon Bedrock support for OpenAI-compatible providers with AWS SigV4 auth | Easier to handle Bedrock usage on Codex side as an official provider | C | Codex provider docs | Maintain Phase 53 provider policy with automatic inheritance; docs refresh when needed |
+| Codex 0.124.0 | Remote plugin marketplaces can be listed and read directly | Easier to check remote plugin sources | P | plugin mirror policy | Add as a follow-up candidate for Harness plugin mirror / marketplace source policy |
+| Codex 0.124.0 | Hooks are stable, configurable inline in `config.toml` and managed `requirements.toml`, and can observe MCP tools, `apply_patch`, and long-running Bash | Can create stable hook policy on Codex side too | P | Codex hooks / guardrails / tests | Separate Claude Code hooks and Codex hooks parity into another task. Do not change `config.toml` speculatively |
+| Codex 0.124.0 | Eligible ChatGPT plans default to Fast service tier unless explicitly opted out | Faster responses for eligible plans | C | runtime UX | Auto-inherit as core / plan-side behavior. Harness does not fix service tier |
+| Codex 0.124.0 | Permission-mode drift, `wait_agent` queued mailbox timeout, relative stdio MCP command resolution, managed config startup edge cases | permissions / subagent wait / MCP startup / managed config become stable | C | Codex runtime | Auto-inherit core fixes. Do not change Harness worker prompt or setup defaults |
+| Codex 0.125.0-alpha.2 | Pre-release tag exists, release body is thin | Can detect upcoming changes early | P | upstream watch | Do not implement speculatively from alpha. Re-confirm when stable release or sufficient release notes are published |
 
 ## Phase 56 follow-up candidates
 
 | Follow-up | Why it matters | Suggested Plans owner |
 |-----------|----------------|-----------------------|
-| Claude Code `PostToolUse.duration_ms` を Session Monitor / hook telemetry に入れるか検討 | 遅い hook / tool 実行を user-facing に説明できる | hooks / session monitor |
-| Claude Code status line `effort.level` / `thinking.enabled` を Harness status line に載せるか検討 | 長時間作業で「今どの強さで考えているか」を見える化できる | statusline / session monitor |
-| `prUrlTemplate` / `--from-pr` multi-host review support を整理 | GitHub Enterprise / GitLab / Bitbucket 利用者の review 導線が自然になる | harness-review / release |
-| Codex `0.124.0` stable hooks と Claude Code hooks の parity review | Codex 側の stable hooks を guardrail / long-running Bash / MCP tool observation に活かせる可能性がある | Codex package / guardrails |
-| Codex multi-environment app-server と branch/workdir policy | 複数 repo / worktree / remote environment の取り違えを減らせる | Codex workflow |
+| Consider whether to include Claude Code `PostToolUse.duration_ms` in Session Monitor / hook telemetry | Can explain slow hook / tool execution to users | hooks / session monitor |
+| Consider whether to include Claude Code status line `effort.level` / `thinking.enabled` in Harness status line | Can visualize "what intensity is it thinking at" during long-running work | statusline / session monitor |
+| Organize `prUrlTemplate` / `--from-pr` multi-host review support | Review paths for GitHub Enterprise / GitLab / Bitbucket users become more natural | harness-review / release |
+| Codex `0.124.0` stable hooks and Claude Code hooks parity review | Possible to leverage Codex-side stable hooks for guardrail / long-running Bash / MCP tool observation | Codex package / guardrails |
+| Codex multi-environment app-server and branch/workdir policy | Can reduce confusion between multiple repos / worktrees / remote environments | Codex workflow |
 
 ## Phase 56.2 closeout
 
-Phase 56 の follow-up decision は `docs/upstream-followups-phase56-2026-04-25.md` に記録した。
+Phase 56 follow-up decisions are recorded in `docs/upstream-followups-phase56-2026-04-25.md`.
 
-要点:
+Key points:
 
-- `PostToolUse.duration_ms` は今回は no-op とし、per-tool telemetry sink を別 task に残す
-- `effort.level` / `thinking.enabled` は `scripts/statusline-harness.sh` に取り込み、statusline telemetry にも保存する
-- Codex stable hooks は parity review のみ行い、`codex/.codex/config.toml` には no-op 理由のコメントだけ残す
-- `prUrlTemplate` / `--from-pr` multi-host review は docs-only とし、owner / branch / CI の automation は GitHub-first を維持する
-- Codex multi-environment app-server は workflow guidance として扱い、write は 1 turn につき 1 primary environment に絞る safe default と write guard を採る
+- `PostToolUse.duration_ms` is no-op this time; leave per-tool telemetry sink as a separate task
+- `effort.level` / `thinking.enabled` are incorporated into `scripts/statusline-harness.sh` and also saved to statusline telemetry
+- Codex stable hooks are parity-reviewed only; leave only a comment for no-op reason in `codex/.codex/config.toml`
+- `prUrlTemplate` / `--from-pr` multi-host review is docs-only; maintain GitHub-first automation for owner / branch / CI
+- Codex multi-environment app-server is treated as workflow guidance; adopt safe default of limiting writes to 1 primary environment per turn and adding a write guard
 
-## B: 書いただけ 0 件の理由
+## Why B: Documentation-only is 0 items
 
-- Feature Table の Phase 56 追加行は、すべてこの snapshot と Plans の Phase 56 task に接続している。
-- 今回は配布 hook / settings / guardrail を変えず、公式差分を `A: 検証強化`, `C: 自動継承`, `P: 将来タスク` に分類した。
-- `A` は「Phase 56 snapshot と upstream integration test による検証強化」であり、実装を捏造しない。
-- `P` は Plans に後続 task として残し、stable でない `0.125.0-alpha.2` からは推測実装しない。
+- All Feature Table Phase 56 addition rows are connected to this snapshot and Phase 56 tasks in Plans.
+- This time, distributed hooks / settings / guardrails were not changed; official diffs were classified as `A: Validation strengthening`, `C: Automatic inheritance`, `P: Future task`.
+- `A` is "validation strengthening through Phase 56 snapshot and upstream integration tests" — not fabricating an implementation.
+- `P` is left as a follow-up task in Plans; no speculative implementation from the unstable `0.125.0-alpha.2`.
 
 ## No-op adaptation decision
 
-今回は no-op adaptation とする。
+This time is a no-op adaptation.
 
-理由:
+Reasons:
 
-- Claude Code `2.1.119` の多くは本体 runtime / TUI / MCP OAuth / managed settings の修正で、Harness が wrapper を重ねると二重責務になりやすい。
-- Codex `0.124.0` の stable hooks は価値が高いが、Claude Code hooks とは config surface が違う。即時に `codex/.codex/config.toml` へ hook を追加するより、Codex hooks parity review として切る方が安全。
-- Pre-release の Codex `0.125.0-alpha.2` は release body が薄く、compare から仕様を推測して実装しない。
+- Most of Claude Code `2.1.119` are core runtime / TUI / MCP OAuth / managed settings fixes; overlaying Harness wrappers easily creates dual responsibilities.
+- Codex `0.124.0` stable hooks are valuable, but their config surface differs from Claude Code hooks. It is safer to cut as a Codex hooks parity review than to immediately add hooks to `codex/.codex/config.toml`.
+- The pre-release Codex `0.125.0-alpha.2` has a thin release body; do not implement speculatively from comparison.

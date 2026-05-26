@@ -2,23 +2,24 @@
 # posttool-output-normalize.sh
 # Phase 62.2.1: PostToolUse.updatedToolOutput governance handler (opt-in)
 #
-# Claude Code 2.1.121 で PostToolUse hook が hookSpecificOutput.updatedToolOutput
-# を返せるようになった。この handler は **opt-in** で動作し、許可された 3 用途
-# (redaction / compaction / machine-readable normalization) のみに使う。
-# 元 output と更新後 output は append-only で audit ledger に記録する。
+# Claude Code 2.1.121 added the ability for PostToolUse hooks to return
+# hookSpecificOutput.updatedToolOutput. This handler operates in **opt-in** mode
+# and is limited to the 3 permitted use cases
+# (redaction / compaction / machine-readable normalization).
+# Original and updated outputs are recorded append-only in the audit ledger.
 #
-# **opt-in 方法**: .claude-plugin/hooks.json または .claude/settings.local.json で
-#   "PostToolUse" matcher にこのスクリプトを追加する。デフォルトでは無効。
+# **How to opt-in**: Add this script to the "PostToolUse" matcher in
+#   .claude-plugin/hooks.json or .claude/settings.local.json. Disabled by default.
 #
-# **禁止用途** (Phase 58.2.2 governance):
-#   - レビュー / テスト出力の改ざん
-#   - JSON 契約 tool の output に人間向け説明を mix する
-#   - エラー証拠の隠蔽
+# **Prohibited uses** (Phase 58.2.2 governance):
+#   - Tampering with review / test output
+#   - Mixing human-readable explanations into JSON-contract tool output
+#   - Concealing error evidence
 #
 # Input:  stdin JSON ({ tool_name, tool_input, tool_response, ... })
 # Output: stdout JSON ({ hookSpecificOutput: { updatedToolOutput: "..." } })
-#         または空 (= no-op)
-# Audit:  .claude/state/output-audit.jsonl に before/after を append-only 記録
+#         or empty (= no-op)
+# Audit:  before/after recorded append-only in .claude/state/output-audit.jsonl
 
 set -euo pipefail
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-agent-eval 結果 → Breezing analyzer 形式への変換スクリプト
+Conversion script: agent-eval results -> Breezing analyzer format
 
-agent-eval の結果ディレクトリ構造:
+agent-eval result directory structure:
   results/{experiment}/{timestamp}/
     ├── experiment.json
     └── {eval-name}/
@@ -11,9 +11,9 @@ agent-eval の結果ディレクトリ構造:
             ├── result.json
             └── transcript.jsonl
 
-変換先 (analyzer.py が期待する形式):
+Output format (expected by analyzer.py):
   converted/{timestamp}/
-    └── result.json (各実行ごとに1ファイル)
+    └── result.json (one file per run)
 """
 
 import json
@@ -24,13 +24,13 @@ from typing import Any, Dict, List
 def convert_experiment(
     experiment_dir: Path, condition: str
 ) -> List[Dict[str, Any]]:
-    """1つの experiment ディレクトリを変換"""
+    """Convert a single experiment directory"""
     results = []
 
     for eval_dir in sorted(experiment_dir.iterdir()):
         if not eval_dir.is_dir():
             continue
-        # experiment.json はスキップ
+        # Skip experiment.json
         if eval_dir.name.startswith(".") or eval_dir.name == "experiment.json":
             continue
 
@@ -88,7 +88,7 @@ def convert_experiment(
 def collect_sequential_results(
     results_dir: Path, condition: str
 ) -> List[Dict[str, Any]]:
-    """_seq_{condition}_task-XX ディレクトリから結果を収集"""
+    """Collect results from _seq_{condition}_task-XX directories"""
     all_results = []
     prefix = f"_seq_{condition}_"
 
@@ -96,7 +96,7 @@ def collect_sequential_results(
         if not seq_dir.is_dir() or not seq_dir.name.startswith(prefix):
             continue
 
-        # _seq_vanilla_task-01/<timestamp>/ → timestamp dir の中に task-XX がある
+        # _seq_vanilla_task-01/<timestamp>/ → task-XX is inside the timestamp dir
         for timestamp_dir in sorted(seq_dir.iterdir()):
             if not timestamp_dir.is_dir():
                 continue
@@ -165,7 +165,7 @@ def main():
             all_results.extend(breezing_results)
             print(f"Converted {len(breezing_results)} breezing results")
 
-    # 各結果を個別の result.json として保存
+    # Save each result as an individual result.json
     for result in all_results:
         task_id = result["task_id"]
         condition = result["condition"]

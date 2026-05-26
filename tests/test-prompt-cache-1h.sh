@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # test-prompt-cache-1h.sh
-# enable-1h-cache.sh の動作検証テスト
+# Behavior validation tests for enable-1h-cache.sh
 #
-# テスト内容:
-#   1. 新規 env.local への追記（ENABLE_PROMPT_CACHING_1H=1 が書き込まれること）
-#   2. 冪等性（2 回実行しても同じ行が 1 行だけ存在すること）
-#   3. 既存の別キー行への干渉なし（他のキーが維持されること）
-#   4. 既存の同キー・別値がある場合は警告して exit 1 すること
-#   5. env.local が ENABLE_PROMPT_CACHING_1H=1 の行を持つと env に伝播すること
+# Test content:
+#   1. Append to new env.local (ENABLE_PROMPT_CACHING_1H=1 is written)
+#   2. Idempotency (running twice still yields only 1 line)
+#   3. No interference with existing other-key lines (other keys are preserved)
+#   4. Warn and exit 1 when same key with different value already exists
+#   5. env propagates when env.local contains ENABLE_PROMPT_CACHING_1H=1
 
 set -euo pipefail
 
@@ -28,7 +28,7 @@ fail_test() {
   FAIL_COUNT=$((FAIL_COUNT + 1))
 }
 
-# テスト用一時ディレクトリ（git リポジトリを模倣するため git init が必要）
+# Temporary directory for testing (git init required to simulate a git repository)
 setup_tmp_repo() {
   local tmp_dir
   tmp_dir="$(mktemp -d)"
@@ -41,45 +41,45 @@ cleanup_tmp() {
   rm -rf "${dir}"
 }
 
-# ---------- テスト 1: スクリプトが存在し実行可能であること ----------
-echo "--- Test 1: スクリプトの存在と実行権限 ---"
+# ---------- Test 1: Script exists and is executable ----------
+echo "--- Test 1: Script existence and execute permission ---"
 if [[ -f "${TARGET_SCRIPT}" ]]; then
-  pass_test "enable-1h-cache.sh が存在する"
+  pass_test "enable-1h-cache.sh exists"
 else
-  fail_test "enable-1h-cache.sh が存在しない (path: ${TARGET_SCRIPT})"
+  fail_test "enable-1h-cache.sh not found (path: ${TARGET_SCRIPT})"
 fi
 
 if [[ -x "${TARGET_SCRIPT}" ]]; then
-  pass_test "enable-1h-cache.sh が実行可能"
+  pass_test "enable-1h-cache.sh is executable"
 else
-  fail_test "enable-1h-cache.sh に実行権限がない"
+  fail_test "enable-1h-cache.sh has no execute permission"
 fi
 
-# ---------- テスト 2: 新規 env.local への追記 ----------
-echo "--- Test 2: 新規 env.local への追記 ---"
+# ---------- Test 2: Append to new env.local ----------
+echo "--- Test 2: Append to new env.local ---"
 TMP_REPO="$(setup_tmp_repo)"
 
-# env.local が存在しない状態で実行
+# Run with no env.local present
 if (cd "${TMP_REPO}" && bash "${TARGET_SCRIPT}" > /dev/null 2>&1); then
   if [[ -f "${TMP_REPO}/env.local" ]]; then
-    pass_test "env.local が新規作成された"
+    pass_test "env.local was newly created"
   else
-    fail_test "env.local が作成されなかった"
+    fail_test "env.local was not created"
   fi
 
   if grep -qE "^export ENABLE_PROMPT_CACHING_1H=1$" "${TMP_REPO}/env.local"; then
-    pass_test "ENABLE_PROMPT_CACHING_1H=1 が env.local に書き込まれた"
+    pass_test "ENABLE_PROMPT_CACHING_1H=1 written to env.local"
   else
-    fail_test "ENABLE_PROMPT_CACHING_1H=1 が env.local に見つからない"
+    fail_test "ENABLE_PROMPT_CACHING_1H=1 not found in env.local"
   fi
 else
-  fail_test "スクリプト実行が失敗した（新規 env.local）"
+  fail_test "Script execution failed (new env.local)"
 fi
 
 cleanup_tmp "${TMP_REPO}"
 
-# ---------- テスト 3: 冪等性（2 回実行） ----------
-echo "--- Test 3: 冪等性 ---"
+# ---------- Test 3: Idempotency (run twice) ----------
+echo "--- Test 3: Idempotency ---"
 TMP_REPO="$(setup_tmp_repo)"
 
 (cd "${TMP_REPO}" && bash "${TARGET_SCRIPT}" > /dev/null 2>&1)
@@ -87,73 +87,73 @@ TMP_REPO="$(setup_tmp_repo)"
 
 COUNT=$(grep -cE "^export ENABLE_PROMPT_CACHING_1H=1$" "${TMP_REPO}/env.local" 2>/dev/null || echo "0")
 if [[ "${COUNT}" -eq 1 ]]; then
-  pass_test "2 回実行後も ENABLE_PROMPT_CACHING_1H=1 は 1 行だけ（冪等）"
+  pass_test "After 2 runs, ENABLE_PROMPT_CACHING_1H=1 still appears only once (idempotent)"
 else
-  fail_test "冪等性違反: ENABLE_PROMPT_CACHING_1H=1 が ${COUNT} 行存在する"
+  fail_test "Idempotency violation: ENABLE_PROMPT_CACHING_1H=1 appears ${COUNT} times"
 fi
 
 cleanup_tmp "${TMP_REPO}"
 
-# ---------- テスト 4: 既存の他キー行への干渉なし ----------
-echo "--- Test 4: 既存の他キー行への干渉なし ---"
+# ---------- Test 4: No interference with existing other-key lines ----------
+echo "--- Test 4: No interference with existing other-key lines ---"
 TMP_REPO="$(setup_tmp_repo)"
 echo "SOME_OTHER_KEY=hello" > "${TMP_REPO}/env.local"
 
 (cd "${TMP_REPO}" && bash "${TARGET_SCRIPT}" > /dev/null 2>&1)
 
 if grep -qE "^SOME_OTHER_KEY=hello$" "${TMP_REPO}/env.local"; then
-  pass_test "既存キー SOME_OTHER_KEY が維持された"
+  pass_test "Existing key SOME_OTHER_KEY was preserved"
 else
-  fail_test "既存キー SOME_OTHER_KEY が消えた"
+  fail_test "Existing key SOME_OTHER_KEY was removed"
 fi
 
 if grep -qE "^export ENABLE_PROMPT_CACHING_1H=1$" "${TMP_REPO}/env.local"; then
-  pass_test "ENABLE_PROMPT_CACHING_1H=1 が追記された"
+  pass_test "ENABLE_PROMPT_CACHING_1H=1 was appended"
 else
-  fail_test "ENABLE_PROMPT_CACHING_1H=1 が追記されなかった"
+  fail_test "ENABLE_PROMPT_CACHING_1H=1 was not appended"
 fi
 
 cleanup_tmp "${TMP_REPO}"
 
-# ---------- テスト 5: 既存の同キー・別値がある場合は exit 1 ----------
-echo "--- Test 5: 同キー・別値の場合は exit 1 ---"
+# ---------- Test 5: Same key with different value → exit 1 ----------
+echo "--- Test 5: Same key with different value → exit 1 ---"
 TMP_REPO="$(setup_tmp_repo)"
 echo "ENABLE_PROMPT_CACHING_1H=0" > "${TMP_REPO}/env.local"
 
 if (cd "${TMP_REPO}" && bash "${TARGET_SCRIPT}" > /dev/null 2>&1); then
-  fail_test "同キー・別値でも exit 0 になった（exit 1 期待）"
+  fail_test "Same key with different value returned exit 0 (expected exit 1)"
 else
-  pass_test "同キー・別値の場合に exit 1 が返った"
+  pass_test "Same key with different value correctly returned exit 1"
 fi
 
 cleanup_tmp "${TMP_REPO}"
 
-# ---------- テスト 6: env への伝播シミュレーション ----------
-# env.local の値を source した場合、ENABLE_PROMPT_CACHING_1H が設定されること
-echo "--- Test 6: env.local を source した場合の env 伝播 ---"
+# ---------- Test 6: env propagation simulation ----------
+# ENABLE_PROMPT_CACHING_1H should be set when env.local is sourced
+echo "--- Test 6: env propagation when sourcing env.local ---"
 TMP_REPO="$(setup_tmp_repo)"
 (cd "${TMP_REPO}" && bash "${TARGET_SCRIPT}" > /dev/null 2>&1)
 
-# env.local を source して変数が設定されるか確認
+# Verify variable is set when sourcing env.local
 SOURCED_VALUE=$(bash -c "source '${TMP_REPO}/env.local' 2>/dev/null; echo \"\${ENABLE_PROMPT_CACHING_1H:-UNSET}\"")
 if [[ "${SOURCED_VALUE}" == "1" ]]; then
-  pass_test "env.local を source すると ENABLE_PROMPT_CACHING_1H=1 が環境変数に設定される"
+  pass_test "Sourcing env.local sets ENABLE_PROMPT_CACHING_1H=1 as environment variable"
 else
-  fail_test "env.local source 後の ENABLE_PROMPT_CACHING_1H が期待値 '1' でなく '${SOURCED_VALUE}'"
+  fail_test "ENABLE_PROMPT_CACHING_1H after sourcing env.local: expected '1', got '${SOURCED_VALUE}'"
 fi
 
-# Critical: source した env.local が subprocess (claude 等) にも env として伝播するか
-# `export KEY=VALUE` 形式でないと subprocess には継承されない (shell-local 変数のまま)
+# Critical: verify sourced env.local propagates to subprocesses (e.g. claude)
+# Without `export KEY=VALUE` form, subprocesses won't inherit it (stays shell-local)
 CHILD_VALUE=$(bash -c "source '${TMP_REPO}/env.local' 2>/dev/null; bash -c 'echo \"\${ENABLE_PROMPT_CACHING_1H:-UNSET}\"'")
 if [[ "${CHILD_VALUE}" == "1" ]]; then
-  pass_test "env.local source 後、subprocess (子 bash) にも ENABLE_PROMPT_CACHING_1H=1 が伝播 (export 確認)"
+  pass_test "After sourcing env.local, ENABLE_PROMPT_CACHING_1H=1 propagates to subprocess (child bash) — export confirmed"
 else
-  fail_test "env.local source 後の subprocess で ENABLE_PROMPT_CACHING_1H が期待値 '1' でなく '${CHILD_VALUE}' — export 抜け"
+  fail_test "ENABLE_PROMPT_CACHING_1H in subprocess: expected '1', got '${CHILD_VALUE}' — missing export"
 fi
 
 cleanup_tmp "${TMP_REPO}"
 
-# ---------- 結果サマリ ----------
+# ---------- Result summary ----------
 echo ""
 echo "========================================"
 echo "Results: ${PASS_COUNT} passed, ${FAIL_COUNT} failed"

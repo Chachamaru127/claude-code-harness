@@ -1,6 +1,6 @@
 # Sync Project Specs Reference
 
-**作業完了後に「Plans.md ちゃんと更新されてるかな？」と不安な時に実行します。**
+**Run this when you're unsure whether Plans.md was properly updated after finishing some work.**
 
 ## When to Use
 

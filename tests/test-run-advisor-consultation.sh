@@ -1,6 +1,6 @@
 #!/bin/bash
 # test-run-advisor-consultation.sh
-# advisor consultation wrapper の回帰テスト
+# Regression tests for the advisor consultation wrapper
 
 set -euo pipefail
 
@@ -25,10 +25,10 @@ cat > "${TMP_DIR}/request.json" <<'EOF'
   "task_id": "43.2.2",
   "reason_code": "retry-threshold",
   "trigger_hash": "43.2.2:retry-threshold:abc",
-  "question": "同じ失敗が2回続いた。次に何を変えるべきか",
+  "question": "The same failure occurred twice in a row. What should be changed next?",
   "attempt": 2,
   "last_error": "schema parse failed",
-  "context_summary": ["wrapper 実装中", "history 追記が必要"]
+  "context_summary": ["implementing wrapper", "history append needed"]
 }
 EOF
 
@@ -48,17 +48,17 @@ fi
 case "${MODE}" in
   PLAN)
     cat <<'JSON'
-{"schema_version":"advisor-response.v1","decision":"PLAN","summary":"順番を入れ替える","executor_instructions":["status を先に固定する"],"confidence":0.81,"stop_reason":null}
+{"schema_version":"advisor-response.v1","decision":"PLAN","summary":"Reorder the steps","executor_instructions":["Fix status first"],"confidence":0.81,"stop_reason":null}
 JSON
     ;;
   CORRECTION)
     cat <<'JSON'
-{"schema_version":"advisor-response.v1","decision":"CORRECTION","summary":"局所修正で足りる","executor_instructions":["JSON validation を先に通す"],"confidence":0.72,"stop_reason":null}
+{"schema_version":"advisor-response.v1","decision":"CORRECTION","summary":"A local fix is sufficient","executor_instructions":["Pass JSON validation first"],"confidence":0.72,"stop_reason":null}
 JSON
     ;;
   STOP)
     cat <<'JSON'
-{"schema_version":"advisor-response.v1","decision":"STOP","summary":"ここで止める","executor_instructions":["ユーザー判断を待つ"],"confidence":0.93,"stop_reason":"dangerous-migration"}
+{"schema_version":"advisor-response.v1","decision":"STOP","summary":"Stop here","executor_instructions":["Wait for user decision"],"confidence":0.93,"stop_reason":"dangerous-migration"}
 JSON
     ;;
   INVALID)

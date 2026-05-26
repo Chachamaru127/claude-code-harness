@@ -1,17 +1,17 @@
 #!/bin/bash
 # tests/test-plan-brief-record.sh
-# Phase 65.1.4 - plan-brief-record-decision.sh の機械検証
+# Phase 65.1.4 - plan-brief-record-decision.sh mechanical validation
 #
-# 検証ケース (DoD c に対応):
-#   1. action=approve   - chosen_option + rejected_options が data に入る
-#   2. action=revise    - reasoning が data に入る
-#   3. action=question  - reasoning が data に入る (chosen は空)
+# Test cases (corresponds to DoD c):
+#   1. action=approve   - chosen_option + rejected_options are stored in data
+#   2. action=revise    - reasoning is stored in data
+#   3. action=question  - reasoning is stored in data (chosen is empty)
 #
-# 共通検証:
-#   (a) --action / --user-request / --project 必須
-#   (b) tags = ["personal-preference", "plan-brief-approval"] 固定 (DoD b)
-#   (c) data.user_request_hash が sha256 hex (64 chars)
-#   (d) data.action が approve/revise/question のいずれか
+# Common validation:
+#   (a) --action / --user-request / --project required
+#   (b) tags = ["personal-preference", "plan-brief-approval"] fixed (DoD b)
+#   (c) data.user_request_hash is sha256 hex (64 chars)
+#   (d) data.action is one of approve/revise/question
 #   (e) schema = "personal-preference.v1"
 #   (f) observation_type = "decision"
 
@@ -38,7 +38,7 @@ if [[ ! -x "$SCRIPT" ]]; then
 fi
 pass "plan-brief-record-decision.sh exists and is executable"
 
-# ---- (a) 必須引数 ----
+# ---- (a) Required arguments ----
 
 set +e
 bash "$SCRIPT" 2>/dev/null
@@ -70,7 +70,7 @@ else
   fail "Script should exit 2 with invalid action (got $exit_code)"
 fi
 
-# ---- ヘルパー: 1 ケース実行 ----
+# ---- Helper: run 1 case ----
 
 run_action_case() {
   local label="$1"
@@ -81,7 +81,7 @@ run_action_case() {
   local out
   out="$(bash "$SCRIPT" \
     --action "$action" \
-    --user-request "Plan Brief 機能を実装したい" \
+    --user-request "I want to implement the Plan Brief feature" \
     --project "demo-project" \
     "${extra_args[@]}" 2>&1)" || {
     fail "[$label] script failed: $out"
@@ -176,11 +176,11 @@ run_action_case() {
 run_action_case "approve" "approve" \
   --chosen-option "Option A: Simple HTML" \
   --rejected-options "Option B: Heavy JS, Option C: PDF" \
-  --reasoning "シンプルさ優先"
+  --reasoning "prefer simplicity"
 
 # Verify approve-specific fields
 out_approve="$(bash "$SCRIPT" --action approve \
-  --user-request "Plan Brief 機能を実装したい" --project "demo-project" \
+  --user-request "I want to implement the Plan Brief feature" --project "demo-project" \
   --chosen-option "Option A" --rejected-options "Option B, Option C" 2>/dev/null)"
 chosen="$(printf '%s' "$out_approve" | jq -r '.data.chosen_option')"
 rejected_count="$(printf '%s' "$out_approve" | jq -r '.data.rejected_options | length')"
@@ -196,27 +196,27 @@ else
 fi
 
 # ---- Case 2: revise ----
-run_action_case "revise" "revise" --reasoning "もっと簡潔にして"
+run_action_case "revise" "revise" --reasoning "make it more concise"
 
 out_revise="$(bash "$SCRIPT" --action revise \
   --user-request "test" --project "demo-project" \
-  --reasoning "もっと簡潔にして" 2>/dev/null)"
+  --reasoning "make it more concise" 2>/dev/null)"
 revise_reasoning="$(printf '%s' "$out_revise" | jq -r '.data.reasoning')"
-if [[ "$revise_reasoning" == "もっと簡潔にして" ]]; then
+if [[ "$revise_reasoning" == "make it more concise" ]]; then
   pass "[revise] reasoning propagates"
 else
   fail "[revise] reasoning mismatch: $revise_reasoning"
 fi
 
 # ---- Case 3: question ----
-run_action_case "question" "question" --reasoning "Phase 65.3 と何が違いますか"
+run_action_case "question" "question" --reasoning "How does this differ from Phase 65.3"
 
 out_q="$(bash "$SCRIPT" --action question \
   --user-request "test" --project "demo-project" \
-  --reasoning "Phase 65.3 と何が違いますか" 2>/dev/null)"
+  --reasoning "How does this differ from Phase 65.3" 2>/dev/null)"
 q_reasoning="$(printf '%s' "$out_q" | jq -r '.data.reasoning')"
 q_chosen="$(printf '%s' "$out_q" | jq -r '.data.chosen_option')"
-if [[ "$q_reasoning" == "Phase 65.3 と何が違いますか" ]]; then
+if [[ "$q_reasoning" == "How does this differ from Phase 65.3" ]]; then
   pass "[question] reasoning propagates"
 else
   fail "[question] reasoning mismatch: $q_reasoning"

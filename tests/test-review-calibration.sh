@@ -14,15 +14,15 @@ cat > "${TMP_DIR}/calibration-input-1.json" <<'EOF'
   "calibration": {
     "label": "false_positive",
     "source": "manual",
-    "notes": "重大ではない差分を止めてしまった",
-    "prompt_hint": "証拠がない場合は minor に留める",
+    "notes": "Stopped a non-critical diff",
+    "prompt_hint": "Keep as minor when there is no evidence",
     "few_shot_ready": true
   },
   "gaps": [
     {
       "severity": "major",
-      "issue": "改善提案を過剰に止めた",
-      "suggestion": "minor として扱う"
+      "issue": "Stopped improvement suggestions excessively",
+      "suggestion": "Treat as minor"
     }
   ]
 }
@@ -38,15 +38,15 @@ cat > "${TMP_DIR}/calibration-input-2.json" <<'EOF'
   "calibration": {
     "label": "missed_bug",
     "source": "retrospective",
-    "notes": "UI 崩れを見逃した",
-    "prompt_hint": "スクリーンショット差分を先に見る",
+    "notes": "Missed a UI layout issue",
+    "prompt_hint": "Check screenshot diff first",
     "few_shot_ready": true
   },
   "gaps": [
     {
       "severity": "major",
-      "issue": "画面崩れを見逃した",
-      "suggestion": "browser snapshot を追加する"
+      "issue": "Missed a screen layout issue",
+      "suggestion": "Add browser snapshot"
     }
   ]
 }
@@ -62,7 +62,7 @@ jq -e '
   (.entries | length) == 2 and
   ([.entries[].calibration_label] | sort) == ["false_positive", "missed_bug"] and
   ([.entries[].reviewer_profile] | sort) == ["browser", "static"] and
-  ([.entries[].prompt_hint] | index("スクリーンショット差分を先に見る")) != null
+  ([.entries[].prompt_hint] | index("Check screenshot diff first")) != null
 ' "${TMP_DIR}/few-shot-bank.json" >/dev/null
 
 echo "test-review-calibration: ok"

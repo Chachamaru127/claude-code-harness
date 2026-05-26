@@ -1,12 +1,12 @@
 package hookhandler
 
 // permission_denied_handler.go
-// permission-denied-handler.sh の Go 移植。
+// Go port of permission-denied-handler.sh.
 //
-// PermissionDenied イベント（auto mode classifier が拒否した場合）を処理する:
-//   - .claude/state/permission-denied-events.jsonl に記録
-//   - Worker の場合は {retry: true, systemMessage: ...} を返す
-//   - Worker 以外の場合は approve を返す
+// Handles PermissionDenied events (when the auto-mode classifier rejects a tool call):
+//   - Records to .claude/state/permission-denied-events.jsonl
+//   - For Workers: returns {retry: true, systemMessage: ...}
+//   - For non-Workers: returns approve
 
 import (
 	"encoding/json"
@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-// permissionDeniedInput は PermissionDenied フックの stdin JSON。
+// permissionDeniedInput is the stdin JSON for the PermissionDenied hook.
 type permissionDeniedInput struct {
 	Tool         string `json:"tool"`
 	ToolName     string `json:"tool_name"`
@@ -29,7 +29,7 @@ type permissionDeniedInput struct {
 	AgentType    string `json:"agent_type"`
 }
 
-// permissionDeniedLogEntry は permission-denied-events.jsonl の1エントリ。
+// permissionDeniedLogEntry is a single entry in permission-denied-events.jsonl.
 type permissionDeniedLogEntry struct {
 	Event     string `json:"event"`
 	Timestamp string `json:"timestamp"`
@@ -40,38 +40,38 @@ type permissionDeniedLogEntry struct {
 	Reason    string `json:"reason"`
 }
 
-// permissionDeniedRetryResponse は Worker 向けの retry レスポンス。
+// permissionDeniedRetryResponse is the retry response for Workers.
 type permissionDeniedRetryResponse struct {
 	Retry         bool   `json:"retry"`
 	SystemMessage string `json:"systemMessage"`
 }
 
-// permissionDeniedApproveResponse は Worker 以外向けの approve レスポンス。
+// permissionDeniedApproveResponse is the approve response for non-Workers.
 type permissionDeniedApproveResponse struct {
 	Decision string `json:"decision"`
 	Reason   string `json:"reason"`
 }
 
-// HandlePermissionDenied は permission-denied-handler.sh の Go 移植。
+// HandlePermissionDenied is the Go port of permission-denied-handler.sh.
 //
-// PermissionDenied フックで呼び出され:
-//  1. .claude/state/permission-denied-events.jsonl にイベントを記録する
-//  2. Worker の場合は {retry: true, systemMessage: ...} を返す
-//  3. Worker 以外の場合は approve を返す
+// Called by the PermissionDenied hook:
+//  1. Records the event to .claude/state/permission-denied-events.jsonl
+//  2. For Workers: returns {retry: true, systemMessage: ...}
+//  3. For non-Workers: returns approve
 func HandlePermissionDenied(in io.Reader, out io.Writer) error {
 	data, err := io.ReadAll(in)
 	if err != nil || len(strings.TrimSpace(string(data))) == 0 {
-		// 入力なし: 正常終了
+		// No input: exit normally
 		return nil
 	}
 
 	var input permissionDeniedInput
 	if jsonErr := json.Unmarshal(data, &input); jsonErr != nil {
-		// パース失敗でも通過
+		// Pass through even on parse failure
 		return writePermissionDeniedApprove(out, "PermissionDenied logged")
 	}
 
-	// tool / denied_reason の解決（フォールバック）
+	// Resolve tool / denied_reason (with fallbacks)
 	toolName := input.Tool
 	if toolName == "" {
 		toolName = input.ToolName
@@ -101,14 +101,14 @@ func HandlePermissionDenied(in io.Reader, out io.Writer) error {
 		agentType = "unknown"
 	}
 
-	// ステートディレクトリを確保
+	// Ensure state directory exists
 	stateDir := resolveNotificationStateDir()
 	if mkErr := ensureNotificationStateDir(stateDir); mkErr != nil {
-		// ディレクトリ作成失敗でも通過
+		// Pass through even if directory creation fails
 		return writePermissionDeniedApprove(out, "PermissionDenied logged")
 	}
 
-	// JSONL に記録
+	// Record to JSONL
 	logFile := filepath.Join(stateDir, "permission-denied-events.jsonl")
 	entry := permissionDeniedLogEntry{
 		Event:     "permission_denied",
@@ -123,16 +123,16 @@ func HandlePermissionDenied(in io.Reader, out io.Writer) error {
 		_ = logErr
 	}
 
-	// stderr にデバッグ出力（bash スクリプトと同等）
+	// Debug output to stderr (equivalent to the bash script)
 	fmt.Fprintf(os.Stderr,
 		"[PermissionDenied] agent=%s type=%s tool=%s reason=%s\n",
 		agentID, agentType, toolName, deniedReason,
 	)
 
-	// Worker の場合: retry + systemMessage を返す
+	// For Workers: return retry + systemMessage
 	if isWorkerAgentType(agentType) {
 		notificationText := fmt.Sprintf(
-			"[PermissionDenied] Worker のツール %s が auto mode で拒否されました。理由: %s。代替アプローチを検討するか、必要なら手動承認してください。",
+			"[PermissionDenied] Worker tool %s was denied by auto mode. Reason: %s. Consider an alternative approach or request manual approval if necessary.",
 			toolName, deniedReason,
 		)
 
@@ -148,13 +148,13 @@ func HandlePermissionDenied(in io.Reader, out io.Writer) error {
 		return writeErr
 	}
 
-	// Worker 以外: approve を返す
+	// For non-Workers: return approve
 	return writePermissionDeniedApprove(out, "PermissionDenied logged")
 }
 
-// isWorkerAgentType は agentType が Worker かどうかを判定する。
-// bash の: [ "${AGENT_TYPE}" = "worker" ] || [ "${AGENT_TYPE}" = "task-worker" ] || echo "${AGENT_TYPE}" | grep -qE ':worker$'
-// と同等。
+// isWorkerAgentType reports whether agentType is a Worker.
+// Equivalent to the bash check:
+// [ "${AGENT_TYPE}" = "worker" ] || [ "${AGENT_TYPE}" = "task-worker" ] || echo "${AGENT_TYPE}" | grep -qE ':worker$'
 func isWorkerAgentType(agentType string) bool {
 	if agentType == "worker" || agentType == "task-worker" {
 		return true
@@ -162,7 +162,7 @@ func isWorkerAgentType(agentType string) bool {
 	return strings.HasSuffix(agentType, ":worker")
 }
 
-// writePermissionDeniedApprove は approve レスポンスを書き込む。
+// writePermissionDeniedApprove writes an approve response.
 func writePermissionDeniedApprove(out io.Writer, reason string) error {
 	resp := permissionDeniedApproveResponse{
 		Decision: "approve",
@@ -176,9 +176,9 @@ func writePermissionDeniedApprove(out io.Writer, reason string) error {
 	return err
 }
 
-// appendPermissionDeniedLog は JSONL ファイルに1エントリ追記し、ローテーションする。
+// appendPermissionDeniedLog appends one entry to the JSONL file and rotates if needed.
 func appendPermissionDeniedLog(logFile string, entry permissionDeniedLogEntry) error {
-	// シンボリックリンクチェック
+	// Symlink check
 	if isSymlink(logFile) {
 		return fmt.Errorf("symlinked log file refused: %s", logFile)
 	}
@@ -198,6 +198,6 @@ func appendPermissionDeniedLog(logFile string, entry permissionDeniedLogEntry) e
 		return fmt.Errorf("write log entry: %w", writeErr)
 	}
 
-	// ローテーション: 500行超なら400行に切り詰め
+	// Rotation: trim to 400 lines when exceeding 500
 	return rotateJSONL(logFile, 500, 400)
 }

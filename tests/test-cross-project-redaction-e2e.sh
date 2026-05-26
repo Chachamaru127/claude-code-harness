@@ -1,18 +1,18 @@
 #!/bin/bash
 # tests/test-cross-project-redaction-e2e.sh
-# Phase 65.3.7 - Cross-Project + 3-Layer Redaction の e2e validation
+# Phase 65.3.7 - e2e validation of Cross-Project + 3-Layer Redaction
 #
-# 検証フロー (Plans.md §65.3.7 DoD a-h):
+# Validation flow (Plans.md §65.3.7 DoD a-h):
 #   (a) fixture group (3 member projects)
-#   (b) 各 member project の observation 相当の data に proper nouns を仕込む
-#   (c) 生成 HTML に proper nouns (NoraiCorp / YorozuPro / 田中 / 佐藤) が
-#       含まれないことを grep で 0 件確認
-#   (d) audit log に redaction 件数が正しく記録
-#   (e) (実行は別スクリプト) validate-plugin.sh PASS
-#   (f) (別スクリプト) check-consistency.sh PASS
-#   (g) envelope (signals + prose) 構造に proper nouns を含めても
-#       validateProseContainsSignals 相当の整合性が壊れないこと
-#   (h) 既存 server 側 [REDACTED_*] mark の二重置換ガード検証
+#   (b) embed proper nouns in observation-equivalent data for each member project
+#   (c) verify generated HTML contains 0 occurrences of proper nouns
+#       (NoraiCorp / YorozuPro / Tanaka / Sato) via grep
+#   (d) audit log correctly records redaction counts
+#   (e) (executed by separate script) validate-plugin.sh PASS
+#   (f) (separate script) check-consistency.sh PASS
+#   (g) embedding proper nouns in envelope (signals + prose) structure does
+#       not break validateProseContainsSignals-equivalent consistency
+#   (h) double-replacement guard for existing server-side [REDACTED_*] marks
 
 set -euo pipefail
 
@@ -82,22 +82,22 @@ YAML
 
 # ============================================================
 # (b) merged Plan Brief data with proper nouns embedded
-# (実 MCP search の戻りを擬似する synthetic fixture)
+# (synthetic fixture simulating actual MCP search return values)
 #
-# 含まれる固有名詞:
-#   - NoraiCorp / YorozuPro (dict 経由で redact)
-#   - 田中 / 佐藤 (NER 経由で redact, fugashi 利用可時)
-#   - [REDACTED_email] (sentinel guard test, h 項目)
-#   - signals/prose (envelope 構造、g 項目)
+# Embedded proper nouns:
+#   - NoraiCorp / YorozuPro (redacted via dict layer)
+#   - Tanaka / Sato (redacted via NER layer, when fugashi is available)
+#   - [REDACTED_email] (sentinel guard test, item h)
+#   - signals/prose (envelope structure, item g)
 # ============================================================
 
 DATA_E2E="$TMP_DIR/e2e-data.json"
 cat > "$DATA_E2E" <<'JSON'
 {
-  "title": "NoraiCorp と YorozuPro の合同案件で 田中 さんと 佐藤 さんが進行中",
+  "title": "NoraiCorp and YorozuPro joint project in progress with Tanaka and Sato",
   "sections": [
-    {"name": "NoraiCorp との打ち合わせ録"},
-    {"name": "YorozuPro 側の感触: 田中 が 佐藤 に確認"},
+    {"name": "Meeting notes with NoraiCorp"},
+    {"name": "YorozuPro feedback: Tanaka checks with Sato"},
     {"name": "Already redacted: [REDACTED_email] is in input"},
     {"name": "envelope-signal: source=project-alpha, label=NoraiCorp"}
   ]
@@ -139,40 +139,40 @@ fi
 pass "HTML output generated successfully"
 
 # ============================================================
-# (c) Plans.md DoD: 固有名詞が HTML に残っていないことを grep で確認
+# (c) Plans.md DoD: verify via grep that no proper nouns remain in generated HTML
 # ============================================================
 
-# Latin literals (dict layer によるカバレッジ)
+# Latin literals (covered by dict layer)
 if grep -q -E "(NoraiCorp|YorozuPro)" "$OUT_HTML"; then
   fail "(c) Latin proper noun leaked: $(grep -E '(NoraiCorp|YorozuPro)' "$OUT_HTML" | head -1)"
 else
   pass "(c) Latin proper nouns (NoraiCorp, YorozuPro) NOT in HTML (dict layer worked)"
 fi
 
-# Japanese names (NER layer によるカバレッジ、tokenizer 必要)
+# Japanese names (covered by NER layer, tokenizer required)
 if [[ "$TOKENIZER_AVAILABLE" == "true" ]]; then
-  if grep -q -E "(田中|佐藤)" "$OUT_HTML"; then
-    fail "(c) Japanese name leaked: $(grep -E '(田中|佐藤)' "$OUT_HTML" | head -1)"
+  if grep -q -E "(Tanaka|Sato)" "$OUT_HTML"; then
+    fail "(c) Japanese name leaked: $(grep -E '(Tanaka|Sato)' "$OUT_HTML" | head -1)"
   else
-    pass "(c) Japanese names (田中, 佐藤) NOT in HTML (NER layer worked)"
+    pass "(c) Japanese names (Tanaka, Sato) NOT in HTML (NER layer worked)"
   fi
 else
   pass "(c) Japanese names check: SKIPPED (tokenizer unavailable)"
 fi
 
 # Combined: the canonical Plans.md DoD command
-if grep -q -E "(NoraiCorp|YorozuPro|田中|佐藤)" "$OUT_HTML"; then
+if grep -q -E "(NoraiCorp|YorozuPro|Tanaka|Sato)" "$OUT_HTML"; then
   if [[ "$TOKENIZER_AVAILABLE" == "true" ]]; then
     fail "(c) Plans.md DoD grep: residue found"
   else
     pass "(c) Plans.md DoD grep: tokenizer unavailable (Latin checked, JP skipped)"
   fi
 else
-  pass "(c) Plans.md DoD grep -E '(NoraiCorp|YorozuPro|田中|佐藤)' returns 0 results"
+  pass "(c) Plans.md DoD grep -E '(NoraiCorp|YorozuPro|Tanaka|Sato)' returns 0 results"
 fi
 
 # ============================================================
-# (d) audit log: 件数記録、passed=true、schema 準拠
+# (d) audit log: counts recorded, passed=true, schema compliant
 # ============================================================
 
 DEFAULT_AUDIT="$ROOT_DIR/.claude/state/audit/cross-project-search.jsonl"
@@ -208,14 +208,14 @@ else
   fail "(d) audit line query_hash mismatch"
 fi
 
-# 生クエリ文字列 'e2e-cross-project-test' は audit に記録されない (privacy)
+# raw query string 'e2e-cross-project-test' must not be recorded in audit (privacy)
 if grep -q "e2e-cross-project-test" "$DEFAULT_AUDIT"; then
   fail "(d) RAW query string leaked in audit log!"
 else
   pass "(d) audit log does NOT contain raw query string (privacy preserved)"
 fi
 
-# 件数: dict は最低 1 (NoraiCorp/YorozuPro が 4-5 回出現)
+# count: dict must be at least 1 (NoraiCorp/YorozuPro appear 4-5 times)
 DICT_HIT="$(echo "$LATEST_LINE" | jq -r '.redaction_count.dict')"
 if [[ "$DICT_HIT" -gt 0 ]]; then
   pass "(d) audit dict count > 0 (got: $DICT_HIT)"
@@ -234,7 +234,7 @@ else
   pass "(d) audit NER count check: SKIPPED"
 fi
 
-# passed_final_scan: true (residue が残っていれば false になっていた)
+# passed_final_scan: true (would be false if any residue remained)
 if echo "$LATEST_LINE" | jq -e '.output_passed_final_scan == true' >/dev/null 2>&1; then
   pass "(d) audit output_passed_final_scan = true"
 else
@@ -242,14 +242,15 @@ else
 fi
 
 # ============================================================
-# (g) envelope 整合性: signals/prose 構造に redact を通しても
-#     不変条件が壊れない (test-fixture template に embed した envelope-like
-#     section が存在することを確認)
+# (g) envelope consistency: passing signals/prose structure through redaction
+#     does not break invariants (verify that envelope-like section embedded
+#     in test-fixture template is present)
 # ============================================================
 
-# render 後に "envelope-signal" 文言は残るが、その中の Latin proper noun
-# (NoraiCorp) は redact されている。これは prose と signals の整合性が
-# 「proper noun を共通 token に置換」によって保たれることを示す。
+# After rendering, the "envelope-signal" label is preserved, but the Latin
+# proper noun (NoraiCorp) inside it is redacted. This demonstrates that
+# prose/signals consistency is maintained by replacing proper nouns with
+# a common token.
 if grep -q "envelope-signal" "$OUT_HTML"; then
   pass "(g) envelope-signal label preserved in output (structural label intact)"
 else
@@ -262,7 +263,7 @@ else
   fail "(g) envelope source field lost"
 fi
 
-# label=NoraiCorp は label=[Client_E2E_A] に redact されている (dict layer)
+# label=NoraiCorp is redacted to label=[Client_E2E_A] (dict layer)
 if grep -q "label=\[Client_E2E_A\]" "$OUT_HTML"; then
   pass "(g) envelope label NoraiCorp → [Client_E2E_A] (signals consistent with prose redaction)"
 else
@@ -270,11 +271,11 @@ else
 fi
 
 # ============================================================
-# (h) 二重置換ガード: 既存の [REDACTED_email] mark は preserved
+# (h) double-replacement guard: existing [REDACTED_email] mark is preserved
 # ============================================================
 
 if grep -q "\[REDACTED_email\]" "$OUT_HTML"; then
-  pass "(h) [REDACTED_email] sentinel mark preserved (二重置換ガード働く)"
+  pass "(h) [REDACTED_email] sentinel mark preserved (double-replacement guard active)"
 else
   fail "(h) [REDACTED_email] was modified by Layer 2/3"
 fi
@@ -288,7 +289,7 @@ else
 fi
 
 # ============================================================
-# 共通: HTML 末尾に audit footer
+# Common: HTML footer must include audit summary
 # ============================================================
 
 if grep -q 'audit-summary' "$OUT_HTML" && grep -q 'redacted: dict' "$OUT_HTML"; then

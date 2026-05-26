@@ -1,5 +1,5 @@
 #!/bin/bash
-# TaskCompleted 3-strike -> pending fix proposal -> approve fix で Plans.md 反映されることを確認
+# Verify that TaskCompleted 3-strike -> pending fix proposal -> approve fix is reflected in Plans.md
 
 set -euo pipefail
 
@@ -12,9 +12,9 @@ trap 'rm -rf "${TMP_DIR}"' EXIT
 
 mkdir -p "${TMP_DIR}/.claude/state"
 cat > "${TMP_DIR}/Plans.md" <<'EOF'
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
-| 26.0.1 | 元タスク | 既存DoD | - | cc:完了 |
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
+| 26.0.1 | original task | existing DoD | - | cc:完了 |
 EOF
 
 cat > "${TMP_DIR}/.claude/state/test-result.json" <<'EOF'
@@ -34,7 +34,7 @@ cat > "${TMP_DIR}/.claude/state/task-quality-gate.json" <<'EOF'
 }
 EOF
 
-payload='{"teammate_name":"impl-1","task_id":"26.0.1","task_subject":"元タスク"}'
+payload='{"teammate_name":"impl-1","task_id":"26.0.1","task_subject":"original task"}'
 output="$(printf '%s' "${payload}" | PROJECT_ROOT="${TMP_DIR}" bash "${TASK_COMPLETED_SCRIPT}")"
 
 echo "${output}" | grep -q '"decision":"approve"' || {
@@ -59,12 +59,12 @@ grep -q '"source_task_id": "26.0.1"' "${TMP_DIR}/.claude/state/pending-fix-propo
 
 approve_output="$(printf '%s' '{"prompt":"approve fix 26.0.1"}' | PROJECT_ROOT="${TMP_DIR}" bash "${FIX_INJECTOR_SCRIPT}")"
 
-echo "${approve_output}" | grep -q 'fix proposal を反映しました' || {
+echo "${approve_output}" | grep -q 'fix proposal applied' || {
   echo "approve output should mention applied proposal"
   exit 1
 }
 
-grep -q '| 26.0.1.fix | fix: 元タスク - assertion_error |' "${TMP_DIR}/Plans.md" || {
+grep -q '| 26.0.1.fix | fix: original task - assertion_error |' "${TMP_DIR}/Plans.md" || {
   echo "Plans.md missing appended fix row"
   exit 1
 }
@@ -80,7 +80,7 @@ cat > "${TMP_DIR}/.claude/state/pending-fix-proposals.jsonl" <<'EOF'
 EOF
 
 ambiguous_output="$(printf '%s' '{"prompt":"yes"}' | PROJECT_ROOT="${TMP_DIR}" bash "${FIX_INJECTOR_SCRIPT}")"
-echo "${ambiguous_output}" | grep -q '対象を明示してください' || {
+echo "${ambiguous_output}" | grep -q 'pending fix proposals' || {
   echo "ambiguous approval should require explicit task id"
   exit 1
 }
@@ -91,7 +91,7 @@ grep -q '"source_task_id":"26.0.2"' "${TMP_DIR}/.claude/state/pending-fix-propos
 }
 
 missing_target_output="$(printf '%s' '{"prompt":"approve fix 99.9.9"}' | PROJECT_ROOT="${TMP_DIR}" bash "${FIX_INJECTOR_SCRIPT}")"
-echo "${missing_target_output}" | grep -q '指定された fix proposal が見つかりません' || {
+echo "${missing_target_output}" | grep -q 'fix proposal was not found' || {
   echo "missing target approval should be rejected"
   exit 1
 }
@@ -123,7 +123,7 @@ cat > "${TMP_DIR}/.claude/state/task-quality-gate.json" <<'EOF'
 }
 EOF
 
-retry_payload='{"teammate_name":"impl-1","task_id":"26.0.1.fix2","task_subject":"再修正タスク"}'
+retry_payload='{"teammate_name":"impl-1","task_id":"26.0.1.fix2","task_subject":"re-fix task"}'
 retry_output="$(printf '%s' "${retry_payload}" | PROJECT_ROOT="${TMP_DIR}" bash "${TASK_COMPLETED_SCRIPT}")"
 
 echo "${retry_output}" | grep -q '26.0.1.fix3' || {
@@ -154,14 +154,14 @@ cat > "${TMP_SYMLINK_DIR}/.claude/state/task-quality-gate.json" <<'EOF'
 }
 EOF
 
-symlink_output="$(printf '%s' '{"teammate_name":"impl-1","task_id":"26.0.9","task_subject":"危険ケース"}' | PROJECT_ROOT="${TMP_SYMLINK_DIR}" bash "${TASK_COMPLETED_SCRIPT}")"
+symlink_output="$(printf '%s' '{"teammate_name":"impl-1","task_id":"26.0.9","task_subject":"dangerous case"}' | PROJECT_ROOT="${TMP_SYMLINK_DIR}" bash "${TASK_COMPLETED_SCRIPT}")"
 
 grep -q '^SAFE$' "${TMP_SYMLINK_DIR}/target.txt" || {
   echo "task-completed should not overwrite symlinked pending proposal target"
   exit 1
 }
 
-echo "${symlink_output}" | grep -q 'proposal 保存に失敗' || {
+echo "${symlink_output}" | grep -q 'failed to save proposal' || {
   echo "task-completed should warn when proposal state path is unsafe"
   exit 1
 }
@@ -169,18 +169,18 @@ echo "${symlink_output}" | grep -q 'proposal 保存に失敗' || {
 TMP_PLAN_SYMLINK_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}" "${TMP_SYMLINK_DIR}" "${TMP_PLAN_SYMLINK_DIR}"' EXIT
 mkdir -p "${TMP_PLAN_SYMLINK_DIR}/.claude/state"
-printf '| Task | 内容 | DoD | Depends | Status |\n|------|------|-----|---------|--------|\n| 26.0.1 | 元タスク | 既存DoD | - | cc:完了 |\n' > "${TMP_PLAN_SYMLINK_DIR}/real-target.md"
+printf '| Task | Description | DoD | Depends | Status |\n|------|-------------|-----|---------|--------|\n| 26.0.1 | original task | existing DoD | - | cc:完了 |\n' > "${TMP_PLAN_SYMLINK_DIR}/real-target.md"
 ln -s "${TMP_PLAN_SYMLINK_DIR}/real-target.md" "${TMP_PLAN_SYMLINK_DIR}/Plans.md"
 printf '%s\n' '{"source_task_id":"26.0.1","fix_task_id":"26.0.1.fix","proposal_subject":"fix: A","dod":"done","depends":"26.0.1","failure_category":"assertion_error","recommended_action":"check","status":"pending"}' > "${TMP_PLAN_SYMLINK_DIR}/.claude/state/pending-fix-proposals.jsonl"
 
 plan_symlink_output="$(printf '%s' '{"prompt":"approve fix 26.0.1"}' | PROJECT_ROOT="${TMP_PLAN_SYMLINK_DIR}" bash "${FIX_INJECTOR_SCRIPT}")"
 
-grep -q '^| 26.0.1 | 元タスク | 既存DoD | - | cc:完了 |$' "${TMP_PLAN_SYMLINK_DIR}/real-target.md" || {
+grep -q '^| 26.0.1 | original task | existing DoD | - | cc:完了 |$' "${TMP_PLAN_SYMLINK_DIR}/real-target.md" || {
   echo "fix injector should not overwrite symlinked Plans target"
   exit 1
 }
 
-echo "${plan_symlink_output}" | grep -q 'Plans.md path が symlink' || {
+echo "${plan_symlink_output}" | grep -q 'Plans.md path is a symlink' || {
   echo "fix injector should report symlinked Plans path"
   exit 1
 }

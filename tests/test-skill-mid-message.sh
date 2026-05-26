@@ -1,22 +1,23 @@
 #!/bin/bash
 #
 # test-skill-mid-message.sh
-# CC 2.1.110 修正: disable-model-invocation: true のスキルが mid-message 呼び出しで
-# 正しくフロントマターを保持しているかを静的に検証する smoke test。
+# CC 2.1.110 fix: smoke test to statically verify that skills with
+# disable-model-invocation: true correctly retain their frontmatter
+# when invoked mid-message.
 #
-# 背景 (CC 2.1.110):
-#   Skills with `disable-model-invocation: true` が `/<skill>` mid-message 呼び出しで
-#   動くよう修正された。これにより harness-review 等の保護スキルが
-#   mid-message 呼び出しでも機能する。
+# Background (CC 2.1.110):
+#   Skills with `disable-model-invocation: true` were fixed to work correctly
+#   when invoked as `/<skill>` mid-message. This enables protected skills such
+#   as harness-review to function in mid-message invocations.
 #
-# このテストが検証すること:
-#   1. disable-model-invocation: true を持つスキルの SKILL.md が存在すること
-#   2. フロントマターが YAML として正しく解析できること (name フィールドあり)
-#   3. allowed-tools フィールドが配列形式で存在すること
+# What this test verifies:
+#   1. SKILL.md exists for skills with disable-model-invocation: true
+#   2. Frontmatter can be parsed as YAML (name field present)
+#   3. allowed-tools field exists as an array
 #
-# このテストが検証しないこと (実行環境依存):
-#   - CC ランタイムでの実際の mid-message 呼び出し (CC CLI が必要)
-#   - モデル呼び出しの有無 (ランタイム挙動)
+# What this test does NOT verify (runtime-environment dependent):
+#   - Actual mid-message invocations in the CC runtime (requires CC CLI)
+#   - Whether model invocations are skipped (runtime behavior)
 #
 # Usage:
 #   bash tests/test-skill-mid-message.sh
@@ -48,11 +49,11 @@ info() { [[ "$VERBOSE" -eq 1 ]] && echo "  [INFO] $1" || true; }
 
 echo "=============================================="
 echo "  smoke test: disable-model-invocation skills"
-echo "  CC 2.1.110 mid-message fix 対応確認"
+echo "  CC 2.1.110 mid-message fix verification"
 echo "=============================================="
 echo ""
 
-# disable-model-invocation: true を持つスキルを列挙
+# Enumerate skills with disable-model-invocation: true
 SKILL_FILES=()
 while IFS= read -r -d '' file; do
     if grep -q "disable-model-invocation: true" "$file" 2>/dev/null; then
@@ -61,12 +62,12 @@ while IFS= read -r -d '' file; do
 done < <(find "$SKILLS_DIR" -name "SKILL.md" -print0 2>/dev/null)
 
 if [[ ${#SKILL_FILES[@]} -eq 0 ]]; then
-    echo "  [WARN] disable-model-invocation: true を持つスキルが見つかりません"
+    echo "  [WARN] No skills with disable-model-invocation: true found"
     echo "  Skills dir: $SKILLS_DIR"
     exit 0
 fi
 
-echo "  対象スキル数: ${#SKILL_FILES[@]}"
+echo "  Target skill count: ${#SKILL_FILES[@]}"
 echo ""
 
 for skill_file in "${SKILL_FILES[@]}"; do
@@ -75,62 +76,63 @@ for skill_file in "${SKILL_FILES[@]}"; do
 
     echo "--- $skill_name ---"
 
-    # 1. SKILL.md が存在すること
+    # 1. SKILL.md must exist
     if [[ -f "$skill_file" ]]; then
-        pass "SKILL.md が存在する: $skill_file"
+        pass "SKILL.md exists: $skill_file"
     else
-        fail "SKILL.md が存在しない: $skill_file"
+        fail "SKILL.md not found: $skill_file"
         continue
     fi
 
-    # 2. フロントマター開始行 (---) があること
+    # 2. Frontmatter opening line (---) must be present
     if head -1 "$skill_file" | grep -q "^---$"; then
-        pass "フロントマター開始行あり"
+        pass "Frontmatter opening line present"
     else
-        fail "フロントマター開始行なし (先頭が --- でない)"
+        fail "Frontmatter opening line missing (first line is not ---)"
         continue
     fi
 
-    # 3. name フィールドがあること
+    # 3. name field must be present
     if grep -q "^name:" "$skill_file"; then
         SKILL_DECLARED_NAME="$(grep "^name:" "$skill_file" | head -1 | sed 's/^name: *//')"
-        pass "name フィールドあり: $SKILL_DECLARED_NAME"
-        info "  宣言名 '$SKILL_DECLARED_NAME' vs ディレクトリ名 '$skill_name'"
+        pass "name field present: $SKILL_DECLARED_NAME"
+        info "  declared name '$SKILL_DECLARED_NAME' vs directory name '$skill_name'"
     else
-        fail "name フィールドが見つからない"
+        fail "name field not found"
     fi
 
-    # 4. disable-model-invocation: true が存在すること (二重確認)
+    # 4. disable-model-invocation: true must exist (double-check)
     if grep -q "^disable-model-invocation: true" "$skill_file"; then
-        pass "disable-model-invocation: true が設定済み"
+        pass "disable-model-invocation: true is set"
     else
-        fail "disable-model-invocation: true が設定されていない"
+        fail "disable-model-invocation: true is not set"
     fi
 
-    # 5. allowed-tools フィールドがあること (mid-message 呼び出しで tool 実行が前提)
+    # 5. allowed-tools field must be present (tool execution is assumed for mid-message invocations)
     if grep -q "^allowed-tools:" "$skill_file"; then
         ALLOWED_TOOLS_LINE="$(grep "^allowed-tools:" "$skill_file" | head -1)"
-        pass "allowed-tools フィールドあり: $ALLOWED_TOOLS_LINE"
+        pass "allowed-tools field present: $ALLOWED_TOOLS_LINE"
     else
-        skip "allowed-tools フィールドなし (disable-model-invocation: true のみのスキルは tool 不要な場合あり)"
+        skip "allowed-tools field absent (skills with only disable-model-invocation: true may not need tools)"
     fi
 
-    # 6. description フィールドがあること (mid-message 自動ロードのため必須)
+    # 6. description field must be present (required for mid-message auto-loading)
     if grep -q "^description:" "$skill_file"; then
-        pass "description フィールドあり"
+        pass "description field present"
     else
-        fail "description フィールドが見つからない (mid-message ロードに必要)"
+        fail "description field not found (required for mid-message loading)"
     fi
 
     echo ""
 done
 
 echo "=============================================="
-echo "  結果: PASS=${PASS}  FAIL=${FAIL}  SKIP=${SKIP}"
+echo "  Result: PASS=${PASS}  FAIL=${FAIL}  SKIP=${SKIP}"
 echo ""
-echo "  静的検証のみ実施。CC ランタイムの mid-message 呼び出し動作は"
-echo "  CC CLI 2.1.110+ で手動検証が必要 (CI 外)。"
-echo "  詳細: docs/cc-2.1.99-2.1.110-impact.md (44.7.1 smoke test 結果)"
+echo "  Static verification only. Actual CC runtime mid-message"
+echo "  invocation behavior requires manual verification with"
+echo "  CC CLI 2.1.110+ (outside CI)."
+echo "  Details: docs/cc-2.1.99-2.1.110-impact.md (44.7.1 smoke test result)"
 echo "=============================================="
 
 if [[ "$FAIL" -gt 0 ]]; then

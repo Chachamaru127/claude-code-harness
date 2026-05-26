@@ -1,161 +1,161 @@
 ---
-description: Claude Codeの作業をレビューし、承認/修正指示をハンドオフ
+description: Review Claude Code's work and hand off approval/change requests
 ---
 
 # /review-cc-work
 
-あなたは **Cursor (PM)** です。Claude Code からの完了報告（/handoff-to-cursor の出力）を受け取り、変更をレビューしてください。
+You are **Cursor (PM)**. Receive the completion report from Claude Code (output of /handoff-to-cursor) and review the changes.
 
-**重要**: レビュー後、承認/修正どちらの場合も **Hand off to Claude** を生成します。
+**Important**: After reviewing, generate a **Hand off to Claude** regardless of whether approving or requesting changes.
 
-## 手順
+## Steps
 
-### Step 1: レビュー実施
+### Step 1: Conduct Review
 
-1. 変更ファイル/差分の要点を把握（`git diff` または完了報告から）
-2. 受入条件に照らして判定
-3. 品質・セキュリティ・パフォーマンス観点でチェック
-4. **Evals の確認**: Plans.md の「評価（Evals）」に基づく検証（テスト/ログ/ベンチ等）が提示されているか、結果が妥当か確認
+1. Understand the key points of changed files/diff (`git diff` or from completion report)
+2. Judge against acceptance criteria
+3. Check from quality, security, and performance perspectives
+4. **Verify Evals**: Confirm that the verification based on "Evaluation (Evals)" in Plans.md (tests/logs/bench etc.) has been presented and the results are reasonable
 
-### Step 2: 判定
+### Step 2: Verdict
 
-| 判定 | 条件 | 次のアクション |
-|------|------|---------------|
-| **approve** | 受入条件を満たす | Plans.md の該当タスクを `pm:確認済` に変更 → コミット指示 → **ここで終了**（次タスクはユーザーの明示要求がある場合のみ） |
-| **request_changes** | 修正が必要 | 修正指示をまとめる → ハンドオフ生成 |
+| Verdict | Condition | Next Action |
+|---------|-----------|-------------|
+| **approve** | Acceptance criteria are met | Change the relevant task in Plans.md to `pm:approved` → commit instruction → **stop here** (next task only if user explicitly requests) |
+| **request_changes** | Changes are needed | Compile change instructions → generate handoff |
 
-> **Commit Pending の場合**: 完了報告に「Commit Status: Pending PM Approval」が含まれている場合、approve 時のハンドオフに **コミット指示を必ず含める**こと（後述の approve テンプレート参照）。
+> **When Commit Pending**: If the completion report contains "Commit Status: Pending PM Approval", the approve handoff **must include a commit instruction** (see the approve template below).
 
-### Step 3: ハンドオフ生成（必須）
+### Step 3: Generate Handoff (required)
 
-どちらの場合も、Claude Code に渡すハンドオフメッセージを生成してください。
-
----
-
-## 出力フォーマット
-
-### 判定サマリー
-
-```
-## レビュー結果
-
-**判定**: approve / request_changes
-**理由**:
-- （1〜3点）
-
-**Plans.md 更新**:
-- `[タスク名]` → `pm:確認済` に変更（approveの場合）
-```
-
-### Hand off to Claude（必ず出力）
-
-#### approve の場合はコミットして終了
-
-**デフォルト動作**: approve 時は変更をコミットして終了します。次タスクはユーザーの明示要求がある場合のみハンドオフを生成してください。
-
-##### 承認のみ（デフォルト）
-
-承認 → コミット指示 → **ここで終了**。次タスクへの自動遷移は行いません。
-
-~~~markdown
-/claude-code-harness:core:work
-<!-- ultrathink: PM からの依頼は原則重要タスクのため、常に high effort を指定 -->
-ultrathink
-
-## 依頼
-
-前回のタスクは承認済みです。変更をコミットしてください。
-
-### コミット指示
-- 前回の変更を承認します。コミットしてください。
-- コミット後、作業は完了です。
-
-### 参考
-- 関連ファイル（あれば）
-
-コミット完了後は `/handoff-to-cursor` で報告してください。
-~~~
-
-##### ユーザーが次タスクを明示要求した場合のみ
-
-ユーザーが「次タスクに進めて」「続けて」等を明示した場合にのみ、以下のテンプレートを使用：
-
-@Plans.md から次の `cc:TODO` または `pm:依頼中` タスクを分析し、以下を生成：
-
-~~~markdown
-/claude-code-harness:core:work
-ultrathink
-
-## 依頼
-
-前回のタスクは承認済みです。**変更をコミットしてから**、次のタスクを実装してください。
-
-### コミット指示
-- 前回の変更を承認します。コミットしてから次のタスクに進んでください。
-
-### 対象タスク
-- （Plans.md から次タスクを抽出）
-
-### 背景
-- 前タスク完了・承認により着手可能になった
-- （依存関係があれば記載）
-
-### 制約
-- 既存のコードスタイルに従う
-- 変更は必要最小限
-- テスト/ビルドが通ることを確認
-
-### 受入条件
-- （3〜5個、具体的に）
-
-### 参考
-- 関連ファイル（あれば）
-
-完了後は `/handoff-to-cursor` で報告してください。
-~~~
-
-#### request_changes の場合
-
-修正指示を含むハンドオフを生成：
-
-~~~markdown
-/claude-code-harness:core:work
-ultrathink
-
-## 修正依頼
-
-レビューの結果、以下の修正が必要です。
-
-### 修正対象タスク
-- （Plans.md の該当タスク）
-
-### 指摘事項
-1. **[重要度: 高/中/低]** 指摘内容
-   - 該当箇所: `ファイル名:行番号`
-   - 期待する修正: 具体的な対応方法
-
-2. **[重要度: 高/中/低]** 指摘内容
-   - 該当箇所:
-   - 期待する修正:
-
-### 制約
-- 既存のテストを壊さないこと
-- 指摘箇所以外は変更しないこと
-
-### 受入条件（修正後）
-- 上記指摘がすべて解消されていること
-- テスト/ビルドが通ること
-- （追加条件があれば）
-
-完了後は `/handoff-to-cursor` で報告してください。
-~~~
+In either case, generate a handoff message to pass to Claude Code.
 
 ---
 
-## ワークフロー図
+## Output Format
+
+### Verdict Summary
 
 ```
-Claude Code 完了報告
+## Review Result
+
+**Verdict**: approve / request_changes
+**Reason**:
+- (1–3 points)
+
+**Plans.md update**:
+- `[Task name]` → changed to `pm:approved` (if approve)
+```
+
+### Hand off to Claude (always output)
+
+#### If approve: commit and stop
+
+**Default behavior**: On approve, commit the changes and stop. Only generate a handoff for the next task if the user explicitly requests it.
+
+##### Approval only (default)
+
+Approve → commit instruction → **stop here**. Do not automatically transition to the next task.
+
+~~~markdown
+/claude-code-harness:core:work
+<!-- ultrathink: requests from PM are generally important tasks, always specify high effort -->
+ultrathink
+
+## Request
+
+The previous task has been approved. Please commit the changes.
+
+### Commit Instructions
+- The previous changes are approved. Please commit them.
+- Work is complete after committing.
+
+### References
+- Related files (if any)
+
+After completing the commit, report via `/handoff-to-cursor`
+~~~
+
+##### Only when the user explicitly requests the next task
+
+Only use the following template when the user explicitly says something like "move on to the next task" or "continue":
+
+Analyze the next `cc:TODO` or `pm:requested` task from @Plans.md and generate:
+
+~~~markdown
+/claude-code-harness:core:work
+ultrathink
+
+## Request
+
+The previous task has been approved. Please **commit the changes first**, then implement the next task.
+
+### Commit Instructions
+- The previous changes are approved. Please commit them before moving to the next task.
+
+### Target Tasks
+- (extract next task from Plans.md)
+
+### Background
+- Previous task completed and approved, so this task is now actionable
+- (include dependencies if any)
+
+### Constraints
+- Follow the existing code style
+- Keep changes to the minimum necessary
+- Confirm tests/build pass
+
+### Acceptance Criteria
+- (3–5 items, specifically)
+
+### References
+- Related files (if any)
+
+After completion, report via `/handoff-to-cursor`
+~~~
+
+#### If request_changes
+
+Generate a handoff containing change instructions:
+
+~~~markdown
+/claude-code-harness:core:work
+ultrathink
+
+## Change Request
+
+As a result of the review, the following changes are required.
+
+### Target Tasks
+- (relevant task from Plans.md)
+
+### Issues Found
+1. **[Severity: High/Medium/Low]** Issue description
+   - Location: `filename:line number`
+   - Expected fix: specific remediation
+
+2. **[Severity: High/Medium/Low]** Issue description
+   - Location:
+   - Expected fix:
+
+### Constraints
+- Do not break existing tests
+- Do not change anything outside the flagged locations
+
+### Acceptance Criteria (after fix)
+- All issues above are resolved
+- Tests/build pass
+- (additional conditions if any)
+
+After completion, report via `/handoff-to-cursor`
+~~~
+
+---
+
+## Workflow Diagram
+
+```
+Claude Code completion report
         ↓
   /review-cc-work
         ↓
@@ -163,18 +163,19 @@ Claude Code 完了報告
    ↓         ↓
 approve   request_changes
    ↓         ↓
-pm:確認済   修正指示作成
+pm:approved  compile change instructions
    ↓         ↓
-commit      ハンドオフ生成
+commit      generate handoff
    ↓         ↓
- 終了        ↓
-(次タスクは     ↓
- 明示要求      ↓
- 時のみ)       ↓
+ stop        ↓
+(next task   ↓
+ only on     ↓
+ explicit    ↓
+ request)    ↓
    ↓         ↓
    └────┬────┘
         ↓
-  Claude Code へ貼り付け
+  Paste into Claude Code
         ↓
-     /work 実行
+     /work execution
 ```

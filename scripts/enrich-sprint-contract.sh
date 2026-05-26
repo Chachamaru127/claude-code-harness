@@ -1,6 +1,6 @@
 #!/bin/bash
 # enrich-sprint-contract.sh
-# sprint-contract.json に Reviewer 観点の追記を加え、必要なら承認状態にする。
+# Adds Reviewer perspective annotations to sprint-contract.json and optionally sets it to approved status.
 
 set -euo pipefail
 

@@ -1,10 +1,10 @@
 #!/bin/bash
-# auto-test-runner.sh - ファイル変更時の自動テスト実行
-# PostToolUse フックから呼び出される
+# auto-test-runner.sh - Automatic test execution on file changes
+# Called from the PostToolUse hook
 
-set +e  # エラーで停止しない
+set +e  # do not stop on error
 
-# 変更されたファイルを取得（stdin JSON優先 / 互換: $1,$2）
+# Get the changed file (stdin JSON takes priority / fallback: $1,$2)
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
@@ -42,12 +42,12 @@ print(f"FILE_PATH_FROM_STDIN={shlex.quote(file_path)}")
   CWD="${CWD_FROM_STDIN:-}"
 fi
 
-# 可能ならプロジェクト相対パスへ正規化
+# Normalize to project-relative path if possible
 if [ -n "$CWD" ] && [ -n "$CHANGED_FILE" ] && [[ "$CHANGED_FILE" == "$CWD/"* ]]; then
   CHANGED_FILE="${CHANGED_FILE#$CWD/}"
 fi
 
-# テスト対象外のファイル
+# Files excluded from test triggering
 EXCLUDED_PATTERNS=(
     "*.md"
     "*.json"
@@ -59,26 +59,26 @@ EXCLUDED_PATTERNS=(
     ".git/*"
 )
 
-# テスト実行が必要かどうか判定
+# Determine whether tests need to be run
 should_run_tests() {
     local file="$1"
 
-    # ファイルが空の場合はスキップ
+    # Skip if file is empty
     [ -z "$file" ] && return 1
 
-    # 除外パターンに一致する場合はスキップ
+    # Skip if file matches an excluded pattern
     for pattern in "${EXCLUDED_PATTERNS[@]}"; do
         if [[ "$file" == $pattern ]]; then
             return 1
         fi
     done
 
-    # テストファイル自体の変更
+    # Change to a test file itself
     if [[ "$file" == *".test."* ]] || [[ "$file" == *".spec."* ]] || [[ "$file" == *"__tests__"* ]]; then
         return 0
     fi
 
-    # ソースコードファイルの変更
+    # Change to a source code file
     if [[ "$file" == *.ts ]] || [[ "$file" == *.tsx ]] || [[ "$file" == *.js ]] || [[ "$file" == *.jsx ]]; then
         return 0
     fi
@@ -98,9 +98,9 @@ should_run_tests() {
     return 1
 }
 
-# テストコマンドを検出
+# Detect the test command
 detect_test_command() {
-    # package.json がある場合
+    # When package.json exists
     if [ -f "package.json" ]; then
         if grep -q '"test"' package.json 2>/dev/null; then
             echo "npm test"
@@ -131,13 +131,13 @@ detect_test_command() {
     return 1
 }
 
-# 関連するテストファイルを検出
+# Detect related test files
 find_related_tests() {
     local file="$1"
     local basename="${file%.*}"
     local dirname=$(dirname "$file")
 
-    # テストファイルのパターン
+    # Test file patterns
     local test_patterns=(
         "${basename}.test.ts"
         "${basename}.test.tsx"
@@ -163,7 +163,7 @@ find_related_tests() {
     return 1
 }
 
-# テストを実際に実行して結果ファイルを書き出す（HARNESS_AUTO_TEST=run モード）
+# Actually run tests and write the result file (HARNESS_AUTO_TEST=run mode)
 run_tests() {
     local test_cmd="$1"
     local related_test="$2"
@@ -174,14 +174,14 @@ run_tests() {
     RESULT_FILE="${STATE_DIR}/test-result.json"
     TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
-    # 実行コマンドを決定（関連テストがあれば絞り込む）
+    # Determine execution command (narrow down to related tests if available)
     if [ -n "$related_test" ]; then
         EXEC_CMD="$test_cmd -- $related_test"
     else
         EXEC_CMD="$test_cmd"
     fi
 
-    # タイムアウト付きでテスト実行（最大 60 秒）
+    # Run tests with a timeout (maximum 60 seconds)
     TIMEOUT_CMD=$(command -v timeout || command -v gtimeout || echo "")
     TMP_OUT="${STATE_DIR}/test-output.tmp"
 
@@ -193,11 +193,11 @@ run_tests() {
         EXIT_CODE=$?
     fi
 
-    # 出力を取得（最大 200 行）
+    # Capture output (up to 200 lines)
     OUTPUT=$(head -200 "$TMP_OUT" 2>/dev/null || true)
     rm -f "$TMP_OUT"
 
-    # 成否判定
+    # Determine pass/fail
     if [ "$EXIT_CODE" -eq 0 ]; then
         STATUS="passed"
     elif [ "$EXIT_CODE" -eq 124 ]; then
@@ -206,7 +206,7 @@ run_tests() {
         STATUS="failed"
     fi
 
-    # 結果を JSON で書き出す
+    # Write result as JSON
     if command -v jq >/dev/null 2>&1; then
         jq -n \
             --arg ts "$TIMESTAMP" \
@@ -218,7 +218,7 @@ run_tests() {
             '{timestamp:$ts,changed_file:$file,command:$cmd,status:$status,exit_code:$code,output:$out}' \
             > "$RESULT_FILE" 2>/dev/null || true
     else
-        # jq がない場合は最小限の JSON を出力
+        # Output minimal JSON when jq is not available
         ESCAPED_OUT=$(printf '%s' "$OUTPUT" | sed 's/\\/\\\\/g; s/"/\\"/g' | tr '\n' ' ')
         cat > "$RESULT_FILE" << EOF
 {"timestamp":"$TIMESTAMP","changed_file":"$CHANGED_FILE","command":"$EXEC_CMD","status":"$STATUS","exit_code":$EXIT_CODE,"output":"$ESCAPED_OUT"}
@@ -228,46 +228,46 @@ EOF
     return "$EXIT_CODE"
 }
 
-# メイン処理
+# Main process
 main() {
-    # テスト実行が必要かチェック
+    # Check whether tests need to run
     if ! should_run_tests "$CHANGED_FILE"; then
         exit 0
     fi
 
-    # テストコマンドを検出
+    # Detect the test command
     TEST_CMD=$(detect_test_command)
     if [ -z "$TEST_CMD" ]; then
         exit 0
     fi
 
-    # 関連テストファイルを検出
+    # Detect related test files
     RELATED_TEST=$(find_related_tests "$CHANGED_FILE")
 
-    # 状態ファイルに記録
+    # Record to state file
     STATE_DIR=".claude/state"
     mkdir -p "$STATE_DIR"
 
-    # HARNESS_AUTO_TEST=run の場合は実際にテストを実行
+    # If HARNESS_AUTO_TEST=run, actually run the tests
     if [ "${HARNESS_AUTO_TEST:-}" = "run" ]; then
         run_tests "$TEST_CMD" "$RELATED_TEST"
         EXIT_CODE=$?
 
-        # 結果サマリーを stderr に出力（hooks ログ用）
+        # Output result summary to stderr (for hooks log)
         RESULT_FILE="${STATE_DIR}/test-result.json"
         if [ -f "$RESULT_FILE" ]; then
             STATUS=$(command -v jq >/dev/null 2>&1 && jq -r '.status // "unknown"' "$RESULT_FILE" 2>/dev/null || grep -o '"status":"[^"]*"' "$RESULT_FILE" | head -1 | sed 's/"status":"\([^"]*\)"/\1/')
             OUTPUT_SNIPPET=$(command -v jq >/dev/null 2>&1 && jq -r '.output // ""' "$RESULT_FILE" 2>/dev/null | head -30 || true)
             echo "[auto-test-runner] run mode: $STATUS (exit=$EXIT_CODE) file=$CHANGED_FILE" >&2
 
-            # テスト結果を additionalContext として Claude に通知
+            # Notify Claude of test result via additionalContext
             if [ "$STATUS" = "passed" ]; then
-                CONTEXT_MSG="[Auto Test Runner] Tests passed / テスト成功
+                CONTEXT_MSG="[Auto Test Runner] Tests passed
 Command: $TEST_CMD
 File: $CHANGED_FILE
 Status: PASSED (exit=0)"
             elif [ "$STATUS" = "timeout" ]; then
-                CONTEXT_MSG="[Auto Test Runner] Tests timed out / テストがタイムアウトしました (60s)
+                CONTEXT_MSG="[Auto Test Runner] Tests timed out (60s)
 Command: $TEST_CMD
 File: $CHANGED_FILE
 Status: TIMEOUT
@@ -275,7 +275,7 @@ Status: TIMEOUT
 Output:
 ${OUTPUT_SNIPPET}"
             else
-                CONTEXT_MSG="[Auto Test Runner] Tests failed / テスト失敗
+                CONTEXT_MSG="[Auto Test Runner] Tests failed
 Command: $TEST_CMD
 File: $CHANGED_FILE
 Status: FAILED (exit=$EXIT_CODE)
@@ -283,10 +283,10 @@ Status: FAILED (exit=$EXIT_CODE)
 Output:
 ${OUTPUT_SNIPPET}
 
-Fix the implementation to make the tests pass. / テストが通るように実装を修正してください。"
+Fix the implementation to make the tests pass."
             fi
 
-            # JSON 出力（additionalContext）
+            # JSON output (additionalContext)
             if command -v jq >/dev/null 2>&1; then
                 jq -nc --arg ctx "$CONTEXT_MSG" \
                     '{hookSpecificOutput:{hookEventName:"PostToolUse",additionalContext:$ctx}}'
@@ -298,27 +298,27 @@ Fix the implementation to make the tests pass. / テストが通るように実�
         exit 0
     fi
 
-    # デフォルト: recommend モード（テスト推奨を記録）
+    # Default: recommend mode (record test recommendation)
     cat > "${STATE_DIR}/test-recommendation.json" << EOF
 {
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
   "changed_file": "$CHANGED_FILE",
   "test_command": "$TEST_CMD",
   "related_test": "$RELATED_TEST",
-  "recommendation": "テストの実行を推奨します"
+  "recommendation": "Running tests is recommended"
 }
 EOF
 
-    # 通知を出力
+    # Output notification
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🧪 テスト実行推奨"
+    echo "🧪 Test run recommended"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "📁 変更ファイル: $CHANGED_FILE"
+    echo "📁 Changed file: $CHANGED_FILE"
     if [ -n "$RELATED_TEST" ]; then
-        echo "🔗 関連テスト: $RELATED_TEST"
+        echo "🔗 Related test: $RELATED_TEST"
     fi
-    echo "📋 推奨コマンド: $TEST_CMD"
+    echo "📋 Recommended command: $TEST_CMD"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     echo ""
 }

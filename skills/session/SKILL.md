@@ -1,8 +1,6 @@
 ---
 name: session
 description: "Unified session management window. Handles initialization, memory, state all-in-one. Explicit /session invocation only — sub-skills handle auto-delegation. Use when managing Claude Code sessions, /session command. Do NOT load for: app user sessions, login state, authentication features."
-description-en: "Unified session management window. Handles initialization, memory, state all-in-one. Explicit /session invocation only — sub-skills handle auto-delegation. Use when managing Claude Code sessions, /session command. Do NOT load for: app user sessions, login state, authentication features."
-description-ja: "セッション管理の総合窓口。初期化・記憶・状態を一手に引き受けます。明示的 /session 呼び出し専用 — 下位スキルが自動委譲されるため自動発動は不要。Use when managing Claude Code sessions, /session command. Do NOT load for: app user sessions, login state, authentication features."
 allowed-tools: ["Read", "Bash", "Write", "Edit", "Glob"]
 user-invocable: true
 disable-model-invocation: true
@@ -71,54 +69,54 @@ Sends a message to all active sessions.
 
 ---
 
-## メモリ最適化（CC 2.1.49+）
+## Memory Optimization (CC 2.1.49+)
 
-Claude Code 2.1.49 以降、セッション再開時のメモリ使用量が **68% 削減** されました。
+Since Claude Code 2.1.49, memory usage on session resume has been reduced by **68%**.
 
-### 長時間セッション管理のベストプラクティス
+### Best Practices for Long Session Management
 
-| ワークロード | 推奨戦略 |
-|------------|---------|
-| **通常実装** | 1-2時間ごとに `--resume` で再開 |
-| **大規模リファクタ** | 機能単位でセッション分割 → 各セッションで `--resume` |
-| **並列タスク** | `/work all` で並列実行、長時間なら途中で `--resume` |
-| **メモリ警告時** | 即座に `--resume` で再開（以前より高速） |
+| Workload | Recommended Strategy |
+|----------|----------------------|
+| **Normal implementation** | Resume with `--resume` every 1–2 hours |
+| **Large-scale refactor** | Split by feature unit → use `--resume` for each session |
+| **Parallel tasks** | Run in parallel with `/work all`; use `--resume` mid-way for long runs |
+| **Low-memory warning** | Resume immediately with `--resume` (faster than before) |
 
-### セッション名の自動生成（CC 2.1.41+）
+### Automatic Session Name Generation (CC 2.1.41+)
 
-`/rename` を引数なしで実行すると、会話コンテキストからセッション名を自動生成します。
-長時間セッションや `--resume` を多用するワークフローでセッションの識別が容易になります。
+Running `/rename` without arguments auto-generates a session name from the conversation context.
+This makes it easier to identify sessions in long-running or `--resume`-heavy workflows.
 
-### 効率的なワークフロー例
+### Efficient Workflow Example
 
 ```bash
-# 実装フェーズ1
-claude "認証機能を実装"
-# → 1時間後
+# Implementation phase 1
+claude "implement authentication"
+# → 1 hour later
 
-# セッション再開（メモリ効率的）
-claude --resume "パスワードリセット機能を追加"
-# → 1時間後
+# Resume session (memory-efficient)
+claude --resume "add password reset"
+# → 1 hour later
 
-# さらに再開
-claude --resume "テストを追加"
+# Resume again
+claude --resume "add tests"
 ```
 
-### メモリ管理の推奨事項
+### Memory Management Recommendations
 
-| 推奨事項 | 理由 |
-|---------|------|
-| **積極的なセッション再開** | 68% メモリ削減で再開コストが低い |
-| **定期的な再開** | コンテキストを整理し、集中力を維持 |
-| **機能単位の分割** | 大規模タスクを小さく分けて再開 |
-| **Plans.md を活用** | 再開時の引き継ぎがスムーズ |
+| Recommendation | Reason |
+|----------------|--------|
+| **Use session resume proactively** | 68% memory reduction lowers the cost of resuming |
+| **Resume periodically** | Keeps context organized and focus sharp |
+| **Split by feature unit** | Break large tasks into smaller pieces, resume for each |
+| **Use Plans.md** | Provides a smooth handoff when resuming |
 
-> 💡 メモリ効率が大幅に改善されたため、セッション再開を積極的に活用してください。
+> Memory efficiency has improved significantly — use session resume proactively.
 
-### Codex 0.123.0 の session shell / terminal 修正
+### Codex 0.123.0 Session Shell / Terminal Fix
 
-Codex 0.123.0 では stale proxy env が shell snapshot から復元されにくくなり、VS Code WSL terminal の Unicode / dead-key input と keyboard 入力も本体側で修正されています。
-Harness は proxy snapshot scrubber や key input wrapper を追加せず、本体修正を自動継承します。
+In Codex 0.123.0, stale proxy env vars are less likely to be restored from shell snapshots, and Unicode / dead-key input and keyboard input in VS Code WSL terminal have been fixed upstream.
+Harness does not add a proxy snapshot scrubber or key input wrapper, and inherits the upstream fix automatically.
 
 ---
 

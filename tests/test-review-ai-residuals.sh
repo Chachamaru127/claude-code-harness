@@ -1,5 +1,5 @@
 #!/bin/bash
-# review-ai-residuals.sh の最小回帰テスト
+# Minimal regression tests for review-ai-residuals.sh
 
 set -euo pipefail
 

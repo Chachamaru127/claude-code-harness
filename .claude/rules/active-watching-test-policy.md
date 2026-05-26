@@ -1,99 +1,97 @@
 # Active Watching Test Policy
 
-Session Monitor などで **外部プロセス / ファイル / daemon を能動監視する機能**を新規追加するときに守るテスト規約。
-D40 (tri-state health) と P29 (dual hooks sync) を運用ルール化し、v4.3.3 のような
-「未インストールユーザーへの誤警告 regression」を初期フェーズで潰すための SSOT。
+Testing requirements to follow when adding **new features that actively monitor external processes, files, or daemons** (e.g., Session Monitor).
+Operationalizes D40 (tri-state health) and P29 (dual hooks sync) as rules, providing the SSOT for eliminating regressions like the "false warning to non-installed users" seen in v4.3.3 from the earliest phase.
 
-## なぜこのルールが必要か
+## Why This Rule Is Necessary
 
-v4.3.1 で Session Monitor に `harness-mem` 能動監視を追加した直後、
-v4.3.3 hotfix で「`~/.claude-mem/` 不在 = harness-mem を opt-in していないユーザー」に対して
-`⚠️ harness-mem unhealthy: not-initialized` が毎セッション表示される regression を修正する必要があった。
+Immediately after adding `harness-mem` active monitoring to Session Monitor in v4.3.1,
+a v4.3.3 hotfix was needed to fix a regression where `⚠️ harness-mem unhealthy: not-initialized`
+was displayed every session for users who had `~/.claude-mem/` absent (i.e., users who had not opted in to harness-mem).
 
-根因は inclusion-based testing のみ行い、**依存先が存在しない状態**のテストを書いていなかったこと。
-active watching は opt-in な外部資源に依存することが多く、「未インストール / 未起動 / 破損」の
-**3 状態をすべて最初からカバーする**のが唯一の再発防止策。
+The root cause was relying solely on inclusion-based testing and not writing tests for the state where **the dependency does not exist**.
+Active watching often depends on opt-in external resources, and **covering all 3 states — not-installed / not-running / corrupted — from the start** is the only way to prevent recurrence.
 
-## 適用範囲
+## Scope
 
-以下のいずれかに該当するコードを新規追加するとき、本規約に従うこと。
+Follow this policy when adding new code that matches any of the following:
 
-- `go/internal/session/monitor.go` に新しい health check を追加する
-- `scripts/hook-handlers/` 等から外部 daemon / HTTP endpoint を probe する
-- `~/.claude-*/` や `$HOME/` 配下の optional ディレクトリを読み取る
-- MCP server の起動状態を監視する
-- Codex daemon / external CLI の可用性をセッション毎にチェックする
-- `UserPromptSubmit` や `SessionStart` hook で外部資源の可用性を additionalContext に載せる
+- Adding a new health check to `go/internal/session/monitor.go`
+- Probing an external daemon or HTTP endpoint from `scripts/hook-handlers/` or similar
+- Reading optional directories under `~/.claude-*/` or `$HOME/`
+- Monitoring the running state of an MCP server
+- Checking the availability of a Codex daemon or external CLI per session
+- Surfacing the availability of an external resource via `additionalContext` in `UserPromptSubmit` or `SessionStart` hooks
 
-逆に、以下は適用対象外:
+Conversely, the following are out of scope:
 
-- 必須依存（Go 標準ライブラリ, `bin/harness` 自体）の sanity check
-- CI 環境でのみ走るテスト（CI では依存が必ずある前提で良い）
+- Sanity checks for required dependencies (Go standard library, `bin/harness` itself)
+- Tests that run only in CI environments (where dependencies are guaranteed to be present)
 
-## 3 状態の定義
+## Defining the 3 States
 
-active watching の対象依存が取り得る状態と、それぞれで求める挙動:
+States that an active-watching dependency can be in, and the expected behavior for each:
 
-| 状態 | 識別子 (reason) | `healthy` | Exit | Monitor 警告 | 典型例 |
+| State | Identifier (reason) | `healthy` | Exit | Monitor warning | Typical example |
 |------|----------------|-----------|------|------------|--------|
-| 未インストール / opt-in 未使用 | `not-configured` | **true** | 0 | **出さない** | `~/.claude-mem/` 不在 |
-| 起動していない / 不達 | `daemon-unreachable`, `timeout`, `unreachable` | false | 1 | 出す | TCP connect 失敗 |
-| 設定破損 / ファイル欠損 | `corrupted`, `invalid-config` | false | 1 | 出す | settings.json 不在 |
-| 正常 | `""` | true | 0 | 出さない | 全構成要素 OK |
+| Not installed / opt-in not used | `not-configured` | **true** | 0 | **Do not emit** | `~/.claude-mem/` absent |
+| Not running / unreachable | `daemon-unreachable`, `timeout`, `unreachable` | false | 1 | Emit | TCP connect failure |
+| Configuration corrupted / file missing | `corrupted`, `invalid-config` | false | 1 | Emit | settings.json absent |
+| Healthy | `""` | true | 0 | Do not emit | All components OK |
 
-重要原則:
+Key principles:
 
-- **「使っていない」は「壊れている」ではない**。opt-in 機能が未使用なだけの状態では警告を出さない
-- 判定ロジックは **health check subcommand 側**に集約し、Monitor / 他呼び出し元で挙動を一致させる（D40）
-- `healthy=true + reason="not-configured"` は Monitor 実装が warning 抑止契約として必ず扱う
+- **"Not in use" is not the same as "broken"**. Do not emit warnings for a state where an opt-in feature is simply not being used.
+- Concentrate the determination logic on the **health check subcommand side** so that the behavior is consistent across Monitor and other callers (D40).
+- `healthy=true + reason="not-configured"` must always be treated by the Monitor implementation as the contract for suppressing warnings.
 
-## テスト命名規約
+## Test Naming Conventions
 
-3 状態それぞれに対して最低 1 件ずつテストを書く。命名は以下で固定する。
+Write at least one test for each of the 3 states. Use the following fixed naming scheme.
 
-| 状態 | テスト関数名パターン | 検証内容 |
+| State | Test function name pattern | What to verify |
 |------|-------------------|---------|
-| `not-configured` | `TestXxx_NotConfigured` | `exit=0`, `healthy=true`, `reason="not-configured"`, Monitor が warning を出さない |
-| `unreachable` | `TestXxx_DaemonUnreachable` または `TestXxx_Unreachable` | `exit=1`, `healthy=false`, 具体的な reason 文字列, Monitor が warning を出す |
-| `corrupted` | `TestXxx_Corrupted` | `exit=1`, `healthy=false`, `reason="corrupted"`, Monitor が warning を出す |
-| 正常 | `TestXxx_Healthy` | `exit=0`, `healthy=true`, `reason=""`, Monitor が静かに通過 |
+| `not-configured` | `TestXxx_NotConfigured` | `exit=0`, `healthy=true`, `reason="not-configured"`, Monitor emits no warning |
+| `unreachable` | `TestXxx_DaemonUnreachable` or `TestXxx_Unreachable` | `exit=1`, `healthy=false`, specific reason string, Monitor emits warning |
+| `corrupted` | `TestXxx_Corrupted` | `exit=1`, `healthy=false`, `reason="corrupted"`, Monitor emits warning |
+| Healthy | `TestXxx_Healthy` | `exit=0`, `healthy=true`, `reason=""`, Monitor passes silently |
 
-Monitor 側統合テストも同じ命名規約で用意する（例: `TestMonitorHandler_XxxNotConfigured`）。
+Prepare Monitor-side integration tests using the same naming conventions (e.g., `TestMonitorHandler_XxxNotConfigured`).
 
-## チェックリスト
+## Checklist
 
-active watching 機能を PR に含めるときに確認する:
+Verify the following when including an active-watching feature in a PR:
 
-- [ ] health check 側に 4 テスト（正常 + 3 異常）を書いた
-- [ ] Monitor 側に `not-configured` で warning が出ないことを assert する統合テストを書いた
-- [ ] `reason` 文字列を enum 的に列挙した（free-text にしない。ドキュメントに表で明示）
-- [ ] `healthy=true + reason="not-configured"` 契約を Monitor 側が参照している
-- [ ] 既存の依存（`harness-mem` など）と命名規約が衝突していない
-- [ ] ドキュメント（`go/SPEC.md` 等）に 3 状態を記載した
+- [ ] Wrote 4 tests on the health check side (healthy + 3 failure states)
+- [ ] Wrote an integration test on the Monitor side asserting that no warning is emitted for `not-configured`
+- [ ] Enumerated `reason` strings as an enum (do not use free text; document them in a table)
+- [ ] The Monitor side references the `healthy=true + reason="not-configured"` contract
+- [ ] Naming conventions do not conflict with existing dependencies (e.g., `harness-mem`)
+- [ ] Documented the 3 states in documentation (e.g., `go/SPEC.md`)
 
-## 事例付録: v4.3.3 harness-mem hotfix
+## Case Study Appendix: v4.3.3 harness-mem Hotfix
 
-本規約が生まれた直接のトリガー事例。テスト構造を真似する reference として参照する。
+The direct triggering case that gave rise to this policy. Reference it as a model for test structure.
 
-- **背景 commit**: [`23589344`](https://github.com/Chachamaru127/claude-code-harness/commit/23589344) (PR #98 / v4.3.3 hotfix)
-- **health check 実装**: `go/cmd/harness/mem.go` の `runMemHealthCheck()` — 早期 return 2 段 (`UserHomeDir` 失敗 / `~/.claude-mem/` 不在) で `not-configured` を返す
-- **health check テスト**: `go/cmd/harness/mem_test.go`
+- **Background commit**: [`23589344`](https://github.com/Chachamaru127/claude-code-harness/commit/23589344) (PR #98 / v4.3.3 hotfix)
+- **Health check implementation**: `runMemHealthCheck()` in `go/cmd/harness/mem.go` — returns `not-configured` via two-stage early return (`UserHomeDir` failure / `~/.claude-mem/` absent)
+- **Health check tests**: `go/cmd/harness/mem_test.go`
   - `TestRunMemHealth_Healthy`
   - `TestRunMemHealth_DaemonUnreachable`
-  - `TestRunMemHealth_NotConfigured` ← 3 状態カバレッジの核
+  - `TestRunMemHealth_NotConfigured` ← the core of 3-state coverage
   - `TestRunMemHealth_Corrupted`
-- **Monitor 統合テスト**: `go/internal/session/monitor_test.go`
+- **Monitor integration tests**: `go/internal/session/monitor_test.go`
   - `TestMonitorHandler_HarnessMemHealthy`
   - `TestMonitorHandler_HarnessMemUnhealthy` (fixture reason = `daemon-unreachable`)
-  - `TestMonitorHandler_HarnessMemNotConfigured` ← 警告非出力を明示的に assert
+  - `TestMonitorHandler_HarnessMemNotConfigured` ← explicitly asserts no warning is emitted
 
-この事例で確認されたのは、3 状態のうち **1 つでも欠けると regression が出る**こと。
-`not-configured` テストを最初から書いていれば v4.3.1 時点で問題を捕捉できた。
+What this case confirmed: **a regression occurs if even 1 of the 3 states is missing**.
+If the `not-configured` test had been written from the start, the problem would have been caught at v4.3.1.
 
-## 関連ルール
+## Related Rules
 
-- [D40](../memory/decisions.md) — tri-state health の設計判断（本規約の理論的根拠）
-- [P29](../memory/patterns.md) — dual hooks.json sync + CI gate（wiring 側の再発防止）
-- [migration-policy.md](./migration-policy.md) — exclusion-based verification の姉妹規約（削除残骸 vs 依存不在）
-- [test-quality.md](./test-quality.md) — テスト品質一般（形骸化テスト禁止）
-- [implementation-quality.md](./implementation-quality.md) — 実装品質一般
+- [D40](../memory/decisions.md) — Design decision behind tri-state health (the theoretical basis of this policy)
+- [P29](../memory/patterns.md) — dual hooks.json sync + CI gate (prevention of recurrence on the wiring side)
+- [migration-policy.md](./migration-policy.md) — Sister policy for exclusion-based verification (deleted residue vs. absent dependency)
+- [test-quality.md](./test-quality.md) — General test quality (prohibition of hollow tests)
+- [implementation-quality.md](./implementation-quality.md) — General implementation quality

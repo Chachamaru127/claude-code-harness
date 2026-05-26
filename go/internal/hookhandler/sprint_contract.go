@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// SprintContractGenerator は Plans.md から sprint-contract を生成する。
+// SprintContractGenerator generates a sprint-contract from Plans.md.
 type SprintContractGenerator struct {
 	ProjectRoot string
 	PlansFile   string
@@ -162,7 +162,7 @@ var defaultSprintAdvisor = sprintContractAdvisor{
 	},
 }
 
-// Generate は指定タスクの sprint-contract を生成して返す。
+// Generate generates and returns a sprint-contract for the specified task.
 func (g *SprintContractGenerator) Generate(taskID string) (*sprintContractDoc, error) {
 	projectRoot := g.ProjectRoot
 	if projectRoot == "" {
@@ -290,7 +290,7 @@ func (g *SprintContractGenerator) Generate(taskID string) (*sprintContractDoc, e
 	return doc, nil
 }
 
-// Write は contract を JSON で出力ファイルへ保存する。
+// Write saves the contract as JSON to the output file.
 func (g *SprintContractGenerator) Write(taskID string) (string, error) {
 	doc, err := g.Generate(taskID)
 	if err != nil {

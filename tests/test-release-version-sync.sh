@@ -193,8 +193,8 @@ PY
 }
 
 test_skill_docs_reference_structured_version_sync() {
-  # `.agents/skills/...` は local-only mirror (clean public checkout には無い)。
-  # 存在する skill ファイルだけを assert し、欠落した mirror は skip する。
+  # `.agents/skills/...` is a local-only mirror (not in clean public checkout).
+  # Only assert on skill files that exist; skip missing mirrors.
   for skill in \
     "$PROJECT_ROOT/skills/harness-release/SKILL.md" \
     "$PROJECT_ROOT/codex/.codex/skills/harness-release/SKILL.md" \

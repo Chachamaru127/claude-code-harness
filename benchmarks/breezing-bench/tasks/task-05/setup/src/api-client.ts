@@ -9,7 +9,7 @@ export interface ApiClientOptions {
   retries?: number;
 }
 
-// エラー処理なしの素朴な実装
+// Naive implementation without error handling
 export class ApiClient {
   constructor(private options: ApiClientOptions) {}
 

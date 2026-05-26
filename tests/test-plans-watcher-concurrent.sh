@@ -1,7 +1,7 @@
 #!/bin/bash
 # test-plans-watcher-concurrent.sh
-# plans-watcher.sh の flock ガード (e) — 2 プロセス同時書き込みテスト
-# ロストアップデートが発生しないことを検証する
+# plans-watcher.sh flock guard (e) — concurrent 2-process write test
+# Validates that lost updates do not occur
 #
 # Usage: bash tests/test-plans-watcher-concurrent.sh
 
@@ -10,7 +10,7 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(dirname "${SCRIPT_DIR}")"
 
-# カラー出力
+# Color output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -34,26 +34,26 @@ warn_test() {
 }
 
 echo "=========================================="
-echo "plans-watcher.sh flock ガード (e) テスト"
+echo "plans-watcher.sh flock guard (e) test"
 echo "=========================================="
 echo ""
 
-# テスト用の一時ディレクトリを作成
+# Create a temporary directory for testing
 WORK_DIR="$(mktemp -d /tmp/test-plans-watcher-XXXXXX)"
 PLANS_LOCK_FILE="${WORK_DIR}/.claude/state/locks/plans.flock"
 TEST_FILE="${WORK_DIR}/counter.txt"
 mkdir -p "${WORK_DIR}/.claude/state/locks"
 
-# クリーンアップ
+# Cleanup
 cleanup() {
     rm -rf "${WORK_DIR}" 2>/dev/null || true
 }
 trap cleanup EXIT
 
-# テスト 1: flock ガードの基本動作（3-tier lock フォールバック再現）
-echo "--- テスト 1: flock 排他制御の基本動作 ---"
+# Test 1: flock guard basic behavior (3-tier lock fallback reproduction)
+echo "--- Test 1: flock exclusive control basic behavior ---"
 
-# flock ロジックを抽出した最小スクリプト（plans-watcher.sh の _plans_acquire_lock を再現）
+# Minimal script extracting flock logic (reproduces _plans_acquire_lock from plans-watcher.sh)
 LOCK_SCRIPT="$(mktemp /tmp/test-flock-worker-XXXXXX.sh)"
 cat > "${LOCK_SCRIPT}" << SCRIPT
 #!/bin/bash
@@ -105,19 +105,19 @@ if ! _acquire; then
     exit 1
 fi
 
-# クリティカルセクション: カウンターのインクリメント（read-modify-write）
+# Critical section: increment counter (read-modify-write)
 CURRENT=\$(cat "\${COUNTER_FILE}" 2>/dev/null || echo "0")
 NEW=\$(( CURRENT + 1 ))
-# 意図的なスリープでレースコンディションを誘発
+# Intentional sleep to induce race condition
 sleep 0.05
 echo "\${NEW}" > "\${COUNTER_FILE}"
 SCRIPT
 chmod +x "${LOCK_SCRIPT}"
 
-# カウンターを初期化
+# Initialize counter
 echo "0" > "${TEST_FILE}"
 
-# 20 並列プロセスで同時にカウンターをインクリメント
+# Increment counter simultaneously with 20 parallel processes
 WORKERS=20
 PIDS=()
 for i in $(seq 1 "${WORKERS}"); do
@@ -125,7 +125,7 @@ for i in $(seq 1 "${WORKERS}"); do
     PIDS+=($!)
 done
 
-# 全ワーカーの完了を待機
+# Wait for all workers to complete
 FAILED_WORKERS=0
 for pid in "${PIDS[@]}"; do
     if ! wait "${pid}" 2>/dev/null; then
@@ -133,27 +133,27 @@ for pid in "${PIDS[@]}"; do
     fi
 done
 
-# 結果の確認
+# Check result
 FINAL_COUNT=$(cat "${TEST_FILE}" 2>/dev/null || echo "error")
 
 if [ "${FAILED_WORKERS}" -gt 0 ]; then
-    warn_test "${FAILED_WORKERS} ワーカーがロック取得に失敗しました（タイムアウトの可能性）"
+    warn_test "${FAILED_WORKERS} worker(s) failed to acquire lock (possible timeout)"
 fi
 
 EXPECTED=$(( WORKERS - FAILED_WORKERS ))
 
 if [ "${FINAL_COUNT}" = "${EXPECTED}" ]; then
-    pass_test "flock 排他制御: ${WORKERS} プロセスで ${EXPECTED} 件のインクリメントが正確に完了（ロストアップデートなし）"
+    pass_test "flock exclusive control: ${WORKERS} processes completed exactly ${EXPECTED} increments (no lost updates)"
 elif [ "${FINAL_COUNT}" = "${WORKERS}" ]; then
-    pass_test "flock 排他制御: 全 ${WORKERS} プロセスが成功（ロストアップデートなし）"
+    pass_test "flock exclusive control: all ${WORKERS} processes succeeded (no lost updates)"
 else
-    fail_test "flock 排他制御: 最終カウント=${FINAL_COUNT}、期待値=${EXPECTED}（ロストアップデートの可能性）"
+    fail_test "flock exclusive control: final count=${FINAL_COUNT}, expected=${EXPECTED} (possible lost update)"
 fi
 
-# テスト 2: flock なし（ロックなし）でロストアップデートが発生することを確認
-# （テスト環境の健全性チェック: 排他制御なしでは問題が起きることを確認）
+# Test 2: confirm that lost updates occur without flock (no lock)
+# (sanity check for test environment: confirm problems occur without exclusive control)
 echo ""
-echo "--- テスト 2: 排他制御なしのロストアップデート確認（期待: 不整合あり）---"
+echo "--- Test 2: lost update confirmation without exclusive control (expected: inconsistency) ---"
 
 LOCK_SCRIPT_NOLOCK="$(mktemp /tmp/test-nolock-worker-XXXXXX.sh)"
 cat > "${LOCK_SCRIPT_NOLOCK}" << 'SCRIPT'
@@ -161,7 +161,7 @@ cat > "${LOCK_SCRIPT_NOLOCK}" << 'SCRIPT'
 COUNTER_FILE="$1"
 CURRENT=$(cat "${COUNTER_FILE}" 2>/dev/null || echo "0")
 NEW=$(( CURRENT + 1 ))
-sleep 0.05  # レースコンディションを誘発
+sleep 0.05  # induce race condition
 echo "${NEW}" > "${COUNTER_FILE}"
 SCRIPT
 chmod +x "${LOCK_SCRIPT_NOLOCK}"
@@ -182,66 +182,66 @@ done
 FINAL_NOLOCK=$(cat "${TEST_FILE_NOLOCK}" 2>/dev/null || echo "error")
 
 if [ "${FINAL_NOLOCK}" != "${WORKERS_NOLOCK}" ]; then
-    pass_test "排他制御なし: ロストアップデートが発生しました（最終=${FINAL_NOLOCK}、期待値=${WORKERS_NOLOCK}）— テスト環境は正常"
+    pass_test "no exclusive control: lost update occurred (final=${FINAL_NOLOCK}, expected=${WORKERS_NOLOCK}) — test environment is sane"
 else
-    warn_test "排他制御なし: ロストアップデートが発生しませんでした（最終=${FINAL_NOLOCK}）— 環境によっては問題なし（flock なしでもたまたま競合しない場合がある）"
+    warn_test "no exclusive control: no lost update occurred (final=${FINAL_NOLOCK}) — acceptable in some environments (races may not trigger without flock)"
 fi
 
-# テスト 3: plans-watcher.sh の flock ガードが呼び出し可能か確認
+# Test 3: confirm flock guard in plans-watcher.sh is callable
 echo ""
-echo "--- テスト 3: plans-watcher.sh の flock 関数定義確認 ---"
+echo "--- Test 3: plans-watcher.sh flock function definition check ---"
 WATCHER_SCRIPT="${PLUGIN_ROOT}/scripts/plans-watcher.sh"
 
 if [ -f "${WATCHER_SCRIPT}" ]; then
     if grep -q "_plans_acquire_lock" "${WATCHER_SCRIPT}" && grep -q "_plans_release_lock" "${WATCHER_SCRIPT}"; then
-        pass_test "plans-watcher.sh に flock ガード関数が定義されています"
+        pass_test "plans-watcher.sh has flock guard functions defined"
     else
-        fail_test "plans-watcher.sh に flock ガード関数が見つかりません"
+        fail_test "plans-watcher.sh flock guard functions not found"
     fi
 
     if grep -q "plans.flock" "${WATCHER_SCRIPT}"; then
-        pass_test "plans-watcher.sh が .claude/state/locks/plans.flock を使用しています"
+        pass_test "plans-watcher.sh uses .claude/state/locks/plans.flock"
     else
-        fail_test "plans-watcher.sh が plans.flock を使用していません"
+        fail_test "plans-watcher.sh does not use plans.flock"
     fi
 
     if grep -q 'trap.*_plans_watcher_cleanup.*EXIT' "${WATCHER_SCRIPT}"; then
-        pass_test "plans-watcher.sh に EXIT trap が設定されています"
+        pass_test "plans-watcher.sh has EXIT trap configured"
     else
-        fail_test "plans-watcher.sh に EXIT trap が設定されていません"
+        fail_test "plans-watcher.sh does not have EXIT trap configured"
     fi
 
-    # fail-closed 検証 (41.1.3): exit 11 コードが存在するか確認
+    # fail-closed validation (41.1.3): check that exit 11 code exists
     if grep -q 'exit 11' "${WATCHER_SCRIPT}"; then
-        pass_test "plans-watcher.sh が lock 取得失敗時に exit 11 で fail-closed します"
+        pass_test "plans-watcher.sh fail-closes with exit 11 on lock acquisition failure"
     else
-        fail_test "plans-watcher.sh に exit 11（fail-closed）が設定されていません"
+        fail_test "plans-watcher.sh does not have exit 11 (fail-closed) configured"
     fi
 
-    # fail-closed 検証: retry ロジックが存在するか確認
+    # fail-closed validation: check that retry logic exists
     if grep -q '_PLANS_LOCK_MAX_RETRIES' "${WATCHER_SCRIPT}"; then
-        pass_test "plans-watcher.sh に retry ロジック（_PLANS_LOCK_MAX_RETRIES）が存在します"
+        pass_test "plans-watcher.sh has retry logic (_PLANS_LOCK_MAX_RETRIES)"
     else
-        fail_test "plans-watcher.sh に retry ロジックが見つかりません"
+        fail_test "plans-watcher.sh retry logic not found"
     fi
 else
-    fail_test "plans-watcher.sh が見つかりません: ${WATCHER_SCRIPT}"
+    fail_test "plans-watcher.sh not found: ${WATCHER_SCRIPT}"
 fi
 
-# テスト 4: fail-closed の実動作確認（lock を事前に取得した状態で plans-watcher.sh 相当を実行）
+# Test 4: confirm fail-closed behavior (run plans-watcher.sh equivalent with lock pre-acquired)
 echo ""
-echo "--- テスト 4: fail-closed 実動作確認（lock 競合時に exit 11）---"
+echo "--- Test 4: fail-closed behavior confirmation (exit 11 on lock conflict) ---"
 
-# lock ファイルを事前に取得して保持し続けるバックグラウンドプロセスを起動
+# Launch background process that pre-acquires and holds the lock file
 FAIL_CLOSED_LOCK="${WORK_DIR}/.claude/state/locks/fc-test.flock"
 mkdir -p "$(dirname "${FAIL_CLOSED_LOCK}")"
 
-# 最小の fail-closed スクリプト（plans-watcher.sh の retry + exit 11 ロジックを抜粋）
+# Minimal fail-closed script (excerpt of retry + exit 11 logic from plans-watcher.sh)
 FC_SCRIPT="$(mktemp /tmp/test-fc-XXXXXX.sh)"
 cat > "${FC_SCRIPT}" << 'FCSCRIPT'
 #!/bin/bash
 LOCK_FILE="$1"
-LOCK_TIMEOUT=1  # テスト用に短くする
+LOCK_TIMEOUT=1  # shortened for testing
 _LOCK_ACQUIRED=0
 
 _acquire() {
@@ -289,39 +289,39 @@ exit 0
 FCSCRIPT
 chmod +x "${FC_SCRIPT}"
 
-# lock を保持し続けるプロセス（mkdir 方式で確実に lock）
+# Process that holds the lock (mkdir method for reliable lock)
 FC_LOCK_DIR="${FAIL_CLOSED_LOCK}.dir"
 mkdir -p "${FC_LOCK_DIR}" 2>/dev/null || true
 
-# lock が取れている状態でスクリプトを実行 → exit 11 が返るはず
+# Run script while lock is held → should return exit 11
 bash "${FC_SCRIPT}" "${FAIL_CLOSED_LOCK}"
 FC_EXIT=$?
 rmdir "${FC_LOCK_DIR}" 2>/dev/null || true
 
 if [ "${FC_EXIT}" -eq 11 ]; then
-    pass_test "fail-closed: lock 競合時に exit 11 が返されました（期待通り）"
+    pass_test "fail-closed: exit 11 returned on lock conflict (as expected)"
 elif [ "${FC_EXIT}" -eq 0 ]; then
-    # flock/lockf が使える環境では lock が共存できる場合があるため warn に留める
-    warn_test "fail-closed: exit 0 でした（flock/lockf 環境では mkdir lock と共存できる場合があります）"
+    # In environments with flock/lockf available, locks may coexist; warn only
+    warn_test "fail-closed: got exit 0 (in flock/lockf environments, mkdir lock may coexist)"
 else
-    fail_test "fail-closed: 期待しない exit code: ${FC_EXIT}（期待値: 11）"
+    fail_test "fail-closed: unexpected exit code: ${FC_EXIT} (expected: 11)"
 fi
 
-# クリーンアップ
+# Cleanup
 rm -f "${LOCK_SCRIPT}" "${LOCK_SCRIPT_NOLOCK}" "${FC_SCRIPT}" 2>/dev/null || true
 
 echo ""
 echo "=========================================="
-echo "テスト結果サマリー"
+echo "Test result summary"
 echo "=========================================="
-echo -e "${GREEN}合格:${NC} ${PASS_COUNT}"
-echo -e "${RED}失敗:${NC} ${FAIL_COUNT}"
+echo -e "${GREEN}Passed:${NC} ${PASS_COUNT}"
+echo -e "${RED}Failed:${NC} ${FAIL_COUNT}"
 echo ""
 
 if [ "${FAIL_COUNT}" -eq 0 ]; then
-    echo -e "${GREEN}✓ 全テスト合格${NC}"
+    echo -e "${GREEN}✓ All tests passed${NC}"
     exit 0
 else
-    echo -e "${RED}✗ ${FAIL_COUNT} 件のテストが失敗しました${NC}"
+    echo -e "${RED}✗ ${FAIL_COUNT} test(s) failed${NC}"
     exit 1
 fi

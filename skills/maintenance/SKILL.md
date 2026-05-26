@@ -2,7 +2,6 @@
 name: maintenance
 description: "File cleanup and archiving. Tidies up bloated Plans.md, session-log.md, old logs, and state files. Trigger: /maintenance, cleanup, archive, organize, split session-log. Do NOT load for: implementation, review, release, new feature development."
 description-en: "File cleanup and archiving. Tidies up bloated Plans.md, session-log.md, old logs, and state files. Trigger: /maintenance, cleanup, archive, organize, split session-log. Do NOT load for: implementation, review, release, new feature development."
-description-ja: "ファイル整理・アーカイブ・ログ圧縮を担当。散らかった Plans.md / session-log.md / 古いログ / state ファイルを整頓する。`/maintenance`, メンテ, 整理して, アーカイブして, 古いタスク移動, session-log 分割, ログ掃除 で起動。実装・レビュー・リリース・新機能開発には使わない。"
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash"]
 argument-hint: "[plans|session-log|logs|state|all] [--dry-run]"
 user-invocable: true

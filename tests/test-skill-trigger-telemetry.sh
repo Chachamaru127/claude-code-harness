@@ -2,12 +2,12 @@
 # test-skill-trigger-telemetry.sh
 # Phase 62.2.3: skill_activated.invocation_trigger telemetry test
 #
-# 検証内容:
-#   (1) 3 trigger 種別 (human / model / skill-chain) を区別して記録
-#   (2) opt-out (HARNESS_SKILL_TELEMETRY_DISABLE=1) で書き込まれない
-#   (3) skill_telemetry_exclude で個別 skill が除外される
-#   (4) ledger は append-only (deletion / overwrite なし)
-#   (5) session_id が 12 文字 prefix に truncate される (privacy)
+# Validation points:
+#   (1) 3 trigger types (human / model / skill-chain) are recorded distinctly
+#   (2) opt-out (HARNESS_SKILL_TELEMETRY_DISABLE=1) prevents writes
+#   (3) skill_telemetry_exclude excludes individual skills
+#   (4) ledger is append-only (no deletion / overwrite)
+#   (5) session_id is truncated to a 12-character prefix (privacy)
 
 set -euo pipefail
 
@@ -26,7 +26,7 @@ trap 'rm -rf "${TEST_PROJECT}"' EXIT
 mkdir -p "${TEST_PROJECT}/.claude/state"
 LEDGER="${TEST_PROJECT}/.claude/state/skill-trigger-stats.jsonl"
 
-# (1) 3 trigger を順に投入
+# (1) Submit 3 triggers in sequence
 for trigger in human model skill-chain; do
   INPUT="$(jq -nc --arg t "${trigger}" \
     '{skill_name: "harness-work", invocation_trigger: $t, session_id: "session-abcdefghijkl-rest", duration_ms: 100}')"
@@ -52,7 +52,7 @@ for trigger in human model skill-chain; do
   fi
 done
 
-# (2) opt-out で書き込まれない
+# (2) opt-out prevents writes
 INPUT='{"skill_name":"harness-work","invocation_trigger":"human","session_id":"session-x"}'
 printf '%s' "${INPUT}" | env CLAUDE_PROJECT_DIR="${TEST_PROJECT}" HARNESS_SKILL_TELEMETRY_DISABLE=1 "${HANDLER}"
 NEW_LINE_COUNT="$(wc -l < "${LEDGER}" | tr -d ' ')"
@@ -61,7 +61,7 @@ if [ "${NEW_LINE_COUNT}" -ne 3 ]; then
   exit 1
 fi
 
-# (3) skill_telemetry_exclude で個別除外
+# (3) skill_telemetry_exclude excludes individual skills
 cat > "${TEST_PROJECT}/.claude/settings.local.json" <<'EOF'
 {
   "harness": {
@@ -77,7 +77,7 @@ if [ "${EXCL_LINE_COUNT}" -ne 3 ]; then
   exit 1
 fi
 
-# Excluded を解除して書き込み確認
+# Clear exclusion and verify write
 INPUT='{"skill_name":"harness-review","invocation_trigger":"model","session_id":"session-z"}'
 printf '%s' "${INPUT}" | env CLAUDE_PROJECT_DIR="${TEST_PROJECT}" "${HANDLER}"
 NEW_LINE_COUNT="$(wc -l < "${LEDGER}" | tr -d ' ')"
@@ -86,7 +86,7 @@ if [ "${NEW_LINE_COUNT}" -ne 4 ]; then
   exit 1
 fi
 
-# (4) append-only: 既存 record が変わらないこと
+# (4) append-only: existing records must not change
 EXISTING_FIRST_LINE="$(head -n 1 "${LEDGER}")"
 INPUT='{"skill_name":"harness-plan","invocation_trigger":"human","session_id":"session-q"}'
 printf '%s' "${INPUT}" | env CLAUDE_PROJECT_DIR="${TEST_PROJECT}" "${HANDLER}"
@@ -98,11 +98,11 @@ if [ "${EXISTING_FIRST_LINE}" != "${NEW_FIRST_LINE}" ]; then
   exit 1
 fi
 
-# (5) session_id は 12 文字 prefix に truncate (privacy)
+# (5) session_id is truncated to 12-character prefix (privacy)
 TRUNCATED="$(jq -r '.session_id' < <(head -n 1 "${LEDGER}"))"
 if [ "${#TRUNCATED}" -ne 12 ]; then
   echo "FAIL (5): session_id should be 12 chars, got ${#TRUNCATED} (${TRUNCATED})"
   exit 1
 fi
 
-echo "PASS: test-skill-trigger-telemetry.sh (Phase 62.2.3) — 5 観点全 PASS"
+echo "PASS: test-skill-trigger-telemetry.sh (Phase 62.2.3) — all 5 checks passed"

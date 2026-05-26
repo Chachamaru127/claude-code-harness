@@ -1,30 +1,30 @@
 #!/bin/bash
 # test-update-notification.sh
-# 既存ユーザー向けアップデート通知機能の検証テスト
+# Validation tests for the update notification feature for existing users
 #
-# テスト対象:
-# - session-init.sh の新規ルール検出
-# - session-init.sh の古いフック設定検出
-# - template-tracker.sh の needsInstall 報告
-# - harness-setup の update 統合後ガイダンス
+# Test targets:
+# - session-init.sh new-rule detection
+# - session-init.sh stale hook configuration detection
+# - template-tracker.sh needsInstall reporting
+# - harness-setup update integration guidance
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# カウンター
+# Counters
 PASSED=0
 FAILED=0
 TOTAL=0
 
-# カラー出力
+# Color output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
-# テスト関数
+# Test functions
 assert_file_contains() {
   local file="$1"
   local pattern="$2"
@@ -73,119 +73,119 @@ assert_script_runs() {
 }
 
 echo "=================================================="
-echo "既存ユーザー向けアップデート通知機能の検証"
+echo "Update notification feature validation for existing users"
 echo "=================================================="
 echo ""
 
 # ============================================
-# session-init.sh の検証
+# session-init.sh validation
 # ============================================
 echo "## session-init.sh"
 echo ""
 
 assert_script_runs \
   "scripts/session-init.sh" \
-  "session-init.sh の構文が正しい"
+  "session-init.sh has valid syntax"
 
 assert_file_contains \
   "scripts/session-init.sh" \
   "QUALITY_RULES.*test-quality.md.*implementation-quality.md" \
-  "品質保護ルールのチェックロジックがある"
+  "Quality protection rules check logic is present"
 
 assert_file_contains \
   "scripts/session-init.sh" \
   "MISSING_RULES_INFO" \
-  "未導入ルールの通知変数がある"
+  "Missing-rules notification variable is present"
 
 assert_file_contains \
   "scripts/session-init.sh" \
   "OLD_HOOKS_INFO" \
-  "古いフック設定の検出変数がある"
+  "Stale hook configuration detection variable is present"
 
 assert_file_contains \
   "scripts/session-init.sh" \
   "jq.*\.hooks" \
-  "hooks セクションの検出ロジックがある"
+  "hooks section detection logic is present"
 
 assert_file_contains \
   "scripts/session-init.sh" \
   "INSTALLS_COUNT" \
-  "新規インストール件数の処理がある"
+  "New install count processing is present"
 
 echo ""
 
 # ============================================
-# template-tracker.sh の検証
+# template-tracker.sh validation
 # ============================================
 echo "## template-tracker.sh"
 echo ""
 
 assert_script_runs \
   "scripts/template-tracker.sh" \
-  "template-tracker.sh の構文が正しい"
+  "template-tracker.sh has valid syntax"
 
 assert_file_contains \
   "scripts/template-tracker.sh" \
   "installs_details" \
-  "インストール詳細の追跡変数がある"
+  "Install details tracking variable is present"
 
 assert_file_contains \
   "scripts/template-tracker.sh" \
   "installsCount" \
-  "installsCount の出力がある"
+  "installsCount output is present"
 
 assert_file_contains \
   "scripts/template-tracker.sh" \
   "installs_count" \
-  "インストール件数のカウントがある"
+  "Install count variable is present"
 
 echo ""
 
 # ============================================
-# harness-setup / update guidance の検証
+# harness-setup / update guidance validation
 # ============================================
 echo "## harness-setup update guidance"
 echo ""
 
-# harness-update は現在 harness-setup に統合されている。
+# harness-update is currently integrated into harness-setup.
 assert_file_contains \
   "skills/harness-setup/SKILL.md" \
   "harness-update.*Harness アップデート|Harness アップデート.*harness-update" \
-  "harness-update の役割が harness-setup に統合されている"
+  "harness-update role is integrated into harness-setup"
 
 assert_file_contains \
   "skills/harness-setup/SKILL.md" \
   "harness sync|harness doctor|sync.*doctor" \
-  "harness-setup に同期と検証の手順がある"
+  "harness-setup contains sync and verification steps"
 
 assert_file_contains \
   "docs/update-summary-2025-12-23-24.md" \
   "古いフック設定.*hooks|カスタムフック保護" \
-  "アップデート履歴にフック検出と保護の説明がある"
+  "Update history describes hook detection and protection"
 
 assert_file_contains \
   "docs/update-summary-2025-12-23-24.md" \
   "新しいスキルを自動検出|削除されたスキルも検出" \
-  "アップデート履歴にスキル差分検出の説明がある"
+  "Update history describes skill diff detection"
 
 echo ""
 
 # ============================================
-# 結果サマリー
+# Results summary
 # ============================================
 echo "=================================================="
-echo "テスト結果"
+echo "Test results"
 echo "=================================================="
 echo ""
-echo "合計: $TOTAL"
-echo -e "成功: ${GREEN}$PASSED${NC}"
-echo -e "失敗: ${RED}$FAILED${NC}"
+echo "Total: $TOTAL"
+echo -e "Passed: ${GREEN}$PASSED${NC}"
+echo -e "Failed: ${RED}$FAILED${NC}"
 echo ""
 
 if [ $FAILED -eq 0 ]; then
-  echo -e "${GREEN}✓ すべてのテストが成功しました${NC}"
+  echo -e "${GREEN}✓ All tests passed${NC}"
   exit 0
 else
-  echo -e "${RED}✗ $FAILED 件のテストが失敗しました${NC}"
+  echo -e "${RED}✗ $FAILED test(s) failed${NC}"
   exit 1
 fi

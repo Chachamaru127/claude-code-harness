@@ -1,8 +1,6 @@
 ---
 name: session-init
 description: "Internal sub-skill for session startup checks, Plans.md status, git state, and harness-mem resume pack. Invoked by session/startup workflows only. Do NOT load for: implementation, reviews, or mid-session tasks."
-description-en: "Internal sub-skill for session startup checks, Plans.md status, git state, and harness-mem resume pack. Invoked by session/startup workflows only. Do NOT load for: implementation, reviews, or mid-session tasks."
-description-ja: "セッション開始時の環境確認、Plans.md 状況、git状態、harness-mem resume pack を扱う内部サブスキル。session/startup 系からのみ呼ぶ。実装、レビュー、途中作業には使わない。"
 allowed-tools: ["Read", "Write", "Bash", "mcp__harness__harness_mem_resume_pack", "mcp__harness__harness_mem_sessions_list", "mcp__harness__harness_mem_health"]
 user-invocable: false
 disable-model-invocation: true
@@ -10,96 +8,94 @@ disable-model-invocation: true
 
 # Session Init Skill
 
-セッション開始時の環境確認と現在のタスク状況把握を行うスキル。
+Checks the environment at session startup and establishes the current task status.
 
 ---
 
-## 呼び出し条件
+## Invocation Conditions
 
-このスキルは `session` / SessionStart 系フローから内部的に呼び出します。
-ユーザー向けの入口は `/session` または通常のセッション開始フローです。
+This skill is invoked internally from `session` / SessionStart workflows.
+The user-facing entry point is `/session` or the standard session start flow.
 
-旧トリガーフレーズ:
+Legacy trigger phrases:
 
-- 「セッション開始」
-- 「作業開始」
-- 「今日の作業を始める」
-- 「状況を確認して」
-- 「何をすればいい？」
 - "start session"
+- "begin work"
+- "start today's work"
+- "check the status"
 - "what should I work on?"
 
 ---
 
-## 概要
+## Overview
 
-Session Init スキルは、Claude Code セッション開始時に自動的に以下を確認します：
+The Session Init skill automatically checks the following at the start of a Claude Code session:
 
-1. **Git 状態**: 現在のブランチ、未コミットの変更
-2. **Plans.md**: 進行中タスク、依頼されたタスク
-3. **AGENTS.md**: 役割分担、禁止事項の確認
-4. **前回セッション**: 引き継ぎ事項の確認
-5. **最新 snapshot**: 進捗スナップショットの要約と前回差分
+1. **Git state**: Current branch, uncommitted changes
+2. **Plans.md**: In-progress tasks, requested tasks
+3. **AGENTS.md**: Role assignments, prohibited actions
+4. **Previous session**: Handoff items to carry over
+5. **Latest snapshot**: Progress snapshot summary and diff from last session
 
 ---
 
-## 実行手順
+## Execution Steps
 
-### Step 0: ファイル状態チェック（自動整理）
+### Step 0: File State Check (auto-triage)
 
-セッション開始前にファイルサイズをチェック：
+Check file sizes before starting the session:
 
 ```bash
-# Plans.md の行数チェック
+# Check Plans.md line count
 if [ -f "Plans.md" ]; then
   lines=$(wc -l < Plans.md)
   if [ "$lines" -gt 200 ]; then
-    echo "⚠️ Plans.md が ${lines} 行です。「整理して」で整理を推奨"
+    echo "⚠️ Plans.md has ${lines} lines. Recommend running 'clean up' to tidy it."
   fi
 fi
 
-# session-log.md の行数チェック
+# Check session-log.md line count
 if [ -f ".claude/memory/session-log.md" ]; then
   lines=$(wc -l < .claude/memory/session-log.md)
   if [ "$lines" -gt 500 ]; then
-    echo "⚠️ session-log.md が ${lines} 行です。「セッションログを整理して」で整理を推奨"
+    echo "⚠️ session-log.md has ${lines} lines. Recommend running 'clean up session log'."
   fi
 fi
 ```
 
-整理が必要な場合は提案を表示（作業には影響しない）。
+If cleanup is needed, display a suggestion (does not affect the current work).
 
-### Step 0.5: 旧ローカルメモリ互換の扱い（任意）
+### Step 0.5: Legacy Local Memory Compatibility (optional)
 
-現在の標準は Step 0.7 の Unified Harness Memory です。
-旧ローカルメモリ互換の確認は原則不要で、特別な移行確認が必要な場合だけ個別に参照します。
+The current standard is Unified Harness Memory from Step 0.7.
+Checking legacy local memory compatibility is generally unnecessary; only consult it when a specific migration check is required.
 
-> **注**: 通常運用ではこのステップをスキップし、共通DB の Resume Pack を唯一の再開導線として扱います。
+> **Note**: In normal operation, skip this step and treat the shared DB Resume Pack as the sole resume path.
 
-### Step 0.7: Unified Harness Memory Resume Pack（必須）
+### Step 0.7: Unified Harness Memory Resume Pack (required)
 
-Codex / Claude / OpenCode 共通DB（`~/.harness-mem/harness-mem.db`）から再開文脈を取得する。
+Retrieve the resume context from the shared DB for Codex / Claude / OpenCode (`~/.harness-mem/harness-mem.db`).
 
-必須呼び出し:
+Required call:
 
 ```text
 harness_mem_resume_pack(project, session_id?, limit=5, include_private=false)
 ```
 
-運用ルール:
-- `project` は必ず現在プロジェクト名を指定
-- `session_id` は `$CLAUDE_SESSION_ID` → `.claude/state/session.json` の `.session_id` の順で取得する
-- `harness_mem_sessions_list(project, limit=1)` の先頭利用は read-only（resume確認）に限定し、`record_checkpoint` / `finalize_session` での書き込みには使わない
-- 取得結果はセッション開始時コンテキストに注入
-- 取得失敗時は `harness_mem_health()` で daemon 状態を確認し、失敗を明示して続行
-- 復旧は `scripts/harness-memd doctor` → `scripts/harness-memd cleanup-stale` → `scripts/harness-memd start` の順で行う
+Operating rules:
+- Always specify the current project name for `project`
+- Obtain `session_id` in order: `$CLAUDE_SESSION_ID` → `.session_id` in `.claude/state/session.json`
+- Using the first result of `harness_mem_sessions_list(project, limit=1)` is limited to read-only (resume confirmation); do not use it for writes in `record_checkpoint` / `finalize_session`
+- Inject retrieved results into the session startup context
+- On retrieval failure, check daemon status with `harness_mem_health()`, log the failure explicitly, and continue
+- Recovery order: `scripts/harness-memd doctor` → `scripts/harness-memd cleanup-stale` → `scripts/harness-memd start`
 
-### Step 1: 環境確認
+### Step 1: Environment Check
 
-以下を並列で実行：
+Run the following in parallel:
 
 ```bash
-# Git状態
+# Git state
 git status -sb
 git log --oneline -3
 ```
@@ -110,73 +106,73 @@ cat Plans.md 2>/dev/null || echo "Plans.md not found"
 ```
 
 ```bash
-# AGENTS.md の要点
+# Key points from AGENTS.md
 head -50 AGENTS.md 2>/dev/null || echo "AGENTS.md not found"
 ```
 
-### Step 2: タスク状況の把握
+### Step 2: Determine Task Status
 
-Plans.md から以下を抽出：
+Extract the following from Plans.md:
 
-- `cc:WIP` - 前回から継続中のタスク
-- `pm:依頼中` - PM から新規依頼されたタスク（互換: cursor:依頼中）
-- `cc:TODO` - 未着手だが割り当て済みのタスク
+- `cc:WIP` - Tasks continuing from the previous session
+- `pm:依頼中` - Tasks newly requested by the PM (compatible: cursor:依頼中)
+- `cc:TODO` - Tasks assigned but not yet started
 
-### Step 3: 状況レポートの出力
+### Step 3: Output Status Report
 
 ```markdown
-## 🚀 セッション開始
+## 🚀 Session Start
 
-**日時**: {{YYYY-MM-DD HH:MM}}
-**ブランチ**: {{branch}}
-**セッションID**: ${CLAUDE_SESSION_ID}
-
----
-
-### 📋 今日のタスク
-
-**優先タスク**:
-- {{pm:依頼中（互換: cursor:依頼中） または cc:WIP のタスク}}
-
-**その他のタスク**:
-- {{cc:TODO のタスク一覧}}
+**Date/Time**: {{YYYY-MM-DD HH:MM}}
+**Branch**: {{branch}}
+**Session ID**: ${CLAUDE_SESSION_ID}
 
 ---
 
-### ⚠️ 注意事項
+### 📋 Today's Tasks
 
-{{AGENTS.md からの重要な制約・禁止事項}}
+**Priority Tasks**:
+- {{Tasks marked pm:依頼中 (compatible: cursor:依頼中) or cc:WIP}}
+
+**Other Tasks**:
+- {{List of cc:TODO tasks}}
 
 ---
 
-**作業を開始しますか？**
+### ⚠️ Notes
+
+{{Important constraints and prohibited actions from AGENTS.md}}
+
+---
+
+**Ready to begin?**
 ```
 
 ---
 
-## 出力フォーマット
+## Output Format
 
-セッション開始時は、以下の情報を簡潔に提示：
+At session start, present the following information concisely:
 
-| 項目 | 内容 |
-|------|------|
-| 現在のブランチ | `staging` など |
-| 優先タスク | 最も重要な 1-2 件 |
-| 注意事項 | 禁止事項の要約 |
-| 次のアクション | 具体的な提案 |
-
----
-
-## 関連コマンド
-
-- `/work` - タスク実行（並列実行対応）
-- `/sync-status` - Plans.md の進捗サマリー
-- `/maintenance` - ファイルの自動整理
+| Item | Content |
+|------|---------|
+| Current branch | e.g. `staging` |
+| Priority tasks | The 1–2 most important tasks |
+| Notes | Summary of prohibited actions |
+| Next action | A concrete suggestion |
 
 ---
 
-## 注意事項
+## Related Commands
 
-- **AGENTS.md を必ず確認**: 役割分担を把握してから作業開始
-- **Plans.md が無い場合**: `/harness-init` を案内
-- **前回の作業が中断している場合**: 継続するか確認
+- `/work` - Execute tasks (parallel execution supported)
+- `/sync-status` - Progress summary of Plans.md
+- `/maintenance` - Automatic file cleanup
+
+---
+
+## Notes
+
+- **Always check AGENTS.md**: Understand role assignments before starting work
+- **If Plans.md is missing**: Direct the user to run `/harness-init`
+- **If previous work was interrupted**: Confirm whether to continue

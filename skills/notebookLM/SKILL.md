@@ -2,7 +2,6 @@
 name: notebookLM
 description: "Generate NotebookLM YAML and slides. Document craftsman shows skill. Use when user mentions NotebookLM, YAML, slides, or presentations. Do NOT load for: implementation work, code fixes, reviews, or deployments."
 description-en: "Generate NotebookLM YAML and slides. Document craftsman shows skill. Use when user mentions NotebookLM, YAML, slides, or presentations. Do NOT load for: implementation work, code fixes, reviews, or deployments."
-description-ja: "NotebookLM用YAMLやスライドを生成。ドキュメント職人の腕の見せ所。Use when user mentions NotebookLM, YAML, slides, or presentations. Do NOT load for: implementation work, code fixes, reviews, or deployments."
 allowed-tools: ["Read", "Write", "Edit"]
 disable-model-invocation: true
 user-invocable: false
@@ -11,85 +10,85 @@ argument-hint: "[yaml|slides]"
 
 # NotebookLM Skill
 
-ドキュメント生成を担当するスキル群です。
+A set of skills responsible for document generation.
 
-## 機能詳細
+## Feature Details
 
-| 機能 | 詳細 |
+| Feature | Details |
 |------|------|
 | **NotebookLM YAML** | See [references/notebooklm-yaml.md](${CLAUDE_SKILL_DIR}/references/notebooklm-yaml.md) |
-| **スライド YAML** | See [references/notebooklm-slides.md](${CLAUDE_SKILL_DIR}/references/notebooklm-slides.md) |
+| **Slide YAML** | See [references/notebooklm-slides.md](${CLAUDE_SKILL_DIR}/references/notebooklm-slides.md) |
 
-## 実行手順
+## Execution Steps
 
-1. ユーザーのリクエストを分類
-2. 上記の「機能詳細」から適切な参照ファイルを読む
-3. その内容に従って生成
+1. Classify the user's request
+2. Read the appropriate reference file from "Feature Details" above
+3. Generate according to its contents
 
 ---
 
-## 🔧 PDF ページ範囲読み取り（Claude Code 2.1.49+）
+## PDF Page Range Reading (Claude Code 2.1.49+)
 
-大型 PDF を効率的に扱うための機能です。
+A feature for efficiently handling large PDFs.
 
-### ページ範囲指定で読み取り
+### Reading with page range specification
 
 ```javascript
-// ページ範囲指定で読み取り
+// Read with page range
 Read({ file_path: "docs/spec.pdf", pages: "1-10" })
 
-// 目次だけ確認
+// Check table of contents only
 Read({ file_path: "docs/manual.pdf", pages: "1-3" })
 
-// 特定のセクションのみ
+// Specific section only
 Read({ file_path: "docs/api-reference.pdf", pages: "25-45" })
 ```
 
-### ユースケース別の推奨アプローチ
+### Recommended approach by use case
 
-| ケース | 推奨読み取り方法 | 理由 |
+| Case | Recommended reading method | Reason |
 |--------|----------------|------|
-| **100ページ超のPDF** | 目次(1-3) → 関連章のみ | トークン消費を最小化 |
-| **仕様書レビュー** | セクション単位で範囲指定 | 必要な部分のみ精読 |
-| **APIドキュメント** | エンドポイント一覧(目次)から開始 | 全体構造を把握してから詳細へ |
-| **学術論文** | Abstract + 結論 → 本文 | 要点を先に把握 |
-| **技術マニュアル** | 目次 + トラブルシューティング章 | 実用的な部分を優先 |
+| **PDFs over 100 pages** | Table of contents (1-3) → relevant chapters only | Minimize token consumption |
+| **Specification review** | Specify range per section | Read only the necessary parts in detail |
+| **API documentation** | Start from endpoint list (table of contents) | Understand overall structure before diving into details |
+| **Academic papers** | Abstract + conclusion → body | Grasp key points first |
+| **Technical manuals** | Table of contents + troubleshooting chapter | Prioritize practical sections |
 
-### NotebookLM YAML 生成時の活用例
+### Example usage when generating NotebookLM YAML
 
 ```markdown
-大型PDF（300ページの技術仕様書）からYAMLを生成する場合：
+When generating YAML from a large PDF (300-page technical specification):
 
-1. **目次を読む**（1-5ページ）
+1. **Read the table of contents** (pages 1-5)
    Read({ file_path: "spec.pdf", pages: "1-5" })
-   → 章立てを把握
+   → Understand the chapter structure
 
-2. **各章の冒頭を読む**（各章の最初の2ページ）
-   Read({ file_path: "spec.pdf", pages: "10-11" })  // 第1章
-   Read({ file_path: "spec.pdf", pages: "45-46" })  // 第2章
-   → 各章の概要を把握
+2. **Read the opening of each chapter** (first 2 pages of each chapter)
+   Read({ file_path: "spec.pdf", pages: "10-11" })  // Chapter 1
+   Read({ file_path: "spec.pdf", pages: "45-46" })  // Chapter 2
+   → Grasp the overview of each chapter
 
-3. **重要セクションを精読**
-   Read({ file_path: "spec.pdf", pages: "78-95" })  // APIリファレンス
-   → 詳細な内容を抽出
+3. **Read important sections in detail**
+   Read({ file_path: "spec.pdf", pages: "78-95" })  // API reference
+   → Extract detailed content
 
-この方法で、300ページすべてを読むことなく効率的にYAMLを生成できます。
+With this approach, you can efficiently generate YAML without reading all 300 pages.
 ```
 
-### ベストプラクティス
+### Best practices
 
-| 原則 | 説明 |
+| Principle | Description |
 |------|------|
-| **段階的読み込み** | 目次 → 概要 → 詳細の順に読む |
-| **関連ページのみ** | タスクに必要なページだけ指定 |
-| **トークン節約** | 全ページ読み込みは最終手段 |
-| **構造理解優先** | 目次で全体像を把握してから詳細へ |
+| **Progressive loading** | Read in order: table of contents → overview → details |
+| **Relevant pages only** | Specify only the pages needed for the task |
+| **Token savings** | Reading all pages is a last resort |
+| **Structure-first understanding** | Grasp the overall picture from the table of contents before going into details |
 
-### 従来の方法との比較
+### Comparison with the traditional approach
 
-| 方法 | トークン消費 | 処理時間 | 精度 |
+| Method | Token consumption | Processing time | Accuracy |
 |------|------------|---------|------|
-| **全ページ読み込み**（300ページ） | ~150,000 | 長い | 高 |
-| **ページ範囲指定**（必要な30ページ） | ~15,000 | 短い | 高 |
+| **Read all pages** (300 pages) | ~150,000 | Long | High |
+| **Page range specification** (30 necessary pages) | ~15,000 | Short | High |
 
-→ **90%のトークン削減と処理時間短縮が可能**
+→ **90% token reduction and faster processing is achievable**

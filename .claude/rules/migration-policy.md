@@ -1,125 +1,123 @@
 # Migration Residue Policy
 
-Harness の **exclusion-based verification（削除済み概念の残骸チェック）** を運用するためのポリシー。
-Phase 40 (v4.1.0) で導入された `deleted-concepts.yaml` + `check-residue.sh` の
-運用ルールを定義する。
+Policy for operating Harness **exclusion-based verification (residue checks for deleted concepts)**.
+Defines the operational rules for `deleted-concepts.yaml` + `check-residue.sh`
+introduced in Phase 40 (v4.1.0).
 
-## なぜこのルールが必要か
+## Why This Rule Is Necessary
 
-v4.0.0 "Hokage" リリース直後、TypeScript から Go への全面移行は「完了」のはずだった。
-ところが、リリース後 2 日間で 13 件もの「旧時代の残骸」が次々と見つかった。
-テストスクリプトの中に消えたはずのファイルパス、ドキュメントに残る旧バージョン名、
-Node.js が必要と書かれた README — これらはいずれも個別のレビューや「X が含まれているか」という
-確認では見つけられないものだった。
+Immediately after the v4.0.0 "Hokage" release, the full migration from TypeScript to Go was supposed to be "complete."
+Yet in the two days following the release, 13 "relics from the old era" were found one after another:
+file paths that should have been deleted still appearing in test scripts, old version names remaining in documentation,
+a README saying Node.js was required — none of these could be found through individual reviews or "does X exist?" style checks.
 
-「大きな移行をした後、本当に古いものが残っていないか」を確かめるには、
-「削除したものが残っていないか」という逆方向の確認（exclusion-based verification）が必要になる。
-このルールを守れば、次回以降の major migration で同じ失敗は再発しない。
+After a major migration, verifying that old things are truly gone requires
+a reverse-direction check: "does the deleted thing still remain?" (exclusion-based verification).
+If this rule is followed, the same mistake will not recur in future major migrations.
 
-## 5 つのルール
+## 5 Rules
 
-### ルール 1: major version migration 時は必ず deleted-concepts.yaml を更新する
+### Rule 1: Always update deleted-concepts.yaml during a major version migration
 
-「X を削除する PR」と「X を deleted-concepts.yaml に追加する PR」は同時に
-出す。遅延は禁止。
+"The PR that deletes X" and "the PR that adds X to deleted-concepts.yaml" must be
+submitted at the same time. Delays are prohibited.
 
-**なぜ**: 削除してから yaml 更新を後回しにすると、その間に別の PR で X への
-参照が混入し、気づかないまま merge されてしまう。yaml 更新を削除 PR に
-同梱することで「削除 = スキャン対象化」を不可分な 1 トランザクションにする。
+**Why**: If the yaml update is deferred after deletion, another PR may introduce
+a reference to X in the interim without being noticed before merge. Bundling the yaml update
+with the deletion PR makes "deletion = adding to scan targets" a single indivisible transaction.
 
-### ルール 2: 更新タイミングは「削除 PR と同時」
+### Rule 2: The update timing is "at the same time as the deletion PR"
 
-ルール 1 の強い形。例: TypeScript guardrail engine を削除する PR を出すなら、
-同じ PR で `deleted_concepts` に `"TypeScript guardrail engine"` を追加する。
+The strong form of Rule 1. For example: if submitting a PR to delete the TypeScript guardrail engine,
+add `"TypeScript guardrail engine"` to `deleted_concepts` in the same PR.
 
-「削除した」と「スキャン対象にした」は必ずセットで完了する。どちらか片方だけでは半分しか終わっていない。
+"I deleted it" and "I made it a scan target" must always be completed together. Either one alone is only half done.
 
-### ルール 3: allowlist は 3 つの原則で運用する
+### Rule 3: The allowlist is operated under 3 principles
 
-deleted-concepts.yaml の `allowlist` フィールドには以下を含めてよい:
+The following may be included in the `allowlist` field of deleted-concepts.yaml:
 
-- **歴史記述**: CHANGELOG.md、`.claude/memory/archive/` は常に allowlist。
-  「過去にこういうものがあった」と記録することは正当な言及であり、残骸ではない。
-- **移行ガイド**: `docs/MIGRATION-*.md` のように旧 → 新の対比を書く文書。
-  比較表の中で旧名称を挙げることは意図的な記述。
-- **個別文脈**: ある特定の文書で旧概念への言及が**意図的に正当**な場合。
-  例: `.claude/rules/v3-architecture.md` は v3 アーキテクチャの歴史記録なので
-  `"Harness v3"` を含んでいて当然。
+- **Historical description**: CHANGELOG.md and `.claude/memory/archive/` are always on the allowlist.
+  Recording "something like this existed in the past" is a legitimate mention, not a relic.
+- **Migration guide**: Documents like `docs/MIGRATION-*.md` that write old → new comparisons.
+  Mentioning old names in a comparison table is intentional writing.
+- **Individual context**: Cases where a mention of an old concept in a specific document is **intentionally legitimate**.
+  Example: `.claude/rules/v3-architecture.md` is a historical record of v3 architecture,
+  so it naturally contains `"Harness v3"`.
 
-allowlist は prefix match で適用される。エントリの**粒度は最小に保つ**こと。
-`CHANGELOG.md` 全体を allowlist に入れるのは正当だが、
-`docs/` ディレクトリ全体を入れるのは過剰であり、scanner を無意味化する。
+The allowlist is applied as a prefix match. **Keep the granularity of entries minimal**.
+Adding all of `CHANGELOG.md` to the allowlist is legitimate, but
+adding the entire `docs/` directory is excessive and renders the scanner meaningless.
 
-### ルール 4: retroactive validation（過去コミットへの遡及検証）を必ず実施する
+### Rule 4: Always perform retroactive validation (scanning past commits)
 
-新しい deleted-concepts.yaml エントリを追加したら、**過去のコミットに遡って
-scanner を走らせ、想定通りに残骸が検出されるか**を確認する:
+After adding a new deleted-concepts.yaml entry, **go back to past commits and
+run the scanner to confirm that residue is detected as expected**:
 
 ```bash
 git checkout <past-commit>
 bash scripts/check-residue.sh
-# → 期待件数検出（0 件以上であること）
+# → Expected number of findings detected (must be 1 or more)
 git checkout -
 ```
 
-これで「yaml が本当に問題を検出できるか」を検証できる。
-検出されない場合、allowlist の書き方が広すぎるか、パターンが誤っている可能性がある。
-偶然パスするような false allowlist を早期発見するのが目的。
+This verifies "whether the yaml can actually detect the problem."
+If nothing is detected, the allowlist may be too broad, or the pattern may be wrong.
+The goal is to catch false allowlists that would accidentally pass early on.
 
-### ルール 5: false positive ゼロ（現 HEAD は常に 0 件）を保つ
+### Rule 5: Maintain zero false positives (current HEAD always produces 0 findings)
 
-現 HEAD で scanner を実行したとき、**検出件数は常に 0** でなければならない。
-検出された場合は以下のいずれかで対処する:
+When the scanner is run against the current HEAD, **the finding count must always be 0**.
+If findings are detected, handle them with one of the following:
 
-1. **真の残骸** なら即修正（ファイルを修正して旧参照を削除）
-2. **歴史記述等で allowlist に追加すべき** なら yaml を更新
-3. **誤分類**（yaml のパターンが意図せず一致している）なら yaml から削除
+1. **True residue** — fix immediately (modify the file to remove the old reference)
+2. **Should be in the allowlist as a historical description, etc.** — update the yaml
+3. **Misclassification** (the yaml pattern accidentally matches) — remove from yaml
 
-CI (validate-plugin.sh のセクション 9) と release preflight (harness-release の Phase 0)
-の両方で自動チェックされているので、**merge 前に 0 件であることが保証される**。
+Both CI (section 9 of validate-plugin.sh) and the release preflight (Phase 0 of harness-release)
+perform automatic checks, so **zero findings before merge is guaranteed**.
 
-## 付録: 今セッション (v4.0.0 → v4.0.1) の 13 件の v3 残骸事例
+## Appendix: The 13 v3 Residue Cases from This Session (v4.0.0 → v4.0.1)
 
-Phase 40 の動機となった事例。**この機能がなぜ生まれたかのストーリー。**
+The cases that motivated Phase 40. **The story of why this feature was born.**
 
-### 発見経緯
+### How They Were Discovered
 
-v4.0.0 "Hokage" リリース (2026-04-09) は TypeScript 実装から Go ネイティブ実装への
-全面移行だった。移行そのものは完遂したが、**テストスクリプト、ドキュメント、SKILL.md の
-あちこちに TypeScript 時代の参照が残骸として残っていた**。
-これらは以下の経路で偶然発見された:
+The v4.0.0 "Hokage" release (2026-04-09) was a complete migration from TypeScript implementation
+to Go native implementation. The migration itself was completed, but **TypeScript-era references
+remained as residue scattered throughout test scripts, documentation, and SKILL.md**.
+These were discovered accidentally through the following paths:
 
-1. テスト実行で失敗 → validate-plugin.sh / check-consistency.sh が落ちる
-2. ユーザーがスラッシュパレットで気づく → SKILL.md frontmatter の "Harness v3"
-3. コードレビューで発見 → agents/*.md の v3 narrative
-4. ドキュメントレビュー → README.md の core/ engine 言及
+1. Test execution failure → validate-plugin.sh / check-consistency.sh fails
+2. User notices in the slash palette → "Harness v3" in SKILL.md frontmatter
+3. Found during code review → v3 narrative in agents/*.md
+4. Found during documentation review → `core/` engine mention in README.md
 
-「偶然見つかった」ことが問題だ。仕組みがなければ次のリリースでも同じことが起きる。
+The problem is that they were "found by accident." Without a system, the same thing will happen in the next release.
 
-### 13 件の分類
+### Classification of the 13 Cases
 
-| カテゴリ | 件数 | 代表例 |
+| Category | Count | Representative example |
 |---------|------|--------|
-| 削除済みパス参照 | 2 | `core/src/guardrails/rules.ts` |
-| 削除済み概念語 | 3 | "TypeScript guardrail engine" |
-| SKILL.md バージョンサフィックス | 2 | `# Harness Work (v3)` |
-| 旧ランタイム要件 | 1 | "Node.js 18+ is installed" |
-| 歴史テーブル | 1 | README ファイルツリーの `core/` |
-| その他（個別書式バグ） | 4 | README 重複行、日本語/英語 drift |
+| Deleted path references | 2 | `core/src/guardrails/rules.ts` |
+| Deleted concept terms | 3 | "TypeScript guardrail engine" |
+| SKILL.md version suffix | 2 | `# Harness Work (v3)` |
+| Legacy runtime requirements | 1 | "Node.js 18+ is installed" |
+| Historical table | 1 | `core/` in README file tree |
+| Other (individual formatting bugs) | 4 | README duplicate lines, language drift |
 
-### 教訓
+### Lessons Learned
 
-この 13 件は全て **inclusion-based verification**（「X が含まれるか」という確認）では
-検出不可能だった。なぜなら「X が残っていない」という確認は、
-あらかじめ「X は削除した」という知識がなければ行えないからだ。
+All 13 cases were undetectable by **inclusion-based verification** ("does X exist?" style checks).
+This is because confirming "X is not remaining" requires prior knowledge that "X was deleted."
 
-**exclusion-based verification**（「削除済みの X が残っていないか」という逆方向の確認）の
-視点が必要。Phase 40 はその視点を Harness の検証層に組み込むために生まれた。
+The perspective of **exclusion-based verification** ("is the deleted X still remaining?") is required.
+Phase 40 was created to build that perspective into the Harness verification layer.
 
-## 関連ファイル
+## Related Files
 
-- `.claude/rules/deleted-concepts.yaml` — 削除済みパス/概念の SSOT カタログ
-- `scripts/check-residue.sh` — scanner 実装（false positive は即 0 に保つ）
-- `go/cmd/harness/doctor.go` — `bin/harness doctor --residue` フラグ
-- `tests/validate-plugin.sh` — Section 9: Migration residue check（CI ゲート）
-- `skills/harness-release/SKILL.md` — Phase 0 preflight step 2（リリースゲート）
+- `.claude/rules/deleted-concepts.yaml` — SSOT catalog of deleted paths/concepts
+- `scripts/check-residue.sh` — Scanner implementation (keep false positives at 0 immediately)
+- `go/cmd/harness/doctor.go` — `bin/harness doctor --residue` flag
+- `tests/validate-plugin.sh` — Section 9: Migration residue check (CI gate)
+- `skills/harness-release/SKILL.md` — Phase 0 preflight step 2 (release gate)

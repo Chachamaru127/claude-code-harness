@@ -1,173 +1,171 @@
 # Cross-Repo Handoff Workflow (claude-code-harness ↔ harness-mem)
 
-claude-code-harness と sibling repo `harness-mem` の間で発生する責任境界の調整・契約変更・実装移管を、再現可能な形で記録する SSOT。
+The SSOT for recording, in a reproducible form, the adjustments to responsibility boundaries, contract changes, and implementation transfers that occur between claude-code-harness and the sibling repo `harness-mem`.
 
-本文書は decisions.md D42 (`claude-code-harness ↔ harness-mem 責任境界 + Cross-repo Handoff Workflow`) の codifiable な policy 部分を抽出したもの。decisions.md は per-developer の local SSOT (gitignore 対象) であるため、共有が必要な policy は本ファイルに置く。
+This document extracts the codifiable policy portion of decisions.md D42 (`claude-code-harness ↔ harness-mem responsibility boundary + Cross-repo Handoff Workflow`). Because decisions.md is a per-developer local SSOT (gitignored), policies that need to be shared are placed in this file.
 
-## なぜこのルールが必要か
+## Why This Rule Is Necessary
 
-claude-code-harness Phase 65 Phase A 完走時のレビューで、ユーザーから「本来 harness-mem 側に実装するべきものを claude-code-harness 側で実装していたら、(i) claude-code-harness から除外し、(ii) harness-mem 側に分かりやすく Issue を上げる」運用期待が示された。
+During the review at the end of Phase 65 Phase A of claude-code-harness, the user expressed the expectation that "if something that should have been implemented on the harness-mem side was implemented on the claude-code-harness side, then (i) remove it from claude-code-harness and (ii) raise a clearly described Issue on the harness-mem side."
 
-実態は (i) は完了済み (Phase 60 の managed companion 化、Phase 63 の dead default 整理) だが、(ii) は GitHub Issue ではなく harness-mem repo の `Plans.md §NNN` という sibling-repo Plans SSOT 方式で運用されていた。GitHub Issue は #70 (Phase 49.1.2 follow-up) の 1 件のみ。
+In practice, (i) was already done (managed companion migration in Phase 60, dead default cleanup in Phase 63), but (ii) was being operated not as a GitHub Issue but via the sibling-repo Plans SSOT method using `Plans.md §NNN` in the harness-mem repo. Only one GitHub Issue existed: #70 (Phase 49.1.2 follow-up).
 
-ユーザー期待 (GitHub Issue) と運用実態 (Plans.md SSOT) の差分は「ポリシー未文書化」が原因。本ルールで正式運用として固定し、再発を防ぐ。
+The gap between user expectation (GitHub Issue) and actual practice (Plans.md SSOT) was caused by "policy not being documented." This rule fixes that as the official process and prevents recurrence.
 
-## 3 層 Redaction の責任境界 (Phase 65 cross-project safety)
+## 3-Layer Redaction Responsibility Boundary (Phase 65 cross-project safety)
 
-| Layer | 内容 | 実装層 | 理由 |
+| Layer | Content | Implementation layer | Reason |
 |---|---|---|---|
-| Layer 1 | privacy filter (`<private>` strip) + project scope (`strict_project: true`) | **harness-mem server 側** | mem の出口で全 client (CC / Codex / opencode) を一律ガード。`include_private=false` default |
-| Layer 2a | 辞書ベース固有名詞 redaction (`client-redaction.yaml`) | **claude-code-harness client 側** | project-local config の解釈は presentation layer の責任。server に schema 解釈を持たせると企業ごと redaction policy が server 設定面に漏れる |
-| Layer 2b | NER (kuromoji 等の Japanese tokenizer) | **claude-code-harness client 側** | server 依存膨張回避: ONNX embedding (multilingual-e5) が既に重く、JP tokenizer 追加は cold start (~5ms) と memory footprint を毀損 |
-| Layer 3 | HTML 生成直前最終 scan | **claude-code-harness client 側** | render-html.sh は client にしかない (rendering pipeline 上にしか置けない) |
+| Layer 1 | privacy filter (`<private>` strip) + project scope (`strict_project: true`) | **harness-mem server side** | Guards all clients (CC / Codex / opencode) uniformly at the mem output. `include_private=false` default |
+| Layer 2a | Dictionary-based proper noun redaction (`client-redaction.yaml`) | **claude-code-harness client side** | Interpreting project-local config is the responsibility of the presentation layer. Pushing schema interpretation to the server would leak per-company redaction policies into server configuration |
+| Layer 2b | NER (Japanese tokenizer such as kuromoji) | **claude-code-harness client side** | Avoid server dependency bloat: ONNX embedding (multilingual-e5) is already heavy; adding a JP tokenizer would hurt cold start (~5ms) and memory footprint |
+| Layer 3 | Final scan immediately before HTML generation | **claude-code-harness client side** | render-html.sh exists only on the client (it can only be placed on the rendering pipeline) |
 
-将来 server 側 PII redaction フラグを希望する場合は `redact_profile` パラメータの opt-in 設計として harness-mem 側 §111 以降で再検討の余地あり。
+If server-side PII redaction flags are desired in the future, there is room to reconsider with an opt-in design via a `redact_profile` parameter, as harness-mem §111 or later.
 
-### Phase 65.3 実装決定事項 (D43)
+### Phase 65.3 Implementation Decisions (D43)
 
-Phase 65.3 着手前の mem 側との coordination で確定した実装制約:
+Implementation constraints confirmed through coordination with the mem side before starting Phase 65.3:
 
-| 制約 | 内容 | 根拠 |
+| Constraint | Content | Basis |
 |---|---|---|
-| MCP cross-project は N-call | `mcp__harness__harness_mem_search` の MCP schema は `project: string` 単一値のみ exposed (`projects: [array]` も `strict_project: boolean` も MCP には無い)。cross-project 検索は client が member ごとに 1 回ずつ MCP call し、結果を client 側でマージ・dedupe する | mem 側 mcp-server schema 確認 (`mcp-server/src/tools/memory.ts:297-341`) |
-| client-redaction.yaml は PiiRule 互換 | client 側 dict schema (`client-redaction.v1`) は mem 側既存 `pii-filter.ts` の `PiiRule[]` schema と field 名を互換にする (`rule_id`, `pattern`, `replace_with` 等)。完全共通化 (npm package) は将来 follow-up | 重複実装回避 + Cross-client 一貫性節への upgrade path 確保 |
-| `[REDACTED_*]` 二重置換ガード | server 側 `event-recorder.ts:redactContent` が email / API key / hex を `[REDACTED_*]` に置換済み。client Layer 2 redact は既存 mark を**再置換しない** sentinel ガードを必須 | 二重置換による情報破損防止 |
-| applied_filters 注記方針 | mem 側 `applied_filters` meta は未実装 (内部 audit のみ)。Phase 65.3.6 audit log は Layer 2/3 (client) のみ記録し、Layer 1 (server) は「server default + 内部 audit に依存」と明示注記 | mem 側未実装を確認、今フェーズ blocking ではない |
+| MCP cross-project requires N-calls | The MCP schema of `mcp__harness__harness_mem_search` exposes only a single `project: string` value (neither `projects: [array]` nor `strict_project: boolean` is exposed via MCP). For cross-project search, the client issues one MCP call per member and merges/deduplicates results on the client side | Confirmed from mem-side mcp-server schema (`mcp-server/src/tools/memory.ts:297-341`) |
+| client-redaction.yaml is PiiRule-compatible | The client-side dict schema (`client-redaction.v1`) is made field-name-compatible with the mem-side existing `pii-filter.ts` `PiiRule[]` schema (`rule_id`, `pattern`, `replace_with`, etc.). Full consolidation (npm package) is a future follow-up | Prevents duplicate implementation + preserves upgrade path to Cross-client Consistency section |
+| `[REDACTED_*]` double-replacement guard | The server-side `event-recorder.ts:redactContent` has already replaced email / API key / hex with `[REDACTED_*]`. Client Layer 2 redact **must not re-replace** existing marks — sentinel guard is required | Prevents information corruption from double replacement |
+| applied_filters annotation policy | The mem-side `applied_filters` meta is not implemented (internal audit only). The Phase 65.3.6 audit log records only Layer 2/3 (client), and Layer 1 (server) is explicitly noted as "depends on server default + internal audit" | Confirmed as not implemented on mem side, not a blocker for this phase |
 
-将来 cross-project N-call のレイテンシが実運用で問題化したら **XR-005** (MCP schema に `projects: [array]` + `strict_project: boolean` 追加) として harness-mem §111 で起票する。
+If the latency of cross-project N-calls becomes a problem in actual operation, file it as **XR-005** (add `projects: [array]` + `strict_project: boolean` to MCP schema) under harness-mem §111.
 
-### Phase 65.3 完走報告 (2026-05-09)
+### Phase 65.3 Completion Report (2026-05-09)
 
-Phase C 7 タスクは 1 セッション内で完走、Cross-Contract 変更ゼロで claude-code-harness 内に完結。
+All 7 Phase C tasks completed within a single session, entirely within claude-code-harness with zero Cross-Contract changes.
 
-| Phase | task | commit | 主要成果物 | テスト |
+| Phase | task | commit | Key deliverables | Tests |
 |---|---|---|---|---|
 | C-1 | 65.3.1 | `4a014137` | `.claude/rules/cross-project-groups.yaml` SSOT + `scripts/load-cross-project-groups.sh` (yaml → JSON validator) + `docs/cross-project-groups-schema.md` | 21 PASS |
-| C-2 | 65.3.2 | `5152bed2` | `.claude/rules/client-redaction.yaml` (PiiRule 互換 schema) + `scripts/redact-by-dictionary.sh` Layer 2a + 二重置換ガード | 26 PASS |
+| C-2 | 65.3.2 | `5152bed2` | `.claude/rules/client-redaction.yaml` (PiiRule-compatible schema) + `scripts/redact-by-dictionary.sh` Layer 2a + double-replacement guard | 26 PASS |
 | C-3 | 65.3.3 | `20a4478f` | `scripts/redact-by-ner.sh` Layer 2b (fugashi tokenizer + fail-open) | 22 PASS |
 | C-4 | 65.3.4 | `0ae3f40a` | `scripts/render-html.sh --with-redaction` Layer 3 final scan + `scripts/final-scan-redaction.py` | 16 PASS |
-| C-5 | 65.3.5 | `09377eb9` | `harness-plan-brief` / `harness-accept` SKILL.md に `--cross-project-group <name>` flag opt-in (D43 Option α: MCP N-call) | 18 PASS |
-| C-6 | 65.3.6 | `272a8f33` | `cross-project-audit.v1` audit log + `scripts/cross-project-audit-log.sh` + HTML 監査サマリ表示 | 21 PASS |
-| C-7 | 65.3.7 | `c05d6ef8` | e2e validation (3-member group + 全層通し + envelope + sentinel guard) | 21 PASS |
+| C-5 | 65.3.5 | `09377eb9` | `harness-plan-brief` / `harness-accept` SKILL.md with `--cross-project-group <name>` flag opt-in (D43 Option alpha: MCP N-call) | 18 PASS |
+| C-6 | 65.3.6 | `272a8f33` | `cross-project-audit.v1` audit log + `scripts/cross-project-audit-log.sh` + HTML audit summary display | 21 PASS |
+| C-7 | 65.3.7 | `c05d6ef8` | e2e validation (3-member group + all-layer pass-through + envelope + sentinel guard) | 21 PASS |
 
-**累計**: 7 feat commit + 7 chore commit = 14 commit、145 assertion 全 PASS、`./tests/validate-plugin.sh` は 51 → 58 (+7)、`bash scripts/ci/check-consistency.sh` 全合格。
+**Total**: 7 feat commits + 7 chore commits = 14 commits, 145 assertions all PASS, `./tests/validate-plugin.sh` 51 → 58 (+7), `bash scripts/ci/check-consistency.sh` all passing.
 
-D43 4 判断パッケージは全て初期設計どおり機能し、想定外の制約や手戻りは発生しなかった。
+All 4 D43 decision packages functioned as initially designed; no unexpected constraints or rework occurred.
 
-**未起票 follow-up trigger 一覧** (発動条件達成時のみ harness-mem §111 で起票):
-- XR-005: MCP schema に `projects: [array]` + `strict_project: boolean` 追加 — N-call レイテンシが実運用で問題化したら
-- (旧仮称 §110-S110-006): `applied_filters` meta 実装 — client から server-side filter 適用を可視化する需要が出たら ※実 §110 S110-006 は本 Phase C closure record として消費済 (下記)
-- PiiRule 共通化 npm package: Cross-client 一貫性が真に必要になったら (mem 側 PiiRule schema reference は下記参照)
+**Pending follow-up triggers** (file under harness-mem §111 only when trigger condition is reached):
+- XR-005: Add `projects: [array]` + `strict_project: boolean` to MCP schema — if N-call latency becomes a problem in actual operation
+- (formerly §110-S110-006): Implement `applied_filters` meta — if demand emerges to make server-side filter application visible from the client ※actual §110 S110-006 has been consumed as the Phase C closure record (see below)
+- PiiRule shared npm package: When cross-client consistency is truly needed (see below for mem-side PiiRule schema reference)
 
-### Phase 65.3 closure ack (harness-mem 側受領、2026-05-10)
+### Phase 65.3 Closure Ack (received by harness-mem side, 2026-05-10)
 
-harness-mem セッションが Phase C 完走報告を **§110 内 S110-006** として
-受領 (Cross-Contract 変更ゼロを確認)。新 §111 は不要、§110 配下に統合
-される SSOT 運用方針となった。
+The harness-mem session received the Phase C completion report as **§110 S110-006** (confirmed zero Cross-Contract changes). No new §111 was needed; the SSOT policy became to consolidate it under §110.
 
-| 項目 | mem 側 commit | 内容 |
+| Item | mem-side commit | Content |
 |---|---|---|
-| content commit | `8b34ecb` | S110-006 Phase C closure record + 6 invariant 衝突 review (0 件) + PiiRule reference 一覧 |
-| hash backfill | `ad4ba56` | S110-006 cc:完了 [8b34ecb] |
-| (任意 follow-up) | (S110-007 候補) | envelope contract に「signals に PII を含めない」を documentation 化 — mem 側で受ける範囲、claude-code-harness 側起票不要 |
+| content commit | `8b34ecb` | S110-006 Phase C closure record + 6 invariant conflict review (0 conflicts) + PiiRule reference list |
+| hash backfill | `ad4ba56` | S110-006 cc:completed [8b34ecb] |
+| (optional follow-up) | (S110-007 candidate) | Document "do not include PII in signals" in envelope contract — within mem-side scope, no need to file from claude-code-harness side |
 
-**6 invariant 衝突 review 結果** (mem 側で確認、衝突 0 件):
-- `<private>` strip / Layer 2/3 重複: 衝突なし (server 削除後は client から見えない設計)
-- `[REDACTED_*]` sentinel format: 衝突なし (mem 側は大文字 `EMAIL` / `KEY` / `SECRET` / `HEX`、client 側 regex `[A-Za-z0-9_]+` で両対応)
-- envelope `validateProseContainsSignals`: 実用上衝突なし (S110-007 候補で envelope contract 側を documentation 化、claude-code-harness 側 client-redaction.yaml に防御的注記追加で対応)
-- cross-project N-call rate limit: 衝突なし (mem 側 rate limit 設定なし、N=5-10 想定で問題なし)
-- Cross-project privacy tag merge: 衝突なし (server は project ごと独立 filter、merge は client 責務)
-- audit log structure: 衝突なし (Phase 65.3.6 client 側完結)
+**6 invariant conflict review results** (confirmed on mem side, 0 conflicts):
+- `<private>` strip / Layer 2/3 overlap: no conflict (by design, client cannot see what server deleted)
+- `[REDACTED_*]` sentinel format: no conflict (mem side uses uppercase `EMAIL` / `KEY` / `SECRET` / `HEX`; client-side regex `[A-Za-z0-9_]+` covers both cases)
+- envelope `validateProseContainsSignals`: no practical conflict (S110-007 candidate: document on the envelope contract side, address on the claude-code-harness side by adding defensive notes to client-redaction.yaml)
+- cross-project N-call rate limit: no conflict (mem side has no rate limit configured; N=5-10 expected is not a problem)
+- Cross-project privacy tag merge: no conflict (server uses independent filter per project; merge is client's responsibility)
+- audit log structure: no conflict (Phase 65.3.6 completed entirely on client side)
 
-### PiiRule schema 公式参照 (mem 側 commit `8b34ecb` 共有、npm package 化起票時の参照点)
+### PiiRule Schema Official Reference (shared from mem-side commit `8b34ecb`, reference point for when npm package is filed)
 
-`mcp-server/src/pii/pii-filter.ts` の PiiRule 仕様 (将来 npm package 化を起票する際の参照点として固定):
+PiiRule specification for `mcp-server/src/pii/pii-filter.ts` (fixed as reference point for when npm packaging is filed in the future):
 
-| 種別 | パス | 内容 |
+| Type | Path | Content |
 |---|---|---|
 | TS SoT | `mcp-server/src/pii/pii-filter.ts:15-20` | `interface PiiRule { name: string; pattern: string; replacement: string }` |
 | TS SoT | `mcp-server/src/pii/pii-filter.ts:22-24` | `interface PiiRulesFile { rules?: PiiRule[] }` |
-| 関数 export | `mcp-server/src/pii/pii-filter.ts:33, 50, 69-85, 92` | `applyPiiFilter` / `loadPiiRules` / `DEFAULT_PII_RULES` / `getActivePiiRules` |
-| .d.ts | `mcp-server/dist/pii/pii-filter.d.ts:1-6` | コンパイル版宣言 |
-| 環境変数 | `docs/environment-variables.md:102-111, 302-303` | `HARNESS_MEM_PII_FILTER` / `HARNESS_MEM_PII_RULES_PATH` |
-| 公式仕様 doc | `docs/specs/vps-team-deploy-spec.md:57, 260-285` | TEAM-006 PII フィルタリング (例 JSON は `:270-275` インライン) |
-| Contract test | `mcp-server/tests/unit/pii-filter.test.ts:1-56` | 5 ケース (phone JP / email / LINE_ID / 複合 / 空ルール) |
-| Usage 例 | `mcp-server/src/tools/memory.ts:13, 1067-1068` | `record_checkpoint` 内適用 |
+| Function exports | `mcp-server/src/pii/pii-filter.ts:33, 50, 69-85, 92` | `applyPiiFilter` / `loadPiiRules` / `DEFAULT_PII_RULES` / `getActivePiiRules` |
+| .d.ts | `mcp-server/dist/pii/pii-filter.d.ts:1-6` | Compiled declaration |
+| Environment variables | `docs/environment-variables.md:102-111, 302-303` | `HARNESS_MEM_PII_FILTER` / `HARNESS_MEM_PII_RULES_PATH` |
+| Official spec doc | `docs/specs/vps-team-deploy-spec.md:57, 260-285` | TEAM-006 PII filtering (inline JSON example at `:270-275`) |
+| Contract test | `mcp-server/tests/unit/pii-filter.test.ts:1-56` | 5 cases (JP phone / email / LINE_ID / compound / empty rules) |
+| Usage example | `mcp-server/src/tools/memory.ts:13, 1067-1068` | Applied within `record_checkpoint` |
 
-**重要 caveat**: README / OpenAPI には PiiRule component schema なし、JSON Schema として独立 export なし。
-npm package 化を起票する際は **schema export と公式 doc 整備を同時にスコープ化** すること (mem 側勧告)。
+**Important caveat**: README / OpenAPI has no PiiRule component schema, and there is no independent JSON Schema export.
+When filing for npm packaging, **scope schema export and official doc preparation together** (recommended by mem side).
 
-### Cross-client 一貫性の担保方針
+### Cross-Client Consistency Guarantee Policy
 
-「Codex 等の他 client から呼ばれた時にも redact が効く」要件は **client 側で shared library (npm package or sub-module) を共通化** する方針で対応する。server 側 MCP API 出口で redact しない理由:
+The requirement to "make redaction work even when called from other clients like Codex" is addressed by **sharing a library (npm package or sub-module) on the client side**. Reasons for not redacting at the server-side MCP API exit:
 
-- 将来の team sharing (`harness_mem_share_to_team`) で「正しい原文を返す」契約が破れ、可逆性を失う
-- server を「presentation policy free」に保つことで、client diversity (CC / Codex / opencode / 将来の third-party client) を阻害しない
+- Future team sharing (`harness_mem_share_to_team`) would break the contract of "returning the correct original text," losing reversibility
+- Keeping the server "presentation policy free" avoids hindering client diversity (CC / Codex / opencode / future third-party clients)
 
-代わりに harness-mem は `mcp__harness__harness_mem_search` の response meta に `applied_filters` (例: `privacy_filter` / `project_scope`) を含める拡張を必要に応じて提供する (harness-mem §110 follow-up または §111 で起票)。
+Instead, harness-mem will optionally provide an extension that includes `applied_filters` (e.g., `privacy_filter` / `project_scope`) in the response meta of `mcp__harness__harness_mem_search` as needed (file under harness-mem §110 follow-up or §111).
 
-## Cross-repo Handoff の 2 経路
+## Two Paths for Cross-repo Handoff
 
-claude-code-harness ↔ harness-mem の handoff は以下の 2 経路を使い分ける。
+Use one of the following two paths for handoffs between claude-code-harness and harness-mem.
 
-### 経路 A: harness-mem repo の `Plans.md §NNN` (sibling-repo Plans SSOT)
+### Path A: harness-mem repo's `Plans.md §NNN` (sibling-repo Plans SSOT)
 
-**用途**: Cross-Contract changes (詳細 DoD が必要、複数セッションで参照される handoff)
+**Use case**: Cross-Contract changes (detailed DoD required, handoffs referenced across multiple sessions)
 
-**例**:
-- §106 (companion contract handoff、Phase 60 で起票、cc:完了)
-- §107 (checkpoint cold-start handoff、cc:完了)
-- §110 (Cross-repo Handoff Workflow Codification、本ルールの相対側、harness-mem 側で codification 完了)
+**Examples**:
+- §106 (companion contract handoff, filed in Phase 60, cc:completed)
+- §107 (checkpoint cold-start handoff, cc:completed)
+- §110 (Cross-repo Handoff Workflow Codification, the counterpart to this rule, codification completed on harness-mem side)
 
-**手順**:
-1. claude-code-harness 側で「mem 側に implementation を移すべき」と判断したら、Plans.md に section を追加 (例: §111)
-2. section 内に必要な DoD を箇条書き (受け入れ条件、技術制約、参照すべき claude-code-harness 側 commit hash)
-3. claude-code-harness 側の関連箇所 (skills/scripts/docs) を **同一 PR で除外** (Phase 60 の `1f4d9133`, `5373d50d` パターン)
-4. 必要なら本ルール `.claude/rules/cross-repo-handoff.md` の表に新行を追加
+**Procedure**:
+1. When the claude-code-harness side determines "this should be moved to the mem side for implementation," add a section to Plans.md (e.g., §111)
+2. List the required DoD as bullet points in the section (acceptance criteria, technical constraints, relevant claude-code-harness commit hashes)
+3. **Remove the relevant portions from claude-code-harness (skills/scripts/docs) in the same PR** (following the Phase 60 `1f4d9133`, `5373d50d` pattern)
+4. If needed, add a new row to the table in this rule file `.claude/rules/cross-repo-handoff.md`
 
-### 経路 B: GitHub Issue
+### Path B: GitHub Issue
 
-**用途**: Cross-Runtime long-running follow-ups (複数セッション・複数 PR に跨る検討、外部参加者への露出が必要なもの)
+**Use case**: Cross-Runtime long-running follow-ups (discussions spanning multiple sessions and PRs, or cases requiring exposure to external participants)
 
-**例**: harness-mem #70 (Phase 49.1.2 follow-up)
+**Example**: harness-mem #70 (Phase 49.1.2 follow-up)
 
-**手順**:
-1. `gh issue create --repo Chachamaru127/harness-mem --title "..." --body "..."` で起票
-2. claude-code-harness 側からは関連箇所に `# See harness-mem#NN` のコメントだけ残す (実装はしない)
-3. harness-mem 側で issue が close されたら、claude-code-harness 側で本ルールの参照を更新
+**Procedure**:
+1. File with `gh issue create --repo Chachamaru127/harness-mem --title "..." --body "..."`
+2. From the claude-code-harness side, only leave a comment like `# See harness-mem#NN` at the relevant location (do not implement)
+3. When the issue is closed on the harness-mem side, update the reference in this rule file on the claude-code-harness side
 
-## 判断軸 (どちらを使うか)
+## Decision Axis (which path to use)
 
-| 観点 | A: Plans.md §NNN | B: GitHub Issue |
+| Consideration | A: Plans.md §NNN | B: GitHub Issue |
 |---|---|---|
-| 詳細 DoD が必要か | ✓ 詳細 DoD を書ける | △ Issue body は流動的 |
-| 複数セッションで参照されるか | ✓ Plans.md は永続 SSOT | △ Issue は時間経過で読みにくい |
-| 外部参加者への露出が必要か | △ repo collaborator のみ | ✓ public repo なら外部から見える |
-| 実害がない closeout-only か | ✓ 軽量 | △ Issue を立てると closeout 工数が発生 |
-| long-running cross-runtime か | △ Plans.md は cross-runtime 向き弱い | ✓ Issue が適切 |
+| Detailed DoD needed? | ✓ Can write detailed DoD | △ Issue body tends to be fluid |
+| Referenced across multiple sessions? | ✓ Plans.md is persistent SSOT | △ Issues become harder to read over time |
+| Exposure to external participants needed? | △ Repo collaborators only | ✓ Visible to outsiders on a public repo |
+| Harmless closeout-only? | ✓ Lightweight | △ Filing an issue creates closeout overhead |
+| Long-running cross-runtime? | △ Plans.md is weak for cross-runtime | ✓ Issues are more appropriate |
 
-迷ったら **経路 A (Plans.md §NNN)** を default とする。理由: 過去 4 件の handoff のうち 3 件 (Phase 60, 63, 65) が Plans.md SSOT で完了しており、運用実績がある。GitHub Issue は #70 1 件のみ。
+When in doubt, default to **Path A (Plans.md §NNN)**. Reason: 3 of the past 4 handoffs (Phases 60, 63, 65) were completed using the Plans.md SSOT, with a track record of success. Only one GitHub Issue (#70) exists.
 
-## 過去の境界調整実績 (retroactive 起票しない)
+## Historical Boundary Adjustment Record (no retroactive filing)
 
-以下の過去 handoff は **本ルールで「Plans.md §NNN は GitHub Issue と等価」と確定した**ため、retroactive な GitHub Issue 起票はしない:
+The following past handoffs are **confirmed by this rule as "Plans.md §NNN is equivalent to a GitHub Issue"**, so retroactive GitHub Issue filing will not be done:
 
-- Phase 60 (managed companion 化) — harness-mem Plans.md §106
-- Phase 63 (dead default 整理) — harness-mem Plans.md §107
-- Phase 65.3 (3 層 redaction の owner 確認) — 本ルール表 + harness-mem Plans.md §110
+- Phase 60 (managed companion migration) — harness-mem Plans.md §106
+- Phase 63 (dead default cleanup) — harness-mem Plans.md §107
+- Phase 65.3 (confirming 3-layer redaction owner) — this rule's table + harness-mem Plans.md §110
 
-将来の境界変更時は本ルールの 2 経路から選択する。
+For future boundary changes, select from the two paths in this rule.
 
-## 関連
+## Related
 
-- claude-code-harness `.claude/memory/decisions.md` D42 (本ルールの local SSOT 元、gitignore 対象)
-- claude-code-harness `.claude/rules/migration-policy.md` (Phase 60 削除済み概念の handoff 記録手順)
-- harness-mem `docs/claude-harness-companion-contract.md:84-96` (Cross-repo Handoff Workflow セクション、harness-mem 側相対)
-- harness-mem `.claude/memory/patterns.md:230` (P7 Non-Application Conditions に Plans.md SSOT 例外追記)
-- harness-mem Plans.md §110 (Cross-repo Handoff Workflow Codification、本ルールの相対側)
+- claude-code-harness `.claude/memory/decisions.md` D42 (local SSOT origin of this rule, gitignored)
+- claude-code-harness `.claude/rules/migration-policy.md` (procedure for recording Phase 60 deleted-concept handoffs)
+- harness-mem `docs/claude-harness-companion-contract.md:84-96` (Cross-repo Handoff Workflow section, counterpart on harness-mem side)
+- harness-mem `.claude/memory/patterns.md:230` (P7 Non-Application Conditions with Plans.md SSOT exception added)
+- harness-mem Plans.md §110 (Cross-repo Handoff Workflow Codification, counterpart to this rule)
 
-## 見直し条件
+## Revision Conditions
 
-- **Trigger A**: server 側で PII redaction を opt-in 提供する API (例: `redact_profile` parameter) が harness-mem §111+ で実装された時 — Layer 2 の owner を再検討
-- **Trigger B**: cross-client 一貫性のための shared library が npm 化された時 — Cross-client 一貫性節を更新
-- **Trigger C**: harness-mem `mcp__harness__harness_mem_search` の response meta に `applied_filters` が追加された時 — Layer 1 検証経路を更新
+- **Trigger A**: When an API providing opt-in PII redaction on the server side (e.g., `redact_profile` parameter) is implemented in harness-mem §111+ — reconsider the owner of Layer 2
+- **Trigger B**: When the shared library for cross-client consistency is npm-packaged — update the Cross-client Consistency section
+- **Trigger C**: When `applied_filters` is added to the response meta of harness-mem's `mcp__harness__harness_mem_search` — update the Layer 1 verification path

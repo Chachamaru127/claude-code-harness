@@ -1,86 +1,86 @@
 #!/bin/bash
 # plans-format-migrate.sh
-# Plans.md の旧フォーマットを新フォーマットに移行
+# Migrates Plans.md from legacy format to the new format
 
 set -uo pipefail
 
 PLANS_FILE="${1:-Plans.md}"
 DRY_RUN="${2:-false}"
 
-# カラー出力
+# Color output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-echo -e "${YELLOW}Plans.md フォーマットマイグレーション${NC}"
+echo -e "${YELLOW}Plans.md Format Migration${NC}"
 echo "=========================================="
 echo ""
 
-# Plans.md が存在しない場合
+# Plans.md does not exist
 if [ ! -f "$PLANS_FILE" ]; then
-  echo -e "${RED}エラー: $PLANS_FILE が見つかりません${NC}"
+  echo -e "${RED}Error: $PLANS_FILE not found${NC}"
   exit 1
 fi
 
-# バックアップ作成
+# Create backup
 BACKUP_DIR=".claude-code-harness/backups/$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$BACKUP_DIR"
 cp "$PLANS_FILE" "$BACKUP_DIR/Plans.md.backup"
-echo -e "${GREEN}✓${NC} バックアップ作成: $BACKUP_DIR/Plans.md.backup"
+echo -e "${GREEN}✓${NC} Backup created: $BACKUP_DIR/Plans.md.backup"
 
-# 変更カウント
+# Change count
 CHANGES=0
 
-# 1. cursor:WIP → pm:依頼中（PMレビュー待ち状態として解釈）
-# Note: cursor:WIP は通常「PM(Cursor)がレビュー中」を意味する
-# 新フォーマットでは pm:依頼中（実装完了→PMレビュー待ち）に相当
+# 1. cursor:WIP → pm:依頼中 (interpreted as pending PM review)
+# Note: cursor:WIP typically means "PM(Cursor) is reviewing"
+# In the new format this corresponds to pm:依頼中 (implementation done, pending PM review)
 if grep -qE 'cursor:WIP' "$PLANS_FILE" 2>/dev/null; then
-  echo -e "${YELLOW}→${NC} cursor:WIP を検出"
+  echo -e "${YELLOW}→${NC} cursor:WIP detected"
   if [ "$DRY_RUN" = "false" ]; then
     sed -i '' 's/cursor:WIP/pm:依頼中/g' "$PLANS_FILE" 2>/dev/null || \
     sed -i 's/cursor:WIP/pm:依頼中/g' "$PLANS_FILE"
-    echo -e "  ${GREEN}✓${NC} cursor:WIP → pm:依頼中 に変換"
+    echo -e "  ${GREEN}✓${NC} cursor:WIP → pm:依頼中 converted"
   else
-    echo -e "  [DRY RUN] cursor:WIP → pm:依頼中 に変換予定"
+    echo -e "  [DRY RUN] cursor:WIP → pm:依頼中 will be converted"
   fi
   ((CHANGES++))
 fi
 
 # 2. cursor:完了 → pm:確認済
 if grep -qE 'cursor:完了' "$PLANS_FILE" 2>/dev/null; then
-  echo -e "${YELLOW}→${NC} cursor:完了 を検出"
+  echo -e "${YELLOW}→${NC} cursor:完了 detected"
   if [ "$DRY_RUN" = "false" ]; then
     sed -i '' 's/cursor:完了/pm:確認済/g' "$PLANS_FILE" 2>/dev/null || \
     sed -i 's/cursor:完了/pm:確認済/g' "$PLANS_FILE"
-    echo -e "  ${GREEN}✓${NC} cursor:完了 → pm:確認済 に変換"
+    echo -e "  ${GREEN}✓${NC} cursor:完了 → pm:確認済 converted"
   else
-    echo -e "  [DRY RUN] cursor:完了 → pm:確認済 に変換予定"
+    echo -e "  [DRY RUN] cursor:完了 → pm:確認済 will be converted"
   fi
   ((CHANGES++))
 fi
 
-# 3. マーカー凡例セクションの更新チェック
+# 3. Check for marker legend section
 if ! grep -qE '## マーカー凡例|## Marker Legend' "$PLANS_FILE" 2>/dev/null; then
-  echo -e "${YELLOW}→${NC} マーカー凡例セクションがありません"
-  echo -e "  ${YELLOW}!${NC} 手動で追加することを推奨します"
+  echo -e "${YELLOW}→${NC} Marker legend section is missing"
+  echo -e "  ${YELLOW}!${NC} It is recommended to add it manually"
 fi
 
-# 結果表示
+# Show results
 echo ""
 echo "=========================================="
 if [ $CHANGES -gt 0 ]; then
   if [ "$DRY_RUN" = "false" ]; then
-    echo -e "${GREEN}✓ マイグレーション完了: $CHANGES 件の変更${NC}"
+    echo -e "${GREEN}✓ Migration complete: $CHANGES change(s)${NC}"
     echo ""
-    echo "変更内容を確認してください:"
+    echo "Please review the changes:"
     echo "  git diff $PLANS_FILE"
   else
-    echo -e "${YELLOW}DRY RUN: $CHANGES 件の変更が予定されています${NC}"
+    echo -e "${YELLOW}DRY RUN: $CHANGES change(s) pending${NC}"
     echo ""
-    echo "実際に変換するには:"
+    echo "To apply the conversion:"
     echo "  ./scripts/plans-format-migrate.sh $PLANS_FILE false"
   fi
 else
-  echo -e "${GREEN}✓ 変更は不要です。フォーマットは最新です。${NC}"
+  echo -e "${GREEN}✓ No changes needed. Format is already up to date.${NC}"
 fi

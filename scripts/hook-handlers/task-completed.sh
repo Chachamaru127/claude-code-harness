@@ -1,26 +1,26 @@
 #!/bin/bash
 # task-completed.sh
-# TaskCompleted フックハンドラ
-# タスクが完了した時にタイムラインに記録する
+# TaskCompleted hook handler
+# Records to timeline when a task completes
 #
 # Input: stdin JSON from Claude Code hooks
 # Output: JSON to approve the event
 
 set -euo pipefail
 
-# === 設定 ===
+# === Configuration ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# Load path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-# プロジェクトルートを検出
+# Detect project root
 PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 
-# タイムラインファイル
+# Timeline file
 STATE_DIR="${PROJECT_ROOT}/.claude/state"
 TIMELINE_FILE="${STATE_DIR}/breezing-timeline.jsonl"
 PENDING_FIX_PROPOSALS_FILE="${STATE_DIR}/pending-fix-proposals.jsonl"
@@ -28,14 +28,14 @@ FINALIZE_MARKER_FILE="${STATE_DIR}/harness-mem-finalize-work-completed.json"
 TOTAL_TASKS=0
 COMPLETED_COUNT=0
 
-# === ユーティリティ関数 ===
+# === Utility functions ===
 
 ensure_state_dir() {
   mkdir -p "${STATE_DIR}" 2>/dev/null || true
   chmod 700 "${STATE_DIR}" 2>/dev/null || true
 }
 
-# JSONL ローテーション（500 行超過時に 400 行に切り詰め）
+# JSONL rotation (trim to 400 lines when exceeding 500)
 rotate_jsonl() {
   local file="$1"
   local _lines
@@ -318,19 +318,19 @@ PY
   fi
 }
 
-# === stdin から JSON ペイロードを読み取り ===
+# === Read JSON payload from stdin ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
+# Skip if payload is empty
 if [ -z "${INPUT}" ]; then
   echo '{"decision":"approve","reason":"TaskCompleted: no payload"}'
   exit 0
 fi
 
-# === フィールド抽出 ===
+# === Field extraction ===
 TEAMMATE_NAME=""
 TASK_ID=""
 TASK_SUBJECT=""
@@ -383,7 +383,7 @@ except:
   STOP_REASON="$(echo "${_parsed}" | sed -n '8p')"
 fi
 
-# === タイムライン記録（jq -nc で安全な JSON 構築） ===
+# === Record to timeline (safe JSON construction via jq -nc) ===
 ensure_state_dir
 TS="$(get_timestamp)"
 
@@ -399,7 +399,7 @@ if command -v jq >/dev/null 2>&1; then
     --arg timestamp "${TS}" \
     '{event:$event, teammate:$teammate, task_id:$task_id, subject:$subject, description:$description, agent_id:$agent_id, agent_type:$agent_type, timestamp:$timestamp}')"
 else
-  # フォールバック: python3 で安全にエスケープ
+  # Fallback: safely escape via python3
   log_entry="$(python3 -c "
 import json, sys
 print(json.dumps({
@@ -420,13 +420,13 @@ if [ -n "${log_entry}" ]; then
   rotate_jsonl "${TIMELINE_FILE}"
 fi
 
-# === シグナル生成（動的オーケストレーション） ===
+# === Signal generation (dynamic orchestration) ===
 SIGNALS_FILE="${STATE_DIR}/breezing-signals.jsonl"
 BREEZING_ACTIVE="${STATE_DIR}/breezing-active.json"
 
-# breezing セッションがアクティブな場合のみシグナルを生成
+# Generate signals only when a breezing session is active
 if [ -f "${BREEZING_ACTIVE}" ]; then
-  # セッション ID を取得（シグナルのセッションスコープ用）
+  # Retrieve session ID (for session-scoped signals)
   SESSION_ID=""
   if command -v jq >/dev/null 2>&1; then
     SESSION_ID="$(jq -r '.session_id // ""' "${BREEZING_ACTIVE}" 2>/dev/null)" || SESSION_ID=""
@@ -441,11 +441,11 @@ except:
 " "${BREEZING_ACTIVE}" 2>/dev/null)" || SESSION_ID=""
   fi
 
-  # breezing-active.json から現在バッチのタスク ID リストと合計タスク数を取得
+  # Retrieve task ID list and total task count for the current batch from breezing-active.json
   TOTAL_TASKS=0
   CURRENT_BATCH_IDS=""
   if command -v jq >/dev/null 2>&1; then
-    # Progressive Batching: 現在の in_progress バッチから取得
+    # Progressive Batching: fetch from the current in_progress batch
     _batch_info="$(jq -r '
       (.batching.batches // [] | map(select(.status == "in_progress")) | .[0].task_ids // []) as $ids |
       ($ids | length) as $len |
@@ -456,18 +456,18 @@ except:
       TOTAL_TASKS="$(printf '%s' "${_batch_info}" | cut -f1)"
       CURRENT_BATCH_IDS="$(printf '%s' "${_batch_info}" | cut -f2)"
     fi
-    # batching でない場合は plans_md_mapping のキー数で推定
+    # If not batching, estimate from the number of plans_md_mapping keys
     if [ "${TOTAL_TASKS}" = "0" ] || [ "${TOTAL_TASKS}" = "null" ] || [ -z "${TOTAL_TASKS}" ]; then
       TOTAL_TASKS="$(jq -r '.plans_md_mapping // {} | keys | length' "${BREEZING_ACTIVE}" 2>/dev/null)" || TOTAL_TASKS=0
-      # 非バッチモード: plans_md_mapping のキーをバッチ ID として使用
+      # Non-batch mode: use plans_md_mapping keys as batch IDs
       CURRENT_BATCH_IDS="$(jq -r '.plans_md_mapping // {} | keys | join(",")' "${BREEZING_ACTIVE}" 2>/dev/null)" || CURRENT_BATCH_IDS=""
     fi
     unset _batch_info
   fi
 
-  # 現在バッチのタスクのみで完了数をカウント（前バッチの完了を除外）
-  # 各タスク ID につき存在すれば +1（リテイク等による重複カウントを防止）
-  # grep -F: 固定文字列マッチ（メタ文字リスク回避）
+  # Count completions only for tasks in the current batch (exclude prior-batch completions)
+  # +1 per task ID if present (prevents double-counting from retakes etc.)
+  # grep -F: fixed-string match (avoids metacharacter risk)
   COMPLETED_COUNT=0
   if [ -f "${TIMELINE_FILE}" ] && [ -n "${CURRENT_BATCH_IDS}" ]; then
     IFS=',' read -ra _batch_id_arr <<< "${CURRENT_BATCH_IDS}"
@@ -481,12 +481,12 @@ except:
     done
     unset _batch_id_arr _bid
   elif [ -f "${TIMELINE_FILE}" ]; then
-    # フォールバック: バッチ ID が取得できない場合は全体カウント
+    # Fallback: count all completions when batch IDs are unavailable
     COMPLETED_COUNT="$(grep -Fc '"event":"task_completed"' "${TIMELINE_FILE}" 2>/dev/null)" || COMPLETED_COUNT=0
   fi
 
-  # シグナル dedup ヘルパー: セッションスコープで重複チェック
-  # SESSION_ID があればセッション単位（同一レコード内で AND 判定）、なければグローバルで dedup
+  # Signal dedup helper: check for duplicates within session scope
+  # If SESSION_ID exists, dedup per session (AND match in the same record); otherwise dedup globally
   _signal_exists() {
     local sig_type="$1"
     if [ -n "${SESSION_ID}" ] && [ -f "${SIGNALS_FILE}" ]; then
@@ -497,7 +497,7 @@ except:
     fi
   }
 
-  # シグナル JSON 構築ヘルパー
+  # Signal JSON construction helper
   _build_signal_json() {
     local sig_type="$1" completed="$2" total="$3" ts="$4"
     if command -v jq >/dev/null 2>&1; then
@@ -522,10 +522,10 @@ print(json.dumps({
     fi
   }
 
-  # 50% 完了シグナル: 部分レビュー推奨
-  # -ge で閾値飛び越え（同時完了等）に対応、既発行チェックで重複防止
-  # 切り上げ計算で閾値が早すぎるトリガーを防止
-  # HALF>1 ガード: バッチサイズ 1-2 では部分レビューは不要（全体レビューで十分）
+  # 50% completion signal: partial review recommended
+  # -ge handles threshold overshoot (e.g. simultaneous completions); dedup guard prevents duplicates
+  # Ceiling calculation prevents early triggering
+  # HALF>1 guard: no partial review needed for batch size 1-2 (full review is sufficient)
   if [ "${TOTAL_TASKS}" -gt 0 ] 2>/dev/null; then
     HALF=$(( (TOTAL_TASKS + 1) / 2 ))
     if [ "${COMPLETED_COUNT}" -ge "${HALF}" ] && [ "${HALF}" -gt 1 ] 2>/dev/null; then
@@ -537,8 +537,8 @@ print(json.dumps({
       fi
     fi
 
-    # 60% 完了シグナル: 次バッチ登録推奨（Progressive Batch 用）
-    # 切り上げ: (n * 60 + 99) / 100 で端数切り捨てによる早期トリガーを防止
+    # 60% completion signal: next batch registration recommended (for Progressive Batch)
+    # Ceiling: (n * 60 + 99) / 100 prevents early triggering from truncation
     SIXTY_PCT=$(( (TOTAL_TASKS * 60 + 99) / 100 ))
     if [ "${COMPLETED_COUNT}" -ge "${SIXTY_PCT}" ] && [ "${SIXTY_PCT}" -gt 0 ] 2>/dev/null; then
       if ! _signal_exists "next_batch_recommended"; then
@@ -551,12 +551,12 @@ print(json.dumps({
   fi
 fi
 
-# === テスト結果参照ロジック ===
-# auto-test-runner の結果ファイルを確認し、未実行/失敗時は exit 2 でエスカレーション
+# === Test result check logic ===
+# Check auto-test-runner result file; escalate with exit 2 when not run or failed
 TEST_RESULT_FILE="${STATE_DIR}/test-result.json"
 QUALITY_GATE_FILE="${STATE_DIR}/task-quality-gate.json"
 
-# タスク ID 別の失敗カウントを更新
+# Update failure count per task ID
 # $1: task_id, $2: "increment"|"reset"
 update_failure_count() {
   local tid="$1"
@@ -572,7 +572,7 @@ update_failure_count() {
     if [ "${action}" = "increment" ]; then
       new_count=$(( current_count + 1 ))
     fi
-    # ファイル更新（存在しない場合は新規作成）
+    # Update file (create if absent)
     local existing="{}"
     if [ -f "${QUALITY_GATE_FILE}" ]; then
       existing="$(cat "${QUALITY_GATE_FILE}" 2>/dev/null)" || existing="{}"
@@ -612,12 +612,12 @@ print(count)
 }
 
 check_test_result() {
-  # 結果ファイルが存在しない場合: テスト未実行
+  # Result file absent: tests have not been run
   if [ ! -f "${TEST_RESULT_FILE}" ]; then
-    return 0  # 未実行はスキップ（テストが不要なプロジェクトも存在するため）
+    return 0  # Skip when not run (some projects require no tests)
   fi
 
-  # 結果ファイルの読み取り
+  # Read result file
   local status=""
   if command -v jq >/dev/null 2>&1; then
     status="$(jq -r '.status // ""' "${TEST_RESULT_FILE}" 2>/dev/null)" || status=""
@@ -632,7 +632,7 @@ except:
 " "${TEST_RESULT_FILE}" 2>/dev/null)" || status=""
   fi
 
-  # status=failed の場合は失敗として検知
+  # Detect failure when status=failed
   if [ "${status}" = "failed" ]; then
     return 1
   fi
@@ -641,10 +641,10 @@ except:
 }
 
 if ! check_test_result; then
-  # テスト失敗: 失敗カウントをインクリメント
+  # Test failed: increment failure count
   FAIL_COUNT="$(update_failure_count "${TASK_ID}" "increment")"
 
-  # タイムラインにも記録
+  # Also record to timeline
   FAIL_ENTRY=""
   if command -v jq >/dev/null 2>&1; then
     FAIL_ENTRY="$(jq -nc \
@@ -660,7 +660,7 @@ if ! check_test_result; then
     echo "${FAIL_ENTRY}" >> "${TIMELINE_FILE}" 2>/dev/null || true
   fi
 
-  # 3回連続失敗でエスカレーション（D21 自動化: exit 0 + stderr 出力）
+  # Escalate on 3 consecutive failures (D21 automation: exit 0 + stderr output)
   ESCALATION_THRESHOLD=3
   if [ "${FAIL_COUNT}" -ge "${ESCALATION_THRESHOLD}" ] 2>/dev/null; then
     # テスト結果から原因分類・推奨アクション・試行履歴を収集
@@ -691,83 +691,83 @@ except Exception as e:
       fi
     fi
 
-    # 原因分類（テスト出力のキーワードから推定）
+    # Failure categorization (inferred from keywords in test output)
     if echo "${_last_output}" | grep -qi "syntax\|SyntaxError\|parse error\|unexpected token"; then
       _failure_category="syntax_error"
-      _recommended_action="構文エラーを修正してください。コードの文法を確認してください。"
+      _recommended_action="Fix the syntax error. Check your code for grammar issues."
     elif echo "${_last_output}" | grep -qi "cannot find module\|module not found\|import.*error\|ModuleNotFoundError"; then
       _failure_category="import_error"
-      _recommended_action="モジュール/インポートエラーを修正してください。依存関係を確認してください（npm install / pip install）。"
+      _recommended_action="Fix the module/import error. Check dependencies (npm install / pip install)."
     elif echo "${_last_output}" | grep -qi "type.*error\|TypeError\|is not assignable\|Property.*does not exist"; then
       _failure_category="type_error"
-      _recommended_action="型エラーを修正してください。型定義と実装の不一致を確認してください。"
+      _recommended_action="Fix the type error. Check for mismatches between type definitions and implementation."
     elif echo "${_last_output}" | grep -qi "assertion\|AssertionError\|expect.*received\|toBe\|toEqual\|FAIL\|FAILED"; then
       _failure_category="assertion_error"
-      _recommended_action="テストアサーションが失敗しています。期待値と実際の値の差分を確認してください。"
+      _recommended_action="Test assertion failed. Check the diff between expected and actual values."
     elif echo "${_last_output}" | grep -qi "timeout\|Timeout\|ETIMEDOUT\|timed out"; then
       _failure_category="timeout"
-      _recommended_action="タイムアウトが発生しました。非同期処理やネットワーク依存を確認してください。"
+      _recommended_action="Timeout occurred. Check async operations and network dependencies."
     elif echo "${_last_output}" | grep -qi "permission\|EACCES\|EPERM\|access denied"; then
       _failure_category="permission_error"
-      _recommended_action="権限エラーが発生しています。ファイルのパーミッションを確認してください。"
+      _recommended_action="Permission error. Check file permissions."
     else
       _failure_category="runtime_error"
-      _recommended_action="ランタイムエラーが発生しています。テスト出力を詳しく確認してください。"
+      _recommended_action="Runtime error. Check the test output in detail."
     fi
 
-    # 試行履歴を quality-gate ファイルから取得
+    # Retrieve attempt history from the quality-gate file
     _history_summary=""
     if [ -f "${QUALITY_GATE_FILE}" ]; then
       if command -v jq >/dev/null 2>&1; then
         _history_summary="$(jq -r --arg tid "${TASK_ID}" '
           .[$tid] |
-          "  失敗カウント: \(.failure_count // 0)\n  最終更新: \(.updated_at // "不明")"
+          "  Failure count: \(.failure_count // 0)\n  Last updated: \(.updated_at // "unknown")"
         ' "${QUALITY_GATE_FILE}" 2>/dev/null)" || _history_summary=""
       fi
     fi
 
-    # エスカレーションレポートを stderr に出力
+    # Output escalation report to stderr
     {
       echo ""
       echo "=========================================="
-      echo "[ESCALATION] 3回連続失敗を検知 - 自動修正ループを停止"
+      echo "[ESCALATION] 3 consecutive failures detected - stopping auto-fix loop"
       echo "=========================================="
-      echo "  タスク ID  : ${TASK_ID}"
-      echo "  タスク名   : ${TASK_SUBJECT}"
-      echo "  担当者     : ${TEAMMATE_NAME}"
-      echo "  連続失敗数 : ${FAIL_COUNT}"
-      echo "  検知時刻   : ${TS}"
+      echo "  Task ID       : ${TASK_ID}"
+      echo "  Task name     : ${TASK_SUBJECT}"
+      echo "  Assignee      : ${TEAMMATE_NAME}"
+      echo "  Failure count : ${FAIL_COUNT}"
+      echo "  Detected at   : ${TS}"
       echo "------------------------------------------"
-      echo "  [原因分類]"
-      echo "  カテゴリ   : ${_failure_category}"
+      echo "  [Failure category]"
+      echo "  Category      : ${_failure_category}"
       echo ""
-      echo "  [推奨アクション]"
+      echo "  [Recommended action]"
       echo "  ${_recommended_action}"
       echo ""
       if [ -n "${_last_cmd}" ]; then
-        echo "  [最後に実行したコマンド]"
+        echo "  [Last executed command]"
         echo "  ${_last_cmd}"
         echo ""
       fi
       if [ -n "${_last_output}" ]; then
-        echo "  [テスト出力（最大20行）]"
+        echo "  [Test output (up to 20 lines)]"
         echo "${_last_output}" | while IFS= read -r _line; do
           echo "    ${_line}"
         done
         echo ""
       fi
       if [ -n "${_history_summary}" ]; then
-        echo "  [試行履歴]"
+        echo "  [Attempt history]"
         echo "${_history_summary}"
         echo ""
       fi
-      echo "  詳細ファイル: ${QUALITY_GATE_FILE}"
-      echo "  手動対応が必要です。エスカレーション記録後、ループを終了します。"
+      echo "  Details file: ${QUALITY_GATE_FILE}"
+      echo "  Manual intervention required. Stopping loop after recording escalation."
       echo "=========================================="
       echo ""
     } >&2 2>/dev/null || true
 
-    # エスカレーション記録をタイムラインに追記
+    # Append escalation record to timeline
     ESC_ENTRY=""
     if command -v jq >/dev/null 2>&1; then
       ESC_ENTRY="$(jq -nc \
@@ -785,7 +785,7 @@ except Exception as e:
 
     _fix_task_id="$(build_fix_task_id "${TASK_ID}")"
     _fix_subject="$(sanitize_inline_text "fix: ${TASK_SUBJECT} - ${_failure_category}")"
-    _fix_dod="$(sanitize_inline_text "失敗カテゴリ (${_failure_category}) を解消し、直近のテスト/CI が通ること")"
+    _fix_dod="$(sanitize_inline_text "Resolve the failure category (${_failure_category}) so that the most recent tests/CI pass")"
     _proposal_json=""
     if command -v jq >/dev/null 2>&1; then
       _proposal_json="$(jq -nc \
@@ -825,17 +825,17 @@ PY
       _proposal_saved="true"
     fi
 
-    _fix_message="[FIX PROPOSAL] タスク ${TASK_ID} が3回連続で失敗しました。
-提案: ${_fix_task_id} — ${_fix_subject}
+    _fix_message="[FIX PROPOSAL] Task ${TASK_ID} failed 3 times in a row.
+Proposal: ${_fix_task_id} — ${_fix_subject}
 DoD: ${_fix_dod}
-承認: approve fix ${TASK_ID}
-却下: reject fix ${TASK_ID}"
+Approve: approve fix ${TASK_ID}
+Reject:  reject fix ${TASK_ID}"
     if [ "${_proposal_saved}" != "true" ]; then
       _fix_message="${_fix_message}
-警告: proposal 保存に失敗しました。手動で Plans.md に追加してください。"
+Warning: failed to save proposal. Please add it to Plans.md manually."
     fi
 
-    # exit 0 でフックを承認しつつ、次ターンで承認可能な proposal を案内
+    # Approve the hook via exit 0 while surfacing an approvable proposal on the next turn
     if command -v jq >/dev/null 2>&1; then
       jq -nc \
         --arg reason "TaskCompleted: 3-strike escalation triggered - fix proposal queued" \
@@ -852,13 +852,13 @@ DoD: ${_fix_dod}
   echo '{"decision":"block","reason":"TaskCompleted: test result shows failure - escalation required"}'
   exit 2
 else
-  # テスト成功またはテスト未実行: 失敗カウントをリセット
+  # Test passed or not run: reset failure count
   if [ -n "${TASK_ID}" ]; then
     update_failure_count "${TASK_ID}" "reset" >/dev/null 2>&1 || true
   fi
 fi
 
-# === Webhook 通知ヘルパー（全 exit パスで呼ばれるよう関数化） ===
+# === Webhook notification helper (factored into a function so all exit paths can call it) ===
 _fire_webhook() {
   if [ -n "${HARNESS_WEBHOOK_URL:-}" ]; then
     local _wh_script="${SCRIPT_DIR}/webhook-notify.sh"
@@ -868,7 +868,7 @@ _fire_webhook() {
   fi
 }
 
-# === レスポンス ===
+# === Response ===
 if [ "${REQUEST_CONTINUE}" = "false" ] || [ -n "${STOP_REASON}" ]; then
   FINAL_STOP_REASON="${STOP_REASON:-TaskCompleted requested stop}"
   _fire_webhook
@@ -891,17 +891,17 @@ if [ "${TOTAL_TASKS}" -gt 0 ] 2>/dev/null && [ "${COMPLETED_COUNT}" -ge "${TOTAL
   exit 0
 fi
 
-# プログレスサマリー付きレスポンス
+# Response with progress summary
 _fire_webhook
 if [ "${TOTAL_TASKS}" -gt 0 ] 2>/dev/null && [ -n "${TASK_SUBJECT:-}" ]; then
-  PROGRESS_MSG="📊 Progress: Task ${COMPLETED_COUNT}/${TOTAL_TASKS} 完了 — \"${TASK_SUBJECT}\""
+  PROGRESS_MSG="📊 Progress: Task ${COMPLETED_COUNT}/${TOTAL_TASKS} done — \"${TASK_SUBJECT}\""
   if command -v jq >/dev/null 2>&1; then
     jq -nc \
       --arg reason "TaskCompleted tracked" \
       --arg msg "${PROGRESS_MSG}" \
       '{"decision":"approve","reason":$reason,"systemMessage":$msg}'
   else
-    # jq がない場合のフォールバック（特殊文字をエスケープ）
+    # Fallback when jq is unavailable (escape special characters)
     _escaped_msg="${PROGRESS_MSG//\"/\\\"}"
     printf '{"decision":"approve","reason":"TaskCompleted tracked","systemMessage":"%s"}\n' "${_escaped_msg}"
   fi

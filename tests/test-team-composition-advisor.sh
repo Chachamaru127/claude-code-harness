@@ -1,6 +1,6 @@
 #!/bin/bash
 # test-team-composition-advisor.sh
-# Advisor を含む役割分担ドキュメントの整合性テスト
+# Consistency test for role-assignment documents including the Advisor
 
 set -euo pipefail
 
@@ -22,27 +22,27 @@ for file in "${ADVISOR_FILE}" "${TEAM_FILE}" "${WORKER_FILE}" "${REVIEWER_FILE}"
 done
 
 grep -q 'advisor-response.v1' "${ADVISOR_FILE}" \
-  || fail "advisor.md に advisor-response.v1 がありません"
+  || fail "advisor.md is missing advisor-response.v1"
 
 grep -q 'PLAN / CORRECTION / STOP' "${ADVISOR_FILE}" \
-  || fail "advisor.md に decision 3 種がありません"
+  || fail "advisor.md is missing the 3 decision types"
 
 grep -q 'コードを書かない' "${ADVISOR_FILE}" \
-  || fail "advisor.md に非実装ルールがありません"
+  || fail "advisor.md is missing the no-implementation rule"
 
 grep -q 'Harness の標準チーム構成は 5 ロール' "${TEAM_FILE}" \
-  || fail "team-composition.md に 5 ロール構成の説明がありません"
+  || fail "team-composition.md is missing the 5-role composition description"
 
 grep -q 'permissionMode' "${TEAM_FILE}" \
-  || fail "team-composition.md に permissionMode 境界の説明がありません"
+  || fail "team-composition.md is missing the permissionMode boundary description"
 
 grep -q '親セッションと plugin settings から継承' "${TEAM_FILE}" \
-  || fail "team-composition.md に権限継承の説明がありません"
+  || fail "team-composition.md is missing the permission inheritance description"
 
 grep -q 'advisor-request.v1' "${WORKER_FILE}" \
-  || fail "worker.md に advisor-request.v1 がありません"
+  || fail "worker.md is missing advisor-request.v1"
 
 grep -q 'Advisor は別ロールであり、Reviewer の代替ではない' "${REVIEWER_FILE}" \
-  || fail "reviewer.md に advisor 非代替の明記がありません"
+  || fail "reviewer.md is missing the explicit statement that Advisor is not a replacement for Reviewer"
 
 echo "test-team-composition-advisor: ok"

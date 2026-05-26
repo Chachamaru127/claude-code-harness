@@ -1,28 +1,28 @@
 #!/bin/bash
 # worktree-create.sh — WorktreeCreate hook handler
-# Breezing 並列ワーカー用の worktree 環境を初期化する
+# Initializes the worktree environment for Breezing parallel workers
 #
-# 入力 (stdin JSON):
+# Input (stdin JSON):
 #   session_id, cwd, hook_event_name
 #
-# 設計: WorktreeCreate/Remove は worktree 固有リソースのみ担当
-#       SessionEnd はセッション全体リソースを担当（分離設計）
+# Design: WorktreeCreate/Remove handle only worktree-specific resources;
+#         SessionEnd handles session-wide resources (separation of concerns)
 
 set -euo pipefail
 
-# === stdin から JSON ペイロードを読み取り ===
+# === Read JSON payload from stdin ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
+# Skip if payload is empty
 if [ -z "${INPUT}" ]; then
   echo '{"decision":"approve","reason":"WorktreeCreate: no payload"}'
   exit 0
 fi
 
-# === フィールド抽出 ===
+# === Field extraction ===
 SESSION_ID=""
 CWD=""
 
@@ -96,11 +96,11 @@ if looks_like_hook_decision_json "${CWD}"; then
   exit 0
 fi
 
-# === worktree 内に .claude/state/ ディレクトリを確保 ===
+# === Ensure .claude/state/ directory inside the worktree ===
 WORKTREE_STATE_DIR="${CWD}/.claude/state"
 mkdir -p "${WORKTREE_STATE_DIR}" 2>/dev/null || true
 
-# === ワーカー ID を記録（Breezing チームでの識別用） ===
+# === Record worker ID (for identification within the Breezing team) ===
 WORKTREE_INFO_FILE="${WORKTREE_STATE_DIR}/worktree-info.json"
 
 if command -v jq >/dev/null 2>&1; then
@@ -121,7 +121,7 @@ print(json.dumps({
 " "${SESSION_ID}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${CWD}" \
     > "${WORKTREE_INFO_FILE}" 2>/dev/null || true
 else
-  # フォールバック: シンプルな JSON 書き出し
+  # Fallback: simple JSON write
   printf '{"worker_id":"%s","created_at":"%s","cwd":"%s"}\n' \
     "${SESSION_ID//\"/\\\"}" \
     "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
@@ -129,6 +129,6 @@ else
     > "${WORKTREE_INFO_FILE}" 2>/dev/null || true
 fi
 
-# === レスポンス ===
+# === Response ===
 echo '{"decision":"approve","reason":"WorktreeCreate: initialized worktree state"}'
 exit 0

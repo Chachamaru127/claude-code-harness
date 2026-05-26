@@ -1,78 +1,81 @@
 # Effort Level Policy
 
-## 概要
+## Overview
 
-CC frontmatter の `effort` フィールドと Anthropic API の effort パラメータの対応関係、および Harness における採用方針を定義する。
+Defines the correspondence between the CC frontmatter `effort` field and the Anthropic API effort
+parameter, and the adoption policy within Harness.
 
-## CC Frontmatter と API Effort の対応マトリクス
+## CC Frontmatter and API Effort Correspondence Matrix
 
-CC v2.1.72 で `max` が廃止され、v2.1.111 で `xhigh` が追加された。
+`max` was deprecated in CC v2.1.72, and `xhigh` was added in v2.1.111.
 
-| CC frontmatter `effort` 値 | API effort 実効値 | Opus 4.7 での動作 | 非 Opus 4.7 での動作 |
+| CC frontmatter `effort` value | Effective API effort | Behavior with Opus 4.7 | Behavior with non-Opus 4.7 |
 |----------------------------|------------------|-------------------|---------------------|
 | `low` | low | low | low |
 | `medium` | medium | medium | medium |
 | `high` | high | high | high |
-| `xhigh` | xhigh (extended thinking) | xhigh（最大 thinking budget） | `high` にフォールバック（changelog 明記） |
+| `xhigh` | xhigh (extended thinking) | xhigh (maximum thinking budget) | Falls back to `high` (noted in changelog) |
 
-**注記**:
-- `xhigh` は CC v2.1.111 で frontmatter に追加された（`CLAUDE-feature-table.md` / `cc-2.1.99-2.1.111-impact.md` 参照）
-- `max` は CC v2.1.72 で廃止済み。frontmatter に書いても無効
-- `xhigh` を Opus 4.7 以外のモデル（Sonnet 系など）で指定した場合、CC が `high` に自動ダウングレードする
+**Notes**:
+- `xhigh` was added to frontmatter in CC v2.1.111 (see `CLAUDE-feature-table.md` / `cc-2.1.99-2.1.111-impact.md`)
+- `max` was deprecated in CC v2.1.72. Writing it in frontmatter has no effect
+- When `xhigh` is specified with non-Opus 4.7 models (e.g., Sonnet series), CC automatically downgrades to `high`
 
-### xhigh が CC 経由で API に渡せるかの判定
+### Whether xhigh can be passed to the API via CC
 
-**判定: 採用（xhigh を frontmatter で受け付ける証拠あり）**
+**Verdict: Adopted (evidence that xhigh is accepted in frontmatter)**
 
-根拠:
-1. `docs/CLAUDE-feature-table.md` の v2.1.111 セクションに `xhigh effort` が `A: 明示追従対象` として記録されている
-2. 同ファイルの Opus 4.7 セクションにも `xhigh effort` が `A: 明示追従対象` として記録されている
-3. `docs/cc-2.1.99-2.1.111-impact.md` に v2.1.111 での `xhigh` 追加が文書化されている
-4. Harness の `opus-4-7-prompt-audit.md` にて「`xhigh`: 呼び出し側が選ぶ推論強度」と定義されている
+Basis:
+1. The v2.1.111 section in `docs/CLAUDE-feature-table.md` records `xhigh effort` as `A: explicit follow-up target`
+2. The Opus 4.7 section in the same file also records `xhigh effort` as `A: explicit follow-up target`
+3. `docs/cc-2.1.99-2.1.111-impact.md` documents the addition of `xhigh` in v2.1.111
+4. Harness's `opus-4-7-prompt-audit.md` defines "`xhigh`: the reasoning intensity chosen by the caller"
 
-`xhigh` を frontmatter に書いた場合、CC は Anthropic API に extended thinking を有効にしたリクエストを送る。非 Opus 4.7 モデルではサイレントに `high` 相当へダウングレードされる。reject や error にはならない。
+When `xhigh` is written in frontmatter, CC sends a request to the Anthropic API with extended thinking enabled.
+With non-Opus 4.7 models, it silently downgrades to `high` equivalent. It does not reject or error.
 
-## Harness の採用方針
+## Harness adoption policy
 
-| フロー | 採用 effort | 理由 |
+| Flow | Adopted effort | Reason |
 |--------|------------|------|
-| Plan | `high` | 速さと整理力のバランスが良い |
-| Work (Worker agent) | `high` | 実装は長考より反復確認が重要 |
-| Review (Reviewer agent, harness-review) | `xhigh` | 比較・反証・抜け漏れ検知に thinking 増分の効果が出る |
-| Advisor | `xhigh` | PLAN / CORRECTION / STOP の判断精度を優先 |
-| Release / Setup | `high` | 手順遵守が中心で、常時 `xhigh` は過剰 |
+| Plan | `high` | Good balance of speed and organization |
+| Work (Worker agent) | `high` | Implementation benefits more from iterative verification than deep thinking |
+| Review (Reviewer agent, harness-review) | `xhigh` | Incremental thinking yields results for comparison, counterargument, and gap detection |
+| Advisor | `xhigh` | Prioritize precision of PLAN / CORRECTION / STOP judgments |
+| Release / Setup | `high` | Primarily about procedure adherence; always using `xhigh` is excessive |
 
-### frontmatter 更新対象
+### Frontmatter update targets
 
-| ファイル | 変更前 | 変更後 | 理由 |
+| File | Before | After | Reason |
 |--------|--------|--------|------|
-| `agents/reviewer.md` | `effort: medium` | `effort: xhigh` | Review に xhigh を採用 |
-| `agents/advisor.md` | `effort: high` | `effort: xhigh` | Advisor に xhigh を採用 |
-| `skills/harness-review/SKILL.md` | `effort: high` | 変更なし | スキルの effort は呼び出し側が上書きするため high を維持 |
+| `agents/reviewer.md` | `effort: medium` | `effort: xhigh` | Adopting xhigh for review |
+| `agents/advisor.md` | `effort: high` | `effort: xhigh` | Adopting xhigh for advisor |
+| `skills/harness-review/SKILL.md` | `effort: high` | Unchanged | Skill effort is overridden by the caller, so keep high |
 
-## 運用ルール
+## Operational rules
 
-1. **review と advisory を優先して `xhigh` の対象にする**
-   理由: バグ検知や反証は、実装そのものより thinking 増分の効果が出やすい。
+1. **Prioritize review and advisory as targets for `xhigh`**
+   Reason: Bug detection and counterargument benefit more from incremental thinking than implementation itself.
 
-2. **work は既定 `high` を維持する**
-   理由: 実装はトークン消費より、短いサイクルでの検証の方が効くことが多い。
+2. **Keep work at the default `high`**
+   Reason: For implementation, fast iterative verification often outperforms long deliberation.
 
-3. **docs では「Opus 4.7 以外は `high` へフォールバック」を明記する**
-   理由: 利用者が「`xhigh` と書いたのに効いていない」と誤解しやすい。
+3. **Document "falls back to `high` on non-Opus 4.7" in docs**
+   Reason: Users may misunderstand "I wrote `xhigh` but it doesn't seem to be working."
 
-4. **全 skill / 全 agent を一律 `xhigh` にしない**
-   理由: コストとレイテンシが無駄に増加する。役割差で使い分けること。
+4. **Do not uniformly set all skills / agents to `xhigh`**
+   Reason: Cost and latency increase unnecessarily. Use different efforts based on role.
 
-5. **`${CLAUDE_EFFORT}` は参照専用にする**
-   理由: Claude Code 2.1.120 以降、skill 本文から現在の effort level を参照できる。
-   ただし、これは呼び出し側が選んだ effort を読むための情報であり、skill 側が勝手に effort を上書きするための仕組みではない。
+5. **Treat `${CLAUDE_EFFORT}` as read-only**
+   Reason: Since Claude Code 2.1.120, the current effort level can be referenced from skill content.
+   However, this is information for reading the effort chosen by the caller — it is not a mechanism
+   for the skill to override effort on its own.
 
 ### `${CLAUDE_EFFORT}` guidance
 
-`CLAUDE_EFFORT` は、現在の session / invocation で有効な effort level を skill 本文から参照するための変数。
+`CLAUDE_EFFORT` is a variable for referencing the currently effective effort level from skill content.
 
-使ってよい例:
+Acceptable usage:
 
 ```md
 Current effort: `${CLAUDE_EFFORT}`.
@@ -80,40 +83,41 @@ If effort is low, report only confirmed blockers.
 If effort is xhigh, include adversarial checks and edge cases.
 ```
 
-避ける例:
+Patterns to avoid:
 
-- skill 本文で「必ず xhigh に変更する」と要求する
-- `CLAUDE_EFFORT` が空の環境を失敗扱いにする
-- user / parent workflow の effort 指定を無視する
+- Requesting "always switch to xhigh" from skill content
+- Treating environments where `CLAUDE_EFFORT` is empty as failures
+- Ignoring the effort specified by the user / parent workflow
 
-Harness の方針:
+Harness policy:
 
-- effort の選択権は呼び出し側に残す。
-- skill は `CLAUDE_EFFORT` を説明、分岐、出力粒度調整にだけ使う。
-- media / announcement 系のような内部起動 skill では、effort より起動契約（`user-invocable` / `disable-model-invocation`）を優先して明確化する。
+- Leave the choice of effort to the caller.
+- Skills use `CLAUDE_EFFORT` only for descriptions, branching, and adjusting output granularity.
+- For internally invoked skills like media / announcement types, clarify the invocation contract
+  (`user-invocable` / `disable-model-invocation`) rather than effort.
 
-## 見送り rationale（採用しないもの）
+## Deferred rationale (things not adopted)
 
-以下は採用しない。見送り理由を明記する。
+The following are not adopted. Reasons for deferral are provided.
 
-| 項目 | 見送り理由 |
+| Item | Reason for deferral |
 |------|-----------|
-| Worker agent を `xhigh` にすること | 実装ループは長考より速い反復が重要。xhigh のコスト増分に見合う品質向上が得られない |
-| Setup / Release スキルを `xhigh` にすること | 手順遵守が中心で、judgment より recall が重要な場面が多い |
-| `max` の復活 | CC v2.1.72 で廃止済み。`xhigh` がその後継 |
+| Setting Worker agent to `xhigh` | Implementation loops benefit more from fast iteration than deep thinking. The incremental cost of xhigh does not yield proportional quality improvement |
+| Setting Setup / Release skills to `xhigh` | These primarily involve procedure adherence; recall matters more than judgment |
+| Reviving `max` | Deprecated in CC v2.1.72. `xhigh` is its successor |
 
-## 注意点
+## Notes
 
-- `xhigh` は「賢くなる魔法」ではなく、より深く考えるための余白
-- 曖昧な指示のままだと、深く考えてもズレた方向に精密化される
-- Opus 4.7 以外のモデルでは `xhigh` を指定しても `high` 相当にフォールバックするため、期待した効果が出ない場合がある
-- `opus-4-7-prompt-audit.md` の合格条件 5: `xhigh` は「呼び出し側が選ぶ推論強度」であり、agent prompt が free-text marker から推測するものではない
+- `xhigh` is not "a magic that makes it smarter" — it provides more space for deeper thinking
+- With vague instructions, deeper thinking only makes the output more precisely wrong
+- On non-Opus 4.7 models, specifying `xhigh` falls back to `high` equivalent, so the expected effect may not appear
+- `opus-4-7-prompt-audit.md` acceptance condition 5: `xhigh` is "the reasoning intensity chosen by the caller" and is not something agent prompts infer from free-text markers
 
-## 関連ファイル
+## Related files
 
-- `docs/CLAUDE-feature-table.md` — v2.1.111 / Opus 4.7 の機能一覧
-- `docs/cc-2.1.99-2.1.111-impact.md` — xhigh 追加の詳細
-- `docs/claude-code-setup-mcp-telemetry-provider.md` — `${CLAUDE_EFFORT}` と setup guidance
-- `.claude/rules/opus-4-7-prompt-audit.md` — xhigh の運用ノブ定義
-- `agents/reviewer.md` — Reviewer effort 設定
-- `agents/advisor.md` — Advisor effort 設定
+- `docs/CLAUDE-feature-table.md` — Feature list for v2.1.111 / Opus 4.7
+- `docs/cc-2.1.99-2.1.111-impact.md` — Details on xhigh addition
+- `docs/claude-code-setup-mcp-telemetry-provider.md` — `${CLAUDE_EFFORT}` and setup guidance
+- `.claude/rules/opus-4-7-prompt-audit.md` — xhigh operational knob definition
+- `agents/reviewer.md` — Reviewer effort setting
+- `agents/advisor.md` — Advisor effort setting

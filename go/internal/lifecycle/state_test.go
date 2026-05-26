@@ -12,19 +12,19 @@ import (
 
 func TestIsTerminal_CommittedIsTerminal(t *testing.T) {
 	if !lifecycle.IsTerminal(lifecycle.StateCommitted) {
-		t.Error("COMMITTED は終端状態であるべき")
+		t.Error("COMMITTED should be a terminal state")
 	}
 }
 
 func TestIsTerminal_AbortedIsTerminal(t *testing.T) {
 	if !lifecycle.IsTerminal(lifecycle.StateAborted) {
-		t.Error("ABORTED は終端状態であるべき")
+		t.Error("ABORTED should be a terminal state")
 	}
 }
 
 func TestIsTerminal_CancelledIsTerminal(t *testing.T) {
 	if !lifecycle.IsTerminal(lifecycle.StateCancelled) {
-		t.Error("CANCELLED は終端状態であるべき")
+		t.Error("CANCELLED should be a terminal state")
 	}
 }
 
@@ -40,7 +40,7 @@ func TestIsTerminal_NonTerminalStates(t *testing.T) {
 	}
 	for _, s := range nonTerminal {
 		if lifecycle.IsTerminal(s) {
-			t.Errorf("状態 %s は終端状態であってはならない", s)
+			t.Errorf("state %s must not be a terminal state", s)
 		}
 	}
 }
@@ -52,19 +52,19 @@ func TestIsTerminal_NonTerminalStates(t *testing.T) {
 func TestNewStateMachine_StartsAtSpawning(t *testing.T) {
 	sm := lifecycle.NewStateMachine()
 	if sm.Current() != lifecycle.StateSpawning {
-		t.Errorf("初期状態は SPAWNING であるべきだが %s だった", sm.Current())
+		t.Errorf("initial state should be SPAWNING but was %s", sm.Current())
 	}
 }
 
 func TestNewStateMachine_HistoryIsEmpty(t *testing.T) {
 	sm := lifecycle.NewStateMachine()
 	if len(sm.History()) != 0 {
-		t.Errorf("初期状態では履歴が空であるべきだが %d 件あった", len(sm.History()))
+		t.Errorf("history should be empty in the initial state but had %d entries", len(sm.History()))
 	}
 }
 
 // ============================================================
-// 正常系全遷移パス
+// Full happy-path transition
 // ============================================================
 
 func TestHappyPath_FullTransition(t *testing.T) {
@@ -82,22 +82,22 @@ func TestHappyPath_FullTransition(t *testing.T) {
 
 	for _, step := range steps {
 		if err := sm.Transition(step.to, step.trigger); err != nil {
-			t.Fatalf("遷移 → %s が失敗: %v", step.to, err)
+			t.Fatalf("transition → %s failed: %v", step.to, err)
 		}
 		if sm.Current() != step.to {
-			t.Errorf("遷移後の状態が %s であるべきだが %s だった", step.to, sm.Current())
+			t.Errorf("state after transition should be %s but was %s", step.to, sm.Current())
 		}
 	}
 }
 
 // ============================================================
-// 異常系遷移
+// Error-path transitions
 // ============================================================
 
 func TestAbnormal_SpawningToFailed(t *testing.T) {
 	sm := lifecycle.NewStateMachine()
 	if err := sm.Transition(lifecycle.StateFailed, "spawn error"); err != nil {
-		t.Errorf("SPAWNING → FAILED は許可されるべきだが: %v", err)
+		t.Errorf("SPAWNING → FAILED should be permitted: %v", err)
 	}
 }
 
@@ -105,7 +105,7 @@ func TestAbnormal_RunningToFailed(t *testing.T) {
 	sm := lifecycle.NewStateMachine()
 	_ = sm.Transition(lifecycle.StateRunning, "started")
 	if err := sm.Transition(lifecycle.StateFailed, "retry exceeded"); err != nil {
-		t.Errorf("RUNNING → FAILED は許可されるべきだが: %v", err)
+		t.Errorf("RUNNING → FAILED should be permitted: %v", err)
 	}
 }
 
@@ -113,7 +113,7 @@ func TestAbnormal_RunningToCancelled(t *testing.T) {
 	sm := lifecycle.NewStateMachine()
 	_ = sm.Transition(lifecycle.StateRunning, "started")
 	if err := sm.Transition(lifecycle.StateCancelled, "user interrupt"); err != nil {
-		t.Errorf("RUNNING → CANCELLED は許可されるべきだが: %v", err)
+		t.Errorf("RUNNING → CANCELLED should be permitted: %v", err)
 	}
 }
 
@@ -122,7 +122,7 @@ func TestAbnormal_ReviewingToFailed(t *testing.T) {
 	_ = sm.Transition(lifecycle.StateRunning, "started")
 	_ = sm.Transition(lifecycle.StateReviewing, "task done")
 	if err := sm.Transition(lifecycle.StateFailed, "review error"); err != nil {
-		t.Errorf("REVIEWING → FAILED は許可されるべきだが: %v", err)
+		t.Errorf("REVIEWING → FAILED should be permitted: %v", err)
 	}
 }
 
@@ -131,7 +131,7 @@ func TestAbnormal_ReviewingToCancelled(t *testing.T) {
 	_ = sm.Transition(lifecycle.StateRunning, "started")
 	_ = sm.Transition(lifecycle.StateReviewing, "task done")
 	if err := sm.Transition(lifecycle.StateCancelled, "user interrupt"); err != nil {
-		t.Errorf("REVIEWING → CANCELLED は許可されるべきだが: %v", err)
+		t.Errorf("REVIEWING → CANCELLED should be permitted: %v", err)
 	}
 }
 
@@ -139,7 +139,7 @@ func TestAbnormal_RunningToStale(t *testing.T) {
 	sm := lifecycle.NewStateMachine()
 	_ = sm.Transition(lifecycle.StateRunning, "started")
 	if err := sm.Transition(lifecycle.StateStale, "24h exceeded"); err != nil {
-		t.Errorf("RUNNING → STALE は許可されるべきだが: %v", err)
+		t.Errorf("RUNNING → STALE should be permitted: %v", err)
 	}
 }
 
@@ -148,7 +148,7 @@ func TestAbnormal_ReviewingToStale(t *testing.T) {
 	_ = sm.Transition(lifecycle.StateRunning, "started")
 	_ = sm.Transition(lifecycle.StateReviewing, "task done")
 	if err := sm.Transition(lifecycle.StateStale, "24h exceeded"); err != nil {
-		t.Errorf("REVIEWING → STALE は許可されるべきだが: %v", err)
+		t.Errorf("REVIEWING → STALE should be permitted: %v", err)
 	}
 }
 
@@ -156,7 +156,7 @@ func TestAbnormal_FailedToRecovering(t *testing.T) {
 	sm := lifecycle.NewStateMachine()
 	_ = sm.Transition(lifecycle.StateFailed, "error")
 	if err := sm.Transition(lifecycle.StateRecovering, "recovery started"); err != nil {
-		t.Errorf("FAILED → RECOVERING は許可されるべきだが: %v", err)
+		t.Errorf("FAILED → RECOVERING should be permitted: %v", err)
 	}
 }
 
@@ -165,7 +165,7 @@ func TestAbnormal_RecoveringToRunning(t *testing.T) {
 	_ = sm.Transition(lifecycle.StateFailed, "error")
 	_ = sm.Transition(lifecycle.StateRecovering, "recovery started")
 	if err := sm.Transition(lifecycle.StateRunning, "recovery succeeded"); err != nil {
-		t.Errorf("RECOVERING → RUNNING は許可されるべきだが: %v", err)
+		t.Errorf("RECOVERING → RUNNING should be permitted: %v", err)
 	}
 }
 
@@ -174,19 +174,19 @@ func TestAbnormal_RecoveringToAborted(t *testing.T) {
 	_ = sm.Transition(lifecycle.StateFailed, "error")
 	_ = sm.Transition(lifecycle.StateRecovering, "recovery started")
 	if err := sm.Transition(lifecycle.StateAborted, "recovery failed"); err != nil {
-		t.Errorf("RECOVERING → ABORTED は許可されるべきだが: %v", err)
+		t.Errorf("RECOVERING → ABORTED should be permitted: %v", err)
 	}
 }
 
 // ============================================================
-// 不正遷移
+// Invalid transitions
 // ============================================================
 
 func TestInvalidTransition_SpawningToCommitted(t *testing.T) {
 	sm := lifecycle.NewStateMachine()
 	err := sm.Transition(lifecycle.StateCommitted, "skip all")
 	if err == nil {
-		t.Error("SPAWNING → COMMITTED は拒否されるべきだが許可された")
+		t.Error("SPAWNING → COMMITTED should be rejected but was permitted")
 	}
 }
 
@@ -194,7 +194,7 @@ func TestInvalidTransition_SpawningToReviewing(t *testing.T) {
 	sm := lifecycle.NewStateMachine()
 	err := sm.Transition(lifecycle.StateReviewing, "skip running")
 	if err == nil {
-		t.Error("SPAWNING → REVIEWING は拒否されるべきだが許可された")
+		t.Error("SPAWNING → REVIEWING should be rejected but was permitted")
 	}
 }
 
@@ -203,7 +203,7 @@ func TestInvalidTransition_RunningToApproved(t *testing.T) {
 	_ = sm.Transition(lifecycle.StateRunning, "started")
 	err := sm.Transition(lifecycle.StateApproved, "skip review")
 	if err == nil {
-		t.Error("RUNNING → APPROVED は拒否されるべきだが許可された")
+		t.Error("RUNNING → APPROVED should be rejected but was permitted")
 	}
 }
 
@@ -214,12 +214,12 @@ func TestInvalidTransition_ApprovedToRunning(t *testing.T) {
 	_ = sm.Transition(lifecycle.StateApproved, "approved")
 	err := sm.Transition(lifecycle.StateRunning, "go back")
 	if err == nil {
-		t.Error("APPROVED → RUNNING は拒否されるべきだが許可された")
+		t.Error("APPROVED → RUNNING should be rejected but was permitted")
 	}
 }
 
 // ============================================================
-// 終端状態からの遷移は全て失敗
+// All transitions from terminal states must fail
 // ============================================================
 
 func TestTerminalStates_AllTransitionsBlocked(t *testing.T) {
@@ -247,14 +247,14 @@ func TestTerminalStates_AllTransitionsBlocked(t *testing.T) {
 			sm := newSMAt(t, terminal)
 			err := sm.Transition(target, "from terminal")
 			if err == nil {
-				t.Errorf("終端状態 %s → %s は拒否されるべきだが許可された", terminal, target)
+				t.Errorf("terminal state %s → %s should be rejected but was permitted", terminal, target)
 			}
 		}
 	}
 }
 
-// newSMAt は指定した終端状態にある StateMachine を返すヘルパー。
-// COMMITTED / ABORTED / CANCELLED のそれぞれを最短経路で到達する。
+// newSMAt is a helper that returns a StateMachine at the given terminal state.
+// Reaches COMMITTED / ABORTED / CANCELLED each via the shortest path.
 func newSMAt(t *testing.T, state lifecycle.AgentState) *lifecycle.StateMachine {
 	t.Helper()
 	sm := lifecycle.NewStateMachine()
@@ -293,19 +293,19 @@ func newSMAt(t *testing.T, state lifecycle.AgentState) *lifecycle.StateMachine {
 			{lifecycle.StateCancelled, "user interrupt"},
 		}
 	default:
-		t.Fatalf("newSMAt: %s は終端状態ではありません", state)
+		t.Fatalf("newSMAt: %s is not a terminal state", state)
 	}
 
 	for _, step := range steps {
 		if err := sm.Transition(step.to, step.trigger); err != nil {
-			t.Fatalf("セットアップ遷移 → %s が失敗: %v", step.to, err)
+			t.Fatalf("setup transition → %s failed: %v", step.to, err)
 		}
 	}
 	return sm
 }
 
 // ============================================================
-// 遷移履歴
+// Transition history
 // ============================================================
 
 func TestHistory_RecordsAllTransitions(t *testing.T) {
@@ -315,32 +315,32 @@ func TestHistory_RecordsAllTransitions(t *testing.T) {
 
 	history := sm.History()
 	if len(history) != 2 {
-		t.Fatalf("履歴は 2 件あるべきだが %d 件だった", len(history))
+		t.Fatalf("history should have 2 entries but had %d", len(history))
 	}
 
 	if history[0].From != lifecycle.StateSpawning || history[0].To != lifecycle.StateRunning {
-		t.Errorf("履歴[0] が期待と異なる: %+v", history[0])
+		t.Errorf("history[0] differs from expected: %+v", history[0])
 	}
 	if history[0].Trigger != "trigger-1" {
-		t.Errorf("履歴[0].Trigger が %q であるべきだが %q だった", "trigger-1", history[0].Trigger)
+		t.Errorf("history[0].Trigger should be %q but was %q", "trigger-1", history[0].Trigger)
 	}
 	if history[1].From != lifecycle.StateRunning || history[1].To != lifecycle.StateReviewing {
-		t.Errorf("履歴[1] が期待と異なる: %+v", history[1])
+		t.Errorf("history[1] differs from expected: %+v", history[1])
 	}
 	if history[1].Trigger != "trigger-2" {
-		t.Errorf("履歴[1].Trigger が %q であるべきだが %q だった", "trigger-2", history[1].Trigger)
+		t.Errorf("history[1].Trigger should be %q but was %q", "trigger-2", history[1].Trigger)
 	}
 }
 
 func TestHistory_FailedTransitionNotRecorded(t *testing.T) {
 	sm := lifecycle.NewStateMachine()
 	_ = sm.Transition(lifecycle.StateRunning, "ok")
-	// 不正遷移（失敗するはず）
+	// Invalid transition (expected to fail)
 	_ = sm.Transition(lifecycle.StateCommitted, "invalid")
 
 	history := sm.History()
 	if len(history) != 1 {
-		t.Errorf("不正遷移は履歴に記録されないべきだが %d 件あった", len(history))
+		t.Errorf("invalid transition must not be recorded in history but had %d entries", len(history))
 	}
 }
 
@@ -353,7 +353,7 @@ func TestHistory_ReturnsIndependentCopy(t *testing.T) {
 
 	h2 := sm.History()
 	if h2[0].Trigger == "TAMPERED" {
-		t.Error("History() が内部スライスの参照を返している（コピーであるべき）")
+		t.Error("History() is returning a reference to the internal slice (should return a copy)")
 	}
 }
 
@@ -364,13 +364,13 @@ func TestHistory_ReturnsIndependentCopy(t *testing.T) {
 func TestCanTransition_ValidTransitionReturnsTrue(t *testing.T) {
 	sm := lifecycle.NewStateMachine()
 	if !sm.CanTransition(lifecycle.StateRunning) {
-		t.Error("SPAWNING から RUNNING への遷移は可能であるべき")
+		t.Error("transition from SPAWNING to RUNNING should be possible")
 	}
 }
 
 func TestCanTransition_InvalidTransitionReturnsFalse(t *testing.T) {
 	sm := lifecycle.NewStateMachine()
 	if sm.CanTransition(lifecycle.StateCommitted) {
-		t.Error("SPAWNING から COMMITTED への遷移は不可であるべき")
+		t.Error("transition from SPAWNING to COMMITTED should not be possible")
 	}
 }

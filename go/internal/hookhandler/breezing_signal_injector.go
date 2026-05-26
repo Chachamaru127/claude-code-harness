@@ -12,17 +12,17 @@ import (
 	"time"
 )
 
-// BreezingSignalInjectorHandler は UserPromptSubmit フックハンドラ（breezing シグナル注入）。
-// breezing-signals.jsonl から未消費シグナルを読み取り、systemMessage として注入する。
-// Breezing 非アクティブ時はスキップする。
+// BreezingSignalInjectorHandler is the UserPromptSubmit hook handler (breezing signal injection).
+// Reads unconsumed signals from breezing-signals.jsonl and injects them as a systemMessage.
+// Skipped when Breezing is not active.
 //
-// shell 版: scripts/hook-handlers/breezing-signal-injector.sh
+// Shell version: scripts/hook-handlers/breezing-signal-injector.sh
 type BreezingSignalInjectorHandler struct {
-	// ProjectRoot はプロジェクトルートのパス。空の場合は cwd を使用する。
+	// ProjectRoot is the path to the project root. Falls back to cwd when empty.
 	ProjectRoot string
 }
 
-// breezingSignal は breezing-signals.jsonl の1行を表す。
+// breezingSignal represents one line in breezing-signals.jsonl.
 type breezingSignal struct {
 	Signal         string  `json:"signal"`
 	Type           string  `json:"type"`
@@ -34,15 +34,15 @@ type breezingSignal struct {
 	TaskID         string  `json:"task_id"`
 }
 
-// injectorResponse は BreezingSignalInjector フックのレスポンス。
+// injectorResponse is the response for the BreezingSignalInjector hook.
 type injectorResponse struct {
 	SystemMessage string `json:"systemMessage,omitempty"`
 }
 
-// Handle は stdin からペイロードを読み取り（使用しない）、
-// breezing シグナルを systemMessage として注入する。
+// Handle reads (and discards) the payload from stdin and injects
+// breezing signals as a systemMessage.
 func (h *BreezingSignalInjectorHandler) Handle(r io.Reader, w io.Writer) error {
-	// stdin は読み捨て（このハンドラは入力を使用しない）
+	// Discard stdin — this handler does not use the input.
 	_, _ = io.ReadAll(r)
 
 	projectRoot := h.ProjectRoot
@@ -54,24 +54,24 @@ func (h *BreezingSignalInjectorHandler) Handle(r io.Reader, w io.Writer) error {
 	activeFile := filepath.Join(stateDir, "breezing-active.json")
 	signalsFile := filepath.Join(stateDir, "breezing-signals.jsonl")
 
-	// breezing セッションが存在するかチェック
+	// Check whether a breezing session is active.
 	if _, err := os.Stat(activeFile); os.IsNotExist(err) {
-		// breezing セッション外はスキップ（出力なし = exit 0 相当）
+		// Outside a breezing session — skip (no output = equivalent to exit 0).
 		return nil
 	}
 
-	// シグナルファイルが存在するかチェック
+	// Check whether the signals file exists.
 	if _, err := os.Stat(signalsFile); os.IsNotExist(err) {
 		return nil
 	}
 
-	// 未消費シグナルを読み取る
+	// Read unconsumed signals.
 	unconsumedSignals, err := h.readUnconsumedSignals(signalsFile)
 	if err != nil || len(unconsumedSignals) == 0 {
 		return nil
 	}
 
-	// シグナルをメッセージ形式に整形
+	// Format signals into message strings.
 	var messageParts []string
 	for _, sig := range unconsumedSignals {
 		msg := h.formatSignalMessage(sig)
@@ -84,17 +84,17 @@ func (h *BreezingSignalInjectorHandler) Handle(r io.Reader, w io.Writer) error {
 		return nil
 	}
 
-	// consumed_at を設定してシグナルをマーク済みにする
+	// Set consumed_at to mark the signals as consumed.
 	_ = h.markSignalsConsumed(signalsFile)
 
-	header := fmt.Sprintf("[breezing-signal-injector] %d 件の未消費シグナルがあります:\n", len(unconsumedSignals))
+	header := fmt.Sprintf("[breezing-signal-injector] %d unconsumed signal(s):\n", len(unconsumedSignals))
 	fullMessage := header + strings.Join(messageParts, "")
 
 	resp := injectorResponse{SystemMessage: fullMessage}
 	return writeInjectorJSON(w, resp)
 }
 
-// readUnconsumedSignals は JSONL ファイルから consumed_at が null のシグナルを返す。
+// readUnconsumedSignals returns signals from the JSONL file whose consumed_at is null.
 func (h *BreezingSignalInjectorHandler) readUnconsumedSignals(signalsFile string) ([]breezingSignal, error) {
 	f, err := os.Open(signalsFile)
 	if err != nil {
@@ -122,7 +122,7 @@ func (h *BreezingSignalInjectorHandler) readUnconsumedSignals(signalsFile string
 	return result, scanner.Err()
 }
 
-// formatSignalMessage はシグナルをメッセージ文字列に変換する。
+// formatSignalMessage converts a signal into a message string.
 func (h *BreezingSignalInjectorHandler) formatSignalMessage(sig breezingSignal) string {
 	signalType := sig.Signal
 	if signalType == "" {
@@ -140,22 +140,22 @@ func (h *BreezingSignalInjectorHandler) formatSignalMessage(sig breezingSignal) 
 		}
 		triggerCmd := sig.TriggerCommand
 		return fmt.Sprintf(
-			"[SIGNAL:ci_failure_detected] CI が失敗しました（%s）。トリガー: %s。ci-cd-fixer エージェントで自動修復することを検討してください。\n",
+			"[SIGNAL:ci_failure_detected] CI failed (%s). Trigger: %s. Consider using the ci-cd-fixer agent for automatic remediation.\n",
 			conclusion, triggerCmd,
 		)
 	case "retake_requested":
 		return fmt.Sprintf(
-			"[SIGNAL:retake_requested] タスク #%s のやり直しが要求されました。理由: %s\n",
+			"[SIGNAL:retake_requested] Redo requested for task #%s. Reason: %s\n",
 			sig.TaskID, sig.Reason,
 		)
 	case "reviewer_approved":
 		return fmt.Sprintf(
-			"[SIGNAL:reviewer_approved] タスク #%s がレビュアーに承認されました。\n",
+			"[SIGNAL:reviewer_approved] Task #%s was approved by the reviewer.\n",
 			sig.TaskID,
 		)
 	case "escalation_required":
 		return fmt.Sprintf(
-			"[SIGNAL:escalation_required] タスク #%s でエスカレーションが必要です。理由: %s\n",
+			"[SIGNAL:escalation_required] Escalation required for task #%s. Reason: %s\n",
 			sig.TaskID, sig.Reason,
 		)
 	default:
@@ -164,13 +164,13 @@ func (h *BreezingSignalInjectorHandler) formatSignalMessage(sig breezingSignal) 
 	}
 }
 
-// markSignalsConsumed は signalsFile 内の未消費シグナルに consumed_at を付与して上書きする。
-// ロックはディレクトリ作成によるアトミック操作で実現する。
+// markSignalsConsumed overwrites signalsFile, setting consumed_at on all unconsumed signals.
+// Locking is achieved via an atomic directory-creation operation.
 func (h *BreezingSignalInjectorHandler) markSignalsConsumed(signalsFile string) error {
 	stateDir := filepath.Dir(signalsFile)
 	lockDir := filepath.Join(stateDir, ".breezing-signals.lock")
 
-	// ロック取得（最大 2 秒、100ms ポーリング）
+	// Acquire the lock (maximum 2 seconds, 100 ms polling).
 	const maxRetries = 20
 	acquired := false
 	for i := 0; i < maxRetries; i++ {
@@ -185,7 +185,7 @@ func (h *BreezingSignalInjectorHandler) markSignalsConsumed(signalsFile string) 
 	}
 	defer func() { _ = os.Remove(lockDir) }()
 
-	// ファイルを読み込み、consumed_at を付与して書き直す
+	// Read the file, add consumed_at, and rewrite it.
 	f, err := os.Open(signalsFile)
 	if err != nil {
 		return err
@@ -206,7 +206,7 @@ func (h *BreezingSignalInjectorHandler) markSignalsConsumed(signalsFile string) 
 			continue
 		}
 
-		// consumed_at が null のものにタイムスタンプを付与
+		// Stamp entries whose consumed_at is null.
 		if sig["consumed_at"] == nil {
 			sig["consumed_at"] = consumedTS
 		}
@@ -228,7 +228,7 @@ func (h *BreezingSignalInjectorHandler) markSignalsConsumed(signalsFile string) 
 	return os.WriteFile(signalsFile, newLines.Bytes(), 0600)
 }
 
-// writeInjectorJSON は v を JSON として w に書き出す。
+// writeInjectorJSON writes v as JSON to w.
 func writeInjectorJSON(w io.Writer, v interface{}) error {
 	data, err := json.Marshal(v)
 	if err != nil {

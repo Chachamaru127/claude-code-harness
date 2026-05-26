@@ -1,14 +1,14 @@
 #!/bin/bash
 # validate-skills.sh
-# スキルの整合性・ガバナンス検証テスト
+# Skill consistency and governance validation test
 #
 # Usage: ./tests/validate-skills.sh [--verbose]
 #
-# 検証項目:
-#   1. SKILL.md の frontmatter 必須フィールド (description, allowed-tools)
-#   2. references/ ディレクトリ内の *.md ファイル存在
-#   3. allowed-tools が有効な Claude Code ツール名か
-#   4. dependencies が存在するスキルを参照しているか
+# Validation items:
+#   1. SKILL.md frontmatter required fields (description, allowed-tools)
+#   2. Existence of *.md files in references/ directory
+#   3. Whether allowed-tools contains valid Claude Code tool names
+#   4. Whether dependencies reference skills that exist
 
 set -u
 set -o pipefail
@@ -22,7 +22,7 @@ if [[ "${1:-}" == "--verbose" ]]; then
   VERBOSE=1
 fi
 
-# カラー出力
+# Color output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
@@ -53,7 +53,7 @@ debug_log() {
   fi
 }
 
-# 有効な Claude Code ツール名リスト
+# Valid Claude Code tool name list
 VALID_TOOLS=(
   "Read" "Write" "Edit" "Glob" "Grep" "Bash"
   "Task" "WebFetch" "WebSearch" "TodoWrite"
@@ -79,7 +79,7 @@ is_valid_tool() {
   return 1
 }
 
-# frontmatter からフィールド値を抽出
+# Extract field value from frontmatter
 extract_frontmatter_field() {
   local file="$1"
   local field="$2"
@@ -97,16 +97,16 @@ extract_frontmatter_field() {
 }
 
 echo "=========================================="
-echo "Claude harness - スキル検証テスト"
+echo "Claude harness - Skill validation test"
 echo "=========================================="
 echo ""
 
 if [ ! -d "$SKILLS_DIR" ]; then
-  fail_test "skills ディレクトリが見つかりません: $SKILLS_DIR"
+  fail_test "skills directory not found: $SKILLS_DIR"
   exit 1
 fi
 
-# スキルディレクトリを収集
+# Collect skill directories
 SKILL_DIRS=()
 while IFS= read -r skill_md; do
   if git -C "$PLUGIN_ROOT" check-ignore -q "${skill_md#$PLUGIN_ROOT/}" 2>/dev/null; then
@@ -117,11 +117,11 @@ while IFS= read -r skill_md; do
 done < <(find "$SKILLS_DIR" -name "SKILL.md" -type f 2>/dev/null | sort)
 
 if [ ${#SKILL_DIRS[@]} -eq 0 ]; then
-  warn_test "SKILL.md が見つかりません"
+  warn_test "No SKILL.md found"
   exit 0
 fi
 
-echo "1. SKILL.md frontmatter 検証"
+echo "1. SKILL.md frontmatter validation"
 echo "----------------------------------------"
 
 for skill_dir in "${SKILL_DIRS[@]}"; do
@@ -130,25 +130,25 @@ for skill_dir in "${SKILL_DIRS[@]}"; do
 
   debug_log "Checking: $skill_name"
 
-  # description 必須
+  # description is required
   description=$(extract_frontmatter_field "$skill_file" "description")
   if [ -n "$description" ]; then
     pass_test "[$skill_name] description: ${description:0:50}..."
   else
-    fail_test "[$skill_name] description が見つかりません"
+    fail_test "[$skill_name] description not found"
   fi
 
-  # allowed-tools 必須
+  # allowed-tools is required
   allowed_tools=$(extract_frontmatter_field "$skill_file" "allowed-tools")
   if [ -n "$allowed_tools" ]; then
     pass_test "[$skill_name] allowed-tools: $allowed_tools"
   else
-    fail_test "[$skill_name] allowed-tools が見つかりません"
+    fail_test "[$skill_name] allowed-tools not found"
   fi
 done
 
 echo ""
-echo "2. allowed-tools 有効性検証"
+echo "2. allowed-tools validity validation"
 echo "----------------------------------------"
 
 for skill_dir in "${SKILL_DIRS[@]}"; do
@@ -160,19 +160,19 @@ for skill_dir in "${SKILL_DIRS[@]}"; do
     continue
   fi
 
-  # [Tool1, Tool2] または ["Tool1", "Tool2"] 形式をパース
-  # クォート、ブラケット、スペースを除去
+  # Parse [Tool1, Tool2] or ["Tool1", "Tool2"] format
+  # Remove quotes, brackets, and spaces
   tools_str=$(echo "$allowed_tools" | sed 's/^\[//' | sed 's/\]$//' | tr ',' '\n' | sed 's/^[ "]*//;s/[ "]*$//')
 
   invalid_found=0
   while IFS= read -r tool; do
-    # 余分な空白とクォートを除去
+    # Remove extra spaces and quotes
     tool=$(echo "$tool" | tr -d ' "'\''')
     if [ -z "$tool" ]; then
       continue
     fi
 
-    # ワイルドカードパターン (mcp__*) はスキップ
+    # Skip wildcard patterns (mcp__*)
     if [[ "$tool" == *"*"* ]]; then
       debug_log "[$skill_name] Wildcard pattern skipped: $tool"
       continue
@@ -181,18 +181,18 @@ for skill_dir in "${SKILL_DIRS[@]}"; do
     if is_valid_tool "$tool"; then
       debug_log "[$skill_name] Valid tool: $tool"
     else
-      fail_test "[$skill_name] 無効なツール名: $tool"
+      fail_test "[$skill_name] Invalid tool name: $tool"
       invalid_found=1
     fi
   done <<< "$tools_str"
 
   if [ "$invalid_found" -eq 0 ]; then
-    pass_test "[$skill_name] 全ツール名が有効"
+    pass_test "[$skill_name] All tool names are valid"
   fi
 done
 
 echo ""
-echo "3. references/ ディレクトリ検証"
+echo "3. references/ directory validation"
 echo "----------------------------------------"
 
 for skill_dir in "${SKILL_DIRS[@]}"; do
@@ -202,20 +202,20 @@ for skill_dir in "${SKILL_DIRS[@]}"; do
   if [ -d "$ref_dir" ]; then
     ref_count=$(find "$ref_dir" -name "*.md" -type f | wc -l | tr -d ' ')
     if [ "$ref_count" -gt 0 ]; then
-      pass_test "[$skill_name] references/: $ref_count 個のドキュメント"
+      pass_test "[$skill_name] references/: $ref_count document(s)"
     else
-      warn_test "[$skill_name] references/ が空です"
+      warn_test "[$skill_name] references/ is empty"
     fi
   else
-    debug_log "[$skill_name] references/ なし（オプション）"
+    debug_log "[$skill_name] references/ not present (optional)"
   fi
 done
 
 echo ""
-echo "4. dependencies 検証"
+echo "4. dependencies validation"
 echo "----------------------------------------"
 
-# 全スキル名を収集
+# Collect all skill names
 ALL_SKILL_NAMES=()
 for skill_dir in "${SKILL_DIRS[@]}"; do
   ALL_SKILL_NAMES+=("$(basename "$skill_dir")")
@@ -227,11 +227,11 @@ for skill_dir in "${SKILL_DIRS[@]}"; do
 
   dependencies=$(extract_frontmatter_field "$skill_file" "dependencies")
   if [ -z "$dependencies" ] || [ "$dependencies" == "[]" ]; then
-    debug_log "[$skill_name] 依存なし"
+    debug_log "[$skill_name] no dependencies"
     continue
   fi
 
-  # [dep1, dep2] 形式をパース
+  # Parse [dep1, dep2] format
   deps_str=$(echo "$dependencies" | sed 's/^\[//' | sed 's/\]$//' | tr ',' '\n')
 
   invalid_dep=0
@@ -250,22 +250,22 @@ for skill_dir in "${SKILL_DIRS[@]}"; do
     done
 
     if [ "$found" -eq 1 ]; then
-      pass_test "[$skill_name] 依存 '$dep' は存在します"
+      pass_test "[$skill_name] dependency '$dep' exists"
     else
-      fail_test "[$skill_name] 依存 '$dep' が見つかりません"
+      fail_test "[$skill_name] dependency '$dep' not found"
       invalid_dep=1
     fi
   done <<< "$deps_str"
 done
 
 echo ""
-echo "5. local-only .agents mirror 検証"
+echo "5. local-only .agents mirror validation"
 echo "----------------------------------------"
 
 AGENTS_SKILLS_DIR="$PLUGIN_ROOT/.agents/skills"
 
 if [ ! -d "$AGENTS_SKILLS_DIR" ]; then
-  pass_test ".agents/skills は存在しません（fresh checkout では正常）"
+  pass_test ".agents/skills does not exist (normal on a fresh checkout)"
 else
   agents_mirror_checked=0
 
@@ -283,7 +283,7 @@ else
     if diff -qr --exclude='.DS_Store' --exclude='.claude' "$source_skill_dir" "$agent_skill_dir" >/dev/null 2>&1; then
       pass_test "[.agents/$skill_name] mirror is in sync"
     else
-      fail_test "[.agents/$skill_name] mirror が skills/$skill_name と不一致です（bash scripts/sync-skill-mirrors.sh を実行してください）"
+      fail_test "[.agents/$skill_name] mirror is out of sync with skills/$skill_name (run bash scripts/sync-skill-mirrors.sh)"
       if [ "$VERBOSE" -eq 1 ]; then
         diff -qr --exclude='.DS_Store' --exclude='.claude' "$source_skill_dir" "$agent_skill_dir" | sed 's/^/  [DIFF] /' || true
       fi
@@ -291,23 +291,23 @@ else
   done < <(find "$AGENTS_SKILLS_DIR" -mindepth 2 -maxdepth 2 -name "SKILL.md" -type f 2>/dev/null | sort)
 
   if [ "$agents_mirror_checked" -eq 0 ]; then
-    warn_test ".agents/skills に検証対象の mirror が見つかりません"
+    warn_test "No mirror targets found in .agents/skills"
   fi
 fi
 
 echo ""
 echo "=========================================="
-echo "スキル検証結果サマリー"
+echo "Skill validation results summary"
 echo "=========================================="
-echo -e "${GREEN}合格:${NC} $PASS_COUNT"
-echo -e "${YELLOW}警告:${NC} $WARN_COUNT"
-echo -e "${RED}失敗:${NC} $FAIL_COUNT"
+echo -e "${GREEN}Passed:${NC} $PASS_COUNT"
+echo -e "${YELLOW}Warnings:${NC} $WARN_COUNT"
+echo -e "${RED}Failed:${NC} $FAIL_COUNT"
 echo ""
 
 if [ $FAIL_COUNT -eq 0 ]; then
-  echo -e "${GREEN}✓ 全てのスキル検証に合格しました！${NC}"
+  echo -e "${GREEN}✓ All skill validations passed!${NC}"
   exit 0
 else
-  echo -e "${RED}✗ $FAIL_COUNT 件の検証が失敗しました${NC}"
+  echo -e "${RED}✗ $FAIL_COUNT validation(s) failed${NC}"
   exit 1
 fi

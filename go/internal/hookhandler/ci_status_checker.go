@@ -12,26 +12,26 @@ import (
 	"time"
 )
 
-// CIStatusCheckerHandler は PostToolUse (Bash) フックハンドラ（CI ステータスチェック）。
-// git push / gh pr コマンドを検出し、CI ステータスを同期的にチェックする。
-// async: true フック（CC がプロセスを最大 600s 生存させる）を前提に、
-// goroutine ではなくブロッキング呼び出しで runner を実行する。
-// CI 失敗時は additionalContext で /ci スキルを推奨する。
+// CIStatusCheckerHandler is the PostToolUse (Bash) hook handler for CI status checking.
+// Detects git push / gh pr commands and checks CI status synchronously.
+// Assumes an async: true hook (CC keeps the process alive for up to 600 s); the runner is
+// invoked as a blocking call rather than in a goroutine.
+// On CI failure, recommends the /ci skill via additionalContext.
 //
-// shell 版: scripts/hook-handlers/ci-status-checker.sh
+// Shell version: scripts/hook-handlers/ci-status-checker.sh
 type CIStatusCheckerHandler struct {
-	// ProjectRoot はプロジェクトルートのパス。空の場合は cwd を使用する。
+	// ProjectRoot is the path to the project root. Falls back to cwd when empty.
 	ProjectRoot string
 
-	// GHCommand は gh コマンドのパス（テスト用）。空の場合は PATH から検索する。
+	// GHCommand is the path to the gh command (for testing). Searched on PATH when empty.
 	GHCommand string
 
-	// AsyncRunner は CI チェックの実行関数（テスト用モック）。
-	// nil の場合はデフォルト実装（同期ブロッキング）を使用する。
+	// AsyncRunner is the function that runs the CI check (mock for testing).
+	// When nil, the default synchronous blocking implementation is used.
 	AsyncRunner func(projectRoot, stateDir, bashCmd, ghCommand string)
 }
 
-// ciStatusInput は PostToolUse フックの入力。
+// ciStatusInput is the input for the PostToolUse hook.
 type ciStatusInput struct {
 	ToolName  string `json:"tool_name"`
 	ToolInput struct {
@@ -45,14 +45,14 @@ type ciStatusInput struct {
 	} `json:"tool_response"`
 }
 
-// ciStatusResponse は CIStatusChecker フックのレスポンス。
+// ciStatusResponse is the response for the CIStatusChecker hook.
 type ciStatusResponse struct {
 	Decision          string `json:"decision"`
 	Reason            string `json:"reason"`
 	AdditionalContext string `json:"additionalContext,omitempty"`
 }
 
-// ciRunEntry は gh run list の1件を表す。
+// ciRunEntry represents one entry from gh run list.
 type ciRunEntry struct {
 	Status     string `json:"status"`
 	Conclusion string `json:"conclusion"`
@@ -60,10 +60,10 @@ type ciRunEntry struct {
 	URL        string `json:"url"`
 }
 
-// pushOrPRCommandRe は git push / gh pr / gh workflow run を検出する正規表現。
+// pushOrPRCommandRe is the regular expression that detects git push / gh pr / gh workflow run.
 var pushOrPRCommandRe = regexp.MustCompile(`(?:^|[\s;|&])(git\s+push|gh\s+pr\s+(?:create|merge|edit)|gh\s+workflow\s+run)`)
 
-// Handle は stdin からペイロードを読み取り、push/PR コマンドを検出して CI 監視を起動する。
+// Handle reads the payload from stdin, detects push/PR commands, and starts CI monitoring.
 func (h *CIStatusCheckerHandler) Handle(r io.Reader, w io.Writer) error {
 	data, err := io.ReadAll(r)
 	if err != nil || len(data) == 0 {
@@ -83,7 +83,7 @@ func (h *CIStatusCheckerHandler) Handle(r io.Reader, w io.Writer) error {
 
 	bashCmd := input.ToolInput.Command
 
-	// git push / gh pr コマンドでなければスキップ
+	// Skip if not a git push / gh pr command.
 	if !isPushOrPRCommand(bashCmd) {
 		return writeCIJSON(w, ciStatusResponse{
 			Decision: "approve",
@@ -91,7 +91,7 @@ func (h *CIStatusCheckerHandler) Handle(r io.Reader, w io.Writer) error {
 		})
 	}
 
-	// gh コマンドが存在しない場合はスキップ
+	// Skip when the gh command is not available.
 	ghCmd := h.resolveGHCommand()
 	if ghCmd == "" {
 		return writeCIJSON(w, ciStatusResponse{
@@ -108,10 +108,10 @@ func (h *CIStatusCheckerHandler) Handle(r io.Reader, w io.Writer) error {
 	stateDir := filepath.Join(projectRoot, ".claude", "state")
 	_ = os.MkdirAll(stateDir, 0700)
 
-	// 直近の CI 失敗シグナルをチェック（runner 実行前に確認）
+	// Check for a recent CI failure signal (before running the runner).
 	additionalContext := h.checkRecentCIFailure(stateDir, bashCmd)
 
-	// レスポンスを先に stdout に書き出す（async: true フックなので CC はプロセスを生かし続ける）
+	// Write the response to stdout first (CC keeps the process alive for async: true hooks).
 	var writeErr error
 	if additionalContext != "" {
 		writeErr = writeCIJSON(w, ciStatusResponse{
@@ -129,9 +129,9 @@ func (h *CIStatusCheckerHandler) Handle(r io.Reader, w io.Writer) error {
 		return writeErr
 	}
 
-	// レスポンス書き出し後にブロッキングで CI ステータスをポーリング。
-	// async: true フックなので CC がプロセスを最大 600s 生存させてくれる。
-	// goroutine は不要 — プロセス終了で kill されるリスクを排除する。
+	// After writing the response, poll CI status synchronously (blocking).
+	// Because this is an async: true hook, CC keeps the process alive for up to 600 s.
+	// No goroutine needed — this eliminates the risk of being killed on process exit.
 	runner := h.AsyncRunner
 	if runner == nil {
 		runner = defaultCIRunner
@@ -140,12 +140,12 @@ func (h *CIStatusCheckerHandler) Handle(r io.Reader, w io.Writer) error {
 	return nil
 }
 
-// isPushOrPRCommand は bashCmd が push / PR コマンドを含むかを返す。
+// isPushOrPRCommand reports whether bashCmd contains a push or PR command.
 func isPushOrPRCommand(cmd string) bool {
 	return pushOrPRCommandRe.MatchString(cmd)
 }
 
-// resolveGHCommand は gh コマンドのパスを返す。存在しない場合は空文字列。
+// resolveGHCommand returns the path to the gh command, or an empty string if not found.
 func (h *CIStatusCheckerHandler) resolveGHCommand() string {
 	if h.GHCommand != "" {
 		if _, err := os.Stat(h.GHCommand); err == nil {
@@ -160,7 +160,7 @@ func (h *CIStatusCheckerHandler) resolveGHCommand() string {
 	return path
 }
 
-// checkRecentCIFailure は直近の ci_failure_detected シグナルを確認し、メッセージを返す。
+// checkRecentCIFailure checks for a recent ci_failure_detected signal and returns a message.
 func (h *CIStatusCheckerHandler) checkRecentCIFailure(stateDir, bashCmd string) string {
 	signalsFile := filepath.Join(stateDir, "breezing-signals.jsonl")
 
@@ -170,9 +170,9 @@ func (h *CIStatusCheckerHandler) checkRecentCIFailure(stateDir, bashCmd string) 
 	}
 	defer f.Close()
 
-	// 最後の ci_failure_detected シグナルを探す
+	// Look for the last ci_failure_detected signal.
 	var lastFailureLine string
-	buf := make([]byte, 1<<20) // 最大 1MB
+	buf := make([]byte, 1<<20) // maximum 1 MB
 	n, _ := f.Read(buf)
 	content := string(buf[:n])
 
@@ -193,16 +193,17 @@ func (h *CIStatusCheckerHandler) checkRecentCIFailure(stateDir, bashCmd string) 
 
 	conclusion, _ := sig["conclusion"].(string)
 	return fmt.Sprintf(
-		"[CI 失敗を検知しました]\nCI ステータス: %s\nトリガーコマンド: %s\n\n推奨アクション: /breezing または ci-cd-fixer エージェントを spawn して CI 障害を自動修復してください。\n  例: ci-cd-fixer に「CI が失敗しました。ログを確認して修正してください。」と依頼",
+		"[CI failure detected]\nCI status: %s\nTrigger command: %s\n\nRecommended action: spawn /breezing or the ci-cd-fixer agent to automatically remediate the CI failure.\n  Example: ask ci-cd-fixer \"CI has failed. Please check the logs and fix it.\"",
 		conclusion, bashCmd,
 	)
 }
 
-// defaultCIRunner は gh run list でポーリングし、結果をシグナルファイルに書き込む。
-// async: true フックを前提に同期ブロッキングで実行される。
-// CC は async: true フックのプロセスを最大 600s 生存させるため、
-// maxWait を 120s に設定して GitHub Actions の完了を十分待つ。
-// （以前の 25s では 10s 間隔で 2 回しかポーリングできず、多くの CI が完了前に監視終了していた）
+// defaultCIRunner polls with gh run list and writes the result to the signals file.
+// Runs synchronously (blocking), assuming an async: true hook.
+// Because CC keeps async: true hook processes alive for up to 600 s,
+// maxWait is set to 120 s to wait long enough for GitHub Actions to complete.
+// (With the previous 25 s, only 2 polls were possible at 10 s intervals,
+// causing monitoring to end before most CI runs finished.)
 func defaultCIRunner(projectRoot, stateDir, bashCmd, ghCmd string) {
 	const maxWait = 120 * time.Second
 	const pollInterval = 10 * time.Second
@@ -229,7 +230,7 @@ func defaultCIRunner(projectRoot, stateDir, bashCmd, ghCmd string) {
 			continue
 		}
 
-		// 結果を記録
+		// Record the result.
 		statusData, _ := json.Marshal(map[string]string{
 			"timestamp":       time.Now().UTC().Format(time.RFC3339),
 			"trigger_command": bashCmd,
@@ -238,7 +239,7 @@ func defaultCIRunner(projectRoot, stateDir, bashCmd, ghCmd string) {
 		})
 		_ = os.WriteFile(ciStatusFile, statusData, 0600)
 
-		// CI 失敗の場合はシグナルファイルに追記
+		// Append to the signals file on CI failure.
 		if run.Conclusion == "failure" || run.Conclusion == "timed_out" || run.Conclusion == "cancelled" {
 			sig, _ := json.Marshal(map[string]string{
 				"signal":          "ci_failure_detected",
@@ -258,7 +259,7 @@ func defaultCIRunner(projectRoot, stateDir, bashCmd, ghCmd string) {
 	}
 }
 
-// writeCIJSON は v を JSON として w に書き出す。
+// writeCIJSON writes v as JSON to w.
 func writeCIJSON(w io.Writer, v interface{}) error {
 	data, err := json.Marshal(v)
 	if err != nil {

@@ -1,6 +1,6 @@
 #!/bin/bash
 # loop-max-cycles.sh
-# harness-loop の最大サイクル数を超えずに停止することを確認する
+# Verify that harness-loop stops without exceeding the maximum cycle count
 
 set -euo pipefail
 
@@ -62,28 +62,28 @@ EOF
 chmod +x "${MOCK_LOOP_SCRIPT}"
 
 if ! HARNESS_LOOP_MAX_CYCLES=3 bash "${MOCK_LOOP_SCRIPT}" "${QUEUE_FILE}" "${LOG_FILE}" "${LOCK_DIR}" >/dev/null 2>&1; then
-  echo "mock loop script が失敗しました"
+  echo "mock loop script failed"
   exit 1
 fi
 
 cycle_count="$(grep -c '^cycle=' "${LOG_FILE}" 2>/dev/null || echo 0)"
 if [ "${cycle_count}" -ne 3 ]; then
-  echo "cycle count が 3 ではありません: ${cycle_count}"
+  echo "cycle count is not 3: ${cycle_count}"
   exit 1
 fi
 
 grep -q 'max cycles reached (3)' "${LOG_FILE}" || {
-  echo "max cycles reached の通知が見つかりません"
+  echo "max cycles reached notification not found"
   exit 1
 }
 
 grep -q 'task-4' "${LOG_FILE}" && {
-  echo "4 回目のタスクが処理されています"
+  echo "4th task was processed"
   exit 1
 }
 
 [ ! -d "${LOCK_DIR}" ] || {
-  echo "lock directory が残っています"
+  echo "lock directory still exists"
   exit 1
 }
 

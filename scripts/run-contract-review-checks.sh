@@ -1,7 +1,7 @@
 #!/bin/bash
 # run-contract-review-checks.sh
-# sprint-contract.json に定義された runtime_validation を順番に実行し、
-# 実行結果を review artifact として保存する。
+# Execute the runtime_validation steps defined in sprint-contract.json in order,
+# and save the results as a review artifact.
 
 set -euo pipefail
 
@@ -26,7 +26,7 @@ fi
 PROFILE="$(jq -r '.review.reviewer_profile // "static"' "$CONTRACT_FILE")"
 TASK_ID="$(jq -r '.task.id // "unknown"' "$CONTRACT_FILE")"
 TASK_TITLE="$(jq -r '.task.title // ""' "$CONTRACT_FILE")"
-# 絶対パスで出力（worktree から呼ばれても Lead 側で解決できるように）
+# Output as absolute path (so the Lead can resolve it even when called from a worktree)
 STATE_DIR="$(pwd)/.claude/state/review"
 mkdir -p "$STATE_DIR"
 
@@ -141,9 +141,9 @@ else
   checks_json='[]'
 fi
 
-# runtime_validation が空の場合は static プロファイルへの降格を示す
-# 空のまま APPROVE/REQUEST_CHANGES を返すのではなく、
-# 呼び出し元がプロファイルを切り替えられるよう DOWNGRADE_TO_STATIC を返す
+# When runtime_validation is empty, indicate downgrade to the static profile.
+# Rather than returning APPROVE/REQUEST_CHANGES with no checks run,
+# return DOWNGRADE_TO_STATIC so the caller can switch profiles.
 RAN_CHECKS="$(echo "$checks_json" | jq 'length')"
 if [ "$RAN_CHECKS" -eq 0 ]; then
   verdict="DOWNGRADE_TO_STATIC"

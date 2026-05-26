@@ -42,7 +42,7 @@ if echo "$COMMAND" | grep -Eiq '(^|[[:space:]])git[[:space:]]+commit([[:space:]]
       rm -f "$REVIEW_RESULT_FILE" 2>/dev/null
 
       # Log the cleanup
-      echo "[Commit Guard] レビュー承認状態をクリアしました。次回のコミット前に再度独立レビューを実行してください。" >&2
+      echo "[Commit Guard] Review approval state cleared. Please run an independent review again before the next commit." >&2
     fi
   fi
 fi

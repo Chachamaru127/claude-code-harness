@@ -1,10 +1,10 @@
-// Package breezing は Breezing モードの goroutine オーケストレーションを提供する。
+// Package breezing provides goroutine orchestration for Breezing mode.
 //
-// Lead セッションが Worker/Reviewer を並列 spawn する際の裏側インフラ:
-//   - 最大並列数制御（semaphore パターン）
-//   - context.Context による graceful shutdown
-//   - タスク依存関係の自動解決
-//   - worktree ライフサイクル管理
+// The underlying infrastructure for Lead sessions to spawn Workers/Reviewers in parallel:
+//   - Maximum parallelism control (semaphore pattern)
+//   - Graceful shutdown via context.Context
+//   - Automatic task dependency resolution
+//   - Worktree lifecycle management
 package breezing
 
 import (
@@ -17,7 +17,7 @@ import (
 	"github.com/Chachamaru127/claude-code-harness/go/internal/state"
 )
 
-// TaskStatus はオーケストレーター内でのタスク進捗を表す。
+// TaskStatus represents task progress within the orchestrator.
 type TaskStatus string
 
 const (
@@ -28,74 +28,74 @@ const (
 	TaskBlocked   TaskStatus = "blocked"
 )
 
-// Task はオーケストレーターが管理する単一タスクを表す。
+// Task represents a single task managed by the orchestrator.
 type Task struct {
-	// ID はタスク識別子（例: "35.6.1"）。
+	// ID is the task identifier (e.g. "35.6.1").
 	ID string
-	// Description はタスクの概要。
+	// Description is a summary of the task.
 	Description string
-	// DependsOn は依存するタスク ID のリスト。
+	// DependsOn is the list of task IDs this task depends on.
 	DependsOn []string
-	// AgentType は spawn するエージェント種別（"worker" / "reviewer"）。
+	// AgentType is the type of agent to spawn ("worker" / "reviewer").
 	AgentType string
-	// WorktreePath は worktree のパス（worktree 使用時）。
+	// WorktreePath is the path to the worktree (when a worktree is used).
 	WorktreePath string
 }
 
-// TaskResult はタスク完了時の結果を表す。
+// TaskResult represents the result of a completed task.
 type TaskResult struct {
-	// TaskID は完了したタスクの ID。
+	// TaskID is the ID of the completed task.
 	TaskID string
-	// AgentID は実行した CC エージェントの ID。
+	// AgentID is the ID of the CC agent that ran the task.
 	AgentID string
-	// CommitHash はコミットのハッシュ（成功時）。
+	// CommitHash is the commit hash on success.
 	CommitHash string
-	// Err はエラー（失敗時）。
+	// Err is the error on failure.
 	Err error
-	// Duration は実行時間。
+	// Duration is the execution time.
 	Duration time.Duration
 }
 
-// WorkerFunc はオーケストレーターが各タスクに対して呼び出すコールバック。
-// context がキャンセルされた場合は速やかに終了すること。
+// WorkerFunc is the callback invoked by the orchestrator for each task.
+// Must return promptly when the context is cancelled.
 type WorkerFunc func(ctx context.Context, task *Task) TaskResult
 
-// ProgressFunc はタスク完了時に呼び出される進捗コールバック。
+// ProgressFunc is the progress callback invoked when a task completes.
 type ProgressFunc func(completed, total int, result TaskResult)
 
-// Orchestrator は Worker/Reviewer の goroutine 並列実行を管理する。
-// semaphore パターンで最大並列数を制御し、context.Context で graceful shutdown を実現する。
+// Orchestrator manages parallel goroutine execution of Workers/Reviewers.
+// Controls maximum parallelism via a semaphore pattern and achieves graceful shutdown with context.Context.
 type Orchestrator struct {
 	mu sync.Mutex
 
-	// tasks は管理対象の全タスク。
+	// tasks is the set of all managed tasks.
 	tasks []*Task
-	// status は各タスクの現在の状態。
+	// status is the current state of each task.
 	status map[string]TaskStatus
-	// results は完了したタスクの結果。
+	// results holds the results of completed tasks.
 	results map[string]TaskResult
 
-	// maxParallel は最大並列実行数。
+	// maxParallel is the maximum number of parallel executions.
 	maxParallel int
-	// tracker はエージェントライフサイクル追跡。
-	// workerFn 内で tracker.HandleStart/HandleStop を呼ぶ想定。
-	// Orchestrator 自身は tracker を直接操作しない（workerFn に委譲）。
+	// tracker is for agent lifecycle tracking.
+	// Expected to call tracker.HandleStart/HandleStop inside workerFn.
+	// The Orchestrator itself does not manipulate tracker directly (delegates to workerFn).
 	tracker *lifecycle.AgentTracker
-	// store は SQLite 永続化ストア（nil 許容）。
-	// workerFn 内で state 永続化に使用する想定。
+	// store is the SQLite persistence store (may be nil).
+	// Expected to be used for state persistence inside workerFn.
 	store *state.HarnessStore
 
-	// workerFn は各タスクの実行関数。
+	// workerFn is the execution function for each task.
 	workerFn WorkerFunc
-	// progressFn は進捗コールバック（nil 許容）。
+	// progressFn is the progress callback (may be nil).
 	progressFn ProgressFunc
 }
 
-// OrchestratorOption は Orchestrator の設定オプション。
+// OrchestratorOption is a configuration option for the Orchestrator.
 type OrchestratorOption func(*Orchestrator)
 
-// WithMaxParallel は最大並列数を設定する。
-// 0 以下の場合はデフォルト (3) が使用される。
+// WithMaxParallel sets the maximum parallelism.
+// Values of 0 or less fall back to the default (3).
 func WithMaxParallel(n int) OrchestratorOption {
 	return func(o *Orchestrator) {
 		if n > 0 {
@@ -104,29 +104,29 @@ func WithMaxParallel(n int) OrchestratorOption {
 	}
 }
 
-// WithTracker は AgentTracker を設定する。
+// WithTracker sets the AgentTracker.
 func WithTracker(t *lifecycle.AgentTracker) OrchestratorOption {
 	return func(o *Orchestrator) {
 		o.tracker = t
 	}
 }
 
-// WithStore は HarnessStore を設定する。
+// WithStore sets the HarnessStore.
 func WithStore(s *state.HarnessStore) OrchestratorOption {
 	return func(o *Orchestrator) {
 		o.store = s
 	}
 }
 
-// WithProgressFunc は進捗コールバックを設定する。
+// WithProgressFunc sets the progress callback.
 func WithProgressFunc(fn ProgressFunc) OrchestratorOption {
 	return func(o *Orchestrator) {
 		o.progressFn = fn
 	}
 }
 
-// NewOrchestrator は新しい Orchestrator を生成する。
-// workerFn は各タスクの実行関数（必須）。
+// NewOrchestrator creates a new Orchestrator.
+// workerFn is the execution function for each task (required).
 func NewOrchestrator(workerFn WorkerFunc, opts ...OrchestratorOption) *Orchestrator {
 	o := &Orchestrator{
 		status:      make(map[string]TaskStatus),
@@ -140,8 +140,8 @@ func NewOrchestrator(workerFn WorkerFunc, opts ...OrchestratorOption) *Orchestra
 	return o
 }
 
-// AddTask はオーケストレーターにタスクを追加する。
-// Run 呼び出し前に全タスクを追加すること。
+// AddTask adds a task to the orchestrator.
+// All tasks must be added before calling Run.
 func (o *Orchestrator) AddTask(task *Task) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -149,9 +149,9 @@ func (o *Orchestrator) AddTask(task *Task) {
 	o.status[task.ID] = TaskPending
 }
 
-// Run はタスクを依存関係に従って並列実行する。
-// 全タスク完了（成功 or 失敗）まで待つ。context キャンセルで graceful shutdown。
-// 返される []TaskResult は完了順。
+// Run executes tasks in parallel respecting their dependency order.
+// Waits until all tasks complete (successfully or with failure). Graceful shutdown on context cancel.
+// The returned []TaskResult is in completion order.
 func (o *Orchestrator) Run(ctx context.Context) ([]TaskResult, error) {
 	o.mu.Lock()
 	total := len(o.tasks)
@@ -161,18 +161,18 @@ func (o *Orchestrator) Run(ctx context.Context) ([]TaskResult, error) {
 	}
 	o.mu.Unlock()
 
-	// semaphore: 最大並列数を制御するバッファ付きチャネル
+	// semaphore: buffered channel to control maximum parallelism
 	sem := make(chan struct{}, o.maxParallel)
-	// resultCh: 完了通知を集約
+	// resultCh: aggregates completion notifications
 	resultCh := make(chan TaskResult, total)
-	// wg: 全 goroutine の完了待ち
+	// wg: waits for all goroutines to finish
 	var wg sync.WaitGroup
 
-	// 依存が解決されたタスクを定期的にチェックして dispatch する
+	// Periodically check for tasks with resolved dependencies and dispatch them
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	// dispatch ループ
+	// dispatch loop
 	go func() {
 		ticker := time.NewTicker(50 * time.Millisecond)
 		defer ticker.Stop()
@@ -184,7 +184,7 @@ func (o *Orchestrator) Run(ctx context.Context) ([]TaskResult, error) {
 			case <-ticker.C:
 				o.dispatchReady(ctx, sem, resultCh, &wg)
 
-				// 全タスクが完了 or 失敗したら終了
+				// Exit when all tasks have completed or failed
 				o.mu.Lock()
 				allDone := o.allTerminated()
 				o.mu.Unlock()
@@ -195,7 +195,7 @@ func (o *Orchestrator) Run(ctx context.Context) ([]TaskResult, error) {
 		}
 	}()
 
-	// 結果集約ループ
+	// result aggregation loop
 	var results []TaskResult
 	completed := 0
 	for completed < total {
@@ -207,7 +207,7 @@ func (o *Orchestrator) Run(ctx context.Context) ([]TaskResult, error) {
 				o.progressFn(completed, total, result)
 			}
 		case <-ctx.Done():
-			// キャンセル: 残り全タスクの結果を待つ
+			// Cancelled: wait for all remaining task results
 			wg.Wait()
 			// drain remaining results
 			for len(resultCh) > 0 {
@@ -222,14 +222,14 @@ func (o *Orchestrator) Run(ctx context.Context) ([]TaskResult, error) {
 	return results, nil
 }
 
-// Status は指定タスクの現在のステータスを返す。
+// Status returns the current status of the specified task.
 func (o *Orchestrator) Status(taskID string) TaskStatus {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 	return o.status[taskID]
 }
 
-// Results は全完了タスクの結果を返す。
+// Results returns the results of all completed tasks.
 func (o *Orchestrator) Results() map[string]TaskResult {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -240,7 +240,7 @@ func (o *Orchestrator) Results() map[string]TaskResult {
 	return res
 }
 
-// dispatchReady は依存が解決された pending タスクを goroutine で起動する。
+// dispatchReady launches goroutines for pending tasks whose dependencies are resolved.
 func (o *Orchestrator) dispatchReady(ctx context.Context, sem chan struct{}, resultCh chan<- TaskResult, wg *sync.WaitGroup) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -250,7 +250,7 @@ func (o *Orchestrator) dispatchReady(ctx context.Context, sem chan struct{}, res
 			continue
 		}
 
-		// 依存先が失敗していれば blocked に（depsResolved より先にチェック）
+		// Check for failed dependencies before depsResolved, and mark as blocked
 		if o.depsFailed(task) {
 			o.status[task.ID] = TaskBlocked
 			resultCh <- TaskResult{
@@ -264,11 +264,11 @@ func (o *Orchestrator) dispatchReady(ctx context.Context, sem chan struct{}, res
 			continue
 		}
 
-		// semaphore 取得を試みる（ノンブロッキング）
+		// Attempt to acquire the semaphore (non-blocking)
 		select {
 		case sem <- struct{}{}:
 		default:
-			continue // 並列上限に達している
+			continue // parallelism limit reached
 		}
 
 		o.status[task.ID] = TaskRunning
@@ -276,7 +276,7 @@ func (o *Orchestrator) dispatchReady(ctx context.Context, sem chan struct{}, res
 
 		go func(t *Task) {
 			defer wg.Done()
-			defer func() { <-sem }() // semaphore 解放
+			defer func() { <-sem }() // release semaphore
 
 			start := time.Now()
 			result := o.workerFn(ctx, t)
@@ -297,8 +297,8 @@ func (o *Orchestrator) dispatchReady(ctx context.Context, sem chan struct{}, res
 	}
 }
 
-// depsResolved は全依存タスクが completed かどうかを返す。
-// ロック取得済み前提。
+// depsResolved returns whether all dependency tasks are completed.
+// Assumes the lock is already held.
 func (o *Orchestrator) depsResolved(task *Task) bool {
 	for _, depID := range task.DependsOn {
 		if o.status[depID] != TaskCompleted {
@@ -308,8 +308,8 @@ func (o *Orchestrator) depsResolved(task *Task) bool {
 	return true
 }
 
-// depsFailed は依存タスクのいずれかが failed/blocked かどうかを返す。
-// ロック取得済み前提。
+// depsFailed returns whether any dependency task is failed or blocked.
+// Assumes the lock is already held.
 func (o *Orchestrator) depsFailed(task *Task) bool {
 	for _, depID := range task.DependsOn {
 		s := o.status[depID]
@@ -320,8 +320,8 @@ func (o *Orchestrator) depsFailed(task *Task) bool {
 	return false
 }
 
-// allTerminated は全タスクが終端状態 (completed/failed/blocked) にあるかを返す。
-// ロック取得済み前提。
+// allTerminated returns whether all tasks are in a terminal state (completed/failed/blocked).
+// Assumes the lock is already held.
 func (o *Orchestrator) allTerminated() bool {
 	for _, task := range o.tasks {
 		s := o.status[task.ID]

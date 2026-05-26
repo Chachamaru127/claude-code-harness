@@ -8,22 +8,22 @@
 
 set -euo pipefail
 
-# === 設定 ===
+# === Configuration ===
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# Load path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-# プロジェクトルートを検出
+# Detect project root
 PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 
-# 状態ディレクトリ
+# State directory
 STATE_DIR="${PROJECT_ROOT}/.claude/state"
 
-# === ユーティリティ関数 ===
+# === Utility functions ===
 
 ensure_state_dir() {
   local state_parent
@@ -54,19 +54,19 @@ write_counter_file() {
   return 0
 }
 
-# === stdin から JSON ペイロードを読み取り ===
+# === Read JSON payload from stdin ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
+# Skip if payload is empty
 if [ -z "${INPUT}" ]; then
   echo '{}'
   exit 0
 fi
 
-# === フィールド抽出 ===
+# === Field extraction ===
 TOOL_NAME=""
 ERROR_MSG=""
 
@@ -89,13 +89,13 @@ except:
   ERROR_MSG="$(echo "${_parsed}" | sed -n '2p')"
 fi
 
-# === 連続失敗カウンター（タイムスタンプ付き） ===
+# === Consecutive failure counter (with timestamp) ===
 if ! ensure_state_dir; then
   echo '{}'
   exit 0
 fi
 COUNTER_FILE="${STATE_DIR}/tool-failure-counter.txt"
-STALENESS_THRESHOLD=60  # 秒。前回失敗から60秒以上経過したらリセット
+STALENESS_THRESHOLD=60  # seconds. Reset if more than 60 seconds have passed since the last failure
 
 if [ -L "${COUNTER_FILE}" ]; then
   echo '{}'
@@ -107,18 +107,18 @@ LAST_TIMESTAMP=0
 NOW="$(date +%s)"
 
 if [ -f "${COUNTER_FILE}" ]; then
-  # フォーマット: "count timestamp"
+  # Format: "count timestamp"
   _line="$(cat "${COUNTER_FILE}" 2>/dev/null || echo "0 0")"
   CURRENT_COUNT="$(echo "${_line}" | awk '{print $1}')"
   LAST_TIMESTAMP="$(echo "${_line}" | awk '{print $2}')"
-  # 数値でない場合のガード
+  # Guard against non-numeric values
   if ! printf '%d' "${CURRENT_COUNT}" >/dev/null 2>&1; then
     CURRENT_COUNT=0
   fi
   if ! printf '%d' "${LAST_TIMESTAMP}" >/dev/null 2>&1; then
     LAST_TIMESTAMP=0
   fi
-  # 前回失敗から一定時間経過していたらリセット（連続ではない）
+  # Reset if enough time has passed since the last failure (not consecutive)
   ELAPSED=$((NOW - LAST_TIMESTAMP))
   if [ "${ELAPSED}" -gt "${STALENESS_THRESHOLD}" ]; then
     CURRENT_COUNT=0
@@ -130,9 +130,9 @@ if ! write_counter_file "${CURRENT_COUNT}" "${NOW}"; then
   exit 0
 fi
 
-# === 3回連続失敗で escalation ===
+# === Escalate after 3 consecutive failures ===
 if [ "${CURRENT_COUNT}" -ge 3 ]; then
-  # エスケープ済みエラーメッセージを構築
+  # Build escaped error message
   if command -v jq >/dev/null 2>&1; then
     jq -nc \
       --arg tool "${TOOL_NAME}" \
@@ -149,7 +149,7 @@ print(json.dumps({'systemMessage': msg}, ensure_ascii=False))
   else
     printf '{"systemMessage":"WARNING: %s consecutive tool failures detected (tool: %s). Stop retrying the same approach."}\n' "${CURRENT_COUNT}" "${TOOL_NAME}"
   fi
-  # カウンターリセット
+  # Reset counter
   write_counter_file "0" "0" || true
 else
   if command -v jq >/dev/null 2>&1; then

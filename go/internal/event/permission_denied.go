@@ -9,18 +9,18 @@ import (
 	"strings"
 )
 
-// PermissionDeniedHandler は PermissionDenied フックハンドラ (v2.1.89+)。
-// auto mode classifier がコマンドを拒否した際に発火する。
-// 拒否イベントを telemetry に記録し、Worker モードでは Lead への通知と retry ヒントを返す。
+// PermissionDeniedHandler is the PermissionDenied hook handler (v2.1.89+).
+// Fires when the auto mode classifier denies a command.
+// Records the denial event to telemetry; in Worker mode returns a notification to Lead and a retry hint.
 //
-// shell 版: scripts/hook-handlers/permission-denied-handler.sh
+// Shell version: scripts/hook-handlers/permission-denied-handler.sh
 type PermissionDeniedHandler struct {
-	// StateDir はログファイルの保存先。
-	// 空の場合は ResolveStateDir(projectRoot) を使う。
+	// StateDir is the destination for log files.
+	// If empty, uses ResolveStateDir(projectRoot).
 	StateDir string
 }
 
-// permissionDeniedInput は PermissionDenied フックの stdin JSON。
+// permissionDeniedInput is the stdin JSON for the PermissionDenied hook.
 type permissionDeniedInput struct {
 	Tool         string `json:"tool,omitempty"`
 	ToolName     string `json:"tool_name,omitempty"`
@@ -32,7 +32,7 @@ type permissionDeniedInput struct {
 	CWD          string `json:"cwd,omitempty"`
 }
 
-// permissionDeniedLogEntry は permission-denied.jsonl に書き出すエントリ。
+// permissionDeniedLogEntry is the entry written to permission-denied.jsonl.
 type permissionDeniedLogEntry struct {
 	Event     string `json:"event"`
 	Timestamp string `json:"timestamp"`
@@ -43,9 +43,9 @@ type permissionDeniedLogEntry struct {
 	Reason    string `json:"reason"`
 }
 
-// Handle は stdin から PermissionDenied ペイロードを読み取り、
-// ログに記録した後、Worker の場合は retry + systemMessage を返す。
-// Worker 以外の場合は approve を返す。
+// Handle reads a PermissionDenied payload from stdin,
+// records it to the log, then returns retry + systemMessage for Workers.
+// For non-Workers, returns approve.
 func (h *PermissionDeniedHandler) Handle(r io.Reader, w io.Writer) error {
 	data, err := io.ReadAll(r)
 	if err != nil || len(data) == 0 {
@@ -57,7 +57,7 @@ func (h *PermissionDeniedHandler) Handle(r io.Reader, w io.Writer) error {
 		return nil
 	}
 
-	// フィールドの正規化
+	// Normalize fields
 	toolName := inp.Tool
 	if toolName == "" {
 		toolName = inp.ToolName
@@ -87,7 +87,7 @@ func (h *PermissionDeniedHandler) Handle(r io.Reader, w io.Writer) error {
 		agentType = "unknown"
 	}
 
-	// ステートディレクトリを決定
+	// Determine the state directory
 	projectRoot := inp.CWD
 	if projectRoot == "" {
 		projectRoot = resolveProjectRoot(data)
@@ -107,7 +107,7 @@ func (h *PermissionDeniedHandler) Handle(r io.Reader, w io.Writer) error {
 		return nil
 	}
 
-	// ログに記録
+	// Record to log
 	entry := permissionDeniedLogEntry{
 		Event:     "permission_denied",
 		Timestamp: Now(),
@@ -119,17 +119,17 @@ func (h *PermissionDeniedHandler) Handle(r io.Reader, w io.Writer) error {
 	}
 	h.appendLog(logFile, entry)
 
-	// stderr にデバッグ出力
+	// Debug output to stderr
 	fmt.Fprintf(os.Stderr,
 		"[PermissionDenied] agent=%s type=%s tool=%s reason=%s\n",
 		agentID, agentType, toolName, deniedReason,
 	)
 
-	// Worker の場合: retry + systemMessage を返す
+	// For Workers: return retry + systemMessage
 	if h.isWorker(agentType) {
 		notificationText := fmt.Sprintf(
-			"[PermissionDenied] Worker のツール %s が auto mode で拒否されました。"+
-				"理由: %s。代替アプローチを検討するか、必要なら手動承認してください。",
+			"[PermissionDenied] Worker tool %s was denied in auto mode. "+
+				"Reason: %s. Consider an alternative approach, or request manual approval if needed.",
 			toolName, deniedReason,
 		)
 		return WriteJSON(w, RetryResponse{
@@ -138,22 +138,22 @@ func (h *PermissionDeniedHandler) Handle(r io.Reader, w io.Writer) error {
 		})
 	}
 
-	// Worker 以外: approve を返す
+	// For non-Workers: return approve
 	return WriteJSON(w, ApproveResponse{
 		Decision: "approve",
 		Reason:   "PermissionDenied logged",
 	})
 }
 
-// isWorker は agentType が Worker であるかを判定する。
-// "worker", "task-worker", または ":worker" で終わる場合に true を返す。
+// isWorker determines whether agentType is a Worker.
+// Returns true if the value is "worker", "task-worker", or ends with ":worker".
 func (h *PermissionDeniedHandler) isWorker(agentType string) bool {
 	return agentType == "worker" ||
 		agentType == "task-worker" ||
 		strings.HasSuffix(agentType, ":worker")
 }
 
-// appendLog は permission-denied ログに 1 エントリ追記する。
+// appendLog appends one entry to the permission-denied log.
 func (h *PermissionDeniedHandler) appendLog(path string, entry permissionDeniedLogEntry) {
 	logData, err := json.Marshal(entry)
 	if err != nil {

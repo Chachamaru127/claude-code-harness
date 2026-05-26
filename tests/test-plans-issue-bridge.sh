@@ -10,16 +10,16 @@ trap 'rm -rf "$TMP_DIR"' EXIT
 cat > "${TMP_DIR}/Plans.md" <<'EOF'
 ## Phase 29.1: Plans.md ⇄ GitHub Issue bridge (opt-in)
 
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
-| 29.1.1 | team mode を定義する | opt-in 条件が明記されている | - | cc:TODO |
-| 29.1.2 | issue payload の dry-run を作る | Plans.md から task が抽出できる | 29.1.1 | cc:TODO |
+| Task | Content | DoD | Depends | Status |
+|------|---------|-----|---------|--------|
+| 29.1.1 | define team mode | opt-in conditions are documented | - | cc:TODO |
+| 29.1.2 | create dry-run of issue payload | task can be extracted from Plans.md | 29.1.1 | cc:TODO |
 
-## Phase 29.3: 軽量 brief と machine-readable manifest
+## Phase 29.3: Lightweight brief and machine-readable manifest
 
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
-| 29.3.1 | design brief を付ける | UI brief のテンプレがある | - | cc:TODO |
+| Task | Content | DoD | Depends | Status |
+|------|---------|-----|---------|--------|
+| 29.3.1 | attach design brief | UI brief template exists | - | cc:TODO |
 EOF
 
 JSON_OUTPUT="${TMP_DIR}/bridge.json"
@@ -42,6 +42,6 @@ MARKDOWN_OUTPUT="${TMP_DIR}/bridge.md"
 
 grep -q "Plans.md issue bridge dry-run" "${MARKDOWN_OUTPUT}"
 grep -q "Team mode: enabled" "${MARKDOWN_OUTPUT}"
-grep -q "29.1.2 issue payload の dry-run を作る" "${MARKDOWN_OUTPUT}"
+grep -q "29.1.2 create dry-run of issue payload" "${MARKDOWN_OUTPUT}"
 
 echo "test-plans-issue-bridge: ok"

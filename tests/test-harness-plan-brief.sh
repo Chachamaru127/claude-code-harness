@@ -1,16 +1,16 @@
 #!/bin/bash
 # tests/test-harness-plan-brief.sh
-# Phase 65.1.2 - harness-plan-brief skill の機械検証
+# Phase 65.1.2 - mechanical verification of the harness-plan-brief skill
 #
-# 検証観点:
-#   1. SKILL.md が存在し、frontmatter が skill-editing.md 規約準拠
-#   2. SKILL.md が `mcp__harness__harness_mem_search` を project enforcement で呼ぶよう指示
-#   3. SKILL.md が cross-project search を禁止 (`strict_project: true` を要求)
-#   4. JSON Schema が valid な JSON Schema として parse 可能
-#   5. fixture が JSON Schema validator で valid (Python jsonschema 優先 → 構造的 jq fallback)
-#   6. render-html.sh で plan-brief.html.template が正常 render できる
-#   7. plan-brief-open.sh が BROWSER=true で skip し path だけ stdout 出力する
-#   8. plan-brief-open.sh が存在しないパスで exit 2 を返す
+# Verification points:
+#   1. SKILL.md exists and frontmatter complies with skill-editing.md convention
+#   2. SKILL.md instructs calling mcp__harness__harness_mem_search with project enforcement
+#   3. SKILL.md prohibits cross-project search (requires strict_project: true)
+#   4. JSON Schema is parseable as a valid JSON Schema
+#   5. fixture is valid against JSON Schema validator (Python jsonschema preferred → structural jq fallback)
+#   6. render-html.sh can render plan-brief.html.template successfully
+#   7. plan-brief-open.sh skips with BROWSER=true and outputs only path to stdout
+#   8. plan-brief-open.sh returns exit 2 for non-existent path
 
 set -euo pipefail
 
@@ -87,12 +87,12 @@ fi
 # ---- 3. NO cross-project search ----
 
 if [[ -f "$SKILL_PATH" ]]; then
-  # cross-project な instruction が肯定的に書かれていないことを確認。
-  # 「cross-project」という語そのものは禁止文脈で使われていれば OK。
-  # 検出ルール: 「cross-project search を呼び出す」「cross-project search を実行する」のような
-  # 肯定表現は NG。「cross-project search を呼ばない / 行わない / 禁止」は OK。
+  # Verify that cross-project instructions are not written affirmatively.
+  # The word "cross-project" itself is OK if used in a prohibition context.
+  # Detection rule: affirmative expressions like "call cross-project search" or "execute cross-project search" are NG.
+  # "do not call / do not perform / prohibit cross-project search" are OK.
   if grep -qE 'cross-project' "$SKILL_PATH"; then
-    if grep -qE 'cross-project[^.]*(行わ|呼ばない|禁止|しない|opt-in|Phase 65.3)' "$SKILL_PATH"; then
+    if grep -qE 'cross-project[^.]*(only when|explicitly|prohibited|not.*call|do not.*call|opt-in|Phase 65.3)' "$SKILL_PATH"; then
       pass "SKILL.md mentions cross-project only in restricted context"
     else
       fail "SKILL.md mentions cross-project without explicit prohibition (DoD c)"

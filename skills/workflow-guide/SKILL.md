@@ -1,8 +1,6 @@
 ---
 name: workflow-guide
 description: "Explicit helper for Cursor PM ↔ Claude Code two-agent workflow guidance. Do NOT load for: solo implementation, workflow setup, handoff execution, or general process coaching."
-description-en: "Explicit helper for Cursor PM ↔ Claude Code two-agent workflow guidance. Do NOT load for: solo implementation, workflow setup, handoff execution, or general process coaching."
-description-ja: "Cursor PM と Claude Code の2エージェント運用を説明する明示補助スキル。単独実装、ワークフロー設定、ハンドオフ実行、一般的な進め方相談には使わない。"
 allowed-tools: ["Read"]
 user-invocable: false
 disable-model-invocation: true
@@ -10,85 +8,85 @@ disable-model-invocation: true
 
 # Workflow Guide Skill
 
-Cursor ↔ Claude Code 2エージェントワークフローのガイダンスを提供するスキル。
+Skill that provides guidance on the Cursor ↔ Claude Code two-agent workflow.
 
 ---
 
-## トリガーフレーズ
+## Trigger Phrases
 
-このスキルは以下のフレーズで起動します：
+This skill is invoked by the following phrases:
 
-- 「ワークフローについて教えて」
-- 「Cursor との連携方法は？」
-- 「作業の流れを教えて」
-- 「どうやって進めればいい？」
+- "explain the workflow"
+- "how do I connect with Cursor?"
+- "walk me through the process"
+- "how should we proceed?"
 - "how does the workflow work?"
 - "explain 2-agent workflow"
 
 ---
 
-## 概要
+## Overview
 
-このスキルは、Cursor（PM）と Claude Code（Worker）の役割分担と連携方法を説明します。
+This skill explains the role assignments and collaboration method for Cursor (PM) and Claude Code (Worker).
 
 ---
 
-## 2エージェントワークフロー
+## Two-Agent Workflow
 
-### 役割分担
+### Role Assignment
 
-| エージェント | 役割 | 責務 |
-|-------------|------|------|
-| **Cursor** | PM（プロジェクトマネージャー） | タスク割り当て、レビュー、本番デプロイ判断 |
-| **Claude Code** | Worker（作業者） | 実装、テスト、CI修正、staging デプロイ |
+| Agent | Role | Responsibilities |
+|-------|------|-----------------|
+| **Cursor** | PM (Project Manager) | Task assignment, review, production deploy decisions |
+| **Claude Code** | Worker | Implementation, testing, CI fixes, staging deploy |
 
-### ワークフロー図
+### Workflow Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    Cursor (PM)                          │
-│  ・タスクを Plans.md に追加                              │
-│  ・Claude Code に作業を依頼（/handoff-to-claude）            │
-│  ・完了報告をレビュー                                    │
-│  ・本番デプロイの判断                                    │
+│  · Add tasks to Plans.md                                │
+│  · Request work from Claude Code (/handoff-to-claude)   │
+│  · Review completion reports                            │
+│  · Decide on production deploys                         │
 └─────────────────────┬───────────────────────────────────┘
-                      │ タスク依頼
+                      │ Task request
                       ▼
 ┌─────────────────────────────────────────────────────────┐
 │                  Claude Code (Worker)                   │
-│  ・/work でタスク実行（並列実行対応）                   │
-│  ・実装 → テスト → コミット                             │
-│  ・CI 失敗時は自動修正（3回まで）                        │
-│  ・/handoff-to-cursor で完了報告                        │
+│  · Execute tasks with /work (parallel execution)        │
+│  · Implement → test → commit                            │
+│  · Auto-fix CI failures (up to 3 attempts)              │
+│  · Report completion with /handoff-to-cursor            │
 └─────────────────────┬───────────────────────────────────┘
-                      │ 完了報告
+                      │ Completion report
                       ▼
 ┌─────────────────────────────────────────────────────────┐
 │                    Cursor (PM)                          │
-│  ・変更内容を確認                                        │
-│  ・staging 動作確認                                      │
-│  ・本番デプロイ実行（承認後）                            │
+│  · Review changes                                       │
+│  · Verify staging behavior                              │
+│  · Execute production deploy (after approval)           │
 └─────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Plans.md によるタスク管理
+## Task Management via Plans.md
 
-### マーカー一覧
+### Marker Reference
 
-| マーカー | 意味 | 設定者 |
-|---------|------|--------|
-| `pm:依頼中` | PM から依頼（互換: cursor:依頼中） | PM（Cursor/PM Claude） |
-| `cc:TODO` | Claude Code 未着手 | どちらでも |
-| `cc:WIP` | Claude Code 作業中 | Claude Code |
-| `cc:完了` | Claude Code 完了 | Claude Code |
-| `pm:確認済` | PM 確認完了（互換: cursor:確認済） | PM（Cursor/PM Claude） |
-| `cursor:依頼中` | （互換）pm:依頼中 と同義 | Cursor |
-| `cursor:確認済` | （互換）pm:確認済 と同義 | Cursor |
-| `blocked` | ブロック中 | どちらでも |
+| Marker | Meaning | Set by |
+|--------|---------|--------|
+| `pm:依頼中` | Requested by PM (compatible: cursor:依頼中) | PM (Cursor/PM Claude) |
+| `cc:TODO` | Claude Code not yet started | Either |
+| `cc:WIP` | Claude Code working | Claude Code |
+| `cc:完了` | Claude Code complete | Claude Code |
+| `pm:確認済` | PM confirmed (compatible: cursor:確認済) | PM (Cursor/PM Claude) |
+| `cursor:依頼中` | (compatible) same as pm:依頼中 | Cursor |
+| `cursor:確認済` | (compatible) same as pm:確認済 | Cursor |
+| `blocked` | Blocked | Either |
 
-### タスクの状態遷移
+### Task State Transitions
 
 ```
 pm:依頼中 → cc:WIP → cc:完了 → pm:確認済
@@ -96,70 +94,70 @@ pm:依頼中 → cc:WIP → cc:完了 → pm:確認済
 
 ---
 
-## 主要コマンド
+## Key Commands
 
-### Claude Code 側
+### Claude Code Side
 
-| コマンド | 用途 |
-|---------|------|
-| `/harness-init` | プロジェクトセットアップ |
-| `/plan-with-agent` | 計画・タスク分解 |
-| `/work` | タスク実行（並列実行対応） |
-| `/handoff-to-cursor` | 完了報告（Cursor PMへ） |
-| `/sync-status` | 状態確認 |
+| Command | Purpose |
+|---------|---------|
+| `/harness-init` | Project setup |
+| `/plan-with-agent` | Planning and task breakdown |
+| `/work` | Execute tasks (parallel execution supported) |
+| `/handoff-to-cursor` | Completion report (to Cursor PM) |
+| `/sync-status` | Check current state |
 
-### スキル（会話で自動起動）
+### Skills (auto-invoked in conversation)
 
-| スキル | トリガー例 |
-|--------|-----------|
-| `handoff-to-pm` | 「PMに完了報告」 |
-| `handoff-to-impl` | 「実装役に渡して」 |
+| Skill | Trigger example |
+|-------|----------------|
+| `handoff-to-pm` | "Report completion to PM" |
+| `handoff-to-impl` | "Hand off to the implementer" |
 
-### Cursor 側（参考）
+### Cursor Side (reference)
 
-| コマンド | 用途 |
-|---------|------|
-| `/handoff-to-claude` | Claude Code にタスク依頼 |
-| `/review-cc-work` | 完了報告のレビュー |
-
----
-
-## CI/CD ルール
-
-### Claude Code の責務範囲
-
-- ✅ staging デプロイまで
-- ✅ CI 失敗時の自動修正（3回まで）
-- ❌ 本番デプロイは禁止
-
-### 3回ルール
-
-CI が 3回連続で失敗した場合：
-1. 自動修正を中止
-2. エスカレーションレポートを生成
-3. Cursor に判断を委ねる
+| Command | Purpose |
+|---------|---------|
+| `/handoff-to-claude` | Request tasks from Claude Code |
+| `/review-cc-work` | Review completion reports |
 
 ---
 
-## よくある質問
+## CI/CD Rules
 
-### Q: Cursor がいない場合は？
+### Claude Code's Scope of Responsibility
 
-A: 一人で作業する場合も、Plans.md でタスク管理することを推奨します。
-本番デプロイは手動で慎重に行ってください。
+- ✅ Up to staging deploy
+- ✅ Auto-fix CI failures (up to 3 attempts)
+- ❌ Production deploy is prohibited
 
-### Q: タスクが不明確な場合は？
+### The 3-Attempt Rule
 
-A: Cursor に確認を依頼するか、`/sync-status` で現状を整理してください。
-
-### Q: CI が何度も失敗する場合は？
-
-A: 3回以上は自動修正せず、Cursor にエスカレーションしてください。
+If CI fails 3 times in a row:
+1. Stop auto-fixing
+2. Generate an escalation report
+3. Defer the decision to Cursor
 
 ---
 
-## 関連ドキュメント
+## FAQ
 
-- AGENTS.md - 詳細な役割分担
-- CLAUDE.md - Claude Code 固有の設定
-- Plans.md - タスク管理ファイル
+### Q: What if Cursor is not available?
+
+A: Even when working solo, it is recommended to manage tasks with Plans.md.
+Perform production deploys manually and carefully.
+
+### Q: What if a task is unclear?
+
+A: Ask Cursor for clarification, or use `/sync-status` to organize the current state.
+
+### Q: What if CI keeps failing?
+
+A: Do not attempt more than 3 auto-fixes; escalate to Cursor instead.
+
+---
+
+## Related Documents
+
+- AGENTS.md - Detailed role assignments
+- CLAUDE.md - Claude Code-specific configuration
+- Plans.md - Task management file

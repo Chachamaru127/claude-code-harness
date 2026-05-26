@@ -52,7 +52,7 @@ func TestTrackCommandHandler_NonSlashPrompt(t *testing.T) {
 	h := &TrackCommandHandler{ProjectRoot: dir}
 
 	var out bytes.Buffer
-	err := h.Handle(strings.NewReader(`{"prompt":"普通のメッセージです"}`), &out)
+	err := h.Handle(strings.NewReader(`{"prompt":"This is a normal message"}`), &out)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestTrackCommandHandler_NonSlashPrompt(t *testing.T) {
 		t.Errorf("expected continue=true")
 	}
 
-	// pending ファイルが作成されていないことを確認
+	// Verify that no pending file was created
 	pendingDir := filepath.Join(dir, ".claude", "state", "pending-skills")
 	if _, err := os.Stat(pendingDir); err == nil {
 		entries, _ := os.ReadDir(pendingDir)
@@ -80,7 +80,7 @@ func TestTrackCommandHandler_SkillRequiredCommand_Work(t *testing.T) {
 	h := &TrackCommandHandler{ProjectRoot: dir}
 
 	var out bytes.Buffer
-	err := h.Handle(strings.NewReader(`{"prompt":"/work タスク3を実装して"}`), &out)
+	err := h.Handle(strings.NewReader(`{"prompt":"/work implement task 3"}`), &out)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -93,7 +93,7 @@ func TestTrackCommandHandler_SkillRequiredCommand_Work(t *testing.T) {
 		t.Errorf("expected continue=true")
 	}
 
-	// pending ファイルが作成されていることを確認
+	// Verify that the pending file was created
 	pendingFile := filepath.Join(dir, ".claude", "state", "pending-skills", "work.pending")
 	data, err := os.ReadFile(pendingFile)
 	if err != nil {
@@ -110,7 +110,7 @@ func TestTrackCommandHandler_SkillRequiredCommand_Work(t *testing.T) {
 	if entry.StartedAt == "" {
 		t.Errorf("expected started_at to be set")
 	}
-	if !strings.Contains(entry.PromptPreview, "タスク3") {
+	if !strings.Contains(entry.PromptPreview, "task 3") {
 		t.Errorf("expected prompt_preview to contain prompt text, got: %s", entry.PromptPreview)
 	}
 }
@@ -143,7 +143,7 @@ func TestTrackCommandHandler_NonSkillSlashCommand(t *testing.T) {
 	dir := t.TempDir()
 	h := &TrackCommandHandler{ProjectRoot: dir}
 
-	// /breezing は skillRequiredCommands に含まれない
+	// /breezing is not in skillRequiredCommands
 	var out bytes.Buffer
 	err := h.Handle(strings.NewReader(`{"prompt":"/breezing all"}`), &out)
 	if err != nil {
@@ -158,7 +158,7 @@ func TestTrackCommandHandler_NonSkillSlashCommand(t *testing.T) {
 		t.Errorf("expected continue=true")
 	}
 
-	// pending ファイルが作成されていないことを確認
+	// Verify that no pending file was created
 	pendingFile := filepath.Join(dir, ".claude", "state", "pending-skills", "breezing.pending")
 	if _, err := os.Stat(pendingFile); err == nil {
 		t.Errorf("expected no pending file for non-skill-required command")
@@ -169,9 +169,9 @@ func TestTrackCommandHandler_PluginPrefixCommand(t *testing.T) {
 	dir := t.TempDir()
 	h := &TrackCommandHandler{ProjectRoot: dir}
 
-	// プラグインプレフィックス付きコマンド
+	// Command with a plugin prefix
 	var out bytes.Buffer
-	err := h.Handle(strings.NewReader(`{"prompt":"/company-ai-harness:core:work タスクを実行"}`), &out)
+	err := h.Handle(strings.NewReader(`{"prompt":"/company-ai-harness:core:work execute task"}`), &out)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -184,7 +184,7 @@ func TestTrackCommandHandler_PluginPrefixCommand(t *testing.T) {
 		t.Errorf("expected continue=true")
 	}
 
-	// プレフィックスが除去されて work として認識されることを確認
+	// Verify that the prefix is stripped and the command is recognised as "work"
 	pendingFile := filepath.Join(dir, ".claude", "state", "pending-skills", "work.pending")
 	if _, err := os.ReadFile(pendingFile); err != nil {
 		t.Fatalf("expected work.pending to be created (after prefix strip): %v", err)
@@ -195,8 +195,8 @@ func TestTrackCommandHandler_MultilinePrompt(t *testing.T) {
 	dir := t.TempDir()
 	h := &TrackCommandHandler{ProjectRoot: dir}
 
-	// 最初の行のみチェックする動作を確認
-	prompt := "/work\n次の行の内容\nさらに次の行"
+	// Verify that only the first line is checked
+	prompt := "/work\nnext line content\nyet another line"
 	input := `{"prompt":` + `"` + strings.ReplaceAll(prompt, "\n", `\n`) + `"}`
 
 	var out bytes.Buffer
@@ -213,7 +213,7 @@ func TestTrackCommandHandler_MultilinePrompt(t *testing.T) {
 		t.Errorf("expected continue=true")
 	}
 
-	// /work がコマンドとして認識されること
+	// /work should be recognised as the command
 	pendingFile := filepath.Join(dir, ".claude", "state", "pending-skills", "work.pending")
 	if _, err := os.ReadFile(pendingFile); err != nil {
 		t.Fatalf("expected work.pending from multiline prompt: %v", err)
@@ -224,8 +224,8 @@ func TestTrackCommandHandler_LongPromptTruncated(t *testing.T) {
 	dir := t.TempDir()
 	h := &TrackCommandHandler{ProjectRoot: dir}
 
-	// 200 文字を超えるプロンプト
-	longText := "/work " + strings.Repeat("あ", 300)
+	// Prompt exceeding 200 characters
+	longText := "/work " + strings.Repeat("a", 300)
 	inputJSON, _ := json.Marshal(map[string]string{"prompt": longText})
 
 	var out bytes.Buffer
@@ -245,7 +245,7 @@ func TestTrackCommandHandler_LongPromptTruncated(t *testing.T) {
 		t.Fatalf("invalid pending JSON: %s", string(data))
 	}
 
-	// preview は最大200文字（rune 単位）
+	// preview should be at most 200 runes
 	runeCount := len([]rune(entry.PromptPreview))
 	if runeCount > 200 {
 		t.Errorf("prompt_preview should be at most 200 runes, got %d", runeCount)

@@ -10,25 +10,25 @@ import (
 	"strings"
 )
 
-// PostCompactHandler は PostCompact フックハンドラ。
-// コンテキストコンパクション完了後に発火し、WIP タスクのコンテキストを再注入する。
+// PostCompactHandler is the PostCompact hook handler.
+// Fires after context compaction completes and re-injects WIP task context.
 //
-// shell 版: scripts/hook-handlers/post-compact.sh
+// Shell version: scripts/hook-handlers/post-compact.sh
 type PostCompactHandler struct {
-	// StateDir はスナップショットファイルの場所を指定する。
-	// 空の場合は ResolveStateDir(projectRoot) を使う。
+	// StateDir specifies the location of snapshot files.
+	// If empty, uses ResolveStateDir(projectRoot).
 	StateDir string
-	// PlansFile は Plans.md のパスを指定する。
-	// 空の場合は projectRoot/Plans.md を使う。
+	// PlansFile specifies the path to Plans.md.
+	// If empty, uses projectRoot/Plans.md.
 	PlansFile string
 }
 
-// precompactSnapshot は PreCompact が保存したスナップショット JSON のスキーマ。
-// handoff-artifact.json (v2.0.0) の全フィールドをカバーする。
+// precompactSnapshot is the schema of the snapshot JSON saved by PreCompact.
+// Covers all fields of handoff-artifact.json (v2.0.0).
 type precompactSnapshot struct {
 	WIPTasks    []string `json:"wipTasks"`
 	RecentEdits []string `json:"recentEdits"`
-	// structured handoff 用フィールド
+	// Fields for structured handoff
 	PreviousState *handoffPreviousState  `json:"previous_state,omitempty"`
 	NextAction    *handoffNextAction     `json:"next_action,omitempty"`
 	OpenRisks     []handoffRisk          `json:"open_risks,omitempty"`
@@ -38,15 +38,15 @@ type precompactSnapshot struct {
 	Continuity    *handoffContinuity     `json:"continuity,omitempty"`
 }
 
-// handoffPreviousState は previous_state フィールドのスキーマ。
+// handoffPreviousState is the schema for the previous_state field.
 type handoffPreviousState struct {
 	Summary      string               `json:"summary"`
 	SessionState *handoffSessionState `json:"session_state,omitempty"`
 	PlanCounts   *handoffPlanCounts   `json:"plan_counts,omitempty"`
 }
 
-// handoffSessionState はセッション状態。
-// null になりうるフィールドはポインタ型で受け取り、JSON null を正しくアンマーシャルする。
+// handoffSessionState is the session state.
+// Fields that can be null are received as pointer types to correctly unmarshal JSON null.
 type handoffSessionState struct {
 	State        string  `json:"state"`
 	ReviewStatus *string `json:"review_status,omitempty"`
@@ -54,7 +54,7 @@ type handoffSessionState struct {
 	ResumedAt    *string `json:"resumed_at,omitempty"`
 }
 
-// handoffPlanCounts はプランカウント情報。
+// handoffPlanCounts holds plan count information.
 type handoffPlanCounts struct {
 	Total       int `json:"total"`
 	WIP         int `json:"wip"`
@@ -62,8 +62,8 @@ type handoffPlanCounts struct {
 	RecentEdits int `json:"recent_edits"`
 }
 
-// handoffNextAction は next_action フィールドのスキーマ。
-// null になりうるフィールドはポインタ型で受け取る。
+// handoffNextAction is the schema for the next_action field.
+// Fields that can be null are received as pointer types.
 type handoffNextAction struct {
 	Summary  string  `json:"summary"`
 	TaskID   *string `json:"taskId,omitempty"`
@@ -75,7 +75,7 @@ type handoffNextAction struct {
 	Priority string  `json:"priority"`
 }
 
-// handoffRisk はリスクエントリ。
+// handoffRisk is a risk entry.
 type handoffRisk struct {
 	Severity string `json:"severity"`
 	Kind     string `json:"kind"`
@@ -83,7 +83,7 @@ type handoffRisk struct {
 	Detail   string `json:"detail"`
 }
 
-// handoffFailedCheck は失敗チェックエントリ。
+// handoffFailedCheck is a failed check entry.
 type handoffFailedCheck struct {
 	Source string `json:"source"`
 	Check  string `json:"check"`
@@ -91,7 +91,7 @@ type handoffFailedCheck struct {
 	Detail string `json:"detail"`
 }
 
-// handoffDecisionEntry は決定ログエントリ。
+// handoffDecisionEntry is a decision log entry.
 type handoffDecisionEntry struct {
 	Timestamp string `json:"timestamp"`
 	Actor     string `json:"actor"`
@@ -99,20 +99,20 @@ type handoffDecisionEntry struct {
 	Rationale string `json:"rationale"`
 }
 
-// handoffContextReset はコンテキストリセット推奨情報。
+// handoffContextReset holds context reset recommendation information.
 type handoffContextReset struct {
 	Recommended bool   `json:"recommended"`
 	Summary     string `json:"summary"`
 }
 
-// handoffContinuity は継続性コンテキスト。
+// handoffContinuity holds the continuity context.
 type handoffContinuity struct {
 	EffortHint  string `json:"effort_hint"`
 	ActiveSkill string `json:"active_skill"`
 	Summary     string `json:"summary"`
 }
 
-// compactionLogEntry は compaction-events.jsonl に書き出すエントリ。
+// compactionLogEntry is the entry written to compaction-events.jsonl.
 type compactionLogEntry struct {
 	Event       string `json:"event"`
 	HasWIP      bool   `json:"has_wip"`
@@ -121,8 +121,8 @@ type compactionLogEntry struct {
 	Timestamp   string `json:"timestamp"`
 }
 
-// Handle は stdin から PostCompact ペイロードを読み取り、
-// WIP コンテキストを再注入した approve レスポンスを返す。
+// Handle reads a PostCompact payload from stdin and
+// returns an approve response with WIP context re-injected.
 func (h *PostCompactHandler) Handle(r io.Reader, w io.Writer) error {
 	data, err := io.ReadAll(r)
 	if err != nil || len(data) == 0 {
@@ -132,7 +132,7 @@ func (h *PostCompactHandler) Handle(r io.Reader, w io.Writer) error {
 		})
 	}
 
-	// プロジェクトルートを決定
+	// Determine the project root
 	projectRoot := resolveProjectRoot(data)
 
 	stateDir := h.StateDir
@@ -151,14 +151,14 @@ func (h *PostCompactHandler) Handle(r io.Reader, w io.Writer) error {
 	precompactSnapshotPath := filepath.Join(stateDir, "precompact-snapshot.json")
 	handoffArtifactPath := filepath.Join(stateDir, "handoff-artifact.json")
 
-	// WIP タスクを Plans.md から取得
+	// Retrieve WIP tasks from Plans.md
 	wipSummary := h.getWIPSummary(plansFile)
 
-	// structured handoff artifact の存在確認
+	// Check for the structured handoff artifact
 	hasHandoff := fileExists(handoffArtifactPath)
 	hasSnapshot := fileExists(precompactSnapshotPath)
 
-	// イベントをログに記録
+	// Record event to log
 	entry := compactionLogEntry{
 		Event:       "post_compact",
 		HasWIP:      wipSummary != "",
@@ -168,7 +168,7 @@ func (h *PostCompactHandler) Handle(r io.Reader, w io.Writer) error {
 	}
 	h.appendCompactionLog(compactionLog, entry)
 
-	// コンテキストメッセージを構築
+	// Build the context message
 	systemMsg := h.buildSystemMessage(
 		wipSummary,
 		precompactSnapshotPath,
@@ -191,7 +191,7 @@ func (h *PostCompactHandler) Handle(r io.Reader, w io.Writer) error {
 	})
 }
 
-// getWIPSummary は Plans.md から WIP/TODO タスクを抽出してサマリー文字列を返す。
+// getWIPSummary extracts WIP/TODO tasks from Plans.md and returns a summary string.
 func (h *PostCompactHandler) getWIPSummary(plansFile string) string {
 	if !fileExists(plansFile) {
 		return ""
@@ -218,15 +218,15 @@ func (h *PostCompactHandler) getWIPSummary(plansFile string) string {
 	return strings.Join(wipLines, "\n")
 }
 
-// buildSystemMessage はシステムメッセージを構築する。
-// structured handoff artifact を優先し、なければ WIP サマリーを使う。
+// buildSystemMessage builds the system message.
+// Prefers the structured handoff artifact; falls back to the WIP summary.
 func (h *PostCompactHandler) buildSystemMessage(
 	wipSummary,
 	precompactSnapshotPath,
 	handoffArtifactPath string,
 	hasHandoff, hasSnapshot bool,
 ) string {
-	// structured handoff artifact（優先）
+	// Structured handoff artifact (preferred)
 	if hasHandoff {
 		ctx := h.extractStructuredContext(handoffArtifactPath)
 		if ctx != "" {
@@ -234,7 +234,7 @@ func (h *PostCompactHandler) buildSystemMessage(
 		}
 	}
 
-	// precompact snapshot（次点）
+	// Precompact snapshot (fallback)
 	if hasSnapshot {
 		ctx := h.extractPrecompactContext(precompactSnapshotPath)
 		if ctx != "" {
@@ -246,7 +246,7 @@ func (h *PostCompactHandler) buildSystemMessage(
 		}
 	}
 
-	// WIP サマリーのみ
+	// WIP summary only
 	if wipSummary != "" {
 		return "[PostCompact Re-injection] Context was just compacted. " +
 			"The following WIP/TODO tasks are active in Plans.md:\n" + wipSummary
@@ -255,8 +255,8 @@ func (h *PostCompactHandler) buildSystemMessage(
 	return ""
 }
 
-// extractStructuredContext は handoff artifact JSON から要点を抽出してテキストを返す。
-// bash 版 post-compact.sh の get_structured_handoff_context に相当する詳細版。
+// extractStructuredContext extracts key points from the handoff artifact JSON and returns text.
+// This is the detailed equivalent of get_structured_handoff_context in the bash version of post-compact.sh.
 func (h *PostCompactHandler) extractStructuredContext(path string) string {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -271,7 +271,7 @@ func (h *PostCompactHandler) extractStructuredContext(path string) string {
 	var parts []string
 	parts = append(parts, "## Structured Handoff")
 
-	// previous_state
+	// previous_state section
 	if snap.PreviousState != nil {
 		if snap.PreviousState.Summary != "" {
 			parts = append(parts, "- Previous state: "+snap.PreviousState.Summary)
@@ -314,7 +314,7 @@ func (h *PostCompactHandler) extractStructuredContext(path string) string {
 		}
 	}
 
-	// next_action
+	// next_action section
 	if na := snap.NextAction; na != nil {
 		var naBits []string
 		if na.Summary != "" {
@@ -339,7 +339,7 @@ func (h *PostCompactHandler) extractStructuredContext(path string) string {
 		}
 	}
 
-	// open_risks（最大4件）
+	// open_risks (up to 4)
 	if len(snap.OpenRisks) > 0 {
 		risks := snap.OpenRisks
 		if len(risks) > 4 {
@@ -357,7 +357,7 @@ func (h *PostCompactHandler) extractStructuredContext(path string) string {
 		}
 	}
 
-	// failed_checks（最大4件）
+	// failed_checks (up to 4)
 	if len(snap.FailedChecks) > 0 {
 		checks := snap.FailedChecks
 		if len(checks) > 4 {
@@ -369,9 +369,9 @@ func (h *PostCompactHandler) extractStructuredContext(path string) string {
 			if text == "" {
 				continue
 			}
-			// detail があれば "check: detail" 形式で追記する。
-			// riskNormalizeText は primary が空のとき secondary を返すだけなので、
-			// ここで両方を結合して detail の情報が落ちないようにする。
+			// If detail is present, append in "check: detail" format.
+			// riskNormalizeText only returns secondary when primary is empty,
+			// so combine both here to avoid losing detail information.
 			if c.Check != "" && c.Detail != "" {
 				text = c.Check + ": " + c.Detail
 			}
@@ -382,7 +382,7 @@ func (h *PostCompactHandler) extractStructuredContext(path string) string {
 		}
 	}
 
-	// decision_log（最大2件）
+	// decision_log (up to 2)
 	if len(snap.DecisionLog) > 0 {
 		entries := snap.DecisionLog
 		if len(entries) > 2 {
@@ -400,17 +400,17 @@ func (h *PostCompactHandler) extractStructuredContext(path string) string {
 		}
 	}
 
-	// context_reset
+	// context_reset section
 	if cr := snap.ContextReset; cr != nil && cr.Summary != "" {
 		parts = append(parts, "- Context reset: "+cr.Summary)
 	}
 
-	// continuity
+	// continuity section
 	if c := snap.Continuity; c != nil && c.Summary != "" {
 		parts = append(parts, "- Continuity: "+c.Summary)
 	}
 
-	// WIP tasks（最大5件）
+	// WIP tasks (up to 5)
 	if len(snap.WIPTasks) > 0 {
 		wip := snap.WIPTasks
 		if len(wip) > 5 {
@@ -419,7 +419,7 @@ func (h *PostCompactHandler) extractStructuredContext(path string) string {
 		parts = append(parts, "- WIP tasks: "+strings.Join(wip, "; "))
 	}
 
-	// recent edits（最大5件）
+	// recent edits (up to 5)
 	if len(snap.RecentEdits) > 0 {
 		edits := snap.RecentEdits
 		if len(edits) > 5 {
@@ -434,7 +434,7 @@ func (h *PostCompactHandler) extractStructuredContext(path string) string {
 	return strings.Join(parts, "\n")
 }
 
-// riskNormalizeText はリスク/チェックのテキストを正規化する。
+// riskNormalizeText normalizes risk/check text.
 func riskNormalizeText(primary, secondary string) string {
 	if primary != "" {
 		return primary
@@ -442,7 +442,7 @@ func riskNormalizeText(primary, secondary string) string {
 	return secondary
 }
 
-// extractPrecompactContext は precompact snapshot JSON から WIP タスクと最近の編集を抽出する。
+// extractPrecompactContext extracts WIP tasks and recent edits from the precompact snapshot JSON.
 func (h *PostCompactHandler) extractPrecompactContext(path string) string {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -468,7 +468,7 @@ func (h *PostCompactHandler) extractPrecompactContext(path string) string {
 	return strings.Join(parts, ". ")
 }
 
-// appendCompactionLog はコンパクションログに 1 エントリ追記する。
+// appendCompactionLog appends one entry to the compaction log.
 func (h *PostCompactHandler) appendCompactionLog(path string, entry compactionLogEntry) {
 	if isSymlink(path) {
 		return
@@ -489,7 +489,7 @@ func (h *PostCompactHandler) appendCompactionLog(path string, entry compactionLo
 	RotateJSONL(path)
 }
 
-// fileExists はファイルが存在するかどうかを返す。
+// fileExists returns whether a file exists.
 func fileExists(path string) bool {
 	_, err := os.Stat(path)
 	return err == nil

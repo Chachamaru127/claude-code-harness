@@ -1,12 +1,12 @@
 #!/bin/bash
-# sync-version.sh - release metadata の VERSION / plugin.json / marketplace.json を同期
+# sync-version.sh - sync release metadata VERSION / plugin.json / marketplace.json
 #
-# 使い方:
-#   ./scripts/sync-version.sh check    # 不一致をチェック
-#   ./scripts/sync-version.sh sync     # release metadata を VERSION に合わせる
-#   ./scripts/sync-version.sh bump             # release 用に patch version を上げる
-#   ./scripts/sync-version.sh bump minor       # minor version を上げる
-#   ./scripts/sync-version.sh bump major       # major version を上げる
+# Usage:
+#   ./scripts/sync-version.sh check    # Check for mismatches
+#   ./scripts/sync-version.sh sync     # Sync release metadata to VERSION
+#   ./scripts/sync-version.sh bump             # Bump patch version for release
+#   ./scripts/sync-version.sh bump minor       # Bump minor version
+#   ./scripts/sync-version.sh bump major       # Bump major version
 
 set -euo pipefail
 
@@ -18,7 +18,7 @@ MARKETPLACE_JSON=".claude-plugin/marketplace.json"
 HARNESS_TOML="harness.toml"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# 現在のバージョンを取得
+# Get current version
 get_version() {
     cat "$VERSION_FILE" | tr -d '\n'
 }
@@ -31,7 +31,7 @@ get_toml_version() {
     grep '^version' "$HARNESS_TOML" | sed 's/.*= "\([^"]*\)".*/\1/'
 }
 
-# バージョン不一致チェック
+# Version mismatch check
 check_version() {
     if [ -f "$SCRIPT_DIR/check-release-version-sync.py" ]; then
         python3 "$SCRIPT_DIR/check-release-version-sync.py" --root "."
@@ -47,26 +47,26 @@ check_version() {
 
     local ok=true
     if [ "$v1" != "$v2" ]; then
-        echo "❌ バージョン不一致:"
+        echo "❌ Version mismatch:"
         echo "   VERSION:      $v1"
         echo "   plugin.json:  $v2"
         ok=false
     fi
     if [ -n "$v3" ] && [ "$v1" != "$v3" ]; then
-        echo "❌ バージョン不一致:"
+        echo "❌ Version mismatch:"
         echo "   VERSION:      $v1"
         echo "   harness.toml: $v3"
         ok=false
     fi
 
     if [ "$ok" = true ]; then
-        echo "✅ バージョン一致: $v1"
+        echo "✅ Versions match: $v1"
         return 0
     fi
     return 1
 }
 
-# JSON ファイルの top-level version を VERSION に同期
+# Sync top-level version in JSON file to VERSION
 sync_top_level_json_version() {
     local file="$1"
     local label="$2"
@@ -100,11 +100,11 @@ with open(path, "w", encoding="utf-8") as fh:
     json.dump(data, fh, ensure_ascii=False, indent=2)
     fh.write("\n")
 PY
-        echo "✅ ${label} を更新: ${current:-未設定} → $version"
+        echo "✅ ${label} updated: ${current:-unset} -> $version"
     fi
 }
 
-# marketplace.json の metadata.version / plugins[].version を VERSION に同期
+# Sync marketplace.json metadata.version / plugins[].version to VERSION
 sync_marketplace_version() {
     local file="$1"
     local version="$2"
@@ -126,7 +126,7 @@ if not isinstance(metadata, dict):
 old_metadata = metadata.get("version")
 if old_metadata != version:
     metadata["version"] = version
-    changes.append(f"metadata.version: {old_metadata or '未設定'} → {version}")
+    changes.append(f"metadata.version: {old_metadata or 'unset'} -> {version}")
 
 plugins = data.get("plugins")
 if plugins is None:
@@ -142,18 +142,18 @@ for index, plugin in enumerate(plugins):
     if old_plugin != version:
         plugin["version"] = version
         name = plugin.get("name") if isinstance(plugin.get("name"), str) else f"#{index}"
-        changes.append(f"plugins[{index}]({name}).version: {old_plugin or '未設定'} → {version}")
+        changes.append(f"plugins[{index}]({name}).version: {old_plugin or 'unset'} -> {version}")
 
 if changes:
     with open(path, "w", encoding="utf-8") as fh:
         json.dump(data, fh, ensure_ascii=False, indent=2)
         fh.write("\n")
     for change in changes:
-        print(f"✅ marketplace.json を更新: {change}")
+        print(f"✅ marketplace.json updated: {change}")
 PY
 }
 
-# package.json / plugin.json / Codex plugin / marketplace.json + harness.toml を VERSION に同期
+# Sync package.json / plugin.json / Codex plugin / marketplace.json + harness.toml to VERSION
 sync_version() {
     local version=$(get_version)
 
@@ -162,7 +162,7 @@ sync_version() {
     sync_top_level_json_version "$CODEX_PLUGIN_JSON" "codex plugin.json" "$version"
     sync_marketplace_version "$MARKETPLACE_JSON" "$version"
 
-    # harness.toml の同期
+    # Sync harness.toml
     if [ -f "$HARNESS_TOML" ]; then
         local toml_ver=$(get_toml_version)
         if [ "$version" != "$toml_ver" ]; then
@@ -171,14 +171,14 @@ sync_version() {
             else
                 sed -i "s/^version = \"$toml_ver\"/version = \"$version\"/" "$HARNESS_TOML"
             fi
-            echo "✅ harness.toml を更新: $toml_ver → $version"
+            echo "✅ harness.toml updated: $toml_ver -> $version"
         fi
     fi
 
-    echo "✅ 同期完了: $version"
+    echo "✅ Sync complete: $version"
 }
 
-# CHANGELOG.md の compare link を更新 (Unreleased のバージョン差し替え + 新バージョン行を挿入)
+# Update CHANGELOG.md compare link (replace Unreleased version + insert new version line)
 update_changelog_compare_links() {
     local current="$1"
     local new="$2"
@@ -214,7 +214,7 @@ for line in lines:
 
 if not inserted:
     print(
-        f"⚠️  CHANGELOG.md に [Unreleased] compare link (v{current}...HEAD) が見つかりません。手動で追加してください。",
+        f"⚠️  [Unreleased] compare link (v{current}...HEAD) not found in CHANGELOG.md. Please add it manually.",
         file=sys.stderr,
     )
     sys.exit(0)
@@ -222,11 +222,11 @@ if not inserted:
 with open(changelog, "w", encoding="utf-8") as fh:
     fh.writelines(new_lines)
 
-print(f"✅ CHANGELOG.md に compare link を追加: [{new}]")
+print(f"✅ CHANGELOG.md compare link added: [{new}]")
 PY
 }
 
-# バージョンを上げる（既定は patch）
+# Bump version (default is patch)
 bump_version() {
     local level="${1:-patch}"
     local current=$(get_version)
@@ -249,20 +249,20 @@ bump_version() {
             new_version="$new_major.0.0"
             ;;
         *)
-            echo "❌ 未対応の bump level: $level" >&2
-            echo "   使用可能: patch | minor | major" >&2
+            echo "❌ Unsupported bump level: $level" >&2
+            echo "   Available: patch | minor | major" >&2
             exit 1
             ;;
     esac
 
     echo "$new_version" > "$VERSION_FILE"
-    echo "✅ VERSION を更新 ($level): $current → $new_version"
+    echo "✅ VERSION updated ($level): $current -> $new_version"
 
     sync_version
     update_changelog_compare_links "$current" "$new_version"
 }
 
-# メイン
+# Main
 case "${1:-check}" in
     check)
         check_version

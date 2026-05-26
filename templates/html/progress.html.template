@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Progress Tracker: {{project}}</title>
@@ -202,19 +202,19 @@
 
   <div class="pct-block">
     <div class="pct-num">{{progress_pct}}%</div>
-    <div class="pct-label">タスク完了率</div>
+    <div class="pct-label">Task completion rate</div>
     <div class="progress-bar">
       <div class="progress-fill"></div>
     </div>
     <div class="counts">
-      <span><strong>{{_done_count}}</strong>件 完了</span>
-      <span><strong>{{_wip_count}}</strong>件 進行中</span>
-      <span><strong>{{_todo_count}}</strong>件 未着手</span>
+      <span><strong>{{_done_count}}</strong> done</span>
+      <span><strong>{{_wip_count}}</strong> in progress</span>
+      <span><strong>{{_todo_count}}</strong> not started</span>
     </div>
   </div>
 
   <div class="current">
-    <div class="current-label">現在のタスク</div>
+    <div class="current-label">Current task</div>
     <div class="current-task">{{current_task}}</div>
   </div>
 
@@ -228,17 +228,17 @@
 
   <div class="stats">
     <div class="stat-card">
-      <div class="stat-label">経過 / 推定 (分)</div>
+      <div class="stat-label">Elapsed / Estimated (min)</div>
       <div class="stat-value">{{elapsed_minutes}} / {{estimated_total_minutes}}</div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">コスト (USD)</div>
+      <div class="stat-label">Cost (USD)</div>
       <div class="stat-value">${{cost_so_far_usd}} / ${{cost_estimate_usd}}</div>
     </div>
   </div>
 
   <section>
-    <h2>進行中のタスク</h2>
+    <h2>In-progress tasks</h2>
     <ul>{{#wip_tasks}}
       <li>
         <span class="task-num">{{number}}</span>
@@ -248,7 +248,7 @@
   </section>
 
   <section>
-    <h2>直近完了したタスク</h2>
+    <h2>Recently completed tasks</h2>
     <ul>{{#_done_recent_items}}
       <li>
         <span class="task-num">{{number}}</span>
@@ -259,7 +259,7 @@
   </section>
 
   <section>
-    <h2>未着手のタスク (top 5)</h2>
+    <h2>Not started tasks (top 5)</h2>
     <ul>{{#todo_tasks}}
       <li>
         <span class="task-num">{{number}}</span>
@@ -269,12 +269,12 @@
   </section>
 
   <section class="audit-trail" style="margin-top:32px;padding:16px 20px;background:#F5F4F1;border:1px solid #E5E5E5;border-radius:4px;font-size:0.85em;color:#52524C;">
-    <h2 style="margin:0 0 8px;font-size:0.9em;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#52524C;">🔍 この artifact の根拠</h2>
+    <h2 style="margin:0 0 8px;font-size:0.9em;font-weight:500;text-transform:uppercase;letter-spacing:0.05em;color:#52524C;">🔍 Basis for this artifact</h2>
     <ul style="list-style:none;margin:0;padding:0;line-height:1.8;">
-      <li><strong>検索範囲</strong>: {{audit_search_scope}}</li>
-      <li><strong>参照 ID</strong>: {{audit_referenced_ids}}</li>
-      <li><strong>redact 件数</strong>: {{audit_redaction_summary}}</li>
-      <li><strong>audit log</strong>: {{audit_log_path}}</li>
+      <li><strong>Search scope</strong>: {{audit_search_scope}}</li>
+      <li><strong>Referenced IDs</strong>: {{audit_referenced_ids}}</li>
+      <li><strong>Redaction count</strong>: {{audit_redaction_summary}}</li>
+      <li><strong>Audit log</strong>: {{audit_log_path}}</li>
     </ul>
   </section>
 

@@ -20,7 +20,7 @@ PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
 STATE_DIR="${PROJECT_ROOT}/.claude/state"
 LEDGER="${STATE_DIR}/skill-trigger-stats.jsonl"
 
-# opt-out: 環境変数で無効化
+# opt-out: disable via environment variable
 if [ "${HARNESS_SKILL_TELEMETRY_DISABLE:-0}" = "1" ]; then
   exit 0
 fi
@@ -47,15 +47,15 @@ fi
 case "${TRIGGER}" in
   human|model|skill-chain) ;;
   *)
-    # 想定外の trigger は "other" として記録 (ledger 整合性のため値は固定化)
+    # Record unexpected triggers as "other" (value is fixed to maintain ledger consistency)
     TRIGGER="other"
     ;;
 esac
 
-# session_id は 12 文字 prefix に truncate (privacy minimization)
+# Truncate session_id to 12-character prefix (privacy minimization)
 SESSION_ID="${SESSION_ID_RAW:0:12}"
 
-# skill exclude list (settings.local.json から読む)
+# skill exclude list (read from settings.local.json)
 SETTINGS_LOCAL="${PROJECT_ROOT}/.claude/settings.local.json"
 if [ -f "${SETTINGS_LOCAL}" ]; then
   EXCLUDED="$(jq -r --arg s "${SKILL_NAME}" '.harness.skill_telemetry_exclude // [] | map(select(. == $s)) | length' "${SETTINGS_LOCAL}" 2>/dev/null || echo "0")"

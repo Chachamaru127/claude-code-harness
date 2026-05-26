@@ -1,6 +1,6 @@
 #!/bin/bash
 # test-harness-loop-flow.sh
-# harness-loop flow.md の contract_path / reviewer_profile / advisor 導線の回帰テスト
+# Regression test for contract_path / reviewer_profile / advisor routing in harness-loop flow.md
 # Phase 1.5: SCRIPT_PATH_SURFACES restricted to active skills/ (codex/opencode archived)
 
 set -euo pipefail
@@ -19,42 +19,42 @@ fail() {
   exit 1
 }
 
-[ -f "${FLOW_FILE}" ] || fail "flow.md が見つかりません"
+[ -f "${FLOW_FILE}" ] || fail "flow.md not found"
 
 grep -q 'CONTRACT_PATH=".claude/state/contracts/${task_id}.sprint-contract.json"' "${FLOW_FILE}" \
-  || fail "Step 2 に CONTRACT_PATH 初期化がありません"
+  || fail "Step 2 is missing CONTRACT_PATH initialization"
 
 if grep -q 'task_contract_path' "${FLOW_FILE}"; then
-  fail "flow.md に削除済みの task_contract_path 参照が残っています"
+  fail "flow.md still contains removed task_contract_path reference"
 fi
 
 grep -q 'REVIEWER_PROFILE=$(jq -r '\''\.review\.reviewer_profile // "static"'\'' "${CONTRACT_PATH}"' "${FLOW_FILE}" \
-  || fail "reviewer_profile 読み取りが CONTRACT_PATH を参照していません"
+  || fail "reviewer_profile read does not reference CONTRACT_PATH"
 
 grep -q 'generate-browser-review-artifact.sh" "${CONTRACT_PATH}"' "${FLOW_FILE}" \
-  || fail "browser profile 分岐が CONTRACT_PATH を使っていません"
+  || fail "browser profile branch does not use CONTRACT_PATH"
 
-grep -q '### Step 4.5: Advisor consult（必要時のみ）' "${FLOW_FILE}" \
-  || fail "advisor consult ステップがありません"
+grep -q '### Step 4.5: Advisor consult (only when needed)' "${FLOW_FILE}" \
+  || fail "advisor consult step is missing"
 
 grep -q 'bash "${HARNESS_PLUGIN_ROOT}/scripts/run-advisor-consultation.sh" \\' "${FLOW_FILE}" \
-  || fail "advisor consultation wrapper の呼び出しがありません"
+  || fail "advisor consultation wrapper call is missing"
 
 if grep -Eq '(^|[[:space:]`"])scripts/(generate-sprint-contract|enrich-sprint-contract|ensure-sprint-contract-ready|detect-review-plateau|run-advisor-consultation)\.(js|sh)' "${FLOW_FILE}"; then
-  fail "plugin bundle root を通さない bare scripts/ 呼び出しが残っています"
+  fail "bare scripts/ call without going through plugin bundle root remains"
 fi
 
 for surface in "${SCRIPT_PATH_SURFACES[@]}"; do
   [ -f "${surface}" ] || continue
   if grep -Eq 'node scripts/(generate-sprint-contract)\.js|bash scripts/(codex-companion|auto-checkpoint|review-ai-residuals)\.sh|bash\("scripts/|&& scripts/|`scripts/(enrich-sprint-contract|ensure-sprint-contract-ready|run-contract-review-checks|write-review-result|review-ai-residuals)\.sh`' "${surface}"; then
-    fail "${surface#${PROJECT_ROOT}/} に plugin bundle root を通さない bare scripts/ 呼び出しが残っています"
+    fail "${surface#${PROJECT_ROOT}/} has bare scripts/ call without going through plugin bundle root"
   fi
 done
 
-grep -q 'PLAN` / `CORRECTION` は次の executor prompt 先頭に advice を入れて再実行' "${FLOW_FILE}" \
-  || fail "PLAN / CORRECTION の説明がありません"
+grep -q 'PLAN` / `CORRECTION` prepend advice to the beginning of the next executor prompt and re-run' "${FLOW_FILE}" \
+  || fail "PLAN / CORRECTION description is missing"
 
-grep -q '同じ `trigger_hash` は 1 回だけ相談する' "${FLOW_FILE}" \
-  || fail "trigger_hash による重複抑止の説明がありません"
+grep -q 'The same `trigger_hash` is consulted only once' "${FLOW_FILE}" \
+  || fail "trigger_hash deduplication description is missing"
 
 echo "test-harness-loop-flow: ok"

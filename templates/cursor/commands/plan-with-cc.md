@@ -1,123 +1,122 @@
 ---
-description: 計画作成（Claude Codeと協調してタスク分解）
+description: Create a plan (decompose tasks in coordination with Claude Code)
 ---
 
 # /plan-with-cc
 
-あなたは **Cursor (PM)** です。ユーザー要望を Plans.md に落とし込み、Claude Code が実装できる粒度に分解します。
+You are **Cursor (PM)**. Translate user requests into Plans.md and break them down into a granularity that Claude Code can implement.
 
-**このコマンドのゴール**は「やること」だけでなく **“どう成功を判定するか（評価）”** まで Plans.md に書き切ることです。
-評価がない計画は、実装が終わっても **成功/失敗を判定できず**、改善も退化も測れません。
+**The goal of this command** is to write not only "what to do" but also **"how to judge success (evaluation)"** into Plans.md.
+A plan without evaluation means that even after implementation, **you cannot determine success or failure**, and you cannot measure improvement or regression.
 
-## 手順
+## Steps
 
-## 0) 最初に決める（ここを曖昧にすると破綻する）
+## 0) Decide first (ambiguity here leads to failure)
 
-- **受入条件は測定可能にする**: 「いい感じ」「ちゃんと」禁止。誰が見ても Yes/No が付く形に落とす。
-- **outcome と transcript を分離する**:
-  - **outcome**: 最終状態（ファイル/DB/テスト結果/設定）で判定する。「言った」ではなく「なった」を見る。
-  - **transcript**: 途中経過（ツール使用、手順、回り道、禁止行為）で判定する。
-- **grader を明示する**: 各受入条件を何で採点するか（テスト/静的解析/grep/実行ログ/目視）を紐づける。
-- **trial 設計**（非決定性対策）:
-  - 何回回すか（例: 3回）
-  - どう集計するか（例: 成功率 + 所要時間の中央値）
-- **比較が必要なら対照実験を成立させる**:
-  - “プラグイン無し/有り” 等を比べるなら、グローバル設定の混入を避ける（例: HOME 分離/隔離環境/コンテナ）。
+- **Make acceptance criteria measurable**: Ban vague terms like "feels right" or "properly". Reduce to a form where anyone can answer Yes/No.
+- **Separate outcome and transcript**:
+  - **outcome**: Judge by final state (files/DB/test results/config). Look at what "happened", not what was "said".
+  - **transcript**: Judge by intermediate process (tool usage, steps, detours, prohibited actions).
+- **Specify the grader**: Link each acceptance criterion to what it will be scored by (tests/static analysis/grep/execution logs/visual inspection).
+- **Trial design** (countermeasure for non-determinism):
+  - How many times to run (example: 3 times)
+  - How to aggregate (example: success rate + median execution time)
+- **If comparison is needed, set up a controlled experiment**:
+  - If comparing "with/without plugin" etc., avoid global config contamination (example: HOME isolation/isolated environment/container).
 
-### 通常の計画作成
+### Normal plan creation
 
-1. **要望を1〜2文で要約**
-2. **スコープ/非スコープ**（各3つ以内）
-3. **受入条件（3〜5個）** を列挙（測定可能に）
-4. **評価（Evals）** を決める（下のテンプレをそのまま埋める）
-5. Plans.md に「フェーズ」と「タスク」を追記（推奨: `pm:依頼中` / `cc:TODO`。互換: `cursor:依頼中`）
-6. Claude Code に実装を依頼する場合は **/handoff-to-claude** を実行して依頼文を生成（依頼文に Evals を必ず含める）
+1. **Summarize the request in 1–2 sentences**
+2. **Scope / out-of-scope** (up to 3 each)
+3. **Acceptance criteria (3–5 items)** listed (make measurable)
+4. **Evaluation (Evals)** defined (fill in the template below)
+5. Add "phase" and "tasks" to Plans.md (recommended: `pm:requested` / `cc:TODO`. Compatible: `cursor:requested`)
+6. If requesting implementation from Claude Code, run **/handoff-to-claude** to generate the request (Evals must always be included in the request)
 
-### Claude Code からの検証依頼を受けた場合
+### When receiving a verification request from Claude Code
 
-Claude Code が「計画検証依頼」を貼り付けられた場合：
+When Claude Code pastes a "plan verification request":
 
-1. 依頼内容（やりたいこと、仮タスク、技術選択、未決事項）を確認
-2. **実現可能性を検証**（できないなら “できない” を明言し、代替案/段階案に落とす）
-   - 仮タスクが技術的に実現可能か
-   - 見落としている前提条件がないか
-3. **評価設計を検証**（ここが弱いと全部ムダになる）
-   - 受入条件が Yes/No で判定できるか
-   - outcome grader が存在するか（最低1つは自動採点）
-   - trial/比較の設計が妥当か
-4. **タスク分解**
-   - 仮タスクを実装可能な粒度に分解
-   - 依存関係・順序を整理
-5. **未決事項の判断**
-   - Claude Code から提示された未決事項について決定
-6. **Plans.md の更新**
-   - `pm:検証待ち` → `cc:TODO` に変更
-   - 分解したタスクを追記
-7. **/handoff-to-claude** を実行して Claude Code への依頼文を生成（Evals/DoD を必ず含める）
+1. Review the request content (what they want to do, draft tasks, technology choices, open questions)
+2. **Verify feasibility** (if not feasible, explicitly say "cannot be done" and reduce to alternatives/staged approach)
+   - Is the draft task technically feasible?
+   - Are there any overlooked preconditions?
+3. **Verify evaluation design** (if this is weak, everything is wasted)
+   - Can the acceptance criteria be judged Yes/No?
+   - Does an outcome grader exist? (at least one automated scorer)
+   - Is the trial/comparison design reasonable?
+4. **Task decomposition**
+   - Break draft tasks into implementable granularity
+   - Organize dependencies and order
+5. **Decide on open questions**
+   - Make decisions on the open questions presented by Claude Code
+6. **Update Plans.md**
+   - Change `pm:pending-review` → `cc:TODO`
+   - Add decomposed tasks
+7. Run **/handoff-to-claude** to generate the request to Claude Code (Evals/DoD must always be included)
 
 ---
 
-## Plans.md 追記テンプレ（コピペして埋める）
+## Plans.md append template (copy and fill in)
 
 ```markdown
-## 🟠 {{テーマ}} `pm:依頼中`
+## 🟠 {{Theme}} `pm:requested`
 
-### 背景 / 目的
-- {{なぜ今やるか}}
+### Background / Purpose
+- {{why do this now}}
 
-### スコープ（やる）
+### Scope (do)
 - {{scope1}}
 - {{scope2}}
 
-### 非スコープ（やらない）
+### Out of scope (don't do)
 - {{non-scope1}}
 - {{non-scope2}}
 
-### 受入条件（必ず測定可能に）
-- [ ] {{AC1: outcome で判定できる形}}
+### Acceptance Criteria (must be measurable)
+- [ ] {{AC1: in a form that can be judged by outcome}}
 - [ ] {{AC2}}
 - [ ] {{AC3}}
 
-### 評価（Evals）
-- **tasks（シナリオ）**:
-  - {{task1: 入力/手順/期待結果}}
-- **trials（回数/集計）**:
-  - 回数: {{例: 3}}
-  - 集計: {{例: 成功率 + 所要時間中央値}}
-- **graders（採点）**:
+### Evaluation (Evals)
+- **tasks (scenarios)**:
+  - {{task1: input/steps/expected result}}
+- **trials (count/aggregation)**:
+  - Count: {{example: 3}}
+  - Aggregation: {{example: success rate + median execution time}}
+- **graders (scoring)**:
   - outcome:
-    - {{例: unit tests / typecheck / ファイル存在 / grep で具体条件}}
+    - {{example: unit tests / typecheck / file existence / grep with specific conditions}}
   - transcript:
-    - {{例: 禁止行為なし / 想定ツール使用 / 余計な変更なし}}
-- **比較（必要な場合のみ）**:
-  - {{例: with-feature vs without-feature / plugin-on vs plugin-off}}
-  - 混入対策: {{例: HOME分離 / コンテナ}}
-- **失敗時の扱い**:
-  - {{例: 失敗ログと再現手順を必ず残す。成功で上書きしない}}
+    - {{example: no prohibited actions / expected tool usage / no unnecessary changes}}
+- **comparison (only if needed)**:
+  - {{example: with-feature vs without-feature / plugin-on vs plugin-off}}
+  - Contamination countermeasure: {{example: HOME isolation / container}}
+- **handling failures**:
+  - {{example: always preserve failure log and reproduction steps. Do not overwrite with success}}
 
-### タスク（Claude Code 実装用）
-- [ ] {{evalタスク: テスト/検証追加}} `pm:依頼中`
-- [ ] {{実装タスク1}} `pm:依頼中`
-- [ ] {{実装タスク2}} `pm:依頼中`
-- [ ] {{レビュー/検証タスク}} `pm:依頼中`
+### Tasks (for Claude Code implementation)
+- [ ] {{eval task: add tests/verification}} `pm:requested`
+- [ ] {{implementation task 1}} `pm:requested`
+- [ ] {{implementation task 2}} `pm:requested`
+- [ ] {{review/verification task}} `pm:requested`
 
-### リスク / 未決事項
+### Risks / Open Questions
 - {{risk1}}
-- {{decision1: PM判断}}
+- {{decision1: PM judgment}}
 ```
 
 ---
 
-## 継続的に評価しながら開発する最低ルール（運用）
+## Minimum rules for continuous evaluation during development (operations)
 
-- **Evals が書けない要件は “未確定” 扱い**: 先に仕様を詰める。実装に回さない。
-- **変更には必ず 1つ以上の自動 grader を追加**: “人間の記憶” をテストケースに変換して回帰を防ぐ。
-- **回帰はタスク化して suite に追加**: 失敗事例を “未来のテスト” にする（これが評価の複利）。
+- **Requirements where Evals cannot be written are treated as "undecided"**: Finalize the spec first. Do not send to implementation.
+- **Every change must add at least one automated grader**: Convert "human memory" into test cases to prevent regression.
+- **Regressions become tasks added to the suite**: Turn failure cases into "future tests" (this is the compounding interest of evaluation).
 
-## 参照
+## References
 
 - @Plans.md
 - @README.md
-- 変更点があれば `git diff` / `git status`
-
+- `git diff` / `git status` if there are changes
 

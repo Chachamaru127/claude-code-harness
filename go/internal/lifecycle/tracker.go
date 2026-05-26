@@ -1,4 +1,4 @@
-// Package lifecycle はエージェントのライフサイクル状態マシンを提供する。
+// Package lifecycle provides the agent lifecycle state machine.
 package lifecycle
 
 import (
@@ -10,50 +10,50 @@ import (
 	"github.com/Chachamaru127/claude-code-harness/go/pkg/hookproto"
 )
 
-// TrackedAgent は追跡中の個々のエージェントを表す。
+// TrackedAgent represents an individual agent being tracked.
 type TrackedAgent struct {
-	// AgentID はエージェントの識別子（CC が付与する agent_id）。
+	// AgentID is the agent identifier (agent_id assigned by CC).
 	AgentID string
-	// AgentType はエージェントの種別（worker / reviewer / scaffolder 等）。
+	// AgentType is the agent type (worker / reviewer / scaffolder, etc.).
 	AgentType string
-	// SessionID はエージェントが属するセッションの識別子。
+	// SessionID is the identifier of the session the agent belongs to.
 	SessionID string
-	// SM はエージェントのライフサイクル状態マシン。
+	// SM is the agent lifecycle state machine.
 	SM *StateMachine
-	// Recovery はエージェントのリカバリマネージャ。
+	// Recovery is the agent recovery manager.
 	Recovery *RecoveryManager
-	// StartedAt はエージェントの起動時刻。
+	// StartedAt is the time the agent started.
 	StartedAt time.Time
 }
 
-// AgentStatus は AgentTracker.Status() が返す単一エージェントの状態スナップショット。
+// AgentStatus is a state snapshot of a single agent returned by AgentTracker.Status().
 type AgentStatus struct {
-	// AgentID はエージェントの識別子。
+	// AgentID is the agent identifier.
 	AgentID string
-	// AgentType はエージェントの種別。
+	// AgentType is the agent type.
 	AgentType string
-	// SessionID は親セッションの識別子。
+	// SessionID is the identifier of the parent session.
 	SessionID string
-	// State は現在の状態。
+	// State is the current state.
 	State AgentState
-	// Duration はエージェントの起動から現在までの経過時間。
+	// Duration is the elapsed time since the agent started.
 	Duration time.Duration
-	// RecoveryAttempts はリカバリ試行回数。
+	// RecoveryAttempts is the number of recovery attempts made.
 	RecoveryAttempts int
 }
 
-// AgentTracker は SubagentStart/Stop イベントを受け取り、
-// エージェントのライフサイクル状態を管理する。
-// ゴルーチンセーフ。SQLite ストアが利用可能な場合、状態を永続化する。
+// AgentTracker receives SubagentStart/Stop events and manages
+// the lifecycle state of agents.
+// Goroutine-safe. Persists state to SQLite if a store is available.
 type AgentTracker struct {
 	mu     sync.RWMutex
 	agents map[string]*TrackedAgent // agent_id → TrackedAgent
-	store  *state.HarnessStore      // SQLite 永続化（nil = インメモリのみ）
-	now    func() time.Time         // テスト時差し替え可能な時刻ファンクション
+	store  *state.HarnessStore      // SQLite persistence (nil = in-memory only)
+	now    func() time.Time         // injectable time function for tests
 }
 
-// NewAgentTracker は新しい AgentTracker を返す。
-// store が nil の場合、状態はインメモリのみで管理される（テスト用途）。
+// NewAgentTracker returns a new AgentTracker.
+// If store is nil, state is managed in-memory only (for testing).
 func NewAgentTracker(store *state.HarnessStore) *AgentTracker {
 	return &AgentTracker{
 		agents: make(map[string]*TrackedAgent),
@@ -62,30 +62,30 @@ func NewAgentTracker(store *state.HarnessStore) *AgentTracker {
 	}
 }
 
-// HandleStart は SubagentStart イベントを処理する。
-// 新しい TrackedAgent を登録し、SPAWNING → RUNNING へ遷移する。
-// agent_id が既に登録済みの場合は何もしない（冪等）。
+// HandleStart processes a SubagentStart event.
+// Registers a new TrackedAgent and transitions it from SPAWNING → RUNNING.
+// Does nothing if agent_id is already registered (idempotent).
 func (t *AgentTracker) HandleStart(input hookproto.HookInput) error {
 	agentID := extractAgentID(input)
 	agentType := extractAgentType(input)
 	sessionID := input.SessionID
 
 	if agentID == "" {
-		return fmt.Errorf("tracker: HandleStart: agent_id が空です")
+		return fmt.Errorf("tracker: HandleStart: agent_id is empty")
 	}
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	// 冪等: 既に登録済みならスキップ
+	// Idempotent: skip if already registered
 	if _, exists := t.agents[agentID]; exists {
 		return nil
 	}
 
 	sm := NewStateMachine()
-	// SPAWNING → RUNNING へ即座に遷移（SubagentStart = 起動完了通知）
+	// Immediately transition SPAWNING → RUNNING (SubagentStart = startup complete notification)
 	if err := sm.Transition(StateRunning, "SubagentStart"); err != nil {
-		return fmt.Errorf("tracker: HandleStart: 状態遷移失敗: %w", err)
+		return fmt.Errorf("tracker: HandleStart: state transition failed: %w", err)
 	}
 
 	agent := &TrackedAgent{
@@ -98,7 +98,7 @@ func (t *AgentTracker) HandleStart(input hookproto.HookInput) error {
 	agent.Recovery = NewRecoveryManager(sm)
 	t.agents[agentID] = agent
 
-	// SQLite 永続化
+	// SQLite persistence
 	if t.store != nil {
 		rec := state.AgentStateRecord{
 			AgentID:          agentID,
@@ -109,23 +109,23 @@ func (t *AgentTracker) HandleStart(input hookproto.HookInput) error {
 			RecoveryAttempts: 0,
 		}
 		if err := t.store.UpsertAgentState(rec); err != nil {
-			// 永続化失敗はエラーにするが処理は継続しない（fatal）
-			return fmt.Errorf("tracker: HandleStart: DB 保存失敗: %w", err)
+			// Persistence failure is treated as an error and processing stops (fatal)
+			return fmt.Errorf("tracker: HandleStart: DB save failed: %w", err)
 		}
 	}
 
 	return nil
 }
 
-// HandleStop は SubagentStop イベントを処理する。
-// エージェントを RUNNING → REVIEWING へ遷移し、停止時刻を記録する。
-// インメモリに未登録でも SQLite に記録があれば DB ベースで状態を更新する。
-// agent_id が未登録かつ DB にも存在しない場合はエラーを返す。
+// HandleStop processes a SubagentStop event.
+// Transitions the agent from RUNNING → REVIEWING and records the stop time.
+// If not registered in memory but present in SQLite, updates state from the DB.
+// Returns an error if agent_id is not registered and does not exist in the DB.
 func (t *AgentTracker) HandleStop(input hookproto.HookInput) error {
 	agentID := extractAgentID(input)
 
 	if agentID == "" {
-		return fmt.Errorf("tracker: HandleStop: agent_id が空です")
+		return fmt.Errorf("tracker: HandleStop: agent_id is empty")
 	}
 
 	t.mu.Lock()
@@ -133,17 +133,17 @@ func (t *AgentTracker) HandleStop(input hookproto.HookInput) error {
 
 	agent, exists := t.agents[agentID]
 	if !exists {
-		// インメモリ未登録: DB から復元を試みる
+		// Not registered in memory: attempt to restore from DB
 		if t.store != nil {
 			rec, err := t.store.GetAgentState(agentID)
 			if err != nil {
-				return fmt.Errorf("tracker: HandleStop: DB 参照失敗: %w", err)
+				return fmt.Errorf("tracker: HandleStop: DB lookup failed: %w", err)
 			}
 			if rec != nil {
-				// DB レコードからインメモリ AgentTracker を再構成する
+				// Reconstruct in-memory AgentTracker from DB record
 				restored, restoreErr := t.restoreFromRecord(rec)
 				if restoreErr != nil {
-					return fmt.Errorf("tracker: HandleStop: 状態復元失敗: %w", restoreErr)
+					return fmt.Errorf("tracker: HandleStop: state restore failed: %w", restoreErr)
 				}
 				t.agents[agentID] = restored
 				agent = restored
@@ -151,19 +151,19 @@ func (t *AgentTracker) HandleStop(input hookproto.HookInput) error {
 			}
 		}
 		if !exists {
-			return fmt.Errorf("tracker: HandleStop: 未登録の agent_id=%q", agentID)
+			return fmt.Errorf("tracker: HandleStop: unregistered agent_id=%q", agentID)
 		}
 	}
 
-	// RUNNING → REVIEWING へ遷移（SubagentStop = タスク完了、レビュー待ち）
-	// 既に REVIEWING 以降の状態になっている場合は遷移をスキップ
+	// Transition RUNNING → REVIEWING (SubagentStop = task complete, awaiting review)
+	// Skip the transition if already in REVIEWING or a later state
 	if agent.SM.CanTransition(StateReviewing) {
 		if err := agent.SM.Transition(StateReviewing, "SubagentStop"); err != nil {
-			return fmt.Errorf("tracker: HandleStop: 状態遷移失敗: %w", err)
+			return fmt.Errorf("tracker: HandleStop: state transition failed: %w", err)
 		}
 	}
 
-	// SQLite 永続化
+	// SQLite persistence
 	if t.store != nil {
 		stoppedAtStr := t.now().UTC().Format(time.RFC3339)
 		rec := state.AgentStateRecord{
@@ -176,33 +176,33 @@ func (t *AgentTracker) HandleStop(input hookproto.HookInput) error {
 			RecoveryAttempts: agent.Recovery.Attempts(),
 		}
 		if err := t.store.UpsertAgentState(rec); err != nil {
-			return fmt.Errorf("tracker: HandleStop: DB 保存失敗: %w", err)
+			return fmt.Errorf("tracker: HandleStop: DB save failed: %w", err)
 		}
 	}
 
 	return nil
 }
 
-// restoreFromRecord は DB レコードからインメモリ TrackedAgent を再構成する。
-// 現在の状態を StartedAt → 現在の State まで最短経路で StateMachine に反映する。
+// restoreFromRecord reconstructs an in-memory TrackedAgent from a DB record.
+// Advances the StateMachine from StartedAt to the current State via the shortest path.
 func (t *AgentTracker) restoreFromRecord(rec *state.AgentStateRecord) (*TrackedAgent, error) {
 	sm := NewStateMachine()
 
-	// DB の state を元に StateMachine を進める
-	// 正常系パス: SPAWNING → RUNNING（最小限。REVIEWING 以降は HandleStop で進める）
+	// Advance the StateMachine based on the DB state.
+	// Happy path: SPAWNING → RUNNING (minimal; REVIEWING and beyond are advanced by HandleStop)
 	currentState := AgentState(rec.State)
 	if currentState != StateSpawning {
 		if err := sm.Transition(StateRunning, "restored from DB"); err != nil {
-			return nil, fmt.Errorf("restore: SPAWNING → RUNNING 失敗: %w", err)
+			return nil, fmt.Errorf("restore: SPAWNING → RUNNING failed: %w", err)
 		}
 	}
 
-	// RUNNING 以降の状態を反映する（REVIEWING 等）
+	// Reflect states beyond RUNNING (e.g. REVIEWING)
 	if currentState != StateSpawning && currentState != StateRunning {
-		// 既に REVIEWING 以降であれば RUNNING → REVIEWING を試みる
+		// If already at REVIEWING or beyond, attempt RUNNING → REVIEWING
 		if sm.CanTransition(currentState) {
 			if err := sm.Transition(currentState, "restored from DB"); err != nil {
-				// 遷移できない状態でも続行（最善努力）
+				// Continue even if the transition cannot be made (best-effort)
 				_ = err
 			}
 		}
@@ -227,8 +227,8 @@ func (t *AgentTracker) restoreFromRecord(rec *state.AgentStateRecord) (*TrackedA
 	return agent, nil
 }
 
-// Status は全追跡中エージェントの状態スナップショットを返す。
-// 返されるスライスは agent_id の昇順ではなくマップ走査順になる。
+// Status returns a state snapshot of all tracked agents.
+// The returned slice is in map iteration order, not sorted by agent_id.
 func (t *AgentTracker) Status() []AgentStatus {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -248,8 +248,8 @@ func (t *AgentTracker) Status() []AgentStatus {
 	return result
 }
 
-// Get は指定した agent_id の TrackedAgent を返す。
-// 存在しない場合は nil を返す。
+// Get returns the TrackedAgent for the given agent_id.
+// Returns nil if not found.
 func (t *AgentTracker) Get(agentID string) *TrackedAgent {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -257,11 +257,11 @@ func (t *AgentTracker) Get(agentID string) *TrackedAgent {
 }
 
 // ============================================================
-// 内部ヘルパー
+// Internal helpers
 // ============================================================
 
-// extractAgentID は HookInput から agent_id を取り出す。
-// CC v2.1.69+ では tool_input["agent_id"] として渡される。
+// extractAgentID extracts agent_id from HookInput.
+// In CC v2.1.69+, it is passed as tool_input["agent_id"].
 func extractAgentID(input hookproto.HookInput) string {
 	if input.ToolInput == nil {
 		return ""
@@ -274,8 +274,8 @@ func extractAgentID(input hookproto.HookInput) string {
 	return ""
 }
 
-// extractAgentType は HookInput から agent_type を取り出す。
-// CC v2.1.69+ では tool_input["agent_type"] として渡される。
+// extractAgentType extracts agent_type from HookInput.
+// In CC v2.1.69+, it is passed as tool_input["agent_type"].
 func extractAgentType(input hookproto.HookInput) string {
 	if input.ToolInput == nil {
 		return ""

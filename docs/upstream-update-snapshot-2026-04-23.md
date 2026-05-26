@@ -1,153 +1,155 @@
 # Claude Code / Codex upstream snapshot - 2026-04-23
 
-この snapshot は、2026-04-23 時点の公式 upstream を確認し、Claude Code Harness に直接取り込むべき項目と、自動継承 / 将来タスクに留める項目を分解したもの。
+This snapshot confirms the official upstream as of 2026-04-23 and breaks down items
+to be directly integrated into Claude Code Harness versus those to be left as
+automatic inheritance / future tasks.
 
-確認日:
+Confirmed on:
 
 - 2026-04-23 (Asia/Tokyo)
 
-一次情報:
+Primary sources:
 
 - Claude Code docs changelog: <https://code.claude.com/docs/en/changelog>
 - Claude Code GitHub changelog: <https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md>
 - OpenAI Codex releases: <https://github.com/openai/codex/releases>
 - OpenAI Codex `rust-v0.123.0` release tag: <https://github.com/openai/codex/releases/tag/rust-v0.123.0>
 
-確認対象:
+Confirmed versions:
 
 - Claude Code `2.1.117`
 - Claude Code `2.1.118`
 - Codex `0.123.0`
 
-分類:
+Classifications:
 
-- `A: 実装`: Harness 側で hooks / release / setup / skills / tests / docs のいずれかに落とす。53.1.1 では実装タスク ID まで固定し、実装本体は後続 task で行う。
-- `C: 自動継承`: Claude Code / Codex 本体の改善をそのまま受ける。Harness wrapper を重ねると二重責務になるもの。
-- `P: 将来タスク`: 今回すぐに実装しないが、Plans に後続候補として残す。推測実装はしない。
+- `A: Implement`: Land in hooks / release / setup / skills / tests / docs on the Harness side. In 53.1.1, implementation task IDs are fixed, and the actual implementation is done in follow-up tasks.
+- `C: Automatic inheritance`: Receive improvements from Claude Code / Codex core as-is. Overlaying Harness wrappers would create dual responsibilities.
+- `P: Future task`: Do not implement now, but leave as a follow-up candidate in Plans. Do not implement speculatively.
 
 ## Version-by-version breakdown
 
-| Version | Upstream item | こうよくなる | Category | Harness surface | Harness action |
-|---------|---------------|--------------|----------|-----------------|----------------|
-| Claude Code 2.1.118 | Vim visual mode / visual-line mode | キーボードだけで選択と編集がしやすくなる | C | TUI usage | Harness 側の wrapper は不要。Claude Code 本体の editor UX として自動継承 |
-| Claude Code 2.1.118 | `/cost` と `/stats` が `/usage` に統合され、旧コマンドは relevant tab を開く typing shortcut になる | 利用量確認の入口が 1 つにまとまり、迷いにくくなる | C | docs / session guidance | 53.1.6 で古い `/cost` / `/stats` 中心の説明があれば `/usage` 中心へ寄せる。挙動は本体を自動継承 |
-| Claude Code 2.1.118 | `/theme` で named custom themes を作成 / 切替でき、JSON 手編集と plugin `themes/` directory に対応 | plugin が見た目の初期値を配れる余地ができる | P | plugin setup / design policy | 53.1.5 で setup docs に用途を記録する。Harness plugin に theme を同梱するかは今回は決めず、推測実装しない |
-| Claude Code 2.1.118 | Hooks can invoke MCP tools directly via `type: "mcp_tool"` | shell script を挟まない読み取り診断 hook を作れる可能性がある | A | hooks / MCP diagnostics / tests | 53.1.2 で読み取り専用 MCP health/resource 診断に限定して検証した。今回の配布 hooks manifest は no-op とし、書き込み系 MCP tool を hook から呼ばないことを test で固定 |
-| Claude Code 2.1.118 | `DISABLE_UPDATES` blocks all update paths, including manual `claude update` | 企業管理環境で手動更新まで止められる | A | setup docs / plugin policy | 53.1.5 で `DISABLE_AUTOUPDATER` との差を説明する。Harness 独自 updater block は追加しない |
-| Claude Code 2.1.118 | WSL can inherit Windows-side managed settings via `wslInheritsWindowsSettings` | Windows / WSL 混在環境の管理設定が揃いやすくなる | P | enterprise setup docs | 53.1.5 の managed settings 整理に含める。Harness default には過剰適用しない |
-| Claude Code 2.1.118 | Auto Mode `autoMode.allow` / `soft_deny` / `environment` can include `"$defaults"` to extend built-ins | 既定安全ルールを消さずに独自ルールを足せる | A | permissions / sandbox docs / settings template | 53.1.4 で「置換」ではなく「`"$defaults"` へ追加」として guidance と test を固定する |
-| Claude Code 2.1.118 | Auto mode opt-in prompt adds "Don't ask again" | 繰り返し確認のノイズが減る | C | Auto Mode UX | Claude Code 本体の対話 UX として自動継承。Harness 側で prompt suppression を重ねない |
-| Claude Code 2.1.118 | `claude plugin tag` creates release git tags with plugin version validation | plugin release で version 不一致のまま tag を切りにくくなる | A | harness-release / release tests | 53.1.3 で release flow に preflight / dry-run guidance と validation 位置を追加する |
-| Claude Code 2.1.118 | `--continue` / `--resume` find sessions that added the current directory via `/add-dir` | multi-directory session の再開漏れが減る | C | session-control docs | 53.1.6 で古い resume 前提があれば更新。実装は本体を自動継承 |
-| Claude Code 2.1.118 | `/color` syncs session accent color to claude.ai/code when Remote Control is connected | remote UI の見た目が揃う | C | Remote Control UX | Harness surface なし。自動継承 |
-| Claude Code 2.1.118 | `/model` picker honors `ANTHROPIC_DEFAULT_*_MODEL_NAME` / `_DESCRIPTION` overrides with custom gateways | gateway 環境で model 表示が実態に近づく | C | model guidance | Harness が model picker を包まないため自動継承。必要なら provider docs の後続で触れる |
-| Claude Code 2.1.118 | Plugin auto-update skips caused by another plugin's version constraint appear in `/doctor` and `/plugin` Errors | plugin dependency の失敗理由が見つけやすくなる | A | setup / plugin policy docs | 53.1.5 で dependency auto-resolve / missing dependency hints と合わせて説明する |
-| Claude Code 2.1.118 | MCP OAuth / custom header authentication fixes | MCP 接続の再認証ループや一時 401 後の詰まりが減る | C | MCP runtime | 本体修正を自動継承。Harness の MCP health watch は後続で、OAuth workaround は追加しない |
-| Claude Code 2.1.118 | Credential save crash on Linux / Windows no longer corrupts `~/.claude/.credentials.json` | 認証情報破損のリスクが下がる | C | auth runtime | 本体修正を自動継承。Harness は credentials を直接書き換えない |
-| Claude Code 2.1.118 | `/login` clears `CLAUDE_CODE_OAUTH_TOKEN` session token so disk credentials can take effect | env token 起動後の login が効きやすくなる | C | auth runtime | 本体修正を自動継承 |
-| Claude Code 2.1.118 | New message scroll pill and `/plugin` badges readability fixes | TUI 表示が読みやすくなる | C | TUI | 自動継承 |
-| Claude Code 2.1.118 | Plan acceptance dialog no longer offers auto mode when running with `--dangerously-skip-permissions` | permission mode 表示の混乱が減る | C | permission UX | 自動継承。Harness の permission guidance は 53.1.4 で `"$defaults"` に絞って更新 |
-| Claude Code 2.1.118 | Agent-type hooks no longer fail with "Messages are required for agent hooks" on non-Stop events | agent hook の適用範囲が扱いやすくなる | C | agent hooks | 本体修正を自動継承。53.1.2 の `mcp_tool` hook とは別扱い |
-| Claude Code 2.1.118 | `prompt` hooks no longer re-fire on tool calls made by an agent-hook verifier subagent | verifier subagent 起因の hook 再入ノイズが減る | C | hook runtime | 自動継承。Harness 側の再入防止 hook は追加しない |
-| Claude Code 2.1.118 | `/fork` stores a parent pointer instead of writing the full parent conversation per fork | fork が軽くなり、disk 使用量が減る | C | session/fork | 自動継承。Harness session-state は pointer hydration を前提にできる |
-| Claude Code 2.1.118 | Alt+K / Alt+X / Alt+^ / Alt+_ keyboard freeze fixes | キーボード入力が固まりにくくなる | C | TUI input | 自動継承 |
-| Claude Code 2.1.118 | Remote session connect no longer overwrites local `model` setting | remote session 利用時の local 設定破壊が減る | C | remote session | 自動継承 |
-| Claude Code 2.1.118 | Typeahead no longer errors when pasted file paths start with `/` | 絶対パス貼り付けが自然に使える | C | prompt input | 自動継承 |
-| Claude Code 2.1.118 | `plugin install` on already-installed plugin re-resolves wrong-version dependencies | 依存関係の修復がしやすくなる | A | plugin setup docs | 53.1.5 で Harness 独自 resolver を重ねず本体に任せる方針として記録 |
-| Claude Code 2.1.118 | File watcher invalid path / fd exhaustion errors are handled | 長時間起動時の watcher エラーで落ちにくくなる | C | long-running sessions | 自動継承 |
-| Claude Code 2.1.118 | Remote Control sessions are not archived on transient CCR initialization blips | 一時的な remote 初期化失敗で session が消えにくくなる | C | remote session | 自動継承 |
-| Claude Code 2.1.118 | Subagents resumed via `SendMessage` restore the explicit `cwd` they were spawned with | subagent resume 後も作業ディレクトリがずれにくい | C | subagent orchestration | Codex native `send_input` とは別の Claude Code 本体修正として自動継承 |
-| Claude Code 2.1.117 | Forked subagents can be enabled on external builds with `CLAUDE_CODE_FORK_SUBAGENT=1` | external build でも forked subagent を試せる | P | agents / skills docs | 53.1.6 で将来候補として整理。Harness default に環境変数を強制しない |
-| Claude Code 2.1.117 | Agent frontmatter `mcpServers` load for main-thread agent sessions via `--agent` | main-thread agent でも MCP 前提の agent 設定が効きやすくなる | P | agents audit / MCP setup | 53.1.6 で agents audit の後続候補として記録する |
-| Claude Code 2.1.117 | `/model` selections persist across restarts and startup header shows project / managed-settings pins | model 設定の出どころが分かりやすくなる | C | model guidance | 自動継承。Harness は model pin を上書きしない |
-| Claude Code 2.1.117 | `/resume` offers to summarize stale large sessions before re-reading | 大きく古い session の再開が軽くなる | C | session-memory / resume docs | 53.1.6 で wrapper を足さない理由を記録。Claude Code 本体の summary を優先 |
-| Claude Code 2.1.117 | Faster MCP startup when local and claude.ai MCP servers are both configured | startup 待ち時間が短くなる | C | MCP startup | 自動継承。MCP health watch は 53.1.2 の読み取り診断候補に限定 |
-| Claude Code 2.1.117 | Already-installed plugin install now installs missing dependencies | dependency 抜けの自己修復がしやすくなる | A | plugin setup docs | 53.1.5 で auto-resolve に Harness resolver を重ねない方針として記録 |
-| Claude Code 2.1.117 | Plugin dependency errors include install hints and `claude plugin marketplace add` auto-resolves missing dependencies | marketplace 由来の依存解決が分かりやすくなる | A | plugin setup / marketplace policy | 53.1.5 で企業利用・安全な marketplace 運用として整理 |
-| Claude Code 2.1.117 | Managed settings `blockedMarketplaces` / `strictKnownMarketplaces` are enforced across plugin install/update/refresh/autoupdate | 管理対象 marketplace policy が抜けにくくなる | A | managed settings docs | 53.1.5 で通常ユーザー default へ過剰適用しない形で説明 |
-| Claude Code 2.1.117 | Advisor Tool experimental label / link / startup notification, plus stuck-result fixes | experimental Advisor の位置づけが分かりやすくなり、詰まりが減る | C | advisor strategy | Harness Advisor Strategy は現状維持。最終品質判定は Reviewer に残す |
-| Claude Code 2.1.117 | `cleanupPeriodDays` retention sweep covers tasks, shell snapshots, backups | 古い補助データが溜まりにくくなる | C | maintenance / session storage | 本体 cleanup を自動継承。Harness maintenance で重複削除しない |
-| Claude Code 2.1.117 | OpenTelemetry command / usage / effort attributes | 観測データが詳しくなる | C | telemetry | Harness が OTEL schema を直接扱っていないため自動継承 |
-| Claude Code 2.1.117 | Native macOS/Linux builds replace Glob/Grep tools with embedded `bfs` and `ugrep` through Bash | 検索が速くなり、tool round-trip が減る | C | search guidance | 53.1.6 で wrapper を追加しない項目として整理 |
-| Claude Code 2.1.117 | Windows caches `where.exe` executable lookups per process | Windows subprocess 起動が速くなる | C | Windows runtime | 自動継承 |
-| Claude Code 2.1.117 | Default effort for Pro/Max subscribers on Opus 4.6 / Sonnet 4.6 is `high` | 複雑な作業の初期品質が上がりやすい | C | effort guidance | 53.1.6 で古い medium 前提があれば更新。Harness が無理に上書きしない |
-| Claude Code 2.1.117 | OAuth / WebFetch / proxy / keyboard / SDK reload / Bedrock / MCP elicitation / subagent model / idle memory / VS Code plugin panel / Opus context fixes | 認証、fetch、proxy、入力、MCP、subagent、memory、context 表示の不具合が減る | C | runtime stability | 本体修正を自動継承。Harness workaround は追加しない |
-| Codex 0.123.0 | Built-in `amazon-bedrock` model provider with configurable AWS profile support | Codex 側でも Bedrock provider を標準導線で扱いやすくなる | A | Codex setup docs / provider policy | 53.2.1 で provider guidance を更新し、Claude 側 Bedrock guidance と混ぜない |
-| Codex 0.123.0 | `/mcp verbose` shows diagnostics, resources, and resource templates while plain `/mcp` stays fast | 困った時だけ詳しい MCP 診断を見られる | A | troubleshoot / setup skill | 53.2.2 で通常 `/mcp` と verbose 診断の使い分けを記録 |
-| Codex 0.123.0 | Plugin MCP loading accepts both `mcpServers` and top-level server maps in `.mcp.json` | 既存 plugin MCP 設定の形をより広く読める | A | Codex setup / plugin MCP docs | 53.2.2 で両形式を説明し、Claude Code 側用語と混ぜない |
-| Codex 0.123.0 | Realtime handoffs let background agents receive transcript deltas and explicitly stay silent | 長時間作業中の background agent が必要な時だけ返答しやすい | A | harness-loop / breezing guidance | 53.2.3 で silence policy を整理する。advisor/reviewer drift 検知とは矛盾させない |
-| Codex 0.123.0 | Host-specific `remote_sandbox_config` requirements for remote environments | remote 環境ごとの sandbox 要件を分けられる | A | sandbox / execution policy | 53.2.4 で比較表化し、既存 `--approval-policy` / `--sandbox` guidance との重複を確認 |
-| Codex 0.123.0 | Bundled model metadata refreshed, including current `gpt-5.4` default | 現在の既定 model 情報に追従しやすくなる | A | Codex setup docs | 53.2.1 で Harness 側が固定しすぎない方針として記録 |
-| Codex 0.123.0 | `/copy` after rollback copies the latest visible assistant response | rollback 後のコピー内容が直感どおりになる | C | TUI UX | 53.2.5 で自動継承 bug fix として記録。workaround は追加しない |
-| Codex 0.123.0 | Follow-up text submitted during manual shell commands is queued | manual shell 中に次入力しても `Working` stuck が起きにくい | C | long-running UX | 53.2.5 で長時間作業 UX に効く自動継承として記録 |
-| Codex 0.123.0 | Unicode / dead-key input fixed in VS Code WSL terminals | WSL terminal で日本語・記号入力が壊れにくくなる | C | terminal input | 53.2.5 で自動継承として記録 |
-| Codex 0.123.0 | Stale proxy env vars are not restored from shell snapshots | 古い proxy 設定で通信が壊れにくくなる | C | session shell snapshots | 53.2.5 で自動継承として記録 |
-| Codex 0.123.0 | `codex exec` inherits root-level shared flags such as sandbox and model options | wrapper 側で同じ flag を重ねる必要が減る可能性がある | A | codex exec wrapper / sandbox docs | 53.2.4 で重複フラグ削減可否を確認する |
-| Codex 0.123.0 | Review prompts no longer leak into TUI transcripts | review の内部プロンプトが見えにくくなる | C | review privacy | Codex 本体修正を自動継承 |
-| Codex 0.123.0 | Code Review skill instructions tightened | Codex-driven review の指示が堅くなる | C | review skill | Harness reviewer は別 surface。必要なら Phase 53.3.1 で重複を整理 |
-| Codex 0.123.0 | App-server protocol docs updated for threadless MCP resource reads and namespaced dynamic tools | MCP resource read / dynamic tool の説明が増える | P | future MCP / app-server docs | 53.2.2 の scope 外で必要になったら扱う。release body 以上の推測実装はしない |
-| Codex 0.123.0 | Dependency alerts fixed, Rust dev debug-info reduced, Python app-server SDK types refreshed | 配布物と開発体験が安定する | C | dependency / build runtime | Harness 側の直接変更なし |
+| Version | Upstream item | How it improves | Category | Harness surface | Harness action |
+|---------|---------------|-----------------|----------|-----------------|----------------|
+| Claude Code 2.1.118 | Vim visual mode / visual-line mode | Easier to select and edit with keyboard only | C | TUI usage | No Harness wrapper needed. Auto-inherit as Claude Code core editor UX |
+| Claude Code 2.1.118 | `/cost` and `/stats` merged into `/usage`; old commands become typing shortcuts that open the relevant tab | Single entry point for usage information, less confusion | C | docs / session guidance | In 53.1.6, shift any `/cost` / `/stats`-centered descriptions to `/usage`-centered. Inherit behavior from core |
+| Claude Code 2.1.118 | `/theme` supports creating/switching named custom themes, with JSON manual editing and plugin `themes/` directory support | Opportunity for plugins to ship visual defaults | P | plugin setup / design policy | Record purpose in setup docs in 53.1.5. Do not decide whether to bundle themes in Harness plugin this time; no speculative implementation |
+| Claude Code 2.1.118 | Hooks can invoke MCP tools directly via `type: "mcp_tool"` | Possibility of creating read-only diagnostic hooks without shell scripts | A | hooks / MCP diagnostics / tests | In 53.1.2, validated limited to read-only MCP health/resource diagnostics. Current shipped hooks manifest is no-op; write-type MCP tool invocation from hooks is fixed in tests as prohibited |
+| Claude Code 2.1.118 | `DISABLE_UPDATES` blocks all update paths, including manual `claude update` | Can stop even manual updates in enterprise-managed environments | A | setup docs / plugin policy | In 53.1.5, explain the difference from `DISABLE_AUTOUPDATER`. Do not add a custom Harness updater block |
+| Claude Code 2.1.118 | WSL can inherit Windows-side managed settings via `wslInheritsWindowsSettings` | Easier to align managed settings in Windows/WSL mixed environments | P | enterprise setup docs | Include in managed settings cleanup in 53.1.5. Do not apply to Harness defaults excessively |
+| Claude Code 2.1.118 | Auto Mode `autoMode.allow` / `soft_deny` / `environment` can include `"$defaults"` to extend built-ins | Can add custom rules without removing default safety rules | A | permissions / sandbox docs / settings template | In 53.1.4, fix guidance and tests as "add to `"$defaults"`" rather than "replace" |
+| Claude Code 2.1.118 | Auto mode opt-in prompt adds "Don't ask again" | Reduces repeated confirmation noise | C | Auto Mode UX | Auto-inherit as Claude Code core interaction UX. Do not overlay prompt suppression in Harness |
+| Claude Code 2.1.118 | `claude plugin tag` creates release git tags with plugin version validation | Harder to cut tags with version mismatch in plugin releases | A | harness-release / release tests | In 53.1.3, add preflight / dry-run guidance and validation placement to release flow |
+| Claude Code 2.1.118 | `--continue` / `--resume` find sessions that added the current directory via `/add-dir` | Fewer missed resumes for multi-directory sessions | C | session-control docs | Update old resume assumptions in 53.1.6 if any. Inherit implementation from core |
+| Claude Code 2.1.118 | `/color` syncs session accent color to claude.ai/code when Remote Control is connected | Visual consistency with remote UI | C | Remote Control UX | No Harness surface. Auto-inherit |
+| Claude Code 2.1.118 | `/model` picker honors `ANTHROPIC_DEFAULT_*_MODEL_NAME` / `_DESCRIPTION` overrides with custom gateways | Model display becomes more accurate in gateway environments | C | model guidance | Auto-inherit since Harness does not wrap the model picker. Touch in provider docs follow-up if needed |
+| Claude Code 2.1.118 | Plugin auto-update skips caused by another plugin's version constraint appear in `/doctor` and `/plugin` Errors | Easier to find reasons for plugin dependency failures | A | setup / plugin policy docs | Explain together with dependency auto-resolve / missing dependency hints in 53.1.5 |
+| Claude Code 2.1.118 | MCP OAuth / custom header authentication fixes | Fewer re-auth loops and 401-hang issues with MCP connections | C | MCP runtime | Auto-inherit core fix. Don't add MCP health watch yet; no OAuth workaround |
+| Claude Code 2.1.118 | Credential save crash on Linux / Windows no longer corrupts `~/.claude/.credentials.json` | Lower risk of credential corruption | C | auth runtime | Auto-inherit core fix. Harness does not directly rewrite credentials |
+| Claude Code 2.1.118 | `/login` clears `CLAUDE_CODE_OAUTH_TOKEN` session token so disk credentials can take effect | Login works better after starting with env token | C | auth runtime | Auto-inherit core fix |
+| Claude Code 2.1.118 | New message scroll pill and `/plugin` badges readability fixes | TUI display more readable | C | TUI | Auto-inherit |
+| Claude Code 2.1.118 | Plan acceptance dialog no longer offers auto mode when running with `--dangerously-skip-permissions` | Less confusion about permission mode display | C | permission UX | Auto-inherit. Narrow Harness permission guidance to `"$defaults"` in 53.1.4 |
+| Claude Code 2.1.118 | Agent-type hooks no longer fail with "Messages are required for agent hooks" on non-Stop events | Easier to handle agent hook scope | C | agent hooks | Auto-inherit core fix. Treat separately from `mcp_tool` hook in 53.1.2 |
+| Claude Code 2.1.118 | `prompt` hooks no longer re-fire on tool calls made by an agent-hook verifier subagent | Reduced hook re-entry noise from verifier subagent | C | hook runtime | Auto-inherit. Do not add re-entry prevention hooks on Harness side |
+| Claude Code 2.1.118 | `/fork` stores a parent pointer instead of writing the full parent conversation per fork | Forks are lighter, less disk usage | C | session/fork | Auto-inherit. Harness session-state can assume pointer hydration |
+| Claude Code 2.1.118 | Alt+K / Alt+X / Alt+^ / Alt+_ keyboard freeze fixes | Keyboard input less likely to freeze | C | TUI input | Auto-inherit |
+| Claude Code 2.1.118 | Remote session connect no longer overwrites local `model` setting | Less risk of local settings being destroyed during remote session use | C | remote session | Auto-inherit |
+| Claude Code 2.1.118 | Typeahead no longer errors when pasted file paths start with `/` | Absolute path pasting works naturally | C | prompt input | Auto-inherit |
+| Claude Code 2.1.118 | `plugin install` on already-installed plugin re-resolves wrong-version dependencies | Easier to repair dependency issues | A | plugin setup docs | In 53.1.5, record as the policy to rely on core rather than overlaying a Harness resolver |
+| Claude Code 2.1.118 | File watcher invalid path / fd exhaustion errors are handled | Less likely to crash on watcher errors in long-running sessions | C | long-running sessions | Auto-inherit |
+| Claude Code 2.1.118 | Remote Control sessions are not archived on transient CCR initialization blips | Sessions less likely to disappear from temporary remote initialization failures | C | remote session | Auto-inherit |
+| Claude Code 2.1.118 | Subagents resumed via `SendMessage` restore the explicit `cwd` they were spawned with | Working directory less likely to drift after subagent resume | C | subagent orchestration | Auto-inherit as a Claude Code core fix, separate from Codex native `send_input` |
+| Claude Code 2.1.117 | Forked subagents can be enabled on external builds with `CLAUDE_CODE_FORK_SUBAGENT=1` | Can test forked subagents in external builds | P | agents / skills docs | Organize as a future candidate in 53.1.6. Do not force the env var into Harness defaults |
+| Claude Code 2.1.117 | Agent frontmatter `mcpServers` load for main-thread agent sessions via `--agent` | Agent configurations with MCP prerequisites work more easily in main-thread agents | P | agents audit / MCP setup | Record as a follow-up candidate for agents audit in 53.1.6 |
+| Claude Code 2.1.117 | `/model` selections persist across restarts and startup header shows project / managed-settings pins | Easier to understand where model settings come from | C | model guidance | Auto-inherit. Harness does not overwrite model pins |
+| Claude Code 2.1.117 | `/resume` offers to summarize stale large sessions before re-reading | Resuming large, stale sessions becomes lighter | C | session-memory / resume docs | Record reason not to add wrapper in 53.1.6. Prioritize Claude Code core summary |
+| Claude Code 2.1.117 | Faster MCP startup when local and claude.ai MCP servers are both configured | Shorter startup wait time | C | MCP startup | Auto-inherit. Limit MCP health watch to read diagnostic candidates in 53.1.2 |
+| Claude Code 2.1.117 | Already-installed plugin install now installs missing dependencies | Easier self-repair of missing dependencies | A | plugin setup docs | In 53.1.5, record as policy not to overlay Harness resolver on auto-resolve |
+| Claude Code 2.1.117 | Plugin dependency errors include install hints and `claude plugin marketplace add` auto-resolves missing dependencies | Dependency resolution from marketplace becomes clearer | A | plugin setup / marketplace policy | Organize for enterprise use / safe marketplace operations in 53.1.5 |
+| Claude Code 2.1.117 | Managed settings `blockedMarketplaces` / `strictKnownMarketplaces` are enforced across plugin install/update/refresh/autoupdate | Managed marketplace policy harder to bypass | A | managed settings docs | Explain in 53.1.5 without applying excessively to normal user defaults |
+| Claude Code 2.1.117 | Advisor Tool experimental label / link / startup notification, plus stuck-result fixes | Easier to understand position of experimental Advisor; fewer stalls | C | advisor strategy | Keep Harness Advisor Strategy as-is. Leave final quality judgment to Reviewer |
+| Claude Code 2.1.117 | `cleanupPeriodDays` retention sweep covers tasks, shell snapshots, backups | Old auxiliary data less likely to accumulate | C | maintenance / session storage | Auto-inherit core cleanup. Do not duplicate deletion in Harness maintenance |
+| Claude Code 2.1.117 | OpenTelemetry command / usage / effort attributes | Observability data becomes more detailed | C | telemetry | Auto-inherit since Harness does not directly handle OTel schema |
+| Claude Code 2.1.117 | Native macOS/Linux builds replace Glob/Grep tools with embedded `bfs` and `ugrep` through Bash | Faster search, fewer tool round-trips | C | search guidance | Organize in 53.1.6 as items not to add wrappers for |
+| Claude Code 2.1.117 | Windows caches `where.exe` executable lookups per process | Faster Windows subprocess startup | C | Windows runtime | Auto-inherit |
+| Claude Code 2.1.117 | Default effort for Pro/Max subscribers on Opus 4.6 / Sonnet 4.6 is `high` | Initial quality tends to be higher for complex tasks | C | effort guidance | Update old medium-assumption descriptions in 53.1.6 if any. Harness does not forcibly override |
+| Claude Code 2.1.117 | OAuth / WebFetch / proxy / keyboard / SDK reload / Bedrock / MCP elicitation / subagent model / idle memory / VS Code plugin panel / Opus context fixes | Fewer issues with auth, fetch, proxy, input, MCP, subagent, memory, context display | C | runtime stability | Auto-inherit core fixes. Do not add Harness workarounds |
+| Codex 0.123.0 | Built-in `amazon-bedrock` model provider with configurable AWS profile support | Easier to handle Bedrock provider as a standard path on the Codex side | A | Codex setup docs / provider policy | Update provider guidance in 53.2.1; do not mix with Claude-side Bedrock guidance |
+| Codex 0.123.0 | `/mcp verbose` shows diagnostics, resources, and resource templates while plain `/mcp` stays fast | Can see detailed MCP diagnostics only when needed | A | troubleshoot / setup skill | Record usage distinction between normal `/mcp` and verbose diagnostics in 53.2.2 |
+| Codex 0.123.0 | Plugin MCP loading accepts both `mcpServers` and top-level server maps in `.mcp.json` | Can read existing plugin MCP configurations in a wider range of formats | A | Codex setup / plugin MCP docs | Explain both formats in 53.2.2; do not mix with Claude Code side terminology |
+| Codex 0.123.0 | Realtime handoffs let background agents receive transcript deltas and explicitly stay silent | Background agents during long tasks can respond only when needed | A | harness-loop / breezing guidance | Organize silence policy in 53.2.3. Do not conflict with advisor/reviewer drift detection |
+| Codex 0.123.0 | Host-specific `remote_sandbox_config` requirements for remote environments | Can separate sandbox requirements per remote environment | A | sandbox / execution policy | Tabulate in 53.2.4 and confirm overlap with existing `--approval-policy` / `--sandbox` guidance |
+| Codex 0.123.0 | Bundled model metadata refreshed, including current `gpt-5.4` default | Easier to track current default model information | A | Codex setup docs | Record in 53.2.1 as the policy to not over-pin on Harness side |
+| Codex 0.123.0 | `/copy` after rollback copies the latest visible assistant response | Copy content after rollback works intuitively | C | TUI UX | Record in 53.2.5 as auto-inherited bug fix. No workaround added |
+| Codex 0.123.0 | Follow-up text submitted during manual shell commands is queued | Less `Working` stall when entering next input during manual shell | C | long-running UX | Record in 53.2.5 as auto-inherited improvement for long-running work UX |
+| Codex 0.123.0 | Unicode / dead-key input fixed in VS Code WSL terminals | Less breakage of Japanese/symbol input in WSL terminal | C | terminal input | Record in 53.2.5 as auto-inherited |
+| Codex 0.123.0 | Stale proxy env vars are not restored from shell snapshots | Less risk of communication breakage from old proxy settings | C | session shell snapshots | Record in 53.2.5 as auto-inherited |
+| Codex 0.123.0 | `codex exec` inherits root-level shared flags such as sandbox and model options | May reduce need to double-pass the same flags on the wrapper side | A | codex exec wrapper / sandbox docs | Confirm whether duplicate flag reduction is possible in 53.2.4 |
+| Codex 0.123.0 | Review prompts no longer leak into TUI transcripts | Review internal prompts less visible | C | review privacy | Auto-inherit Codex core fix |
+| Codex 0.123.0 | Code Review skill instructions tightened | Codex-driven review instructions become more strict | C | review skill | Harness reviewer is a different surface. Clean up overlap in Phase 53.3.1 if needed |
+| Codex 0.123.0 | App-server protocol docs updated for threadless MCP resource reads and namespaced dynamic tools | More explanation for MCP resource read / dynamic tools | P | future MCP / app-server docs | Out of 53.2.2 scope; handle when needed. Do not implement speculatively beyond release body |
+| Codex 0.123.0 | Dependency alerts fixed, Rust dev debug-info reduced, Python app-server SDK types refreshed | Artifacts and development experience become more stable | C | dependency / build runtime | No direct Harness changes |
 
 ## 53.1.2 MCP tool hook decision
 
-対象 hook の用途:
+Target hook use case:
 
-- 将来の読み取り専用の MCP health / resource list 診断に限定する。
-- たとえば、MCP server の疎通状態、公開 resources の一覧、resource template の有無などを、shell script を増やさず hook から直接確認する用途。
-- 外部状態を書き換える audit log、checkpoint 記録、issue 作成、database 更新、ファイル書き込みは対象外。
+- Limit to future read-only MCP health / resource list diagnostics.
+- For example: checking MCP server connectivity status, listing exposed resources, checking for resource template existence — without adding shell scripts, directly from a hook.
+- Out of scope: audit logs that rewrite external state, checkpoint recording, issue creation, database updates, file writes.
 
-今回の判断:
+Decision this time:
 
-- `hooks/hooks.json` / `.claude-plugin/hooks.json` は今回は no-op として変更しない。
-- 理由は、2026-04-23 時点で公式 changelog は `type: "mcp_tool"` を告知している一方、Hooks reference の hook handler field 表はまだ `command` / `http` / `prompt` / `agent` 中心で、`mcp_tool` の必須 field 名と入力展開規約が安定仕様として読み取れないため。
-- もう 1 つの理由は、配布 plugin の hooks は有効化された全環境で読まれるため、常に存在する読み取り専用 MCP diagnostic tool をまだ前提にできないため。環境依存の MCP tool を manifest に直接入れると、未設定環境で hook error を増やす可能性がある。
+- `hooks/hooks.json` / `.claude-plugin/hooks.json` are kept as no-op with no changes this time.
+- Reason: As of 2026-04-23, the official changelog announces `type: "mcp_tool"`, but the Hooks reference's hook handler field table is still centered on `command` / `http` / `prompt` / `agent`, and the required field names and input expansion conventions for `mcp_tool` cannot be read as a stable spec.
+- Another reason: Hooks in distributed plugins are read in all enabled environments, so a permanently-present read-only MCP diagnostic tool cannot yet be assumed. Putting an environment-dependent MCP tool directly in the manifest may increase hook errors in unconfigured environments.
 
-安全条件:
+Safety conditions:
 
-- 書き込み系 MCP tool は hook から呼ばない。
-- 将来 `type: "mcp_tool"` を manifest に入れる場合でも、tool 名は `health` / `list` / `read` / `get` / `status` / `diagnostic` / `resource` など読み取り診断と分かるものに限定する。
-- `write` / `create` / `update` / `delete` / `remove` / `record` / `mutate` / `set` / `insert` / `upsert` / `patch` を含む tool 名は hook から呼ばない。
-- この方針は `tests/test-claude-upstream-integration.sh` で固定する。現時点は no-op を検出し、将来 `mcp_tool` hook が追加された場合は読み取り専用名であることを jq check する。
+- Do not call write-type MCP tools from hooks.
+- Even when adding `type: "mcp_tool"` to the manifest in the future, limit tool names to those clearly identifiable as read-only diagnostics: `health` / `list` / `read` / `get` / `status` / `diagnostic` / `resource`, etc.
+- Do not call from hooks tool names containing `write` / `create` / `update` / `delete` / `remove` / `record` / `mutate` / `set` / `insert` / `upsert` / `patch`.
+- This policy is fixed in `tests/test-claude-upstream-integration.sh`. Currently, it detects no-op; if an `mcp_tool` hook is added in the future, a jq check requires it to have a read-only name.
 
 ## 53.1.3 plugin tag release flow decision
 
-対象:
+Scope:
 
-- Claude Code `2.1.118` の `claude plugin tag`
-- `harness-release` の release flow
+- Claude Code `2.1.118` `claude plugin tag`
+- `harness-release` release flow
 
-今回の判断:
+Decision this time:
 
-- `skills/harness-release/SKILL.md` に Claude plugin project 用の tag preflight を追加する。
-- `.claude-plugin/plugin.json` がある project では、`VERSION` と `.claude-plugin/plugin.json` の version が一致しない限り tag に進まない。
-- Pre-Gate と `--dry-run` では `claude plugin tag .claude-plugin --dry-run` を実行し、作られる plugin tag 名と内部の tag / push 相当コマンドを見える化する。
-- Post-Gate では release commit 後に再度 version sync を確認し、`claude plugin tag .claude-plugin --push --remote origin` で `{plugin-name}--v{version}` tag を作る。
-- 既存の GitHub Release automation が `vX.Y.Z` tag を前提にしている project では、plugin tag とは別に semver tag を作る。plugin 配布 tag は `claude plugin tag` に任せ、手動 `git tag` だけに依存しない。
+- Add Claude plugin project tag preflight to `skills/harness-release/SKILL.md`.
+- For projects with `.claude-plugin/plugin.json`, do not proceed to tagging unless `VERSION` and `.claude-plugin/plugin.json` version match.
+- In Pre-Gate and `--dry-run`, run `claude plugin tag .claude-plugin --dry-run` to visualize the created plugin tag name and the tag/push-equivalent commands.
+- In Post-Gate, re-confirm version sync after the release commit, then create the `{plugin-name}--v{version}` tag with `claude plugin tag .claude-plugin --push --remote origin`.
+- For projects where existing GitHub Release automation assumes a `vX.Y.Z` tag, create a semver tag separately from the plugin tag. Delegate plugin distribution tags to `claude plugin tag`; do not rely solely on manual `git tag`.
 
-安全条件:
+Safety conditions:
 
-- `claude plugin validate .claude-plugin/plugin.json` が失敗した場合は tag を作らない。
-- `VERSION` と `.claude-plugin/plugin.json` が不一致の場合は tag を作らない。
-- `--dry-run` は tag を作らず、release plan に実行コマンドを表示する目的で使う。
-- この guidance は `tests/test-claude-upstream-integration.sh` で grep 固定する。
+- Do not create a tag if `claude plugin validate .claude-plugin/plugin.json` fails.
+- Do not create a tag if `VERSION` and `.claude-plugin/plugin.json` do not match.
+- `--dry-run` does not create a tag; it is used to display the execution command in the release plan.
+- This guidance is grep-fixed in `tests/test-claude-upstream-integration.sh`.
 
 ## 53.1.4 Auto Mode "$defaults" permission and sandbox policy
 
-対象:
+Scope:
 
-- Claude Code `2.1.118` の Auto Mode `autoMode.allow` / `autoMode.soft_deny` / `autoMode.environment`
-- Harness の `.claude-plugin/settings.json`
+- Claude Code `2.1.118` Auto Mode `autoMode.allow` / `autoMode.soft_deny` / `autoMode.environment`
+- Harness `.claude-plugin/settings.json`
 - Project-level template: `templates/claude/settings.security.json.template`
 
-今回の判断:
+Decision this time:
 
-- Auto Mode built-in defaults stay in place through "$defaults"。
-- Harness は、Claude Code 組み込みの Auto Mode default を置き換えない。
-- Project / enterprise 側で `autoMode.allow` / `autoMode.soft_deny` / `autoMode.environment` を追加する場合だけ、各配列に `"$defaults"` を入れ、その後ろに project-specific / organization-specific entry を足す。
-- 配布 plugin の `.claude-plugin/settings.json` には、この task では `autoMode` object を追加しない。理由は、組み込み default の中身と更新責務は Claude Code 本体が持つべきで、Harness が空の置換設定を配ると upstream default とのズレを作りやすいため。
-- Project-level template には、`autoMode` を追加する時の注意書きだけを置く。実際の追加 entry はプロジェクトごとに異なるため、Harness が推測して固定しない。
+- Auto Mode built-in defaults stay in place through "$defaults".
+- Harness does not replace Claude Code's built-in Auto Mode defaults.
+- Only when adding `autoMode.allow` / `autoMode.soft_deny` / `autoMode.environment` at project/enterprise level, include `"$defaults"` in each array and append project-specific / organization-specific entries after it.
+- Do not add an `autoMode` object to the distributed plugin's `.claude-plugin/settings.json` in this task. The reason is that the contents and update responsibilities for built-in defaults should belong to Claude Code core; distributing an empty replacement config from Harness easily creates misalignment with upstream defaults.
+- In the project-level template, place only a note about caution when adding `autoMode`. Do not speculatively fix actual additional entries as they differ per project.
 
-追加時の形:
+Addition format:
 
 ```json
 {
@@ -159,101 +161,101 @@
 }
 ```
 
-安全条件:
+Safety conditions:
 
-- `"$defaults"` を削らない。
-- `"$defaults"` を「Harness が考える default 一覧」に展開して書き直さない。
-- 既存の `permissions.deny` / `permissions.ask` / `sandbox.failIfUnavailable` / `sandbox.network.deniedDomains` / `sandbox.filesystem` は維持する。
-- Auto Mode entry を追加する場合も、deny / ask / sandbox を緩める理由にはしない。
+- Do not remove `"$defaults"`.
+- Do not expand `"$defaults"` and rewrite it as "the default list Harness considers."
+- Maintain existing `permissions.deny` / `permissions.ask` / `sandbox.failIfUnavailable` / `sandbox.network.deniedDomains` / `sandbox.filesystem`.
+- Adding Auto Mode entries is not a reason to relax deny / ask / sandbox.
 
 R05 guardrail and sandbox.network.deniedDomains are not duplicated by Auto Mode:
 
-- R05 は Go guardrail 側の危険操作検出で、`sudo` wrapper、`find -delete` / `find -exec rm ...`、macOS dangerous removal path などをコマンド文字列から検出する。Auto Mode は自動承認の分類層であり、R05 のような Harness 固有の二層目ガードとは責務が違う。
-- `sandbox.network.deniedDomains` は metadata endpoint への到達を sandbox の network 境界で止める。Auto Mode の `environment` guidance は「どの環境条件なら自動化しやすいか」の分類であり、network deny list の代替ではない。
-- `permissions.deny` / `permissions.ask` は、明示的な拒否・確認ルールとして残す。Claude Code 側の deny precedence と Harness の guardrail を重ねることで、Auto Mode default が更新されても破壊的操作や機密読み取りの防御を緩めない。
+- R05 is a dangerous operation detection on the Go guardrail side, detecting `sudo` wrappers, `find -delete` / `find -exec rm ...`, macOS dangerous removal paths, etc. from command strings. Auto Mode is a classification layer for automatic approval, with different responsibilities from Harness-specific second-layer guards like R05.
+- `sandbox.network.deniedDomains` stops access to metadata endpoints at the sandbox network boundary. Auto Mode's `environment` guidance is a classification of "what environment conditions make automation easier" and is not a substitute for a network deny list.
+- `permissions.deny` / `permissions.ask` remain as explicit deny/confirmation rules. By layering Claude Code's deny precedence with Harness guardrails, defenses against destructive operations and sensitive read access are not weakened even when Auto Mode defaults are updated.
 
-検証:
+Verification:
 
-- `tests/test-claude-upstream-integration.sh` で、この section、template note、`.claude-plugin/settings.json` の既存 deny / ask / deniedDomains 維持を固定する。
-- 将来 `.claude-plugin/settings.json` に `autoMode` を追加する場合は、`allow` / `soft_deny` / `environment` の各 entry に `"$defaults"` が含まれることを同 test の jq check が要求する。
+- `tests/test-claude-upstream-integration.sh` fixes this section, the template note, and the maintenance of existing deny / ask / deniedDomains in `.claude-plugin/settings.json`.
+- If `autoMode` is added to `.claude-plugin/settings.json` in the future, the same test's jq check requires that `"$defaults"` is included in each entry of `allow` / `soft_deny` / `environment`.
 
 ## 53.1.5 plugin / managed settings policy
 
-対象:
+Scope:
 
-- Claude Code `2.1.118` の plugin `themes/` directory
-- `DISABLE_UPDATES` と既存 `DISABLE_AUTOUPDATER`
-- Claude Code `2.1.117` の `blockedMarketplaces` / `strictKnownMarketplaces`
+- Claude Code `2.1.118` plugin `themes/` directory
+- `DISABLE_UPDATES` and existing `DISABLE_AUTOUPDATER`
+- Claude Code `2.1.117` `blockedMarketplaces` / `strictKnownMarketplaces`
 - plugin dependency auto-resolve / missing dependency hints
-- Windows / WSL managed settings 継承 (`wslInheritsWindowsSettings`)
+- Windows / WSL managed settings inheritance (`wslInheritsWindowsSettings`)
 
-今回の判断:
+Decision this time:
 
-- `docs/plugin-managed-settings-policy.md` を新設し、setup / plugin policy docs の正本として扱う。
-- `skills/harness-setup/SKILL.md` から同 docs へ pointer を追加し、setup 時に marketplace policy と dependency policy を迷わないようにする。
-- `DISABLE_AUTOUPDATER` は自動更新停止、`DISABLE_UPDATES` は手動 `claude update` まで止める企業管理向けの強い停止として区別する。
-- `blockedMarketplaces` / `strictKnownMarketplaces` は managed settings 専用の管理環境向け policy として扱い、通常ユーザー向け default には過剰適用しない。
-- 通常の team onboarding では `extraKnownMarketplaces` を優先し、strict allowlist が必要な企業だけが managed settings で `strictKnownMarketplaces` を使う。
-- plugin dependency auto-resolve と missing dependency hints は Claude Code 本体に任せる。Harness 独自の dependency resolver、cache 直接編集、marketplace policy 迂回は追加しない。
-- plugin `themes/` directory は今回は `P` に留める。Harness は運用安全性の plugin であり、theme 同梱には brand / accessibility / terminal compatibility の別レビューが必要なため推測実装しない。
-- `wslInheritsWindowsSettings` は Windows / WSL 混在企業環境向けの managed settings 候補として記録し、Harness default には入れない。
+- Create `docs/plugin-managed-settings-policy.md` as the canonical source for setup / plugin policy docs.
+- Add a pointer from `skills/harness-setup/SKILL.md` to the same docs so marketplace policy and dependency policy are clear during setup.
+- Distinguish `DISABLE_AUTOUPDATER` (stops auto-update) from `DISABLE_UPDATES` (stronger enterprise-managed stop that also halts manual `claude update`).
+- Treat `blockedMarketplaces` / `strictKnownMarketplaces` as policy for managed environments only; do not apply excessively to normal user defaults.
+- For normal team onboarding, prioritize `extraKnownMarketplaces`; only enterprises requiring strict allowlists use `strictKnownMarketplaces` in managed settings.
+- Rely on Claude Code core for plugin dependency auto-resolve and missing dependency hints. Do not add a Harness-specific dependency resolver, direct cache editing, or marketplace policy bypass.
+- Leave plugin `themes/` directory as `P` for now. As Harness is an operational safety plugin, bundling themes requires separate review of brand / accessibility / terminal compatibility; no speculative implementation.
+- Record `wslInheritsWindowsSettings` as a managed settings candidate for Windows/WSL mixed enterprise environments; do not include in Harness defaults.
 
-安全条件:
+Safety conditions:
 
-- `.claude-plugin/settings.json` に `DISABLE_UPDATES`、`blockedMarketplaces`、`strictKnownMarketplaces` を default として追加しない。
-- managed settings の最上位 precedence と Claude Code 本体の install / update / refresh / auto-update enforcement を信頼する。
-- Harness は説明・release guidance・検証 grep に留め、信頼境界そのものを再実装しない。
-- この guidance は `tests/test-claude-upstream-integration.sh` で、policy docs の存在、`DISABLE_UPDATES` / marketplace policy / dependency resolver / themes decision の記述、Feature Table の完了表記を固定する。
+- Do not add `DISABLE_UPDATES`, `blockedMarketplaces`, `strictKnownMarketplaces` as defaults to `.claude-plugin/settings.json`.
+- Trust managed settings' top-level precedence and Claude Code core's install / update / refresh / auto-update enforcement.
+- Harness remains in explanation / release guidance / validation grep and does not re-implement the trust boundary itself.
+- This guidance is fixed in `tests/test-claude-upstream-integration.sh` with: policy docs existence, `DISABLE_UPDATES` / marketplace policy / dependency resolver / themes decision descriptions, and Feature Table completion marks.
 
 ## 53.1.6 Claude Code UX automatic inheritance policy
 
-対象:
+Scope:
 
-- Claude Code `2.1.118` の `/cost` / `/stats` から `/usage` への統合
-- Claude Code `2.1.118` の `/continue` / `/resume` が `/add-dir` で追加された current directory の session を見つける改善
-- Claude Code `2.1.117` の main-thread `--agent` + agent frontmatter `mcpServers` 読み込み
-- Claude Code `2.1.117` の `CLAUDE_CODE_FORK_SUBAGENT=1` external build flag
-- Claude Code `2.1.117` の stale large session summary、native `bfs` / `ugrep` search、高 effort default
+- Claude Code `2.1.118` `/cost` / `/stats` to `/usage` integration
+- Claude Code `2.1.118` `/continue` / `/resume` improvement to find sessions with `/add-dir`-added current directory
+- Claude Code `2.1.117` main-thread `--agent` + agent frontmatter `mcpServers` loading
+- Claude Code `2.1.117` `CLAUDE_CODE_FORK_SUBAGENT=1` external build flag
+- Claude Code `2.1.117` stale large session summary, native `bfs` / `ugrep` search, high effort default
 
-今回の判断:
+Decision this time:
 
-- `/usage` を利用量・コスト・統計の primary entrypoint として扱う。
-- `/cost` / `/stats` は legacy typing shortcut として扱う。古い docs でコスト確認や統計確認の入口を説明する場合は、まず `/usage` を案内し、必要な tab を開く shortcut として `/cost` / `/stats` を補足する。
-- `/resume` が `/add-dir` session を見つける改善と stale large session summary は Claude Code 本体の session discovery / summary logic を自動継承する。Harness は duplicate resume index、独自 stale-session summarizer、transcript 再読 wrapper を追加しない。
-- `--agent` + `mcpServers` は agents audit の後続候補に残す。main-thread agent で MCP 前提の agent frontmatter がどう読まれるかは、既存 agent definitions と MCP setup guidance の棚卸しが必要なため、今回の task では `P` として記録する。
-- `CLAUDE_CODE_FORK_SUBAGENT=1` は Harness default に強制しない。external build で forked subagent を検証するための upstream flag として扱い、配布 plugin の settings / skill default / environment template には入れない。
-- native `bfs` / `ugrep` search は wrapper を追加しない。検索の高速化は Claude Code native macOS / Linux build が Bash 経由で提供する領域で、Harness が別 search shim を重ねると path 解決、glob 差異、fallback 差異を増やす。
-- 高 effort default は Claude Code 本体の model/account policy として自動継承する。Harness の `harness-work` effort scoring は、複雑な task に `ultrathink` や `high` を上乗せする局所 policy に留め、Pro / Max subscriber 向けの built-in default を固定値で上書きしない。
+- Treat `/usage` as the primary entry point for usage / cost / statistics.
+- Treat `/cost` / `/stats` as legacy typing shortcuts. When explaining cost confirmation or statistics entry points in old docs, guide to `/usage` first and supplement with `/cost` / `/stats` as shortcuts to open the needed tab.
+- Auto-inherit from Claude Code core the improvements to `/resume` finding `/add-dir` sessions and stale large session summary. Harness does not add duplicate resume indexes, custom stale-session summarizers, or transcript re-reading wrappers.
+- Leave `--agent` + `mcpServers` as a follow-up candidate for agents audit. How agent frontmatter with MCP prerequisites is read in main-thread agents requires an inventory of existing agent definitions and MCP setup guidance, so record as `P` in this task.
+- Do not force `CLAUDE_CODE_FORK_SUBAGENT=1` into Harness defaults. Treat as an upstream flag for verifying forked subagents in external builds; do not include in distributed plugin settings / skill defaults / environment templates.
+- Do not add wrappers for native `bfs` / `ugrep` search. Search speedup is in the domain provided by Claude Code native macOS / Linux builds through Bash; adding a separate Harness search shim increases path resolution, glob differences, and fallback differences.
+- Auto-inherit high effort default as Claude Code core model/account policy. Harness's `harness-work` effort scoring remains a local policy that adds `ultrathink` or `high` for complex tasks, without overwriting built-in defaults for Pro / Max subscriber accounts with fixed values.
 
-Harness wrapper を追加しない理由:
+Reasons not to add Harness wrappers:
 
-- これらは UI command routing、session discovery、agent frontmatter loading、native search、model/account default のように Claude Code 本体が runtime で判断する領域。
-- Harness が同じ判断を wrapper として再実装すると、upstream 側の修正後も古い挙動を抱えたり、ユーザーの managed settings / account policy / platform-specific build と衝突したりする。
-- Harness の責務は、古い説明を `/usage` 中心へ更新し、`C` は自動継承として記録し、agent audit が必要な `--agent` + `mcpServers` と external build flag は `P` として後続候補に残すこと。
+- These are areas where Claude Code core makes runtime decisions, such as UI command routing, session discovery, agent frontmatter loading, native search, and model/account defaults.
+- Re-implementing the same judgment as Harness wrappers would retain old behavior even after upstream fixes, or conflict with user managed settings / account policy / platform-specific builds.
+- Harness's responsibility is to update old descriptions to be `/usage`-centered, record `C` as automatic inheritance, and leave `--agent` + `mcpServers` needing agent audit and external build flags as `P` for future candidates.
 
-検証:
+Verification:
 
-- `tests/test-claude-upstream-integration.sh` で、この section、`/usage` primary entrypoint、legacy shortcut の扱い、`--agent` + `mcpServers` follow-up、external build flag を default にしない方針、native search / high effort default の自動継承、Feature Table の `C/P` 表記を固定する。
+- `tests/test-claude-upstream-integration.sh` fixes: this section, `/usage` primary entry point, legacy shortcut handling, `--agent` + `mcpServers` follow-up, external build flag not-as-default policy, native search / high effort default automatic inheritance, and Feature Table `C/P` notation.
 
 ## 53.2.1 Codex provider and model metadata setup policy
 
-対象:
+Scope:
 
-- Codex `0.123.0` の built-in `amazon-bedrock` model provider
+- Codex `0.123.0` built-in `amazon-bedrock` model provider
 - `model_providers.amazon-bedrock.aws.profile`
-- Codex `0.123.0` の bundled model metadata refresh と current `gpt-5.4` default
-- 古い固定 model slug の setup guidance 残留
-- Claude Code 側 Bedrock guidance との切り分け
+- Codex `0.123.0` bundled model metadata refresh and current `gpt-5.4` default
+- Residual old fixed model slug setup guidance
+- Separation from Claude Code-side Bedrock guidance
 
-今回の判断:
+Decision this time:
 
-- `docs/codex-provider-setup-policy.md` を新設し、Codex provider / model metadata setup guidance の正本として扱う。
-- Bedrock を使う user / project だけが `model_provider = "amazon-bedrock"` と `[model_providers.amazon-bedrock.aws] profile = "codex-bedrock"` を自分の Codex config に追加する。
-- Harness の配布用 `codex/.codex/config.toml` には、`amazon-bedrock` の説明コメントだけを置く。実際の `model_provider` default は設定しない。
-- Harness は AWS credential、temporary token、secret key、Bedrock endpoint override を書き込まない。
-- `gpt-5.4` は Codex `0.123.0` の current bundled model metadata として扱う。Harness setup は `model = "gpt-5.4"` を default として固定しない。
-- `scripts/check-codex.sh` の古い `gpt-5.2-codex` 推奨 sample は削除し、通常は Codex CLI の current default metadata に任せる説明へ変更する。
-- Claude Code 側の Bedrock guidance は `CLAUDE_CODE_USE_BEDROCK`、`ANTHROPIC_DEFAULT_*`、`modelOverrides` の領域として残す。Codex の `model_provider = "amazon-bedrock"` と混ぜない。
+- Create `docs/codex-provider-setup-policy.md` as the canonical source for Codex provider / model metadata setup guidance.
+- Only users/projects using Bedrock add `model_provider = "amazon-bedrock"` and `[model_providers.amazon-bedrock.aws] profile = "codex-bedrock"` to their own Codex config.
+- In Harness's distributed `codex/.codex/config.toml`, place only an explanatory comment for `amazon-bedrock`. Do not set an actual `model_provider` default.
+- Harness does not write AWS credentials, temporary tokens, secret keys, or Bedrock endpoint overrides.
+- Treat `gpt-5.4` as current bundled model metadata for Codex `0.123.0`. Harness setup does not fix `model = "gpt-5.4"` as a default.
+- Remove the old `gpt-5.2-codex` recommendation sample from `scripts/check-codex.sh` and change to a description that relies on the current default metadata of Codex CLI.
+- Keep Claude Code-side Bedrock guidance in the domain of `CLAUDE_CODE_USE_BEDROCK`, `ANTHROPIC_DEFAULT_*`, `modelOverrides`. Do not mix with Codex's `model_provider = "amazon-bedrock"`.
 
 Bedrock config example:
 
@@ -264,42 +266,42 @@ model_provider = "amazon-bedrock"
 profile = "codex-bedrock"
 ```
 
-古い固定 model slug の点検:
+Checking for old fixed model slugs:
 
 ```bash
 rg -n "gpt-5\.2-codex|gpt-5-codex|gpt-5\.1|codex-mini|gpt-5\.3-codex|gpt-5\.4" \
   docs skills codex skills-codex scripts tests templates .claude-plugin opencode .agents -u
 ```
 
-結果の扱い:
+Handling results:
 
-- `scripts/check-codex.sh` の `gpt-5.2-codex` sample は setup guidance として古いため削除する。
-- `scripts/codex-loop.sh`、`scripts/config-utils.sh`、advisor contract tests の `gpt-5.4` は Advisor Strategy の model policy / fixture であり、Codex setup default ではないため今回は維持する。
-- `docs/CLAUDE-feature-table.md` の過去 version 説明にある Bedrock / model 名は履歴説明として維持する。
-- 新規 setup docs / skill / Codex README では、古い model slug を推奨値として追加しない。
+- The `gpt-5.2-codex` sample in `scripts/check-codex.sh` is outdated as setup guidance and will be removed.
+- `gpt-5.4` in `scripts/codex-loop.sh`, `scripts/config-utils.sh`, and advisor contract tests are model policies / fixtures for Advisor Strategy, not Codex setup defaults, so they are maintained this time.
+- Bedrock / model names in past version descriptions in `docs/CLAUDE-feature-table.md` are maintained as historical descriptions.
+- Do not add old model slugs as recommended values in new setup docs / skills / Codex README.
 
-検証:
+Verification:
 
-- `tests/test-claude-upstream-integration.sh` で、provider policy docs、`harness-setup` pointer、Codex README / config note、古い `gpt-5.2-codex` sample 削除、Feature Table の 53.2.1 完了表記を grep 固定する。
+- `tests/test-claude-upstream-integration.sh` grep-fixes: provider policy docs, `harness-setup` pointer, Codex README / config note, old `gpt-5.2-codex` sample removal, Feature Table 53.2.1 completion mark.
 
 ## 53.2.2 Codex MCP diagnostics and plugin loading policy
 
-対象:
+Scope:
 
-- Codex `0.123.0` の `/mcp verbose`
-- Codex `0.123.0` の plugin `.mcp.json` loading
-- plugin `.mcp.json` の `mcpServers` 形式
-- plugin `.mcp.json` の top-level server map 形式
+- Codex `0.123.0` `/mcp verbose`
+- Codex `0.123.0` plugin `.mcp.json` loading
+- `mcpServers` format in plugin `.mcp.json`
+- Top-level server map format in plugin `.mcp.json`
 
-今回の判断:
+Decision this time:
 
-- `docs/codex-mcp-diagnostics.md` を新設し、Codex MCP diagnostics / plugin MCP loading guidance の正本として扱う。
-- 普段の Codex TUI では `/mcp` を軽量な server 状態確認として使う。
-- MCP server が見えない、起動エラーが分からない、resources / resource templates の有無を見たい時だけ `/mcp verbose` を使う。
-- `/mcp verbose` は diagnostics、resources、resource templates を見る troubleshoot 用の入口として案内する。
-- plugin 内 `.mcp.json` は `mcpServers` 形式と top-level server map 形式の両方を受け取れる前提に更新する。
-- 新規 plugin では、他 tool と共有しやすい `mcpServers` 形式を優先する。
-- 既存 plugin が top-level server map 形式なら、Codex 側の loading 改善を利用し、不要な migration を要求しない。
+- Create `docs/codex-mcp-diagnostics.md` as the canonical source for Codex MCP diagnostics / plugin MCP loading guidance.
+- In normal Codex TUI usage, use `/mcp` as lightweight server status confirmation.
+- Use `/mcp verbose` only when: MCP server is not visible, startup errors are unclear, or need to check presence of resources / resource templates.
+- Guide `/mcp verbose` as the troubleshooting entry point for viewing diagnostics, resources, and resource templates.
+- Update plugin `.mcp.json` to assume acceptance of both `mcpServers` format and top-level server map format.
+- For new plugins, prioritize `mcpServers` format for easier sharing with other tools.
+- For existing plugins in top-level server map format, use Codex's loading improvement and do not require unnecessary migration.
 
 `.mcp.json` examples:
 
@@ -323,181 +325,181 @@ rg -n "gpt-5\.2-codex|gpt-5-codex|gpt-5\.1|codex-mini|gpt-5\.3-codex|gpt-5\.4" \
 }
 ```
 
-Claude Code 側 MCP guidance と混ぜない理由:
+Reason not to mix with Claude Code-side MCP guidance:
 
-- Codex TUI の `/mcp` / `/mcp verbose` は Codex runtime の診断入口。
-- Codex plugin `.mcp.json` loading は Codex plugin 側の読み込み改善。
-- Claude Code 側の `claude mcp ...`、`.claude/mcp.json`、hook `type: "mcp_tool"` は別 surface。
-- 53.1.2 の `type: "mcp_tool"` hook safety decision は Claude Code hooks の話であり、53.2.2 の Codex `/mcp verbose` guidance とは責務を分ける。
+- Codex TUI's `/mcp` / `/mcp verbose` is Codex runtime's diagnostic entry point.
+- Codex plugin `.mcp.json` loading is a loading improvement for the Codex plugin side.
+- Claude Code-side `claude mcp ...`, `.claude/mcp.json`, hook `type: "mcp_tool"` are different surfaces.
+- The `type: "mcp_tool"` hook safety decision in 53.1.2 is about Claude Code hooks, with separate responsibilities from the Codex `/mcp verbose` guidance in 53.2.2.
 
-検証:
+Verification:
 
-- `tests/test-claude-upstream-integration.sh` で、`docs/codex-mcp-diagnostics.md`、`harness-setup` pointer、Codex README guidance、`/mcp verbose`、diagnostics / resources / resource templates、`mcpServers` 形式、top-level server map 形式、Claude Code 側 MCP guidance と混ぜない方針、Feature Table の 53.2.2 完了表記を grep 固定する。
-- `tests/test-codex-package.sh` で、Codex README の `/mcp verbose` と `.mcp.json` loading guidance を検出する。
+- `tests/test-claude-upstream-integration.sh` grep-fixes: `docs/codex-mcp-diagnostics.md`, `harness-setup` pointer, Codex README guidance, `/mcp verbose`, diagnostics / resources / resource templates, `mcpServers` format, top-level server map format, not-mixing-with-Claude-Code-side-MCP policy, Feature Table 53.2.2 completion mark.
+- `tests/test-codex-package.sh` detects `/mcp verbose` and `.mcp.json` loading guidance in Codex README.
 
 ## 53.2.3 Codex realtime handoff silence policy
 
-対象:
+Scope:
 
-- Codex `0.123.0` の realtime handoff
-- background agents が受け取る transcript delta
-- `harness-loop` の background runner
-- `breezing` の Worker / Advisor / Reviewer
-- advisor / reviewer drift 検知
+- Codex `0.123.0` realtime handoff
+- Transcript deltas received by background agents
+- `harness-loop` background runner
+- `breezing` Worker / Advisor / Reviewer
+- Advisor / reviewer drift detection
 
-今回の判断:
+Decision this time:
 
-- Codex `0.123.0` の realtime handoff 改善は `A: docs / guidance 化済み` として取り込む。
-- background agent が transcript delta を受け取れることは、途中通知を増やす理由ではなく、必要な時だけ判断を更新できる前提として扱う。
-- `skills-codex/harness-loop/SKILL.md` と Codex mirror `codex/.codex/skills/harness-loop/SKILL.md` に `Realtime Handoff / Silence Policy` を追加する。
-- `skills-codex/breezing/SKILL.md` と Codex mirror `codex/.codex/skills/breezing/SKILL.md` に、Worker / Advisor / Reviewer の silence policy を追加する。
-- 共有 `skills/breezing/SKILL.md` と `skills/harness-loop/SKILL.md` には、長時間実行時の通知整理として同じ考え方を反映する。
-- `scripts/codex-loop.sh` が生成する 1-cycle prompt に、transcript delta だけで余計な途中報告を出さない指示を追加する。
+- Adopt Codex `0.123.0`'s realtime handoff improvement as `A: documented / guided`.
+- That background agents can receive transcript deltas is not a reason to increase interim notifications; treat it as a premise for updating judgment only when needed.
+- Add `Realtime Handoff / Silence Policy` to `skills-codex/harness-loop/SKILL.md` and Codex mirror `codex/.codex/skills/harness-loop/SKILL.md`.
+- Add Worker / Advisor / Reviewer silence policy to `skills-codex/breezing/SKILL.md` and Codex mirror `codex/.codex/skills/breezing/SKILL.md`.
+- Reflect the same thinking as notification cleanup during long-running execution in shared `skills/breezing/SKILL.md` and `skills/harness-loop/SKILL.md`.
+- Add instruction to the 1-cycle prompt generated by `scripts/codex-loop.sh` not to produce unnecessary interim reports just from transcript deltas.
 
-silence policy:
+Silence policy:
 
-- 報告するのは cycle / task 完了、blocked、validation failure、review `REQUEST_CHANGES`、advisor `STOP`、plateau、contract readiness failure、user が明示的に status を求めた時。
-- `advisor-request.v1` 未応答、`review-result.v1` 未到着、review loop plateau などの advisor / reviewer drift は silence 対象にしない。
-- transcript delta を受け取っただけで task status、review verdict、advisor decision が変わっていない場合は明示的に沈黙する。
-- tool stdout の細かな増分は log / status 側に寄せる。
-- default は `harness-loop` では「1 cycle につき最終報告 1 回」、`breezing` では「task 完了ごとに progress feed 1 回」。
+- Report only on: cycle / task completion, blocked, validation failure, review `REQUEST_CHANGES`, advisor `STOP`, plateau, contract readiness failure, or when user explicitly requests status.
+- Do not silence advisor / reviewer drift such as unanswered `advisor-request.v1`, undelivered `review-result.v1`, review loop plateau.
+- When only transcript deltas are received and task status / review verdict / advisor decision has not changed, explicitly stay silent.
+- Keep fine-grained tool stdout increments on the log / status side.
+- Default is: "one final report per cycle" in `harness-loop`, "one progress feed per task completion" in `breezing`.
 
-advisor / reviewer drift と矛盾しない理由:
+Why it doesn't conflict with advisor / reviewer drift:
 
-- silence policy は「不要な通知を減らす」ための方針であり、品質判定や停止条件を弱めるものではない。
-- Advisor は `PLAN` / `CORRECTION` / `STOP` の相談役、Reviewer は `APPROVE` / `REQUEST_CHANGES` の品質判定役として分離したままにする。
-- drift は `.claude/state/session.events.jsonl` / contract / review artifact の欠落として扱い、会話上の沈黙とは別の異常として検出する。
+- Silence policy is a policy to reduce unnecessary notifications and does not weaken quality judgment or stop conditions.
+- Advisor remains as the `PLAN` / `CORRECTION` / `STOP` consultant; Reviewer remains as the `APPROVE` / `REQUEST_CHANGES` quality judge; they stay separated.
+- Drift is detected as an anomaly separate from conversational silence, treated as missing contract / review artifact in `.claude/state/session.events.jsonl`.
 
-検証:
+Verification:
 
-- `tests/test-claude-upstream-integration.sh` で、snapshot、Codex harness-loop / breezing、共有 harness-loop / breezing、`scripts/codex-loop.sh` に silence policy と drift 例外があることを grep 固定する。
-- `tests/test-codex-package.sh` で、Codex README と Codex skill mirror に realtime handoff / silence policy があることを検出する。
-- `./scripts/sync-skill-mirrors.sh --check` で `skills-codex` と Codex mirror の drift がないことを確認する。
+- `tests/test-claude-upstream-integration.sh` grep-fixes: snapshot, Codex harness-loop / breezing, shared harness-loop / breezing, and silence policy and drift exceptions in `scripts/codex-loop.sh`.
+- `tests/test-codex-package.sh` detects realtime handoff / silence policy in Codex README and Codex skill mirror.
+- `./scripts/sync-skill-mirrors.sh --check` confirms no drift between `skills-codex` and Codex mirror.
 
 ## 53.2.4 Codex sandbox / execution policy
 
-対象:
+Scope:
 
-- Codex `0.123.0` の host-specific `remote_sandbox_config`
-- `requirements.toml` の `allowed_sandbox_modes`
-- `codex exec` の root-level shared flags 継承
+- Codex `0.123.0` host-specific `remote_sandbox_config`
+- `allowed_sandbox_modes` in `requirements.toml`
+- `codex exec` root-level shared flags inheritance
 - `scripts/codex-companion.sh`
 - `scripts/codex/codex-exec-wrapper.sh`
 
-今回の判断:
+Decision this time:
 
-- `docs/codex-sandbox-execution-policy.md` を新設し、Codex sandbox / execution policy の正本として扱う。
-- `remote_sandbox_config` は user / project `config.toml` ではなく、管理者が制約する `requirements.toml` の host-specific policy として案内する。
-- remote devbox / ephemeral CI runner / shared host / unknown host の比較表を置き、host class ごとの `allowed_sandbox_modes` を整理する。
-- host matching は FQDN 優先、kernel hostname fallback の best-effort classification として扱う。強い device authentication ではないため、persistent host には broad wildcard を使わない。
-- 各 requirements source は最初に一致した `remote_sandbox_config` を merge 前に適用し、source precedence を維持する。低優先 source の host rule が高優先 source の `allowed_sandbox_modes` を弱める前提にはしない。
-- Codex `0.123.0` 以降は `codex exec` が root-level shared flags を継承するため、Harness wrapper 側で同じ sandbox / model / approval policy を重ねて転送しない。
-- 53.2.4 では runtime wrapper behavior は変更しない。
+- Create `docs/codex-sandbox-execution-policy.md` as the canonical source for Codex sandbox / execution policy.
+- Guide `remote_sandbox_config` as a host-specific policy in `requirements.toml` constrained by admins, not in user / project `config.toml`.
+- Place a comparison table for remote devbox / ephemeral CI runner / shared host / unknown host, and organize `allowed_sandbox_modes` per host class.
+- Host matching is best-effort classification using FQDN-first, kernel hostname fallback. As this is not strong device authentication, do not use broad wildcards for persistent hosts.
+- Each requirements source applies the first matched `remote_sandbox_config` before merge and maintains source precedence. Do not assume that lower-priority source host rules weaken higher-priority source `allowed_sandbox_modes`.
+- Since `codex exec` inherits root-level shared flags from Codex `0.123.0` onward, do not redundantly pass the same sandbox / model / approval policy from the Harness wrapper side.
+- Do not change runtime wrapper behavior in 53.2.4.
 
-wrapper flag 削減可否:
+Wrapper flag reduction assessment:
 
-| Wrapper | 確認結果 | 判断 |
-|---------|----------|------|
-| `scripts/codex-companion.sh` structured task mode | `task --write` を `--sandbox workspace-write` へ変換し、明示 `--sandbox` / `-s` / `--full-auto` / bypass flag がある時は caller intent を保存する | 維持。これは root shared flags の重複転送ではなく、Harness workflow intent の exec-local 変換 |
-| `scripts/codex/codex-exec-wrapper.sh` | `codex exec - --full-auto` の単一 policy で hardening prompt を実行し、別途 `--approval-policy` / `--sandbox` pair は重ねていない | 維持。`--full-auto` の変更は approval / sandbox behavior を変えるため、別 task と focused regression test が必要 |
-| docs / setup guidance | 古い `--approval-policy` / `--sandbox` 二重指定を増やす必要はない | docs では「一 call 一 source of truth」を明記 |
+| Wrapper | Assessment result | Decision |
+|---------|-----------------|----------|
+| `scripts/codex-companion.sh` structured task mode | Converts `task --write` to `--sandbox workspace-write`, preserving caller intent when explicit `--sandbox` / `-s` / `--full-auto` / bypass flags are present | Maintain. This is not redundant transfer of root shared flags, but exec-local conversion of Harness workflow intent |
+| `scripts/codex/codex-exec-wrapper.sh` | Runs the hardening prompt with a single `codex exec - --full-auto` policy; does not stack separate `--approval-policy` / `--sandbox` pairs | Maintain. Changing `--full-auto` changes approval / sandbox behavior, requiring a separate task and focused regression test |
+| docs / setup guidance | No need to add old `--approval-policy` / `--sandbox` double-specification | In docs, explicitly state "one call, one source of truth" |
 
-automatic inheritance として残す項目:
+Items to leave as automatic inheritance:
 
-- `codex exec` が root-level shared flags を継承する挙動そのものは Codex 本体の fix として自動継承する。
-- Harness はその fix を再実装しない。
-- Harness が行うのは、重複 flag を増やさない guidance、既存 wrapper の意図の明文化、remote sandbox policy の置き場所の整理。
+- The behavior of `codex exec` inheriting root-level shared flags itself is auto-inherited as a Codex core fix.
+- Harness does not re-implement that fix.
+- What Harness does: guidance not to add duplicate flags, documentation of existing wrapper intent, organization of storage location for remote sandbox policy.
 
-検証:
+Verification:
 
-- `tests/test-claude-upstream-integration.sh` で policy docs、snapshot section、Feature Table 完了表記、CHANGELOG、harness-setup pointer、wrapper comments を grep 固定する。
-- `tests/test-codex-package.sh` で Codex README に sandbox / exec policy と `remote_sandbox_config` guidance があることを検出する。
-- `bash -n scripts/codex-companion.sh scripts/codex/codex-exec-wrapper.sh` で wrapper comment 追加後の shell 構文を確認する。
+- `tests/test-claude-upstream-integration.sh` grep-fixes: policy docs, snapshot section, Feature Table completion mark, CHANGELOG, `harness-setup` pointer, wrapper comments.
+- `tests/test-codex-package.sh` detects sandbox / exec policy and `remote_sandbox_config` guidance in Codex README.
+- `bash -n scripts/codex-companion.sh scripts/codex/codex-exec-wrapper.sh` confirms shell syntax after wrapper comment addition.
 
 ## 53.2.5 Codex automatic bug fix inheritance policy
 
-対象:
+Scope:
 
-- Codex `0.123.0` の `/copy` after rollback
+- Codex `0.123.0` `/copy` after rollback
 - manual shell follow-up queue
 - Unicode / dead-key input
 - stale proxy env
 - VS Code WSL keyboard
 - review prompt leak
 
-今回の判断:
+Decision this time:
 
-- Codex `0.123.0` の `/copy` after rollback、manual shell follow-up queue、Unicode / dead-key input、stale proxy env、VS Code WSL keyboard は `C: 自動継承` として扱う。
-- `/copy` after rollback は TUI の表示中 assistant message を正しくコピーする修正であり、Harness は clipboard / rollback state を直接管理していない。
-- manual shell follow-up queue は、manual shell 中に次の入力を送った時の Codex TUI queueing 修正であり、`harness-loop` や `codex-loop` が独自 queue を重ねる領域ではない。
-- Unicode / dead-key input と VS Code WSL keyboard は terminal input layer の修正であり、Harness skill / wrapper が key event を変換しない方が安全。
-- stale proxy env は shell snapshot から古い proxy environment を復元しない修正であり、Harness session docs では「本体挙動を信頼し、proxy scrubber を追加しない」方針だけを記録する。
-- review prompt leak は Codex review runtime の transcript hygiene 修正であり、Harness reviewer surface とは別に本体修正を受け取る。
+- Treat Codex `0.123.0`'s `/copy` after rollback, manual shell follow-up queue, Unicode / dead-key input, stale proxy env, VS Code WSL keyboard as `C: Automatic inheritance`.
+- `/copy` after rollback is a fix to correctly copy the currently-displayed assistant message in the TUI; Harness does not directly manage clipboard / rollback state.
+- Manual shell follow-up queue is a Codex TUI queuing fix for when the next input is sent during manual shell; it is not an area where `harness-loop` or `codex-loop` should overlay its own queue.
+- Unicode / dead-key input and VS Code WSL keyboard are terminal input layer fixes; it is safer for Harness skill / wrapper not to convert key events.
+- Stale proxy env is a fix not to restore old proxy environments from shell snapshots; in Harness session docs, only record the policy "trust core behavior and do not add a proxy scrubber."
+- Review prompt leak is a transcript hygiene fix in the Codex review runtime; receive the core fix separately from the Harness reviewer surface.
 
-直接実装しない理由:
+Reasons not to implement directly:
 
-- 直接実装しない理由は、本体修正を自動継承するため。
-- これらは clipboard、TUI queue、terminal input、shell snapshot restore、review transcript の runtime bug fix であり、Harness の Plan / Work / Review orchestration policy とは責務が違う。
-- Harness workaround、copy wrapper、manual shell queue shim、proxy snapshot scrubber は追加しない。
-- 無理な wrapper を追加すると、Codex 本体修正後も古い挙動や platform-specific 例外を Harness 側に残してしまう。
+- The reason not to implement directly is to auto-inherit the core fixes.
+- These are runtime bug fixes for clipboard, TUI queue, terminal input, shell snapshot restore, and review transcript — with different responsibilities from Harness's Plan / Work / Review orchestration policy.
+- Harness does not add workarounds, copy wrappers, manual shell queue shims, or proxy snapshot scrubbers.
+- Adding forced wrappers would leave old behavior or platform-specific exceptions on the Harness side even after Codex core fixes.
 
-Harness docs に反映する範囲:
+Scope of Harness docs updates:
 
-- `skills/harness-loop/SKILL.md` には、manual shell follow-up queue と `/copy` rollback は長時間作業 UX として自動継承し、loop runner が追加入力 queue を持たないことだけを記録する。
-- `skills/session/SKILL.md` には、stale proxy env、Unicode / dead-key、VS Code WSL keyboard を session shell / terminal input の自動継承として短く記録する。
-- Feature Table と CHANGELOG は入口に留め、判断根拠はこの snapshot section に集約する。
+- In `skills/harness-loop/SKILL.md`, record that manual shell follow-up queue and `/copy` rollback are auto-inherited as long-running work UX, and that the loop runner does not have additional input queue.
+- In `skills/session/SKILL.md`, briefly record stale proxy env, Unicode / dead-key, VS Code WSL keyboard as auto-inherited session shell / terminal input.
+- Feature Table and CHANGELOG are entry points; the rationale and decision details are consolidated in this snapshot section.
 
-検証:
+Verification:
 
-- `tests/test-claude-upstream-integration.sh` で、この section、`C: 自動継承` 判定、直接実装しない理由、workaround を追加しない方針、Feature Table / CHANGELOG / long-running / session docs の反映を grep 固定する。
+- `tests/test-claude-upstream-integration.sh` grep-fixes: this section, `C: Automatic inheritance` classification, reasons not to implement directly, no-workaround policy, and the reflection in Feature Table / CHANGELOG / long-running / session docs.
 
 ## 53.3.1 Phase 53 closeout / Phase 51.2 dependency note
 
-Phase 53 の A/C/P 反映はここで閉じる。
+Phase 53's A/C/P adoption closes here.
 
-完了確認:
+Completion check:
 
-- Feature Table は Phase 53 追補テーブルとして、Claude Code `2.1.117-2.1.118` と Codex `0.123.0` の各項目を `A` / `C` / `P` に分類済み。
-- CHANGELOG `[Unreleased]` は Phase 53 の user-facing change を snapshot、MCP hook safety、plugin tag、Auto Mode、managed settings、Codex provider / MCP / realtime / sandbox / bug-fix inheritance まで記録済み。
-- `tests/test-claude-upstream-integration.sh` は Phase 53 snapshot と主要 guidance を grep 固定済み。
-- `tests/validate-plugin.sh` は Phase 53 closeout 時点で PASS。既存 warning は script executable bit と `IMPLEMENTATION_GUIDE.md` 推奨欠落のみ。
+- Feature Table classified each item from Claude Code `2.1.117-2.1.118` and Codex `0.123.0` as `A` / `C` / `P` in the Phase 53 supplementary table.
+- CHANGELOG `[Unreleased]` records Phase 53 user-facing changes from snapshot through MCP hook safety, plugin tag, Auto Mode, managed settings, Codex provider / MCP / realtime / sandbox / bug-fix inheritance.
+- `tests/test-claude-upstream-integration.sh` grep-fixed Phase 53 snapshot and major guidance.
+- `tests/validate-plugin.sh` PASS at Phase 53 closeout. Existing warnings are only script executable bit and missing `IMPLEMENTATION_GUIDE.md` recommendation.
 
-Phase 51.2 との重複整理:
+Overlap cleanup with Phase 51.2:
 
-- Phase 53 は upstream `0.123.0` の具体差分を取り込む周期であり、Codex-native skill audit 全体の片付けではない。
-- 53.2.3 の realtime handoff silence と 53.2.4 の sandbox / exec policy は、`harness-loop` / `breezing` / `harness-setup` の必要最小 guidance と mirror 同期だけを扱った。
-- Phase 51.2.1-51.2.4 に残る Codex-native tool model、memory/session path drift、review / loop / release mirror path policy、media skill metadata は引き続き Phase 51.2 の owns とする。
-- 今後 mirror / path drift を広く直す場合は Phase 51.2 側で扱い、Phase 53 の upstream snapshot 追従と混ぜない。
+- Phase 53 is a cycle to absorb specific diffs from upstream `0.123.0`, not a full cleanup of Codex-native skill audit.
+- 53.2.3's realtime handoff silence and 53.2.4's sandbox / exec policy only covered the minimum necessary guidance and mirror sync for `harness-loop` / `breezing` / `harness-setup`.
+- Phase 51.2.1-51.2.4's remaining Codex-native tool model, memory/session path drift, review / loop / release mirror path policy, and media skill metadata continue to be owned by Phase 51.2.
+- When broadly fixing mirror / path drift in the future, handle it on the Phase 51.2 side without mixing with Phase 53's upstream snapshot tracking.
 
 ## Harness judgement
 
-53.1.1 では snapshot を作るだけに留め、後続 task の実装を先取りしない。
+In 53.1.1, only create the snapshot without pre-implementing follow-up tasks.
 
-実装候補として確定したもの:
+Confirmed as implementation candidates:
 
-- `type: "mcp_tool"` hook: 53.1.2 で no-op + safety test として完了。manifest 追加は必須 field 仕様と常設 read-only diagnostic tool が揃った後に行う
+- `type: "mcp_tool"` hook: completed in 53.1.2 as no-op + safety test. Manifest addition comes after required field spec and permanently-available read-only diagnostic tools are in place
 - `claude plugin tag`: 53.1.3
 - Auto Mode `"$defaults"`: 53.1.4
 - plugin themes / managed settings / update controls / dependency auto-resolve docs: 53.1.5
-- Claude Code UX の自動継承 / 将来候補整理: 53.1.6
+- Claude Code UX automatic inheritance / future candidate cleanup: 53.1.6
 - Codex Bedrock provider / model metadata: 53.2.1
 - Codex `/mcp verbose` / `.mcp.json` loading: 53.2.2
 - Codex realtime handoff silence policy: 53.2.3
 - Codex `remote_sandbox_config` / `codex exec` shared flags: 53.2.4
 - Codex automatic bug fix notes: 53.2.5
 
-自動継承に留める理由:
+Reasons to leave as automatic inheritance:
 
-- UI / TUI / keyboard / OAuth / file watcher / Remote Control / runtime stability fix は、Claude Code または Codex 本体が直す領域で、Harness が wrapper を足すと挙動差分や二重責務を作りやすい。
-- `/resume`、`/fork`、subagent cwd restore、Codex follow-up queue などは長時間作業に効くが、まず本体挙動を受け取るのが安全。Harness 側は必要な docs/guidance だけ後続 task で更新する。
-- Codex `0.123.0` の app-server protocol / namespaced dynamic tools は release body にある範囲だけ記録し、compare から推測実装しない。
+- UI / TUI / keyboard / OAuth / file watcher / Remote Control / runtime stability fixes are areas where Claude Code or Codex core handles, and adding Harness wrappers easily creates behavioral differences and dual responsibilities.
+- `/resume`, `/fork`, subagent cwd restore, Codex follow-up queue, etc. are effective for long-running work, but receiving core behavior first is safe. Only update necessary docs/guidance in Harness in follow-up tasks.
+- Codex `0.123.0`'s app-server protocol / namespaced dynamic tools are recorded only within the release body range; no speculative implementation from comparison.
 
-## Why `B: 書いただけ` is 0
+## Why `B: Documentation-only` is 0
 
-この snapshot では `B: 書いただけ` を分類として使わない。
+This snapshot does not use `B: Documentation-only` as a classification.
 
-- `A` は必ず Phase 53 の具体的な Plans task に接続した。Feature Table に書くだけでは終わらせない。
-- `C` は本体修正を自動継承する理由と、Harness 側で wrapper を追加しない理由を明記した。
-- `P` は「今回は実装しない」ことを明示し、推測実装を避けた。
+- All `A` items were connected to specific Plans tasks in Phase 53. Nothing ends at just adding to the Feature Table.
+- For all `C` items, the reason for inheriting core fixes automatically and the reason not to add wrappers on the Harness side were stated explicitly.
+- All `P` items explicitly state "not implementing this time" and avoid speculative implementation.
 
-そのため、`CHANGELOG.md` と `docs/CLAUDE-feature-table.md` は snapshot への入口であり、一次情報と判断根拠の正本はこの文書に置く。
+Therefore, `CHANGELOG.md` and `docs/CLAUDE-feature-table.md` are entry points to the snapshot, and the primary sources and decision rationale are placed in this document.

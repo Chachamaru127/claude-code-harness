@@ -1,10 +1,10 @@
 #!/bin/bash
 # stop-session-evaluator.sh
-# Stop フックのセッション完了評価
+# Session completion evaluation for Stop hook
 #
-# prompt type の代替として、確実に有効な JSON を出力する command type フック。
-# セッション状態を検査し、停止を許可 or ブロックの判定を行う。
-# CC 2.1.47+: stdin から last_assistant_message を読み取り session.json に記録する。
+# A command-type hook that reliably outputs valid JSON as an alternative to prompt type.
+# Inspects session state and decides whether to allow or block the stop.
+# CC 2.1.47+: reads last_assistant_message from stdin and records it in session.json.
 #
 # Input:  stdin (JSON: { stop_hook_active, transcript_path, last_assistant_message, ... })
 # Output: {"ok": true} or {"ok": false, "reason": "..."}
@@ -16,12 +16,12 @@ set +e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# Load path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-# detect_project_root が定義されているか確認してから呼び出す
+# Check if detect_project_root is defined before calling it
 if declare -F detect_project_root > /dev/null 2>&1; then
   PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 else
@@ -30,13 +30,13 @@ fi
 
 STATE_FILE="${PROJECT_ROOT}/.claude/state/session.json"
 
-# jq がなければ即座に ok を返す（安全なフォールバック）
+# If jq is absent, return ok immediately (safe fallback)
 if ! command -v jq &> /dev/null; then
   echo '{"ok":true}'
   exit 0
 fi
 
-# ポータブル timeout 検出
+# Portable timeout detection
 _TIMEOUT=""
 if command -v timeout > /dev/null 2>&1; then
   _TIMEOUT="timeout"
@@ -44,27 +44,27 @@ elif command -v gtimeout > /dev/null 2>&1; then
   _TIMEOUT="gtimeout"
 fi
 
-# stdin から Hook ペイロードを読み取る（サイズ制限 + タイムアウト付き）
+# Read hook payload from stdin (with size limit + timeout)
 PAYLOAD=""
 if [ -t 0 ]; then
-  # stdin が TTY の場合はスキップ（テスト実行時等）
+  # Skip when stdin is a TTY (e.g. during test execution)
   :
 else
   if [ -n "$_TIMEOUT" ]; then
     PAYLOAD=$($_TIMEOUT 5 head -c 65536 2>/dev/null || true)
   else
-    # timeout 未搭載: dd でバイト数上限を保証（POSIX 標準）
+    # timeout not available: use dd to cap byte count (POSIX standard)
     PAYLOAD=$(dd bs=65536 count=1 2>/dev/null || true)
   fi
 fi
 
-# last_assistant_message のメタデータを session.json に記録（内容はハッシュ化）
+# Record last_assistant_message metadata to session.json (content is hashed)
 if [ -n "$PAYLOAD" ] && [ -f "$STATE_FILE" ]; then
   LAST_MSG=$(echo "$PAYLOAD" | jq -r '.last_assistant_message // ""' 2>/dev/null || true)
   if [ -n "$LAST_MSG" ] && [ "$LAST_MSG" != "null" ]; then
-    # メッセージ長とハッシュのみ記録（平文内容は保存しない）
+    # Record only message length and hash (plaintext content is not stored)
     MSG_LENGTH=${#LAST_MSG}
-    # ポータブルハッシュ: shasum (macOS) / sha256sum (Linux) / fallback
+    # Portable hash: shasum (macOS) / sha256sum (Linux) / fallback
     if command -v shasum > /dev/null 2>&1; then
       MSG_HASH=$(printf '%s' "$LAST_MSG" | shasum -a 256 | cut -c1-16)
     elif command -v sha256sum > /dev/null 2>&1; then
@@ -85,22 +85,22 @@ if [ -n "$PAYLOAD" ] && [ -f "$STATE_FILE" ]; then
   fi
 fi
 
-# 状態ファイルがなければ即座に ok を返す
+# If state file is absent, return ok immediately
 if [ ! -f "$STATE_FILE" ]; then
   echo '{"ok":true}'
   exit 0
 fi
 
-# セッション状態を検査
+# Inspect session state
 SESSION_STATE=$(jq -r '.state // "unknown"' "$STATE_FILE" 2>/dev/null)
 
-# 既に停止処理済みなら即座に ok
+# Already stopped — return ok immediately
 if [ "$SESSION_STATE" = "stopped" ]; then
   echo '{"ok":true}'
   exit 0
 fi
 
-# デフォルト: 停止を許可
-# ユーザーが明示的に Stop を押した場合、基本的に停止を許可する
+# Default: allow stop
+# When the user explicitly presses Stop, generally allow it
 echo '{"ok":true}'
 exit 0

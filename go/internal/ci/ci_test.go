@@ -10,7 +10,7 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// CIStatusHandler テスト
+// CIStatusHandler tests
 // ---------------------------------------------------------------------------
 
 func TestIsPushOrPRCommand(t *testing.T) {
@@ -108,7 +108,7 @@ func TestCIStatusHandler_Handle_PushCommand(t *testing.T) {
 	dir := t.TempDir()
 	h := &CIStatusHandler{
 		StateDir: dir,
-		GHCmd:    "false", // gh コマンドが失敗するようにして非同期チェックをスキップ
+		GHCmd:    "false", // Make gh command fail to skip the async check
 		nowFunc:  func() string { return "2026-04-05T00:00:00Z" },
 	}
 	var out bytes.Buffer
@@ -134,7 +134,7 @@ func TestCIStatusHandler_Handle_PushCommand(t *testing.T) {
 func TestCIStatusHandler_Handle_PushWithFailureSignal(t *testing.T) {
 	dir := t.TempDir()
 
-	// 既存の失敗シグナルを書いておく
+	// Write a pre-existing failure signal
 	signalsFile := filepath.Join(dir, "breezing-signals.jsonl")
 	signalData := `{"signal":"ci_failure_detected","timestamp":"2026-04-05T00:00:00Z","conclusion":"failure","trigger_command":"git push origin main"}` + "\n"
 	if err := os.WriteFile(signalsFile, []byte(signalData), 0600); err != nil {
@@ -161,8 +161,8 @@ func TestCIStatusHandler_Handle_PushWithFailureSignal(t *testing.T) {
 	if resp.Decision != "approve" {
 		t.Errorf("Decision = %q, want approve", resp.Decision)
 	}
-	// additionalContext に CI 失敗メッセージが含まれること
-	if !strings.Contains(resp.AdditionalContext, "CI 失敗を検知しました") {
+	// additionalContext should contain CI failure message
+	if !strings.Contains(resp.AdditionalContext, "CI failure detected") {
 		t.Errorf("AdditionalContext should mention CI failure, got: %q", resp.AdditionalContext)
 	}
 	if !strings.Contains(resp.AdditionalContext, "failure") {
@@ -252,7 +252,7 @@ func TestEvidenceCollector_Collect_Basic(t *testing.T) {
 		t.Error("SavedPath should not be empty")
 	}
 
-	// ファイルが存在して内容が正しいことを確認
+	// Verify that the file exists and has the correct content
 	data, err := os.ReadFile(result.SavedPath)
 	if err != nil {
 		t.Fatalf("reading saved file: %v", err)
@@ -261,7 +261,7 @@ func TestEvidenceCollector_Collect_Basic(t *testing.T) {
 		t.Errorf("file content = %q, want 'all tests passed\\ncount: 42'", string(data))
 	}
 
-	// ディレクトリ構造を確認
+	// Verify the directory structure
 	expectedDir := filepath.Join(dir, ".claude", "state", "evidence", "test-run")
 	if !strings.HasPrefix(result.SavedPath, expectedDir) {
 		t.Errorf("SavedPath %q should be under %q", result.SavedPath, expectedDir)
@@ -307,7 +307,7 @@ func TestEvidenceCollector_Collect_NoContent(t *testing.T) {
 func TestEvidenceCollector_Collect_FromFile(t *testing.T) {
 	dir := t.TempDir()
 
-	// 収集元ファイルを作成
+	// Create the source file
 	srcFile := filepath.Join(dir, "build.log")
 	if err := os.WriteFile(srcFile, []byte("build output here"), 0600); err != nil {
 		t.Fatalf("write source file: %v", err)
@@ -383,7 +383,7 @@ func TestEvidenceCollector_CollectFromStdin(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// ユーティリティ テスト
+// Utility tests
 // ---------------------------------------------------------------------------
 
 func TestSplitLines(t *testing.T) {

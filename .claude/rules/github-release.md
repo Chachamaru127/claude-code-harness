@@ -56,43 +56,43 @@ Generated with [Claude Code](https://claude.com/claude-code)
 
 ### Language
 
-- **GitHub Release**: English required（公開リポジトリのため）
-- **CHANGELOG.md**: **日本語**で詳細な Before/After 形式（後述）
+- **GitHub Release**: English required (public repository)
+- **CHANGELOG.md**: English, detailed Before/After format (see below)
 - Keep descriptions user-focused
 
-## CHANGELOG フォーマット（日本語・詳細 Before/After）
+## CHANGELOG Format (Detailed Before/After)
 
-CHANGELOG は各機能を「今まで → 今後」形式で具体的に記述する:
+Describe each feature in CHANGELOG using a concrete "Before → After" format:
 
 ```markdown
 ## [X.Y.Z] - YYYY-MM-DD
 
-### テーマ: [変更全体を一言で]
+### Theme: [One-line summary of the overall change]
 
-**[ユーザーにとっての価値を1〜2文で]**
+**[Value to the user in 1-2 sentences]**
 
 ---
 
-#### 1. [機能名]
+#### 1. [Feature name]
 
-**今まで**: [旧動作。ユーザーが体験していた不便を具体的に描写]
+**Before**: [Old behavior. Concrete description of the inconvenience the user experienced.]
 
-**今後**: [新動作。何が解決するか + 具体例]
+**After**: [New behavior. What problem is solved + concrete examples.]
 
-```出力例やコマンド例```
+```example output or command```
 
-#### 2. [次の機能名]
+#### 2. [Next feature name]
 
-**今まで**: ...
-**今後**: ...
+**Before**: ...
+**After**: ...
 ```
 
-**書き方ルール**:
-- 各機能を `#### N. 機能名` で独立セクションにする
-- 「今まで」は**課題描写**（「〜する必要がありました」形式）
-- 「今後」は**解決の具体像**（コマンド例・出力例を含める）
-- 長くてOK。読みやすさが最優先
-- テクニカル詳細（ファイル名、ステップ番号）は「今後」の補足として最小限に
+**Writing rules**:
+- Make each feature an independent section with `#### N. Feature Name`
+- "Before" describes the **problem** (e.g., "you had to..." form)
+- "After" describes the **concrete solution** (include command examples and output examples)
+- Length is fine. Readability is the top priority.
+- Technical details (filenames, step numbers) are included minimally as supplementary notes in "After"
 
 ## Prohibited
 
@@ -116,16 +116,16 @@ CHANGELOG は各機能を「今まで → 今後」形式で具体的に記述�
 | Reviews required separate manual step | Each task-worker self-reviews autonomously |
 ```
 
-## Good Example (CHANGELOG — Japanese)
+## Good Example (CHANGELOG)
 
 ```markdown
-#### 1. 失敗タスクの自動再チケット化
+#### 1. Automatic re-ticketing of failed tasks
 
-**今まで**: テスト/CI が失敗すると3回リトライして止まるだけでした。
-止まった後は「何が原因だったか」を自分で調べ、Plans.md に手動で修正タスクを追加する必要がありました。
+**Before**: When tests/CI failed, it would just retry 3 times and stop.
+After stopping, you had to investigate the cause yourself and manually add a fix task to Plans.md.
 
-**今後**: 3回失敗で止まるとき、Harness が失敗原因を分類し、修正タスク案を自動生成します。
-承認すると Plans.md に `.fix` タスクとして自動追加されます。
+**After**: When it stops after 3 failures, Harness classifies the failure cause and auto-generates a fix task proposal.
+Once approved, it is automatically added to Plans.md as a `.fix` task.
 ```
 
 ## Bad Example
@@ -161,73 +161,74 @@ EOF
 )"
 ```
 
-## CC バージョン統合時の CHANGELOG パターン
+## CHANGELOG Pattern for CC Version Integration
 
-Claude Code の新バージョン統合を含むリリースでは、通常の「今まで / 今後」形式ではなく、
-**「CC のアプデ → Harness での活用」形式**を使用する。
-上流（CC）の変更理由から説明することで、読者が「なぜこの変更が自分に関係あるか」を文脈から理解できる。
+For releases that include integration of a new Claude Code version, use the
+**"CC update → Harness utilization" format** rather than the standard "Before / After" format.
+By explaining from the upstream (CC) change's perspective first, readers can understand
+"why this change is relevant to them" from the context.
 
-### 判定条件
+### Trigger Conditions
 
-以下のいずれかに該当する場合、このパターンを適用する:
+Apply this pattern when any of the following applies:
 
-- Feature Table のバージョン表記が更新されている
-- hooks.json に CC 由来の新イベントが追加されている
-- skills に CC 新機能の活用ガイドが追記されている
+- Version notation in the Feature Table has been updated
+- A new CC-originated event has been added to hooks.json
+- A usage guide for a new CC feature has been added to skills
 
-### 構造
+### Structure
 
 ```markdown
-#### N. Claude Code X.Y.Z 統合
+#### N. Claude Code X.Y.Z Integration
 
-（1 行で全体概要）
+(One-line overall summary)
 
-##### N-1. 機能名
+##### N-1. Feature name
 
-**CC のアプデ**: Claude Code で何が変わったか。ユーザー視点で、その機能が何をするものか分かるように説明。
+**CC update**: What changed in Claude Code. Explain in user-facing terms what the feature does.
 
-**Harness での活用**: その変更を Harness がどう活かしているか。具体的な仕組み（スクリプト名、フロー）を含める。
+**Harness utilization**: How Harness leverages that change. Include specific mechanisms (script names, flow).
 
-##### N-2. 次の機能名
+##### N-2. Next feature name
 
-**CC のアプデ**: ...
-**Harness での活用**: ...
+**CC update**: ...
+**Harness utilization**: ...
 ```
 
-### 書き方ルール
+### Writing Rules
 
-- 機能ごとに `##### N-X.` で独立セクションにする
-- 「CC のアプデ」はファイル変更ではなく**ユーザー体験の変化**を書く
-- 「Harness での活用」は**具体的な仕組み**（何が動くか、何が防がれるか）を書く
-- ファイル名の羅列は避ける。「hooks.json を更新」ではなく「Worker のフリーズを防止」のように書く
-- ドキュメントのみの変更（Feature Table 更新、詳細セクション追加）は個別エントリにせず、冒頭の概要 1 行に含める
+- Make each feature an independent section with `##### N-X.`
+- "CC update" describes **the change in user experience**, not file changes
+- "Harness utilization" describes **the specific mechanism** (what runs, what gets prevented)
+- Avoid listing filenames. Write "prevents Worker freeze" rather than "updated hooks.json"
+- Documentation-only changes (Feature Table updates, additional detail sections) are not separate entries; include them in the opening one-line summary
 
 ### Good Example
 
 ```markdown
-##### 5-1. MCP Elicitation への自動対応
+##### 5-1. Automatic handling of MCP Elicitation
 
-**CC のアプデ**: MCP サーバーが、タスク実行中にユーザーへ「質問」できるようになった（Elicitation）。
-例えば「どのリポジトリに push しますか？」のようなフォーム入力を求められる。
+**CC update**: MCP servers can now ask the user "questions" during task execution (Elicitation).
+For example, you might be prompted with a form input like "Which repository do you want to push to?"
 
-**Harness での活用**: Breezing の Worker はバックグラウンド実行のため質問フォームに応答できない。
-放置すると Worker がフリーズする。elicitation-handler.sh を新規作成し、
-Breezing セッション中は自動スキップ、通常セッションではそのまま通過してユーザーが回答する仕組みを実装。
+**Harness utilization**: Breezing Workers run in the background and cannot respond to question forms.
+If left unhandled, the Worker freezes. A new elicitation-handler.sh was created that auto-skips
+during Breezing sessions while allowing normal sessions to pass through so the user can answer.
 ```
 
 ### Bad Example
 
 ```markdown
-#### CC 2.1.76 統合
+#### CC 2.1.76 Integration
 
-- hooks.json に Elicitation を追加
-- elicitation-handler.sh を作成
-- CLAUDE.md を更新
+- Added Elicitation to hooks.json
+- Created elicitation-handler.sh
+- Updated CLAUDE.md
 ```
 
-→ ファイル変更の羅列で、なぜその変更が必要だったか、ユーザーにとって何が変わるかが伝わらない
+-> A list of file changes that doesn't convey why the change was needed or what changes for the user
 
 ## Reference
 
-- Good examples: v2.8.0, v2.8.2, v2.9.1, v3.10.3 (CC統合パターン)
+- Good examples: v2.8.0, v2.8.2, v2.9.1, v3.10.3 (CC integration pattern)
 - Keep consistent with CHANGELOG

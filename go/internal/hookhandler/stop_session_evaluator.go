@@ -10,47 +10,47 @@ import (
 	"strings"
 )
 
-// stopSessionInput は Stop フックの stdin JSON ペイロード。
-// CC 2.1.47+ で last_assistant_message が含まれる。
+// stopSessionInput is the stdin JSON payload for the Stop hook.
+// last_assistant_message is included in CC 2.1.47+.
 type stopSessionInput struct {
 	StopHookActive       bool   `json:"stop_hook_active"`
 	TranscriptPath       string `json:"transcript_path"`
 	LastAssistantMessage string `json:"last_assistant_message"`
 }
 
-// stopSessionResponse は Stop フックのレスポンス。
+// stopSessionResponse is the response for the Stop hook.
 type stopSessionResponse struct {
 	OK            bool   `json:"ok"`
 	Reason        string `json:"reason,omitempty"`
 	SystemMessage string `json:"systemMessage,omitempty"`
 }
 
-// StopSessionEvaluatorHandler は scripts/hook-handlers/stop-session-evaluator.sh の Go 移植。
+// StopSessionEvaluatorHandler is a Go port of scripts/hook-handlers/stop-session-evaluator.sh.
 //
-// Stop イベントでセッション状態を評価する。
-//   - last_assistant_message を長さ・ハッシュ（SHA-256 先頭 16 文字）にして session.json に記録
-//   - WIP タスクがある場合は systemMessage で警告（ブロックはしない）
-//   - 停止は常に許可（ok: true）
+// Evaluates the session state on Stop events.
+//   - Records last_assistant_message as length + hash (first 16 chars of SHA-256) in session.json
+//   - Warns via systemMessage if there are WIP tasks (does not block)
+//   - Always allows stopping (ok: true)
 type StopSessionEvaluatorHandler struct {
-	// ProjectRoot はプロジェクトルートのパス。空の場合は環境変数/CWD から解決。
+	// ProjectRoot is the path to the project root. Resolved from env vars/CWD if empty.
 	ProjectRoot string
 }
 
-// Handle は Stop フックを処理する。
+// Handle processes the Stop hook.
 func (h *StopSessionEvaluatorHandler) Handle(in io.Reader, out io.Writer) error {
-	// プロジェクトルート解決
+	// Resolve project root
 	projectRoot := h.ProjectRoot
 	if projectRoot == "" {
 		projectRoot = resolveProjectRoot()
 	}
 	stateFile := projectRoot + "/.claude/state/session.json"
 
-	// stdin を読み取る（サイズ上限: 64 KiB）
+	// Read stdin (size limit: 64 KiB)
 	var payload []byte
 	limited := io.LimitReader(in, 65536)
 	payload, _ = io.ReadAll(limited)
 
-	// last_assistant_message のメタデータを session.json に記録
+	// Record last_assistant_message metadata to session.json
 	if len(payload) > 0 {
 		var input stopSessionInput
 		if jsonErr := json.Unmarshal(payload, &input); jsonErr == nil {
@@ -60,12 +60,12 @@ func (h *StopSessionEvaluatorHandler) Handle(in io.Reader, out io.Writer) error 
 		}
 	}
 
-	// session.json が存在しない場合はデフォルト ok
+	// Default ok when session.json does not exist
 	if _, err := os.Stat(stateFile); os.IsNotExist(err) {
 		return writeJSON(out, stopSessionResponse{OK: true})
 	}
 
-	// セッション状態を読み取り
+	// Read session state
 	sessionData, err := os.ReadFile(stateFile)
 	if err != nil {
 		return writeJSON(out, stopSessionResponse{OK: true})
@@ -76,16 +76,16 @@ func (h *StopSessionEvaluatorHandler) Handle(in io.Reader, out io.Writer) error 
 		return writeJSON(out, stopSessionResponse{OK: true})
 	}
 
-	// 既に stopped 状態なら即 ok
+	// Already in stopped state: return ok immediately
 	if state, ok := sessionMap["state"].(string); ok && state == "stopped" {
 		return writeJSON(out, stopSessionResponse{OK: true})
 	}
 
-	// WIP タスクチェック: Plans.md を探して cc:WIP を数える
+	// WIP task check: search Plans.md and count cc:WIP markers
 	wipCount := h.countWIPTasks(projectRoot)
 	if wipCount > 0 {
 		msg := fmt.Sprintf(
-			"[StopSession] %d WIP タスクが残っています。Plans.md を確認してください。",
+			"[StopSession] %d WIP task(s) remaining. Please check Plans.md.",
 			wipCount,
 		)
 		return writeJSON(out, stopSessionResponse{
@@ -97,10 +97,10 @@ func (h *StopSessionEvaluatorHandler) Handle(in io.Reader, out io.Writer) error 
 	return writeJSON(out, stopSessionResponse{OK: true})
 }
 
-// recordLastMessage は session.json に last_message_length と last_message_hash を記録する。
-// 平文内容は保存しない（プライバシー保護）。
+// recordLastMessage records last_message_length and last_message_hash in session.json.
+// Plain-text content is not stored (privacy protection).
 func (h *StopSessionEvaluatorHandler) recordLastMessage(stateFile, msg string) {
-	// ファイルが存在しない場合はスキップ（bash 版と同じ動作）
+	// Skip if file does not exist (same behavior as the bash version)
 	sessionData, err := os.ReadFile(stateFile)
 	if err != nil {
 		return
@@ -122,7 +122,7 @@ func (h *StopSessionEvaluatorHandler) recordLastMessage(stateFile, msg string) {
 		return
 	}
 
-	// アトミック書き込み: 一時ファイル + rename
+	// Atomic write: temp file + rename
 	stateDir := stateFile[:strings.LastIndex(stateFile, "/")]
 	tmpFile, err := os.CreateTemp(stateDir, "session.json.*")
 	if err != nil {
@@ -130,7 +130,7 @@ func (h *StopSessionEvaluatorHandler) recordLastMessage(stateFile, msg string) {
 	}
 	tmpPath := tmpFile.Name()
 	defer func() {
-		// rename 失敗時のクリーンアップ
+		// Clean up on rename failure
 		os.Remove(tmpPath)
 	}()
 
@@ -143,7 +143,7 @@ func (h *StopSessionEvaluatorHandler) recordLastMessage(stateFile, msg string) {
 	_ = os.Rename(tmpPath, stateFile)
 }
 
-// countWIPTasks は projectRoot 配下の Plans.md を探し、cc:WIP マーカーの数を返す。
+// countWIPTasks searches for Plans.md under projectRoot and returns the number of cc:WIP markers.
 func (h *StopSessionEvaluatorHandler) countWIPTasks(projectRoot string) int {
 	for _, name := range plansFileNames {
 		path := projectRoot + "/" + name

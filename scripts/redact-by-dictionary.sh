@@ -1,38 +1,38 @@
 #!/usr/bin/env bash
 # redact-by-dictionary.sh
-# Phase 65.3.2 - Layer 2a 辞書ベース固有名詞 redaction (D43 判断 3 + 4)
+# Phase 65.3.2 - Layer 2a dictionary-based named-entity redaction (D43 decisions 3 + 4)
 #
 # Purpose:
-#   テキストを受け取り、client-redaction.yaml の dict に従って
-#   固有名詞 (clients / people / domains) を redact_with token に置換。
-#   ヒット件数を stderr に記録、redacted text を stdout に出力。
+#   Accept text and replace named entities (clients / people / domains) with
+#   redact_with tokens according to the dict in client-redaction.yaml.
+#   Record hit count to stderr; output redacted text to stdout.
 #
 # Usage:
 #   redact-by-dictionary.sh --input <text> [--dict <yaml-path>]
 #   echo "text" | redact-by-dictionary.sh --stdin [--dict <yaml-path>]
 #
 # Options:
-#   --input <text>          redact 対象テキスト (literal)
-#   --stdin                 stdin から redact 対象を読む
-#   --dict <yaml-path>      dict ファイル (default: .claude/rules/client-redaction.yaml)
-#   -h | --help             ヘルプ
+#   --input <text>          Text to redact (literal)
+#   --stdin                 Read redact target from stdin
+#   --dict <yaml-path>      Dict file (default: .claude/rules/client-redaction.yaml)
+#   -h | --help             Help
 #
 # Exit code:
-#   0 = success (ヒット 0 でも 1 でも、正常終了)
+#   0 = success (normal exit regardless of 0 or 1+ hits)
 #   1 = dict file not found / dict schema invalid / runtime error
 #   2 = usage error
 #
 # Output:
-#   stdout: redacted text (ヒット 0 件なら原文そのまま)
-#   stderr: ヒット時のみ "redacted: <count> tokens" の 1 行
+#   stdout: redacted text (original text unchanged if 0 hits)
+#   stderr: single line "redacted: <count> tokens" only when hits > 0
 #
-# 二重置換ガード (D43 判断 4):
-#   既に [REDACTED_*] [Entity] [Client_*] [Person_*] [Domain_*] が
-#   含まれる箇所は再置換しない (sentinel pattern による境界検出)。
+# Double-replacement guard (D43 decision 4):
+#   Locations already containing [REDACTED_*] [Entity] [Client_*] [Person_*] [Domain_*]
+#   are not re-replaced (boundary detection via sentinel pattern).
 #
-# Schema: client-redaction.v1 (PiiRule 互換)
+# Schema: client-redaction.v1 (PiiRule compatible)
 #   {schema_version, clients[], people[], domains[]}
-#   各 entry: {rule_id, name, aliases[]?, replace_with}
+#   Each entry: {rule_id, name, aliases[]?, replace_with}
 
 set -euo pipefail
 
@@ -43,12 +43,12 @@ Usage:
   echo "text" | redact-by-dictionary.sh --stdin [--dict <yaml-path>]
 
 Required (one of):
-  --input <text>          redact 対象テキスト
-  --stdin                 stdin から読む
+  --input <text>          Text to redact
+  --stdin                 Read from stdin
 
 Optional:
-  --dict <yaml-path>      dict ファイル (default: .claude/rules/client-redaction.yaml)
-  -h | --help             ヘルプ
+  --dict <yaml-path>      Dict file (default: .claude/rules/client-redaction.yaml)
+  -h | --help             Help
 
 Exit code: 0=success / 1=runtime error / 2=usage error
 USAGE
@@ -75,8 +75,8 @@ if [[ "$USE_STDIN" == "true" && -n "$INPUT" ]]; then
 fi
 
 if [[ "$USE_STDIN" == "false" && -z "$INPUT" ]]; then
-  # 空文字列の --input は 0 ヒットで原文出力 (正常)
-  # ただし両方未指定はエラー
+  # Empty-string --input outputs the original text with 0 hits (normal)
+  # However, having neither specified is an error
   if [[ $# -eq 0 ]] && [[ -z "${INPUT+x}" || "$INPUT" == "__UNSET_SENTINEL__" ]]; then
     echo "ERROR: one of --input or --stdin is required" >&2
     usage
@@ -100,7 +100,7 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
-# stdin から読む
+# Read from stdin
 if [[ "$USE_STDIN" == "true" ]]; then
   INPUT="$(cat)"
 fi
@@ -124,8 +124,8 @@ INPUT_TEXT = os.environ.get("INPUT_TEXT_PY", "")
 
 EXPECTED_SCHEMA = "client-redaction.v1"
 
-# Sentinel patterns (D43 判断 4: 二重置換ガード)
-# 既存の redact mark をプレースホルダーに退避し、redact 後に復元する
+# Sentinel patterns (D43 decision 4: double-replacement guard)
+# Stash existing redact marks into placeholders, then restore after redaction
 SENTINEL_PATTERNS = [
     re.compile(r"\[REDACTED_[A-Za-z0-9_]+\]"),
     re.compile(r"\[Entity\]"),
@@ -151,7 +151,7 @@ if schema_version != EXPECTED_SCHEMA:
     print(f"ERROR: schema_version must be '{EXPECTED_SCHEMA}', got: {schema_version!r}", file=sys.stderr)
     sys.exit(1)
 
-# ---- entries 抽出 (clients + people + domains) ----
+# ---- Extract entries (clients + people + domains) ----
 entries = []
 seen_rule_ids = set()
 
@@ -202,13 +202,13 @@ for category in ("clients", "people", "domains"):
             "category": category,
         })
 
-# ---- 二重置換ガード: sentinel を退避 ----
-# 既存の sentinel mark を {{__SENTINEL_<idx>__}} に退避する
+# ---- Double-replacement guard: stash sentinels ----
+# Stash existing sentinel marks into {{__SENTINEL_<idx>__}}
 text = INPUT_TEXT
-sentinel_storage = []  # 復元用 (idx, original)
+sentinel_storage = []  # for restoration (idx, original)
 
 def stash_sentinels(t):
-    """t 内の sentinel mark を placeholder に退避し、退避リストを更新"""
+    """Stash sentinel marks in t into placeholders and update the stash list"""
     out = t
     for pat in SENTINEL_PATTERNS:
         def replace(m):
@@ -221,8 +221,8 @@ def stash_sentinels(t):
 text = stash_sentinels(text)
 
 # ---- redaction (longer aliases first to avoid partial overshadow) ----
-# entry ごとに [name] + [aliases] を全部 collect → length 降順で sort →
-# 順次 literal replace。これで「田中太郎」が「田中」より先に置換される。
+# Collect [name] + [aliases] for each entry → sort by length DESC →
+# literal replace in order. This ensures "Tanaka Taro" is replaced before "Tanaka".
 hit_count = 0
 
 # Build replacement list: (search_string, replace_with) — sort by length DESC
@@ -232,7 +232,7 @@ for e in entries:
     for t in targets:
         all_replacements.append((t, e["replace_with"]))
 
-# 長い順 (alias で 田中 vs 田中太郎 が両方ある時、長いほうから replace)
+# Sort by length descending (when aliases include both "Tanaka" and "Tanaka Taro", replace the longer one first)
 all_replacements.sort(key=lambda x: len(x[0]), reverse=True)
 
 for search_str, replace_with in all_replacements:
@@ -244,13 +244,13 @@ for search_str, replace_with in all_replacements:
         text = text.replace(search_str, replace_with)
         hit_count += count
 
-# ---- sentinel 復元 ----
+# ---- Restore sentinels ----
 for idx, original in enumerate(sentinel_storage):
     text = text.replace(f"__CCHX_SENTINEL_{idx}__", original)
 
 # ---- output ----
 sys.stdout.write(text)
-# 末尾改行は input 由来のものを尊重 (write は改行付与しない)
+# Respect trailing newline from input (write does not add a newline)
 
 if hit_count > 0:
     print(f"redacted: {hit_count} tokens", file=sys.stderr)

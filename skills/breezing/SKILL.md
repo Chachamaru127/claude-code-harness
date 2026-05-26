@@ -1,7 +1,6 @@
 ---
 name: breezing
 description: "Team execution mode — backward-compatible alias for harness-work with team orchestration."
-description-ja: "チーム実行モード — harness-work のチーム協調エイリアス。breezing, チーム実行, 全部やって でトリガー。"
 description-en: "Team execution mode — backward-compatible alias for harness-work with team orchestration."
 kind: workflow
 purpose: "Wrap harness-work with team execution orchestration"

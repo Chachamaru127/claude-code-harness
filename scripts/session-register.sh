@@ -1,24 +1,24 @@
 #!/bin/bash
 # session-register.sh
-# セッションを active.json に登録する（出力なし）
+# Register the session in active.json (no output)
 #
-# 使用方法:
+# Usage:
 #   ./session-register.sh [session_id]
 #
-# session_id を省略した場合は .claude/state/session.json から取得
-# hook から呼び出される際は出力を抑制し、JSON 出力と混ざらないようにする
+# If session_id is omitted, it is read from .claude/state/session.json.
+# When called from a hook, output is suppressed to avoid mixing with JSON output.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# ===== 設定 =====
+# ===== Configuration =====
 SESSIONS_DIR=".claude/sessions"
 ACTIVE_FILE="${SESSIONS_DIR}/active.json"
 SESSION_FILE=".claude/state/session.json"
-STALE_THRESHOLD=3600  # 1時間経過したセッションは stale とみなす
+STALE_THRESHOLD=3600  # Sessions older than 1 hour are considered stale
 
-# ===== ヘルパー関数 =====
+# ===== Helper functions =====
 get_session_id_from_file() {
   if [ -f "$SESSION_FILE" ] && command -v jq >/dev/null 2>&1; then
     jq -r '.session_id // empty' "$SESSION_FILE" 2>/dev/null
@@ -29,42 +29,42 @@ get_current_timestamp() {
   date +%s
 }
 
-# ===== メイン処理 =====
+# ===== Main processing =====
 main() {
-  # セッションID を取得（引数優先、なければファイルから）
+  # Get session ID (argument takes priority; otherwise read from file)
   local session_id="${1:-}"
   if [ -z "$session_id" ]; then
     session_id=$(get_session_id_from_file)
   fi
 
-  # セッションID がない場合は何もしない（エラーも出さない）
+  # Do nothing if there is no session ID (no error output either)
   if [ -z "$session_id" ] || [ "$session_id" = "null" ]; then
     exit 0
   fi
 
-  # jq がない場合は何もしない
+  # Do nothing if jq is unavailable
   if ! command -v jq >/dev/null 2>&1; then
     exit 0
   fi
 
-  # ディレクトリ作成
+  # Create directory
   mkdir -p "$SESSIONS_DIR"
 
   local current_time=$(get_current_timestamp)
   local short_id="${session_id:0:12}"
 
-  # active.json を読み込み（存在しない場合は空オブジェクト）
+  # Load active.json (use empty object if it does not exist)
   local session_data="{}"
   if [ -f "$ACTIVE_FILE" ]; then
     session_data=$(cat "$ACTIVE_FILE" 2>/dev/null || echo "{}")
   fi
 
-  # 一時ファイル用のクリーンアップ設定
+  # Set up cleanup for temporary file
   local tmp_file=""
   cleanup_tmp() { [ -n "$tmp_file" ] && [ -f "$tmp_file" ] && rm -f "$tmp_file"; }
   trap cleanup_tmp EXIT
 
-  # セッションを登録/更新
+  # Register / update session
   tmp_file=$(mktemp)
   echo "$session_data" | jq \
     --arg id "$session_id" \
@@ -78,7 +78,7 @@ main() {
       "status": "active"
     }' > "$tmp_file" && mv "$tmp_file" "$ACTIVE_FILE"
 
-  # 古いセッションをクリーンアップ（24時間以上経過したもの）
+  # Clean up old sessions (those older than 24 hours)
   local cleanup_threshold=$((current_time - 86400))
   tmp_file=$(mktemp)
   jq --arg threshold "$cleanup_threshold" \

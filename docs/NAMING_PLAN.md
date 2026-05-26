@@ -74,7 +74,7 @@ echo "[claude-code-harness] plugin root not found; hook skipped"
 | `go/cmd/harness/migration_report.go:211,280,301,309,570` | Strings `"claude-code-harness"` in migration report logic |
 | `go/internal/guardrail/protected_branch_policy.go:69` | `.claude-code-harness.config.yaml` path |
 | `go/internal/session/monitor.go:741,810` | `.claude-code-harness.config.yaml` path |
-| `go/internal/session/init.go:192` | Comment: `# [claude-code-harness] セッション初期化` |
+| `go/internal/session/init.go:192` | Comment: `# [claude-code-harness] session initialization` |
 | `go/internal/hookhandler/posttooluse_quality_pack.go:37,92,164` | `.claude-code-harness.config.yaml` path |
 | `go/internal/hookhandler/userprompt_track_command.go:82,84` | Prefix check `"claude-code-harness:"` |
 | All `go/` import paths | Module prefix `github.com/Chachamaru127/claude-code-harness/go/…` |

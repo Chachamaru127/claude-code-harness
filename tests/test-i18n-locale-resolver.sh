@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 #
 # Verify Phase 55.1.2 locale resolution for shell hooks.
+# The project is now English-only by default.
+# - Default locale (no config, no env) must resolve to "en"
+# - Explicit CLAUDE_CODE_HARNESS_LANG=ja still activates Japanese output
+# - Config file with language: ja still takes priority over env en
 
 set -euo pipefail
 
@@ -65,6 +69,8 @@ assert_eq() {
   fi
 }
 
+# --- Locale resolution ---
+
 missing_config="$tmpdir/missing.yaml"
 assert_eq "en" "$(run_locale "$missing_config")" "missing config defaults to en"
 assert_eq "ja" "$(run_locale "$missing_config" "ja")" "env ja is accepted"
@@ -84,6 +90,8 @@ i18n:
 YAML
 assert_eq "en" "$(run_locale "$config_invalid")" "invalid config locale normalizes to en"
 
+# --- pretooluse-guard: default locale is English ---
+
 hook_project="$tmpdir/hook-project"
 mkdir -p "$hook_project"
 
@@ -96,6 +104,8 @@ if ! jq -r '.hookSpecificOutput.permissionDecisionReason' <<< "$default_sudo" | 
   exit 1
 fi
 
+# --- pretooluse-guard: CLAUDE_CODE_HARNESS_LANG=ja activates Japanese message ---
+
 ja_sudo="$(guard_decision "$hook_project" "ja" "$sudo_payload")"
 assert_eq "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<< "$ja_sudo")" "sudo is denied with ja env"
 if ! jq -r '.hookSpecificOutput.permissionDecisionReason' <<< "$ja_sudo" | grep -q '^ブロック:'; then
@@ -103,6 +113,8 @@ if ! jq -r '.hookSpecificOutput.permissionDecisionReason' <<< "$ja_sudo" | grep 
   echo "$ja_sudo" >&2
   exit 1
 fi
+
+# --- config file ja takes priority over env en ---
 
 cat > "$hook_project/.claude-code-harness.config.yaml" <<'YAML'
 i18n:
@@ -115,6 +127,10 @@ if ! jq -r '.hookSpecificOutput.permissionDecisionReason' <<< "$config_sudo" | g
   exit 1
 fi
 
+rm "$hook_project/.claude-code-harness.config.yaml"
+
+# --- Decision parity across locales (ask/deny outcomes must be locale-independent) ---
+
 rm_payload="$(jq -nc --arg cwd "$hook_project" '{tool_name:"Bash", tool_input:{command:"rm -rf build"}, cwd:$cwd}')"
 rm_en="$(guard_decision "$hook_project" "en" "$rm_payload")"
 rm_ja="$(guard_decision "$hook_project" "ja" "$rm_payload")"
@@ -126,6 +142,8 @@ write_en="$(guard_decision "$hook_project" "en" "$write_payload")"
 write_ja="$(guard_decision "$hook_project" "ja" "$write_payload")"
 assert_eq "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<< "$write_en")" ".env write denied in en"
 assert_eq "deny" "$(jq -r '.hookSpecificOutput.permissionDecision' <<< "$write_ja")" ".env write denied in ja"
+
+# --- Default implementation guideline is English ---
 
 runtime_project="$tmpdir/runtime-project"
 mkdir -p "$runtime_project/src"
@@ -141,6 +159,8 @@ if ! jq -r '.hookSpecificOutput.additionalContext' <<< "$guideline_en" | grep -q
   exit 1
 fi
 
+# --- Japanese implementation guideline when CLAUDE_CODE_HARNESS_LANG=ja ---
+
 guideline_ja="$(guard_decision "$runtime_project" "ja" "$guideline_payload")"
 assert_eq "allow" "$(jq -r '.hookSpecificOutput.permissionDecision' <<< "$guideline_ja")" "pretooluse guideline keeps allow decision in ja"
 if ! jq -r '.hookSpecificOutput.additionalContext' <<< "$guideline_ja" | grep -q '実装品質ガイドライン'; then
@@ -148,6 +168,8 @@ if ! jq -r '.hookSpecificOutput.additionalContext' <<< "$guideline_ja" | grep -q
   echo "$guideline_ja" >&2
   exit 1
 fi
+
+# --- userprompt hook: default locale is English ---
 
 make_userprompt_project() {
   local dir="$1"
@@ -180,6 +202,8 @@ if jq -r '.hookSpecificOutput.additionalContext' <<< "$userprompt_en" | grep -q 
   exit 1
 fi
 
+# --- userprompt hook: CLAUDE_CODE_HARNESS_LANG=ja activates Japanese message ---
+
 userprompt_ja_project="$tmpdir/userprompt-ja"
 make_userprompt_project "$userprompt_ja_project"
 userprompt_ja="$(userprompt_policy "$userprompt_ja_project" "ja" "$prompt_payload")"
@@ -188,6 +212,8 @@ if ! jq -r '.hookSpecificOutput.additionalContext' <<< "$userprompt_ja" | grep -
   echo "$userprompt_ja" >&2
   exit 1
 fi
+
+# --- config file ja takes priority over env en in userprompt policy ---
 
 userprompt_config_project="$tmpdir/userprompt-config-ja"
 make_userprompt_project "$userprompt_config_project"
@@ -201,6 +227,8 @@ if ! jq -r '.hookSpecificOutput.additionalContext' <<< "$userprompt_config" | gr
   echo "$userprompt_config" >&2
   exit 1
 fi
+
+# --- userprompt semantic: Japanese LSP policy when CLAUDE_CODE_HARNESS_LANG=ja ---
 
 userprompt_semantic_ja_project="$tmpdir/userprompt-semantic-ja"
 make_userprompt_policy_only_project "$userprompt_semantic_ja_project"
@@ -217,4 +245,4 @@ if jq -r '.hookSpecificOutput.additionalContext' <<< "$userprompt_semantic_ja" |
   exit 1
 fi
 
-echo "✓ shell locale resolver and pretooluse guard locale behavior are coherent"
+echo "✓ shell locale resolver defaults to English; explicit ja opt-in preserves Japanese behavior"

@@ -1,12 +1,12 @@
 package hookhandler
 
-// task_completed.go - task-completed.sh の Go 移植 (エントリポイント)
+// task_completed.go - Go port of task-completed.sh (entry point)
 //
-// TaskCompleted イベント（チームモード）ハンドラ。
-// タスク完了をタイムラインに記録し、Breezing 状態管理・
-// テスト失敗エスカレーション・harness-mem finalize を担う。
+// TaskCompleted event (team mode) handler.
+// Records task completion to the timeline and handles Breezing state management,
+// test failure escalation, and harness-mem finalize.
 //
-// 元スクリプト: scripts/hook-handlers/task-completed.sh
+// Original script: scripts/hook-handlers/task-completed.sh
 
 import (
 	"encoding/json"
@@ -16,7 +16,7 @@ import (
 	"path/filepath"
 )
 
-// taskCompletedInput は TaskCompleted フックの stdin JSON。
+// taskCompletedInput is the stdin JSON for the TaskCompleted hook.
 type taskCompletedInput struct {
 	TeammateName    string `json:"teammate_name"`
 	AgentName       string `json:"agent_name"`
@@ -34,19 +34,19 @@ type taskCompletedInput struct {
 	ProjectRoot     string `json:"project_root"`
 }
 
-// taskCompletedHandler は task-completed の全状態を保持する。
+// taskCompletedHandler holds all state for task-completed.
 type taskCompletedHandler struct {
 	projectRoot    string
 	stateDir       string
 	timelineFile   string
 	pendingFixFile string
 	finalizeMarker string
-	// plansPath は Plans.md の解決済みパス（設定の plansDirectory を考慮）。
-	// 存在しない場合は空文字。
+	// plansPath is the resolved path to Plans.md (respecting plansDirectory setting).
+	// Empty if it does not exist.
 	plansPath string
 }
 
-// HandleTaskCompleted は task-completed.sh の Go 移植エントリポイント。
+// HandleTaskCompleted is the Go port entry point for task-completed.sh.
 func HandleTaskCompleted(in io.Reader, out io.Writer) error {
 	data, err := io.ReadAll(in)
 	if err != nil || len(data) == 0 {
@@ -58,7 +58,7 @@ func HandleTaskCompleted(in io.Reader, out io.Writer) error {
 		return writeJSON(out, approveResponse("TaskCompleted: invalid payload"))
 	}
 
-	// プロジェクトルートを決定
+	// Determine project root
 	projectRoot := input.ProjectRoot
 	if projectRoot == "" {
 		projectRoot = input.CWD
@@ -73,7 +73,7 @@ func HandleTaskCompleted(in io.Reader, out io.Writer) error {
 		timelineFile:   filepath.Join(projectRoot, ".claude", "state", "breezing-timeline.jsonl"),
 		pendingFixFile: filepath.Join(projectRoot, ".claude", "state", "pending-fix-proposals.jsonl"),
 		finalizeMarker: filepath.Join(projectRoot, ".claude", "state", "harness-mem-finalize-work-completed.json"),
-		// 設定ファイルの plansDirectory を考慮して Plans.md のパスを解決する
+		// Resolve Plans.md path respecting plansDirectory in config
 		plansPath: resolvePlansPath(projectRoot),
 	}
 
@@ -81,7 +81,7 @@ func HandleTaskCompleted(in io.Reader, out io.Writer) error {
 }
 
 func (h *taskCompletedHandler) handle(input taskCompletedInput, rawData []byte, out io.Writer) error {
-	// フィールド正規化
+	// Normalize fields
 	teammateName := firstNonEmpty(input.TeammateName, input.AgentName)
 	taskID := input.TaskID
 	taskSubject := firstNonEmpty(input.TaskSubject, input.Subject)
@@ -96,19 +96,19 @@ func (h *taskCompletedHandler) handle(input taskCompletedInput, rawData []byte, 
 	agentType := input.AgentType
 
 	stopReason := firstNonEmpty(input.StopReason, input.StopReasonSnake)
-	requestContinue := true // デフォルトは続行
+	requestContinue := true // Default: continue
 	if input.Continue != nil {
 		requestContinue = *input.Continue
 	}
 
 	ts := utcNow()
 
-	// 状態ディレクトリの作成
+	// Create state directory
 	if err := os.MkdirAll(h.stateDir, 0o700); err != nil {
 		fmt.Fprintf(os.Stderr, "[task-completed] mkdir: %v\n", err)
 	}
 
-	// タイムラインへ記録
+	// Record to timeline
 	h.appendTimeline(timelineEntry{
 		Event:       "task_completed",
 		Teammate:    teammateName,
@@ -120,14 +120,14 @@ func (h *taskCompletedHandler) handle(input taskCompletedInput, rawData []byte, 
 		Timestamp:   ts,
 	})
 
-	// Breezing シグナル生成
+	// Generate Breezing signals
 	totalTasks, completedCount := h.updateBreezingSignals(taskID, ts)
 
-	// テスト結果チェック
+	// Check test result
 	testOK, failCount := h.checkTestResultAndEscalate(taskID, taskSubject, teammateName, ts)
 	if !testOK {
 		if failCount >= 3 {
-			// 3-strike エスカレーション
+			// 3-strike escalation
 			return h.emitEscalationResponse(out, taskID, taskSubject, failCount)
 		}
 		return writeJSON(out, map[string]string{
@@ -136,15 +136,15 @@ func (h *taskCompletedHandler) handle(input taskCompletedInput, rawData []byte, 
 		})
 	}
 
-	// Webhook 通知（同期、5秒タイムアウト）
+	// Webhook notification (synchronous, 5-second timeout)
 	h.fireWebhook(rawData)
 
-	// terminalSequence (CC 2.1.141+, opt-in via HARNESS_TERMINAL_NOTIFY) 用の title / body。
-	// 詳細: .claude/rules/hooks-2.1.139-plus.md
+	// title / body for terminalSequence (CC 2.1.141+, opt-in via HARNESS_TERMINAL_NOTIFY).
+	// Details: .claude/rules/hooks-2.1.139-plus.md
 	tsTitle, tsBody := taskCompletedTerminalTitleBody(taskSubject, completedCount, totalTasks)
 	tsSeq := BuildTerminalSequence(tsTitle, tsBody)
 
-	// 停止判定
+	// Determine whether to stop
 	if !requestContinue || stopReason != "" {
 		finalReason := stopReason
 		if finalReason == "" {
@@ -160,7 +160,7 @@ func (h *taskCompletedHandler) handle(input taskCompletedInput, rawData []byte, 
 		return writeJSON(out, resp)
 	}
 
-	// 全タスク完了判定
+	// Determine if all tasks are complete
 	if totalTasks > 0 && completedCount >= totalTasks {
 		h.maybeFinalizeHarnessMem(ts)
 		resp := map[string]interface{}{
@@ -173,9 +173,9 @@ func (h *taskCompletedHandler) handle(input taskCompletedInput, rawData []byte, 
 		return writeJSON(out, resp)
 	}
 
-	// プログレスサマリー付き承認レスポンス
+	// Approval response with progress summary
 	if totalTasks > 0 && taskSubject != "" {
-		progressMsg := fmt.Sprintf("Progress: Task %d/%d 完了 — %q", completedCount, totalTasks, taskSubject)
+		progressMsg := fmt.Sprintf("Progress: Task %d/%d completed — %q", completedCount, totalTasks, taskSubject)
 		resp := map[string]interface{}{
 			"decision":      "approve",
 			"reason":        "TaskCompleted tracked",
@@ -197,8 +197,8 @@ func (h *taskCompletedHandler) handle(input taskCompletedInput, rawData []byte, 
 	return writeJSON(out, resp)
 }
 
-// taskCompletedTerminalTitleBody は TaskCompleted 通知の terminalSequence title/body を組み立てる。
-// progress 情報がある場合は body に件数を含める。
+// taskCompletedTerminalTitleBody assembles the terminalSequence title/body for TaskCompleted notifications.
+// Includes a count in the body when progress information is available.
 func taskCompletedTerminalTitleBody(taskSubject string, completed, total int) (string, string) {
 	title := "Claude Code: task completed"
 	if taskSubject != "" {
@@ -211,7 +211,7 @@ func taskCompletedTerminalTitleBody(taskSubject string, completed, total int) (s
 	return title, body
 }
 
-// approveResponse は標準承認レスポンスを返す。
+// approveResponse returns a standard approval response.
 func approveResponse(reason string) map[string]string {
 	return map[string]string{
 		"decision": "approve",

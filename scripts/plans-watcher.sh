@@ -1,20 +1,20 @@
 #!/bin/bash
-# plans-watcher.sh - Plans.md の変更を監視し、PM への通知を生成（互換: cursor:*）
-# PostToolUse フックから呼び出される
+# plans-watcher.sh - Monitors changes to Plans.md and generates notifications to PM (compat: cursor:*)
+# Called from PostToolUse hook
 #
-# 冪等性ガード (e): .claude/state/locks/plans.flock を使った排他制御
-# wake-up と Worker の並行書き込みによるロストアップデートを防止する。
-# flock(Linux) → lockf(macOS) → mkdir フォールバックの 3-tier ロックを使用。
-# auto-checkpoint.sh の acquire_lock/release_lock と同じパターン。
+# Idempotency guard (e): exclusive control via .claude/state/locks/plans.flock
+# Prevents lost updates from concurrent wake-up and Worker writes.
+# Uses a 3-tier lock: flock(Linux) → lockf(macOS) → mkdir fallback.
+# Same pattern as acquire_lock/release_lock in auto-checkpoint.sh.
 #
-# fail-closed ポリシー (41.1.3):
-# lock 取得失敗時に 3 回 retry（transient race を吸収）し、
-# それでも取得できない場合は exit 11 で fail-closed する（続行しない）。
-# これにより plans-state.json への無保護な read-modify-write を防止する。
+# fail-closed policy (41.1.3):
+# Retries lock acquisition 3 times (to absorb transient races);
+# if still unable to acquire, exits with code 11 (fail-closed, does not continue).
+# This prevents unprotected read-modify-write to plans-state.json.
 
-set +e  # エラーで停止しない
+set +e  # do not stop on error
 
-# ── flock ガード（3-tier fallback）─────────────────────────────────────────────
+# ── flock guard (3-tier fallback) ─────────────────────────────────────────────
 PLANS_LOCK_FILE="${PLANS_LOCK_FILE:-.claude/state/locks/plans.flock}"
 PLANS_LOCK_DIR="${PLANS_LOCK_FILE}.dir"
 PLANS_LOCK_TIMEOUT="${PLANS_LOCK_TIMEOUT:-5}"
@@ -45,7 +45,7 @@ _plans_acquire_lock() {
         fi
     fi
 
-    # フォールバック: mkdir による排他制御
+    # Fallback: exclusive control via mkdir
     local waited=0
     local max_wait=$(( PLANS_LOCK_TIMEOUT * 5 ))
     while ! mkdir "${PLANS_LOCK_DIR}" 2>/dev/null; do
@@ -68,9 +68,9 @@ _plans_release_lock() {
     _PLANS_LOCK_ACQUIRED=0
 }
 
-# ロック取得（fail-closed: 3 回 retry 後も失敗したら exit 11）
-# transient race 条件を吸収するため 3 回試行する。
-# 全て失敗した場合は plans-state.json への無保護アクセスを避けるため abort する。
+# Acquire lock (fail-closed: exit 11 if still failing after 3 retries)
+# Attempt 3 times to absorb transient race conditions.
+# If all attempts fail, abort to avoid unprotected access to plans-state.json.
 _PLANS_LOCK_MAX_RETRIES=3
 _PLANS_LOCK_GOT=0
 for _retry in 1 2 3; do
@@ -85,17 +85,17 @@ for _retry in 1 2 3; do
 done
 
 if [ "${_PLANS_LOCK_GOT}" -eq 0 ]; then
-    echo "plans-watcher.sh: ERROR: ${_PLANS_LOCK_MAX_RETRIES} 回試行しても plans.flock 取得失敗、abort（fail-closed）" >&2
+    echo "plans-watcher.sh: ERROR: Failed to acquire plans.flock after ${_PLANS_LOCK_MAX_RETRIES} attempts, aborting (fail-closed)" >&2
     exit 11
 fi
 
-# スクリプト終了時に必ずロック解放
+# Always release lock on script exit
 _plans_watcher_cleanup() {
     _plans_release_lock
 }
 trap _plans_watcher_cleanup EXIT
 
-# 変更されたファイルを取得（stdin JSON優先 / 互換: $1,$2）
+# Get the changed file (stdin JSON preferred / compat: $1,$2)
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
@@ -133,19 +133,19 @@ print(f"FILE_PATH_FROM_STDIN={shlex.quote(file_path)}")
   CWD="${CWD_FROM_STDIN:-}"
 fi
 
-# 可能ならプロジェクト相対パスへ正規化
+# Normalize to project-relative path if possible
 if [ -n "$CWD" ] && [ -n "$CHANGED_FILE" ] && [[ "$CHANGED_FILE" == "$CWD/"* ]]; then
   CHANGED_FILE="${CHANGED_FILE#$CWD/}"
 fi
 
-# Plans.md のパス（plansDirectory 設定を考慮）
+# Path to Plans.md (respects plansDirectory setting)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "${SCRIPT_DIR}/config-utils.sh" ]; then
   source "${SCRIPT_DIR}/config-utils.sh"
   PLANS_FILE=$(get_plans_file_path)
   plans_file_exists || PLANS_FILE=""
 else
-  # フォールバック: 従来の検索ロジック
+  # Fallback: legacy search logic
   find_plans_file() {
       for f in Plans.md plans.md PLANS.md PLANS.MD; do
           if [ -f "$f" ]; then
@@ -158,7 +158,7 @@ else
   PLANS_FILE=$(find_plans_file)
 fi
 
-# Plans.md 以外の変更はスキップ
+# Skip changes to files other than Plans.md
 if [ -z "$PLANS_FILE" ]; then
     exit 0
 fi
@@ -168,14 +168,14 @@ case "$CHANGED_FILE" in
     *) exit 0 ;;
 esac
 
-# 状態ディレクトリ
+# State directory
 STATE_DIR=".claude/state"
 mkdir -p "$STATE_DIR"
 
-# 前回の状態を取得
+# Retrieve previous state
 PREV_STATE_FILE="${STATE_DIR}/plans-state.json"
 
-# マーカーをカウント
+# Count markers
 count_markers() {
     local marker=$1
     local count=0
@@ -186,14 +186,14 @@ count_markers() {
     echo "$count"
 }
 
-# 現在の状態を取得（English marker family を正規。日本語 / cursor は read-compatible）
+# Get current state (English marker family is canonical; Japanese / cursor are read-compatible)
 PM_PENDING=$(( $(count_markers "pm:requested") + $(count_markers "pm:依頼中") + $(count_markers "cursor:依頼中") ))
 CC_TODO=$(( $(count_markers "cc:todo") + $(count_markers "cc:TODO") ))
 CC_WIP=$(( $(count_markers "cc:wip") + $(count_markers "cc:WIP") ))
 CC_DONE=$(( $(count_markers "cc:done") + $(count_markers "cc:完了") ))
 PM_CONFIRMED=$(( $(count_markers "pm:approved") + $(count_markers "pm:確認済") + $(count_markers "cursor:確認済") ))
 
-# 新しいタスクを検出
+# Detect new tasks
 NEW_TASKS=""
 if [ -f "$PREV_STATE_FILE" ]; then
     PREV_PM_PENDING=$(jq -r '.pm_pending // 0' "$PREV_STATE_FILE" 2>/dev/null || echo "0")
@@ -202,7 +202,7 @@ if [ -f "$PREV_STATE_FILE" ]; then
     fi
 fi
 
-# 完了タスクを検出
+# Detect completed tasks
 COMPLETED_TASKS=""
 if [ -f "$PREV_STATE_FILE" ]; then
     PREV_CC_DONE=$(jq -r '.cc_done // 0' "$PREV_STATE_FILE" 2>/dev/null || echo "0")
@@ -211,7 +211,7 @@ if [ -f "$PREV_STATE_FILE" ]; then
     fi
 fi
 
-# 状態を保存
+# Save state
 cat > "$PREV_STATE_FILE" << EOF
 {
   "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
@@ -223,7 +223,7 @@ cat > "$PREV_STATE_FILE" << EOF
 }
 EOF
 
-# 通知を生成
+# Generate notification
 generate_notification() {
     echo ""
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -251,7 +251,7 @@ generate_notification() {
     echo ""
 }
 
-# 変更がある場合のみ通知
+# Notify only if there are changes
 if [ -n "$NEW_TASKS" ] || [ -n "$COMPLETED_TASKS" ]; then
     generate_notification
 fi
@@ -259,11 +259,11 @@ fi
 # PM notification file for two-role operation
 if [ -n "$NEW_TASKS" ] || [ -n "$COMPLETED_TASKS" ]; then
     PM_NOTIFICATION_FILE="${STATE_DIR}/pm-notification.md"
-    CURSOR_NOTIFICATION_FILE="${STATE_DIR}/cursor-notification.md" # 互換
+    CURSOR_NOTIFICATION_FILE="${STATE_DIR}/cursor-notification.md" # compat alias
     cat > "$PM_NOTIFICATION_FILE" << EOF
 # PM Notification
 
-**生成日時**: $(date +"%Y-%m-%d %H:%M:%S")
+**Generated at**: $(date +"%Y-%m-%d %H:%M:%S")
 
 ## Status Changes
 
@@ -287,6 +287,6 @@ EOF
     echo "" >> "$PM_NOTIFICATION_FILE"
     echo "**Next action**: Review in PM Claude, then request follow-up if needed (/handoff-to-impl-claude)." >> "$PM_NOTIFICATION_FILE"
 
-    # 互換: 旧ファイル名にも同内容を出力
+    # Compat: also write same content to legacy filename
     cp -f "$PM_NOTIFICATION_FILE" "$CURSOR_NOTIFICATION_FILE" 2>/dev/null || true
 fi

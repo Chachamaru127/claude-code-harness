@@ -1,6 +1,6 @@
 #!/bin/bash
 # test-session-state.sh
-# session-state.sh の単体テスト
+# Unit tests for session-state.sh
 #
 # Usage: ./tests/test-session-state.sh
 
@@ -11,13 +11,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(dirname "$SCRIPT_DIR")"
 SESSION_STATE_SCRIPT="$PLUGIN_ROOT/scripts/session-state.sh"
 
-# テスト用一時ディレクトリ
+# Temporary directory for tests
 TEST_DIR=$(mktemp -d)
 trap "rm -rf $TEST_DIR" EXIT
 
 cd "$TEST_DIR"
 
-# カラー出力
+# Color output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
@@ -36,25 +36,25 @@ fail_test() {
 }
 
 echo "=========================================="
-echo "session-state.sh 単体テスト"
+echo "session-state.sh unit tests"
 echo "=========================================="
 echo ""
 
-# スクリプトの存在確認
+# Check that the script exists
 if [ ! -f "$SESSION_STATE_SCRIPT" ]; then
-  fail_test "session-state.sh が見つかりません: $SESSION_STATE_SCRIPT"
+  fail_test "session-state.sh not found: $SESSION_STATE_SCRIPT"
   exit 1
 fi
 
 if [ ! -x "$SESSION_STATE_SCRIPT" ]; then
-  fail_test "session-state.sh に実行権限がありません"
+  fail_test "session-state.sh is not executable"
   exit 1
 fi
 
-pass_test "session-state.sh が存在し実行権限があります"
+pass_test "session-state.sh exists and is executable"
 
 echo ""
-echo "1. 初期状態からの遷移テスト"
+echo "1. Transition tests from initial state"
 echo "----------------------------------------"
 
 # idle → initialized (session.start)
@@ -64,25 +64,25 @@ else
   fail_test "idle → initialized (session.start)"
 fi
 
-# session.json の確認
+# Verify session.json was created
 if [ -f ".claude/state/session.json" ]; then
-  pass_test "session.json が作成されました"
+  pass_test "session.json was created"
 
-  # state フィールドの確認
+  # Check the state field
   if command -v jq >/dev/null 2>&1; then
     state=$(jq -r '.state' .claude/state/session.json 2>/dev/null)
     if [ "$state" = "initialized" ]; then
       pass_test "state = initialized"
     else
-      fail_test "state が 'initialized' ではありません: $state"
+      fail_test "state is not 'initialized': $state"
     fi
   fi
 else
-  fail_test "session.json が作成されませんでした"
+  fail_test "session.json was not created"
 fi
 
 echo ""
-echo "2. 正常な状態遷移テスト"
+echo "2. Valid state transition tests"
 echo "----------------------------------------"
 
 # initialized → planning (plan.ready)
@@ -121,7 +121,7 @@ else
 fi
 
 echo ""
-echo "3. ワイルドカード遷移テスト (任意の状態 → stopped)"
+echo "3. Wildcard transition tests (any state → stopped)"
 echo "----------------------------------------"
 
 # completed → stopped (session.stop)
@@ -132,56 +132,56 @@ else
 fi
 
 echo ""
-echo "4. 無効な遷移テスト"
+echo "4. Invalid transition tests"
 echo "----------------------------------------"
 
-# stopped → completed は許可されていない
+# stopped → completed is not allowed
 if "$SESSION_STATE_SCRIPT" --state completed --event verify.passed 2>/dev/null; then
-  fail_test "stopped → completed (verify.passed) が許可されました（期待: 拒否）"
+  fail_test "stopped → completed (verify.passed) was allowed (expected: denied)"
 else
-  pass_test "stopped → completed (verify.passed) が正しく拒否されました"
+  pass_test "stopped → completed (verify.passed) was correctly denied"
 fi
 
 echo ""
-echo "5. イベントログのテスト"
+echo "5. Event log tests"
 echo "----------------------------------------"
 
 if [ -f ".claude/state/session.events.jsonl" ]; then
-  pass_test "session.events.jsonl が作成されました"
+  pass_test "session.events.jsonl was created"
 
   EVENT_COUNT=$(wc -l < .claude/state/session.events.jsonl | tr -d ' ')
   if [ "$EVENT_COUNT" -gt 0 ]; then
-    pass_test "イベントログに $EVENT_COUNT 件のエントリがあります"
+    pass_test "Event log has $EVENT_COUNT entries"
   else
-    fail_test "イベントログが空です"
+    fail_test "Event log is empty"
   fi
 
-  # 最後のイベントを確認
+  # Check the last event
   if command -v jq >/dev/null 2>&1; then
     LAST_EVENT=$(tail -n 1 .claude/state/session.events.jsonl)
     LAST_STATE=$(echo "$LAST_EVENT" | jq -r '.state' 2>/dev/null)
     if [ "$LAST_STATE" = "stopped" ]; then
-      pass_test "最後のイベントの state = stopped"
+      pass_test "Last event state = stopped"
     else
-      fail_test "最後のイベントの state が 'stopped' ではありません: $LAST_STATE"
+      fail_test "Last event state is not 'stopped': $LAST_STATE"
     fi
   fi
 else
-  fail_test "session.events.jsonl が作成されませんでした"
+  fail_test "session.events.jsonl was not created"
 fi
 
 echo ""
 echo "=========================================="
-echo "テスト結果サマリー"
+echo "Test results summary"
 echo "=========================================="
-echo -e "${GREEN}合格:${NC} $PASS_COUNT"
-echo -e "${RED}失敗:${NC} $FAIL_COUNT"
+echo -e "${GREEN}Passed:${NC} $PASS_COUNT"
+echo -e "${RED}Failed:${NC} $FAIL_COUNT"
 echo ""
 
 if [ $FAIL_COUNT -eq 0 ]; then
-  echo -e "${GREEN}✓ 全てのテストに合格しました！${NC}"
+  echo -e "${GREEN}✓ All tests passed!${NC}"
   exit 0
 else
-  echo -e "${RED}✗ $FAIL_COUNT 件のテストが失敗しました${NC}"
+  echo -e "${RED}✗ $FAIL_COUNT test(s) failed${NC}"
   exit 1
 fi

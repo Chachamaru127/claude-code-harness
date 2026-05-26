@@ -15,7 +15,7 @@ func TestHandleNotification_EmptyInput(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// 通知ハンドラは空入力で出力なし
+	// Notification handler produces no output for empty input
 	if out.Len() != 0 {
 		t.Errorf("expected no output for empty input, got %q", out.String())
 	}
@@ -27,7 +27,7 @@ func TestHandleNotification_InvalidJSON(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// パース失敗でも出力なし（正常終了）
+	// No output even on parse failure (normal exit)
 	if out.Len() != 0 {
 		t.Errorf("expected no output for invalid JSON, got %q", out.String())
 	}
@@ -53,7 +53,7 @@ func TestHandleNotification_BasicEvent(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// JSONL ログが作成されていること
+	// JSONL log should be created
 	logFile := filepath.Join(tmpDir, ".claude", "state", "notification-events.jsonl")
 	data, readErr := os.ReadFile(logFile)
 	if readErr != nil {
@@ -96,7 +96,7 @@ func TestHandleNotification_TypeFallback(t *testing.T) {
 	t.Setenv("PROJECT_ROOT", tmpDir)
 	t.Setenv("CLAUDE_PLUGIN_DATA", "")
 
-	// notification_type がない場合は type でフォールバック
+	// Falls back to type field when notification_type is absent
 	input := `{"type":"idle_prompt","session_id":"sess-002"}`
 	var out bytes.Buffer
 	if err := HandleNotification(strings.NewReader(input), &out); err != nil {
@@ -132,7 +132,7 @@ func TestHandleNotification_MatcherFallback(t *testing.T) {
 	t.Setenv("PROJECT_ROOT", tmpDir)
 	t.Setenv("CLAUDE_PLUGIN_DATA", "")
 
-	// notification_type も type もない場合は matcher でフォールバック
+	// Falls back to matcher field when neither notification_type nor type is present
 	input := `{"matcher":"permission_prompt","session_id":"sess-003","agent_type":"task-worker"}`
 	var out bytes.Buffer
 	if err := HandleNotification(strings.NewReader(input), &out); err != nil {
@@ -168,7 +168,7 @@ func TestHandleNotification_RotatesAtLimit(t *testing.T) {
 	t.Setenv("PROJECT_ROOT", tmpDir)
 	t.Setenv("CLAUDE_PLUGIN_DATA", "")
 
-	// ログファイルに501行のダミーエントリを書き込む
+	// Write 501 dummy entries to the log file
 	stateDir := filepath.Join(tmpDir, ".claude", "state")
 	if err := os.MkdirAll(stateDir, 0o700); err != nil {
 		t.Fatal(err)
@@ -194,15 +194,15 @@ func TestHandleNotification_RotatesAtLimit(t *testing.T) {
 		t.Fatalf("log file not found: %v", readErr)
 	}
 	lines := strings.Split(strings.TrimRight(string(data), "\n"), "\n")
-	// 401行（400行 + 1行の新エントリ）になっていること
+	// Should be 401 lines (400 kept + 1 new entry)
 	if len(lines) > 401 {
 		t.Errorf("expected ≤401 lines after rotation, got %d", len(lines))
 	}
 }
 
 func TestHandleNotification_NoOutput(t *testing.T) {
-	// 通知ハンドラは HARNESS_TERMINAL_NOTIFY 未設定なら stdout に何も書かない
-	// (既存挙動: opt-in 維持の後方互換性テスト)
+	// Notification handler writes nothing to stdout when HARNESS_TERMINAL_NOTIFY is unset
+	// (backward-compatibility test for opt-in behaviour)
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
 	if err != nil {
@@ -222,15 +222,15 @@ func TestHandleNotification_NoOutput(t *testing.T) {
 	if err := HandleNotification(strings.NewReader(input), &out); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// stdout には何も書かない（bash の exit 0 に相当）
+	// Nothing should be written to stdout (equivalent to bash exit 0)
 	if out.Len() != 0 {
 		t.Errorf("notification handler should produce no stdout output when env unset, got %q", out.String())
 	}
 }
 
-// TestHandleNotification_TerminalSequenceEmit は
-// HARNESS_TERMINAL_NOTIFY=osc9 で permission_prompt 受信時に
-// terminalSequence 付き JSON が emit されることを確認する (CC 2.1.141+ Phase 69)。
+// TestHandleNotification_TerminalSequenceEmit verifies that when
+// HARNESS_TERMINAL_NOTIFY=osc9 and a permission_prompt is received,
+// a JSON response containing terminalSequence is emitted (CC 2.1.141+ Phase 69).
 func TestHandleNotification_TerminalSequenceEmit(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
@@ -268,14 +268,14 @@ func TestHandleNotification_TerminalSequenceEmit(t *testing.T) {
 	if !ok || seq == "" {
 		t.Errorf("expected terminalSequence string in response, got %v (type %T)", resp["terminalSequence"], resp["terminalSequence"])
 	}
-	// OSC 9 sequence は ESC ]9; ... BEL の形
+	// OSC 9 sequence has the form ESC ]9; ... BEL
 	if !strings.HasPrefix(seq, "\x1b]9;") || !strings.HasSuffix(seq, "\x07") {
 		t.Errorf("terminalSequence does not match OSC 9 shape: %q", seq)
 	}
 }
 
-// TestHandleNotification_TerminalSequence_UnknownType は
-// 未知の notification_type では terminalSequence を emit しないことを確認する。
+// TestHandleNotification_TerminalSequence_UnknownType verifies that
+// an unknown notification_type does not emit a terminalSequence.
 func TestHandleNotification_TerminalSequence_UnknownType(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()
@@ -296,15 +296,15 @@ func TestHandleNotification_TerminalSequence_UnknownType(t *testing.T) {
 	if err := HandleNotification(strings.NewReader(input), &out); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// 未知 type は silent
+	// Unknown type should be silent
 	if out.Len() != 0 {
 		t.Errorf("unknown notification_type should not emit terminalSequence, got %q", out.String())
 	}
 }
 
-// TestHandleNotification_TerminalSequence_AllTypes は
-// 既知 4 種 (permission_prompt / elicitation_dialog / idle_prompt / auth_success) で
-// terminalSequence が emit されることを確認する。
+// TestHandleNotification_TerminalSequence_AllTypes verifies that
+// all four known types (permission_prompt / elicitation_dialog / idle_prompt / auth_success)
+// emit a terminalSequence.
 func TestHandleNotification_TerminalSequence_AllTypes(t *testing.T) {
 	knownTypes := []string{"permission_prompt", "elicitation_dialog", "idle_prompt", "auth_success"}
 	for _, nt := range knownTypes {

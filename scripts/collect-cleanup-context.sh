@@ -1,8 +1,8 @@
 #!/bin/bash
 # collect-cleanup-context.sh
-# Stop Hook 用: セッション終了時にクリーンアップ推奨判断のためのコンテキストを収集
+# For Stop Hook: collect context at session end to determine whether cleanup is recommended
 #
-# 出力: JSON 形式でファイル状態・タスク統計を出力
+# Output: file state and task statistics in JSON format
 
 set -euo pipefail
 
@@ -52,7 +52,7 @@ count_plan_tasks() {
   ' "$file" 2>/dev/null || printf '0\n'
 }
 
-# JSON出力用の変数
+# Variables for JSON output
 PLANS_EXISTS="false"
 PLANS_LINES=0
 COMPLETED_TASKS=0
@@ -68,12 +68,12 @@ CLAUDE_MD_LINES=0
 GIT_UNCOMMITTED=0
 SESSION_CHANGES=0
 
-# Plans.md の分析
+# Analyze Plans.md
 if [ -f "$PLANS_PATH" ]; then
   PLANS_EXISTS="true"
   PLANS_LINES=$(wc -l < "$PLANS_PATH" | tr -d ' ')
 
-  # タスク数をカウント
+  # Count tasks
   COMPLETED_TASKS=$(count_plan_tasks "(cc:(done|完了)|pm:(approved|確認済)|cursor:確認済)" "$PLANS_PATH")
   WIP_TASKS=$(count_plan_tasks "(cc:(wip|WIP)|pm:(requested|依頼中)|cursor:依頼中)" "$PLANS_PATH")
   TODO_TASKS=$(count_plan_tasks "cc:(todo|TODO)" "$PLANS_PATH")
@@ -82,34 +82,34 @@ if [ -f "$PLANS_PATH" ]; then
   CC_WIP_TASKS=$(count_plan_tasks "cc:(wip|WIP)" "$PLANS_PATH")
   CC_DONE_TASKS=$(count_plan_tasks "cc:(done|完了)" "$PLANS_PATH")
 
-  # 最も古い完了日を取得（YYYY-MM-DD 形式を探す）
+  # Get the oldest completion date (looks for YYYY-MM-DD format)
   OLDEST_COMPLETED_DATE=$(grep -oE "[0-9]{4}-[0-9]{2}-[0-9]{2}" "$PLANS_PATH" 2>/dev/null | sort | head -1 || echo "")
 fi
 
-# session-log.md の行数
+# session-log.md line count
 if [ -f ".claude/memory/session-log.md" ]; then
   SESSION_LOG_LINES=$(wc -l < ".claude/memory/session-log.md" | tr -d ' ')
 fi
 
-# CLAUDE.md の行数
+# CLAUDE.md line count
 if [ -f "CLAUDE.md" ]; then
   CLAUDE_MD_LINES=$(wc -l < "CLAUDE.md" | tr -d ' ')
 fi
 
-# Git 未コミット数
+# Git uncommitted count
 if [ -d ".git" ]; then
   GIT_UNCOMMITTED=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ' || echo "0")
 fi
 
-# セッション中の変更数（あれば）
+# Number of changes during the session (if available)
 if [ -f ".claude/state/session.json" ] && command -v jq >/dev/null 2>&1; then
   SESSION_CHANGES=$(jq '.changes_this_session | length' .claude/state/session.json 2>/dev/null || echo "0")
 fi
 
-# 今日の日付
+# Today's date
 TODAY=$(date +%Y-%m-%d)
 
-# JSON 出力
+# JSON output
 cat << EOF
 {
   "today": "$TODAY",

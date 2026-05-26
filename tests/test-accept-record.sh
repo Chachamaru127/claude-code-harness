@@ -1,21 +1,21 @@
 #!/bin/bash
 # tests/test-accept-record.sh
-# Phase 65.2.3 - accept-record-decision.sh の機械検証
+# Phase 65.2.3 - mechanical validation of accept-record-decision.sh
 #
-# 検証ケース (DoD d):
-#   1. action=accept   - recommendation_taken=true、override_reason 空
-#   2. action=override - recommendation_taken=false、override_reason 必須
-#   3. action=reject   - recommendation に応じて recommendation_taken 計算
-#                        (rec=reject なら true、それ以外なら false)
+# Validation cases (DoD d):
+#   1. action=accept   - recommendation_taken=true, override_reason empty
+#   2. action=override - recommendation_taken=false, override_reason required
+#   3. action=reject   - recommendation_taken computed based on recommendation
+#                        (true if rec=reject, false otherwise)
 #
-# 共通検証:
-#   (a) --action / --user-request / --project / --recommendation 必須
-#   (b) tags = ["personal-preference", "acceptance-decision"] 固定
-#   (c) data.user_request_hash が sha256 hex (64 chars)
-#   (d) Phase 65.1.4 plan-brief-record-decision.sh と同じ user_request →
-#       同じ user_request_hash (DoD c の "join 可能" 構造的検証)
+# Common validation:
+#   (a) --action / --user-request / --project / --recommendation required
+#   (b) tags = ["personal-preference", "acceptance-decision"] fixed
+#   (c) data.user_request_hash is sha256 hex (64 chars)
+#   (d) same user_request as Phase 65.1.4 plan-brief-record-decision.sh →
+#       same user_request_hash (structural verification of DoD c "joinable")
 #   (e) schema = "acceptance-decision.v1"
-#   (f) override action では override_reason 必須 (空なら exit 2)
+#   (f) override action requires override_reason (exit 2 if empty)
 
 set -euo pipefail
 
@@ -41,7 +41,7 @@ if [[ ! -x "$SCRIPT" ]]; then
 fi
 pass "accept-record-decision.sh exists and is executable"
 
-# ---- (a) 必須引数 ----
+# ---- (a) required arguments ----
 
 set +e
 bash "$SCRIPT" 2>/dev/null
@@ -94,7 +94,7 @@ else
   fail "Script should exit 2 when override missing reason (got $exit_code)"
 fi
 
-# ---- ヘルパー: 1 ケース実行 ----
+# ---- helper: run one case ----
 
 run_action_case() {
   local label="$1"
@@ -107,7 +107,7 @@ run_action_case() {
   local out
   out="$(bash "$SCRIPT" \
     --action "$action" \
-    --user-request "Plan Brief MVP の検収" \
+    --user-request "Plan Brief MVP acceptance" \
     --project "demo-project" \
     --recommendation "$rec" \
     ${extra_args[@]+"${extra_args[@]}"} 2>&1)" || {
@@ -216,11 +216,11 @@ run_action_case() {
 }
 
 # ---- Case 1: action=accept ----
-# rec=ship を採用 → recommendation_taken=true
+# rec=ship adopted → recommendation_taken=true
 run_action_case "accept" "accept" "ship" "true"
 
-# accept-specific: override_reason は空
-out_accept="$(bash "$SCRIPT" --action accept --user-request "Plan Brief MVP の検収" \
+# accept-specific: override_reason is empty
+out_accept="$(bash "$SCRIPT" --action accept --user-request "Plan Brief MVP acceptance" \
   --project "demo-project" --recommendation ship 2>/dev/null)"
 override_a="$(printf '%s' "$out_accept" | jq -r '.data.override_reason')"
 if [[ -z "$override_a" ]]; then
@@ -229,33 +229,33 @@ else
   fail "[accept] override_reason should be empty: $override_a"
 fi
 
-# ---- Case 2: action=override (rec=wait → ship 採用) ----
+# ---- Case 2: action=override (rec=wait → ship adopted) ----
 run_action_case "override" "override" "wait" "false" \
-  --override-reason "verified 全 5 件確認済みなので ship 判断"
+  --override-reason "shipping because all 5 verified items confirmed"
 
-# override-specific: override_reason が伝播
-out_override="$(bash "$SCRIPT" --action override --user-request "Plan Brief MVP の検収" \
+# override-specific: override_reason propagates
+out_override="$(bash "$SCRIPT" --action override --user-request "Plan Brief MVP acceptance" \
   --project "demo-project" --recommendation wait \
-  --override-reason "verified 全 5 件確認済みなので ship 判断" 2>/dev/null)"
+  --override-reason "shipping because all 5 verified items confirmed" 2>/dev/null)"
 override_o="$(printf '%s' "$out_override" | jq -r '.data.override_reason')"
-if [[ "$override_o" == "verified 全 5 件確認済みなので ship 判断" ]]; then
+if [[ "$override_o" == "shipping because all 5 verified items confirmed" ]]; then
   pass "[override] override_reason propagates"
 else
   fail "[override] override_reason mismatch: $override_o"
 fi
 
-# ---- Case 3: action=reject (rec=ship → reject 判断 = override 相当) ----
-# rec=ship + reject 判断 → recommendation_taken=false
+# ---- Case 3: action=reject (rec=ship → reject decision = override equivalent) ----
+# rec=ship + reject decision → recommendation_taken=false
 run_action_case "reject" "reject" "ship" "false" \
-  --override-reason "後発で重大な不具合を発見"
+  --override-reason "critical bug found late in the process"
 
-# reject + rec=reject = recommendation そのまま採用
+# reject + rec=reject = recommendation adopted as-is
 run_action_case "reject-rec-reject" "reject" "reject" "true"
 
-# ---- DoD c: Plan Brief 側との join 可能性 ----
-# 同じ user_request 文字列 → Phase 65.1.4 と完全一致する hash
+# ---- DoD c: joinability with Plan Brief side ----
+# same user_request string → hash identical to Phase 65.1.4
 
-USER_REQ="プラン → 受け入れの trace 検証用 request"
+USER_REQ="request for plan to acceptance trace verification"
 
 if [[ -x "$PLAN_BRIEF_SCRIPT" ]]; then
   hash_plan="$(bash "$PLAN_BRIEF_SCRIPT" --action approve \
@@ -266,7 +266,7 @@ if [[ -x "$PLAN_BRIEF_SCRIPT" ]]; then
     | jq -r '.data.user_request_hash')"
 
   if [[ -n "$hash_plan" && "$hash_plan" == "$hash_accept" ]]; then
-    pass "DoD c: Plan Brief 側 personal-preference.v1 と join 可能 (同 hash: ${hash_plan:0:16}...)"
+    pass "DoD c: joinable with Plan Brief personal-preference.v1 (same hash: ${hash_plan:0:16}...)"
   else
     fail "DoD c: hash mismatch — plan=$hash_plan, accept=$hash_accept"
   fi
@@ -274,7 +274,7 @@ else
   fail "Phase 65.1.4 script not found (required for join verification)"
 fi
 
-# verified_criteria_at_decision の取り扱い
+# handling of verified_criteria_at_decision
 TMP_CRITERIA="$(mktemp /tmp/criteria-XXXXXX.json)"
 cat > "$TMP_CRITERIA" <<'JSON'
 {
@@ -299,7 +299,7 @@ rm -f "$TMP_CRITERIA"
 # post_launch_concerns csv split
 out_concerns="$(bash "$SCRIPT" --action accept \
   --user-request "test concerns" --project "demo-project" --recommendation ship \
-  --post-launch-concerns "懸念A, 懸念B, 懸念C" 2>/dev/null)"
+  --post-launch-concerns "concern A, concern B, concern C" 2>/dev/null)"
 concerns_count="$(printf '%s' "$out_concerns" | jq '.data.post_launch_concerns | length')"
 if [[ "$concerns_count" -eq 3 ]]; then
   pass "post_launch_concerns csv splits to 3 entries"

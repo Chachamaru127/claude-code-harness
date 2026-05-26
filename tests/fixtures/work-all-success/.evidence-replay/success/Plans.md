@@ -1,6 +1,6 @@
 # Plans.md
 
-| Task | 内容 | Status |
-|------|------|--------|
-| 1 | `src/math.js` の `add` を正しく実装し、`subtract` を追加する | cc:完了 |
-| 2 | `src/format.js` を追加し、`formatResult(label, value)` が `"label: value"` を返すようにする | cc:完了 |
+| Task | Description | Status |
+|------|-------------|--------|
+| 1 | Implement `add` correctly in `src/math.js` and add `subtract` | cc:完了 |
+| 2 | Add `src/format.js` so that `formatResult(label, value)` returns `"label: value"` | cc:完了 |

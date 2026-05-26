@@ -1,59 +1,61 @@
-# Opus 4.7 Vision 使用ガイド
+# Opus 4.7 Vision Usage Guide
 
-Opus 4.7 で強化された vision 機能（解像度上限 ~2576px）の運用ガイド。
-harness-review での PDF・設計図・UI スクリーンショットレビューに適用する。
+Usage guide for the enhanced vision capabilities in Opus 4.7 (resolution limit ~2576px).
+Applies to harness-review when reviewing PDFs, schematics, and UI screenshots.
 
-> **出典**: Claude / Opus 4.7 リリースノート および Claude Code ドキュメント記載の vision 仕様。
-> 「短辺 2576px まで安全」はこれらのドキュメントに基づく値であり、それ以外の数値は使用しない。
-
----
-
-## 基本ガイドライン
-
-### 解像度上限
-
-**短辺 2576px** が Opus 4.7 の vision における運用上の安全上限。
-
-| 画像サイズ | 対応 |
-|-----------|------|
-| 短辺 2576px 以下 | Read tool でそのまま渡せる |
-| 短辺 2576px 超 | **事前リサイズ必須**（下記参照） |
-
-- 「短辺」は縦横のうち小さい方。例: 3840×2160 の画像は短辺 = 2160px（上限内）
-- 例: 5000×3000 の画像は短辺 = 3000px（上限超 → リサイズ必要）
-- 長辺は 2576px を超えていても短辺が 2576px 以下なら問題ない
+> **Source**: Claude / Opus 4.7 release notes and the vision specification in Claude Code
+> documentation. "Safe up to 2576px on the short side" is the value from those documents;
+> no other figures should be used.
 
 ---
 
-## 2576px を超える場合の事前リサイズ手順
+## Basic guidelines
 
-### macOS (sips コマンド)
+### Resolution limit
+
+**2576px on the short side** is the operational safe limit for vision in Opus 4.7.
+
+| Image size | Action |
+|-----------|--------|
+| Short side 2576px or less | Pass directly to the Read tool |
+| Short side exceeds 2576px | **Pre-resize required** (see below) |
+
+- "Short side" is the smaller of width and height. Example: a 3840×2160 image has a short
+  side of 2160px (within limit).
+- Example: a 5000×3000 image has a short side of 3000px (exceeds limit → resize required).
+- The long side may exceed 2576px as long as the short side stays at 2576px or below.
+
+---
+
+## Pre-resize procedure when the short side exceeds 2576px
+
+### macOS (sips command)
 
 ```bash
-# 解像度確認
+# Check resolution
 sips -g pixelWidth -g pixelHeight input.png
 
-# リサイズ: 長辺・短辺のうち大きい方を 2576px に収める
+# Resize: fit the longest dimension within 2576px
 sips -Z 2576 input.png --out output.png
 ```
 
-`-Z 2576` はアスペクト比を保ったまま、長辺を 2576px に収める。
-短辺が 2576px を超えている場合（縦長画像など）も同様に機能する。
+`-Z 2576` preserves aspect ratio and fits the long side within 2576px.
+It also works when the short side exceeds 2576px (e.g., portrait images).
 
-### ImageMagick (クロスプラットフォーム)
+### ImageMagick (cross-platform)
 
 ```bash
-# リサイズ: 縦横どちらも 2576px を超えないよう縮小（アスペクト比保持）
+# Resize: shrink so neither dimension exceeds 2576px (preserving aspect ratio)
 convert input.png -resize 2576x2576\> output.png
 ```
 
-`\>` は「元のサイズが指定値より大きい場合のみ縮小」する修飾子。
-2576px 以下の画像は変更されない。
+`\>` is a modifier meaning "shrink only when the original is larger than the specified value".
+Images at 2576px or below are left unchanged.
 
-### 複数ファイルを一括リサイズ (macOS sips)
+### Batch resize multiple files (macOS sips)
 
 ```bash
-# カレントディレクトリの PNG を全てリサイズして resized/ に出力
+# Resize all PNGs in the current directory and output to resized/
 mkdir -p resized
 for f in *.png; do
   sips -Z 2576 "$f" --out "resized/$f"
@@ -62,33 +64,33 @@ done
 
 ---
 
-## PDF の場合の注意点
+## Notes for PDFs
 
-PDF は **ページ単位**で vision モデルに渡される。
-各ページのレンダリング解像度（DPI）が高いと、1 ページが 2576px を超える場合がある。
+PDFs are passed to the vision model **one page at a time**.
+If the rendering resolution (DPI) is high, a single page may exceed 2576px.
 
-### DPI と実効解像度の関係
+### DPI and effective resolution
 
-| DPI | A4 ページの実効解像度（縦×横） | 短辺 |
-|-----|-------------------------------|------|
-| 72 dpi  | 595 × 842 px | 595px（上限内） |
-| 150 dpi | 1240 × 1754 px | 1240px（上限内） |
-| 200 dpi | 1654 × 2340 px | 1654px（上限内） |
-| 250 dpi | 2067 × 2926 px | 2067px（上限内） |
-| 300 dpi | 2480 × 3508 px | 2480px（上限内） |
-| 360 dpi | 2976 × 4210 px | **2976px（上限超）** |
+| DPI | A4 page effective resolution (height × width) | Short side |
+|-----|----------------------------------------------|-----------|
+| 72 dpi  | 595 × 842 px | 595px (within limit) |
+| 150 dpi | 1240 × 1754 px | 1240px (within limit) |
+| 200 dpi | 1654 × 2340 px | 1654px (within limit) |
+| 250 dpi | 2067 × 2926 px | 2067px (within limit) |
+| 300 dpi | 2480 × 3508 px | 2480px (within limit) |
+| 360 dpi | 2976 × 4210 px | **2976px (exceeds limit)** |
 
-A4 サイズの場合、300 dpi まではほぼ安全。360 dpi 以上は要注意。
+For A4 size, up to 300 dpi is generally safe. 360 dpi and above requires attention.
 
-### PDF の DPI を調整してエクスポートする（Ghostscript）
+### Re-export PDF at a target DPI (Ghostscript)
 
 ```bash
-# 150 dpi で再エクスポート（ファイルサイズも削減）
+# Re-export at 150 dpi (also reduces file size)
 gs -dNOPAUSE -dBATCH -sDEVICE=pdfwrite \
    -dPDFSETTINGS=/screen \
    -sOutputFile=output_150dpi.pdf input.pdf
 
-# 特定の解像度を明示指定
+# Specify a target resolution explicitly
 gs -dNOPAUSE -dBATCH -sDEVICE=pdfwrite \
    -dCompatibilityLevel=1.4 \
    -dDownsampleColorImages=true \
@@ -96,57 +98,60 @@ gs -dNOPAUSE -dBATCH -sDEVICE=pdfwrite \
    -sOutputFile=output_200dpi.pdf input.pdf
 ```
 
-### Read tool での PDF 読み込み
+### Loading a PDF with the Read tool
 
 ```
 Read tool: file_path="spec.pdf", pages="1-5"
 ```
 
-- `pages` パラメータで読み込むページ範囲を指定する（例: `"1-5"`, `"3"`, `"10-20"`）
-- 1 回のリクエストで最大 20 ページまで指定可能
-- 20 ページを超える PDF は 20 ページ単位で分割して読み込む
+- Use the `pages` parameter to specify the page range (e.g., `"1-5"`, `"3"`, `"10-20"`).
+- Up to 20 pages can be specified per request.
+- PDFs longer than 20 pages must be read in 20-page batches.
 
 ---
 
-## メモリ消費の目安
+## Token consumption estimates
 
-高解像度画像を複数渡す場合、token 消費が増加する。以下を参考に枚数を調整する。
+Passing multiple high-resolution images increases token consumption. Use the table below
+to decide how many images to include.
 
-| 画像 1 枚あたりの解像度 | 概算 token 消費（vision 入力分） |
-|------------------------|-------------------------------|
-| 512 × 512 px | ~85 トークン |
-| 1024 × 1024 px | ~340 トークン |
-| 2048 × 2048 px | ~1360 トークン |
-| 2576 × 2576 px | ~2100 トークン（上限付近） |
+| Resolution per image | Estimated token consumption (vision input) |
+|---------------------|--------------------------------------------|
+| 512 × 512 px | ~85 tokens |
+| 1024 × 1024 px | ~340 tokens |
+| 2048 × 2048 px | ~1,360 tokens |
+| 2576 × 2576 px | ~2,100 tokens (near limit) |
 
-> 上記は概算値。実際の消費量は画像の内容・圧縮率・モデルの内部処理によって変動する。
+> These are rough estimates. Actual consumption varies based on image content,
+> compression rate, and model internal processing.
 
-### N 枚渡す場合の換算例
+### Estimates for N images
 
-| 枚数 × 解像度 | 概算 token 消費 |
-|--------------|----------------|
-| 5 枚 × 2576px | ~10,500 トークン |
-| 10 枚 × 2576px | ~21,000 トークン |
-| 20 枚 × 2048px | ~27,200 トークン |
+| Images × resolution | Estimated token consumption |
+|--------------------|----------------------------|
+| 5 × 2576px | ~10,500 tokens |
+| 10 × 2576px | ~21,000 tokens |
+| 20 × 2048px | ~27,200 tokens |
 
-1M コンテキスト窓を持つ Opus 4.7 では、これらは全体の 2〜3% 程度に収まる。
-ただし、大量の高解像度画像を同一セッションで処理する場合はバッチ分割を推奨する。
-
----
-
-## よくあるエラーと対処
-
-| 症状 | 原因 | 対処 |
-|------|------|------|
-| Read tool が画像を返さない | ファイルパスが正しくない、または対応外の形式 | パスを確認。PNG / JPG / GIF / WebP / PDF に限定 |
-| レビュー結果が「画像が不明瞭」 | 解像度が低すぎる（100px 以下等） | 高解像度版を用意するか、テキスト補足を添える |
-| PDF の一部ページが欠落する | pages 指定が PDF の総ページ数を超えている | `pages` を有効範囲に収める |
-| 処理が遅い / タイムアウト | 高解像度画像を大量に渡している | 5 枚単位にバッチ分割して処理する |
+With Opus 4.7's 1M context window these represent approximately 2-3% of the total.
+However, batch splitting is recommended when processing large numbers of high-resolution
+images within a single session.
 
 ---
 
-## 関連ドキュメント
+## Common errors and remedies
 
-- [`skills/harness-review/references/vision-high-res-flow.md`](../skills/harness-review/references/vision-high-res-flow.md) — 典型シナリオ別フロー（PDF / 設計図 / UI スクリーンショット）
-- [`skills/harness-review/SKILL.md`](../skills/harness-review/SKILL.md) — harness-review メインスキル定義
-- [`docs/CLAUDE-feature-table.md`](CLAUDE-feature-table.md) — Opus 4.7 機能一覧（vision 2576px エントリ）
+| Symptom | Cause | Remedy |
+|---------|-------|--------|
+| Read tool returns no image | Incorrect file path or unsupported format | Verify path; limit to PNG / JPG / GIF / WebP / PDF |
+| Review result says "image is unclear" | Resolution too low (100px or below, etc.) | Provide a higher-resolution version or add text context |
+| Some PDF pages are missing | `pages` range exceeds the total page count | Keep `pages` within the valid range |
+| Slow processing / timeout | Large number of high-resolution images | Split into batches of 5 images |
+
+---
+
+## Related documents
+
+- [`skills/harness-review/references/vision-high-res-flow.md`](../skills/harness-review/references/vision-high-res-flow.md) — Per-scenario flows (PDF / schematic / UI screenshot)
+- [`skills/harness-review/SKILL.md`](../skills/harness-review/SKILL.md) — harness-review main skill definition
+- [`docs/CLAUDE-feature-table.md`](CLAUDE-feature-table.md) — Opus 4.7 feature list (vision 2576px entry)

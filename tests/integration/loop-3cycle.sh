@@ -1,6 +1,6 @@
 #!/bin/bash
 # loop-3cycle.sh
-# harness-loop の 3 サイクル連続 wake-up で文脈が途切れないことを確認する
+# Verify that context is not lost across 3 consecutive wake-ups of harness-loop
 
 set -euo pipefail
 
@@ -18,9 +18,9 @@ cp "${ROOT_DIR}/scripts/session-resume.sh" "${TMP_DIR}/scripts/session-resume.sh
 cp "${ROOT_DIR}/scripts/lib/progress-snapshot.sh" "${TMP_DIR}/scripts/lib/progress-snapshot.sh"
 
 cat > "${TMP_DIR}/Plans.md" <<'EOF'
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
-| 41.4.2 | loop smoke test | 3 cycle wake-up が途切れない | - | cc:TODO |
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
+| 41.4.2 | loop smoke test | 3 cycle wake-up continues without interruption | - | cc:TODO |
 EOF
 
 run_cycle() {
@@ -33,24 +33,24 @@ run_cycle() {
 # Continuity Briefing
 
 ## Current Focus
-- cycle-${cycle_no}: harness-loop の wake-up が継続することを確認する
+- cycle-${cycle_no}: verifying that harness-loop wake-up continues
 EOF
   : > "${TMP_DIR}/.claude/state/.memory-resume-pending"
 
   output="$(cd "${TMP_DIR}" && bash "./scripts/${command_name}" 2>/dev/null)"
 
   printf '%s' "${output}" | grep -q "cycle-${cycle_no}" || {
-    echo "cycle-${cycle_no} の文脈が出力に見つかりません"
+    echo "cycle-${cycle_no} context not found in output"
     exit 1
   }
 
   [ ! -f "${context_file}" ] || {
-    echo "cycle-${cycle_no} の文脈ファイルが消費されていません"
+    echo "cycle-${cycle_no} context file was not consumed"
     exit 1
   }
 
   [ ! -f "${TMP_DIR}/.claude/state/.memory-resume-pending" ] || {
-    echo "cycle-${cycle_no} の pending フラグが残っています"
+    echo "cycle-${cycle_no} pending flag still present"
     exit 1
   }
 }

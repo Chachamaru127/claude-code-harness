@@ -1,3 +1,3 @@
-ConfigMerger に `mergeWithStrategy(base, override, strategy)` メソッドを追加してください。
-`types.ts` にインターフェース定義があります。
-strategy は 'replace' | 'append' | 'prefer-base' を指定でき、ネストオブジェクトの配列マージ戦略を制御します。
+Add a `mergeWithStrategy(base, override, strategy)` method to ConfigMerger.
+The interface definition is in `types.ts`.
+The strategy can be 'replace' | 'append' | 'prefer-base' and controls the array merge strategy for nested objects.

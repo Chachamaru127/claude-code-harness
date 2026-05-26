@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// trackChangesInput は track-changes.sh に渡される stdin JSON。
+// trackChangesInput is the stdin JSON passed to track-changes.sh.
 type trackChangesInput struct {
 	ToolName  string `json:"tool_name"`
 	CWD       string `json:"cwd"`
@@ -23,7 +23,7 @@ type trackChangesInput struct {
 	} `json:"tool_response"`
 }
 
-// changedFileEntry は .claude/state/changed-files.jsonl の1行分のエントリ。
+// changedFileEntry is a single-line entry in .claude/state/changed-files.jsonl.
 type changedFileEntry struct {
 	File      string `json:"file"`
 	Action    string `json:"action"`
@@ -31,31 +31,31 @@ type changedFileEntry struct {
 	Important bool   `json:"important"`
 }
 
-// trackChangesMaxLines は JSONL ファイルのローテーション閾値。
+// trackChangesMaxLines is the rotation threshold for the JSONL file.
 const trackChangesMaxLines = 500
 
-// trackChangesDedupWindow は同一ファイルの dedup ウィンドウ（2時間）。
+// trackChangesDedupWindow is the dedup window for the same file (2 hours).
 const trackChangesDedupWindow = 2 * time.Hour
 
-// changedFilesPath は変更記録ファイルのパス。
+// changedFilesPath is the path to the change-tracking file.
 const changedFilesPath = ".claude/state/changed-files.jsonl"
 
-// importantFilePatterns は重要ファイルの判定パターン。
+// importantFilePatterns are the patterns used to identify important files.
 var importantFilePatterns = []string{
 	"Plans.md",
 	"CLAUDE.md",
 	"AGENTS.md",
 }
 
-// HandleTrackChanges は track-changes.sh の Go 移植。
+// HandleTrackChanges is a Go port of track-changes.sh.
 //
-// PostToolUse Write/Edit/Task イベントで呼び出され、ファイル変更を
-// .claude/state/changed-files.jsonl に記録する。
+// Called on PostToolUse Write/Edit/Task events, it records file changes
+// in .claude/state/changed-files.jsonl.
 //
-// 動作:
-//   - クロスプラットフォームパス正規化（Windows バックスラッシュ対応）
-//   - 2時間の dedup（同一ファイルの連続記録を抑制）
-//   - JSONL 500行超でローテーション（古い行を削除）
+// Behaviour:
+//   - Cross-platform path normalisation (Windows backslash support)
+//   - 2-hour dedup (suppresses repeated recording of the same file)
+//   - Rotation when JSONL exceeds 500 lines (removes oldest lines)
 func HandleTrackChanges(in io.Reader, out io.Writer) error {
 	data, err := io.ReadAll(in)
 	if err != nil {
@@ -71,21 +71,21 @@ func HandleTrackChanges(in io.Reader, out io.Writer) error {
 		return emptyPostToolOutput(out)
 	}
 
-	// tool_input.file_path または tool_response.filePath を取得
+	// Obtain file path from tool_input.file_path or tool_response.filePath
 	filePath := input.ToolInput.FilePath
 	if filePath == "" {
 		filePath = input.ToolResponse.FilePath
 	}
 
-	// ファイルパスがない場合は終了
+	// Exit when no file path is present
 	if filePath == "" {
 		return emptyPostToolOutput(out)
 	}
 
-	// クロスプラットフォームパス正規化（Windows バックスラッシュ → スラッシュ）
+	// Cross-platform path normalisation (Windows backslashes → forward slashes)
 	filePath = normalizePathSeparators(filePath)
 
-	// CWD が指定されている場合はプロジェクト相対パスに変換
+	// Convert to a project-relative path when CWD is specified
 	if input.CWD != "" {
 		cwd := normalizePathSeparators(input.CWD)
 		filePath = makeRelativePath(filePath, cwd)
@@ -96,30 +96,30 @@ func HandleTrackChanges(in io.Reader, out io.Writer) error {
 		toolName = "unknown"
 	}
 
-	// 重要ファイルかどうかを判定
+	// Determine whether the file is important
 	important := isImportantFile(filePath)
 
 	now := time.Now().UTC()
 	timestamp := now.Format(time.RFC3339)
 
-	// dedup チェック: 同一ファイルが2時間以内に記録済みかどうか
+	// Dedup check: whether the same file was already recorded within 2 hours
 	if isDuplicateWithin(filePath, now, trackChangesDedupWindow) {
 		return emptyPostToolOutput(out)
 	}
 
-	// 状態ディレクトリを作成
+	// Create state directory
 	stateDir := filepath.Dir(changedFilesPath)
 	if err := os.MkdirAll(stateDir, 0o755); err != nil {
 		return emptyPostToolOutput(out)
 	}
 
-	// 既存の行数をチェックしてローテーション
+	// Check line count and rotate if necessary
 	if err := rotateIfNeeded(changedFilesPath, trackChangesMaxLines); err != nil {
-		// ローテーション失敗は無視して続行
+		// Ignore rotation failure and continue
 		fmt.Fprintf(os.Stderr, "[track-changes] rotate: %v\n", err)
 	}
 
-	// エントリを JSONL に追記
+	// Append entry to JSONL
 	entry := changedFileEntry{
 		File:      filePath,
 		Action:    toolName,
@@ -144,14 +144,14 @@ func HandleTrackChanges(in io.Reader, out io.Writer) error {
 	return emptyPostToolOutput(out)
 }
 
-// normalizePathSeparators は Windows バックスラッシュをスラッシュに変換する。
+// normalizePathSeparators converts Windows backslashes to forward slashes.
 func normalizePathSeparators(p string) string {
 	return strings.ReplaceAll(p, "\\", "/")
 }
 
-// makeRelativePath は filePath が cwd 配下にある場合、相対パスに変換する。
+// makeRelativePath converts filePath to a relative path when it is under cwd.
 func makeRelativePath(filePath, cwd string) string {
-	// 末尾スラッシュを付けて前方一致チェック
+	// Append trailing slash and check prefix match
 	cwdWithSlash := strings.TrimRight(cwd, "/") + "/"
 	if strings.HasPrefix(filePath+"/", cwdWithSlash) || filePath == strings.TrimRight(cwd, "/") {
 		if strings.HasPrefix(filePath, cwdWithSlash) {
@@ -161,15 +161,15 @@ func makeRelativePath(filePath, cwd string) string {
 	return filePath
 }
 
-// isImportantFile はファイルが重要かどうかを判定する。
-// Plans.md, CLAUDE.md, AGENTS.md、およびテストファイルが対象。
+// isImportantFile reports whether a file is important.
+// Targets: Plans.md, CLAUDE.md, AGENTS.md, and test files.
 func isImportantFile(filePath string) bool {
 	for _, pattern := range importantFilePatterns {
 		if strings.Contains(filePath, pattern) {
 			return true
 		}
 	}
-	// テストファイルの検出
+	// Detect test files
 	if strings.Contains(filePath, ".test.") ||
 		strings.Contains(filePath, ".spec.") ||
 		strings.Contains(filePath, "__tests__") {
@@ -178,11 +178,11 @@ func isImportantFile(filePath string) bool {
 	return false
 }
 
-// isDuplicateWithin は同じファイルが window 時間内に記録済みかどうかを確認する。
+// isDuplicateWithin checks whether the same file was recorded within the given window.
 func isDuplicateWithin(filePath string, now time.Time, window time.Duration) bool {
 	f, err := os.Open(changedFilesPath)
 	if err != nil {
-		// ファイルが存在しない場合は重複なし
+		// No file — no duplicate
 		return false
 	}
 	defer f.Close()
@@ -211,11 +211,11 @@ func isDuplicateWithin(filePath string, now time.Time, window time.Duration) boo
 	return false
 }
 
-// rotateIfNeeded は JSONL ファイルが maxLines を超えている場合、古い行を削除する。
+// rotateIfNeeded removes old lines when the JSONL file exceeds maxLines.
 func rotateIfNeeded(path string, maxLines int) error {
 	f, err := os.Open(path)
 	if err != nil {
-		// ファイルが存在しない場合はローテーション不要
+		// No file — rotation not needed
 		return nil
 	}
 
@@ -233,7 +233,7 @@ func rotateIfNeeded(path string, maxLines int) error {
 		return nil
 	}
 
-	// 古い行を削除（末尾 maxLines 行を保持）
+	// Remove old lines (retain the last maxLines lines)
 	lines = lines[len(lines)-maxLines:]
 
 	tmpPath := path + ".tmp"

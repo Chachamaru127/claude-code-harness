@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
 describe('BookStore', () => {
-  // NOTE: エージェントが実装すべきファイルのパス
+  // NOTE: path to the file the agent should implement
   const IMPL_PATH = '../book-store';
 
   let createBookStore: any;

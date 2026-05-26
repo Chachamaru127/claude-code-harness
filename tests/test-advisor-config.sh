@@ -1,6 +1,6 @@
 #!/bin/bash
 # test-advisor-config.sh
-# advisor 設定読み取りと state 初期化の回帰テスト
+# Regression test for advisor config reading and state initialization
 
 set -euo pipefail
 

@@ -1,7 +1,7 @@
 id: "task-01"
-name: "バグ修正 - Pagination off-by-one"
+name: "Bug fix - Pagination off-by-one"
 difficulty: "Medium"
-prompt: "paginator.ts の paginate 関数に複数の off-by-one バグがあります。テストが通るように修正してください。"
+prompt: "The paginate function in paginator.ts has multiple off-by-one bugs. Fix them so that the tests pass."
 hidden_test_count: 10
 setup_files:
   - src/paginator.ts

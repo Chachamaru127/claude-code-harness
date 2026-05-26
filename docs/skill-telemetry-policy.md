@@ -1,36 +1,36 @@
 # Skill Telemetry Policy (Phase 62.2.3)
 
 > **Status**: Active (2026-05-07)
-> **対象**: Claude Code `2.1.126+` で発火する `claude_code.skill_activated` OTel event
-> の `invocation_trigger` field を local ledger に記録する場合の運用ルール。
+> **Scope**: Operational rules for recording the `invocation_trigger` field of the
+> `claude_code.skill_activated` OTel event fired by Claude Code `2.1.126+` to a local ledger.
 
-## ひとことで
+## In a nutshell
 
-Skill 発動の trigger 種別 (人間 / モデル / skill 連鎖) を **local ledger** に記録し、
-無駄に発動している skill を特定する材料にする。
-record する場合は **privacy / retention / opt-out** を必ず守る。
+Record the trigger type of skill activations (human / model / skill-chain) in a **local ledger**
+to identify skills that are firing unnecessarily.
+When recording, always follow **privacy / retention / opt-out** rules.
 
-## たとえると
+## Analogy
 
-「読んだ本のタイトルだけ家計簿に書く」のと似ている。
-中身 (本文 = skill 入力 / 出力) は書かず、いつ・どの種別で・どの本を読んだか (skill_activated event)
-だけを記録する。
+Similar to "writing only the book title in a household ledger."
+The content (body = skill input / output) is not recorded — only when, by what trigger type,
+and which skill was activated (the `skill_activated` event).
 
-## telemetry sink 設計の前提
+## Telemetry sink design assumptions
 
-Phase 58.2.3 で「telemetry sink 設計が先」と判断済み。本 doc はその sink 仕様を定める。
+Phase 58.2.3 established that "telemetry sink design comes first." This doc defines that sink spec.
 
-| 項目 | 仕様 |
+| Item | Spec |
 |------|------|
-| sink 種別 | **local-only JSON Lines ledger** (外部送信なし) |
-| ledger path | `.claude/state/skill-trigger-stats.jsonl` |
-| append 方式 | **append-only** (追記のみ。compaction も deletion もしない) |
-| 取得経路 | Claude Code の OTel event を `scripts/skill-trigger-telemetry.sh` で受け取り |
-| 出力形式 | 1 行 1 JSON object |
+| Sink type | **local-only JSON Lines ledger** (no external transmission) |
+| Ledger path | `.claude/state/skill-trigger-stats.jsonl` |
+| Append mode | **append-only** (append only — no compaction or deletion) |
+| Ingestion path | Receive Claude Code OTel events via `scripts/skill-trigger-telemetry.sh` |
+| Output format | 1 JSON object per line |
 
-## 記録フィールド
+## Recorded fields
 
-各 record は以下の field のみを含む。**個人を特定できる情報は記録しない**。
+Each record contains only the following fields. **No personally identifiable information is recorded.**
 
 ```json
 {
@@ -42,50 +42,51 @@ Phase 58.2.3 で「telemetry sink 設計が先」と判断済み。本 doc は�
 }
 ```
 
-| field | 必須 | 説明 |
-|-------|------|------|
+| Field | Required | Description |
+|-------|----------|-------------|
 | `timestamp` | yes | RFC3339 UTC |
-| `skill_name` | yes | 発動した skill 名 (`harness-work`, `harness-review` 等) |
-| `invocation_trigger` | yes | `human` / `model` / `skill-chain` のいずれか |
-| `session_id` | yes | CC session ID (12 文字以上ある場合は前 12 文字に truncate) |
-| `duration_ms` | no | skill 実行時間。CC が提供する場合のみ記録 |
+| `skill_name` | yes | Name of the activated skill (e.g., `harness-work`, `harness-review`) |
+| `invocation_trigger` | yes | One of `human` / `model` / `skill-chain` |
+| `session_id` | yes | CC session ID (truncated to first 12 characters if longer than 12 chars) |
+| `duration_ms` | no | Skill execution time. Only recorded if provided by CC |
 
-**記録しない field**:
-- skill の入力 prompt
-- skill の出力本文
-- ユーザー名 / メールアドレス
-- API token / 認証情報
-- 個別ファイルパス (skill 名以上の粒度では記録しない)
+**Fields not recorded**:
+- Skill input prompt
+- Skill output body
+- Username / email address
+- API token / authentication credentials
+- Individual file paths (granularity beyond skill name is not recorded)
 
-## privacy 原則
+## Privacy principles
 
-1. **local-only**: ledger は `.claude/state/` に置き、外部送信しない
-2. **identifier minimization**: session_id は 12 文字以下の prefix に truncate
-3. **content opacity**: skill の入出力本文は記録しない
-4. **opt-out 可能**: 環境変数 `HARNESS_SKILL_TELEMETRY_DISABLE=1` で無効化
+1. **local-only**: The ledger is stored in `.claude/state/` and not transmitted externally
+2. **identifier minimization**: `session_id` is truncated to a prefix of 12 characters or fewer
+3. **content opacity**: Skill input/output body is not recorded
+4. **opt-out available**: Disable with the environment variable `HARNESS_SKILL_TELEMETRY_DISABLE=1`
 
-## retention
+## Retention
 
-| Trigger | 保持期間 | 削除タイミング |
-|---------|---------|--------------|
-| 既定 | **30 日** | `scripts/maintenance/prune-skill-telemetry.sh` (manual or cron) |
-| user 削除要求 | 即時 | `rm .claude/state/skill-trigger-stats.jsonl` |
-| repo clone / share 時 | 共有しない | `.gitignore` に追加 (state path 一括除外で既存 .gitignore がカバー) |
+| Trigger | Retention period | Deletion timing |
+|---------|-----------------|----------------|
+| Default | **30 days** | `scripts/maintenance/prune-skill-telemetry.sh` (manual or cron) |
+| User deletion request | Immediate | `rm .claude/state/skill-trigger-stats.jsonl` |
+| On repo clone / sharing | Do not share | Add to `.gitignore` (existing .gitignore covers state path with bulk exclusion) |
 
-30 日後の record は手動削除を **推奨** するが、自動削除はしない (audit 用途で長期保持したいケースを想定)。
-削除を実装する場合は append-only 性質を保つために rotation 方式 (`stats.jsonl.{date}` への移動) にする。
+Deletion of records older than 30 days is **recommended** but not automated
+(to support long-term retention for audit use cases).
+If implementing deletion, use rotation format (`stats.jsonl.{date}` move) to preserve append-only nature.
 
-## opt-out
+## Opt-out
 
-### 完全無効化
+### Full disable
 
-`.claude/settings.json` または環境変数で無効化:
+Disable via `.claude/settings.json` or environment variable:
 
 ```bash
 export HARNESS_SKILL_TELEMETRY_DISABLE=1
 ```
 
-または:
+Or:
 
 ```json
 {
@@ -95,9 +96,9 @@ export HARNESS_SKILL_TELEMETRY_DISABLE=1
 }
 ```
 
-### 部分無効化 (skill 単位)
+### Partial disable (per-skill)
 
-`.claude/settings.local.json` に exclude list を書く:
+Add an exclude list to `.claude/settings.local.json`:
 
 ```json
 {
@@ -107,21 +108,21 @@ export HARNESS_SKILL_TELEMETRY_DISABLE=1
 }
 ```
 
-## 関連 doc
+## Related docs
 
-- Phase 58.2.3 (`docs/upstream-followups-phase58-2026-05-03.md`) — telemetry sink 設計判断
-- Phase 61 (`docs/sandbagging-aware-weak-supervision.md`) — `.claude/state/elicitation/events.jsonl` ledger と同じ append-only 設計を踏襲
+- Phase 58.2.3 (`docs/upstream-followups-phase58-2026-05-03.md`) — telemetry sink design decision
+- Phase 61 (`docs/sandbagging-aware-weak-supervision.md`) — follows the same append-only design as the `.claude/state/elicitation/events.jsonl` ledger
 - Claude Code OTel reference (Anthropic docs)
 
-## Acceptance 条件 (Phase 62.2.3 DoD)
+## Acceptance criteria (Phase 62.2.3 DoD)
 
-- [x] `docs/skill-telemetry-policy.md` がある (本 doc)
-- [x] privacy / retention / opt-out が記載
-- [x] Phase 58.2.3 の判断と矛盾しない (sink 設計を local-only 限定で固定)
-- [x] sink path: `.claude/state/skill-trigger-stats.jsonl`
-- [x] schema: timestamp / skill_name / invocation_trigger / session_id / duration_ms
+- [x] `docs/skill-telemetry-policy.md` exists (this doc)
+- [x] privacy / retention / opt-out documented
+- [x] Does not conflict with Phase 58.2.3 decision (sink design fixed as local-only)
+- [x] Sink path: `.claude/state/skill-trigger-stats.jsonl`
+- [x] Schema: timestamp / skill_name / invocation_trigger / session_id / duration_ms
 
-## 参考
+## Reference
 
 - Claude Code 2.1.126 CHANGELOG: `claude_code.skill_activated` OTel event includes `invocation_trigger`
-- Phase 61 의 sandbagging-aware weak-supervision ledger 設計 (privacy-first, append-only)
+- Phase 61 sandbagging-aware weak-supervision ledger design (privacy-first, append-only)

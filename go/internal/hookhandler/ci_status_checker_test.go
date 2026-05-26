@@ -60,7 +60,7 @@ func TestCIStatusChecker_NonPushCommand(t *testing.T) {
 
 func TestCIStatusChecker_GitPushCommand_NoGH(t *testing.T) {
 	dir := t.TempDir()
-	// gh コマンドが存在しない場合はスキップ
+	// Skip when the gh command is not available.
 	h := &CIStatusCheckerHandler{ProjectRoot: dir, GHCommand: "/nonexistent/gh"}
 
 	input := `{
@@ -122,7 +122,7 @@ func TestCIStatusChecker_GitPushCommand_WithGH(t *testing.T) {
 		t.Errorf("expected 'CI monitoring started' in reason, got: %s", resp.Reason)
 	}
 
-	// 同期呼び出しなので Handle() が戻った時点でランナーは必ず実行済み。
+	// Synchronous call, so the runner is guaranteed to have run by the time Handle() returns.
 	if !runnerCalled.Load() {
 		t.Error("runner was not called synchronously")
 	}
@@ -135,7 +135,7 @@ func TestCIStatusChecker_GHPRCreateCommand(t *testing.T) {
 		ProjectRoot: dir,
 		GHCommand:   findGHOrSkip(t),
 		AsyncRunner: func(projectRoot, stateDir, bashCmd, ghCommand string) {
-			// ノーオペレーション
+			// no-op
 		},
 	}
 
@@ -167,7 +167,7 @@ func TestCIStatusChecker_WithExistingFailureSignal(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// 既存の失敗シグナルを書き込む
+	// Write an existing failure signal.
 	signalsFile := filepath.Join(stateDir, "breezing-signals.jsonl")
 	failureLine := `{"signal":"ci_failure_detected","conclusion":"failure","trigger_command":"git push"}` + "\n"
 	if err := os.WriteFile(signalsFile, []byte(failureLine), 0600); err != nil {
@@ -178,7 +178,7 @@ func TestCIStatusChecker_WithExistingFailureSignal(t *testing.T) {
 		ProjectRoot: dir,
 		GHCommand:   findGHOrSkip(t),
 		AsyncRunner: func(projectRoot, stateDir, bashCmd, ghCommand string) {
-			// ノーオペレーション
+			// no-op
 		},
 	}
 
@@ -201,8 +201,8 @@ func TestCIStatusChecker_WithExistingFailureSignal(t *testing.T) {
 	if resp.Decision != "approve" {
 		t.Errorf("expected decision=approve, got %s", resp.Decision)
 	}
-	// CI 失敗コンテキストが注入されること
-	if !strings.Contains(resp.AdditionalContext, "CI 失敗を検知しました") {
+	// CI failure context should be injected.
+	if !strings.Contains(resp.AdditionalContext, "CI failure detected") {
 		t.Errorf("expected CI failure context injected, got: %s", resp.AdditionalContext)
 	}
 	if !strings.Contains(resp.AdditionalContext, "failure") {
@@ -244,21 +244,22 @@ func TestDefaultCIRunner_MaxWait(t *testing.T) {
 	dir := t.TempDir()
 	stateDir := dir
 
-	// ポーリングが呼ばれた回数を記録するダミー gh スクリプトを作成
+	// Create a dummy gh script to record how many times polling is called.
 	callCount := 0
 	var callTimes []time.Time
 
-	// 実際の defaultCIRunner の maxWait/pollInterval 定数は変更されているはずなので、
-	// ここでは AsyncRunner モックで正しい値が使われていることを間接的に検証する。
-	// （直接 defaultCIRunner を呼ぶと 120s 待つため、ここでは定数を確認する別アプローチを採る）
+	// The actual maxWait/pollInterval constants of defaultCIRunner should have been updated,
+	// so here we indirectly verify that the correct values are used via an AsyncRunner mock.
+	// (Calling defaultCIRunner directly would block for 120 s, so a different approach is used.)
 
-	// 代わりに: カスタムランナーで 2 回ポーリングを確認（25s では 2 回しかできなかった制約の検証）
+	// Alternative: verify with a custom runner that 2+ polls are possible
+	// (validating the constraint where 25 s allowed only 2 polls).
 	h := &CIStatusCheckerHandler{
 		ProjectRoot: dir,
 		GHCommand:   findGHOrSkip(t),
 		AsyncRunner: func(projectRoot, stateDir, bashCmd, ghCommand string) {
-			// 3 回以上ポーリングできることを想定した設計になっているか検証
-			// （maxWait=120s, pollInterval=10s → 最大 12 回ポーリング可能）
+			// Verify the design allows 3+ polls
+			// (maxWait=120s, pollInterval=10s → up to 12 polls possible).
 			for i := 0; i < 3; i++ {
 				callCount++
 				callTimes = append(callTimes, time.Now())
@@ -277,7 +278,7 @@ func TestDefaultCIRunner_MaxWait(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// ランナーが呼ばれ、3 回のポーリングが完了していること（同期実行を確認）
+	// The runner should have been called and completed 3 polls (synchronous execution verified).
 	if callCount != 3 {
 		t.Errorf("expected runner to poll 3 times, got %d", callCount)
 	}
@@ -287,12 +288,12 @@ func TestDefaultCIRunner_MaxWait(t *testing.T) {
 	_ = stateDir
 }
 
-// findGHOrSkip は gh コマンドのパスを返す。存在しない場合はテストをスキップする。
-// テストで GHCommand フィールドに渡す有効なパスが必要な場合に使用する。
-// （gh が実際に存在する環境でのみ、CI 監視ロジックのテストを実行する）
+// findGHOrSkip returns the path to the gh command, or skips the test when it is not found.
+// Used when a valid path is needed for the GHCommand field in tests.
+// (CI monitoring logic tests run only in environments where gh is actually available.)
 func findGHOrSkip(t *testing.T) string {
 	t.Helper()
-	// ダミーの gh スクリプトを作成してテストを通過させる
+	// Create a dummy gh script so the test can proceed.
 	dir := t.TempDir()
 	ghScript := filepath.Join(dir, "gh")
 	script := "#!/bin/sh\nexit 0\n"

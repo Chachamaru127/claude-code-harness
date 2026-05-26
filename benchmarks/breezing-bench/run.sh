@@ -1,18 +1,18 @@
 #!/bin/bash
 # run.sh
-# Breezing v2 ベンチマーク実行スクリプト
+# Breezing v2 benchmark runner script
 #
 # Usage: ./run.sh --task <1-10|all> --iterations <N> --mode <vanilla|breezing|both>
 
 set -euo pipefail
 
-# macOS 互換: timeout コマンドのポータブルラッパー
+# macOS compatible: portable wrapper for the timeout command
 if command -v timeout &>/dev/null; then
   TIMEOUT_CMD="timeout"
 elif command -v gtimeout &>/dev/null; then
   TIMEOUT_CMD="gtimeout"
 else
-  # macOS fallback: background + kill で実装
+  # macOS fallback: implemented via background + kill
   portable_timeout() {
     local duration="$1"
     shift
@@ -34,7 +34,7 @@ PLUGIN_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 RESULTS_DIR="$SCRIPT_DIR/results"
 TASKS_DIR="$SCRIPT_DIR/tasks"
 
-# デフォルト値
+# Default values
 TASK_NUM="all"
 ITERATIONS=2
 MODE="both"
@@ -72,7 +72,7 @@ EXAMPLES:
 EOF
 }
 
-# 引数解析
+# Argument parsing
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --task) TASK_NUM="$2"; shift 2 ;;
@@ -88,14 +88,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# タスクリスト構築
+# Build task list
 if [[ "$TASK_NUM" == "all" ]]; then
   TASKS=(01 02 03 04 05 06 07 08 09 10)
 else
   TASKS=($(printf "%02d" "$TASK_NUM"))
 fi
 
-# 実行順をランダム化するための関数
+# Function to randomize execution order
 generate_execution_order() {
   local seed="$1"
   local -a order=()
@@ -103,7 +103,7 @@ generate_execution_order() {
   for task in "${TASKS[@]}"; do
     for iter in $(seq 1 "$ITERATIONS"); do
       if [[ "$MODE" == "both" ]]; then
-        # seed に基づいて順序を決定
+        # Determine order based on seed
         local hash_input="${seed}_${task}_${iter}"
         local hash_val
         hash_val=$(echo -n "$hash_input" | md5sum | cut -c1-8)
@@ -123,7 +123,7 @@ generate_execution_order() {
   printf '%s\n' "${order[@]}"
 }
 
-# 実行順を生成
+# Generate execution order
 mapfile -t EXEC_ORDER < <(generate_execution_order "$SEED")
 
 # Dry run
@@ -145,10 +145,10 @@ if [[ "$DRY_RUN" == true ]]; then
   exit 0
 fi
 
-# 結果ディレクトリ作成
+# Create results directory
 mkdir -p "$RESULTS_DIR"
 
-# タスクプロンプトを読み込む関数
+# Function to load task prompt
 get_task_prompt() {
   local task_num="$1"
   local task_dir="$TASKS_DIR/task-${task_num}"
@@ -159,11 +159,11 @@ get_task_prompt() {
     return 1
   fi
 
-  # YAML からプロンプトを抽出 (簡易パース)
+  # Extract prompt from YAML (simple parse)
   grep '^prompt:' "$yaml_file" | sed 's/^prompt: *//' | sed 's/^"//' | sed 's/"$//'
 }
 
-# セットアップファイルをコピーする関数
+# Function to copy setup files
 setup_work_dir() {
   local task_num="$1"
   local work_dir="$2"
@@ -171,13 +171,13 @@ setup_work_dir() {
 
   mkdir -p "$work_dir"
 
-  # setup/ の内容をコピー
+  # Copy contents of setup/
   if [[ -d "$task_dir/setup" ]]; then
     cp -r "$task_dir/setup/"* "$work_dir/"
   fi
 }
 
-# 単一実行
+# Single run
 run_single() {
   local task_num="$1"
   local iter="$2"
@@ -194,18 +194,18 @@ run_single() {
   echo "=== Running: Task $task_num | Iter $iter | $condition ==="
   echo "  Work dir: $work_dir"
 
-  # セットアップ
+  # Setup
   setup_work_dir "$task_num" "$work_dir"
 
-  # タスクプロンプト
+  # Task prompt
   local task_prompt
   task_prompt=$(get_task_prompt "$task_num")
 
-  # 開始時刻
+  # Start time
   local start_time
   start_time=$(date +%s)
 
-  # Claude CLI で実行
+  # Run with Claude CLI
   local exit_code=0
   if [[ "$condition" == "vanilla" ]]; then
     run_vanilla "$work_dir" "$task_prompt" "$result_id" || exit_code=$?
@@ -213,14 +213,14 @@ run_single() {
     run_breezing "$work_dir" "$task_prompt" "$result_id" || exit_code=$?
   fi
 
-  # 終了時刻
+  # End time
   local end_time
   end_time=$(date +%s)
   local duration=$((end_time - start_time))
 
   echo "  Duration: ${duration}s"
 
-  # グレーディング
+  # Grading
   echo "  Grading..."
   local grade_output
   grade_output=$(python3 "$SCRIPT_DIR/grader.py" \
@@ -228,7 +228,7 @@ run_single() {
     --task-dir "$TASKS_DIR/task-${task_num}" \
     --json 2>/dev/null || echo '{"primary":{"score":0.0,"passed":0,"total":0,"error":"grader failed"}}')
 
-  # 結果保存
+  # Save results
   mkdir -p "$result_dir"
   cp -r "$work_dir" "$result_dir/project" 2>/dev/null || true
 
@@ -255,11 +255,11 @@ ENDJSON
   echo "  Score: $score"
   echo "  Result: $result_dir/result.json"
 
-  # 作業ディレクトリクリーンアップ
+  # Clean up work directory
   rm -rf "$work_dir"
 }
 
-# Vanilla 実行
+# Vanilla run
 run_vanilla() {
   local work_dir="$1"
   local task_prompt="$2"
@@ -273,7 +273,7 @@ Write clean TypeScript code with proper error handling.
 Create tests for your implementation.
 Make sure all existing tests still pass."
 
-  # Claude CLI で実行 (非対話, パーミッション全スキップ, セッション保存なし)
+  # Run with Claude CLI (non-interactive, skip all permissions, no session persistence)
   ( cd "$work_dir" && \
     $TIMEOUT_CMD $((MAX_TURNS * 30)) claude \
       --model "$MODEL" \
@@ -287,7 +287,7 @@ Make sure all existing tests still pass."
     >"$RESULTS_DIR/${result_id}.stdout" || true
 }
 
-# Breezing 実行
+# Breezing run
 run_breezing() {
   local work_dir="$1"
   local task_prompt="$2"
@@ -317,7 +317,7 @@ ${task_prompt}
 6. If Reviewer finds CRITICAL issues, message Implementer to fix them
 7. After review cycle, clean up the team"
 
-  # Breezing は Team 使用のため予算を増やす
+  # Increase budget for Breezing because it uses Teams
   ( cd "$work_dir" && \
     $TIMEOUT_CMD $((MAX_TURNS * 60)) claude \
       --model "$MODEL" \
@@ -331,7 +331,7 @@ ${task_prompt}
     >"$RESULTS_DIR/${result_id}.stdout" || true
 }
 
-# メイン実行ループ
+# Main execution loop
 echo "=== Breezing v2 Benchmark ==="
 echo "Tasks: ${TASKS[*]}"
 echo "Iterations: $ITERATIONS"

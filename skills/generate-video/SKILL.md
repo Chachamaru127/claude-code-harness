@@ -1,8 +1,6 @@
 ---
 name: generate-video
 description: "Auto-generate product demo videos. Internal/manual workflow only; use from an explicit /generate-video command or a parent media workflow. Requires Remotion setup."
-description-en: "Auto-generate product demo videos. Internal/manual workflow only; use from an explicit /generate-video command or a parent media workflow. Requires Remotion setup."
-description-ja: "プロダクトデモ動画を自動生成。明示的な /generate-video または親メディアワークフローからのみ使う。通常発話からの自動起動はしない。Remotion セットアップが必要。"
 allowed-tools: ["Read", "Write", "Edit", "Grep", "Glob", "Bash", "Task", "AskUserQuestion", "WebFetch"]
 disable-model-invocation: true
 user-invocable: false
@@ -12,178 +10,178 @@ context: fork
 
 # Generate Video Skill
 
-プロダクト説明動画の自動生成を担当するスキル群です。
+Skills responsible for automatic generation of product demo videos.
 
-## 起動契約
+## Invocation Contract
 
-このスキルは `user-invocable: false` かつ `disable-model-invocation: true` です。
-通常のユーザー発話（例: 「動画を作って」）で Claude が自動選択する前提にはしません。
+This skill has `user-invocable: false` and `disable-model-invocation: true`.
+It is not intended to be auto-selected by Claude from ordinary user speech (e.g., "make a video").
 
-- 明示的な `/generate-video` コマンド、または親メディアワークフローから内部的に起動される時だけ使います。
-- `allowed-tools` は Claude Code 用です。Claude ではユーザー確認に `AskUserQuestion` を使えます。
-- Codex mirror では同等の確認は `request_user_input` 相当の計画モード入力に読み替えます。通常実行でそのツールがない場合は、既定値を提示して停止せず進め、重要な未確定事項だけユーザーへ確認します。
-- `disable-model-invocation: true` は「説明文だけを見てモデルが勝手に起動しない」という意味です。slash や親 workflow から明示起動された場合は本文手順に従います。
+- Only invoked explicitly via a `/generate-video` command or internally from a parent media workflow.
+- `allowed-tools` is for Claude Code. Claude can use `AskUserQuestion` for user confirmation.
+- In Codex mirrors, the equivalent confirmation maps to plan-mode input for `request_user_input`. When that tool is unavailable in normal execution, present defaults and proceed without halting — only confirm critical unknowns with the user.
+- `disable-model-invocation: true` means the model will not auto-invoke this skill just from reading the description. When explicitly invoked via a slash command or parent workflow, follow the steps in this document.
 
 ---
 
-## 概要
+## Overview
 
-`/generate-video` コマンドの内部で使用されるスキルです。
-コードベース分析 → シナリオ提案 → 並列生成のフローを実行します。
+This skill is used internally by the `/generate-video` command.
+It executes the codebase analysis → scenario proposal → parallel generation flow.
 
-## 機能詳細
+## Feature Details
 
-| 機能 | 詳細 |
-|------|------|
-| **ベストプラクティス** | See [references/best-practices.md](${CLAUDE_SKILL_DIR}/references/best-practices.md) |
-| **コードベース分析** | See [references/analyzer.md](${CLAUDE_SKILL_DIR}/references/analyzer.md) |
-| **シナリオプランニング** | See [references/planner.md](${CLAUDE_SKILL_DIR}/references/planner.md) |
-| **並列シーン生成** | See [references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md) |
-| **視覚効果ライブラリ** | See [references/visual-effects.md](${CLAUDE_SKILL_DIR}/references/visual-effects.md) |
-| **AI画像生成** | See [references/image-generator.md](${CLAUDE_SKILL_DIR}/references/image-generator.md) |
-| **画像品質判定** | See [references/image-quality-check.md](${CLAUDE_SKILL_DIR}/references/image-quality-check.md) |
+| Feature | Details |
+|---------|---------|
+| **Best practices** | See [references/best-practices.md](${CLAUDE_SKILL_DIR}/references/best-practices.md) |
+| **Codebase analysis** | See [references/analyzer.md](${CLAUDE_SKILL_DIR}/references/analyzer.md) |
+| **Scenario planning** | See [references/planner.md](${CLAUDE_SKILL_DIR}/references/planner.md) |
+| **Parallel scene generation** | See [references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md) |
+| **Visual effects library** | See [references/visual-effects.md](${CLAUDE_SKILL_DIR}/references/visual-effects.md) |
+| **AI image generation** | See [references/image-generator.md](${CLAUDE_SKILL_DIR}/references/image-generator.md) |
+| **Image quality assessment** | See [references/image-quality-check.md](${CLAUDE_SKILL_DIR}/references/image-quality-check.md) |
 
 ## Prerequisites
 
-- Remotion がセットアップ済み（`/remotion-setup`）
+- Remotion is set up (`/remotion-setup`)
 - Node.js 18+
-- （オプション）`GOOGLE_AI_API_KEY` - AI画像生成用
+- (Optional) `GOOGLE_AI_API_KEY` — for AI image generation
 
-## `/generate-video` フロー
+## `/generate-video` Flow
 
 ```
 /generate-video
     │
-    ├─[Step 1] 分析（analyzer.md）
-    │   ├─ フレームワーク検出
-    │   ├─ 主要機能検出
-    │   ├─ UIコンポーネント検出
-    │   └─ プロジェクト資産解析（Plans.md, CHANGELOG等）
+    ├─[Step 1] Analysis (analyzer.md)
+    │   ├─ Framework detection
+    │   ├─ Key feature detection
+    │   ├─ UI component detection
+    │   └─ Project asset analysis (Plans.md, CHANGELOG, etc.)
     │
-    ├─[Step 2] シナリオ提案（planner.md）
-    │   ├─ 動画タイプ自動判定
-    │   ├─ シーン構成提案
-    │   └─ ユーザー確認
+    ├─[Step 2] Scenario proposal (planner.md)
+    │   ├─ Auto-detect video type
+    │   ├─ Propose scene structure
+    │   └─ User confirmation
     │
-    ├─[Step 2.5] 素材生成（image-generator.md）← NEW
-    │   ├─ 素材必要判定（イントロ、CTA等）
-    │   ├─ Nano Banana Pro で2枚生成
-    │   ├─ Claude が品質判定（image-quality-check.md）
-    │   └─ OK → 採用 / NG → 再生成（最大3回）
+    ├─[Step 2.5] Asset generation (image-generator.md) ← NEW
+    │   ├─ Determine if assets are needed (intro, CTA, etc.)
+    │   ├─ Generate 2 images with Nano Banana Pro
+    │   ├─ Claude quality-checks (image-quality-check.md)
+    │   └─ OK → adopt / NG → regenerate (max 3 times)
     │
-    └─[Step 3] 並列生成（generator.md）
-        ├─ シーン並列生成（Task tool）
-        ├─ 統合 + トランジション
-        └─ 最終レンダリング
+    └─[Step 3] Parallel generation (generator.md)
+        ├─ Parallel scene generation (Task tool)
+        ├─ Integration + transitions
+        └─ Final rendering
 ```
 
-## 実行手順
+## Execution Steps
 
-1. ユーザーが `/generate-video` を実行
-2. Remotion セットアップ確認
-3. `analyzer.md` でコードベース分析
-4. `planner.md` でシナリオ提案 + ユーザー確認
-5. `generator.md` で並列生成
-6. 完了報告
+1. User runs `/generate-video`
+2. Verify Remotion setup
+3. Analyze codebase with `analyzer.md`
+4. Propose scenario with `planner.md` + user confirmation
+5. Generate in parallel with `generator.md`
+6. Report completion
 
-## 動画タイプ（ファネル別）
+## Video Types (by funnel stage)
 
-| タイプ | ファネル | 長さ目安 | 自動判定条件 | 構成の芯 |
-|--------|----------|----------|--------------|----------|
-| **LP/広告ティザー** | 認知〜興味 | 30-90秒 | 新規プロジェクト | 痛み→結果→CTA |
-| **Introデモ** | 興味→検討 | 2-3分 | UI変更検出 | 1ユースケース完走 |
-| **リリースノート** | 検討→確信 | 1-3分 | CHANGELOG更新 | Before/After重視 |
-| **アーキテクチャ解説** | 確信→決裁 | 5-30分 | 大規模構造変更 | 実運用+証拠 |
-| **オンボーディング** | 継続・活用 | 30秒-数分 | 初回セットアップ | Aha体験への最短パス |
+| Type | Funnel | Length | Auto-detect condition | Core structure |
+|------|--------|--------|-----------------------|----------------|
+| **LP/Ad teaser** | Awareness → Interest | 30-90s | New project | Pain → Result → CTA |
+| **Intro demo** | Interest → Consideration | 2-3min | UI changes detected | 1 use case end-to-end |
+| **Release notes** | Consideration → Conviction | 1-3min | CHANGELOG updated | Before/After focus |
+| **Architecture overview** | Conviction → Decision | 5-30min | Large structural changes | Real usage + evidence |
+| **Onboarding** | Retention / adoption | 30s-several min | First-time setup | Shortest path to Aha moment |
 
-> 詳細: [references/best-practices.md](${CLAUDE_SKILL_DIR}/references/best-practices.md)
+> Details: [references/best-practices.md](${CLAUDE_SKILL_DIR}/references/best-practices.md)
 
-## シーンテンプレート
+## Scene Templates
 
-### 90秒ティザー（LP/広告向け）
+### 90-second teaser (LP/ad)
 
-| 時間 | シーン | 内容 |
-|------|--------|------|
-| 0-5秒 | Hook | 痛み or 望む結果 |
-| 5-15秒 | Problem+Promise | 対象ユーザーと約束 |
-| 15-55秒 | Workflow | 象徴ワークフロー |
-| 55-70秒 | Differentiator | 差別化の根拠 |
-| 70-90秒 | CTA | 次の一手 |
+| Time | Scene | Content |
+|------|-------|---------|
+| 0-5s | Hook | Pain or desired outcome |
+| 5-15s | Problem+Promise | Target user and promise |
+| 15-55s | Workflow | Signature workflow |
+| 55-70s | Differentiator | Evidence of differentiation |
+| 70-90s | CTA | Next step |
 
-### 3分Introデモ（検討向け）
+### 3-minute intro demo (consideration)
 
-| 時間 | シーン | 内容 |
-|------|--------|------|
-| 0-10秒 | Hook | 結論+痛み |
-| 10-30秒 | UseCase | ユースケース宣言 |
-| 30-140秒 | Demo | 実画面で完走 |
-| 140-170秒 | Objection | よくある不安1つ潰す |
-| 170-180秒 | CTA | 行動喚起 |
+| Time | Scene | Content |
+|------|-------|---------|
+| 0-10s | Hook | Conclusion + pain |
+| 10-30s | UseCase | Use case declaration |
+| 30-140s | Demo | Live screen end-to-end |
+| 140-170s | Objection | Address 1 common concern |
+| 170-180s | CTA | Call to action |
 
-### 共通シーン
+### Common scenes
 
-| シーン | 推奨時間 | 内容 |
-|--------|----------|------|
-| イントロ | 3-5秒 | ロゴ + タグライン |
-| 機能デモ | 10-30秒 | Playwrightキャプチャ |
-| アーキテクチャ図 | 10-20秒 | Mermaid → アニメーション |
-| CTA | 3-5秒 | URL + 連絡先 |
+| Scene | Recommended time | Content |
+|-------|-----------------|---------|
+| Intro | 3-5s | Logo + tagline |
+| Feature demo | 10-30s | Playwright capture |
+| Architecture diagram | 10-20s | Mermaid → animation |
+| CTA | 3-5s | URL + contact |
 
-> 詳細テンプレート: [${CLAUDE_SKILL_DIR}/references/best-practices.md](${CLAUDE_SKILL_DIR}/references/best-practices.md#テンプレート)
+> Detailed templates: [${CLAUDE_SKILL_DIR}/references/best-practices.md](${CLAUDE_SKILL_DIR}/references/best-practices.md#templates)
 
-## 音声同期ルール（重要）
+## Audio Sync Rules (Important)
 
-ナレーション付き動画では以下を厳守:
+For narrated videos, strictly follow these rules:
 
-| ルール | 値 |
-|--------|-----|
-| 音声開始 | シーン開始 + 30f（1秒待機） |
-| シーン長さ | 30f + 音声長さ + 20f余白 |
-| トランジション | 15f（隣接シーンとオーバーラップ） |
-| シーン開始計算 | 前シーン開始 + 前シーン長 - 15f |
+| Rule | Value |
+|------|-------|
+| Audio start | Scene start + 30f (1 second delay) |
+| Scene length | 30f + audio length + 20f buffer |
+| Transition | 15f (overlap with adjacent scenes) |
+| Scene start calculation | Previous scene start + previous scene length - 15f |
 
-**事前確認**: `ffprobe` で音声長さを確認してからシーン設計
+**Pre-check**: Confirm audio length with `ffprobe` before designing scenes
 
-> 詳細: [${CLAUDE_SKILL_DIR}/references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md#音声同期ルール重要)
+> Details: [${CLAUDE_SKILL_DIR}/references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md#audio-sync-rules-important)
 
-## BGM サポート
+## BGM Support
 
-| 項目 | 推奨値 |
-|------|--------|
-| ナレーションあり | bgmVolume: 0.20 - 0.30 |
-| ナレーションなし | bgmVolume: 0.50 - 0.80 |
-| ファイル配置 | `public/BGM/` |
+| Item | Recommended value |
+|------|-------------------|
+| With narration | bgmVolume: 0.20 - 0.30 |
+| Without narration | bgmVolume: 0.50 - 0.80 |
+| File location | `public/BGM/` |
 
-> 詳細: [${CLAUDE_SKILL_DIR}/references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md#bgm-サポート)
+> Details: [${CLAUDE_SKILL_DIR}/references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md#bgm-support)
 
-## 字幕サポート
+## Subtitle Support
 
-| ルール | 値 |
-|--------|-----|
-| 字幕開始 | 音声開始と同じ |
-| 字幕duration | 音声長 + 10f |
-| フォント | Base64埋め込み推奨 |
+| Rule | Value |
+|------|-------|
+| Subtitle start | Same as audio start |
+| Subtitle duration | Audio length + 10f |
+| Font | Base64 embedding recommended |
 
-> 詳細: [${CLAUDE_SKILL_DIR}/references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md#字幕サポート)
+> Details: [${CLAUDE_SKILL_DIR}/references/generator.md](${CLAUDE_SKILL_DIR}/references/generator.md#subtitle-support)
 
-## 視覚効果ライブラリ
+## Visual Effects Library
 
-インパクトのある動画向けエフェクト集:
+A collection of effects for high-impact videos:
 
-| エフェクト | 用途 |
-|-----------|------|
-| GlitchText | Hook、タイトル |
-| Particles | 背景、CTA収束 |
-| ScanLine | 解析中演出 |
-| ProgressBar | 並列処理表示 |
-| 3D Parallax | カード表示 |
+| Effect | Use case |
+|--------|---------|
+| GlitchText | Hook, titles |
+| Particles | Background, CTA convergence |
+| ScanLine | Analysis in progress |
+| ProgressBar | Parallel processing display |
+| 3D Parallax | Card display |
 
-> 詳細: [references/visual-effects.md](${CLAUDE_SKILL_DIR}/references/visual-effects.md)
+> Details: [references/visual-effects.md](${CLAUDE_SKILL_DIR}/references/visual-effects.md)
 
 ## Notes
 
-- Remotion未セットアップの場合は `/remotion-setup` を案内
-- 並列生成数はシーン数に応じて自動調整（max 5）
-- 生成された動画は `out/` ディレクトリに出力
-- AI生成画像は `out/assets/generated/` に保存
-- `GOOGLE_AI_API_KEY` 未設定時は画像生成をスキップ（既存素材 or プレースホルダー使用）
+- Guide to `/remotion-setup` if Remotion is not set up
+- Parallel generation count is auto-adjusted based on number of scenes (max 5)
+- Generated videos are output to the `out/` directory
+- AI-generated images are saved to `out/assets/generated/`
+- When `GOOGLE_AI_API_KEY` is not set, image generation is skipped (use existing assets or placeholders)

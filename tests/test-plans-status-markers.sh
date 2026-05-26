@@ -21,7 +21,7 @@ Markers are protocol state values.
 | Task | Content | DoD | Depends | Status |
 |------|---------|-----|---------|--------|
 | 1 | legacy queued task | parser sees legacy todo | - | cc:TODO |
-| 2 | legacy requested task | parser sees legacy requested | - | pm:依頼中 |
+| 2 | legacy requested task | parser sees legacy requested | - | pm:requested |
 | 3 | English requested alias task | parser sees requested alias | - | pm:requested |
 | 4 | English done alias task | parser sees done alias | - | cc:done |
 | 5 | English approved alias task | parser sees approved alias | - | pm:approved |
@@ -59,7 +59,7 @@ assert_eq() {
   source "$LOOP_SCRIPT"
 
   assert_eq "$(next_task_id all "${TMP_DIR}/Plans.md")" "1" "codex-loop keeps canonical TODO first"
-  assert_eq "$(next_task_id 2 "${TMP_DIR}/Plans.md")" "2" "codex-loop accepts pm:依頼中"
+  assert_eq "$(next_task_id 2 "${TMP_DIR}/Plans.md")" "2" "codex-loop accepts pm:requested"
   assert_eq "$(next_task_id 3 "${TMP_DIR}/Plans.md")" "3" "codex-loop accepts pm:requested"
   assert_eq "$(next_task_id 8 "${TMP_DIR}/Plans.md")" "8" "codex-loop accepts cc:todo"
   assert_eq "$(next_task_id 9 "${TMP_DIR}/Plans.md")" "9" "codex-loop accepts cc:wip"

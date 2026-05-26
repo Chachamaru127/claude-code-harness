@@ -1,6 +1,6 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "description": "Sandbox 設定テンプレート - 操作感への影響を最小化しつつセキュリティを強化。docs/sandbox-allowlist-recipe.md と同期 (29 ドメイン allowlist + 9 ドメイン denylist)",
+  "description": "Sandbox settings template - strengthens security while minimizing impact on usability. Synced with docs/sandbox-allowlist-recipe.md (29-domain allowlist + 9-domain denylist)",
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
@@ -70,11 +70,11 @@
     ]
   },
   "_notes": {
-    "purpose": "Claude Code Permissions ドキュメントに基づく推奨 Sandbox 設定",
-    "autoAllowBashIfSandboxed": "true にすることで Sandbox 有効時の許可プロンプトを最小化",
-    "excludedCommands": "Sandbox 外で実行が必要なコマンド（ホストシステムへのアクセスが必要）",
-    "allowedDomains": "3 階層構成: 開発コア 14 (github / npm / anthropic / pypi / go / crates / rubygems) + Firecrawl 本体 2 + 代表スクレイプ対象 13 (日本/英語テックブログ)。詳細: docs/sandbox-allowlist-recipe.md",
-    "deniedDomains": "SSRF (cloud metadata endpoint) + 流出経路 (pastebin 系) の遮断。allowedDomains に含まれていても deniedDomains が優先で deny される",
-    "sync_with": "docs/sandbox-allowlist-recipe.md と数値・項目を完全一致させること。drift を放置すると user が template と recipe どちらが正かわからなくなる"
+    "purpose": "Recommended Sandbox settings based on the Claude Code Permissions documentation",
+    "autoAllowBashIfSandboxed": "Setting to true minimizes permission prompts when Sandbox is enabled",
+    "excludedCommands": "Commands that need to run outside the Sandbox (require access to the host system)",
+    "allowedDomains": "3-tier structure: 14 dev-core domains (github / npm / anthropic / pypi / go / crates / rubygems) + 2 Firecrawl domains + 13 representative scraping targets (Japanese/English tech blogs). Details: docs/sandbox-allowlist-recipe.md",
+    "deniedDomains": "Blocks SSRF (cloud metadata endpoints) + exfiltration routes (pastebin-style). Even if a domain is in allowedDomains, deniedDomains takes precedence",
+    "sync_with": "Keep numbers and entries in exact sync with docs/sandbox-allowlist-recipe.md. If drift is allowed, users will not know whether the template or the recipe is the authoritative source"
   }
 }

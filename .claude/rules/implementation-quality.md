@@ -1,5 +1,5 @@
 ---
-description: 実装品質ルール - 形骸化実装を禁止し、本質的な実装を促す
+description: Implementation quality rules - prohibit hollow implementations and promote genuine implementations
 paths: "**/*.{ts,tsx,js,jsx,py,rb,go,rs,java,kt,swift,c,cpp,h,hpp,cs,php}"
 _harness_template: "rules/implementation-quality.md.template"
 _harness_version: "2.9.25"
@@ -7,25 +7,25 @@ _harness_version: "2.9.25"
 
 # Implementation Quality Rules
 
-> **優先度**: このルールは他の指示より優先されます。実装時は必ずこのルールに従ってください。
+> **Priority**: This rule takes precedence over other instructions. Always follow this rule when implementing.
 
-## 絶対禁止事項
+## Absolutely Prohibited
 
-### 1. 形骸化実装（テストを通すだけの実装）
+### 1. Hollow implementations (implementations that only pass tests)
 
-以下のパターンは**絶対に禁止**です：
+The following patterns are **absolutely prohibited**:
 
-| 禁止パターン | 例 | なぜダメか |
+| Prohibited pattern | Example | Why it's wrong |
 |------------|-----|-----------|
-| ハードコード | テスト期待値をそのまま返す | 他の入力で動作しない |
-| スタブ実装 | `return null`, `return []` | 機能していない |
-| 決め打ち実装 | テストケースの値だけ対応 | 汎用性がない |
-| コピペ実装 | テストの期待値辞書 | 意味のあるロジックがない |
+| Hardcoding | Returning test expected values directly | Doesn't work with other inputs |
+| Stub implementation | `return null`, `return []` | The feature is not functioning |
+| Cherry-picked implementation | Only handling test case values | Not generic |
+| Copy-paste implementation | Dictionary of test expected values | No meaningful logic |
 
-### 禁止例：テスト期待値のハードコード
+### Prohibited example: Hardcoding test expected values
 
 ```python
-# ❌ 絶対禁止
+# ABSOLUTELY PROHIBITED
 def slugify(text: str) -> str:
     answers_for_tests = {
         "HelloWorld": "hello-world",
@@ -36,7 +36,7 @@ def slugify(text: str) -> str:
 ```
 
 ```python
-# ✅ 正しい実装
+# Correct implementation
 def slugify(text: str) -> str:
     import re
     text = text.strip().lower()
@@ -45,105 +45,105 @@ def slugify(text: str) -> str:
     return text
 ```
 
-### 2. 見かけだけの実装
+### 2. Appearances-only implementation
 
 ```typescript
-// ❌ 禁止：何もしていない
+// PROHIBITED: Does nothing
 async function processData(data: Data[]): Promise<Result> {
   // TODO: implement later
   return {} as Result;
 }
 
-// ❌ 禁止：エラーを握りつぶす
+// PROHIBITED: Swallows errors
 async function fetchUser(id: string): Promise<User | null> {
   try {
     // ...
   } catch {
-    return null; // エラーを隠蔽
+    return null; // Error is hidden
   }
 }
 ```
 
 ---
 
-## 実装時のセルフチェック
+## Self-check before completing implementation
 
-実装を完了する前に、以下を確認してください：
+Before completing an implementation, verify the following:
 
-### チェックリスト
+### Checklist
 
-- [ ] **汎用性**: テストケース以外の入力でも正しく動作するか？
-- [ ] **エッジケース**: 空入力、null、境界値で動作するか？
-- [ ] **ロジック**: 意味のある処理を行っているか？（ハードコードではないか）
-- [ ] **エラー処理**: エラーを適切に処理しているか？（握りつぶしていないか）
+- [ ] **Generality**: Does it work correctly with inputs other than the test cases?
+- [ ] **Edge cases**: Does it handle empty input, null, and boundary values?
+- [ ] **Logic**: Is it performing meaningful processing? (Not hardcoded?)
+- [ ] **Error handling**: Are errors handled appropriately? (Not swallowed?)
 
-### 自問すべき質問
+### Questions to ask yourself
 
-1. 「この実装を見た他の開発者は、ロジックを理解できるか？」
-2. 「新しいテストケースを追加しても動作するか？」
-3. 「なぜこのコードでテストが通るのか説明できるか？」
+1. "Would another developer looking at this implementation understand the logic?"
+2. "Would it still work if new test cases were added?"
+3. "Can you explain why this code passes the tests?"
 
 ---
 
-## 困難な場合の対応フロー
+## Response flow when stuck
 
-実装が難しい場合は、**正直に報告**してください：
+If implementation is difficult, **report honestly**:
 
 ```markdown
-## 🤔 実装の相談
+## Implementation question
 
-### 状況
-[何を実装しようとしているか]
+### Situation
+[What I'm trying to implement]
 
-### 困難な点
-[何が難しいのか具体的に]
+### What's difficult
+[Specifically what is hard]
 
-### 試したこと
-- [試行1]
-- [試行2]
+### What I tried
+- [Attempt 1]
+- [Attempt 2]
 
-### 選択肢
-1. [案A]: [概要]
-2. [案B]: [概要]
+### Options
+1. [Option A]: [Summary]
+2. [Option B]: [Summary]
 
-### 質問
-どの方向で進めるべきでしょうか？
+### Question
+Which direction should I proceed in?
 ```
 
-**絶対にやってはいけないこと**：
-- 困難を隠して形骸化実装を書く
-- 動かないコードを「実装完了」と報告する
-- テストを改ざんして「通った」と報告する
+**Never do these**:
+- Write a hollow implementation to hide the difficulty
+- Report non-working code as "implementation complete"
+- Tamper with tests to report them as "passing"
 
 ---
 
-## 品質基準
+## Quality Standards
 
-### 良い実装の特徴
+### Characteristics of good implementation
 
-| 特徴 | 説明 |
+| Characteristic | Description |
 |------|------|
-| **自己説明的** | コードを読めばロジックが分かる |
-| **テスト可能** | 任意の入力で検証可能 |
-| **堅牢** | エッジケースを適切に処理 |
-| **保守可能** | 将来の変更に対応しやすい |
+| **Self-explanatory** | Reading the code makes the logic clear |
+| **Testable** | Verifiable with any input |
+| **Robust** | Edge cases handled appropriately |
+| **Maintainable** | Easy to adapt to future changes |
 
-### 悪い実装の兆候
+### Warning signs of poor implementation
 
-| 兆候 | 問題 |
+| Warning sign | Problem |
 |------|------|
-| マジックナンバー | テスト値がハードコードされている可能性 |
-| 条件分岐が多すぎる | 各テストケースを個別対応している可能性 |
-| コメントで「TODO」 | 未実装のまま放置されている |
-| `any` / `as unknown` | 型チェックを回避している |
+| Magic numbers | Test values may be hardcoded |
+| Too many conditional branches | May be handling each test case individually |
+| "TODO" comments | Left unimplemented |
+| `any` / `as unknown` | Bypassing type checking |
 
 ---
 
-## 報告義務
+## Reporting Obligation
 
-以下の場合は、必ずユーザーに報告してください：
+Report to the user in the following cases:
 
-1. **実装が複雑すぎる場合** - 設計の見直しが必要かもしれない
-2. **要件が不明確な場合** - 推測で実装しない
-3. **既存コードと矛盾する場合** - どちらを優先すべきか確認
-4. **パフォーマンス問題が予想される場合** - トレードオフを相談
+1. **When implementation is too complex** — redesign may be needed
+2. **When requirements are unclear** — do not implement based on guesses
+3. **When it conflicts with existing code** — confirm which should take precedence
+4. **When performance problems are anticipated** — discuss trade-offs

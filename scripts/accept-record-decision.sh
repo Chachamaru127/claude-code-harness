@@ -1,6 +1,6 @@
 #!/bin/bash
 # scripts/accept-record-decision.sh
-# Phase 65.2.3 - Acceptance Demo 判断記録 (memory write side)
+# Phase 65.2.3 - Acceptance Demo: record decision (memory write side)
 #
 # Usage:
 #   accept-record-decision.sh --action <accept|override|reject> \
@@ -11,31 +11,32 @@
 #       [--post-launch-concerns <csv>] \
 #       [--out -|<path>]
 #
-# 役割:
-#   ユーザーの ship/wait/reject 判断 (Acceptance Demo の recommendation を
-#   採用 / override / reject) を記録する `acceptance-decision.v1` schema
-#   準拠の payload JSON を出力する。実際の `mcp__harness__harness_mem_ingest`
-#   呼び出しは skill (LLM context) 側で行う。
+# Role:
+#   Outputs a payload JSON conforming to `acceptance-decision.v1` schema that
+#   records the user's ship/wait/reject decision (accepting, overriding, or
+#   rejecting the Acceptance Demo recommendation). The actual
+#   `mcp__harness__harness_mem_ingest` call is performed on the skill (LLM
+#   context) side.
 #
-# Plan Brief 側との join:
-#   `data.user_request_hash` は同じ user request 文字列の sha256 hex で、
-#   Phase 65.1.4 の `personal-preference.v1` と完全一致する → mem_graph
-#   や mem_search で「プラン → 受け入れ」の完全 trace が取得可能
+# Join with Plan Brief side:
+#   `data.user_request_hash` is the sha256 hex of the same user request string,
+#   matching exactly with Phase 65.1.4's `personal-preference.v1` — enabling
+#   full plan-to-acceptance trace via mem_graph or mem_search.
 #
-# Action 種別:
-#   - accept    : recommendation をそのまま採用 (ship/wait/reject どれでも)
+# Action types:
+#   - accept    : adopt the recommendation as-is (ship/wait/reject any)
 #                 → recommendation_taken = true
-#   - override  : recommendation と異なる判断を採用
-#                 → recommendation_taken = false, override_reason 必須
-#   - reject    : recommendation に関係なく「reject」を最終判断とした
+#   - override  : adopt a decision different from the recommendation
+#                 → recommendation_taken = false, override_reason required
+#   - reject    : final decision is "reject" regardless of recommendation
 #                 → recommendation_taken = (recommendation == "reject")
 #
 # Schema: acceptance-decision.v1
 #   data: {
-#     user_request_hash             : sha256 hex (Plan Brief 側 personal-preference.v1 と join)
-#     recommendation_shown          : "ship"|"wait"|"reject"  (Acceptance Demo HTML が示した値)
-#     recommendation_taken          : bool                     (採用したかどうか)
-#     override_reason               : string                   (override 時のみ非空)
+#     user_request_hash             : sha256 hex (joins with Plan Brief personal-preference.v1)
+#     recommendation_shown          : "ship"|"wait"|"reject"  (value shown in Acceptance Demo HTML)
+#     recommendation_taken          : bool                     (whether recommendation was adopted)
+#     override_reason               : string                   (non-empty only on override)
 #     verified_criteria_at_decision : [{name, passed, evidence}]
 #     post_launch_concerns          : string[]
 #     timestamp                     : ISO8601 UTC
@@ -43,7 +44,7 @@
 #     action                        : "accept" | "override" | "reject"
 #   }
 #
-# Tags (固定):
+# Tags (fixed):
 #   ["personal-preference", "acceptance-decision"]
 #
 # Exit code: 0=success, 2=usage error, 3=runtime error
@@ -61,21 +62,21 @@ Usage: $0 --action <accept|override|reject> \
           [--out -|<path>]
 
 Required:
-  --action <accept|override|reject>      ユーザー判断のアクション種別
-  --user-request <text>                  Plan Brief を起動した request 原文
-  --project <name>                       project 名
-  --recommendation <ship|wait|reject>    Acceptance Demo HTML が示した recommendation
+  --action <accept|override|reject>      type of user decision action
+  --user-request <text>                  original request text that launched Plan Brief
+  --project <name>                       project name
+  --recommendation <ship|wait|reject>    recommendation shown in Acceptance Demo HTML
 
 Optional:
-  --override-reason <text>               override / reject 時の理由 (default: "")
-                                          action=override のときは required
-  --verified-criteria-source <path>      Acceptance Demo の verified_criteria JSON
-                                          (default: 空配列)
-                                          形式: {"items": [{"name", "passed", "evidence"}]}
-  --post-launch-concerns <csv>           ローンチ後懸念事項 (default: "")
-  --out -|<path>                         出力先 (- = stdout, default: stdout)
+  --override-reason <text>               reason for override/reject (default: "")
+                                          required when action=override
+  --verified-criteria-source <path>      verified_criteria JSON from Acceptance Demo
+                                          (default: empty array)
+                                          format: {"items": [{"name", "passed", "evidence"}]}
+  --post-launch-concerns <csv>           post-launch concerns (default: "")
+  --out -|<path>                         output destination (- = stdout, default: stdout)
 
-出力: acceptance-decision.v1 schema 準拠の harness_mem_ingest 用 JSON
+Output: JSON conforming to acceptance-decision.v1 schema for harness_mem_ingest
 USAGE
   exit 2
 }
@@ -104,7 +105,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# ---- 必須引数 ----
+# ---- required arguments ----
 
 if [[ -z "$ACTION" || -z "$USER_REQUEST" || -z "$PROJECT" || -z "$RECOMMENDATION" ]]; then
   echo "ERROR: --action, --user-request, --project, --recommendation are required" >&2
@@ -127,7 +128,7 @@ case "$RECOMMENDATION" in
     ;;
 esac
 
-# action=override で override_reason 必須
+# override_reason is required when action=override
 if [[ "$ACTION" == "override" && -z "$OVERRIDE_REASON" ]]; then
   echo "ERROR: --override-reason is required when --action override" >&2
   exit 2
@@ -138,10 +139,10 @@ if ! command -v jq >/dev/null 2>&1; then
   exit 3
 fi
 
-# ---- recommendation_taken 判定 ----
+# ---- determine recommendation_taken ----
 #   accept    → true
 #   override  → false
-#   reject    → (recommendation == "reject")  ← rec が reject ならユーザーも reject = 採用
+#   reject    → (recommendation == "reject")  ← if rec is reject, user also rejected = adopted
 case "$ACTION" in
   accept)
     RECOMMENDATION_TAKEN="true"
@@ -158,7 +159,7 @@ case "$ACTION" in
     ;;
 esac
 
-# ---- sha256 hex (Phase 65.1.4 と完全一致するロジック) ----
+# ---- sha256 hex (logic must exactly match Phase 65.1.4) ----
 
 sha256_of_text() {
   local text="$1"
@@ -174,7 +175,7 @@ sha256_of_text() {
 
 USER_REQUEST_HASH="$(sha256_of_text "$USER_REQUEST")"
 
-# ---- verified_criteria_at_decision の正規化 ----
+# ---- normalize verified_criteria_at_decision ----
 
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/accept-record-decision.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
@@ -198,7 +199,7 @@ else
   echo '[]' > "$NORM_CRITERIA"
 fi
 
-# ---- post_launch_concerns を array に変換 ----
+# ---- convert post_launch_concerns to array ----
 
 if [[ -z "$POST_LAUNCH_CONCERNS_CSV" ]]; then
   POST_LAUNCH_CONCERNS_JSON='[]'
@@ -219,7 +220,7 @@ fi
 
 TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
-# ---- payload 組み立て ----
+# ---- assemble payload ----
 
 PAYLOAD="$(jq -n \
   --arg hash "$USER_REQUEST_HASH" \

@@ -1,9 +1,9 @@
 #!/bin/bash
 # analyze-project.sh
-# プロジェクト分析スクリプト - 適応型セットアップ用
+# Project analysis script - for adaptive setup
 #
 # Usage: ./scripts/analyze-project.sh [project_path]
-# Output: JSON形式のプロジェクト分析結果
+# Output: Project analysis results in JSON format
 #
 # Cross-platform: Supports Windows (Git Bash/MSYS2/Cygwin/WSL), macOS, Linux
 
@@ -19,12 +19,12 @@ fi
 PROJECT_PATH="${1:-.}"
 cd "$PROJECT_PATH"
 
-# JSON出力用の一時ファイル（自動クリーンアップ付き）
+# Temporary file for JSON output (with automatic cleanup)
 RESULT_FILE=$(mktemp)
 trap 'rm -f "$RESULT_FILE"' EXIT
 
 # ================================
-# ヘルパー関数
+# Helper functions
 # ================================
 
 json_escape() {
@@ -40,7 +40,7 @@ dir_exists() {
 }
 
 # ================================
-# 1. 技術スタック検出
+# 1. Technology stack detection
 # ================================
 
 detect_tech_stack() {
@@ -57,11 +57,11 @@ detect_tech_stack() {
       techs+=("typescript")
     fi
 
-    # package.json を1回だけ読み込んでキャッシュ（I/O最適化: 12回→1回）
+    # Read package.json once and cache (I/O optimization: 12 reads → 1)
     local pkg_content
     pkg_content=$(cat package.json 2>/dev/null) || pkg_content=""
 
-    # フレームワーク検出（キャッシュした内容でパターンマッチ）
+    # Framework detection (pattern match against cached content)
     [[ "$pkg_content" == *'"react"'* ]] && frameworks+=("react")
     [[ "$pkg_content" == *'"next"'* ]] && frameworks+=("nextjs")
     [[ "$pkg_content" == *'"vue"'* ]] && frameworks+=("vue")
@@ -70,7 +70,7 @@ detect_tech_stack() {
     [[ "$pkg_content" == *'"fastify"'* ]] && frameworks+=("fastify")
     [[ "$pkg_content" == *'"svelte"'* ]] && frameworks+=("svelte")
 
-    # テストフレームワーク
+    # Test frameworks
     [[ "$pkg_content" == *'"jest"'* ]] && testing+=("jest")
     [[ "$pkg_content" == *'"vitest"'* ]] && testing+=("vitest")
     [[ "$pkg_content" == *'"mocha"'* ]] && testing+=("mocha")
@@ -83,7 +83,7 @@ detect_tech_stack() {
     techs+=("python")
 
     if [ -f "pyproject.toml" ]; then
-      # pyproject.toml を1回だけ読み込んでキャッシュ
+      # Read pyproject.toml once and cache
       local pyproject_content
       pyproject_content=$(cat pyproject.toml 2>/dev/null) || pyproject_content=""
 
@@ -123,7 +123,7 @@ detect_tech_stack() {
     fi
   fi
 
-  # 出力
+  # Output
   if [ ${#techs[@]} -eq 0 ]; then
     echo "\"technologies\": [],"
   else
@@ -144,7 +144,7 @@ detect_tech_stack() {
 }
 
 # ================================
-# 2. 既存コーディング規約検出
+# 2. Existing coding standards detection
 # ================================
 
 detect_coding_standards() {
@@ -212,7 +212,7 @@ detect_coding_standards() {
 }
 
 # ================================
-# 3. 既存ドキュメント検出
+# 3. Existing documentation detection
 # ================================
 
 detect_documentation() {
@@ -233,24 +233,24 @@ detect_documentation() {
 }
 
 # ================================
-# 4. 既存 Claude/Cursor 設定検出
+# 4. Existing Claude/Cursor configuration detection
 # ================================
 
 detect_existing_setup() {
   local claude_files=()
   local cursor_files=()
 
-  # Claude 設定
+  # Claude configuration
   [ -f "CLAUDE.md" ] && claude_files+=("CLAUDE.md")
   [ -f ".claude/CLAUDE.md" ] && claude_files+=(".claude/CLAUDE.md")
   [ -d ".claude/rules" ] && claude_files+=(".claude/rules/")
   [ -d ".claude/memory" ] && claude_files+=(".claude/memory/")
 
-  # Cursor 設定
+  # Cursor configuration
   [ -d ".cursor/commands" ] && cursor_files+=(".cursor/commands/")
   [ -d ".cursor/rules" ] && cursor_files+=(".cursor/rules/")
 
-  # バージョンファイル
+  # Version file
   local version="none"
   if [ -f ".claude-code-harness-version" ]; then
     version=$(grep "^version:" .claude-code-harness-version 2>/dev/null | cut -d' ' -f2 || echo "unknown")
@@ -272,7 +272,7 @@ detect_existing_setup() {
 }
 
 # ================================
-# 5. Git 情報検出
+# 5. Git information detection
 # ================================
 
 detect_git_info() {
@@ -281,13 +281,13 @@ detect_git_info() {
     return
   fi
 
-  # 最近のコミットプレフィックス分析
+  # Analyze recent commit prefixes
   local commit_prefixes=$(git log --oneline -50 2>/dev/null | grep -oE "^[a-f0-9]+ (feat|fix|docs|refactor|test|chore|style|perf|ci|build|revert):" | cut -d' ' -f2 | sort | uniq -c | sort -rn | head -5 || echo "")
 
-  # ブランチ名
+  # Branch name
   local branch=$(git branch --show-current 2>/dev/null || echo "unknown")
 
-  # コミット規約の検出
+  # Detect commit convention
   local conventional_commits="false"
   if echo "$commit_prefixes" | grep -qE "(feat|fix|chore):" 2>/dev/null; then
     conventional_commits="true"
@@ -300,39 +300,39 @@ detect_git_info() {
 }
 
 # ================================
-# 6. 重要事項の検出（キーワードベース）
+# 6. Important pattern detection (keyword-based)
 # ================================
 
 detect_important_patterns() {
   local patterns=()
 
-  # 検索対象ファイル（存在するもののみ）
+  # Files to search (only those that exist)
   local search_files=""
   for f in README.md CONTRIBUTING.md AGENTS.md CLAUDE.md; do
     [ -f "$f" ] && search_files="$search_files $f"
   done
 
-  # セキュリティ関連（日本語対応）
+  # Security-related (Japanese-aware)
   if [ -f "SECURITY.md" ] || grep -riqE "security|セキュリティ|バリデーション|SQLインジェクション|認証" $search_files 2>/dev/null; then
     patterns+=("security")
   fi
 
-  # テスト重視（日本語対応）
+  # Test emphasis (Japanese-aware)
   if grep -riqE "test coverage|coverage.*%|must have tests|require.*test|テスト.*必須|カバレッジ|ユニットテスト" $search_files 2>/dev/null; then
     patterns+=("testing-required")
   fi
 
-  # アクセシビリティ（日本語対応）
+  # Accessibility (Japanese-aware)
   if grep -riqE "accessibility|a11y|wcag|aria|アクセシビリティ|スクリーンリーダー" $search_files package.json 2>/dev/null; then
     patterns+=("accessibility")
   fi
 
-  # パフォーマンス（日本語対応）
+  # Performance (Japanese-aware)
   if grep -riqE "performance|core web vitals|lighthouse|パフォーマンス|レスポンス.*ms|N\+1" $search_files 2>/dev/null; then
     patterns+=("performance")
   fi
 
-  # 国際化
+  # Internationalization
   if grep -riqE "i18n|internationalization|localization|国際化" $search_files package.json 2>/dev/null; then
     patterns+=("i18n")
   fi
@@ -345,7 +345,7 @@ detect_important_patterns() {
 }
 
 # ================================
-# メイン: JSON 出力
+# Main: JSON output
 # ================================
 
 echo "{"
@@ -353,7 +353,7 @@ echo "\"project_path\": \"$(pwd)\","
 echo "\"project_name\": \"$(basename "$(pwd)")\","
 echo "\"analyzed_at\": \"$(date -Iseconds)\","
 
-# 各セクション
+# Each section
 detect_tech_stack
 echo ","
 detect_coding_standards

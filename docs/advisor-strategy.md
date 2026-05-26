@@ -1,116 +1,111 @@
 # Advisor Strategy
 
-## ひとことで
+## In a Nutshell
 
-Advisor Strategy は、
-**ふだんは実行役が自走し、難しい場面だけ相談役を呼ぶ**進め方です。
+The Advisor Strategy is an approach where
+**the executor runs autonomously most of the time, and only consults an advisor in difficult situations.**
 
-Harness では v1 として、
-まず `harness-loop` からこの考え方を入れています。
+In Harness v1, this concept is first introduced via `harness-loop`.
 
-## たとえると
+## Analogy
 
-ずっと横で細かく指示する監督ではなく、
-普段は現場の担当者が動き、
-「ここは判断が重い」となった時だけ先輩に相談する形です。
+Rather than a supervisor who gives detailed instructions at every step,
+this approach has the person on the ground moving forward independently
+and only escalating to a senior colleague when a decision feels heavy.
 
-この形にすると、
-毎回大きな判断役を前に出さずに済むので、
-速さと安全のバランスを取りやすくなります。
+This way, you don't have to surface a heavyweight decision-maker at every turn,
+making it easier to balance speed and safety.
 
-## 中身
+## Roles
 
-Harness の役割分担は次の 4 つです。
+Harness has four roles:
 
-| 役割 | 何をするか |
-|------|------------|
-| Lead | 全体の流れを整える |
-| Worker / executor | 実装や修正を進める |
-| Advisor | 方針だけ助言する |
-| Reviewer | 最終的な品質判定をする |
+| Role | Responsibility |
+|------|----------------|
+| Lead | Manages the overall flow |
+| Worker / executor | Carries out implementation and fixes |
+| Advisor | Provides guidance on direction only |
+| Reviewer | Makes the final quality judgment |
 
-大事なのは、
-**Advisor は Reviewer の代わりではない**ことです。
+Critically,
+**the Advisor is not a replacement for the Reviewer.**
 
-Advisor は「次にどう進むか」を返します。
-最終的に `APPROVE` するか `REQUEST_CHANGES` にするかは、
-これまで通り Reviewer が持ちます。
+The Advisor returns guidance on "how to proceed next."
+Whether to ultimately `APPROVE` or `REQUEST_CHANGES`
+remains with the Reviewer, as always.
 
-## いつ advisor が呼ばれるか
+## When the Advisor Is Called
 
-v1 では、相談する場面を 3 つに固定しています。
+In v1, consultation is fixed to three scenarios:
 
-1. 高リスク task の初回実行前
-2. 同じ原因の失敗が 2 回続いた後
-3. plateau 検知で `PIVOT_REQUIRED` を返す直前
+1. Before the first execution of a high-risk task
+2. After the same root cause fails twice in a row
+3. Just before returning `PIVOT_REQUIRED` on plateau detection
 
-高リスク task とは、今の contract では次のいずれかです。
+High-risk tasks, in the current contract, are any of the following:
 
 - `needs-spike`
 - `security-sensitive`
 - `state-migration`
 
-同じ相談を何度も繰り返さないために、
-`trigger_hash` という識別子を使います。
+To avoid repeating the same consultation,
+a `trigger_hash` identifier is used.
 
-これは、
-**「どの task で」「どんな理由で」「どんな失敗だったか」**
-をまとめた印です。
+This is a fingerprint combining
+**"which task", "what reason", and "what kind of failure"**.
 
-同じ `trigger_hash` では 1 回しか相談しません。
-さらに task ごとの相談回数は最大 3 回です。
+The same `trigger_hash` triggers at most one consultation.
+Additionally, the maximum number of consultations per task is 3.
 
-## advisor が返す 3 つの decision
+## The 3 Decisions the Advisor Returns
 
-Advisor の返答は `advisor-response.v1` という JSON で固定しています。
-decision は次の 3 種類だけです。
+The advisor's response is fixed as `advisor-response.v1` JSON.
+There are exactly 3 decision values:
 
-| decision | 意味 | Harness の動き |
-|----------|------|----------------|
-| `PLAN` | 進め方を組み直す | 次の実行 prompt の先頭に助言を入れて再実行 |
-| `CORRECTION` | 方針は合っていて局所修正だけ必要 | 修正指示として再実行 |
-| `STOP` | これ以上は自走しない方がよい | loop を止め、理由を state に残してエスカレーション |
+| decision | Meaning | Harness behavior |
+|----------|---------|------------------|
+| `PLAN` | Reorganize the approach | Re-execute with the advice prepended to the next execution prompt |
+| `CORRECTION` | Direction is correct, only a local fix is needed | Re-execute as a correction instruction |
+| `STOP` | Better not to continue autonomously | Stop the loop, persist the reason in state, and escalate |
 
-## 具体例
+## Concrete Example
 
-たとえば、
-`state-migration` を含む task を `harness-loop` で回している場面を考えます。
+Consider running a task containing `state-migration` through `harness-loop`.
 
-1. loop が sprint contract を読む
-2. 高リスク task だと分かる
-3. 実装を始める前に advisor に 1 回だけ相談する
-4. advisor が `PLAN` を返す
-5. loop はその助言を次の prompt の先頭に入れて実行役を走らせる
-6. 実装後の最終判定は Reviewer が行う
+1. The loop reads the sprint contract
+2. It identifies the task as high-risk
+3. Before starting implementation, it consults the advisor once
+4. The advisor returns `PLAN`
+5. The loop prepends that advice to the next prompt and runs the executor
+6. The final quality judgment after implementation is performed by the Reviewer
 
-つまり、
-相談役は「実装そのもの」を引き取らず、
-実装役が迷わず進めるための方向だけ整えます。
+In other words,
+the advisor does not take ownership of the implementation itself—
+it only sets the direction so the executor can proceed without hesitation.
 
-## なぜ `harness-loop` から先に入れるのか
+## Why Start with `harness-loop`
 
-理由は 3 つあります。
+There are three reasons:
 
-1. 長時間実行では、迷った時だけ重い判断を呼ぶ形が特に効くから
-2. `run.json` や `cycles.jsonl` があるので、相談の履歴を残しやすいから
-3. 既存の Reviewer や checkpoint の流れを崩さずに導入しやすいから
+1. For long-running executions, calling heavyweight judgment only when stuck is especially effective
+2. `run.json` and `cycles.jsonl` make it easy to keep a consultation history
+3. It can be introduced without disrupting the existing Reviewer or checkpoint flow
 
-言い換えると、
-いきなり全部の実行経路を変えるのではなく、
-**いちばん効果が大きく、観察しやすい場所から入れている**
-ということです。
+In other words,
+rather than changing every execution path all at once,
+**the highest-impact, most observable entry point is chosen first.**
 
-## 既知の制約
+## Known Constraints
 
-v1 には、あえて入れていないものがあります。
+v1 intentionally leaves out certain things:
 
-- Worker が自由に新しい subagent を増やすことはしない
-- 自信推定のような自然言語ベース判定はまだ使わない
-- advisor の永続化は SQLite ではなく file-based state に留める
-- Phase 61 の weak-supervision cue は自然言語の自信推定ではなく、`.claude/state/elicitation/events.jsonl` に残った証拠イベントだけを短く渡す
-- `breezing` と `harness-work` は、まず protocol と文書の統一から進める
+- Workers cannot freely spawn new subagents
+- Natural-language-based confidence estimation is not yet used
+- Advisor persistence stays file-based state rather than SQLite
+- Phase 61 weak-supervision cues pass only the short evidence events left in `.claude/state/elicitation/events.jsonl`, not natural-language confidence estimation
+- `breezing` and `harness-work` start with protocol and documentation alignment first
 
-## 関連ファイル
+## Related Files
 
 - `agents/advisor.md`
 - `scripts/run-advisor-consultation.sh`
@@ -118,15 +113,14 @@ v1 には、あえて入れていないものがあります。
 - `skills/harness-loop/SKILL.md`
 - `skills/harness-loop/references/flow.md`
 
-## なぜこのやり方を取るか
+## Why This Approach
 
-Harness はもともと、
-「計画」「実装」「レビュー」を分けて壊れにくくする設計です。
+Harness was originally designed to stay robust by separating
+"planning," "implementation," and "review."
 
-Advisor Strategy を入れる時も、
-その土台は残したまま、
-**実行役の自走力だけを上げる**方が安全です。
+When introducing the Advisor Strategy,
+it is safer to **only raise the executor's autonomous capability**
+while keeping that foundation intact.
 
-そのため v1 では、
-「相談役を追加する」が主で、
-「品質判定の責任を移す」はしていません。
+Therefore, v1's primary change is "adding a consultation role,"
+not "transferring responsibility for quality judgment."

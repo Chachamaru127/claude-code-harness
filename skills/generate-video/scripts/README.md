@@ -1,12 +1,12 @@
 # Scripts Directory
 
-JSON Schema 自動生成とバリデーションのためのスクリプト集。
+A collection of scripts for JSON Schema auto-generation and validation.
 
 ## Available Scripts
 
 ### generate-schemas.js
 
-JSON Schema から Zod スキーマを自動生成します。
+Automatically generates Zod schemas from JSON Schemas.
 
 **Usage:**
 ```bash
@@ -14,11 +14,11 @@ npm run generate:schemas
 ```
 
 **Input:**
-- `schemas/*.schema.json` - JSON Schema ファイル
+- `schemas/*.schema.json` - JSON Schema files
 
 **Output:**
-- `src/schemas/*.ts` - Zod スキーマ定義
-- `src/schemas/index.ts` - バレル export
+- `src/schemas/*.ts` - Zod schema definitions
+- `src/schemas/index.ts` - Barrel export
 
 **Example:**
 ```bash
@@ -30,7 +30,7 @@ npm run generate:schemas
 ```
 
 **Dependencies:**
-- `json-schema-to-zod` - JSON Schema → Zod 変換
+- `json-schema-to-zod` - JSON Schema → Zod conversion
 - `zod` - Runtime validation
 
 ---
@@ -39,7 +39,7 @@ npm run generate:schemas
 
 ### Install Dependencies
 
-スキーマ生成に必要なパッケージをインストール：
+Install the packages required for schema generation:
 
 ```bash
 npm install --save-dev json-schema-to-zod
@@ -48,7 +48,7 @@ npm install zod
 
 ### Add npm Script
 
-`package.json` に以下を追加：
+Add the following to `package.json`:
 
 ```json
 {
@@ -60,7 +60,7 @@ npm install zod
 
 ### Pre-commit Hook (Optional)
 
-スキーマ変更時に自動生成：
+Auto-generate on schema changes:
 
 ```bash
 # .husky/pre-commit
@@ -72,10 +72,10 @@ git add src/schemas/
 
 ## Schema Development Workflow
 
-1. **Schema 作成**: `schemas/*.schema.json` を作成
-2. **生成実行**: `npm run generate:schemas`
-3. **型推論確認**: `src/schemas/*.ts` で TypeScript 型を確認
-4. **バリデーション**: 生成された Zod スキーマで検証
+1. **Create schema**: Create `schemas/*.schema.json`
+2. **Run generation**: `npm run generate:schemas`
+3. **Verify type inference**: Check TypeScript types in `src/schemas/*.ts`
+4. **Validate**: Verify with the generated Zod schemas
 
 ### Example
 
@@ -112,15 +112,15 @@ if (result.success) {
 
 ### Breaking Changes
 
-メジャーバージョンを上げる必要がある変更：
-- Required フィールドの追加
-- フィールドの削除
-- 型の変更
+Changes that require a major version bump:
+- Adding required fields
+- Removing fields
+- Changing types
 
-マイナーバージョンで可能な変更：
-- Optional フィールドの追加
-- Enum 値の追加
-- Description の変更
+Changes possible in a minor version:
+- Adding optional fields
+- Adding enum values
+- Changing descriptions
 
 ---
 
@@ -134,11 +134,11 @@ npm install --save-dev json-schema-to-zod
 ```
 
 **Error**: `No .schema.json files found`
-- `schemas/` ディレクトリに `*.schema.json` ファイルがあるか確認
+- Verify `*.schema.json` files exist in the `schemas/` directory
 
 **Error**: `Invalid JSON`
-- JSON Schema の構文エラーをチェック
-- [JSONLint](https://jsonlint.com/) で検証
+- Check JSON Schema syntax errors
+- Validate with [JSONLint](https://jsonlint.com/)
 
 ### Zod Schema Issues
 
@@ -158,7 +158,7 @@ const manifest: AssetManifest = { /* ... */ };
 
 ### validate-scene.js
 
-個別シーン JSON を `scene.schema.json` に対してバリデーションします。
+Validates individual scene JSON against `scene.schema.json`.
 
 **Usage:**
 ```bash
@@ -187,11 +187,11 @@ node scripts/validate-scene.js schemas/examples/scene-example.json
 
 ### validate-scenario.js
 
-シナリオ JSON を `scenario.schema.json` に対してバリデーションします。
-セマンティックチェックも実行：
-- セクション ID の一意性
-- セクション順序の正しさ
-- Duration の妥当性
+Validates scenario JSON against `scenario.schema.json`.
+Also runs semantic checks:
+- Section ID uniqueness
+- Section order correctness
+- Duration validity
 
 **Usage:**
 ```bash
@@ -217,8 +217,8 @@ node scripts/validate-scenario.js schemas/examples/scenario-example.json
 
 ### validate-video.js
 
-完全なビデオスクリプト JSON を E2E でバリデーションします。
-Critical エラーは停止、Warning はログ出力して続行。
+End-to-end validation of a complete video script JSON.
+Critical errors halt execution; warnings are logged and processing continues.
 
 **Usage:**
 ```bash
@@ -271,7 +271,7 @@ node scripts/validate-video.js schemas/examples/video-script-example.json
 
 ### load-assets.js
 
-アセット（背景、効果音、フォント、画像）の読み込みとユーザー上書き対応。
+Loads assets (backgrounds, sound effects, fonts, images) with user override support.
 
 **Priority System:**
 1. User assets: `~/.harness/video/assets/`
@@ -338,12 +338,12 @@ npm test -- asset-loader.test.js
 
 ## Future Scripts (Phase 3+)
 
-今後追加予定のスクリプト：
+Scripts planned for future addition:
 
-- `merge-scenes.js` - シーン JSON マージ
-- `optimize-assets.js` - アセット最適化
-- `generate-thumbnails.js` - サムネイル自動生成
-- `render-video.js` - ビデオレンダリング (Phase 8)
+- `merge-scenes.js` - Scene JSON merge
+- `optimize-assets.js` - Asset optimization
+- `generate-thumbnails.js` - Automatic thumbnail generation
+- `render-video.js` - Video rendering (Phase 8)
 
 ---
 

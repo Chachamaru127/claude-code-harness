@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 #
 # reenter-worktree.sh
-# CC 2.1.105 で追加された EnterWorktree path 引数を使い、既存 worktree へ再入するための
-# エージェント spawn 用ヘルパー。Breezing の修正ループ（REQUEST_CHANGES 後の amend）で
-# Worker が一度離脱した worktree に再度入る場合に使用する。
+# Helper for agent spawn to re-enter an existing worktree using the EnterWorktree path argument
+# added in CC 2.1.105. Used when a Worker needs to re-enter a worktree it previously left,
+# e.g. in Breezing's fix loop (amend after REQUEST_CHANGES).
 #
 # Usage: ./scripts/reenter-worktree.sh --path <worktree-path> [--task-id <id>]
 #
-# 前提:
-#   - git worktree list に <worktree-path> が存在すること
-#   - CC 2.1.105 以上 (EnterWorktree path 引数サポート)
+# Prerequisites:
+#   - <worktree-path> must exist in git worktree list
+#   - CC 2.1.105 or higher (EnterWorktree path argument support)
 #
-# 出力 (JSON):
+# Output (JSON):
 #   {"decision":"approve","worktree_path":"<path>","task_id":"<id>"}
-#   または
+#   or
 #   {"decision":"deny","reason":"<message>"}
 
 set -euo pipefail
@@ -37,7 +37,7 @@ usage() {
     exit 1
 }
 
-# 引数パース
+# Argument parsing
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --path)
@@ -65,7 +65,7 @@ if [[ -z "$WORKTREE_PATH" ]]; then
     usage
 fi
 
-# worktree パスの存在確認
+# Check that the worktree path exists
 if [[ ! -d "$WORKTREE_PATH" ]]; then
     printf '{"decision":"deny","reason":"worktree path does not exist: %s"}\n' "$WORKTREE_PATH"
     exit 1
@@ -73,7 +73,7 @@ fi
 
 CANONICAL_WORKTREE_PATH="$(canonicalize_path "$WORKTREE_PATH")"
 
-# git worktree list で登録確認
+# Confirm registration via git worktree list
 if ! git worktree list --porcelain 2>/dev/null | awk '/^worktree / {sub(/^worktree /, ""); print}' | while IFS= read -r listed_path; do
     [[ "$(canonicalize_path "$listed_path")" == "$CANONICAL_WORKTREE_PATH" ]] && exit 0
 done; then
@@ -81,7 +81,7 @@ done; then
     exit 1
 fi
 
-# worktree 内の .claude/state/worktree-info.json を確認（Breezing Worker が作成）
+# Check .claude/state/worktree-info.json inside the worktree (created by Breezing Worker)
 WORKTREE_INFO="${WORKTREE_PATH}/.claude/state/worktree-info.json"
 if [[ -f "$WORKTREE_INFO" ]] && command -v jq >/dev/null 2>&1; then
     REGISTERED_WORKER_ID="$(jq -r '.worker_id // ""' "$WORKTREE_INFO" 2>/dev/null || echo "")"
@@ -91,33 +91,33 @@ fi
 
 print_guidance() {
     cat >&2 <<EOF
-# EnterWorktree path 再入確認
+# EnterWorktree path re-entry confirmation
 
-## worktree 情報
+## Worktree information
 - path:      $WORKTREE_PATH
-- task_id:   ${TASK_ID:-"(未指定)"}
-- worker_id: ${REGISTERED_WORKER_ID:-"(取得不可)"}
+- task_id:   ${TASK_ID:-"(not specified)"}
+- worker_id: ${REGISTERED_WORKER_ID:-"(not available)"}
 
-## CC 2.1.105 以降: エージェント定義での利用方法
+## CC 2.1.105+: How to use in agent definitions
 
-Agent tool の isolation フィールドで既存 worktree を指定するには、
-EnterWorktree の path パラメータを以下のように渡す:
+To specify an existing worktree in the isolation field of the Agent tool,
+pass the path parameter to EnterWorktree as follows:
 
   isolation: "worktree"
   worktreePath: "$WORKTREE_PATH"
 
-Harness breezing の Lead が SendMessage でワーカーを resume する際、
-同じ worktree に再入するのに使用する。
+Used when Harness breezing Lead resumes a worker via SendMessage,
+re-entering the same worktree.
 
-## スクリプトからの検証
-- git worktree list: OK (path 登録確認済み)
-- ディレクトリ存在: OK
+## Validation from script
+- git worktree list: OK (path registration confirmed)
+- Directory exists: OK
 EOF
 }
 
 print_guidance
 
-# JSON 出力
+# JSON output
 if command -v jq >/dev/null 2>&1; then
     jq -nc \
         --arg decision "approve" \

@@ -15,18 +15,18 @@ import (
 	"github.com/Chachamaru127/claude-code-harness/go/internal/harnessmem"
 )
 
-// memHealthOutput は `bin/harness mem health` の JSON 出力スキーマ。
+// memHealthOutput is the JSON output schema for `bin/harness mem health`.
 type memHealthOutput struct {
 	Healthy bool   `json:"healthy"`
 	Reason  string `json:"reason"`
 }
 
-// daemonProbe は harness-mem daemon への到達性確認。
-// テスト注入のため package 変数。本番では probeHarnessMemDaemon を使う。
+// daemonProbe checks reachability of the harness-mem daemon.
+// Stored as a package variable for test injection; production uses probeHarnessMemDaemon.
 var daemonProbe = probeHarnessMemDaemon
 
-// probeHarnessMemDaemon は HARNESS_MEM_HOST:HARNESS_MEM_PORT に TCP connect を試す。
-// 既定 127.0.0.1:37888。接続失敗はそのまま error を返す（fail-silent な呼び出し側で処理）。
+// probeHarnessMemDaemon attempts a TCP connect to HARNESS_MEM_HOST:HARNESS_MEM_PORT.
+// Defaults to 127.0.0.1:37888. Connection failures are returned as-is (caller handles fail-silent).
 func probeHarnessMemDaemon() error {
 	host := os.Getenv("HARNESS_MEM_HOST")
 	if host == "" {
@@ -45,7 +45,7 @@ func probeHarnessMemDaemon() error {
 	return nil
 }
 
-// runMem は `harness mem <subcommand>` を処理する。
+// runMem handles `harness mem <subcommand>`.
 func runMem(args []string) {
 	os.Exit(runMemCommand(args, os.Stdout, os.Stderr))
 }
@@ -76,9 +76,9 @@ func runMemCommand(args []string, stdout, stderr io.Writer) int {
 	}
 }
 
-// runMemHealth は `harness mem health` サブコマンドを実行する。
-// ~/.claude-mem/ のファイルチェック後に daemon への TCP probe を行い、
-// いずれかの段階で失敗したら unhealthy を返す。
+// runMemHealth executes the `harness mem health` subcommand.
+// Checks files under ~/.claude-mem/ and then TCP-probes the daemon;
+// returns unhealthy if either step fails.
 // exit 0: healthy, exit 1: unhealthy
 func runMemHealth(_ []string) {
 	os.Exit(writeMemHealth(os.Stdout))
@@ -91,19 +91,19 @@ func writeMemHealth(stdout io.Writer) int {
 	return code
 }
 
-// runMemHealthCheck はヘルスチェックロジックを実行し、結果と exit code を返す。
-// テストからも直接呼び出せるよう os.Exit を含まない形で分離する。
+// runMemHealthCheck executes the health check logic and returns the result with an exit code.
+// Separated from os.Exit so it can be called directly from tests.
 //
-// harness-mem が未設定のケース (`~/.claude-mem/` が存在しない) は、
-// 「壊れている」ではなく「監視対象外」として扱う。
-// healthy=true + reason="not-configured" を返すことで、
-// MonitorHandler 側の `⚠️ harness-mem unhealthy` 警告を抑止する。
-// daemon 停止 (daemon-unreachable) や構成破損 (corrupted) は従来どおり unhealthy。
+// When harness-mem is not configured (`~/.claude-mem/` does not exist), the state is
+// treated as "not monitored" rather than "broken".
+// Returning healthy=true + reason="not-configured" suppresses the
+// `⚠️ harness-mem unhealthy` warning on the MonitorHandler side.
+// A stopped daemon (daemon-unreachable) or corrupted config (corrupted) are still unhealthy.
 func runMemHealthCheck() (memHealthOutput, int) {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		// ホームディレクトリ解決失敗は環境異常。
-		// harness-mem 未設定判定もできない状態なので healthy=true で手を引く。
+		// Failure to resolve the home directory is an environment anomaly.
+		// Cannot determine whether harness-mem is configured, so return healthy=true.
 		return memHealthOutput{Healthy: true, Reason: "not-configured"}, 0
 	}
 
@@ -113,9 +113,9 @@ func runMemHealthCheck() (memHealthOutput, int) {
 	}
 	claudeMem := filepath.Join(home, ".claude-mem")
 
-	// ~/.harness-mem/ または legacy ~/.claude-mem/ の存在チェック。
-	// 両方不在 = harness-mem がそもそもインストールされていない。
-	// 監視対象外として healthy 扱いにして exit 0 を返す。
+	// Check for ~/.harness-mem/ or the legacy ~/.claude-mem/ directory.
+	// Both absent means harness-mem is not installed at all.
+	// Treat as not monitored: return healthy and exit 0.
 	if _, err := os.Stat(harnessMemHome); os.IsNotExist(err) {
 		if _, legacyErr := os.Stat(claudeMem); os.IsNotExist(legacyErr) {
 			return memHealthOutput{Healthy: true, Reason: "not-configured"}, 0
@@ -134,7 +134,7 @@ func runMemHealthCheck() (memHealthOutput, int) {
 		return memHealthOutput{Healthy: true, Reason: "not-configured"}, 0
 	}
 
-	// settings.json または supervisor.json のいずれかが読めるか
+	// Check whether either settings.json or supervisor.json is readable
 	settingsPath := filepath.Join(claudeMem, "settings.json")
 	supervisorPath := filepath.Join(claudeMem, "supervisor.json")
 
@@ -151,7 +151,7 @@ func runMemHealthCheck() (memHealthOutput, int) {
 		return memHealthOutput{Healthy: false, Reason: "corrupted"}, 1
 	}
 
-	// daemon reachability probe: ファイルは揃っていても daemon 停止中は unhealthy
+	// Daemon reachability probe: files may be intact but daemon could be stopped
 	if err := daemonProbe(); err != nil {
 		return memHealthOutput{Healthy: false, Reason: "daemon-unreachable"}, 1
 	}

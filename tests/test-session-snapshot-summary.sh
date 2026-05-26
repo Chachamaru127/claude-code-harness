@@ -1,5 +1,5 @@
 #!/bin/bash
-# session-init / session-resume が snapshot 要約を additionalContext に含めることを確認
+# Verify that session-init / session-resume include snapshot summaries in additionalContext
 
 set -euo pipefail
 

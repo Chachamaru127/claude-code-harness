@@ -1,161 +1,162 @@
 ---
 name: docs-notebooklm-slide-yaml
-description: "NotebookLM の［スライド資料をカスタマイズ］で使えるデザイン指示YAMLを2案（別角度）生成して出力する。"
+description: "Generate two design-instruction YAML variations (from different angles) for use in NotebookLM's [Customize slide deck] feature."
 allowed-tools: ["Read", "Write"]
 ---
 
 # NotebookLM Slide Design YAML (2 Variations)
 
-## 目的
+## Purpose
 
-NotebookLM の「スライド資料」生成で、**デザインの方向性をYAMLで明示して品質と再現性を上げる**。
+In NotebookLM's "Slides" generation, **specify the design direction via YAML to improve quality and reproducibility**.
 
-このスキルは、同じソースでも見た目を変えられるように、**意図の捉え方が異なる2案**のYAMLを出力します。
+This skill outputs **two YAML variations with different interpretations of the intent**
+so that the same source material can have visually distinct presentations.
 
-参考（使い方/作例）:
+References (usage/examples):
 - `https://note.com/yoshifujidesign/n/nd9c8db0b55b8`
 - `https://note.com/yoshifujidesign/n/n7412bccb5762`
 
 ---
 
-## 使い方（NotebookLM 側）
+## How to use (NotebookLM side)
 
-NotebookLMで資料ソースを読み込んだ後、
-［スライド資料］→［スライド資料をカスタマイズ］→［作成するスライドについて説明してください］
-に **このスキルが出力するYAML全文を貼り付けて**［生成］します。
-
----
-
-## 入力（ユーザーに確認すること）
-
-可能なら最初に以下を最大5問で確認し、回答がなければ括弧のデフォルトで進めます。
-
-1. 目的（例: 社内共有/営業/採用/投資家向け） (社内共有)
-2. 想定読者（例: 経営/開発/非エンジニア） (非エンジニア混在)
-3. トーン（例: 信頼感/革新/親しみ） (信頼感)
-4. ブランド要素（ロゴ/ブランドカラー/フォント指定） (指定なし)
-5. 写真/図表の比率（写真多め/データ多め） (データ多め)
+After loading the source material in NotebookLM,
+go to [Slides] → [Customize slide deck] → [Describe the slides to create]
+and **paste the full YAML output from this skill**, then click [Generate].
 
 ---
 
-## 出力（必須フォーマット）
+## Input (confirm with the user)
 
-以下の **2案**を必ず出力すること。
+If possible, ask up to 5 questions upfront; if no answer is given, proceed with the defaults shown in parentheses.
 
-- 案A: **可読性・信頼感・データ伝達を最優先**（ミニマル/コーポレート）
-- 案B: **情緒・ストーリー・余白の美学を重視**（エディトリアル/ライフスタイル）
-
-どちらも **日本語YAML**で、NotebookLMにそのまま貼れる形にする。
-
-出力形式:
-
-- `### 案A` の直下に YAML を1つ（コードブロック）
-- `### 案B` の直下に YAML を1つ（コードブロック）
+1. Purpose (e.g., internal sharing / sales / recruiting / investor-facing) (internal sharing)
+2. Target audience (e.g., management / engineering / non-engineers) (mixed non-engineers)
+3. Tone (e.g., trustworthy / innovative / approachable) (trustworthy)
+4. Brand elements (logo / brand colors / font specification) (none specified)
+5. Photo-to-chart ratio (photo-heavy / data-heavy) (data-heavy)
 
 ---
 
-## 生成ルール
+## Output (required format)
 
-- 具体的な色は **HEX** を含める（例: `#FFFFFF`）
-- 「やってはいけない」も少し書く（例: 枠線多用禁止、過剰な影禁止、色数制限）
-- 章立て/ナビゲーション/余白/グリッドなど、**再現性に効く制約を明文化**
-- 内容（ソース）が不明でも成立するよう、**構造テンプレ**として書く
+Always output the following **2 variations**.
+
+- Variation A: **Readability, trustworthiness, and data communication as top priorities** (minimal / corporate)
+- Variation B: **Emphasizes emotion, storytelling, and the aesthetics of whitespace** (editorial / lifestyle)
+
+Both should be in **Japanese YAML** that can be pasted directly into NotebookLM.
+
+Output format:
+
+- One YAML (code block) directly below `### Variation A`
+- One YAML (code block) directly below `### Variation B`
 
 ---
 
-## 出力テンプレ（生成例の骨格）
+## Generation Rules
 
-### 案A（ミニマル/コーポレート）
+- Include specific colors as **HEX values** (e.g., `#FFFFFF`)
+- Include a few "don'ts" (e.g., avoid excessive borders, avoid heavy shadows, limit color count)
+- Explicitly state **constraints that improve reproducibility** such as chapter structure, navigation, whitespace, and grid
+- Write as a **structural template** that works even when the source content is unknown
 
-（必要に応じて、目的/読者/ブランド色に合わせて微調整する）
+---
+
+## Output Template (generation example skeleton)
+
+### Variation A (Minimal / Corporate)
+
+(Adjust as needed to fit purpose, audience, and brand colors)
 
 ```yaml
-# presentation_design_spec_minimal_corporate_jp.yaml
-# スタイル: モダン・ミニマル / コーポレート
-# 目的: 可読性とデータ伝達を最優先（信頼感）
+# presentation_design_spec_minimal_corporate.yaml
+# Style: Modern Minimal / Corporate
+# Purpose: Prioritize readability and data communication (trustworthy)
 
-全体デザイン設定:
-  トーン: "信頼感、プロフェッショナル、クリーン、論理的"
-  配色パレット:
-    ベース: "#FFFFFF (白) または #F5F5F7 (非常に薄いグレー)"
-    文字色: "#111111 (ほぼ黒) または #333333 (チャコール)"
-    アクセント: "ブランドカラーがあればそれを使用。なければ #0052CC (ブルー) を採用"
-    強調: "#FFB020 (アンバー) - 重要な数値や注意に限定"
-    色数制限: "最大3色 + グレー階調"
-  タイポグラフィ:
-    見出し: "太めのゴシック体（サンセリフ）。短く強い言葉。"
-    本文: "可読性の高いゴシック体。行間を広めに。"
-    数字: "サンセリフ太字で大きく。単位（%など）は小さめ。"
-  共通レイアウト・ルール:
-    グリッド: "12カラム相当で整列。左右余白を広く。"
-    ナビゲーション: "左上に '01. SECTION' のような番号＋章題を小さく表示。"
-    余白: "詰め込み禁止。1スライド1メッセージ。"
-    図表: "罫線/グリッド線は最小。強調点のみアクセント色。"
-  NG事項:
-    - "過剰なドロップシャドウ禁止"
-    - "装飾枠の多用禁止"
-    - "グラデーション多用禁止"
+overall_design:
+  tone: "Trustworthy, professional, clean, logical"
+  color_palette:
+    base: "#FFFFFF (white) or #F5F5F7 (very light gray)"
+    text: "#111111 (near black) or #333333 (charcoal)"
+    accent: "Use brand color if available; otherwise #0052CC (blue)"
+    highlight: "#FFB020 (amber) — limited to key figures and warnings"
+    color_limit: "Max 3 colors + gray gradations"
+  typography:
+    heading: "Bold sans-serif. Short, strong words."
+    body: "Highly readable sans-serif. Generous line spacing."
+    numbers: "Large, bold sans-serif. Units (% etc.) slightly smaller."
+  layout_rules:
+    grid: "Align to 12-column equivalent. Wide left/right margins."
+    navigation: "Show small section number + chapter title in top-left, e.g. '01. SECTION'."
+    whitespace: "No cramming. One message per slide."
+    charts: "Minimize grid lines. Use accent color only on emphasis points."
+  dont:
+    - "Avoid excessive drop shadows"
+    - "Avoid overuse of decorative borders"
+    - "Avoid heavy use of gradients"
 
-レイアウト・バリエーション（カタログ）:
-  - タイプ: "表紙"
-    デザイン: "余白大。タイトルは左寄せで大きく、サブタイトルは小さく。薄い横罫線を1本。"
-  - タイプ: "章扉"
-    デザイン: "章タイトルを大きく。背景は単色でミニマル。"
-  - タイプ: "結論（TL;DR）"
-    デザイン: "結論3点 + 大きな数字/指標を1つ。"
-  - タイプ: "2カラム（課題 vs 解決）"
-    デザイン: "縦線で2分割。左:課題、右:解決。見出し太字、本文細字。"
-  - タイプ: "データ/チャート"
-    デザイン: "棒/折れ線のシンプル表現。注釈は短く。"
-  - タイプ: "プロセス"
-    デザイン: "水平ステップ（01-05）。丸アイコンは最小。"
-  - タイプ: "タイムライン"
-    デザイン: "縦線 + 年号大 + 説明小。"
-  - タイプ: "まとめ"
-    デザイン: "次アクションを3点。チェックリスト風に簡潔に。"
+layout_catalog:
+  - type: "Cover"
+    design: "Wide margins. Title large and left-aligned, subtitle small. One thin horizontal rule."
+  - type: "Chapter divider"
+    design: "Chapter title large. Background solid color, minimal."
+  - type: "Conclusion (TL;DR)"
+    design: "3 key takeaways + one large number/metric."
+  - type: "2-column (problem vs. solution)"
+    design: "Vertical line divides in two. Left: problem, Right: solution. Heading bold, body light."
+  - type: "Data / chart"
+    design: "Simple bar/line representation. Annotations short."
+  - type: "Process"
+    design: "Horizontal steps (01–05). Circle icons minimal."
+  - type: "Timeline"
+    design: "Vertical line + large year + small description."
+  - type: "Summary"
+    design: "Next actions in 3 points. Concise checklist style."
 ```
 
-### 案B（エディトリアル/ストーリー）
+### Variation B (Editorial / Story)
 
-（必要に応じて、目的/読者/写真比率に合わせて微調整する）
+(Adjust as needed to fit purpose, audience, and photo ratio)
 
 ```yaml
-# presentation_design_spec_editorial_story_jp.yaml
-# スタイル: モダン・エディトリアル / ライフスタイル雑誌風
-# 目的: 余白と写真でストーリーを語る（情緒/説得）
+# presentation_design_spec_editorial_story.yaml
+# Style: Modern Editorial / Lifestyle magazine
+# Purpose: Tell a story through whitespace and photography (emotion / persuasion)
 
-全体デザイン設定:
-  トーン: "穏やか、知的、情緒的、オーガニック、洗練"
-  ビジュアル・アイデンティティ:
-    背景色: "#F3F0EB (サンドベージュ) または #EBEBEB (ウォームグレー)"
-    文字色: "#333333 (チャコール) - 真っ黒は避ける"
-    アクセントカラー: "#E07A5F (テラコッタ) または #708D81 (オリーブ)"
-    画像スタイル:
-      特徴: "自然光、フィルム粒子、彩度低め"
-      形状: "角丸長方形 または アーチ型"
-  タイポグラフィ:
-    見出し: "上品な明朝/セリフ体。重要語は控えめに強調。"
-    本文: "読みやすいゴシック/サンセリフで小さめ。"
-    数字: "セリフ数字で落ち着きを出す。"
-  共通レイアウト・ルール:
-    余白: "余白を最優先。文字密度を下げる。"
-    写真: "1スライド1枚の大きい写真を基本。"
-    罫線: "枠線は禁止。区切りは余白か極細線のみ。"
-  デザインルール:
-    - "寒色・ネオンは禁止（温かいトーンで統一）"
-    - "過剰なアイコンは禁止（写真とタイポで語る）"
+overall_design:
+  tone: "Calm, intellectual, emotional, organic, refined"
+  visual_identity:
+    background: "#F3F0EB (sand beige) or #EBEBEB (warm gray)"
+    text: "#333333 (charcoal) — avoid pure black"
+    accent: "#E07A5F (terracotta) or #708D81 (olive)"
+    image_style:
+      characteristics: "Natural light, film grain, low saturation"
+      shape: "Rounded rectangle or arch shape"
+  typography:
+    heading: "Elegant serif. Emphasize key words subtly."
+    body: "Readable sans-serif, kept small."
+    numbers: "Serif numerals for a composed feel."
+  layout_rules:
+    whitespace: "Whitespace is the top priority. Keep text density low."
+    photos: "One large photo per slide as the default."
+    borders: "No frames. Use only whitespace or hairlines as dividers."
+  design_rules:
+    - "No cool colors or neons (keep a warm tone throughout)"
+    - "No excessive icons (let photos and typography do the talking)"
 
-レイアウト・バリエーション（カタログ）:
-  - タイプ: "表紙（雑誌カバー）"
-    デザイン: "右に写真フルブリード、左にタイトル。細い横罫線で区切る。"
-  - タイプ: "引用（Quote）"
-    デザイン: "短いメッセージを中央。背景に大きな引用符を薄く。"
-  - タイプ: "ストーリー（1→2→3）"
-    デザイン: "縦ステップ。点線で接続。各ステップ横に小さな丸写真。"
-  - タイプ: "比較"
-    デザイン: "左右2枚写真 + 各キャプション。色は抑えめ。"
-  - タイプ: "データ"
-    デザイン: "極細折れ線 + 説明文段落で補足（物語を添える）。"
-  - タイプ: "まとめ"
-    デザイン: "次アクションを3点。余白を残して締める。"
+layout_catalog:
+  - type: "Cover (magazine cover)"
+    design: "Full-bleed photo on the right, title on the left. Thin horizontal rule as divider."
+  - type: "Quote"
+    design: "Short message centered. Large faint quotation marks in background."
+  - type: "Story (1→2→3)"
+    design: "Vertical steps. Connected by dotted lines. Small circular photo beside each step."
+  - type: "Comparison"
+    design: "Two photos side by side + individual captions. Colors subdued."
+  - type: "Data"
+    design: "Ultra-thin line chart + explanatory text paragraph as a narrative supplement."
+  - type: "Summary"
+    design: "3 next actions. Close with whitespace preserved."
 ```

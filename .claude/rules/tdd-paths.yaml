@@ -1,11 +1,10 @@
 # tdd-paths.yaml
 #
 # Purpose:
-#   Phase 68 - TDD enforcement の言語別 src↔test ファイルマッピング SSOT。
-#   scripts/detect-test-framework.sh と scripts/hook-handlers/tdd-enforce.sh
-#   (Phase B 実装) から参照され、R14 guardrail rule が
-#   「src ファイル書き込み時に対応する test ファイルが存在するか」
-#   を判定する基準になる。
+#   Phase 68 - SSOT for per-language src<->test file mapping for TDD enforcement.
+#   Referenced by scripts/detect-test-framework.sh and scripts/hook-handlers/tdd-enforce.sh
+#   (Phase B implementation). Provides the criteria by which the R14 guardrail rule
+#   determines "when writing a src file, does the corresponding test file exist?"
 #
 # Schema: tdd-paths.v1
 #   {
@@ -19,28 +18,28 @@
 #         src_to_test_map: [{from: "...", to: ["..."]}]
 #       }
 #     },
-#     overrides: [{glob, framework}]  # 任意、polyglot monorepo 用
+#     overrides: [{glob, framework}]  # optional, for polyglot monorepos
 #   }
 #
 # Default:
-#   node / go / python / rust の 4 言語を基本マッピングで提供。
-#   未登録言語の write は test 要求を発火させない (誤検知防止)。
+#   Provides basic mappings for 4 languages: node / go / python / rust.
+#   Writes to unregistered languages do not trigger test requirements (prevents false positives).
 #
 # Update Rules:
-#   1. languages key は言語識別子で unique (node / go / python / rust / ...)
-#   2. src_patterns は glob (bash extglob / Go filepath.Match 互換)
-#   3. test_patterns は src と排他にする (test ファイル自体は R14 対象外)
-#   4. src_to_test_map[].from は placeholder {name} / {dir} を含む pattern
-#   5. src_to_test_map[].to は 1 つ以上の候補 (最初に存在したものを採用)
-#   6. framework_detect_files の最初の hit が framework_command_default を採用
-#   7. 不正な schema は scripts/detect-test-framework.sh が exit 1
-#   8. 詳細仕様: docs/TDD_ENFORCEMENT.md (Phase B.3 で作成予定)
+#   1. The languages key is unique per language identifier (node / go / python / rust / ...)
+#   2. src_patterns are globs (bash extglob / Go filepath.Match compatible)
+#   3. test_patterns must be mutually exclusive with src (test files themselves are not R14 targets)
+#   4. src_to_test_map[].from is a pattern containing placeholders {name} / {dir}
+#   5. src_to_test_map[].to has one or more candidates (the first existing one is used)
+#   6. The first hit in framework_detect_files adopts framework_command_default
+#   7. An invalid schema causes scripts/detect-test-framework.sh to exit 1
+#   8. Full specification: docs/TDD_ENFORCEMENT.md (to be created in Phase B.3)
 #
-# False-positive 回避の優先パターン (R14 gate と整合):
-#   - test ファイル自体への Write は常に approve (gate 5 で除外)
-#   - sprint-contract.json が無い path への Write は常に approve (gate 6 不成立)
-#   - tdd_required != true の contract に紐づく path は常に approve (gate 6 不成立)
-#   - tdd.enforce.level != "max" の時は本ファイルが一切参照されない (gate 1 で短絡)
+# Priority patterns for avoiding false positives (aligned with R14 gate):
+#   - Writes to test files themselves are always approved (excluded at gate 5)
+#   - Writes to paths without sprint-contract.json are always approved (gate 6 not satisfied)
+#   - Paths linked to a contract where tdd_required != true are always approved (gate 6 not satisfied)
+#   - When tdd.enforce.level != "max", this file is not referenced at all (short-circuits at gate 1)
 #
 
 schema_version: tdd-paths.v1
@@ -145,11 +144,10 @@ languages:
           - "tests/{name}_test.rs"
           - "src/{name}_test.rs"
 
-# ---- per-glob framework override (将来拡張用、現状空配列) ----
+# ---- per-glob framework override (for future extension, currently empty array) ----
 #
-# polyglot monorepo で「ルートでは go だが node/web 配下は vitest」のような
-# 上書きが必要になったら overrides[] に追加する。R14 は最も specific な
-# overrides[].glob にマッチした framework を採用し、無ければ languages 走査
-# 結果を採用する。
+# For cases in a polyglot monorepo where "the root is go but the node/web subdirectory uses vitest,"
+# add to overrides[]. R14 adopts the framework from the most specific overrides[].glob match,
+# and falls back to the languages scan result if none matches.
 #
 overrides: []

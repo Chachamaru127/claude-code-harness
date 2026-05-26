@@ -1,5 +1,5 @@
 #!/bin/bash
-# TaskCompleted 完了時 finalize の安全条件を検証
+# Verify the safety conditions for TaskCompleted finalize
 
 set -euo pipefail
 
@@ -103,12 +103,12 @@ run_task_completed() {
 start_server
 SERVER_PORT="$(cat "${PORT_FILE}")"
 
-# Case 1: 途中タスクでは finalize しない
+# Case 1: intermediate tasks must not trigger finalize
 CASE1_DIR="${TMP_DIR}/case1"
 mkdir -p "${CASE1_DIR}/.claude/state"
 write_breezing_active "${CASE1_DIR}" "session-case1"
 
-case1_output="$(run_task_completed "${CASE1_DIR}" '{"teammate_name":"impl-1","task_id":"26.0.1","task_subject":"最初のタスク"}')"
+case1_output="$(run_task_completed "${CASE1_DIR}" '{"teammate_name":"impl-1","task_id":"26.0.1","task_subject":"first task"}')"
 echo "${case1_output}" | grep -q '"decision":"approve"' || {
   echo "non-final task should approve"
   exit 1
@@ -118,7 +118,7 @@ echo "${case1_output}" | grep -q '"decision":"approve"' || {
   exit 1
 }
 
-# Case 2: 最後のタスクで session.json fallback を使って finalize
+# Case 2: final task should finalize using session.json fallback
 CASE2_DIR="${TMP_DIR}/case2"
 mkdir -p "${CASE2_DIR}/.claude/state"
 write_breezing_active "${CASE2_DIR}" ""
@@ -130,7 +130,7 @@ cat > "${CASE2_DIR}/.claude/state/session.json" <<'EOF'
 }
 EOF
 
-case2_output="$(run_task_completed "${CASE2_DIR}" '{"teammate_name":"impl-1","task_id":"26.0.2","task_subject":"最後のタスク"}')"
+case2_output="$(run_task_completed "${CASE2_DIR}" '{"teammate_name":"impl-1","task_id":"26.0.2","task_subject":"last task"}')"
 echo "${case2_output}" | grep -q '"stopReason":"all_tasks_completed"' || {
   echo "final task should stop after completion"
   exit 1
@@ -150,8 +150,8 @@ tail -n 1 "${REQUEST_LOG}" | jq -e '.session_id == "session-case2" and .project 
   exit 1
 }
 
-# Case 3: 同一セッションの再実行では finalize を重複送信しない
-case3_output="$(run_task_completed "${CASE2_DIR}" '{"teammate_name":"impl-1","task_id":"26.0.2","task_subject":"最後のタスク"}')"
+# Case 3: re-running the same session must not send finalize twice
+case3_output="$(run_task_completed "${CASE2_DIR}" '{"teammate_name":"impl-1","task_id":"26.0.2","task_subject":"last task"}')"
 echo "${case3_output}" | grep -q '"stopReason":"all_tasks_completed"' || {
   echo "duplicate final task should still stop cleanly"
   exit 1
@@ -161,13 +161,13 @@ echo "${case3_output}" | grep -q '"stopReason":"all_tasks_completed"' || {
   exit 1
 }
 
-# Case 4: session_id が解決できない時は静かに skip
+# Case 4: when session_id cannot be resolved, silently skip
 CASE4_DIR="${TMP_DIR}/case4"
 mkdir -p "${CASE4_DIR}/.claude/state"
 write_breezing_active "${CASE4_DIR}" ""
 seed_first_task "${CASE4_DIR}"
 
-case4_output="$(run_task_completed "${CASE4_DIR}" '{"teammate_name":"impl-1","task_id":"26.0.2","task_subject":"最後のタスク"}')"
+case4_output="$(run_task_completed "${CASE4_DIR}" '{"teammate_name":"impl-1","task_id":"26.0.2","task_subject":"last task"}')"
 echo "${case4_output}" | grep -q '"stopReason":"all_tasks_completed"' || {
   echo "missing session id case should still stop cleanly"
   exit 1

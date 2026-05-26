@@ -170,20 +170,20 @@
     },
     "i18n": {
       "type": "object",
-      "description": "Internationalization settings / 国際化設定",
+      "description": "Internationalization settings",
       "properties": {
         "language": {
           "type": "string",
           "enum": ["en", "ja"],
           "default": "en",
-          "description": "Display language for commands and messages (en: English, ja: Japanese / 日本語)"
+          "description": "Display language for commands and messages (en: English, ja: Japanese)"
         }
       },
       "default": {}
     },
     "constitution": {
       "type": "object",
-      "description": "Constitution file settings / 開発原則設定",
+      "description": "Constitution file settings",
       "properties": {
         "path": {
           "type": "string",
@@ -195,7 +195,7 @@
     },
     "orchestration": {
       "type": "object",
-      "description": "Deterministic orchestration settings / 決定論的オーケストレーション設定",
+      "description": "Deterministic orchestration settings",
       "properties": {
         "state_machine_version": {
           "type": "string",

@@ -11,39 +11,39 @@ import (
 	"time"
 )
 
-// StalenessThreshold は連続失敗カウンターのリセット閾値（秒）。
-// 前回失敗から StalenessThreshold 秒以上経過した場合はリセットする。
+// StalenessThreshold is the reset threshold (in seconds) for the consecutive failure counter.
+// The counter is reset when more than StalenessThreshold seconds have elapsed since the last failure.
 const StalenessThreshold = 60
 
-// PostToolFailureHandler は PostToolUseFailure フックハンドラ。
-// 連続ツール失敗をカウントし、3 回連続で escalation メッセージを返す。
+// PostToolFailureHandler is the PostToolUseFailure hook handler.
+// Counts consecutive tool failures and returns an escalation message after 3 in a row.
 //
-// shell 版: scripts/hook-handlers/post-tool-failure.sh
+// Shell version: scripts/hook-handlers/post-tool-failure.sh
 type PostToolFailureHandler struct {
-	// StateDir はカウンターファイルの保存先。
-	// 空の場合は ResolveStateDir(projectRoot) を使う。
+	// StateDir is the destination for the counter file.
+	// If empty, uses ResolveStateDir(projectRoot).
 	StateDir string
-	// nowFunc はテスト用の時刻注入関数。nil の場合は time.Now() を使う。
+	// nowFunc is a time injection function for testing. If nil, uses time.Now().
 	nowFunc func() time.Time
 }
 
-// postToolFailureInput は PostToolUseFailure フックの stdin JSON。
+// postToolFailureInput is the stdin JSON for the PostToolUseFailure hook.
 type postToolFailureInput struct {
 	ToolName string `json:"tool_name"`
-	// toolName の別名も許容
+	// Also accepts the toolName alias
 	ToolNameAlt string `json:"toolName,omitempty"`
 	Error       string `json:"error,omitempty"`
 	Message     string `json:"message,omitempty"`
 }
 
-// counterRecord はカウンターファイルのレコード。
+// counterRecord is the record for the counter file.
 type counterRecord struct {
 	Count     int
 	Timestamp int64
 }
 
-// Handle は stdin から PostToolUseFailure ペイロードを読み取り、
-// 連続失敗カウントに応じた systemMessage を stdout に書き出す。
+// Handle reads a PostToolUseFailure payload from stdin and
+// writes a systemMessage to stdout based on the consecutive failure count.
 func (h *PostToolFailureHandler) Handle(r io.Reader, w io.Writer) error {
 	data, err := io.ReadAll(r)
 	if err != nil || len(data) == 0 {
@@ -71,7 +71,7 @@ func (h *PostToolFailureHandler) Handle(r io.Reader, w io.Writer) error {
 		errorMsg = errorMsg[:200]
 	}
 
-	// ステートディレクトリの確保
+	// Ensure the state directory exists
 	stateDir := h.StateDir
 	if stateDir == "" {
 		projectRoot := resolveProjectRoot(data)
@@ -97,7 +97,7 @@ func (h *PostToolFailureHandler) Handle(r io.Reader, w io.Writer) error {
 	}
 
 	if rec.Count >= 3 {
-		// 3 回連続失敗: escalation
+		// 3 consecutive failures: escalation
 		h.resetCounter(counterFile)
 		msg := fmt.Sprintf(
 			"WARNING: %d consecutive tool failures detected (tool: %s). "+
@@ -108,7 +108,7 @@ func (h *PostToolFailureHandler) Handle(r io.Reader, w io.Writer) error {
 		return WriteJSON(w, SystemMessageResponse{SystemMessage: msg})
 	}
 
-	// 失敗 1-2 回: 警告のみ
+	// Failure 1-2: warning only
 	msg := fmt.Sprintf(
 		"Tool failure #%d/3 (tool: %s). Will escalate after 3 consecutive failures.",
 		rec.Count, toolName,
@@ -116,7 +116,7 @@ func (h *PostToolFailureHandler) Handle(r io.Reader, w io.Writer) error {
 	return WriteJSON(w, SystemMessageResponse{SystemMessage: msg})
 }
 
-// now は現在時刻を返す（テスト用に注入可能）。
+// now returns the current time (injectable for testing).
 func (h *PostToolFailureHandler) now() time.Time {
 	if h.nowFunc != nil {
 		return h.nowFunc()
@@ -124,9 +124,9 @@ func (h *PostToolFailureHandler) now() time.Time {
 	return time.Now()
 }
 
-// readCounter はカウンターファイルを読み取る。
-// ファイルがない、または形式が不正な場合は count=0 を返す。
-// 前回失敗から StalenessThreshold 秒以上経過していた場合もリセットする。
+// readCounter reads the counter file.
+// Returns count=0 if the file is missing or malformed.
+// Also resets if more than StalenessThreshold seconds have elapsed since the last failure.
 func (h *PostToolFailureHandler) readCounter(path string, now int64) counterRecord {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -144,7 +144,7 @@ func (h *PostToolFailureHandler) readCounter(path string, now int64) counterReco
 		return counterRecord{}
 	}
 
-	// 古い場合はリセット
+	// Reset if stale
 	if now-ts > StalenessThreshold {
 		return counterRecord{}
 	}
@@ -152,7 +152,7 @@ func (h *PostToolFailureHandler) readCounter(path string, now int64) counterReco
 	return counterRecord{Count: count, Timestamp: ts}
 }
 
-// writeCounter はカウンターファイルに書き出す。
+// writeCounter writes to the counter file.
 func (h *PostToolFailureHandler) writeCounter(path string, rec counterRecord) error {
 	if isSymlink(path) {
 		return fmt.Errorf("security: symlinked counter file: %s", path)
@@ -161,14 +161,14 @@ func (h *PostToolFailureHandler) writeCounter(path string, rec counterRecord) er
 	return os.WriteFile(path, []byte(content), 0600)
 }
 
-// resetCounter はカウンターを 0 にリセットする。
+// resetCounter resets the counter to 0.
 func (h *PostToolFailureHandler) resetCounter(path string) {
 	_ = h.writeCounter(path, counterRecord{Count: 0, Timestamp: 0})
 }
 
-// resolveProjectRoot は入力 JSON や環境変数からプロジェクトルートを推測する。
+// resolveProjectRoot infers the project root from the input JSON or environment variables.
 func resolveProjectRoot(data []byte) string {
-	// CWD フィールドを試みる
+	// Try the CWD field
 	var v struct {
 		CWD string `json:"cwd"`
 	}
@@ -176,7 +176,7 @@ func resolveProjectRoot(data []byte) string {
 		return v.CWD
 	}
 
-	// 環境変数フォールバック
+	// Environment variable fallback
 	if r := os.Getenv("HARNESS_PROJECT_ROOT"); r != "" {
 		return r
 	}

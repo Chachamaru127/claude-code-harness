@@ -1,82 +1,82 @@
 # harness-review operating model
 
-## ひとことで
+## In one sentence
 
-`harness-review` は、軽い closeout から重い品質 gate までを 1 つの入口で扱う。
-別の軽量 skill は作らない。
+`harness-review` handles everything from a lightweight closeout to a heavy quality gate through a single entry point.
+No separate lightweight skill is created.
 
-## たとえると
+## Analogy
 
-病院の受付を 2 つに増やすのではなく、同じ受付で「通常診察」「精密検査」「救急」を振り分ける形にする。
-入口を増やすと迷いやすい。
-入口を 1 つにして、中で適切な検査の重さを選ぶ。
+Rather than adding a second reception desk at a hospital, keep one desk and route patients to "routine checkup," "detailed examination," or "emergency" from the same entry point.
+More entry points creates confusion.
+Keep one entry point and choose the appropriate examination depth from there.
 
 ## Why single entrypoint
 
-| 判断 | 理由 |
+| Decision | Reason |
 |---|---|
-| 別 skill を作らない | discovery noise が増える。ユーザーも agent も、どちらを呼ぶべきか迷う |
-| `harness-review` を dispatcher にする | contract drift を避けられる。`APPROVE` の意味が skill ごとにズレない |
-| governance を reference に逃がす | 長い SKILL.md を毎回読む負担を減らしつつ、品質 gate は残せる |
-| read-only default にする | review だけで commit / push まで進むと、release/work flow の責務が壊れる |
+| No separate skill | Increases discovery noise. Both users and agents struggle to know which one to call |
+| Make `harness-review` a dispatcher | Avoids contract drift. The meaning of `APPROVE` doesn't diverge between skills |
+| Offload governance to references | Reduces the overhead of reading a long SKILL.md every time, while keeping quality gates |
+| Read-only default | Allowing review to proceed all the way to commit/push would break the responsibilities of release/work flows |
 
 ## Mode table
 
-| mode | 使う場面 | 重さ | 主な出力 |
+| mode | When to use | Weight | Primary output |
 |---|---|---:|---|
-| `quick` | 小さな未コミット変更を閉じたい時 | 軽い | accepted/rejected findings と focused tests |
-| `codex-closeout` *(archived for v1)* | Codex review を助言として使い、実コードで確認したい時 | 軽い | review command / tests / clean result |
-| `code` | 普通の実装差分レビュー | 中 | `APPROVE` / `REQUEST_CHANGES` |
-| `plan` | `Plans.md` の DoD / Depends / Status を見る時 | 中 | plan 修正点 |
-| `scope` | やりすぎ、漏れ、不要変更を見たい時 | 中 | scope 判定 |
-| `security` | 権限、入力、秘密情報などのリスクを見る時 | 重い | OWASP Top 10 観点の findings |
-| `ui-rubric` | 見た目、使いやすさ、完成度を点数化する時 | 中 | design quality score |
-| `full` | release 前や重要変更の最終 gate | 重い | TeamAgent Debate + governance gate |
+| `quick` | Closing out small uncommitted changes | Light | accepted/rejected findings and focused tests |
+| `codex-closeout` *(archived for v1)* | When using Codex review as advice, confirming with actual code | Light | review command / tests / clean result |
+| `code` | Regular implementation diff review | Medium | `APPROVE` / `REQUEST_CHANGES` |
+| `plan` | Reviewing DoD / Depends / Status in `Plans.md` | Medium | Plan correction points |
+| `scope` | Checking for over-scoping, gaps, or unnecessary changes | Medium | Scope assessment |
+| `security` | Reviewing risks around permissions, input, secrets, etc. | Heavy | OWASP Top 10 findings |
+| `ui-rubric` | Scoring appearance, usability, and completeness | Medium | Design quality score |
+| `full` | Final gate before release or for significant changes | Heavy | TeamAgent Debate + governance gate |
 
 ## Adopted from external codex-review *(historical upstream context, Codex archived for v1)*
 
-| 採用項目 | harness-review での扱い |
+| Adopted item | Handling in harness-review |
 |---|---|
-| `advisory` | Codex の指摘は助言。実コード、diff、テストで確認してから採用する |
-| `accepted/rejected` | 指摘は accepted findings / rejected findings に分けて理由を書く |
-| `stop-on-clean` | clean result 後に、見栄えのためだけの追加 review をしない |
-| `target selection` | dirty / PR branch / branch range / single commit を最初に固定する |
-| `no push just to review` | Do not push just to review。review 目的だけで push しない |
-| `dirty tree handling` | untracked を含む未コミット変更を review scope に含める |
+| `advisory` | Codex findings are advisory. Adopt only after confirming with actual code, diff, and tests |
+| `accepted/rejected` | Split findings into accepted findings / rejected findings with reasons |
+| `stop-on-clean` | Do not run additional review just for appearances after a clean result |
+| `target selection` | Fix the target (dirty / PR branch / branch range / single commit) upfront |
+| `no push just to review` | Do not push just to review |
+| `dirty tree handling` | Include uncommitted changes, including untracked files, in the review scope |
 
 ## Not adopted
 
-| 非採用 | 理由 |
+| Not adopted | Reason |
 |---|---|
-| review skill の default auto-commit | review と work/release の責務が混ざる |
-| 軽量専用の別 skill | discovery noise と contract drift が増える |
-| AI 指摘の自動採用 | 実コード確認なしでは false positive / false negative が混ざる |
-| clean 後の追加 review loop | 時間を使うだけで品質が上がりにくい |
+| Default auto-commit for review skill | Mixes review responsibilities with those of work/release |
+| Separate lightweight-only skill | Increases discovery noise and contract drift |
+| Auto-applying AI suggestions | Without confirming with actual code, false positives/negatives mix in |
+| Additional review loop after clean | Costs time without meaningfully improving quality |
 
 ## Side-effect boundary
 
-`harness-review` は原則 read-only。
-`APPROVE` は「品質 gate を通った」という判定であり、「commit してよい」という操作命令ではない。
+`harness-review` is read-only by default.
+`APPROVE` means "passed the quality gate," not "proceed to commit."
 
-commit / push / release の責務:
+Responsibility for commit / push / release:
 
-| 操作 | 担当 |
+| Operation | Responsible party |
 |---|---|
-| 修正 commit | `harness-work` またはユーザー明示依頼 |
-| release commit / tag / publish | `harness-release` |
-| review 結果の判定 | `harness-review` |
-| push | ユーザー明示依頼または release flow |
+| Correction commit | `harness-work` or explicit user request |
+| Release commit / tag / publish | `harness-release` |
+| Review result judgment | `harness-review` |
+| Push | Explicit user request or release flow |
 
 ## Concrete example
 
-小さな docs 修正を見たい時:
+When reviewing a small docs change:
 
 ```bash
 /harness-review --quick
 bash scripts/harness-review-closeout.sh --dry-run --uncommitted
 ```
 
-release 前の重い gate を通す時:
+Running a heavy gate before a release:
 
 ```bash
 /harness-review full --team-debate --dual
@@ -84,8 +84,8 @@ release 前の重い gate を通す時:
 
 ## Why this approach
 
-今の問題は、品質基準が弱いことではない。
-入口の `SKILL.md` が重すぎて、軽い closeout でも毎回精密検査の説明書を読む形になっていること。
+The problem is not weak quality standards.
+It's that the entry-point `SKILL.md` is too heavy, so even a lightweight closeout ends up reading the full examination guide every time.
 
-だから、品質基準を削らず、入口だけを薄くする。
-これにより、通常時は速く、重要時は深く見られる。
+The solution is to keep the quality standards intact and make only the entry point lighter.
+This makes normal reviews fast, and important reviews thorough.

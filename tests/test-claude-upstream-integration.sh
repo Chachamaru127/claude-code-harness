@@ -9,9 +9,9 @@ CODEX_ACTIVE=false
 SKILLS_CODEX_ACTIVE=false
 [ -d "${ROOT_DIR}/skills-codex" ] && SKILLS_CODEX_ACTIVE=true
 
-# Phase 64.1.1 / 64.1.3: archive-aware Plans.md grep helper を共有 library から source
-# helper 実装と説明は tests/lib/grep_plans_or_archive.sh を参照。
-# tests/test-grep-plans-or-archive.sh が 4 状態 (Plans only / archive only / both / miss) を独立検証する。
+# Phase 64.1.1 / 64.1.3: source archive-aware Plans.md grep helper from shared library
+# See tests/lib/grep_plans_or_archive.sh for helper implementation and description.
+# tests/test-grep-plans-or-archive.sh independently validates all 4 states (Plans only / archive only / both / miss).
 # shellcheck source=lib/grep_plans_or_archive.sh
 . "${ROOT_DIR}/tests/lib/grep_plans_or_archive.sh"
 

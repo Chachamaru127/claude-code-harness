@@ -1,7 +1,7 @@
 id: "task-02"
-name: "マルチファイル CRUD - TODO API"
+name: "Multi-file CRUD - TODO API"
 difficulty: "Medium"
-prompt: "types.ts のインターフェースに従って、TodoStore の実装を作成してください。create, getById, getAll, update, delete の全メソッドを実装してください。"
+prompt: "Following the interfaces in types.ts, create an implementation of TodoStore. Implement all methods: create, getById, getAll, update, delete."
 hidden_test_count: 15
 setup_files:
   - src/types.ts

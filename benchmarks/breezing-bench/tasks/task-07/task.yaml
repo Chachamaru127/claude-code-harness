@@ -1,7 +1,7 @@
 id: "task-07"
-name: "テスト追加 - カバレッジ向上"
+name: "Add tests - improve coverage"
 difficulty: "Medium"
-prompt: "string-utils.ts の20個の関数に対して、正常系とエッジケースを網羅するテストを追加してください。各関数で空文字列、null的入力、特殊文字のケースをカバーしてください。"
+prompt: "Add tests covering both normal cases and edge cases for the 20 functions in string-utils.ts. For each function, cover empty string, null-like input, and special character cases."
 hidden_test_count: 12
 setup_files:
   - src/string-utils.ts

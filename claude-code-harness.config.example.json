@@ -9,13 +9,13 @@
 
   "constitution": {
     "path": "docs/constitution.md",
-    "comment": "品質ゲート・DoD・原則を集約したファイル（プロジェクトごとにカスタマイズ可）"
+    "comment": "File aggregating quality gates, DoD, and principles (customizable per project)"
   },
 
   "work": {
     "auto_commit": true,
     "commit_on_pm_approve": false,
-    "comment": "commit_on_pm_approve: true にすると 2-Agent モードで PM 承認後にコミット"
+    "comment": "commit_on_pm_approve: true commits after PM approval in 2-Agent mode"
   },
 
   "safety": {

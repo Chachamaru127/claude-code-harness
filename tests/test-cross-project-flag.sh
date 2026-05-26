@@ -1,14 +1,14 @@
 #!/bin/bash
 # tests/test-cross-project-flag.sh
-# Phase 65.3.5 - --cross-project-group flag の skill 統合検証
+# Phase 65.3.5 - skill integration validation of --cross-project-group flag
 #
-# 検証ケース (Plans.md §65.3.5 DoD e に対応):
-#   1. flag 不在 - SKILL.md に default (project-only) と alt (cross-project)
-#                  両方の Step 2 が記述されている
-#   2. 有効 group - load-cross-project-groups.sh --group <valid> で member
-#                   配列が返る (D43 Option α)
-#   3. 無効 group - --group <invalid> で exit 1, stderr "group not found"
-#   4. 空 group   - groups: [{name: X, members: []}] で --group X → []
+# Validation cases (Plans.md §65.3.5 DoD e):
+#   1. flag absent - SKILL.md describes both default (project-only) and
+#                    alt (cross-project) Step 2
+#   2. valid group - load-cross-project-groups.sh --group <valid> returns
+#                    member array (D43 Option α)
+#   3. invalid group - --group <invalid> exits 1, stderr "group not found"
+#   4. empty group  - groups: [{name: X, members: []}] with --group X → []
 
 set -euo pipefail
 
@@ -48,7 +48,7 @@ TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/test-cross-project-flag.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 # ============================================================
-# Case 1: flag 不在 - SKILL.md に default + alt Step 2 両方の記述あり
+# Case 1: flag absent - SKILL.md has both default + alt Step 2 descriptions
 # ============================================================
 
 # Plan Brief
@@ -90,7 +90,7 @@ else
 fi
 
 # ============================================================
-# Case 2: 有効 group - members 配列を返す
+# Case 2: valid group - returns members array
 # ============================================================
 
 YAML2="$TMP_DIR/groups2-valid.yaml"
@@ -106,7 +106,7 @@ groups:
 YAML
 
 OUTPUT="$(bash "$LOADER" --yaml "$YAML2" --group "TestPersonalTools" 2>"$TMP_DIR/c2-stderr.txt")"
-# JSON は Python json.dumps default 形式 (separators付きスペース) で出力される
+# JSON is output in Python json.dumps default format (with separators and spaces)
 if echo "$OUTPUT" | python3 -c "import json,sys; arr=json.load(sys.stdin); sys.exit(0 if arr==['my-cli','my-dotfiles','my-scripts'] else 1)"; then
   pass "Case 2 (valid group): exit 0, members array returned (parsed: my-cli/my-dotfiles/my-scripts)"
 else
@@ -120,7 +120,7 @@ else
 fi
 
 # ============================================================
-# Case 3: 無効 group - exit 1, stderr "group not found"
+# Case 3: invalid group - exit 1, stderr "group not found"
 # ============================================================
 
 if bash "$LOADER" --yaml "$YAML2" --group "DoesNotExist" >/dev/null 2>"$TMP_DIR/c3-stderr.txt"; then
@@ -136,7 +136,7 @@ else
 fi
 
 # ============================================================
-# Case 4: 空 group - members: [] で exit 0, [] が返る
+# Case 4: empty group - members: [] exits 0, [] returned
 # ============================================================
 
 YAML4="$TMP_DIR/groups4-empty-members.yaml"
@@ -162,7 +162,7 @@ else
 fi
 
 # ============================================================
-# 共通: SKILL.md が D43 Option α を明示参照しているか
+# Common: does SKILL.md explicitly reference D43 Option α?
 # ============================================================
 
 if grep -q "D43 Option α" "$PLAN_BRIEF_SKILL"; then
@@ -178,7 +178,7 @@ else
 fi
 
 # ============================================================
-# 共通: cross-project 結果には --with-redaction を使う指示があるか
+# Common: is there an instruction to use --with-redaction for cross-project results?
 # ============================================================
 
 if grep -q -- "--with-redaction" "$PLAN_BRIEF_SKILL"; then

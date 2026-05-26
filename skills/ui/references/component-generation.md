@@ -1,40 +1,40 @@
 ---
 name: component
-description: "UIコンポーネント生成（shadcn/ui 等）。ヒーローセクションや料金表などのUIを作りたい場合に使用します。"
+description: "Generate UI components (shadcn/ui, etc.). Use when building UI like hero sections or pricing tables."
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 ---
 
 # Component Skill
 
-shadcn/uiベースのUIコンポーネントを生成するスキル。
-最初に `../ui-skills.md` と `../frontend-design.md` の適用条件を確認する。
+Skill for generating shadcn/ui-based UI components.
+Start by checking the application conditions in `../ui-skills.md` and `../frontend-design.md`.
 
 ---
 
-## トリガーフレーズ
+## Trigger Phrases
 
-- 「ヒーローセクションを作って」
-- 「料金表を作って」
-- 「フッターを作って」
-- 「お問い合わせフォームを作って」
-- 「UIコンポーネントを生成して」
-
----
-
-## 機能
-
-- shadcn/uiコンポーネントの自動インストール
-- レスポンシブ対応
-- アクセシビリティ対応
-- Tailwind CSSカスタマイズ
+- "create a hero section"
+- "build a pricing table"
+- "add a footer"
+- "create a contact form"
+- "generate a UI component"
 
 ---
 
-## 対応コンポーネント
+## Features
 
-- Hero セクション
-- Pricing（料金表）
-- Features（機能紹介）
-- Contact（お問い合わせ）
+- Auto-install shadcn/ui components
+- Responsive layout support
+- Accessibility support
+- Tailwind CSS customization
+
+---
+
+## Supported Components
+
+- Hero section
+- Pricing table
+- Features section
+- Contact form
 - Footer
 - Header/Navigation

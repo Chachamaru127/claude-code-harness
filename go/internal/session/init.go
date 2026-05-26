@@ -24,29 +24,29 @@ import (
 // InitHandler
 // ---------------------------------------------------------------------------
 
-// InitHandler は SessionStart フックハンドラ。
-// session-init.sh の主要機能を Go に移植する:
-//  1. サブエージェント時の軽量初期化
-//  2. セッション JSON の初期化 (session.json)
-//  3. Plans.md のタスクカウント
-//  4. additionalContext を含む JSON レスポンス
+// InitHandler is the SessionStart hook handler.
+// Ports the main functionality of session-init.sh to Go:
+//  1. Lightweight initialization for subagents
+//  2. Session JSON initialization (session.json)
+//  3. Task count from Plans.md
+//  4. JSON response including additionalContext
 //
-// shell 版: scripts/session-init.sh
+// Shell version: scripts/session-init.sh
 type InitHandler struct {
-	// StateDir は .claude/state ディレクトリのパス。空の場合は cwd から推定する。
+	// StateDir is the path to the .claude/state directory. Inferred from cwd if empty.
 	StateDir string
-	// PlansFile は Plans.md のパス。空の場合は projectRoot/Plans.md を使う。
+	// PlansFile is the path to Plans.md. Defaults to projectRoot/Plans.md if empty.
 	PlansFile string
 }
 
-// initInput は SessionStart フックの stdin JSON。
+// initInput is the stdin JSON for the SessionStart hook.
 type initInput struct {
 	SessionID string `json:"session_id,omitempty"`
 	AgentType string `json:"agent_type,omitempty"`
 	CWD       string `json:"cwd,omitempty"`
 }
 
-// sessionJSON は session.json のスキーマ（最低限）。
+// sessionJSON is the schema for session.json (minimal).
 type sessionJSON struct {
 	SessionID   string `json:"session_id"`
 	State       string `json:"state"`
@@ -56,7 +56,7 @@ type sessionJSON struct {
 	LastEventID string `json:"last_event_id"`
 }
 
-// initResponse は SessionStart フックへの JSON 出力。
+// initResponse is the JSON output for the SessionStart hook.
 type initResponse struct {
 	HookSpecificOutput initHookOutput `json:"hookSpecificOutput"`
 }
@@ -66,8 +66,8 @@ type initHookOutput struct {
 	AdditionalContext string `json:"additionalContext"`
 }
 
-// Handle は stdin から SessionStart ペイロードを読み取り、
-// セッション初期化を行い、additionalContext を含む JSON を stdout に書き出す。
+// Handle reads the SessionStart payload from stdin,
+// performs session initialization, and writes a JSON including additionalContext to stdout.
 func (h *InitHandler) Handle(r io.Reader, w io.Writer) error {
 	data, _ := io.ReadAll(r)
 
@@ -76,26 +76,26 @@ func (h *InitHandler) Handle(r io.Reader, w io.Writer) error {
 		_ = json.Unmarshal(data, &inp)
 	}
 
-	// サブエージェント時は軽量初期化（session.json 操作をスキップ）
+	// Lightweight initialization for subagents (skip session.json operations)
 	if inp.AgentType == "subagent" {
 		return writeJSON(w, initResponse{
 			HookSpecificOutput: initHookOutput{
 				HookEventName:     "SessionStart",
-				AdditionalContext: "[subagent] 軽量初期化完了",
+				AdditionalContext: "[subagent] lightweight initialization complete",
 			},
 		})
 	}
 
-	// プロジェクトルートとステートディレクトリを決定
+	// Resolve project root and state directory
 	projectRoot := resolveProjectRoot(inp.CWD)
 	stateDir := h.StateDir
 	if stateDir == "" {
 		stateDir = filepath.Join(projectRoot, ".claude", "state")
 	}
 
-	// ステートディレクトリを作成（シンボリックリンクチェック付き）
+	// Create state directory (with symlink check)
 	if err := ensureStateDir(stateDir); err != nil {
-		// エラーでも処理を継続（バナーと Plans 情報は出力する）
+		// Continue even on error (banner and Plans info will still be output)
 		_ = err
 	}
 
@@ -107,20 +107,20 @@ func (h *InitHandler) Handle(r io.Reader, w io.Writer) error {
 	now := time.Now().UTC().Format(time.RFC3339)
 	_ = writeFileAtomic(skillsUsedFile, []byte(fmt.Sprintf(`{"used":[],"session_start":%q}`, now)+"\n"), 0600)
 
-	// SSOT 同期フラグをクリア
+	// Clear SSOT sync flag
 	_ = os.Remove(filepath.Join(stateDir, ".ssot-synced-this-session"))
-	// work 警告フラグをクリア
+	// Clear work warning flags
 	_ = os.Remove(filepath.Join(stateDir, ".work-review-warned"))
 	_ = os.Remove(filepath.Join(stateDir, ".ultrawork-review-warned"))
 
-	// Plans.md カウント
+	// Plans.md task count
 	plansFile := h.PlansFile
 	if plansFile == "" {
 		plansFile = filepath.Join(projectRoot, "Plans.md")
 	}
 	plansInfo := buildPlansInfo(plansFile)
 
-	// マーカー凡例を追記
+	// Append marker legend
 	context := buildAdditionalContext(plansInfo)
 
 	return writeJSON(w, initResponse{
@@ -131,8 +131,8 @@ func (h *InitHandler) Handle(r io.Reader, w io.Writer) error {
 	})
 }
 
-// initSessionFile は session.json を初期化する。
-// 既存ファイルが active 状態（initialized/running/working）なら何もしない。
+// initSessionFile initializes session.json.
+// Does nothing if the existing file is in an active state (initialized/running/working).
 func (h *InitHandler) initSessionFile(stateDir string) error {
 	sessionFile := filepath.Join(stateDir, "session.json")
 
@@ -140,21 +140,21 @@ func (h *InitHandler) initSessionFile(stateDir string) error {
 		return fmt.Errorf("security: symlinked session file: %s", sessionFile)
 	}
 
-	// 既存ファイルの状態を確認
+	// Check the state of any existing file
 	if data, err := os.ReadFile(sessionFile); err == nil {
 		var s sessionJSON
 		if json.Unmarshal(data, &s) == nil {
-			// stopped/completed/failed 以外はそのまま
+			// Keep as-is for states other than stopped/completed/failed
 			switch s.State {
 			case "stopped", "completed", "failed":
-				// 新規初期化が必要
+				// New initialization required
 			default:
 				return nil
 			}
 		}
 	}
 
-	// 新規セッション初期化
+	// New session initialization
 	now := time.Now().UTC().Format(time.RFC3339)
 	sessionID := fmt.Sprintf("session-%d", time.Now().Unix())
 	s := sessionJSON{
@@ -174,39 +174,39 @@ func (h *InitHandler) initSessionFile(stateDir string) error {
 	return writeFileAtomic(sessionFile, append(data, '\n'), 0600)
 }
 
-// buildPlansInfo は Plans.md を読んで WIP/TODO カウントの情報文字列を返す。
+// buildPlansInfo reads Plans.md and returns an info string with the WIP/TODO counts.
 func buildPlansInfo(plansFile string) string {
 	if _, err := os.Stat(plansFile); err != nil {
-		return "Plans.md: 未検出"
+		return "Plans.md: not found"
 	}
 
 	wipCount := countMatches(plansFile, "cc:WIP", "pm:依頼中", "cursor:依頼中")
 	todoCount := countMatches(plansFile, "cc:TODO")
 
-	return fmt.Sprintf("Plans.md: 進行中 %d / 未着手 %d", wipCount, todoCount)
+	return fmt.Sprintf("Plans.md: in-progress %d / pending %d", wipCount, todoCount)
 }
 
-// buildAdditionalContext はセッション初期化の additionalContext を構築する。
+// buildAdditionalContext builds the additionalContext for session initialization.
 func buildAdditionalContext(plansInfo string) string {
 	var sb strings.Builder
-	sb.WriteString("# [claude-code-harness] セッション初期化\n\n")
+	sb.WriteString("# [claude-code-harness] Session Initialization\n\n")
 	sb.WriteString(plansInfo + "\n")
-	sb.WriteString("\n## マーカー凡例\n")
-	sb.WriteString("| マーカー | 状態 | 説明 |\n")
-	sb.WriteString("|---------|------|------|\n")
-	sb.WriteString("| `cc:TODO` | 未着手 | Impl（Claude Code）が実行予定 |\n")
-	sb.WriteString("| `cc:WIP` | 作業中 | Impl が実装中 |\n")
-	sb.WriteString("| `cc:blocked` | ブロック中 | 依存タスク待ち |\n")
-	sb.WriteString("| `pm:依頼中` | PM から依頼 | 2-Agent 運用時 |\n")
-	sb.WriteString("\n> **互換**: `cursor:依頼中` / `cursor:確認済` は `pm:*` と同義として扱います。\n")
+	sb.WriteString("\n## Marker Legend\n")
+	sb.WriteString("| Marker | State | Description |\n")
+	sb.WriteString("|--------|-------|-------------|\n")
+	sb.WriteString("| `cc:TODO` | Pending | Scheduled for execution by Impl (Claude Code) |\n")
+	sb.WriteString("| `cc:WIP` | In Progress | Currently being implemented by Impl |\n")
+	sb.WriteString("| `cc:blocked` | Blocked | Waiting on a dependent task |\n")
+	sb.WriteString("| `pm:依頼中` | Requested by PM | Used in 2-Agent workflows |\n")
+	sb.WriteString("\n> **Compatibility**: `cursor:依頼中` / `cursor:確認済` are treated as synonyms for `pm:*`.\n")
 	return sb.String()
 }
 
 // ---------------------------------------------------------------------------
-// ユーティリティ（package-private）
+// Utilities (package-private)
 // ---------------------------------------------------------------------------
 
-// writeJSON は v を JSON として w に書き出す。
+// writeJSON writes v as JSON to w.
 func writeJSON(w io.Writer, v interface{}) error {
 	data, err := json.Marshal(v)
 	if err != nil {
@@ -216,7 +216,7 @@ func writeJSON(w io.Writer, v interface{}) error {
 	return err
 }
 
-// resolveProjectRoot は CWD フィールドや環境変数からプロジェクトルートを推測する。
+// resolveProjectRoot infers the project root from the CWD field or environment variables.
 func resolveProjectRoot(cwd string) string {
 	if cwd != "" {
 		return cwd
@@ -231,8 +231,8 @@ func resolveProjectRoot(cwd string) string {
 	return root
 }
 
-// ensureStateDir はステートディレクトリを作成する。
-// シンボリックリンクの場合はエラーを返す。
+// ensureStateDir creates the state directory.
+// Returns an error if the path is a symlink.
 func ensureStateDir(stateDir string) error {
 	parent := filepath.Dir(stateDir)
 	if isSymlink(parent) || isSymlink(stateDir) {
@@ -241,7 +241,7 @@ func ensureStateDir(stateDir string) error {
 	return os.MkdirAll(stateDir, 0700)
 }
 
-// isSymlink はパスがシンボリックリンクかどうかを返す。
+// isSymlink returns whether the given path is a symbolic link.
 func isSymlink(path string) bool {
 	fi, err := os.Lstat(path)
 	if err != nil {
@@ -250,7 +250,7 @@ func isSymlink(path string) bool {
 	return fi.Mode()&os.ModeSymlink != 0
 }
 
-// countMatches は patterns のいずれかを含む行数の合計を返す。
+// countMatches returns the total number of lines containing any of the given patterns.
 func countMatches(filePath string, patterns ...string) int {
 	f, err := os.Open(filePath)
 	if err != nil {
@@ -272,7 +272,7 @@ func countMatches(filePath string, patterns ...string) int {
 	return count
 }
 
-// writeFileAtomic はファイルを一時ファイル経由で原子的に書き出す。
+// writeFileAtomic atomically writes a file via a temporary file.
 func writeFileAtomic(path string, data []byte, perm os.FileMode) error {
 	if isSymlink(path) {
 		return fmt.Errorf("security: symlinked file refused: %s", path)

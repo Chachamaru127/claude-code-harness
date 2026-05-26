@@ -1,12 +1,12 @@
-// Package ci は CI ステータスチェックとエビデンス収集機能を提供する。
+// Package ci provides CI status checking and evidence collection functionality.
 //
-// CI ステータスチェッカーは PostToolUse (Bash) フックから呼び出され、
-// git push / gh pr コマンドの後に CI ステータスを非同期で確認する。
+// The CI status checker is called from the PostToolUse (Bash) hook and
+// asynchronously checks CI status after git push / gh pr commands.
 //
-// エビデンスコレクターはテスト結果やビルドログを
-// .claude/state/evidence/ に保存する。
+// The evidence collector saves test results and build logs
+// to .claude/state/evidence/.
 //
-// shell 版:
+// Shell versions:
 //   - scripts/hook-handlers/ci-status-checker.sh
 //   - scripts/evidence/common.sh
 package ci
@@ -23,10 +23,10 @@ import (
 )
 
 // ---------------------------------------------------------------------------
-// 共通型
+// Common types
 // ---------------------------------------------------------------------------
 
-// HookInput は CI ステータスチェッカーが stdin から受け取るフック JSON。
+// HookInput is the hook JSON received from stdin by the CI status checker.
 type HookInput struct {
 	ToolName     string                 `json:"tool_name,omitempty"`
 	ToolInput    map[string]interface{} `json:"tool_input,omitempty"`
@@ -35,7 +35,7 @@ type HookInput struct {
 	SessionID    string                 `json:"session_id,omitempty"`
 }
 
-// CIRun は gh run list の 1 エントリ。
+// CIRun is one entry from gh run list.
 type CIRun struct {
 	Status     string `json:"status"`
 	Conclusion string `json:"conclusion"`
@@ -43,7 +43,7 @@ type CIRun struct {
 	URL        string `json:"url"`
 }
 
-// CIStatusRecord は .claude/state/ci-status.json のスキーマ。
+// CIStatusRecord is the schema for .claude/state/ci-status.json.
 type CIStatusRecord struct {
 	Timestamp      string `json:"timestamp"`
 	TriggerCommand string `json:"trigger_command"`
@@ -51,7 +51,7 @@ type CIStatusRecord struct {
 	Conclusion     string `json:"conclusion"`
 }
 
-// signalEntry は breezing-signals.jsonl への追記エントリ。
+// signalEntry is an entry appended to breezing-signals.jsonl.
 type signalEntry struct {
 	Signal         string `json:"signal"`
 	Timestamp      string `json:"timestamp"`
@@ -59,7 +59,7 @@ type signalEntry struct {
 	TriggerCommand string `json:"trigger_command"`
 }
 
-// approveResponse はフックの approve レスポンス。
+// approveResponse is the hook approve response.
 type approveResponse struct {
 	Decision          string `json:"decision"`
 	Reason            string `json:"reason,omitempty"`
@@ -70,20 +70,20 @@ type approveResponse struct {
 // CIStatusHandler — hook ci-status
 // ---------------------------------------------------------------------------
 
-// CIStatusHandler は PostToolUse フックで CI ステータスを確認するハンドラ。
-// stdin から JSON を受け取り、push/PR コマンドを検知したら
-// バックグラウンドで CI チェックを開始する。
+// CIStatusHandler is the handler that checks CI status in the PostToolUse hook.
+// It receives JSON from stdin and, when a push/PR command is detected,
+// starts a CI check in the background.
 type CIStatusHandler struct {
-	// StateDir はステートファイルの保存先。空なら自動解決。
+	// StateDir is the destination for state files. Auto-resolved if empty.
 	StateDir string
-	// GHCmd は gh コマンドのパス。空なら "gh" を使う。
+	// GHCmd is the path to the gh command. Uses "gh" if empty.
 	GHCmd string
-	// nowFunc はテスト用の時刻注入関数。
+	// nowFunc is a time injection function for testing.
 	nowFunc func() string
 }
 
-// Handle は stdin から PostToolUse ペイロードを読み取り、
-// CI チェックを開始して approve レスポンスを返す。
+// Handle reads a PostToolUse payload from stdin,
+// starts a CI check, and returns an approve response.
 func (h *CIStatusHandler) Handle(r io.Reader, w io.Writer) error {
 	data, err := io.ReadAll(r)
 	if err != nil || len(data) == 0 {
@@ -95,28 +95,28 @@ func (h *CIStatusHandler) Handle(r io.Reader, w io.Writer) error {
 		return h.writeApprove(w, "ci-status: parse error", "")
 	}
 
-	// Bash コマンドを取得
+	// Get the Bash command
 	bashCmd := h.extractBashCommand(inp)
 	if !isPushOrPRCommand(bashCmd) {
 		return h.writeApprove(w, "ci-status: not a push/PR command", "")
 	}
 
-	// ステートディレクトリを確保
+	// Ensure the state directory exists
 	stateDir := h.resolveStateDir(inp.CWD)
 	if err := ensureDir(stateDir); err != nil {
 		return h.writeApprove(w, "ci-status: state dir error", "")
 	}
 
-	// バックグラウンドで CI チェックを起動（フックをブロックしない）
+	// Start CI check in the background (do not block the hook)
 	go h.checkCIAsync(stateDir, bashCmd)
 
-	// 直近の CI 失敗シグナルがあれば additionalContext を注入
+	// Inject additionalContext if there is a recent CI failure signal
 	additionalCtx := h.buildFailureContext(stateDir, bashCmd)
 
 	return h.writeApprove(w, "ci-status: push/PR detected, CI monitoring started", additionalCtx)
 }
 
-// extractBashCommand は HookInput から Bash コマンド文字列を取得する。
+// extractBashCommand retrieves the Bash command string from a HookInput.
 func (h *CIStatusHandler) extractBashCommand(inp HookInput) string {
 	if inp.ToolInput == nil {
 		return ""
@@ -125,7 +125,7 @@ func (h *CIStatusHandler) extractBashCommand(inp HookInput) string {
 	return cmd
 }
 
-// isPushOrPRCommand は git push / gh pr コマンドかどうかを判定する。
+// isPushOrPRCommand determines whether the command is a git push / gh pr command.
 func isPushOrPRCommand(cmd string) bool {
 	patterns := []string{
 		"git push",
@@ -142,7 +142,7 @@ func isPushOrPRCommand(cmd string) bool {
 	return false
 }
 
-// resolveStateDir はプロジェクトルートから .claude/state パスを返す。
+// resolveStateDir returns the .claude/state path from the project root.
 func (h *CIStatusHandler) resolveStateDir(cwd string) string {
 	if h.StateDir != "" {
 		return h.StateDir
@@ -155,15 +155,15 @@ func (h *CIStatusHandler) resolveStateDir(cwd string) string {
 	return filepath.Join(root, ".claude", "state")
 }
 
-// checkCIAsync は gh run list をポーリングして CI ステータスを確認する。
-// バックグラウンドゴルーチンとして実行される。
+// checkCIAsync polls gh run list to check CI status.
+// Runs as a background goroutine.
 func (h *CIStatusHandler) checkCIAsync(stateDir, triggerCmd string) {
 	ghCmd := h.GHCmd
 	if ghCmd == "" {
 		ghCmd = "gh"
 	}
 
-	// gh コマンドの存在確認
+	// Check that the gh command exists
 	if _, err := exec.LookPath(ghCmd); err != nil {
 		return
 	}
@@ -185,10 +185,10 @@ func (h *CIStatusHandler) checkCIAsync(stateDir, triggerCmd string) {
 			continue
 		}
 
-		// 結果を記録
+		// Record the result
 		h.writeCIStatus(stateDir, triggerCmd, run.Status, run.Conclusion)
 
-		// 失敗した場合はシグナルを書き出す
+		// Write a signal if it failed
 		if isFailureConclusion(run.Conclusion) {
 			h.writeFailureSignal(stateDir, triggerCmd, run.Conclusion)
 		}
@@ -196,7 +196,7 @@ func (h *CIStatusHandler) checkCIAsync(stateDir, triggerCmd string) {
 	}
 }
 
-// fetchLatestRun は gh run list --limit 1 を実行して結果を返す。
+// fetchLatestRun runs gh run list --limit 1 and returns the results.
 func (h *CIStatusHandler) fetchLatestRun(ghCmd string) ([]CIRun, error) {
 	// #nosec G204 — ghCmd は "gh" または設定値（テスト用モック）のみ
 	out, err := exec.Command(ghCmd, "run", "list", "--limit", "1", "--json", "status,conclusion,name,url").Output()
@@ -211,7 +211,7 @@ func (h *CIStatusHandler) fetchLatestRun(ghCmd string) ([]CIRun, error) {
 	return runs, nil
 }
 
-// isFailureConclusion は CI が失敗したかどうかを返す。
+// isFailureConclusion returns whether the CI result is a failure.
 func isFailureConclusion(conclusion string) bool {
 	switch conclusion {
 	case "failure", "timed_out", "cancelled":
@@ -220,7 +220,7 @@ func isFailureConclusion(conclusion string) bool {
 	return false
 }
 
-// writeCIStatus は CI ステータスを ci-status.json に保存する。
+// writeCIStatus saves the CI status to ci-status.json.
 func (h *CIStatusHandler) writeCIStatus(stateDir, triggerCmd, status, conclusion string) {
 	rec := CIStatusRecord{
 		Timestamp:      h.now(),
@@ -240,7 +240,7 @@ func (h *CIStatusHandler) writeCIStatus(stateDir, triggerCmd, status, conclusion
 	_ = os.WriteFile(path, append(data, '\n'), 0600)
 }
 
-// writeFailureSignal は CI 失敗シグナルを breezing-signals.jsonl に追記する。
+// writeFailureSignal appends a CI failure signal to breezing-signals.jsonl.
 func (h *CIStatusHandler) writeFailureSignal(stateDir, triggerCmd, conclusion string) {
 	entry := signalEntry{
 		Signal:         "ci_failure_detected",
@@ -266,7 +266,7 @@ func (h *CIStatusHandler) writeFailureSignal(stateDir, triggerCmd, conclusion st
 	_, _ = fmt.Fprintf(f, "%s\n", data)
 }
 
-// buildFailureContext は直近の CI 失敗シグナルをチェックして additionalContext を返す。
+// buildFailureContext checks for recent CI failure signals and returns additionalContext.
 func (h *CIStatusHandler) buildFailureContext(stateDir, bashCmd string) string {
 	signalsFile := filepath.Join(stateDir, "breezing-signals.jsonl")
 	if isSymlink(signalsFile) {
@@ -278,7 +278,7 @@ func (h *CIStatusHandler) buildFailureContext(stateDir, bashCmd string) string {
 		return ""
 	}
 
-	// 末尾から ci_failure_detected を探す
+	// Search from the end for ci_failure_detected
 	lines := splitLines(data)
 	for i := len(lines) - 1; i >= 0; i-- {
 		line := lines[i]
@@ -292,16 +292,16 @@ func (h *CIStatusHandler) buildFailureContext(stateDir, bashCmd string) string {
 		}
 
 		return fmt.Sprintf(
-			"[CI 失敗を検知しました]\nCI ステータス: %s\nトリガーコマンド: %s\n\n"+
-				"推奨アクション: /breezing または ci-cd-fixer エージェントを spawn して CI 障害を自動修復してください。\n"+
-				"  例: ci-cd-fixer に「CI が失敗しました。ログを確認して修正してください。」と依頼",
+			"[CI failure detected]\nCI status: %s\nTrigger command: %s\n\n"+
+				"Recommended action: spawn /breezing or a ci-cd-fixer agent to automatically repair the CI failure.\n"+
+				"  Example: ask ci-cd-fixer \"CI failed. Please check the logs and fix the issue.\"",
 			sig.Conclusion, bashCmd,
 		)
 	}
 	return ""
 }
 
-// writeApprove は approve レスポンスを w に書き出す。
+// writeApprove writes an approve response to w.
 func (h *CIStatusHandler) writeApprove(w io.Writer, reason, additionalCtx string) error {
 	resp := approveResponse{
 		Decision:          "approve",
@@ -316,7 +316,7 @@ func (h *CIStatusHandler) writeApprove(w io.Writer, reason, additionalCtx string
 	return err
 }
 
-// now は現在時刻を ISO 8601 UTC 形式で返す。
+// now returns the current time in ISO 8601 UTC format.
 func (h *CIStatusHandler) now() string {
 	if h.nowFunc != nil {
 		return h.nowFunc()
@@ -328,37 +328,37 @@ func (h *CIStatusHandler) now() string {
 // EvidenceCollector — evidence collect
 // ---------------------------------------------------------------------------
 
-// CollectOptions はエビデンス収集のオプション。
+// CollectOptions holds options for evidence collection.
 type CollectOptions struct {
-	// ProjectRoot はプロジェクトルートディレクトリ。
+	// ProjectRoot is the project root directory.
 	ProjectRoot string
-	// Label はエビデンスのラベル（例: "test-run", "build"）。
+	// Label is the label for the evidence (e.g. "test-run", "build").
 	Label string
-	// Content は保存するコンテンツ文字列。
+	// Content is the content string to save.
 	Content string
-	// ContentFile は保存元ファイルパス（Content の代わりに使用）。
+	// ContentFile is the source file path (used instead of Content).
 	ContentFile string
 }
 
-// CollectResult はエビデンス収集の結果。
+// CollectResult is the result of evidence collection.
 type CollectResult struct {
-	// SavedPath は保存先パス。
+	// SavedPath is the destination path.
 	SavedPath string
-	// Label は使用したラベル。
+	// Label is the label used.
 	Label string
-	// Timestamp は収集時刻。
+	// Timestamp is the collection time.
 	Timestamp string
-	// Error はエラーメッセージ（エラーがない場合は空）。
+	// Error is an error message (empty if no error).
 	Error string
 }
 
-// EvidenceCollector はエビデンスを収集して保存するコレクター。
+// EvidenceCollector collects and saves evidence.
 type EvidenceCollector struct {
-	// nowFunc はテスト用の時刻注入関数。
+	// nowFunc is a time injection function for testing.
 	nowFunc func() string
 }
 
-// Collect はコンテンツを .claude/state/evidence/{label}/{timestamp}.txt に保存する。
+// Collect saves content to .claude/state/evidence/{label}/{timestamp}.txt.
 func (c *EvidenceCollector) Collect(opts CollectOptions) CollectResult {
 	ts := c.now()
 
@@ -367,7 +367,7 @@ func (c *EvidenceCollector) Collect(opts CollectOptions) CollectResult {
 		label = "general"
 	}
 
-	// コンテンツを取得
+	// Get the content
 	content := opts.Content
 	if content == "" && opts.ContentFile != "" {
 		data, err := os.ReadFile(opts.ContentFile)
@@ -389,7 +389,7 @@ func (c *EvidenceCollector) Collect(opts CollectOptions) CollectResult {
 		}
 	}
 
-	// 保存先ディレクトリを作成
+	// Create the destination directory
 	root := opts.ProjectRoot
 	if root == "" {
 		root, _ = os.Getwd()
@@ -404,7 +404,7 @@ func (c *EvidenceCollector) Collect(opts CollectOptions) CollectResult {
 		}
 	}
 
-	// タイムスタンプをファイル名に使用（コロンをハイフンに置換してファイル名安全に）
+	// Use timestamp as filename (replace colons with hyphens to make it filename-safe)
 	safeTS := strings.ReplaceAll(ts, ":", "-")
 	filename := fmt.Sprintf("%s.txt", safeTS)
 	savePath := filepath.Join(evidenceDir, filename)
@@ -432,7 +432,7 @@ func (c *EvidenceCollector) Collect(opts CollectOptions) CollectResult {
 	}
 }
 
-// CollectFromStdin は stdin からコンテンツを読み取ってエビデンスを保存する。
+// CollectFromStdin reads content from stdin and saves it as evidence.
 func (c *EvidenceCollector) CollectFromStdin(r io.Reader, w io.Writer, opts CollectOptions) error {
 	data, err := io.ReadAll(r)
 	if err != nil {
@@ -445,7 +445,7 @@ func (c *EvidenceCollector) CollectFromStdin(r io.Reader, w io.Writer, opts Coll
 	return json.NewEncoder(w).Encode(result)
 }
 
-// now は現在時刻を ISO 8601 UTC 形式で返す。
+// now returns the current time in ISO 8601 UTC format.
 func (c *EvidenceCollector) now() string {
 	if c.nowFunc != nil {
 		return c.nowFunc()
@@ -454,15 +454,15 @@ func (c *EvidenceCollector) now() string {
 }
 
 // ---------------------------------------------------------------------------
-// ユーティリティ
+// Utilities
 // ---------------------------------------------------------------------------
 
-// ensureDir はディレクトリを作成する。
+// ensureDir creates a directory.
 func ensureDir(dir string) error {
 	return os.MkdirAll(dir, 0700)
 }
 
-// isSymlink はパスがシンボリックリンクかどうかを返す。
+// isSymlink returns whether the path is a symbolic link.
 func isSymlink(path string) bool {
 	fi, err := os.Lstat(path)
 	if err != nil {
@@ -471,7 +471,7 @@ func isSymlink(path string) bool {
 	return fi.Mode()&os.ModeSymlink != 0
 }
 
-// splitLines は改行で分割し、空行を除外する。
+// splitLines splits by newline and excludes empty lines.
 func splitLines(data []byte) []string {
 	var lines []string
 	start := 0

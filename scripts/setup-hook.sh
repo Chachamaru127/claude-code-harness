@@ -1,12 +1,12 @@
 #!/bin/bash
 # setup-hook.sh
-# Setup Hook: claude --init / --maintenance 時のセットアップ処理
+# Setup Hook: setup processing on claude --init / --maintenance
 #
 # Usage:
-#   setup-hook.sh init        # 初回セットアップ
-#   setup-hook.sh maintenance # メンテナンス処理
+#   setup-hook.sh init        # Initial setup
+#   setup-hook.sh maintenance # Maintenance processing
 #
-# 出力: JSON形式で hookSpecificOutput を出力
+# Output: hookSpecificOutput in JSON format
 
 set -euo pipefail
 
@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODE="${1:-init}"
 TEMPLATE_DIR="$SCRIPT_DIR/../templates"
 
-# ===== SIMPLE モード検出 =====
+# ===== SIMPLE mode detection =====
 SIMPLE_MODE="false"
 if [ -f "$SCRIPT_DIR/check-simple-mode.sh" ]; then
   # shellcheck source=./check-simple-mode.sh
@@ -25,7 +25,7 @@ if [ -f "$SCRIPT_DIR/check-simple-mode.sh" ]; then
   fi
 fi
 
-# stdin から JSON 入力を読み取り（Claude Code v2.1.10+）
+# Read JSON input from stdin (Claude Code v2.1.10+)
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT=$(cat 2>/dev/null || true)
@@ -36,7 +36,7 @@ if [ -f "$SCRIPT_DIR/config-utils.sh" ]; then
   source "$SCRIPT_DIR/config-utils.sh"
 fi
 
-# ===== 共通ヘルパー =====
+# ===== Common helpers =====
 output_json() {
   local message="$1"
   cat <<EOF
@@ -96,19 +96,19 @@ msg() {
   local locale="$2"
 
   case "$locale:$key" in
-    ja:cache_synced) printf '%s\n' "プラグインキャッシュ同期完了" ;;
-    ja:state_ready) printf '%s\n' "状態ディレクトリ初期化完了" ;;
-    ja:config_created) printf '%s\n' "設定ファイル生成完了" ;;
-    ja:agents_created) printf '%s\n' "AGENTS.md 生成完了" ;;
-    ja:claude_created) printf '%s\n' "CLAUDE.md 生成完了" ;;
-    ja:plans_created) printf '%s\n' "Plans.md 生成完了" ;;
-    ja:already_initialized) printf '%s\n' "[Setup:init] ハーネスは既に初期化済みです" ;;
-    ja:cache_maintenance) printf '%s\n' "キャッシュ同期完了" ;;
-    ja:old_sessions_removed) printf '%s\n' "古いセッションアーカイブ削除" ;;
-    ja:maintenance_done) printf '%s\n' "[Setup:maintenance] メンテナンス完了（変更なし）" ;;
-    ja:template_updates) printf '%s\n' "テンプレート更新あり" ;;
-    ja:config_warning) printf '%s\n' "警告: 設定ファイルの構文エラー" ;;
-    ja:unknown_mode) printf '%s\n' "[Setup] 不明なモード" ;;
+    ja:cache_synced) printf '%s\n' "Plugin cache synced" ;;
+    ja:state_ready) printf '%s\n' "State directory initialized" ;;
+    ja:config_created) printf '%s\n' "Config file generated" ;;
+    ja:agents_created) printf '%s\n' "AGENTS.md generated" ;;
+    ja:claude_created) printf '%s\n' "CLAUDE.md generated" ;;
+    ja:plans_created) printf '%s\n' "Plans.md generated" ;;
+    ja:already_initialized) printf '%s\n' "[Setup:init] Harness is already initialized" ;;
+    ja:cache_maintenance) printf '%s\n' "Cache synced" ;;
+    ja:old_sessions_removed) printf '%s\n' "Old session archives removed" ;;
+    ja:maintenance_done) printf '%s\n' "[Setup:maintenance] Maintenance complete (no changes)" ;;
+    ja:template_updates) printf '%s\n' "Template updates available" ;;
+    ja:config_warning) printf '%s\n' "Warning: config file has a syntax error" ;;
+    ja:unknown_mode) printf '%s\n' "[Setup] Unknown mode" ;;
     *:cache_synced) printf '%s\n' "Plugin cache synced" ;;
     *:state_ready) printf '%s\n' "State directory initialized" ;;
     *:config_created) printf '%s\n' "Config file generated" ;;
@@ -140,23 +140,23 @@ join_messages() {
   printf '%s\n' "$joined"
 }
 
-# ===== Init モード: 初回セットアップ =====
+# ===== Init mode: initial setup =====
 run_init() {
   local messages=()
   local locale
   locale="$(setup_locale)"
 
-  # 1. プラグインキャッシュの同期
+  # 1. Sync plugin cache
   if [ -f "$SCRIPT_DIR/sync-plugin-cache.sh" ]; then
     bash "$SCRIPT_DIR/sync-plugin-cache.sh" >/dev/null 2>&1 || true
     messages+=("$(msg cache_synced "$locale")")
   fi
 
-  # 2. 状態ディレクトリの初期化
+  # 2. Initialize state directory
   STATE_DIR=".claude/state"
   mkdir -p "$STATE_DIR"
 
-  # 3. デフォルト設定ファイルの生成（存在しない場合）
+  # 3. Generate default config file (if absent)
   CONFIG_FILE=".claude-code-harness.config.yaml"
   if [ ! -f "$CONFIG_FILE" ]; then
     local config_template
@@ -167,7 +167,7 @@ run_init() {
     fi
   fi
 
-  # 4. AGENTS.md / CLAUDE.md の生成（存在しない場合）
+  # 4. Generate AGENTS.md / CLAUDE.md (if absent)
   if [ ! -f "AGENTS.md" ]; then
     local agents_template
     agents_template="$(template_for_locale "AGENTS.md.template" "$locale")"
@@ -186,8 +186,8 @@ run_init() {
     fi
   fi
 
-  # 5. Plans.md の生成（存在しない場合）
-  # plansDirectory 設定を考慮
+  # 5. Generate Plans.md (if absent)
+  # Respect the plansDirectory setting
   if [ -f "$SCRIPT_DIR/config-utils.sh" ]; then
     source "$SCRIPT_DIR/config-utils.sh"
     PLANS_PATH=$(get_plans_file_path)
@@ -196,7 +196,7 @@ run_init() {
   fi
 
   if [ ! -f "$PLANS_PATH" ]; then
-    # ディレクトリが存在しない場合は作成
+    # Create directory if it does not exist
     PLANS_DIR=$(dirname "$PLANS_PATH")
     [ "$PLANS_DIR" != "." ] && mkdir -p "$PLANS_DIR"
 
@@ -208,17 +208,17 @@ run_init() {
     fi
   fi
 
-  # 6. テンプレートトラッカーの初期化
+  # 6. Initialize template tracker
   if [ -f "$SCRIPT_DIR/template-tracker.sh" ]; then
     bash "$SCRIPT_DIR/template-tracker.sh" init >/dev/null 2>&1 || true
   fi
 
-  # SIMPLE モード警告を追加
+  # Add SIMPLE mode warning
   if [ "$SIMPLE_MODE" = "true" ]; then
     messages+=("WARNING: CLAUDE_CODE_SIMPLE mode — skills/agents/memory disabled, hooks only")
   fi
 
-  # 結果出力
+  # Output result
   if [ ${#messages[@]} -eq 0 ]; then
     output_json "$(msg already_initialized "$locale")"
   else
@@ -228,35 +228,35 @@ run_init() {
   fi
 }
 
-# ===== Maintenance モード: メンテナンス処理 =====
+# ===== Maintenance mode: maintenance processing =====
 run_maintenance() {
   local messages=()
   local locale
   locale="$(setup_locale)"
 
-  # 1. プラグインキャッシュの同期
+  # 1. Sync plugin cache
   if [ -f "$SCRIPT_DIR/sync-plugin-cache.sh" ]; then
     bash "$SCRIPT_DIR/sync-plugin-cache.sh" >/dev/null 2>&1 || true
     messages+=("$(msg cache_maintenance "$locale")")
   fi
 
-  # 2. 古いセッションファイルのクリーンアップ
+  # 2. Clean up old session files
   STATE_DIR=".claude/state"
   ARCHIVE_DIR="$STATE_DIR/sessions"
 
   if [ -d "$ARCHIVE_DIR" ]; then
-    # 7日以上前のセッションアーカイブを削除
+    # Delete session archives older than 7 days
     find "$ARCHIVE_DIR" -name "session-*.json" -mtime +7 -delete 2>/dev/null || true
     messages+=("$(msg old_sessions_removed "$locale")")
   fi
 
-  # 3. 一時ファイルのクリーンアップ
+  # 3. Clean up temporary files
   if [ -d "$STATE_DIR" ]; then
-    # .tmp ファイルを削除
+    # Delete .tmp files
     find "$STATE_DIR" -name "*.tmp" -delete 2>/dev/null || true
   fi
 
-  # 4. テンプレート更新チェック
+  # 4. Check for template updates
   if [ -f "$SCRIPT_DIR/template-tracker.sh" ]; then
     CHECK_RESULT=$(bash "$SCRIPT_DIR/template-tracker.sh" check 2>/dev/null || echo '{"needsCheck": false}')
     if command -v jq >/dev/null 2>&1; then
@@ -268,15 +268,15 @@ run_maintenance() {
     fi
   fi
 
-  # 5. SIMPLE モード警告を追加
+  # 5. Add SIMPLE mode warning
   if [ "$SIMPLE_MODE" = "true" ]; then
     messages+=("WARNING: CLAUDE_CODE_SIMPLE mode — skills/agents/memory disabled, hooks only")
   fi
 
-  # 6. 設定ファイルの検証
+  # 6. Validate config file
   CONFIG_FILE=".claude-code-harness.config.yaml"
   if [ -f "$CONFIG_FILE" ]; then
-    # 基本的な YAML 構文チェック
+    # Basic YAML syntax check
     if command -v python3 >/dev/null 2>&1; then
       if ! python3 -c "import yaml; yaml.safe_load(open('$CONFIG_FILE'))" 2>/dev/null; then
         messages+=("$(msg config_warning "$locale")")
@@ -284,7 +284,7 @@ run_maintenance() {
     fi
   fi
 
-  # 結果出力
+  # Output result
   if [ ${#messages[@]} -eq 0 ]; then
     output_json "$(msg maintenance_done "$locale")"
   else
@@ -294,7 +294,7 @@ run_maintenance() {
   fi
 }
 
-# ===== メイン処理 =====
+# ===== Main =====
 case "$MODE" in
   init)
     run_init

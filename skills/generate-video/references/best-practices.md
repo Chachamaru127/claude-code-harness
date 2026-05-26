@@ -1,292 +1,292 @@
 # SaaS Video Best Practices
 
-SaaS紹介動画のベストプラクティス集です。
-動画の目的・ファネルに応じた最適な構成を選択するためのガイドラインを提供します。
+A collection of best practices for SaaS introduction videos.
+Provides guidelines for selecting the optimal structure based on video purpose and funnel stage.
 
 ---
 
-## 基本原則
+## Core Principles
 
-### 1. 画面より先に「誰の何の痛みを消すか」を決める
+### 1. Decide "whose pain you eliminate" before designing the screen
 
-機能紹介ではなく、視聴者の痛み→解決の確信を最短で作る装置として設計する。
+Design not as a feature showcase, but as a device that converts viewer pain into conviction of resolution as quickly as possible.
 
-**リスク**: ターゲットが曖昧だと誰にも刺さらない
+**Risk**: An unclear target will resonate with no one.
 
-### 2. 最初の数秒で余計な儀式を捨てる
+### 2. Drop unnecessary ceremony in the first few seconds
 
-冒頭でロゴや演出を長く出すと離脱率が上がるため、すぐに本題へ入る。
-音・本題開始の速さを重視。
+Starting with a long logo animation or intro raises drop-off rates — get to the point immediately.
+Prioritize speed of audio and topic start.
 
-### 3. 長さは目的で決める
+### 3. Length is determined by purpose
 
-一般に長いほどエンゲージメント率は低下するが、最適な長さは目的次第。
+Engagement rates generally decline with length, but the optimal length depends on the goal.
 
-| 長さ | 用途 |
+| Length | Use case |
 |------|------|
-| 1-2分 | 冒頭離脱が少ない |
-| 5-10分 | 長めの解説 |
+| 1-2 min | Low early drop-off |
+| 5-10 min | Longer explainers |
 
-**結論**: 長尺は冒頭設計が命
+**Conclusion**: For long-form videos, the opening design is everything.
 
-### 4. CTAは最後に置かない
+### 4. Don't put CTA only at the end
 
-視聴者の途中離脱を防ぐため、CTAは途中にも置く。
+Place CTAs midway through as well, to retain viewers who might leave early.
 
-### 5. 見やすい映像は衛生管理
+### 5. Watchable video is basic hygiene
 
-**優先順位**: 音質 > 画面の可読性 > テンポ > 見た目
+**Priority order**: Audio quality > Screen readability > Pacing > Aesthetics
 
-**重要**: 音が悪いと即離脱
+**Critical**: Poor audio causes immediate drop-off.
 
-### 6. 字幕・トランスクリプトは必須
+### 6. Subtitles and transcripts are mandatory
 
-字幕は必須要件で、自動生成だけでなく修正も必要。
+Subtitles are a requirement — auto-generation alone is not enough; corrections are needed.
 
-### 7. 長尺にはチャプター
+### 7. Long-form needs chapters
 
-動画視聴者は飛ばし見をしたいので、チャプター（目次）を付ける。
+Video viewers want to skip around, so add chapters (table of contents).
 
 ---
 
-## ファネル別動画タイプ比較
+## Video Type Comparison by Funnel Stage
 
-| 目的（ファネル） | 動画タイプ | 長さ目安 | 構成の芯 | 主なKPI |
+| Purpose (Funnel) | Video Type | Length | Core Structure | Main KPI |
 |------------------|------------|----------|----------|---------|
-| 認知〜興味 | 超短尺ティザー | 30〜90秒 | 痛み→結果（未来）→"続きはここ" | 視聴維持/CTR |
-| 興味→検討 | Intro（概要デモ） | 2〜3分 | 1ユースケースを最短で完走 | デモ申込/トライアル開始 |
-| 検討→確信 | Demo（短尺セールス） | 2〜5分 | 反論の芽を先に潰す | 商談化率/返信率 |
-| 確信→決裁 | Walkthrough / Webinar | 5〜30分 | 実運用の流れ＋証拠 | CVR/問い合わせ |
-| 拡張・効率化 | ハイブリッドデモ | 録画＋Q&A | 録画で標準化→ライブで個別最適 | 成約率/工数削減 |
-| 継続・活用 | オンボーディング | 30秒〜数分（小分け） | 最短のクイックウィン→Aha | Activation/継続率 |
-| サポート | How-to/トラブル | 1〜5分 | 手順を1本1目的で | 問い合わせ削減/自己解決率 |
+| Awareness → Interest | Short teaser | 30–90s | Pain → Result (future) → "See more here" | Retention/CTR |
+| Interest → Consideration | Intro demo | 2–3 min | Complete 1 use case end-to-end | Demo signups/Trial starts |
+| Consideration → Conviction | Short sales demo | 2–5 min | Pre-empt top objections | Meeting rate/Reply rate |
+| Conviction → Decision | Walkthrough / Webinar | 5–30 min | Real workflow + evidence | CVR/Inquiries |
+| Expansion / Efficiency | Hybrid demo | Recording + Q&A | Recording for standardization → Live for personalization | Close rate/Effort reduction |
+| Retention / Adoption | Onboarding | 30s–a few min (bite-sized) | Shortest path to quick win → Aha | Activation/Retention rate |
+| Support | How-to/Troubleshooting | 1–5 min | One purpose per video | Ticket reduction/Self-service rate |
 
 ---
 
-## カテゴリ別ガイド
+## Category-by-Category Guide
 
-### LP/広告向け：短尺紹介（30〜90秒）
+### For LP/Ads: Short Introduction (30–90 seconds)
 
-**目的**: 認知〜興味ファネル向け
+**Purpose**: Awareness → Interest funnel
 
-**構成アウトライン**:
-- 0–5秒: 痛み or 望む結果
-- 5–20秒: 対象ユーザーと約束
-- 20–60秒: 象徴ワークフロー1本
-- 60–90秒: 次の一手
+**Content outline**:
+- 0–5s: Pain or desired outcome
+- 5–20s: Target user and promise
+- 20–60s: Signature workflow
+- 60–90s: Next step
 
-**避けるべき落とし穴**: 機能羅列・抽象ワード連発
+**Pitfalls to avoid**: Feature laundry list, abstract buzzwords
 
-### 検討向け：2〜3分 Introデモ
+### For Consideration: 2–3 minute Intro Demo
 
-1ユースケースを完走させ、専門用語を避けて分解しながら説明。
+Walk through a single use case end-to-end; avoid jargon and explain step by step.
 
-**推奨事項**:
-- 冒頭は短く本題へ
-- 一番刺さる1ケースを選ぶ
-- 途中CTAも設置
+**Recommendations**:
+- Open briefly and get to the point
+- Pick the most compelling single use case
+- Include mid-video CTA
 
-### セールス向け：2〜5分デモ
+### For Sales: 2–5 minute Demo
 
-購買決断の次の一手に進めるための短尺セールス向け動画。
+Short sales video designed to move the viewer to the next step in the buying decision.
 
-**戦略**:
-- 反論トップ3を先回りで潰す
-- 1動画=1業界／職種
+**Strategy**:
+- Pre-empt the top 3 objections
+- 1 video = 1 industry / job role
 
-### 決裁向け：15〜30分ウォークスルー
+### For Decision-Makers: 15–30 minute Walkthrough
 
-より深い理解と意思決定を促す長尺動画。チャプター設計必須。
+Long-form video promoting deeper understanding and decision-making. Chapters are required.
 
-**キーポイント**:
-- 基本フロー
-- 反論処理
-- 管理/セキュリティの説明
+**Key points**:
+- Core workflow
+- Objection handling
+- Admin/security explanation
 
-### オンボーディング向け
+### For Onboarding
 
-ユーザーが最初の成功体験（Aha）に到達する設計。
+Designed to get the user to their first success (Aha) moment.
 
-**ガイドライン**:
-- 1本で全部教えない
-- 役割別分岐動画
+**Guidelines**:
+- Don't try to teach everything in one video
+- Separate videos by role
 
-### サポート／ヘルプ動画
+### Support / Help Videos
 
-動画を唯一の答えにせず、テキストと併用する。
+Don't make the video the only answer — use it alongside text.
 
-**必須要素**:
-- 動画＋手順テキスト
-- 字幕＋全文トランスクリプト
+**Required elements**:
+- Video + step-by-step text
+- Subtitles + full transcript
 
 ---
 
-## テンプレート
+## Templates
 
-### 90秒刺す紹介テンプレ
+### 90-second Impact Introduction Template
 
-**用途**: LP/広告、認知〜興味ファネル
+**Use case**: LP/ads, Awareness → Interest funnel
 
-| 時間 | 内容 | フレーム数(30fps) |
+| Time | Content | Frames (30fps) |
 |------|------|------------------|
-| 0:00–0:05 | 痛み or 望む結果 | 0-150 |
-| 0:05–0:15 | 対象ユーザーと約束 | 150-450 |
-| 0:15–0:55 | 象徴ワークフロー | 450-1650 |
-| 0:55–1:10 | 差別化の根拠 | 1650-2100 |
+| 0:00–0:05 | Pain or desired outcome | 0-150 |
+| 0:05–0:15 | Target user and promise | 150-450 |
+| 0:15–0:55 | Signature workflow | 450-1650 |
+| 0:55–1:10 | Differentiation evidence | 1650-2100 |
 | 1:10–1:30 | CTA | 2100-2700 |
 
-**合計**: 90秒 = 2700フレーム
+**Total**: 90 seconds = 2700 frames
 
-### 3分 Introデモテンプレ
+### 3-minute Intro Demo Template
 
-**用途**: 検討向け、興味→検討ファネル
+**Use case**: Consideration, Interest → Consideration funnel
 
-| 時間 | 内容 |
+| Time | Content |
 |------|------|
-| 0:00–0:10 | 結論＋痛み |
-| 0:10–0:30 | ユースケース宣言 |
-| 0:30–2:20 | 実画面で完走 |
-| 2:20–2:50 | よくある不安1つ潰す |
+| 0:00–0:10 | Conclusion + pain |
+| 0:10–0:30 | Use case declaration |
+| 0:30–2:20 | Live screen walkthrough |
+| 2:20–2:50 | Address 1 common concern |
 | 2:50–3:00 | CTA |
 
-### 20分決裁向けウォークスルー
+### 20-minute Decision-Maker Walkthrough
 
-**用途**: 確信→決裁ファネル
+**Use case**: Conviction → Decision funnel
 
-| 時間 | 内容 |
+| Time | Content |
 |------|------|
-| 0:00–1:00 | 対象と課題 |
-| 1:00–8:00 | 基本フロー |
-| 8:00–12:00 | 反論トップ2 |
-| 12:00–15:00 | 管理/セキュリティ |
-| 15:00–20:00 | 成功事例＋CTA |
+| 0:00–1:00 | Target and problem |
+| 1:00–8:00 | Core workflow |
+| 8:00–12:00 | Top 2 objections |
+| 12:00–15:00 | Admin/Security |
+| 15:00–20:00 | Success stories + CTA |
 
 ---
 
-## 制作チェックリスト
+## Production Checklist
 
-### 収録前
+### Before Recording
 
-- [ ] 台本：話すことを削り切る
-- [ ] デモ環境：通知オフ、個人情報除去
-- [ ] 画面：UIの文字が読めるズーム
+- [ ] Script: cut everything unnecessary
+- [ ] Demo environment: notifications off, personal info removed
+- [ ] Screen: zoomed enough to read UI text
 
-### 収録中
+### During Recording
 
-- [ ] 音：明瞭さ最優先
-- [ ] 照明/映り：最低限
-- [ ] テンポ：操作を迷う瞬間は全カット
+- [ ] Audio: clarity is top priority
+- [ ] Lighting/appearance: minimum acceptable
+- [ ] Pacing: cut every moment of hesitation
 
-### 公開時
+### At Publication
 
-- [ ] 字幕：必ず品質修正
-- [ ] トランスクリプト：検索と拾い読み用
-- [ ] 長尺はチャプター必須
+- [ ] Subtitles: quality review required
+- [ ] Transcript: for search and skimming
+- [ ] Long-form: chapters are mandatory
 
 ---
 
-## 共通の失敗パターン
+## Common Failure Patterns
 
-| 失敗 | 影響 |
+| Failure | Impact |
 |------|------|
-| 誰向けか曖昧 | 誰にも刺さらない |
-| ロゴ・会社紹介が長い | 冒頭離脱 |
-| 機能全部入り | 焦点がぼける |
-| 字幕なし/雑 | アクセシビリティ低下 |
-| 動画だけ置いて満足 | 効果測定できず |
-| CTAが最後だけ | 途中離脱で見られない |
+| Unclear target audience | Resonates with no one |
+| Long logo / company intro | Early drop-off |
+| Everything-and-the-kitchen-sink | Loses focus |
+| No subtitles / poor subtitles | Reduced accessibility |
+| Just posting the video and calling it done | No way to measure impact |
+| CTA only at the end | Missed by viewers who leave early |
 
 ---
 
-## 推奨3本セット
+## Recommended 3-Video Set
 
-最短で成果を出すための基本セット:
+The core set for achieving results as quickly as possible:
 
-1. **90秒ティザー** - 認知獲得
-2. **3分 Introデモ** - 検討促進
-3. **15〜25分決裁用ウォークスルー** - 成約支援
+1. **90-second teaser** - Awareness acquisition
+2. **3-minute Intro demo** - Drive consideration
+3. **15–25 minute decision-maker walkthrough** - Support conversion
 
-**成果**: 獲得→検討→決裁の情報の穴を埋める
+**Outcome**: Fills the information gaps from acquisition → consideration → decision
 
 ---
 
-## Harness での活用
+## Using in Harness
 
-### 動画タイプ自動判定
+### Video Type Auto-Detection
 
-| Harness検出条件 | 推奨動画タイプ | テンプレート |
+| Harness Detection Condition | Recommended Video Type | Template |
 |-----------------|----------------|--------------|
-| 新規プロジェクト | LP/広告向け短尺 | 90秒ティザー |
-| UI変更検出 | Introデモ | 3分テンプレ |
-| CHANGELOG更新 | リリースノート | Before/After重視 |
-| 大規模構造変更 | アーキテクチャ解説 | ウォークスルー |
+| New project | Short LP/ad | 90-second teaser |
+| UI changes detected | Intro demo | 3-minute template |
+| CHANGELOG updated | Release notes | Before/After focus |
+| Major structural changes | Architecture overview | Walkthrough |
 
-### シーン構成ガイド
+### Scene Structure Guide
 
-#### 短尺（30-90秒）の場合
-
-```
-HookScene (3秒) → ProblemPromise (7秒) → WorkflowDemo (40-60秒) → Differentiator (10秒) → CTA (10秒)
-```
-
-#### Introデモ（2-3分）の場合
+#### Short-form (30-90 seconds)
 
 ```
-Hook (10秒) → UseCase宣言 (20秒) → 実画面デモ (110秒) → 不安解消 (30秒) → CTA (10秒)
+HookScene (3s) → ProblemPromise (7s) → WorkflowDemo (40-60s) → Differentiator (10s) → CTA (10s)
 ```
 
-#### ウォークスルー（15-30分）の場合
+#### Intro demo (2-3 minutes)
 
 ```
-対象と課題 (1分) → 基本フロー (7分) → 反論処理 (4分) → 管理/セキュリティ (3分) → 成功事例+CTA (5分)
+Hook (10s) → UseCase declaration (20s) → Live screen demo (110s) → Address concern (30s) → CTA (10s)
+```
+
+#### Walkthrough (15-30 minutes)
+
+```
+Target and problem (1 min) → Core workflow (7 min) → Objection handling (4 min) → Admin/Security (3 min) → Success stories + CTA (5 min)
 ```
 
 ---
 
-## Remotion 実装ルール
+## Remotion Implementation Rules
 
-### アニメーション
+### Animation
 
-| ルール | 理由 |
+| Rule | Reason |
 |--------|------|
-| `useCurrentFrame()` 必須 | CSS animations 禁止、Remotion のフレーム制御を使う |
-| `spring({ damping: 200 })` | 滑らかなモーション |
-| `interpolate()` + `extrapolateRight: 'clamp'` | 値の暴走防止 |
-| タイプライター効果は `text.slice(0, charCount)` | 文字単位の opacity 変更は非推奨 |
+| `useCurrentFrame()` required | CSS animations are prohibited; use Remotion's frame control |
+| `spring({ damping: 200 })` | Smooth motion |
+| `interpolate()` + `extrapolateRight: 'clamp'` | Prevent value runaway |
+| Typewriter effect via `text.slice(0, charCount)` | Per-character opacity changes are not recommended |
 
-### 音声
+### Audio
 
-| ルール | 理由 |
+| Rule | Reason |
 |--------|------|
-| `Audio` は `@remotion/media` から import | `Html5Audio` は非推奨 |
-| 音声開始 = シーン開始 + 30f（1秒待機） | スライド変更後に視覚的に落ち着いてから音声開始 |
-| シーン長さ = 30f + 音声長さ + 20f余白 | トランジション前に音声終了 |
-| `ffprobe` で音声長さを事前確認 | シーン設計の前提情報 |
+| Import `Audio` from `@remotion/media` | `Html5Audio` is deprecated |
+| Audio start = scene start + 30f (1-second delay) | Start audio after the slide has settled visually |
+| Scene length = 30f + audio length + 20f buffer | Audio ends before transition begins |
+| Pre-check audio length with `ffprobe` | Required info before designing scenes |
 
 ### TransitionSeries
 
-| ルール | 理由 |
+| Rule | Reason |
 |--------|------|
-| トランジション長は 15f（0.5秒）推奨 | 自然な切り替え |
-| シーン開始 = 前シーン開始 + 前シーン長 - トランジション長 | オーバーラップを考慮 |
-| 音声はトランジション開始前に終了させる | 切り替え中の音声は違和感 |
+| Transition length: 15f (0.5s) recommended | Natural handoff |
+| Scene start = previous scene start + previous scene length - transition length | Accounts for overlap |
+| End audio before transition starts | Audio during a cut is jarring |
 
-### シーン長さ計算例
+### Scene Length Calculation Example
 
 ```
-音声長さ確認（30fps換算）:
-  hook: 4.0秒 = 121フレーム
-  problem: 12.0秒 = 360フレーム
+Audio length (at 30fps):
+  hook: 4.0s = 121 frames
+  problem: 12.0s = 360 frames
 
-シーン長さ計算:
-  hook: 30(待機) + 121(音声) + 24(余白) = 175フレーム
-  problem: 30(待機) + 360(音声) + 25(余白) = 415フレーム
+Scene length:
+  hook: 30(wait) + 121(audio) + 24(buffer) = 175 frames
+  problem: 30(wait) + 360(audio) + 25(buffer) = 415 frames
 
-シーン開始フレーム（トランジション15f）:
+Scene start frames (transition 15f):
   hook: 0
   problem: 175 - 15 = 160
 
-音声開始タイミング:
+Audio start timing:
   hook: 0 + 30 = 30
   problem: 160 + 30 = 190
 ```
@@ -295,6 +295,6 @@ Hook (10秒) → UseCase宣言 (20秒) → 実画面デモ (110秒) → 不安�
 
 ## References
 
-- [planner.md](planner.md) - シナリオプランニング
-- [generator.md](generator.md) - 並列シーン生成
-- [analyzer.md](analyzer.md) - コードベース分析
+- [planner.md](planner.md) - Scenario planning
+- [generator.md](generator.md) - Parallel scene generation
+- [analyzer.md](analyzer.md) - Codebase analysis

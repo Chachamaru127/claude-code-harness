@@ -1,6 +1,6 @@
 #!/bin/bash
 # loop-compaction-resume.sh
-# まとめ（compaction）後の resume で structured handoff が復元されることを確認する
+# Verify that structured handoff is restored on resume after compaction
 
 set -euo pipefail
 
@@ -18,9 +18,9 @@ cp "${ROOT_DIR}/scripts/session-resume.sh" "${TMP_DIR}/scripts/session-resume.sh
 cp "${ROOT_DIR}/scripts/lib/progress-snapshot.sh" "${TMP_DIR}/scripts/lib/progress-snapshot.sh"
 
 cat > "${TMP_DIR}/Plans.md" <<'EOF'
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
-| 41.4.2 | compaction resume | compaction 後の文脈が復元される | - | cc:TODO |
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
+| 41.4.2 | compaction resume | context is restored after compaction | - | cc:TODO |
 EOF
 
 cat > "${TMP_DIR}/.claude/state/handoff-artifact.json" <<'EOF'
@@ -54,27 +54,27 @@ init_output="$(cd "${TMP_DIR}" && bash "./scripts/session-init.sh" 2>/dev/null)"
 resume_output="$(cd "${TMP_DIR}" && bash "./scripts/session-resume.sh" 2>/dev/null)"
 
 printf '%s' "${init_output}" | grep -q 'Structured Handoff' || {
-  echo "session-init が structured handoff を復元していません"
+  echo "session-init did not restore structured handoff"
   exit 1
 }
 
 printf '%s' "${resume_output}" | grep -q 'Structured Handoff' || {
-  echo "session-resume が structured handoff を復元していません"
+  echo "session-resume did not restore structured handoff"
   exit 1
 }
 
 printf '%s' "${resume_output}" | grep -q 'resume after compaction' || {
-  echo "resume 後の next action が見つかりません"
+  echo "next action not found after resume"
   exit 1
 }
 
 printf '%s' "${resume_output}" | grep -q 'plugin-first workflow remains readable' || {
-  echo "resume 後の continuity が見つかりません"
+  echo "continuity not found after resume"
   exit 1
 }
 
 grep -Eq '"recommended"[[:space:]]*:[[:space:]]*true' "${TMP_DIR}/.claude/state/session.json" || {
-  echo "session.json に context_reset の情報が残っていません"
+  echo "context_reset information missing from session.json"
   exit 1
 }
 

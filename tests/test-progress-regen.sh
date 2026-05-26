@@ -1,14 +1,14 @@
 #!/bin/bash
 # tests/test-progress-regen.sh
-# Phase 65.4.2 - PostToolUse hook 自動再生成 + 60s rate limit 検証
+# Phase 65.4.2 - PostToolUse hook auto-regeneration + 60s rate limit validation
 #
-# 検証ケース (Plans.md §65.4.2 DoD a-e):
-#   1. 初回      - state file なし → 再生成実行 + state file 作成
-#   2. 60 秒以内 - state file あり (last regen 30 秒前) → skip
-#   3. 60 秒超   - state file あり (last regen 90 秒前) → 再生成実行
-#   4. hook input 不正 - stdin が空でも crash しない
-#   + dual sync 検証 (.claude-plugin/hooks.json と hooks/hooks.json 一致)
-#   + JSON validity 検証
+# Test cases (Plans.md §65.4.2 DoD a-e):
+#   1. first run   - no state file → execute regen + create state file
+#   2. within 60s  - state file present (last regen 30s ago) → skip
+#   3. over 60s    - state file present (last regen 90s ago) → execute regen
+#   4. invalid hook input - must not crash even with empty stdin
+#   + dual sync validation (.claude-plugin/hooks.json and hooks/hooks.json match)
+#   + JSON validity validation
 
 set -euo pipefail
 
@@ -40,76 +40,76 @@ mkdir -p "$TMP_PROJ/out"
 cat > "$TMP_PROJ/Plans.md" <<'PLANS'
 # Plans
 
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
-| 99.1.1 | 完了 task | dod | - | cc:完了 [a1b2c3d] |
-| 99.1.2 | 進行中 | dod | - | cc:WIP |
+| Task | Content | DoD | Depends | Status |
+|------|---------|-----|---------|--------|
+| 99.1.1 | done task | dod | - | cc:完了 [a1b2c3d] |
+| 99.1.2 | in-progress | dod | - | cc:WIP |
 PLANS
 
 STATE_FILE="$TMP_PROJ/.claude/state/progress-last-regen.txt"
 
 # ============================================================
-# Case 1: 初回 — state file なし → 再生成 + state file 作成
+# Case 1: first run — no state file → regen + create state file
 # ============================================================
 
 rm -f "$STATE_FILE"
 OUT="$(echo "" | PROJECT_ROOT="$TMP_PROJ" bash "$HANDLER" 2>"$TMP_PROJ/c1-stderr.txt")"
 
 if echo "$OUT" | jq -e '.ok == true' >/dev/null 2>&1; then
-  pass "Case 1 (初回): JSON {ok:true} 返却"
+  pass "Case 1 (first run): JSON {ok:true} returned"
 else
   fail "Case 1: bad JSON. got: $OUT"
 fi
 
 if echo "$OUT" | jq -e '.regenerated == true' >/dev/null 2>&1; then
-  pass "Case 1 (初回): regenerated:true マーカー"
+  pass "Case 1 (first run): regenerated:true marker"
 else
   fail "Case 1: regenerated marker missing. got: $OUT"
 fi
 
-# background regen が完了するまで少し待つ
+# wait for background regen to complete
 sleep 1
 
 if [[ -f "$STATE_FILE" ]]; then
-  pass "Case 1 (初回): state file 作成された"
+  pass "Case 1 (first run): state file created"
 else
-  fail "Case 1: state file 未作成"
+  fail "Case 1: state file not created"
 fi
 
-# state file は epoch seconds (整数)
+# state file contains epoch seconds (integer)
 LAST_VAL="$(cat "$STATE_FILE" 2>/dev/null || echo "")"
 if [[ "$LAST_VAL" =~ ^[0-9]+$ ]]; then
-  pass "Case 1 (初回): state file 内容が epoch seconds (整数)"
+  pass "Case 1 (first run): state file content is epoch seconds (integer)"
 else
-  fail "Case 1: state file 内容が epoch でない. got: $LAST_VAL"
+  fail "Case 1: state file content is not epoch. got: $LAST_VAL"
 fi
 
 # ============================================================
-# Case 2: 60 秒以内 — state file あり (last 30 秒前) → skip
+# Case 2: within 60s — state file present (last 30s ago) → skip
 # ============================================================
 
-# 30 秒前の epoch を state file に書く
+# write epoch from 30s ago into state file
 NOW="$(date +%s)"
 echo $((NOW - 30)) > "$STATE_FILE"
 
 OUT="$(echo "" | PROJECT_ROOT="$TMP_PROJ" bash "$HANDLER" 2>"$TMP_PROJ/c2-stderr.txt")"
 
 if echo "$OUT" | jq -e '.skipped == "rate-limit"' >/dev/null 2>&1; then
-  pass "Case 2 (30秒前): skipped:rate-limit"
+  pass "Case 2 (30s ago): skipped:rate-limit"
 else
   fail "Case 2: rate-limit skip not triggered. got: $OUT"
 fi
 
-# state file は変更されていない
+# state file should not be modified
 LAST_VAL_AFTER="$(cat "$STATE_FILE")"
 if [[ "$LAST_VAL_AFTER" == "$((NOW - 30))" ]]; then
-  pass "Case 2 (rate-limit): state file 未更新"
+  pass "Case 2 (rate-limit): state file not updated"
 else
-  fail "Case 2: state file 更新された (skip だったはず). before=$((NOW - 30)) after=$LAST_VAL_AFTER"
+  fail "Case 2: state file was updated (should have been skipped). before=$((NOW - 30)) after=$LAST_VAL_AFTER"
 fi
 
 # ============================================================
-# Case 3: 60 秒超 — state file あり (last 90 秒前) → 再生成
+# Case 3: over 60s — state file present (last 90s ago) → regen
 # ============================================================
 
 NOW="$(date +%s)"
@@ -118,7 +118,7 @@ echo $((NOW - 90)) > "$STATE_FILE"
 OUT="$(echo "" | PROJECT_ROOT="$TMP_PROJ" bash "$HANDLER" 2>"$TMP_PROJ/c3-stderr.txt")"
 
 if echo "$OUT" | jq -e '.regenerated == true' >/dev/null 2>&1; then
-  pass "Case 3 (90秒前): 再生成実行"
+  pass "Case 3 (90s ago): regen executed"
 else
   fail "Case 3: regenerated marker missing. got: $OUT"
 fi
@@ -127,32 +127,32 @@ sleep 1
 
 LAST_VAL_C3="$(cat "$STATE_FILE")"
 if [[ "$LAST_VAL_C3" -gt "$((NOW - 90))" ]]; then
-  pass "Case 3 (90秒前): state file 更新された"
+  pass "Case 3 (90s ago): state file updated"
 else
-  fail "Case 3: state file 未更新. before=$((NOW - 90)) after=$LAST_VAL_C3"
+  fail "Case 3: state file not updated. before=$((NOW - 90)) after=$LAST_VAL_C3"
 fi
 
 # ============================================================
-# Case 4: hook input 不正 — stdin 空 / EOF / large input
+# Case 4: invalid hook input — empty stdin / EOF / large input
 # ============================================================
 
-# 4-a: 空 stdin
+# 4-a: empty stdin
 OUT="$(echo -n "" | PROJECT_ROOT="$TMP_PROJ" bash "$HANDLER" 2>/dev/null)"
 if echo "$OUT" | jq -e '.ok == true' >/dev/null 2>&1; then
-  pass "Case 4-a (empty stdin): {ok:true} 返却 (crash しない)"
+  pass "Case 4-a (empty stdin): {ok:true} returned (no crash)"
 else
   fail "Case 4-a: crashed or bad output. got: $OUT"
 fi
 
-# 4-b: 不正 JSON stdin
+# 4-b: invalid JSON stdin
 OUT="$(echo "not-json{garbage" | PROJECT_ROOT="$TMP_PROJ" bash "$HANDLER" 2>/dev/null)"
 if echo "$OUT" | jq -e '.ok == true' >/dev/null 2>&1; then
-  pass "Case 4-b (garbage stdin): {ok:true} 返却 (handler は stdin を読み捨てる)"
+  pass "Case 4-b (garbage stdin): {ok:true} returned (handler discards stdin)"
 else
   fail "Case 4-b: bad output. got: $OUT"
 fi
 
-# 4-c: Plans.md なし → no-plans-md skipped
+# 4-c: no Plans.md → no-plans-md skipped
 TMP_PROJ_NO_PLANS="$(mktemp -d "${TMPDIR:-/tmp}/test-progress-no-plans.XXXXXX")"
 trap "rm -rf '$TMP_PROJ' '$TMP_PROJ_NO_PLANS'" EXIT
 mkdir -p "$TMP_PROJ_NO_PLANS/.claude/state"
@@ -164,13 +164,13 @@ else
 fi
 
 # ============================================================
-# 共通検証: dual hooks.json sync (P29 規約)
+# Common: dual hooks.json sync (P29 contract)
 # ============================================================
 
 if diff -q "$ROOT_DIR/.claude-plugin/hooks.json" "$ROOT_DIR/hooks/hooks.json" >/dev/null 2>&1; then
-  pass "dual hooks.json sync: .claude-plugin と hooks/ が完全一致"
+  pass "dual hooks.json sync: .claude-plugin and hooks/ are identical"
 else
-  fail "dual hooks.json sync 違反: 2 ファイル不一致"
+  fail "dual hooks.json sync violation: 2 files differ"
 fi
 
 # JSON validity
@@ -182,16 +182,16 @@ for f in "$ROOT_DIR/.claude-plugin/hooks.json" "$ROOT_DIR/hooks/hooks.json"; do
   fi
 done
 
-# posttool-progress-regen.sh エントリが両方に存在
+# posttool-progress-regen.sh entry must exist in both files
 for f in "$ROOT_DIR/.claude-plugin/hooks.json" "$ROOT_DIR/hooks/hooks.json"; do
   if grep -q "posttool-progress-regen.sh" "$f"; then
-    pass "$(basename "$(dirname "$f")")/hooks.json: posttool-progress-regen.sh エントリ存在"
+    pass "$(basename "$(dirname "$f")")/hooks.json: posttool-progress-regen.sh entry present"
   else
-    fail "$(basename "$(dirname "$f")")/hooks.json: hook エントリ未追加"
+    fail "$(basename "$(dirname "$f")")/hooks.json: hook entry missing"
   fi
 done
 
-# PostToolUse 配下に存在することを確認 (jq path query)
+# Verify entry is registered under PostToolUse (jq path query)
 for f in "$ROOT_DIR/.claude-plugin/hooks.json" "$ROOT_DIR/hooks/hooks.json"; do
   if jq -e '
     .hooks.PostToolUse | map(.hooks[]?.command? // "" | tostring)
@@ -199,9 +199,9 @@ for f in "$ROOT_DIR/.claude-plugin/hooks.json" "$ROOT_DIR/hooks/hooks.json"; do
     | map(select(test("posttool-progress-regen")))
     | length > 0
   ' "$f" >/dev/null 2>&1; then
-    pass "$(basename "$(dirname "$f")")/hooks.json: PostToolUse 配下に登録"
+    pass "$(basename "$(dirname "$f")")/hooks.json: registered under PostToolUse"
   else
-    fail "$(basename "$(dirname "$f")")/hooks.json: PostToolUse 配下に未登録"
+    fail "$(basename "$(dirname "$f")")/hooks.json: not registered under PostToolUse"
   fi
 done
 

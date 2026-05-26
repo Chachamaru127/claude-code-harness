@@ -2,15 +2,15 @@
 # test-output-governance.sh
 # Phase 62.2.1: PostToolUse.updatedToolOutput governance test
 #
-# 検証内容:
-#   (1) opt-in disabled (default) → handler は no-op
-#   (2) opt-in enabled + redact 用途 → 正しく redact + audit 記録
-#   (3) JSON-contract tool (Read/Grep/Bash) → mix を防ぐため skip
-#   (4) audit ログは append-only で before/after を保持
+# Verification items:
+#   (1) opt-in disabled (default) → handler is no-op
+#   (2) opt-in enabled + redact use → correctly redacts + records audit
+#   (3) JSON-contract tool (Read/Grep/Bash) → skip to prevent mixing
+#   (4) audit log is append-only and retains before/after
 #
-# 失敗用途 (改ざん) も明示的に検証:
-#   (5) review / test output 中の証拠隠蔽用途は handler が許可しない
-#       (handler 設計が「allowlist 方式」のため、新ルール追加には明示登録が必要)
+# Also explicitly verifies failure use case (tampering):
+#   (5) handler does not allow evidence-concealment in review/test output
+#       (handler is allowlist-based; new rules require explicit registration)
 
 set -euo pipefail
 
@@ -39,7 +39,7 @@ if [ -n "${NO_OPT_OUTPUT}" ]; then
   exit 1
 fi
 
-# (2) opt-in enabled + redact 用途 → redacted updatedToolOutput を返す
+# (2) opt-in enabled + redact use → returns redacted updatedToolOutput
 REDACT_INPUT='{"tool_name":"Edit","tool_input":{},"tool_response":{"output":"key=sk-1234567890abcdefghijABCDEFGHIJ visible"}}'
 export HARNESS_OUTPUT_GOVERNANCE_ENABLE=1
 REDACT_OUTPUT="$(printf '%s' "${REDACT_INPUT}" | "${HANDLER}" 2>&1 || true)"
@@ -71,7 +71,7 @@ for skip_tool in Read Grep Bash TodoWrite; do
   fi
 done
 
-# (4) audit log は append-only で before/after を保持
+# (4) audit log is append-only and retains before/after
 if [ -f "${AUDIT_LOG}" ]; then
   LAST_RECORD="$(tail -n 1 "${AUDIT_LOG}")"
   if ! printf '%s' "${LAST_RECORD}" | jq -e '.before and .after and .rule and .timestamp' >/dev/null 2>&1; then
@@ -84,19 +84,19 @@ if [ -f "${AUDIT_LOG}" ]; then
   fi
 fi
 
-# (5) test output / review evidence 隠蔽用途は handler の allowlist に無いため、
-#     対応する rule が登録されていないことを source 検査で固定する。
+# (5) test output / review evidence concealment is not in handler allowlist;
+#     verify by source inspection that no corresponding rule is registered.
 TEST_TAMPERING_PATTERN='passed.*failed|test_result|review_artifact'
 if grep -E "${TEST_TAMPERING_PATTERN}" "${HANDLER}" >/dev/null 2>&1; then
   echo "FAIL (5): handler must NOT contain test-tampering rules (pattern: ${TEST_TAMPERING_PATTERN})"
   exit 1
 fi
 
-# (6) handler は HARNESS_OUTPUT_GOVERNANCE_ENABLE=1 で明示 opt-in されることが
-#     コードに literal に書かれていること
+# (6) handler must have HARNESS_OUTPUT_GOVERNANCE_ENABLE=1 explicit opt-in
+#     written literally in the code
 if ! grep -q 'HARNESS_OUTPUT_GOVERNANCE_ENABLE' "${HANDLER}"; then
   echo "FAIL (6): handler must check HARNESS_OUTPUT_GOVERNANCE_ENABLE for opt-in"
   exit 1
 fi
 
-echo "PASS: test-output-governance.sh (Phase 62.2.1) — 6 ケース全 PASS"
+echo "PASS: test-output-governance.sh (Phase 62.2.1) — all 6 cases PASS"

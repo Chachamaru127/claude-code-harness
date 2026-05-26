@@ -69,7 +69,7 @@ func TestUsageTrackerHandler_SkillTracking(t *testing.T) {
 		t.Errorf("expected continue=true")
 	}
 
-	// JSONL ファイルが作成されているか確認
+	// Verify that the JSONL file was created
 	statsFile := filepath.Join(dir, ".claude", "state", usageStatsFile)
 	data, err := os.ReadFile(statsFile)
 	if err != nil {
@@ -92,7 +92,7 @@ func TestUsageTrackerHandler_SkillTracking_BaseName(t *testing.T) {
 	dir := t.TempDir()
 	h := &UsageTrackerHandler{ProjectRoot: dir}
 
-	// コロン区切りの完全修飾名
+	// Fully-qualified name with colon separators
 	input := `{"tool_name":"Skill","tool_input":{"skill":"plugin:category:work"}}`
 
 	var out bytes.Buffer
@@ -134,7 +134,7 @@ func TestUsageTrackerHandler_SlashCommandTracking(t *testing.T) {
 	if entry.Type != "command" {
 		t.Errorf("expected type=command, got %q", entry.Type)
 	}
-	// 先頭スラッシュが除去されているか
+	// Verify that the leading slash was stripped
 	if entry.Name != "harness-review" {
 		t.Errorf("expected name=harness-review, got %q", entry.Name)
 	}
@@ -169,7 +169,7 @@ func TestUsageTrackerHandler_UnknownTool_NoFile(t *testing.T) {
 	dir := t.TempDir()
 	h := &UsageTrackerHandler{ProjectRoot: dir}
 
-	// 追跡対象外のツール（Read など）
+	// Tool not subject to tracking (e.g. Read)
 	input := `{"tool_name":"Read","tool_input":{"file_path":"/foo/bar.txt"}}`
 
 	var out bytes.Buffer
@@ -178,7 +178,7 @@ func TestUsageTrackerHandler_UnknownTool_NoFile(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// JSONL ファイルは作成されないはず
+	// The JSONL file should not be created
 	statsFile := filepath.Join(dir, ".claude", "state", usageStatsFile)
 	if _, err := os.Stat(statsFile); err == nil {
 		t.Errorf("usage-stats.jsonl should not be created for unknown tool")
@@ -194,7 +194,7 @@ func TestUsageTrackerHandler_SSOTFlag_MemorySkill(t *testing.T) {
 	var out bytes.Buffer
 	_ = h.Handle(strings.NewReader(input), &out)
 
-	// SSOT フラグが作成されているか確認
+	// Verify that the SSOT flag was created
 	ssotFlag := filepath.Join(dir, ".claude", "state", ".ssot-synced-this-session")
 	if _, err := os.Stat(ssotFlag); err != nil {
 		t.Errorf("expected .ssot-synced-this-session to be created: %v", err)
@@ -238,7 +238,7 @@ func TestUsageTrackerHandler_Rotation(t *testing.T) {
 	stateDir := filepath.Join(dir, ".claude", "state")
 	_ = os.MkdirAll(stateDir, 0700)
 
-	// 100KB 超のダミーファイルを作成
+	// Create a dummy file exceeding 100 KB
 	statsFile := filepath.Join(stateDir, usageStatsFile)
 	large := bytes.Repeat([]byte("x"), usageMaxSizeBytes+1)
 	_ = os.WriteFile(statsFile, large, 0600)
@@ -248,13 +248,13 @@ func TestUsageTrackerHandler_Rotation(t *testing.T) {
 	var out bytes.Buffer
 	_ = h.Handle(strings.NewReader(input), &out)
 
-	// .bak が作成されているか確認
+	// Verify that the .bak file was created
 	bakFile := statsFile + ".bak"
 	if _, err := os.Stat(bakFile); err != nil {
 		t.Errorf("expected .bak file to be created: %v", err)
 	}
 
-	// 元ファイルが小さくなっているか確認（新規作成された）
+	// Verify that the original file is now smaller (recreated)
 	fi, err := os.Stat(statsFile)
 	if err != nil {
 		t.Fatalf("stats file not found after rotation: %v", err)

@@ -1,70 +1,70 @@
 ---
-description: CC アプデ追従時の品質ポリシー
+description: Quality policy for following CC updates
 globs: ["CLAUDE.md", "docs/CLAUDE-feature-table.md"]
 ---
 
-# CC アップデート追従ポリシー
+# CC Update Follow Policy
 
-Claude Code の新バージョン対応時に Feature Table を更新する際の品質基準。
+Quality standards for updating the Feature Table when adopting a new version of Claude Code.
 
-## 基本原則
+## Core Principle
 
-Feature Table への追加は、**対応する実装変更**または**カテゴリ C（CC 自動継承）の明示的分類**を伴わなければならない。
+Any addition to the Feature Table must be accompanied by either a **corresponding implementation change** or an **explicit classification as Category C (CC auto-inherit)**.
 
-「Feature Table に行を足しただけ」の状態で PR をマージしてはならない。
+A PR must not be merged in a state where "a row was simply added to the Feature Table" with nothing else.
 
-## 3 カテゴリ分類
+## 3-Category Classification
 
-| カテゴリ | 定義 | PR マージ |
+| Category | Definition | PR Merge |
 |---------|------|----------|
-| **(A) 実装あり** | hooks / scripts / agents / skills / core に対応する実装変更がある | 可 |
-| **(B) 書いただけ** | Feature Table のみ変更。実装なし | **不可** -- 実装案の提示が必須 |
-| **(C) CC 自動継承** | CC 本体の修正で Harness 側の変更不要（パフォーマンス改善、バグ修正等） | 可（Feature Table に「CC 自動継承」と明記） |
+| **(A) Has implementation** | A corresponding implementation change exists in hooks / scripts / agents / skills / core | Allowed |
+| **(B) Documentation only** | Only the Feature Table was changed. No implementation. | **Not allowed** — a concrete implementation proposal is required |
+| **(C) CC auto-inherit** | No Harness-side change needed because CC itself fixed it (performance improvement, bug fix, etc.) | Allowed (note "CC auto-inherit" in the Feature Table) |
 
-## ルール
+## Rules
 
-### 1. Feature Table 追加には実装または分類を伴うこと
+### 1. Every Feature Table addition must include an implementation or a classification
 
-Feature Table に新行を追加する場合、以下のいずれかを満たすこと:
+When adding a new row to the Feature Table, at least one of the following must be true:
 
-- **(A)** 同じ PR 内に対応する実装ファイルの変更が含まれている
-- **(C)** Feature Table 内で「CC 自動継承」であることが明記されている
+- **(A)** A corresponding implementation file change is included in the same PR
+- **(C)** The entry is explicitly marked as "CC auto-inherit" in the Feature Table
 
-いずれにも該当しない場合、その項目はカテゴリ B（書いただけ）と判定される。
+If neither applies, the entry is classified as Category B (documentation only).
 
-### 2. カテゴリ B 検出時は PR をブロックし実装案を要求
+### 2. Detecting Category B blocks the PR and requires an implementation proposal
 
-カテゴリ B の項目が 1 件でも存在する場合:
+If even one Category B entry exists:
 
-- PR のマージを**ブロック**する
-- 各カテゴリ B 項目について、以下を含む**実装案**の提示を要求する:
-  - Harness ならではの付加価値の説明
-  - 変更対象ファイルと具体的な変更内容
-  - ユーザー体験の改善（今まで / 今後）
+- **Block** the PR from merging
+- For each Category B entry, require a concrete **implementation proposal** that includes:
+  - Explanation of the unique value Harness provides
+  - The files to be changed and the specific changes
+  - User experience improvement (before / after)
 
-実装案が承認された後、実装を含む追加コミットまたは後続 PR を作成すること。
+After the proposal is approved, create an additional commit with the implementation or a follow-up PR.
 
-### 3. 「付加価値」列の追加を推奨
+### 3. Adding a "value" column is recommended
 
-Feature Table に A / B / C の分類を可視化する「付加価値」列の追加を推奨する。
+Adding a "value" column to the Feature Table that makes the A / B / C classification visible is recommended.
 
 ```markdown
-| Feature | Skill | Purpose | 付加価値 |
+| Feature | Skill | Purpose | Value |
 |---------|-------|---------|---------|
-| PostCompact フック | hooks | コンテキスト再注入 | A: 実装あり |
-| Streaming leak fix | all | メモリリーク修正 | C: CC 自動継承 |
+| PostCompact hook | hooks | Context re-injection | A: implemented |
+| Streaming leak fix | all | Memory leak fix | C: CC auto-inherit |
 ```
 
-この列により:
-- レビュー時にカテゴリ B の残存を即座に発見できる
-- Feature Table の各項目が「なぜここにあるか」を自己文書化する
-- 将来の CC アップデート統合時に過去の判断を参照できる
+This column enables:
+- Immediately spotting any remaining Category B entries during review
+- Each Feature Table entry self-documenting "why it's here"
+- Referencing past decisions when integrating future CC updates
 
-## 適用範囲
+## Scope
 
-このポリシーは以下のファイルの変更時に適用される:
+This policy applies when changing the following files:
 
-- `CLAUDE.md` の Feature Table セクション
+- The Feature Table section of `CLAUDE.md`
 - `docs/CLAUDE-feature-table.md`
 
-通常の実装 PR、ドキュメント修正、リリース作業には適用されない。
+It does not apply to normal implementation PRs, documentation fixes, or release work.

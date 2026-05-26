@@ -1,11 +1,11 @@
 package hookhandler
 
 // notification_handler.go
-// notification-handler.sh の Go 移植。
+// Go port of notification-handler.sh.
 //
-// Notification イベント (permission_prompt, idle_prompt, auth_success 等) を
-// .claude/state/notification-events.jsonl に記録する。
-// 通知ハンドラはブロックしない（常に approve）。
+// Records Notification events (permission_prompt, idle_prompt, auth_success, etc.)
+// to .claude/state/notification-events.jsonl.
+// The notification handler never blocks (always approves).
 
 import (
 	"encoding/json"
@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-// notificationInput は Notification フックの stdin JSON。
+// notificationInput is the stdin JSON for Notification hooks.
 type notificationInput struct {
 	NotificationType string `json:"notification_type"`
 	Type             string `json:"type"`
@@ -26,7 +26,7 @@ type notificationInput struct {
 	AgentType        string `json:"agent_type"`
 }
 
-// notificationLogEntry は notification-events.jsonl の1エントリ。
+// notificationLogEntry is a single entry in notification-events.jsonl.
 type notificationLogEntry struct {
 	Event            string `json:"event"`
 	NotificationType string `json:"notification_type"`
@@ -35,25 +35,25 @@ type notificationLogEntry struct {
 	Timestamp        string `json:"timestamp"`
 }
 
-// HandleNotification は notification-handler.sh の Go 移植。
+// HandleNotification is the Go port of notification-handler.sh.
 //
-// Notification フックで呼び出され、通知イベントを
-// .claude/state/notification-events.jsonl に記録する。
-// 通知ハンドラは常に approve を返す（ブロックしない）。
+// Called on Notification hooks, it records notification events to
+// .claude/state/notification-events.jsonl.
+// The notification handler always returns approve (non-blocking).
 func HandleNotification(in io.Reader, out io.Writer) error {
 	data, err := io.ReadAll(in)
 	if err != nil || len(strings.TrimSpace(string(data))) == 0 {
-		// 入力なし: 正常終了（exit 0 相当）
+		// No input: normal exit (equivalent to exit 0).
 		return nil
 	}
 
 	var input notificationInput
 	if jsonErr := json.Unmarshal(data, &input); jsonErr != nil {
-		// パース失敗でも通過（通知ハンドラはブロックしない）
+		// Pass through even on parse failure (notification handler does not block).
 		return nil
 	}
 
-	// notification_type の解決（type / matcher でフォールバック）
+	// Resolve notification_type (fallback to type / matcher).
 	notificationType := input.NotificationType
 	if notificationType == "" {
 		notificationType = input.Type
@@ -62,14 +62,14 @@ func HandleNotification(in io.Reader, out io.Writer) error {
 		notificationType = input.Matcher
 	}
 
-	// ステートディレクトリを確保
+	// Ensure the state directory exists.
 	stateDir := resolveNotificationStateDir()
 	if mkErr := ensureNotificationStateDir(stateDir); mkErr != nil {
-		// ディレクトリ作成失敗でも通過
+		// Pass through even if directory creation fails.
 		return nil
 	}
 
-	// JSONL に記録
+	// Write to JSONL.
 	logFile := filepath.Join(stateDir, "notification-events.jsonl")
 	entry := notificationLogEntry{
 		Event:            "notification",
@@ -79,7 +79,7 @@ func HandleNotification(in io.Reader, out io.Writer) error {
 		Timestamp:        time.Now().UTC().Format(time.RFC3339),
 	}
 	if logErr := appendNotificationLog(logFile, entry); logErr != nil {
-		// ログ書き込み失敗は無視
+		// Ignore log write failures.
 		_ = logErr
 	}
 

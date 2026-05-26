@@ -8,20 +8,20 @@ import (
 )
 
 // agentBrowserContext is the additionalContext injected when agent-browser is installed.
-const agentBrowserContext = `💡 **agent-browser を先に試すことを推奨します**
+const agentBrowserContext = `💡 **Consider trying agent-browser first**
 
-agent-browser は AI エージェント向けに最適化されたブラウザ自動化ツールです。
+agent-browser is a browser automation tool optimised for AI agents.
 
 ` + "```bash" + `
-# 基本的な使い方
+# Basic usage
 agent-browser open <url>
-agent-browser snapshot -i -c  # AI 向けスナップショット
-agent-browser click @e1        # 要素参照でクリック
+agent-browser snapshot -i -c  # AI-friendly snapshot
+agent-browser click @e1        # Click by element reference
 ` + "```" + `
 
-現在の MCP ツールも使用可能ですが、agent-browser の方がシンプルで高速です。
+The current MCP tools are still available, but agent-browser is simpler and faster.
 
-詳細: ` + "`docs/OPTIONAL_PLUGINS.md`"
+Details: ` + "`docs/OPTIONAL_PLUGINS.md`"
 
 // agentBrowserLookupFn is the function used to check if agent-browser is
 // installed. It is a package-level variable to allow injection in tests.

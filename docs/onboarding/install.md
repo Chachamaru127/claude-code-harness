@@ -1,6 +1,6 @@
 # Install, Update, Uninstall
 
-Choose the tool you are using now (今使っている tool) before running commands.
+Choose the tool you are currently using before running commands.
 This page keeps the Claude-first install path and the existing Codex CLI setup
 path intact while showing candidate and unsupported hosts without upgrading
 their support tier.

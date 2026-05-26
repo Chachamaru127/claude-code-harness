@@ -1,82 +1,81 @@
 # cross-project-group.v1 Schema
 
-Phase 65.3 (Cross-Project Group + 3-Layer Redaction) で導入。
-`.claude/rules/cross-project-groups.yaml` のスキーマ仕様。
+Introduced in Phase 65.3 (Cross-Project Group + 3-Layer Redaction).
+Schema specification for `.claude/rules/cross-project-groups.yaml`.
 
-## 目的
+## Purpose
 
-Plan Brief / Acceptance Demo / Progress Tracker などの client 側 skill が、
-**横断プロジェクト検索**を opt-in で有効化するためのグループ定義 SSOT。
+This is the SSOT for group definitions that allow client-side skills like
+Plan Brief / Acceptance Demo / Progress Tracker to **opt-in to cross-project search**.
 
-横断検索は default 無効。`--cross-project-group <name>` flag で
-明示的に group 名を指定した場合のみ、その group の member projects に
-対して `mcp__harness__harness_mem_search` を発行する。
+Cross-project search is disabled by default. Only when a group name is explicitly specified
+with `--cross-project-group <name>` will `mcp__harness__harness_mem_search` be issued
+against the member projects of that group.
 
-## スキーマ
+## Schema
 
 ```yaml
 schema_version: cross-project-group.v1
 
 groups:
-  - name: <string>            # group 識別子
-    description: <string?>    # 任意 (group の用途説明)
-    members:                  # 配列、要素 unique、空 OK
-      - <string>              # member project 名
+  - name: <string>            # Group identifier
+    description: <string?>    # Optional (description of group's purpose)
+    members:                  # Array, elements unique, empty OK
+      - <string>              # Member project name
       - <string>
 ```
 
-## 制約
+## Constraints
 
-| フィールド | 型 | 必須 | 制約 |
+| Field | Type | Required | Constraints |
 |---|---|---|---|
-| `schema_version` | string | ✓ | `cross-project-group.v1` 固定 |
-| `groups` | array | ✓ | 空配列 `[]` 可 |
-| `groups[].name` | string | ✓ | `groups` 内で unique、空文字不可 |
-| `groups[].description` | string | optional | 任意 |
-| `groups[].members` | array | ✓ | 配列、要素 unique、空 OK |
-| `groups[].members[]` | string | - | 空文字不可、重複不可 |
+| `schema_version` | string | ✓ | Fixed to `cross-project-group.v1` |
+| `groups` | array | ✓ | Empty array `[]` allowed |
+| `groups[].name` | string | ✓ | Unique within `groups`, cannot be empty |
+| `groups[].description` | string | optional | Optional |
+| `groups[].members` | array | ✓ | Array, elements unique, empty OK |
+| `groups[].members[]` | string | - | Cannot be empty, no duplicates |
 
-## バリデーション
+## Validation
 
-`scripts/load-cross-project-groups.sh` が yaml をパースし、
-不正な schema を検出した場合は **exit 1** で停止する。
+`scripts/load-cross-project-groups.sh` parses the yaml and stops with **exit 1** if an invalid schema is detected.
 
-検出する不正:
+Detected errors:
 
-1. `schema_version` 不一致 (`cross-project-group.v1` 以外)
-2. `groups` が array でない
-3. `groups[].name` 欠損 / 空文字 / 重複
-4. `groups[].members` が array でない / 要素重複 / 空文字
-5. `groups[].members[]` が string でない
+1. `schema_version` mismatch (anything other than `cross-project-group.v1`)
+2. `groups` is not an array
+3. `groups[].name` is missing / empty / duplicated
+4. `groups[].members` is not an array / has duplicate elements / contains empty strings
+5. `groups[].members[]` is not a string
 
-## 利用例
+## Usage Examples
 
-### CLI (loader script 直接呼び出し)
+### CLI (direct call to loader script)
 
 ```bash
-# 全 groups を JSON で出力
+# Output all groups as JSON
 bash scripts/load-cross-project-groups.sh
 
-# 特定 group の members を JSON array で出力
+# Output members of a specific group as a JSON array
 bash scripts/load-cross-project-groups.sh --group "Personal Tools"
 # → ["my-cli","my-dotfiles","my-scripts"]
 
-# 存在しない group は exit 1
+# Nonexistent group exits with 1
 bash scripts/load-cross-project-groups.sh --group "Unknown"
 # → stderr: "group not found: Unknown" / exit 1
 ```
 
-### Skill 経由 (Phase 65.3.5 で実装予定)
+### Via skill (implemented in Phase 65.3.5)
 
 ```bash
-# 横断検索なし (default、現プロジェクトのみ)
-/harness-plan-brief "新しい CI を導入したい"
+# No cross-project search (default, current project only)
+/harness-plan-brief "I want to introduce new CI"
 
-# 横断検索 opt-in (Personal Tools group の全 members を検索)
-/harness-plan-brief "新しい CI を導入したい" --cross-project-group "Personal Tools"
+# Cross-project search opt-in (search all members of Personal Tools group)
+/harness-plan-brief "I want to introduce new CI" --cross-project-group "Personal Tools"
 ```
 
-## Cross-Project Search の実装 (D43 Option α)
+## Cross-Project Search Implementation (D43 Option α)
 
 ```
 client skill (Plan Brief / Accept / Progress)
@@ -91,23 +90,23 @@ For each member in members:
    mcp__harness__harness_mem_search(project=member, ...)
    │
    ▼
-client 側でマージ・dedupe (relevance_score 順)
+Merge and dedupe on client side (sorted by relevance_score)
    │
    ▼
-Layer 2 (dict + NER) で固有名詞 redact
+Layer 2 (dict + NER) redacts proper nouns
    │
    ▼
-Layer 3 (final scan) で残骸検出 → 0 件なら HTML 生成、検出なら exit 1
+Layer 3 (final scan) detects residue → if 0: generate HTML, if detected: exit 1
 ```
 
-詳細な責任境界は [.claude/rules/cross-repo-handoff.md](../.claude/rules/cross-repo-handoff.md) の
-「3 層 Redaction の責任境界」と「Phase 65.3 実装決定事項 (D43)」を参照。
+For detailed responsibility boundaries, see `.claude/rules/cross-repo-handoff.md`
+"3-Layer Redaction Responsibility Boundaries" and "Phase 65.3 Implementation Decisions (D43)".
 
-## 関連
+## Related
 
-- `.claude/rules/cross-project-groups.yaml` — 本 schema の SSOT (default `groups: []`)
+- `.claude/rules/cross-project-groups.yaml` — SSOT for this schema (default `groups: []`)
 - `scripts/load-cross-project-groups.sh` — yaml → JSON parser + validator
-- `tests/test-cross-project-groups-schema.sh` — 4 ケース機械検証
-- `.claude/rules/cross-repo-handoff.md` — Phase 65.3 実装決定事項 (D43)
-- `.claude/rules/client-redaction.yaml` — Layer 2a 辞書 (Phase 65.3.2 で導入予定)
-- Plans.md §65.3.1-65.3.7 — Phase C 全タスク
+- `tests/test-cross-project-groups-schema.sh` — 4-case automated verification
+- `.claude/rules/cross-repo-handoff.md` — Phase 65.3 implementation decisions (D43)
+- `.claude/rules/client-redaction.yaml` — Layer 2a dictionary (introduced in Phase 65.3.2)
+- Plans.md §65.3.1-65.3.7 — Phase C all tasks

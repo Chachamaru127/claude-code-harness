@@ -1,18 +1,18 @@
 package hookhandler
 
 // terminal_notify.go
-// CC 2.1.141+ hook JSON output `terminalSequence` フィールドを構築する共有ヘルパー。
-// HARNESS_TERMINAL_NOTIFY env で opt-in。
+// Shared helper for building the `terminalSequence` field in CC 2.1.141+ hook JSON output.
+// Opt-in via the HARNESS_TERMINAL_NOTIFY env variable.
 //
-// 詳細: .claude/rules/hooks-2.1.139-plus.md
-// shell 版参考実装: scripts/lib/terminal-notify.sh
+// Details: .claude/rules/hooks-2.1.139-plus.md
+// Shell reference implementation: scripts/lib/terminal-notify.sh
 
 import (
 	"os"
 	"strings"
 )
 
-// terminalNotifyMode は HARNESS_TERMINAL_NOTIFY env を解釈した結果。
+// terminalNotifyMode is the result of interpreting the HARNESS_TERMINAL_NOTIFY env variable.
 type terminalNotifyMode int
 
 const (
@@ -23,7 +23,7 @@ const (
 	notifyDesktop // OSC 777
 )
 
-// resolveTerminalNotifyMode は env から mode を解決する。未知値は notifyOff。
+// resolveTerminalNotifyMode resolves the mode from the env variable. Unknown values default to notifyOff.
 func resolveTerminalNotifyMode() terminalNotifyMode {
 	switch strings.ToLower(strings.TrimSpace(os.Getenv("HARNESS_TERMINAL_NOTIFY"))) {
 	case "", "0":
@@ -37,13 +37,13 @@ func resolveTerminalNotifyMode() terminalNotifyMode {
 	case "notify":
 		return notifyDesktop
 	default:
-		// 未知値は silent (rule との一致)
+		// Unknown values are silent (consistent with the rule)
 		return notifyOff
 	}
 }
 
-// sanitizeTerminalText は title / body から制御文字 (0x00-0x1F, 0x7F) を除去する。
-// terminal corruption / secret 漏洩防止のため、印字可能な文字だけを通す。
+// sanitizeTerminalText strips control characters (0x00-0x1F, 0x7F) from title/body.
+// Only printable characters are allowed, to prevent terminal corruption and secret leakage.
 func sanitizeTerminalText(s string) string {
 	if s == "" {
 		return ""
@@ -51,7 +51,7 @@ func sanitizeTerminalText(s string) string {
 	var b strings.Builder
 	b.Grow(len(s))
 	for _, r := range s {
-		// 0x00-0x1F は制御文字、0x7F は DEL
+		// 0x00-0x1F are control characters; 0x7F is DEL
 		if r < 0x20 || r == 0x7F {
 			continue
 		}
@@ -60,12 +60,12 @@ func sanitizeTerminalText(s string) string {
 	return b.String()
 }
 
-// BuildTerminalSequence は terminalSequence の raw OSC sequence を構築する。
+// BuildTerminalSequence builds the raw OSC sequence for the terminalSequence field.
 //
-// title が空の場合、bell mode のみ BEL を返し、それ以外は空文字列を返す。
-// HARNESS_TERMINAL_NOTIFY 未設定なら常に空文字列を返す (opt-in 維持)。
+// When title is empty, only bell mode returns BEL; all other modes return an empty string.
+// Returns an empty string when HARNESS_TERMINAL_NOTIFY is not set (preserves opt-in behaviour).
 //
-// 戻り値は raw bytes。JSON にする場合は json.Marshal で encode する。
+// The return value is raw bytes. Encode with json.Marshal when embedding in JSON.
 func BuildTerminalSequence(title, body string) string {
 	mode := resolveTerminalNotifyMode()
 	if mode == notifyOff {
@@ -75,7 +75,7 @@ func BuildTerminalSequence(title, body string) string {
 	cleanTitle := sanitizeTerminalText(title)
 	cleanBody := sanitizeTerminalText(body)
 
-	// bell mode は title 不要、それ以外は title 必須
+	// Bell mode does not require a title; all other modes do
 	if mode != notifyBell && cleanTitle == "" {
 		return ""
 	}
@@ -102,8 +102,8 @@ func BuildTerminalSequence(title, body string) string {
 	return ""
 }
 
-// AugmentWithTerminalSequence は hook 応答 map に terminalSequence フィールドを追加する。
-// HARNESS_TERMINAL_NOTIFY が未設定 / title が空 (非 bell) の場合は何もしない。
+// AugmentWithTerminalSequence adds a terminalSequence field to the hook response map.
+// Does nothing when HARNESS_TERMINAL_NOTIFY is unset, or when title is empty (non-bell mode).
 func AugmentWithTerminalSequence(resp map[string]interface{}, title, body string) {
 	if resp == nil {
 		return

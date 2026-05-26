@@ -1,14 +1,14 @@
 #!/bin/bash
 # tests/test-progress-past-judgments.sh
-# Phase 65.4.4 - Progress Tracker 過去判断 lookup の機械検証
+# Phase 65.4.4 - Progress Tracker past judgment lookup mechanical validation
 #
-# 検証ケース (Plans.md §65.4.4 DoD d):
-#   1. judgment 0 件  - records 該当なし → total_count=0, rate=0
-#   2. judgment 3 件  - mixed (2 reject + 1 accept) → total=3, rate=66
-#   3. 全 reject     - 5 件全て reject_suggestion → rate=100
-#   4. 全 accept     - 5 件全て follow_suggestion → rate=0
-# 加えて (c) cross-project default OFF 確認
-#   + alert kind enum 検証 + records-file not found エラー
+# Validation cases (Plans.md §65.4.4 DoD d):
+#   1. judgment 0 items  - no matching records → total_count=0, rate=0
+#   2. judgment 3 items  - mixed (2 reject + 1 accept) → total=3, rate=66
+#   3. all reject        - 5 items all reject_suggestion → rate=100
+#   4. all accept        - 5 items all follow_suggestion → rate=0
+# Also (c) cross-project default OFF check
+#   + alert kind enum validation + records-file not found error
 
 set -euo pipefail
 
@@ -34,7 +34,7 @@ TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/test-past-judgments.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 # ============================================================
-# Case 1: judgment 0 件 - records に該当なし
+# Case 1: judgment 0 items - no matching records
 # ============================================================
 
 REC1="$TMP_DIR/rec1-empty.jsonl"
@@ -52,13 +52,13 @@ if echo "$OUT" | jq -e '
   .rejection_rate_pct == 0 and
   (.top_3_judgments | length == 0)
 ' >/dev/null 2>&1; then
-  pass "Case 1 (0 件): total=0, rate=0, top_3=[]"
+  pass "Case 1 (0 items): total=0, rate=0, top_3=[]"
 else
   fail "Case 1: bad output. got: $OUT"
 fi
 
 # ============================================================
-# Case 2: judgment 3 件 (2 reject + 1 follow) → rate=66
+# Case 2: judgment 3 items (2 reject + 1 follow) → rate=66
 # ============================================================
 
 REC2="$TMP_DIR/rec2-mixed.jsonl"
@@ -76,12 +76,12 @@ if echo "$OUT" | jq -e '
   .rejection_rate_pct == 66 and
   (.top_3_judgments | length == 3)
 ' >/dev/null 2>&1; then
-  pass "Case 2 (3 件 mixed): total=3, rejected=2, rate=66"
+  pass "Case 2 (3 items mixed): total=3, rejected=2, rate=66"
 else
   fail "Case 2: bad output. got: $OUT"
 fi
 
-# top_3 は timestamp 降順
+# top_3 is sorted by timestamp DESC
 FIRST_TIMESTAMP="$(echo "$OUT" | jq -r '.top_3_judgments[0].timestamp')"
 if [[ "$FIRST_TIMESTAMP" == "2026-05-03T10:00:00Z" ]]; then
   pass "Case 2: top_3 sorted by timestamp DESC (newest first)"
@@ -90,7 +90,7 @@ else
 fi
 
 # ============================================================
-# Case 3: 全 reject (5 件) → rate=100
+# Case 3: all reject (5 items) → rate=100
 # ============================================================
 
 REC3="$TMP_DIR/rec3-all-reject.jsonl"
@@ -107,13 +107,13 @@ if echo "$OUT" | jq -e '
   .rejected_count == 5 and
   .rejection_rate_pct == 100
 ' >/dev/null 2>&1; then
-  pass "Case 3 (全 reject): rate=100"
+  pass "Case 3 (all reject): rate=100"
 else
   fail "Case 3: bad output. got: $OUT"
 fi
 
 # ============================================================
-# Case 4: 全 follow (5 件) → rate=0
+# Case 4: all follow (5 items) → rate=0
 # ============================================================
 
 REC4="$TMP_DIR/rec4-all-follow.jsonl"
@@ -130,16 +130,16 @@ if echo "$OUT" | jq -e '
   .rejected_count == 0 and
   .rejection_rate_pct == 0
 ' >/dev/null 2>&1; then
-  pass "Case 4 (全 follow): rate=0"
+  pass "Case 4 (all follow): rate=0"
 else
   fail "Case 4: bad output. got: $OUT"
 fi
 
 # ============================================================
-# (c) cross-project default OFF 確認
+# (c) cross-project default OFF check
 # ============================================================
 
-# OFF: project=myproj 指定で otherproj record は除外
+# OFF: project=myproj specified, otherproj records are excluded
 REC_MIX="$TMP_DIR/rec-mix-projects.jsonl"
 cat > "$REC_MIX" <<'JSONL'
 {"data":{"alert_kind":"time-overrun","decision":"reject_suggestion","reasoning":"a","timestamp":"2026-05-01T00:00:00Z","project":"myproj"}}
@@ -152,24 +152,24 @@ if echo "$OUT" | jq -e '
   .total_count == 1 and
   .cross_project_used == false
 ' >/dev/null 2>&1; then
-  pass "(c) cross-project default OFF: project=myproj のみ集計 (1 件), cross_project_used=false"
+  pass "(c) cross-project default OFF: only project=myproj aggregated (1 item), cross_project_used=false"
 else
   fail "(c) default OFF: bad output. got: $OUT"
 fi
 
-# ON: cross-project-group 指定で全 records 集計
+# ON: cross-project-group specified, all records aggregated
 OUT_CROSS="$(bash "$SCRIPT" --alert-kind time-overrun --project myproj --records-file "$REC_MIX" --cross-project-group "TestG")"
 if echo "$OUT_CROSS" | jq -e '
   .total_count == 3 and
   .cross_project_used == true
 ' >/dev/null 2>&1; then
-  pass "(c) cross-project ON: project filter 解除 (3 件全集計), cross_project_used=true"
+  pass "(c) cross-project ON: project filter removed (all 3 items aggregated), cross_project_used=true"
 else
   fail "(c) cross-project ON: bad output. got: $OUT_CROSS"
 fi
 
 # ============================================================
-# 共通: alert kind enum 検証
+# Common: alert kind enum validation
 # ============================================================
 
 if bash "$SCRIPT" --alert-kind not-a-kind --project myproj --records-file "$REC1" >/dev/null 2>&1; then
@@ -179,7 +179,7 @@ else
 fi
 
 # ============================================================
-# 共通: records-file not found
+# Common: records-file not found
 # ============================================================
 
 if bash "$SCRIPT" --alert-kind scope-creep --project myproj --records-file "/nonexistent" >/dev/null 2>&1; then
@@ -189,7 +189,7 @@ else
 fi
 
 # ============================================================
-# 共通: required args missing
+# Common: required args missing
 # ============================================================
 
 if bash "$SCRIPT" --alert-kind scope-creep --project myproj 2>/dev/null; then

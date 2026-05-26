@@ -131,9 +131,9 @@ Key files with user-visible strings:
 
 | File | Sample | Priority |
 |------|--------|---------|
-| `go/internal/guardrail/rules.go` | `"sudo の使用は禁止されています。..."`, `"git push --force は禁止されています。..."` | **high** |
+| `go/internal/guardrail/rules.go` | `"sudo is prohibited..."`, `"git push --force is prohibited..."` (currently in Japanese) | **high** |
 | `go/internal/guardrail/post_tool.go` | denial reasons | high |
-| `go/internal/guardrail/helpers.go` | `"警告: ..."` system messages | high |
+| `go/internal/guardrail/helpers.go` | `"Warning: ..."` system messages (currently in Japanese) | high |
 | `go/internal/guardrail/tampering.go` | tampering detection messages | high |
 | `go/internal/event/permission_denied.go` | permission denied messages | high |
 | `go/internal/hookhandler/ask_user_question_normalizer.go` | user prompt strings | high |
@@ -257,7 +257,7 @@ Retroactive translation would generate massive, low-value churn and obscure git 
 **Active / User-facing / translate now**
 
 21 Japanese lines in `CONTRIBUTING.md`, a public-facing file for contributors.
-Section `## CHANGELOG 記載ルール` and surrounding content are in Japanese.
+Section `## CHANGELOG Entry Rules` and surrounding content were in Japanese.
 
 **Action**: translate now. Small scope, high visibility.
 
@@ -273,7 +273,7 @@ Section `## CHANGELOG 記載ルール` and surrounding content are in Japanese.
 surface and is read directly by project maintainers when customizing the harness.
 
 Key commented sections:
-- `main/master への直接 push の扱い` (line 22-23)
+- `direct push to main/master policy` (line 22-23)
 - Worker self-review rule comments (lines 151-167)
 
 **Action**: translate now. Small scope, direct user impact.

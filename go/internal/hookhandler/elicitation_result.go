@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// elicitationResultInput は ElicitationResult フックの stdin JSON ペイロード。
+// elicitationResultInput is the stdin JSON payload for the ElicitationResult hook.
 type elicitationResultInput struct {
 	MCPServerName string `json:"mcp_server_name"`
 	ServerName    string `json:"server_name"`
@@ -20,7 +20,7 @@ type elicitationResultInput struct {
 	Status        string `json:"status"`
 }
 
-// elicitationResultLogEntry は elicitation-events.jsonl に追記するエントリ。
+// elicitationResultLogEntry is the entry appended to elicitation-events.jsonl.
 type elicitationResultLogEntry struct {
 	Event         string `json:"event"`
 	MCPServer     string `json:"mcp_server"`
@@ -29,15 +29,15 @@ type elicitationResultLogEntry struct {
 	Timestamp     string `json:"timestamp"`
 }
 
-// ElicitationResultHandler は scripts/hook-handlers/elicitation-result.sh の Go 移植。
+// ElicitationResultHandler is the Go port of scripts/hook-handlers/elicitation-result.sh.
 //
-// ElicitationResult イベントを受け取り、軽量ロギングのみを行う。
-// 結果は .claude/state/elicitation-events.jsonl に追記される。
-// 常に approve を返す。
+// Receives ElicitationResult events and performs lightweight logging only.
+// Results are appended to .claude/state/elicitation-events.jsonl.
+// Always returns approve.
 type ElicitationResultHandler struct {
-	// ProjectRoot はプロジェクトルートのパス。空の場合は環境変数/CWD から解決。
+	// ProjectRoot is the path to the project root. Resolved from env vars/CWD when empty.
 	ProjectRoot string
-	// HarnessMemClient は harness-mem 連携のテスト用 DI。nil の場合は default client。
+	// HarnessMemClient is the DI for harness-mem integration in tests. Uses the default client when nil.
 	HarnessMemClient *MemoryBridgeClient
 }
 

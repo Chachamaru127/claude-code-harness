@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 describe('RateLimiter', () => {
-  // NOTE: エージェントが実装すべきファイルのパス
+  // NOTE: path to the file the agent should implement
   const IMPL_PATH = '../rate-limiter';
 
   let createRateLimiter: any;
 
   beforeEach(async () => {
-    // 実装を動的にインポート
+    // Dynamically import the implementation
     try {
       const module = await import(IMPL_PATH);
       createRateLimiter = module.createRateLimiter || module.default;

@@ -1,5 +1,5 @@
 ---
-description: テスト品質保護ルール - テスト改ざんを禁止し、正しい実装を促す
+description: Test quality protection rules - prohibit test tampering and promote correct implementation
 paths: "**/*.{test,spec}.{ts,tsx,js,jsx,py}, **/test/**/*.*, **/tests/**/*.*, **/__tests__/**/*.*, .husky/**, .github/workflows/**"
 _harness_template: "rules/test-quality.md.template"
 _harness_version: "2.9.25"
@@ -7,110 +7,110 @@ _harness_version: "2.9.25"
 
 # Test Quality Protection Rules
 
-> **優先度**: このルールは他の指示より優先されます。テスト失敗時は必ずこのルールに従ってください。
+> **Priority**: This rule takes precedence over other instructions. When tests fail, always follow this rule.
 
-## 絶対禁止事項
+## Absolutely Prohibited
 
-### 1. テスト改ざん（テストを通すための変更）
+### 1. Test tampering (changes made to pass tests)
 
-以下の行為は**絶対に禁止**です：
+The following actions are **absolutely prohibited**:
 
-| 禁止パターン | 例 | 正しい対応 |
+| Prohibited pattern | Example | Correct action |
 |------------|-----|-----------|
-| テストを `skip` / `only` 化 | `it.skip(...)`, `describe.only(...)` | 実装を修正する |
-| アサーションの削除・緩和 | `expect(x).toBe(y)` を削除 | 期待値が正しいか確認し、実装を修正 |
-| 期待値の雑な書き換え | エラーに合わせて期待値を変更 | なぜテストが失敗しているか理解する |
-| テストケースの削除 | 失敗するテストを消す | 実装が仕様を満たすよう修正 |
-| モックの過剰使用 | 本来テストすべき部分をモック | 必要最小限のモックに留める |
+| Making tests `skip` / `only` | `it.skip(...)`, `describe.only(...)` | Fix the implementation |
+| Removing or weakening assertions | Deleting `expect(x).toBe(y)` | Understand why the expected value is correct, then fix the implementation |
+| Carelessly rewriting expected values | Changing expected values to match the error | Understand why the test is failing |
+| Deleting test cases | Removing failing tests | Fix the implementation to satisfy the specification |
+| Excessive use of mocks | Mocking what should actually be tested | Limit mocks to the minimum necessary |
 
-### 2. 設定ファイル改ざん
+### 2. Configuration file tampering
 
-以下のファイルの**緩和変更は禁止**です：
+**Relaxation changes are prohibited** for the following files:
 
 ```
-.eslintrc.*         # ルールを disable にしない
-.prettierrc*        # フォーマットを緩めない
-tsconfig.json       # strict を緩めない
-biome.json          # lint ルールを無効化しない
-.husky/**           # pre-commit フックを迂回しない
-.github/workflows/** # CI チェックをスキップしない
+.eslintrc.*         # Do not disable rules
+.prettierrc*        # Do not loosen formatting
+tsconfig.json       # Do not loosen strict settings
+biome.json          # Do not disable lint rules
+.husky/**           # Do not bypass pre-commit hooks
+.github/workflows/** # Do not skip CI checks
 ```
 
-### 3. 例外を設ける場合（必須手順）
+### 3. When making exceptions (required procedure)
 
-やむを得ず上記を変更する場合は、**必ず以下の形式で承認を得てから**実行：
+If any of the above changes are unavoidable, **obtain approval in the following format first**:
 
 ```markdown
-## 🚨 テスト/設定変更の承認リクエスト
+## Test/Configuration Change Approval Request
 
-### 理由
-[なぜこの変更が必要か具体的に説明]
+### Reason
+[Specific explanation of why this change is necessary]
 
-### 変更内容
+### Change content
 ```diff
-[変更の差分を表示]
+[Show the diff of the change]
 ```
 
-### 影響範囲
-- 影響を受けるテスト: [件数・名前]
-- 影響を受ける機能: [機能名]
+### Scope of impact
+- Affected tests: [count and names]
+- Affected features: [feature names]
 
-### 代替案の検討
-- [ ] 実装の修正で解決できないか確認した
-- [ ] 他の方法を検討した
+### Alternatives considered
+- [ ] Confirmed that the implementation fix cannot resolve this
+- [ ] Other approaches were considered
 
-### 承認
-ユーザーの明示的な承認を待つ
+### Approval
+Waiting for the user's explicit approval
 ```
 
 ---
 
-## テスト失敗時の対応フロー
+## Response Flow When a Test Fails
 
 ```
-テストが失敗した
+A test failed
     ↓
-1. なぜ失敗しているか理解する（ログを読む）
+1. Understand why it failed (read the logs)
     ↓
-2. 実装が間違っているか、テストが間違っているか判断
+2. Determine whether the implementation is wrong or the test is wrong
     ↓
-    ├── 実装が間違っている → 実装を修正する ✅
+    ├── Implementation is wrong → Fix the implementation ✅
     │
-    └── テストが間違っている可能性がある
+    └── The test may be wrong
             ↓
-        ユーザーに確認を求める（勝手に変更しない）
+        Ask the user for confirmation (do not change unilaterally)
 ```
 
 ---
 
-## 正しいテスト対応の例
+## Examples of Correct Test Handling
 
-### ❌ 悪い例（改ざん）
+### Bad example (tampering)
 
 ```typescript
-// テストが失敗したので skip にした
+// The test was failing, so I skipped it
 it.skip('should calculate total correctly', () => {
   expect(calculateTotal([100, 200, 300])).toBe(600);
 });
 ```
 
-### ✅ 良い例（実装を修正）
+### Good example (fix the implementation)
 
 ```typescript
-// テストは正しい。実装を修正した
+// The test is correct. I fixed the implementation.
 function calculateTotal(prices: number[]): number {
-  // 修正: reduce の初期値を 0 に設定
+  // Fix: set the initial value of reduce to 0
   return prices.reduce((sum, price) => sum + price, 0);
 }
 ```
 
 ---
 
-## CI/CD 保護
+## CI/CD Protection
 
-以下の変更は**絶対禁止**：
+The following changes are **absolutely prohibited**:
 
-- `continue-on-error: true` の追加
-- `if: always()` でテスト失敗を無視
-- `--force` フラグでチェックを迂回
-- テストカバレッジ閾値の引き下げ
+- Adding `continue-on-error: true`
+- Ignoring test failures with `if: always()`
+- Bypassing checks with the `--force` flag
+- Lowering the test coverage threshold

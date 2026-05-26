@@ -28,7 +28,7 @@ func TestBuildTerminalSequence_Bell(t *testing.T) {
 }
 
 func TestBuildTerminalSequence_BellEmptyTitle(t *testing.T) {
-	// bell mode は title 不要 → 空でも BEL を発火する契約
+	// bell mode does not require a title → contract: BEL is emitted even when title is empty
 	t.Setenv("HARNESS_TERMINAL_NOTIFY", "bell")
 	got := BuildTerminalSequence("", "")
 	if got != "\x07" {
@@ -46,7 +46,7 @@ func TestBuildTerminalSequence_OSC9(t *testing.T) {
 }
 
 func TestBuildTerminalSequence_OSC9EmptyTitle(t *testing.T) {
-	// osc9 は title 必須 → 空なら無音
+	// osc9 requires a title → silent when title is empty
 	t.Setenv("HARNESS_TERMINAL_NOTIFY", "osc9")
 	if got := BuildTerminalSequence("", "body"); got != "" {
 		t.Errorf("osc9 with empty title should return empty, got %q", got)
@@ -88,7 +88,7 @@ func TestBuildTerminalSequence_UnknownMode(t *testing.T) {
 }
 
 func TestBuildTerminalSequence_AliasOne(t *testing.T) {
-	// "1" は bell の alias
+	// "1" is an alias for bell
 	t.Setenv("HARNESS_TERMINAL_NOTIFY", "1")
 	got := BuildTerminalSequence("", "")
 	if got != "\x07" {
@@ -98,7 +98,7 @@ func TestBuildTerminalSequence_AliasOne(t *testing.T) {
 
 func TestBuildTerminalSequence_ControlCharsStripped(t *testing.T) {
 	t.Setenv("HARNESS_TERMINAL_NOTIFY", "osc9")
-	// 制御文字 (\n, ESC, BEL, NUL) を含む title が sanitize される
+	// A title containing control characters (\n, ESC, BEL, NUL) is sanitized
 	dirty := "bad\ntitle\x1b\x07evil\x00here"
 	got := BuildTerminalSequence(dirty, "")
 	// expect "badtitleevilhere" cleaned
@@ -106,14 +106,14 @@ func TestBuildTerminalSequence_ControlCharsStripped(t *testing.T) {
 	if got != expected {
 		t.Errorf("control char sanitization failed:\n  got:    %q\n  expect: %q", got, expected)
 	}
-	// 制御文字が混入していないことを確認
+	// Verify that no control characters leaked into the output
 	if strings.ContainsAny(got[3:len(got)-1], "\x00\x01\x02\x03\x04\x05\x06\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1c\x1d\x1e\x1f\x7f") {
 		t.Errorf("control chars leaked into output: %q", got)
 	}
 }
 
 func TestBuildTerminalSequence_NonASCIIPreserved(t *testing.T) {
-	// 印字可能な非 ASCII (日本語等) は保持される
+	// Printable non-ASCII characters (Japanese, etc.) are preserved
 	t.Setenv("HARNESS_TERMINAL_NOTIFY", "osc9")
 	got := BuildTerminalSequence("ビルド完了", "")
 	expected := "\x1b]9;ビルド完了\x07"
@@ -149,7 +149,7 @@ func TestAugmentWithTerminalSequence_NilMap(t *testing.T) {
 }
 
 func TestResolveTerminalNotifyMode_Whitespace(t *testing.T) {
-	// 前後 whitespace / 大文字小文字を tolerate する
+	// Leading/trailing whitespace and case differences are tolerated
 	t.Setenv("HARNESS_TERMINAL_NOTIFY", "  OSC9  ")
 	if got := resolveTerminalNotifyMode(); got != notifyOSC9 {
 		t.Errorf("whitespace/case tolerance failed, got mode %d", got)

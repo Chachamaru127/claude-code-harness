@@ -1,19 +1,19 @@
 #!/bin/bash
 # tests/test-harness-accept.sh
-# Phase 65.2.1 - harness-accept skill の機械検証
+# Phase 65.2.1 - mechanical verification of the harness-accept skill
 #
-# 検証観点:
-#   1. SKILL.md frontmatter (skill-editing.md 規約準拠)
-#   2. SKILL.md の project enforcement / cross-project 禁止 / Plan Brief 連携記述
-#   3. JSON Schema (acceptance-context.v1) の妥当性
-#   4. 4 ケース fixture (DoD e):
+# Verification points:
+#   1. SKILL.md frontmatter (skill-editing.md convention compliance)
+#   2. SKILL.md project enforcement / cross-project prohibition / Plan Brief integration description
+#   3. JSON Schema (acceptance-context.v1) validity
+#   4. 4-case fixture (DoD e):
 #      - case-all-verified    : 5/5 = 100% → ship
 #      - case-half-verified   : 3/5 = 60%  → wait
 #      - case-all-unverified  : 0/5 = 0%   → reject
 #      - case-zero-criteria   : 0/0        → reject (safe-side)
-#   5. recommendation 算出ルール (DoD d) を 4 ケースで固定
-#   6. evidence 空文字列 → HTML で警告表示 (DoD c)
-#   7. HTML 生成 (template + render-html.sh) が成功
+#   5. recommendation calculation rule (DoD d) fixed for 4 cases
+#   6. empty evidence string → warning display in HTML (DoD c)
+#   7. HTML generation (template + render-html.sh) succeeds
 
 set -euo pipefail
 
@@ -45,13 +45,19 @@ else
     fail "SKILL.md frontmatter has no closing '---' marker"
   else
     FM_CONTENT="$(sed -n "1,${FM_END_LINE}p" "$SKILL_PATH")"
-    for required in "name: harness-accept" "user-invocable: true" "argument-hint:" "allowed-tools:" "description:" "description-en:" "description-ja:"; do
+    for required in "name: harness-accept" "user-invocable: true" "argument-hint:" "allowed-tools:" "description:" "description-en:"; do
       if printf '%s' "$FM_CONTENT" | grep -q "$required"; then
         pass "SKILL.md frontmatter has '$required'"
       else
         fail "SKILL.md frontmatter missing '$required'"
       fi
     done
+    # description-ja must NOT be present (removed in English-only migration)
+    if printf '%s' "$FM_CONTENT" | grep -q "description-ja:"; then
+      fail "SKILL.md frontmatter must not contain 'description-ja:' (English-only)"
+    else
+      pass "SKILL.md frontmatter does not contain 'description-ja:' (English-only)"
+    fi
   fi
 fi
 
@@ -76,15 +82,15 @@ if [[ -f "$SKILL_PATH" ]]; then
     fail "SKILL.md does not instruct strict_project: true"
   fi
 
-  # Plan Brief 連携 (DoD b)
+  # Plan Brief integration (DoD b)
   if grep -qE 'user_request_hash' "$SKILL_PATH" && grep -qE 'personal-preference\.v1|plan-brief-approval' "$SKILL_PATH"; then
     pass "SKILL.md documents Plan Brief join via user_request_hash + personal-preference.v1"
   else
     fail "SKILL.md missing Plan Brief join documentation (DoD b)"
   fi
 
-  # cross-project 禁止 (Phase 65.3 まで保留)
-  if grep -qE 'cross-project[^.]*(行わ|呼ばない|禁止|opt-in|Phase 65.3)' "$SKILL_PATH"; then
+  # cross-project prohibition (deferred until Phase 65.3)
+  if grep -qE 'cross-project[^.]*(only when|explicitly|prohibited|not.*call|do not.*call|opt-in|Phase 65.3)' "$SKILL_PATH"; then
     pass "SKILL.md forbids cross-project explicitly"
   else
     fail "SKILL.md does not explicitly forbid cross-project"
@@ -125,8 +131,8 @@ else
   fi
 fi
 
-# ---- ヘルパー: 4 ケース実行 ----
-# 引数: <case_label> <fixture_basename> <expected_recommendation>
+# ---- Helper: run 4 cases ----
+# Args: <case_label> <fixture_basename> <expected_recommendation>
 #       <expected_verified_count> <expected_total_count>
 
 run_case() {
@@ -150,7 +156,7 @@ run_case() {
     return
   fi
 
-  # Schema validate (Python jsonschema 優先)
+  # Schema validate (Python jsonschema preferred)
   validated=0
   if command -v python3 >/dev/null 2>&1; then
     if python3 -c "
@@ -187,7 +193,7 @@ except jsonschema.ValidationError as e:
     fail "[$label] recommendation mismatch: got $actual_rec, expected $exp_rec"
   fi
 
-  # 算出ルール検証: verified count / total を独立計算して期待値と一致
+  # Rule verification: independently compute verified count / total and match against expected
   local actual_verified actual_total
   actual_verified="$(jq '[.verified_criteria[] | select(.passed == true)] | length' "$fixture")"
   actual_total="$(jq '.verified_criteria | length' "$fixture")"

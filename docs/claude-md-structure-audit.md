@@ -1,15 +1,15 @@
-# CLAUDE.md 構造監査 — Phase 47.1.1 調査レポート
+# CLAUDE.md Structure Audit — Phase 47.1.1 Investigation Report
 
-調査日: 2026-04-20
-対象: `CLAUDE.md` v2026-04-19 時点 (142 行、Phase 50.1.1 の pointer 追加後)
-Phase 47 のゴール: session-start 読込コストの実測 → `.claude/rules/` への分割可否判断
+Investigation date: 2026-04-20
+Target: `CLAUDE.md` v2026-04-19 (142 lines, after the pointer addition in Phase 50.1.1)
+Phase 47 goal: Measure session-start loading cost in practice → decide whether to split into `.claude/rules/`
 
-## (a) section 別 line 計測
+## (a) Line count by section
 
-`awk` で `## H2` 境界ごとに line 数を集計した結果:
+Result of aggregating line counts per `## H2` boundary with `awk`:
 
-| # | Section | 行範囲 | 行数 |
-|---|---------|--------|-----|
+| # | Section | Line range | Lines |
+|---|---------|-----------|-------|
 | 1 | Project Overview | 5-10 | 6 |
 | 2 | Claude Code Feature Utilization | 11-18 | 8 |
 | 3 | Development Rules | 19-44 | **26** |
@@ -23,82 +23,82 @@ Phase 47 のゴール: session-start 読込コストの実測 → `.claude/rules
 | 11 | Key Commands (for development) | 115-127 | 13 |
 | 12 | SSOT (Single Source of Truth) | 128-132 | 5 |
 | 13 | Test Tampering Prevention | 133-142 | 10 |
-|   | (ヘッダー + 空行) | 1-4 | 4 |
-|   | **合計** | | **142** |
+|   | (Header + blank lines) | 1-4 | 4 |
+|   | **Total** | | **142** |
 
-### Top 3 重い section
+### Top 3 heaviest sections
 
-1. **Development Rules (26 行)**: 5 つの sub-section (Commit / Version / CHANGELOG / Language / Code Style)
-2. **Using Skills (18 行)**: Top Skill Categories テーブル (5 行) + trigger 説明
-3. **Permission Boundaries (16 行)**: guardrail 7 行テーブル + 説明
+1. **Development Rules (26 lines)**: 5 sub-sections (Commit / Version / CHANGELOG / Language / Code Style)
+2. **Using Skills (18 lines)**: Top Skill Categories table (5 lines) + trigger explanations
+3. **Permission Boundaries (16 lines)**: 7-row guardrail table + explanation
 
-30 行超の section は存在しない。142 行全体で ~3.5KB 相当（session-start context 全体の 1-2%）。
+No section exceeds 30 lines. The 142-line total amounts to ~3.5 KB (1-2% of the session-start context).
 
-## (b) 分割候補 section の列挙
+## (b) Split candidate sections
 
-`.claude/rules/` へ移設できる候補:
+Candidates that could be moved to `.claude/rules/`:
 
-| 候補 | 現在の位置 | 分割先案 | メリット | 懸念点 |
-|------|----------|---------|---------|-------|
-| **MCP Trust Policy** | CLAUDE.md 91-98 (8 行) | `.claude/rules/mcp-trust-policy.md` | 既存 `codex-cli-only.md` と整合、外部 MCP 追加手順を独立管理 | 8 行なので分割価値は限定的 |
-| **Permission Boundaries** | CLAUDE.md 99-114 (16 行) | `.claude/rules/permission-boundaries.md` | settings.json deny と連動、表を拡張しやすい | session-start で毎回見てほしい重要情報 |
-| **Development Rules** | CLAUDE.md 19-44 (26 行) | `.claude/rules/development-rules.md` に一括 or sub-section 毎に分散 | 最大 section の軽量化 | 既に CHANGELOG は `github-release.md` に分離済みで残りは short |
-| **Notes** | CLAUDE.md 84-90 (7 行) | 削除 or Repository Structure に merge | section ヘッダー + 項目 4 件で overhead が高い | 小さすぎて分割単独では価値なし |
+| Candidate | Current location | Proposed split target | Benefit | Concern |
+|-----------|-----------------|----------------------|---------|---------|
+| **MCP Trust Policy** | CLAUDE.md 91-98 (8 lines) | `.claude/rules/mcp-trust-policy.md` | Consistent with existing `codex-cli-only.md`, manages external MCP addition procedures independently | Only 8 lines, so split value is limited |
+| **Permission Boundaries** | CLAUDE.md 99-114 (16 lines) | `.claude/rules/permission-boundaries.md` | Linked to settings.json deny, easier to expand the table | This is important information that should be read every session-start |
+| **Development Rules** | CLAUDE.md 19-44 (26 lines) | Bulk move to `.claude/rules/development-rules.md` or distribute per sub-section | Lighten the largest section | CHANGELOG is already split to `github-release.md`; remaining content is short |
+| **Notes** | CLAUDE.md 84-90 (7 lines) | Delete or merge into Repository Structure | Section header + 4 items has high overhead | Too small; splitting alone provides no value |
 
-2 つ以上の候補を列挙する DoD (b) は満たす。ただし (d) の判断で分割有無を決定する。
+DoD (b) requiring 2+ candidates is satisfied. The decision to split or not is made in step (d).
 
-## (c) `@` 記法の可否調査
+## (c) Investigation of `@` notation availability
 
-### 調査方法
+### Investigation method
 
-既存 repo 内での `@path/to/file.md` パターン使用を grep で確認:
+Grep to confirm use of `@path/to/file.md` pattern in the existing repo:
 
 ```bash
 grep -rE '@[a-zA-Z0-9_/.-]+\.md' CLAUDE.md .claude/rules/*.md
-# → 0 件
+# → 0 matches
 ```
 
-他箇所での使用:
-- `.claude/worktrees/flamboyant-shannon/templates/*/commands/review-cc-work.md:83`: `@Plans.md から...` の形で **prompt body 内**で使用
-- `docs/constitution.md:99`: `@docs/constitution.md の品質ゲートを満たすこと。` (self-reference、prose)
+Other usages found:
+- `.claude/worktrees/flamboyant-shannon/templates/*/commands/review-cc-work.md:83`: used **inside prompt body** as `@Plans.md ...`
+- `docs/constitution.md:99`: `@docs/constitution.md` quality gate (self-reference, prose)
 
-### 判定
+### Verdict
 
-1. **CC 2.1.111+ での `@file.md` 記法の公式仕様**: Claude Code の CLAUDE.md は auto-include されるが、`@path/to/file.md` 記法による追加 import が**公式に文書化された安定機能として存在する確認は取れない**。prompt body 内での参照案内としては使えるが、CLAUDE.md 自体が auto-load される現状では二重ロードになるリスクもある
-2. **既存の運用実績**: CLAUDE.md 内では使われていない。pointer は常に `[.claude/rules/xxx.md](path)` のマークダウンリンク形式
-3. **smoke test の存在**: `tests/test-claude-md-auto-include.sh` は存在しない。機能として smoke test で確認する対象ではなく、CC のバージョン互換性の問題
+1. **Official spec for `@file.md` notation in CC 2.1.111+**: Claude Code auto-includes CLAUDE.md, but **there is no confirmed stable, officially documented feature** for additional imports via `@path/to/file.md` notation. It can be used as a reference guide in prompt bodies, but in the current setup where CLAUDE.md itself is auto-loaded there is also a risk of double-loading.
+2. **Existing usage**: Not used inside CLAUDE.md. Pointers always take the markdown link form `[.claude/rules/xxx.md](path)`.
+3. **Smoke test coverage**: `tests/test-claude-md-auto-include.sh` does not exist. This is a CC version compatibility question, not a feature to verify via smoke test.
 
-**結論**: `@` 記法は **安定動作する保証なし**。現状の pointer 方式（通常のマークダウンリンク + session-start で assistant が必要時に Read で追う）が最も安全。
+**Conclusion**: The `@` notation **has no guarantee of stable operation**. The current pointer approach (regular markdown links + assistant reading them with the Read tool when needed at session-start) is the safest option.
 
-## (d) 最終判断と根拠
+## (d) Final decision and rationale
 
-### 判断: **現状維持（分割しない）**
+### Decision: **Maintain current state (do not split)**
 
-### 根拠
+### Rationale
 
-1. **定量データ**: 142 行 / 最大 section 26 行は CC の session-start context から見れば軽量。分割しなくても token pressure は低い
-2. **pointer 方式の安全性**: 現 CLAUDE.md は既に "concise overview + detailed pointer" パターンで設計されている（CHANGELOG → `github-release.md`, skill catalog → `docs/CLAUDE-skill-catalog.md`, feature table → `docs/CLAUDE-feature-table.md`）。詳細情報は既に外出ししており、CLAUDE.md に残っているのは「session-start で必ず参照すべき overview と index」
-3. **`@` 記法の不確定性**: CC 2.1.111+ で `@` 記法が auto-include に昇格する保証がない。現 pointer (通常リンク) は assistant が必要時に Read で追う形で運用できる。`@` への移行は gain より divergence risk の方が大きい
-4. **分割の主観的コスト**: section を `.claude/rules/` に移すと、source-of-truth が 2 箇所に分散する。現状 CLAUDE.md を読むだけで Harness 固有の運用規約の "目次" が一望できるメリットを失う
-5. **hook 警告の扱い**: `PostToolUse` hook が 130 行超で警告を出す仕組みが v4.3.1 頃から入ったが、これは「150 行近くを超えたら再検討」の意味であり、「即分割すべき」の意味ではない。Phase 50.1.1 で +1 行したのは必要最小の pointer 追加で、意図的
+1. **Quantitative data**: 142 lines / max 26 lines per section is lightweight relative to the CC session-start context. Token pressure is low without splitting.
+2. **Safety of the pointer approach**: The current CLAUDE.md is already designed with a "concise overview + detailed pointer" pattern (CHANGELOG → `github-release.md`, skill catalog → `docs/CLAUDE-skill-catalog.md`, feature table → `docs/CLAUDE-feature-table.md`). Detailed information is already externalized; what remains in CLAUDE.md is "the overview and index that should always be read at session-start."
+3. **Uncertainty around `@` notation**: There is no guarantee that `@` notation will be promoted to auto-include in CC 2.1.111+. The current pointers (regular links) work in a model where the assistant follows them with Read when needed. Migrating to `@` carries more divergence risk than gain.
+4. **Subjective cost of splitting**: Moving sections to `.claude/rules/` distributes the source of truth across two places. This loses the benefit of seeing a complete "table of contents" for Harness-specific operational rules just by reading CLAUDE.md.
+5. **Handling hook warnings**: A mechanism to warn when `PostToolUse` hooks exceed ~130 lines was introduced around v4.3.1, but this means "reconsider if approaching 150 lines," not "split immediately." The +1 line added in Phase 50.1.1 was a necessary minimal pointer addition, done intentionally.
 
-### 将来の分割トリガー（将来対応ルール）
+### Future split triggers (future action rules)
 
-- **Trigger A**: 単一 section が 30 行超になったら、その section のみ分割を検討
-- **Trigger B**: CLAUDE.md 全体が 180 行超になったら、全体再構成を検討
-- **Trigger C**: CC 公式ドキュメントが `@` 記法の auto-include 挙動を明文化したら、section 再配置 + `@` 記法による一括 import への移行を検討
+- **Trigger A**: If any single section exceeds 30 lines, consider splitting that section only
+- **Trigger B**: If the full CLAUDE.md exceeds 180 lines, consider a full restructure
+- **Trigger C**: If CC official docs formally document `@` notation auto-include behavior, consider section reorganization + migration to bulk `@` imports
 
-現時点 (142 行、最大 26 行) では Trigger A/B/C のいずれも満たさないため、現状維持が最適解。
+At the current state (142 lines, max 26 lines per section), none of Triggers A/B/C are met, so maintaining the current state is the optimal solution.
 
-## (e) 本 Phase の成果
+## (e) Outcome of this Phase
 
-本 Phase は調査のみで、**本体 `CLAUDE.md` の構造は変更していない**。
-Phase 50.1.1 による pointer 1 行追加は別タスクとして実施済み。
+This Phase was investigation only — **the main `CLAUDE.md` structure was not changed**.
+The 1-line pointer addition from Phase 50.1.1 was carried out as a separate task.
 
-## 関連ファイル
+## Related Files
 
-- `CLAUDE.md` (調査対象、無改変)
-- `.claude/rules/` 配下 17 ファイル (分割先候補)
-- `docs/CLAUDE-feature-table.md` (既に外出し済みの例)
-- `docs/CLAUDE-skill-catalog.md` (既に外出し済みの例)
-- `docs/CLAUDE-commands.md` (既に外出し済みの例)
+- `CLAUDE.md` (target of investigation, unchanged)
+- 17 files under `.claude/rules/` (candidate split targets)
+- `docs/CLAUDE-feature-table.md` (example of already-externalized content)
+- `docs/CLAUDE-skill-catalog.md` (example of already-externalized content)
+- `docs/CLAUDE-commands.md` (example of already-externalized content)

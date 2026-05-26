@@ -1,13 +1,13 @@
 #!/bin/bash
 # test-validate-plugin-quick.sh
-# validate-plugin.sh --quick の jq フォールバック検証
+# jq fallback validation for validate-plugin.sh --quick
 #
-# テスト内容:
-#   1. validate-plugin.sh --quick が正常に動作すること（現プロジェクトで PASS）
-#   2. jq フォールバック関数（_check_json_syntax）が有効な JSON を正しく判定すること
-#   3. jq フォールバック関数が壊れた JSON を正しく検知すること
-#   4. jq なし環境で python3 fallback が機能すること
-#   5. jq も python3 もなし環境で skip（fail-open）になること
+# Test coverage:
+#   1. validate-plugin.sh --quick completes successfully (PASS on the current project)
+#   2. The jq fallback function (_check_json_syntax) correctly validates valid JSON
+#   3. The jq fallback function correctly detects broken JSON
+#   4. python3 fallback works in environments without jq
+#   5. Falls back to skip (fail-open) when neither jq nor python3 is available
 #
 # Usage: bash tests/test-validate-plugin-quick.sh
 
@@ -39,7 +39,7 @@ warn_test() {
 }
 
 echo "=========================================="
-echo "validate-plugin.sh --quick jq fallback テスト"
+echo "validate-plugin.sh --quick jq fallback test"
 echo "=========================================="
 echo ""
 
@@ -62,47 +62,47 @@ EOF
 
 printf '{"broken": true, invalid json' > "${BROKEN_JSON}"
 
-# ── テスト 1: validate-plugin.sh --quick が現プロジェクトで PASS ─────────────────
-echo "--- テスト 1: validate-plugin.sh --quick（現プロジェクト）---"
+# ── Test 1: validate-plugin.sh --quick passes on the current project ─────────────────
+echo "--- Test 1: validate-plugin.sh --quick (current project) ---"
 
 output=$(bash "${SCRIPT_DIR}/validate-plugin.sh" --quick 2>&1)
 exit_code=$?
 
 if [ "${exit_code}" -eq 0 ]; then
-    pass_test "validate-plugin.sh --quick: exit 0（PASS）"
+    pass_test "validate-plugin.sh --quick: exit 0 (PASS)"
 else
-    fail_test "validate-plugin.sh --quick: exit ${exit_code}（FAIL）"
-    echo "  出力: ${output}" >&2
+    fail_test "validate-plugin.sh --quick: exit ${exit_code} (FAIL)"
+    echo "  Output: ${output}" >&2
 fi
 
-# ── テスト 2: _check_json_syntax 関数の存在確認 ────────────────────────────────
+# ── Test 2: Verify _check_json_syntax function exists ────────────────────────────────
 echo ""
-echo "--- テスト 2: _check_json_syntax 関数・_JSON_PARSER 変数の存在 ---"
+echo "--- Test 2: Presence of _check_json_syntax function and _JSON_PARSER variable ---"
 
 if grep -q '_check_json_syntax' "${SCRIPT_DIR}/validate-plugin.sh"; then
-    pass_test "_check_json_syntax 関数が validate-plugin.sh に存在します"
+    pass_test "_check_json_syntax function is present in validate-plugin.sh"
 else
-    fail_test "_check_json_syntax 関数が validate-plugin.sh に見つかりません"
+    fail_test "_check_json_syntax function not found in validate-plugin.sh"
 fi
 
 if grep -q '_JSON_PARSER' "${SCRIPT_DIR}/validate-plugin.sh"; then
-    pass_test "_JSON_PARSER 変数（jq/python3/skip 分岐）が存在します"
+    pass_test "_JSON_PARSER variable (jq/python3/skip branch) is present"
 else
-    fail_test "_JSON_PARSER 変数が見つかりません"
+    fail_test "_JSON_PARSER variable not found"
 fi
 
 if grep -q 'python3.*json.*load\|python3 -c.*json' "${SCRIPT_DIR}/validate-plugin.sh"; then
-    pass_test "python3 fallback コードが存在します"
+    pass_test "python3 fallback code is present"
 else
-    fail_test "python3 fallback コードが見つかりません"
+    fail_test "python3 fallback code not found"
 fi
 
-# ── テスト 3: jq 環境での有効・壊れた JSON チェック ───────────────────────────
+# ── Test 3: Valid and broken JSON check in jq environment ───────────────────────────
 echo ""
-echo "--- テスト 3: _check_json_syntax ロジックを直接検証（インライン実装） ---"
+echo "--- Test 3: Direct validation of _check_json_syntax logic (inline implementation) ---"
 
-# validate-plugin.sh の _check_json_syntax と同等のロジックをここで再現してテストする
-# （validate-plugin.sh は PLUGIN_ROOT を自動計算するため外部から PLUGIN_ROOT を差し替えられない）
+# Reproduce logic equivalent to validate-plugin.sh's _check_json_syntax here for testing.
+# (validate-plugin.sh auto-computes PLUGIN_ROOT, so PLUGIN_ROOT cannot be overridden from outside.)
 
 _test_check_json() {
     local parser="$1"
@@ -116,85 +116,85 @@ _test_check_json() {
 
 if command -v jq >/dev/null 2>&1; then
     if _test_check_json "jq" "${VALID_JSON}"; then
-        pass_test "jq: 有効な JSON → PASS"
+        pass_test "jq: valid JSON → PASS"
     else
-        fail_test "jq: 有効な JSON → FAIL（誤検知）"
+        fail_test "jq: valid JSON → FAIL (false positive)"
     fi
 
     if ! _test_check_json "jq" "${BROKEN_JSON}"; then
-        pass_test "jq: 壊れた JSON → FAIL 検知（期待通り）"
+        pass_test "jq: broken JSON → FAIL detected (as expected)"
     else
-        fail_test "jq: 壊れた JSON → PASS（検知失敗）"
+        fail_test "jq: broken JSON → PASS (detection missed)"
     fi
 else
-    warn_test "jq が利用不可のため、jq テストをスキップします"
+    warn_test "jq is not available, skipping jq tests"
 fi
 
-# ── テスト 4: python3 fallback での有効・壊れた JSON チェック ──────────────────
+# ── Test 4: Valid and broken JSON check with python3 fallback ──────────────────
 echo ""
-echo "--- テスト 4: python3 fallback での JSON チェック ---"
+echo "--- Test 4: JSON check with python3 fallback ---"
 
 if command -v python3 >/dev/null 2>&1; then
     if _test_check_json "python3" "${VALID_JSON}"; then
-        pass_test "python3: 有効な JSON → PASS"
+        pass_test "python3: valid JSON → PASS"
     else
-        fail_test "python3: 有効な JSON → FAIL（誤検知）"
+        fail_test "python3: valid JSON → FAIL (false positive)"
     fi
 
     if ! _test_check_json "python3" "${BROKEN_JSON}"; then
-        pass_test "python3: 壊れた JSON → FAIL 検知（期待通り）"
+        pass_test "python3: broken JSON → FAIL detected (as expected)"
     else
-        fail_test "python3: 壊れた JSON → PASS（検知失敗）"
+        fail_test "python3: broken JSON → PASS (detection missed)"
     fi
 else
-    warn_test "python3 が利用不可のため、python3 fallback テストをスキップします"
+    warn_test "python3 is not available, skipping python3 fallback tests"
 fi
 
-# ── テスト 5: skip モードは常に return 0（fail-open）─────────────────────────
+# ── Test 5: skip mode always returns 0 (fail-open) ─────────────────────────
 echo ""
-echo "--- テスト 5: skip モード（fail-open）---"
+echo "--- Test 5: skip mode (fail-open) ---"
 
 if _test_check_json "skip" "${VALID_JSON}" && _test_check_json "skip" "${BROKEN_JSON}"; then
-    pass_test "skip モード: 有効・壊れた JSON いずれも return 0（fail-open）"
+    pass_test "skip mode: both valid and broken JSON return 0 (fail-open)"
 else
-    fail_test "skip モード: return 0 にならない（fail-open が機能していない）"
+    fail_test "skip mode: did not return 0 (fail-open not working)"
 fi
 
-# ── テスト 6: validate-plugin.sh の jq フォールバック分岐コードの構造確認 ───────
+# ── Test 6: Verify fallback branch structure in validate-plugin.sh ───────
 echo ""
-echo "--- テスト 6: validate-plugin.sh の fallback 分岐構造確認 ---"
+echo "--- Test 6: Fallback branch structure in validate-plugin.sh ---"
 
-# jq → python3 → skip の分岐が存在するか
+# Check that the jq → python3 → skip branch exists
 if grep -q 'command -v jq' "${SCRIPT_DIR}/validate-plugin.sh"; then
-    pass_test "jq 存在チェック（command -v jq）が存在します"
+    pass_test "jq presence check (command -v jq) is present"
 else
-    fail_test "jq 存在チェックが見つかりません"
+    fail_test "jq presence check not found"
 fi
 
 if grep -q 'command -v python3' "${SCRIPT_DIR}/validate-plugin.sh"; then
-    pass_test "python3 存在チェック（command -v python3）が存在します"
+    pass_test "python3 presence check (command -v python3) is present"
 else
-    fail_test "python3 存在チェックが見つかりません"
+    fail_test "python3 presence check not found"
 fi
 
 if grep -q '"skip"' "${SCRIPT_DIR}/validate-plugin.sh"; then
-    pass_test "skip 分岐（\"skip\"）が存在します"
+    pass_test "skip branch (\"skip\") is present"
 else
-    fail_test "skip 分岐が見つかりません"
+    fail_test "skip branch not found"
 fi
 
 echo ""
 echo "=========================================="
-echo "テスト結果サマリー"
+echo "Test results summary"
 echo "=========================================="
-echo -e "${GREEN}合格:${NC} ${PASS_COUNT}"
-echo -e "${RED}失敗:${NC} ${FAIL_COUNT}"
+echo -e "${GREEN}Passed:${NC} ${PASS_COUNT}"
+echo -e "${RED}Failed:${NC} ${FAIL_COUNT}"
 echo ""
 
 if [ "${FAIL_COUNT}" -eq 0 ]; then
-    echo -e "${GREEN}✓ 全テスト合格${NC}"
+    echo -e "${GREEN}✓ All tests passed${NC}"
     exit 0
 else
-    echo -e "${RED}✗ ${FAIL_COUNT} 件のテストが失敗しました${NC}"
+    echo -e "${RED}✗ ${FAIL_COUNT} test(s) failed${NC}"
     exit 1
 fi

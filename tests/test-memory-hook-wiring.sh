@@ -58,8 +58,8 @@ for hooks_file in "${ROOT_DIR}/hooks/hooks.json" "${ROOT_DIR}/.claude-plugin/hoo
     exit 1
   }
 
-  # --- XR-003 / Phase 49: shell 実装の resume-pack 注入 wiring 検証 ---
-  # SessionStart[startup|resume] に memory-session-start.sh が入っていること (DoD a の配線)
+  # --- XR-003 / Phase 49: shell implementation resume-pack injection wiring verification ---
+  # memory-session-start.sh must be present in SessionStart[startup|resume] (DoD a wiring)
   jq -e '.hooks.SessionStart[] | select(.matcher | test("(^|\\|)startup($|\\|)")) | .hooks[] | select(.command? | strings | contains("memory-session-start.sh"))' "${hooks_file}" >/dev/null || {
     echo "SessionStart startup is missing memory-session-start.sh (Phase 49) in ${hooks_file}"
     exit 1
@@ -69,17 +69,17 @@ for hooks_file in "${ROOT_DIR}/hooks/hooks.json" "${ROOT_DIR}/.claude-plugin/hoo
     exit 1
   }
 
-  # UserPromptSubmit に userprompt-inject-policy.sh が入っていること (DoD a の配線)
+  # userprompt-inject-policy.sh must be present in UserPromptSubmit (DoD a wiring)
   jq -e '.hooks.UserPromptSubmit[] | .hooks[] | select(.command? | strings | contains("userprompt-inject-policy.sh"))' "${hooks_file}" >/dev/null || {
     echo "UserPromptSubmit is missing userprompt-inject-policy.sh (Phase 49) in ${hooks_file}"
     exit 1
   }
 
-  # UserPromptSubmit での順序: memory-bridge → userprompt-inject-policy.sh
-  # 旧 Go inject-policy は shell 側と同じ additionalContext を出しうるため、
-  # UserPromptSubmit からは外して二重注入を防ぐ。
-  # `.command // ""` で null-safe にする: agent/http 型 hook (.command プロパティを持たない) が混ざっても
-  # 後続の `test(...)` が null に対してエラーにならないようにする。
+  # UserPromptSubmit order: memory-bridge → userprompt-inject-policy.sh
+  # The old Go inject-policy could emit the same additionalContext as the shell side,
+  # so it is removed from UserPromptSubmit to prevent double injection.
+  # Use `.command // ""` for null-safety: even when agent/http-type hooks (without .command) are mixed in,
+  # subsequent `test(...)` will not error on null.
   order_check=$(jq -r '.hooks.UserPromptSubmit[] | select(.matcher=="*") | .hooks | map(.command // "") | map(
     if test("hook memory-bridge") then "1:memory-bridge"
     elif test("userprompt-inject-policy.sh") then "2:userprompt-inject-policy"
@@ -97,9 +97,9 @@ for hooks_file in "${ROOT_DIR}/hooks/hooks.json" "${ROOT_DIR}/.claude-plugin/hoo
   fi
 done
 
-# --- Issue #94 Item 4: agent/http 型 hook (command フィールドなし) を含んでも order_check が壊れないこと ---
-# 旧実装 `map(.command)` は null → test() エラーで exit 1 になっていたが、null-safe 化後は
-# agent hook を無視して command 型だけで順序を判定できることを確認する。
+# --- Issue #94 Item 4: order_check must not break when agent/http-type hooks (no command field) are present ---
+# The old implementation `map(.command)` would null → test() error causing exit 1, but after null-safe fix,
+# verify that only command-type hooks are used for order judgment while agent hooks are ignored.
 mixed_hooks_file="${TMP_DIR}/hooks-mixed.json"
 cat > "${mixed_hooks_file}" <<'EOF'
 {
@@ -123,18 +123,18 @@ mixed_order=$(jq -r '.hooks.UserPromptSubmit[] | select(.matcher=="*") | .hooks 
   else empty end
 ) | join(",")' "${mixed_hooks_file}")
 [[ "${mixed_order}" == "1:memory-bridge,2:userprompt-inject-policy" ]] || {
-  echo "mixed-type hook order_check failed (agent 型 hook 混在で jq が落ちた可能性): got '${mixed_order}'"
+  echo "mixed-type hook order_check failed (jq may have crashed due to mixed agent-type hooks): got '${mixed_order}'"
   exit 1
 }
 
-# --- DoD (c): harness-mem daemon 不達時 userprompt-inject-policy.sh が silent skip する ---
-# 空 stdin / state dir 無しでも exit 0 で JSON を返すこと
+# --- DoD (c): userprompt-inject-policy.sh silently skips when harness-mem daemon is unreachable ---
+# Must return JSON with exit 0 even on empty stdin / missing state dir
 SILENT_TMP="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}" "${SILENT_TMP}"' EXIT
 silent_out="$(cd "${SILENT_TMP}" && echo '' | bash "${ROOT_DIR}/scripts/userprompt-inject-policy.sh" 2>/dev/null || true)"
-# state dir が無いため early exit し空出力になる — 既存 Go hooks と additionalContext merge が競合しない
+# Early exit due to missing state dir produces empty output — no conflict with existing Go hooks additionalContext merge
 if [ -n "${silent_out}" ]; then
-  # 出力がある場合は valid な JSON schema であること
+  # If there is output, it must be a valid JSON schema
   echo "${silent_out}" | jq -e '.hookSpecificOutput.hookEventName == "UserPromptSubmit"' >/dev/null || {
     echo "userprompt-inject-policy.sh silent-skip output is not a valid UserPromptSubmit hook JSON"
     echo "output: ${silent_out}"
@@ -142,7 +142,7 @@ if [ -n "${silent_out}" ]; then
   }
 fi
 
-# state dir ありだが harness-mem daemon 不達（resume pending flag 無し）でも silent skip する
+# state dir present but harness-mem daemon unreachable (no resume pending flag) should also silent skip
 mkdir -p "${SILENT_TMP}/.claude/state"
 echo '{"session_id":"test","prompt_seq":0}' > "${SILENT_TMP}/.claude/state/session.json"
 no_resume_out="$(cd "${SILENT_TMP}" && echo '{"prompt":"test"}' | bash "${ROOT_DIR}/scripts/userprompt-inject-policy.sh" 2>/dev/null)"
@@ -162,8 +162,8 @@ cp "${ROOT_DIR}/scripts/session-resume.sh" "${TMP_DIR}/scripts/session-resume.sh
 cp "${ROOT_DIR}/scripts/lib/progress-snapshot.sh" "${TMP_DIR}/scripts/lib/progress-snapshot.sh"
 
 cat > "${TMP_DIR}/Plans.md" <<'EOF'
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
 | 1.0 | sample | done | - | cc:WIP |
 EOF
 

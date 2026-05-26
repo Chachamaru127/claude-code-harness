@@ -2,7 +2,6 @@
 name: harness-release
 description: "Generic release automation for projects using Keep a Changelog + GitHub. Single confirmation gate then end-to-end automation: bump detection, CHANGELOG promotion, tag, GitHub Release. Trigger: release, version bump, publish. Do NOT load for: implementation, review, planning, setup."
 description-en: "Generic release automation for projects using Keep a Changelog + GitHub. Single confirmation gate then end-to-end automation: bump detection, CHANGELOG promotion, tag, GitHub Release. Trigger: release, version bump, publish. Do NOT load for: implementation, review, planning, setup."
-description-ja: "汎用リリース自動化スキル。Keep a Changelog と GitHub を使うあらゆるプロジェクトで動作。単一確認ゲートで bump 判定・CHANGELOG 昇格・タグ・GitHub Release まで全自動実行する。リリース、バージョンバンプ、タグ作成、公開で起動。実装・コードレビュー・プランニング・セットアップには使わない。"
 kind: workflow
 purpose: "Release projects through changelog, version, tag, and GitHub Release gates"
 trigger: "release, version bump, publish"

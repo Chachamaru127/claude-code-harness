@@ -1,31 +1,31 @@
 #!/bin/bash
 # stop-failure.sh
-# StopFailure フックハンドラー（v2.1.78+）
+# StopFailure hook handler (v2.1.78+)
 #
-# API エラー（レート制限、認証失敗等）でセッション停止が失敗した際に発火。
-# エラー情報をログに記録し、Breezing モードでは Lead への通知を試みる。
+# Fires when session stop fails due to an API error (rate limit, auth failure, etc.).
+# Logs the error and attempts to notify Lead in Breezing mode.
 #
 # Input:  stdin (JSON: { error, session_id, ... })
-# Output: なし（ログ記録のみ）
+# Output: none (logging only)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-# path-utils.sh の読み込み
+# Load path-utils.sh
 if [ -f "${PARENT_DIR}/path-utils.sh" ]; then
   source "${PARENT_DIR}/path-utils.sh"
 fi
 
-# detect_project_root が定義されているか確認してから呼び出す
+# Check if detect_project_root is defined before calling it
 if declare -F detect_project_root > /dev/null 2>&1; then
   PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 else
   PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
 fi
 
-# ステートディレクトリ（CLAUDE_PLUGIN_DATA 使用時はプロジェクト別にスコープ）
+# State directory (scoped per project when CLAUDE_PLUGIN_DATA is in use)
 if [ -n "${CLAUDE_PLUGIN_DATA:-}" ]; then
   _project_hash="$(printf '%s' "${PROJECT_ROOT}" | { shasum -a 256 2>/dev/null || sha256sum 2>/dev/null || echo "default  -"; } | cut -c1-12)"
   [ -z "${_project_hash}" ] && _project_hash="default"
@@ -35,7 +35,7 @@ else
 fi
 LOG_FILE="${STATE_DIR}/stop-failures.jsonl"
 
-# === ユーティリティ関数 ===
+# === Utility functions ===
 
 ensure_state_dir() {
   local state_parent
@@ -54,7 +54,7 @@ ensure_state_dir() {
   return 0
 }
 
-# JSONL ローテーション（500 行超過時に 400 行に切り詰め）
+# JSONL rotation (trim to 400 lines when exceeding 500)
 rotate_jsonl() {
   local file="$1"
 
@@ -71,23 +71,23 @@ rotate_jsonl() {
   fi
 }
 
-# === stdin から入力を読み取り ===
+# === Read input from stdin ===
 INPUT=""
 if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)" || true
 fi
 
-# ペイロードが空の場合はスキップ
+# Skip if payload is empty
 if [ -z "${INPUT}" ]; then
   exit 0
 fi
 
-# === ステートディレクトリの確保 ===
+# === Ensure state directory ===
 if ! ensure_state_dir; then
   exit 0
 fi
 
-# === エラー情報を抽出 ===
+# === Extract error information ===
 ERROR_MSG="unknown"
 ERROR_CODE="unknown"
 SESSION_ID="unknown"
@@ -123,7 +123,7 @@ fi
 
 TIMESTAMP="$(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date +"%Y-%m-%dT%H:%M:%SZ")"
 
-# === JSONL にログ記録（jq/python3 で安全にエスケープ）===
+# === Write log entry to JSONL (safely escaped via jq/python3) ===
 log_entry=""
 if command -v jq > /dev/null 2>&1; then
   log_entry="$(jq -nc \
@@ -155,24 +155,24 @@ if [ -n "${log_entry}" ]; then
   rotate_jsonl "${LOG_FILE}"
 fi
 
-# === Lead への通知（429 レート制限時）===
+# === Notify Lead (on 429 rate limit) ===
 if [ "${ERROR_CODE}" = "429" ]; then
-  # systemMessage で Lead に通知（CC hooks プロトコル）
-  # SESSION_ID を jq/python3 で安全にエスケープして JSON を生成
+  # Notify Lead via systemMessage (CC hooks protocol)
+  # Safely escape SESSION_ID via jq/python3 when building JSON
   _sys_msg=""
   if command -v jq > /dev/null 2>&1; then
     _sys_msg="$(jq -nc --arg sid "${SESSION_ID}" \
-      '{systemMessage: ("[StopFailure] Worker " + $sid + " がレート制限 (429) で停止。Breezing Lead は指数バックオフ後に自動再開を試みてください。")}')"
+      '{systemMessage: ("[StopFailure] Worker " + $sid + " stopped due to rate limit (429). Breezing Lead: please retry with exponential backoff.")}')"
   elif command -v python3 > /dev/null 2>&1; then
     _sys_msg="$(python3 -c "
 import json, sys
-print(json.dumps({'systemMessage': '[StopFailure] Worker ' + sys.argv[1] + ' がレート制限 (429) で停止。Breezing Lead は指数バックオフ後に自動再開を試みてください。'}, ensure_ascii=False))
+print(json.dumps({'systemMessage': '[StopFailure] Worker ' + sys.argv[1] + ' stopped due to rate limit (429). Breezing Lead: please retry with exponential backoff.'}, ensure_ascii=False))
 " "${SESSION_ID}" 2>/dev/null)" || _sys_msg=""
   fi
   [ -n "${_sys_msg}" ] && echo "${_sys_msg}"
 fi
 
-# stderr にも出力（デバッグ用）
+# Also output to stderr (for debugging)
 echo "[StopFailure] session=${SESSION_ID} code=${ERROR_CODE} msg=${ERROR_MSG}" >&2
 
 exit 0

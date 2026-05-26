@@ -1,9 +1,11 @@
 # Distribution Scope
 
-最終更新: 2026-05-14
+Last updated: 2026-05-14
 
-この文書は `claude-code-harness` の「repo には存在するが、Claude Code plugin の配布 payload には載せないもの」を明文化する scope table です。
-`Plans.md`、README、`.gitattributes`、配布スクリプト、検証スクリプトで迷ったら、この表を正本として扱います。
+This document explicitly defines what "exists in the `claude-code-harness` repo but is not included in
+the Claude Code plugin distribution payload."
+When there is uncertainty about `Plans.md`, README, `.gitattributes`, distribution scripts, or
+validation scripts, treat this table as the source of truth.
 
 ## Scope Table
 
@@ -11,39 +13,39 @@
 |------|--------|---------------|--------------------|
 | `.claude-plugin/` | Distribution-included | Claude Code plugin manifest / hooks / settings | `claude plugin validate`, `test-distribution-archive.sh` |
 | `bin/harness*` | Distribution-included | Go-native guardrail / lifecycle runtime | `validate-plugin`, `go test`, archive required entries |
-| `skills/` | Distribution-included | Claude Code 用 primary skill surface | `validate-plugin`, mirror sync checks |
+| `skills/` | Distribution-included | Primary skill surface for Claude Code | `validate-plugin`, mirror sync checks |
 | `agents/` | Distribution-included | worker / reviewer / scaffolder / advisor | `validate-plugin`, agent frontmatter tests |
-| `hooks/`, `monitors/` | Distribution-included | 実行時 hook / monitor definitions | `hooks/hooks.json`, `validate-plugin` |
+| `hooks/`, `monitors/` | Distribution-included | Runtime hook / monitor definitions | `hooks/hooks.json`, `validate-plugin` |
 | `output-styles/` | Distribution-included | Claude Code output style | `plugin.json`, archive required entries |
-| `templates/`, `workflows/` | Distribution-included | project init / rules / workflow templates | `check-consistency.sh`, template registry checks |
-| `scripts/` runtime files | Distribution-included | hook handlers, setup, sync, review, plan, loop runtime | `validate-plugin`, runtime hook tests |
+| `templates/`, `workflows/` | Distribution-included | Project init / rules / workflow templates | `check-consistency.sh`, template registry checks |
+| `scripts/` runtime files | Distribution-included | Hook handlers, setup, sync, review, plan, loop runtime | `validate-plugin`, runtime hook tests |
 | `assets/`, public `docs/` | Distribution-included | README assets and public user documentation | README claim drift checks |
-| `commands/` | Compatibility-retained | 旧 slash command 資産。存在する場合のみ検証 | `validate-plugin` |
-| `codex/`, `opencode/`, `skills-codex/` | Source-repo mirror only | 代替クライアント向け mirror / setup 導線。Claude plugin archive には載せない | `test-codex-package.sh`, `opencode-compat.yml`, `.gitattributes` |
-| `go/`, `tests/`, `benchmarks/`, `.github/` | Development-only and distribution-excluded | source / CI / benchmark / validation | `.gitattributes`, `test-distribution-archive.sh` |
-| `.claude/`, `.cursor/`, `CLAUDE.md`, `AGENTS.md`, `Plans.md` | Development-only and distribution-excluded | repo-local agent context, local plans, editor setup | `.gitattributes`, `test-distribution-archive.sh` |
-| `.private/` | Local-only and distribution-excluded | `skills/` 直下に置くと `claude --plugin-dir .` の inventory に出る private/dev-only skills の退避先 | `.gitignore`, `test-public-plugin-inventory.sh` |
+| `commands/` | Compatibility-retained | Legacy slash command assets. Validated only if present | `validate-plugin` |
+| `codex/`, `opencode/`, `skills-codex/` | Source-repo mirror only | Mirror / setup paths for alternative clients. Not included in Claude plugin archive | `test-codex-package.sh`, `opencode-compat.yml`, `.gitattributes` |
+| `go/`, `tests/`, `benchmarks/`, `.github/` | Development-only and distribution-excluded | Source / CI / benchmark / validation | `.gitattributes`, `test-distribution-archive.sh` |
+| `.claude/`, `.cursor/`, `CLAUDE.md`, `AGENTS.md`, `Plans.md` | Development-only and distribution-excluded | Repo-local agent context, local plans, editor setup | `.gitattributes`, `test-distribution-archive.sh` |
+| `.private/` | Local-only and distribution-excluded | Escape destination for private/dev-only skills that would appear in `claude --plugin-dir .` inventory if placed under `skills/` | `.gitignore`, `test-public-plugin-inventory.sh` |
 | `scripts/ci/`, `scripts/evidence/`, `scripts/sandbox-test/` | Development-only and distribution-excluded | CI helpers, evidence fixtures, local sandbox examples | `.gitattributes`, `test-distribution-archive.sh` |
-| `mcp-server/` | Development-only and distribution-excluded | オプション機能。repo では開発・調査用に残すが配布 payload には含めない | `.gitignore`, `.gitattributes`, CHANGELOG history |
-| `harness-ui/`, `harness-ui-archive/`, `remotion/` | Development-only and distribution-excluded | optional UI / video experiments and archives | `.gitignore`, `.gitattributes`, CHANGELOG history |
-| `docs/research/`, `docs/private/`, `docs/notebooklm/`, `docs/slides/`, `docs/presentation/`, `docs/social/` | Private or generated reference | 調査記録、公開前の下書き、生成中間物 | `.gitignore`, `.gitattributes`, `test-distribution-archive.sh` |
+| `mcp-server/` | Development-only and distribution-excluded | Optional feature. Remains in repo for development/investigation but not included in distribution payload | `.gitignore`, `.gitattributes`, CHANGELOG history |
+| `harness-ui/`, `harness-ui-archive/`, `remotion/` | Development-only and distribution-excluded | Optional UI / video experiments and archives | `.gitignore`, `.gitattributes`, CHANGELOG history |
+| `docs/research/`, `docs/private/`, `docs/notebooklm/`, `docs/slides/`, `docs/presentation/`, `docs/social/` | Private or generated reference | Research records, pre-publication drafts, generated intermediates | `.gitignore`, `.gitattributes`, `test-distribution-archive.sh` |
 
 ## Current Decisions
 
-- `commands/` は削除済み扱いにしない。現在は **Compatibility-retained**。
-- `codex/` / `opencode/` は repo 上の mirror として検証対象だが、Claude Code plugin archive からは除外する。
-- `.claude/` / `.cursor/` / `CLAUDE.md` / `AGENTS.md` / `Plans.md` は repo-local context であり、plugin payload ではない。
-- private/dev-only skills は `skills/` 配下に置かない。`.gitignore` されていても `claude --plugin-dir .` の local inventory には露出するため、`.private/skills/` など public plugin surface の外へ退避する。
-- `mcp-server/` は削除済み扱いにしない。現在は **Development-only and distribution-excluded**。
-- `scripts/hook-handlers/memory-bridge.sh` と `memory-*.sh` は local bridge でも **Distribution-included**。hook が参照するため、repo に tracked されている必要がある。
-- README や `Plans.md` で「削除」と書く場合は、実際に tree から消えたときだけ使う。
-- 「配布外」「互換維持」「開発専用」はこの文書のラベルに合わせて使い分ける。
+- `commands/` is not treated as deleted. Currently **Compatibility-retained**.
+- `codex/` / `opencode/` are validation targets as repo mirrors but are excluded from the Claude Code plugin archive.
+- `.claude/` / `.cursor/` / `CLAUDE.md` / `AGENTS.md` / `Plans.md` are repo-local context, not plugin payload.
+- Private/dev-only skills must not be placed under `skills/`. Even if `.gitignore`d, they are exposed in the local inventory of `claude --plugin-dir .`, so move them outside the public plugin surface to `.private/skills/` or similar.
+- `mcp-server/` is not treated as deleted. Currently **Development-only and distribution-excluded**.
+- `scripts/hook-handlers/memory-bridge.sh` and `memory-*.sh` are **Distribution-included** even as local bridges. They must be tracked in the repo since hooks reference them.
+- Use "deleted" in README or `Plans.md` only when the item has actually been removed from the tree.
+- Use the labels "distribution-excluded," "compatibility-retained," and "development-only" consistent with this document.
 
 ## Update Rule
 
-次のいずれかが起きたら、この表も同じ PR / commit で更新すること。
+Update this table in the same PR / commit when any of the following occurs:
 
-1. README の architecture / install / compatibility 説明を変更したとき
-2. `.gitignore` や build script の除外規則を変更したとき
-3. `commands/` や `mcp-server/` など、存在理由が誤解されやすいディレクトリの扱いを変えたとき
-4. `.gitattributes` の `export-ignore` や `tests/test-distribution-archive.sh` の required / forbidden list を変更したとき
+1. Changing the architecture / install / compatibility description in README
+2. Changing exclusion rules in `.gitignore` or build scripts
+3. Changing how directories like `commands/` or `mcp-server/` — whose purpose is prone to misunderstanding — are handled
+4. Changing `export-ignore` in `.gitattributes` or the required/forbidden lists in `tests/test-distribution-archive.sh`

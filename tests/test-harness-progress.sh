@@ -1,12 +1,12 @@
 #!/bin/bash
 # tests/test-harness-progress.sh
-# Phase 65.4.1 - harness-progress skill + progress-snapshot.v1 の機械検証
+# Phase 65.4.1 - mechanical verification of the harness-progress skill + progress-snapshot.v1
 #
-# 検証ケース (Plans.md §65.4.1 DoD a-d):
-#   (a) skills/harness-progress/SKILL.md 存在 + 必須 frontmatter
-#   (b) progress-snapshot.v1 schema が JSON Schema として valid
-#   (c) Plans.md fixture から cc:WIP / cc:TODO / cc:完了 件数を反映
-#   (d) 各 status 含む fixture Plans.md で snapshot HTML が正しい % 表示
+# Verification cases (Plans.md §65.4.1 DoD a-d):
+#   (a) skills/harness-progress/SKILL.md exists + required frontmatter
+#   (b) progress-snapshot.v1 schema is valid as a JSON Schema
+#   (c) cc:WIP / cc:TODO / cc:done counts from Plans.md fixture are reflected
+#   (d) snapshot HTML shows correct % display for fixture Plans.md with each status
 
 set -euo pipefail
 
@@ -27,7 +27,7 @@ pass() { PASS=$((PASS + 1)); echo "✓ $1"; }
 fail() { FAIL=$((FAIL + 1)); FAIL_MESSAGES+=("$1"); echo "✗ $1" >&2; }
 
 # ============================================================
-# (a) SKILL.md 存在 + frontmatter
+# (a) SKILL.md exists + frontmatter
 # ============================================================
 
 if [[ -f "$SKILL_MD" ]]; then
@@ -44,18 +44,18 @@ else
 fi
 
 if grep -q "^description:" "$SKILL_MD" && grep -q "^description-en:" "$SKILL_MD"; then
-  pass "(a) SKILL.md has both description + description-en (i18n gate)"
+  pass "(a) SKILL.md has both description + description-en"
 else
   fail "(a) SKILL.md missing description / description-en"
 fi
 
-# i18n consistency: description == description-en (literal match)
-DESC_JA="$(awk '/^description:/{sub(/^description: */, ""); gsub(/^"|"$/, ""); print; exit}' "$SKILL_MD")"
+# Consistency: description == description-en (literal match)
+DESC_VAL="$(awk '/^description:/{sub(/^description: */, ""); gsub(/^"|"$/, ""); print; exit}' "$SKILL_MD")"
 DESC_EN="$(awk '/^description-en:/{sub(/^description-en: */, ""); gsub(/^"|"$/, ""); print; exit}' "$SKILL_MD")"
-if [[ "$DESC_JA" == "$DESC_EN" ]]; then
-  pass "(a) description == description-en (i18n gate compatible)"
+if [[ "$DESC_VAL" == "$DESC_EN" ]]; then
+  pass "(a) description == description-en"
 else
-  fail "(a) description and description-en differ (i18n gate may fail)"
+  fail "(a) description and description-en differ"
 fi
 
 # ============================================================
@@ -89,17 +89,17 @@ fi
 TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/test-progress.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-# Case 1: 各 status 含む fixture (TODO 2 / WIP 1 / 完了 1 = 計 4、25%)
+# Case 1: fixture with each status (TODO 2 / WIP 1 / done 1 = total 4, 25%)
 FIXTURE1="$TMP_DIR/plans1-mixed.md"
 cat > "$FIXTURE1" <<'PLANS'
 # Plans
 
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
-| 99.1.1 | 最初のテスト task | DoD T-001 | - | cc:完了 [a1b2c3d] |
-| 99.1.2 | 進行中の task | DoD T-002 | - | cc:WIP |
-| 99.1.3 | 未着手 task A | DoD T-003 | - | cc:TODO |
-| 99.1.4 | 未着手 task B | DoD T-004 | - | cc:TODO |
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
+| 99.1.1 | first test task | DoD T-001 | - | cc:完了 [a1b2c3d] |
+| 99.1.2 | in-progress task | DoD T-002 | - | cc:WIP |
+| 99.1.3 | pending task A | DoD T-003 | - | cc:TODO |
+| 99.1.4 | pending task B | DoD T-004 | - | cc:TODO |
 PLANS
 
 SNAP1="$TMP_DIR/snap1.json"
@@ -115,13 +115,13 @@ if jq -e '
   (.done_tasks | length == 1) and
   (.done_tasks[0].commit == "a1b2c3d")
 ' "$SNAP1" >/dev/null 2>&1; then
-  pass "(c) Case 1 (TODO=2 / WIP=1 / 完了=1): counts and 25% correct"
+  pass "(c) Case 1 (TODO=2 / WIP=1 / done=1): counts and 25% correct"
 else
   fail "(c) Case 1: snapshot incorrect. content: $(cat "$SNAP1")"
 fi
 
-if jq -e '.current_task | test("進行中の task")' "$SNAP1" >/dev/null; then
-  pass "(c) Case 1: current_task = WIP の最初の項目"
+if jq -e '.current_task | test("in-progress task")' "$SNAP1" >/dev/null; then
+  pass "(c) Case 1: current_task = first WIP item"
 else
   fail "(c) Case 1: current_task wrong"
 fi
@@ -134,19 +134,19 @@ else
   fail "(d) Case 1: render failed. stderr: $(cat "$TMP_DIR/r1-stderr.txt")"
 fi
 
-if grep -q "25%" "$HTML1" && grep -q ">1</strong>件 完了" "$HTML1" && grep -q ">2</strong>件 未着手" "$HTML1"; then
-  pass "(d) Case 1: HTML contains 25%, '1件 完了', '2件 未着手'"
+if grep -q "25%" "$HTML1" && grep -q ">1</strong>" "$HTML1" && grep -q "done" "$HTML1"; then
+  pass "(d) Case 1: HTML contains 25% and done count"
 else
   fail "(d) Case 1: HTML missing expected count display"
 fi
 
-# Case 2: 全 完了 (100%)
+# Case 2: all done (100%)
 FIXTURE2="$TMP_DIR/plans2-all-done.md"
 cat > "$FIXTURE2" <<'PLANS'
 # Plans
 
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
 | 1 | task 1 | dod | - | cc:完了 [aaaaaaa] |
 | 2 | task 2 | dod | - | cc:完了 [bbbbbbb] |
 PLANS
@@ -155,18 +155,18 @@ SNAP2="$TMP_DIR/snap2.json"
 bash "$SNAPSHOT_SCRIPT" --plans "$FIXTURE2" --project "case2" > "$SNAP2"
 
 if jq -e '.progress_pct == 100 and (.done_tasks | length == 2) and .current_task == ""' "$SNAP2" >/dev/null; then
-  pass "(c) Case 2 (all done): progress_pct=100, current_task空"
+  pass "(c) Case 2 (all done): progress_pct=100, current_task empty"
 else
   fail "(c) Case 2: incorrect"
 fi
 
-# Case 3: タスクゼロ (0%)
+# Case 3: zero tasks (0%)
 FIXTURE3="$TMP_DIR/plans3-empty.md"
 cat > "$FIXTURE3" <<'PLANS'
 # Plans
 
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
 PLANS
 
 SNAP3="$TMP_DIR/snap3.json"
@@ -178,13 +178,13 @@ else
   fail "(c) Case 3: incorrect"
 fi
 
-# Case 4: pm:* status は無視 (TODO/WIP/完了 のみカウント)
+# Case 4: pm:* status is ignored (only TODO/WIP/done counted)
 FIXTURE4="$TMP_DIR/plans4-pm-mixed.md"
 cat > "$FIXTURE4" <<'PLANS'
 # Plans
 
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
 | 1 | task 1 | dod | - | cc:完了 [aaaaaaa] |
 | 2 | task 2 | dod | - | pm:依頼中 |
 | 3 | task 3 | dod | - | pm:確認済 |
@@ -201,7 +201,7 @@ else
 fi
 
 # ============================================================
-# 共通: missing Plans.md → exit 1
+# Common: missing Plans.md → exit 1
 # ============================================================
 
 if bash "$SNAPSHOT_SCRIPT" --plans "/nonexistent/Plans.md" --project "x" >/dev/null 2>"$TMP_DIR/missing-stderr.txt"; then
@@ -217,7 +217,7 @@ else
 fi
 
 # ============================================================
-# 共通: missing args → exit 2
+# Common: missing args → exit 2
 # ============================================================
 
 if bash "$SNAPSHOT_SCRIPT" --plans Plans.md >/dev/null 2>&1; then

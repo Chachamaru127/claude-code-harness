@@ -1,8 +1,6 @@
 ---
 name: harness-loop
 description: "Long-running task loop using /loop (Claude Code dynamic mode) and ScheduleWakeup to re-enter with fresh context on each wake-up. Internally invokes harness-work through Agent. Trigger: long-running, loop, wake-up, autonomous. Do NOT load for: one-shot task execution, review, release, planning."
-description-en: "Long-running task loop using /loop (Claude Code dynamic mode) and ScheduleWakeup to re-enter with fresh context on each wake-up. Internally invokes harness-work through Agent. Trigger: long-running, loop, wake-up, autonomous. Do NOT load for: one-shot task execution, review, release, planning."
-description-ja: "長時間タスクを /loop と ScheduleWakeup で wake-up 毎に fresh context で再入実行。harness-work を内部で Agent 呼び出し。長時間、ループ、loop、wake-up、autonomous に対応。"
 kind: workflow
 purpose: "Re-enter long-running Plans.md execution with fresh context"
 trigger: "long-running, loop, wake-up, autonomous"
@@ -19,248 +17,248 @@ user-invocable: true
 
 # harness-loop
 
-`/loop`（CC dynamic mode）と `ScheduleWakeup` を組み合わせ、
-長時間タスクを **wake-up 毎に fresh context で再入実行** するメタスキル。
+A meta-skill that combines `/loop` (CC dynamic mode) and `ScheduleWakeup` to
+**re-enter long-running tasks with fresh context on each wake-up**.
 
-各 wake-up で `harness-work --breezing` を Agent 経由で呼び出し、
-1 サイクル = 1 タスク完結の再入可能ループを構成する。
+On each wake-up, it calls `harness-work --breezing` via Agent,
+constructing a re-entrant loop where 1 cycle = 1 task completion.
 
 > **Long-session helpers (CC 2.1.108+)**:
-> 人が戻ってきたら `/recap` で要約を取り直してから `/harness-loop status` を見る。
-> 長めの離席や再入が多い運用では `ENABLE_PROMPT_CACHING_1H=1` を優先する。
+> When you return, use `/recap` to get a summary before checking `/harness-loop status`.
+> For workflows with long absences or frequent re-entries, prefer `ENABLE_PROMPT_CACHING_1H=1`.
 
-> **長時間セッション推奨 (CC 2.1.108+)**:
-> セッション長が 30 分を超える見込みの場合、plugin bundle root 解決後に `bash "${HARNESS_PLUGIN_ROOT}/scripts/enable-1h-cache.sh"` を実行して 1 時間 prompt cache を opt-in すること。
+> **Long session recommendation (CC 2.1.108+)**:
+> If the session is expected to exceed 30 minutes, after resolving the plugin bundle root, run `bash "${HARNESS_PLUGIN_ROOT}/scripts/enable-1h-cache.sh"` to opt in to the 1-hour prompt cache.
 
 > **Codex 0.123.0 automatic bug fix inheritance**:
-> manual shell follow-up queue と `/copy` after rollback は Codex 本体の TUI 修正として自動継承する。
-> loop runner は追加入力 queue、copy wrapper、rollback workaround を追加しない。
-> 長時間作業中に manual shell へ follow-up を投げた時の queueing は Codex runtime に任せる。
+> The manual shell follow-up queue and `/copy` after rollback are automatically inherited as TUI fixes in the Codex core.
+> The loop runner does not add an extra input queue, copy wrapper, or rollback workaround.
+> Queueing when a follow-up is sent to the manual shell during long-running work is left to the Codex runtime.
 
 ## Quick Reference
 
-| 入力 | 動作 |
+| Input | Behavior |
 |------|------|
-| `/harness-loop all` | 全未完了タスクをループ実行（default: max 8 サイクル） |
-| `/harness-loop all --max-cycles 3` | 3 サイクルで停止 |
-| `/harness-loop 41.1-41.3 --pacing ci` | タスク範囲を CI pacing で実行 |
-| `/harness-loop all --plan roadmap` | named Plans の `roadmap` を対象にループ実行 |
-| `/harness-loop all --pacing night` | 深夜バッチ（3600s 間隔） |
-| `/harness-loop status` | 進行中ランナーの状態確認 |
-| `/harness-loop stop` | 進行中ランナーの停止要求 |
+| `/harness-loop all` | Loop through all incomplete tasks (default: max 8 cycles) |
+| `/harness-loop all --max-cycles 3` | Stop after 3 cycles |
+| `/harness-loop 41.1-41.3 --pacing ci` | Run task range with CI pacing |
+| `/harness-loop all --plan roadmap` | Loop through the named Plan `roadmap` |
+| `/harness-loop all --pacing night` | Night batch (3600s interval) |
+| `/harness-loop status` | Check the status of the running runner |
+| `/harness-loop stop` | Request stop of the running runner |
 
-## オプション
+## Options
 
-| オプション | 説明 | デフォルト |
+| Option | Description | Default |
 |----------|------|----------|
-| `all` | 全未完了タスクを対象 | - |
-| `N-M` | タスク番号範囲指定 | - |
-| `--plan NAME` | `plans/manifest.json` の named plan を使う | active/default |
-| `--max-cycles N` | 最大サイクル数 | `8` |
-| `--pacing <mode>` | wake-up 間隔モード | `worker`（270s） |
+| `all` | Target all incomplete tasks | - |
+| `N-M` | Task number range | - |
+| `--plan NAME` | Use the named plan from `plans/manifest.json` | active/default |
+| `--max-cycles N` | Maximum number of cycles | `8` |
+| `--pacing <mode>` | Wake-up interval mode | `worker` (270s) |
 
-### pacing 値マッピング
+### Pacing Value Mapping
 
-| pacing | delaySeconds | 用途 |
+| pacing | delaySeconds | Use case |
 |--------|-------------|------|
-| `worker` | 270 | Worker 完了直後（5 min 以内で cache warm） |
-| `ci` | 270 | CI 短時間ジョブ待ち |
-| `plateau` | 1200 | 20 min（plateau 検知後の再試行間隔） |
-| `night` | 3600 | 深夜の長時間放置 |
+| `worker` | 270 | Immediately after Worker completion (within 5 min cache warm) |
+| `ci` | 270 | Short CI job waits |
+| `plateau` | 1200 | 20 min (retry interval after plateau detection) |
+| `night` | 3600 | Long overnight unattended runs |
 
-> **制約**: `ScheduleWakeup` の `delaySeconds` はランタイムで **[60, 3600]** に clamp される。
-> `worker` / `ci` の 270s および `night` の 3600s はこの範囲内。
-> `plateau` の 1200s も範囲内。値を直接指定する場合は必ず 60 以上 3600 以下にすること。
+> **Constraint**: `ScheduleWakeup` `delaySeconds` is **clamped to [60, 3600]** at runtime.
+> `worker` / `ci` at 270s and `night` at 3600s are within this range.
+> `plateau` at 1200s is also within range. When specifying values directly, always use 60 or above and 3600 or below.
 
-## 起動フロー（wake-up 毎のエントリ）
+## Startup Flow (entry on each wake-up)
 
-詳細版: [`${CLAUDE_SKILL_DIR}/references/flow.md`](${CLAUDE_SKILL_DIR}/references/flow.md)
+Detailed version: [`${CLAUDE_SKILL_DIR}/references/flow.md`](${CLAUDE_SKILL_DIR}/references/flow.md)
 
-### plugin bundle root 解決
+### Resolve plugin bundle root
 
-`harness-loop` は host project の cwd ではなく、plugin bundle root 配下の helper script を呼ぶ。
-たとえると、作業机（host project）と工具箱（plugin bundle）を分けて扱う。
+`harness-loop` calls helper scripts under the plugin bundle root, not the host project's cwd.
+Think of it as keeping the work surface (host project) and the toolbox (plugin bundle) separate.
 
-各 wake-up の冒頭で次の順に `HARNESS_PLUGIN_ROOT` を決める:
+At the start of each wake-up, determine `HARNESS_PLUGIN_ROOT` in the following order:
 
-1. `CLAUDE_PLUGIN_ROOT` があり、`scripts/` を含むならそれを使う
-2. `CLAUDE_PLUGIN_ROOT` がなければ、`CLAUDE_SKILL_DIR` から plugin bundle root を逆算する
-   - `skills/harness-loop` 配布なら `${CLAUDE_SKILL_DIR}/../..`
-   - `.agents/skills/harness-loop` mirror 配布なら `${CLAUDE_SKILL_DIR}/../../..`
-3. どちらでも解けない場合は停止し、`CLAUDE_PLUGIN_ROOT` を plugin bundle root に設定して再実行する
+1. If `CLAUDE_PLUGIN_ROOT` exists and contains `scripts/`, use it
+2. If `CLAUDE_PLUGIN_ROOT` does not exist, back-calculate the plugin bundle root from `CLAUDE_SKILL_DIR`
+   - If distributed as `skills/harness-loop`: `${CLAUDE_SKILL_DIR}/../..`
+   - If distributed as `.agents/skills/harness-loop` mirror: `${CLAUDE_SKILL_DIR}/../../..`
+3. If neither resolves, stop and re-run with `CLAUDE_PLUGIN_ROOT` set to the plugin bundle root
 
-`Plans.md` と `.claude/state/...` は host project 側に置く。
-helper script だけを `${HARNESS_PLUGIN_ROOT}/scripts/...` から呼ぶ。
+`Plans.md` and `.claude/state/...` reside on the host project side.
+Only helper scripts are called from `${HARNESS_PLUGIN_ROOT}/scripts/...`.
 
-複数 Plans.md がある repo では、長時間 run の起動時に `--plan NAME` を明示する。
-runner は開始時に解決した Plans file を cycle 間で保持するため、途中で active plan を切り替えない。
+In repos with multiple Plans.md files, specify `--plan NAME` explicitly when starting a long run.
+The runner retains the Plans file resolved at startup between cycles, so do not switch the active plan mid-run.
 
 ```
 wake-up
   │
   ▼
-[Step 0] plugin bundle root を HARNESS_PLUGIN_ROOT に解決
-  CLAUDE_PLUGIN_ROOT が有効ならそれを使用
-  なければ CLAUDE_SKILL_DIR から plugin bundle root を逆算
-  ※ host project cwd の scripts/ は参照しない
+[Step 0] Resolve plugin bundle root into HARNESS_PLUGIN_ROOT
+  Use CLAUDE_PLUGIN_ROOT if valid
+  Otherwise back-calculate plugin bundle root from CLAUDE_SKILL_DIR
+  * Do not reference the host project cwd's scripts/
   │
   ▼
-[Step 1] Plans.md を先に読む
-  cc:WIP / cc:TODO の先頭タスクを特定（task_id を得る）
-  ※ 未完了タスクなし → ループ終了（正常完了）
+[Step 1] Read Plans.md first
+  Identify the leading task with cc:WIP / cc:TODO (get task_id)
+  * No incomplete tasks → end loop (normal completion)
   │
   ▼
-[Step 2] sprint-contract 存在確認 & 生成
-  .claude/state/contracts/${task_id}.sprint-contract.json の有無を確認
-  無ければ node "${HARNESS_PLUGIN_ROOT}/scripts/generate-sprint-contract.js" ${task_id} で生成
-  生成直後（初回のみ）: bash "${HARNESS_PLUGIN_ROOT}/scripts/enrich-sprint-contract.sh" <contract-path> \
-    --check "wake-up 自動承認（harness-loop のため DoD を reviewer 観点で確認）" \
-    --approve  ← draft → approved に昇格
-  （既存 contract は approved 済みのためスキップ）
+[Step 2] Check for sprint-contract and generate if missing
+  Check for .claude/state/contracts/${task_id}.sprint-contract.json
+  If absent: generate with node "${HARNESS_PLUGIN_ROOT}/scripts/generate-sprint-contract.js" ${task_id}
+  Immediately after generation (first time only): bash "${HARNESS_PLUGIN_ROOT}/scripts/enrich-sprint-contract.sh" <contract-path> \
+    --check "Auto-approved on wake-up (reviewing DoD from reviewer perspective for harness-loop)" \
+    --approve  ← promote draft → approved
+  (Existing contracts are already approved, so skip)
   │
   ▼
-[Step 3] contract readiness チェック
+[Step 3] Contract readiness check
   bash "${HARNESS_PLUGIN_ROOT}/scripts/ensure-sprint-contract-ready.sh" <contract-path>
   │
   ▼
-[Step 4] Resume pack 再読込
-  harness-mem resume-pack（コンテキスト再注入）
+[Step 4] Reload resume pack
+  harness-mem resume-pack (context re-injection)
   │
   ▼
-[Step 4.5] Advisor consult（必要時のみ）
-  高リスク task の初回実行前 / 同じ原因の 2 回目失敗後 / plateau 直前で
-  `advisor-request.v1` を組み立てて相談する
+[Step 4.5] Advisor consult (only when needed)
+  Before the first run of a high-risk task / after 2 consecutive failures with the same cause / just before plateau
+  Assemble an `advisor-request.v1` and consult
   │
-  ├── PLAN        → 次回 executor prompt に advice を prepend
-  ├── CORRECTION  → 局所修正の指示として再実行
-  └── STOP        → その場で loop を停止し、理由を残す
+  ├── PLAN        → prepend advice to the next executor prompt
+  ├── CORRECTION  → re-run as a local fix instruction
+  └── STOP        → stop the loop there and leave the reason
   │
   ▼
-[Step 5] 1 タスクサイクル実行
+[Step 5] Execute 1 task cycle
   worker_result = Agent(
-      subagent_type="claude-code-harness:worker",  # worker エージェント（harness-work ではない）
-      prompt="タスク: ${task_id}\nDoD: <Plans.md から抽出>\ncontract_path: ${CONTRACT_PATH}\nmode: breezing",
+      subagent_type="claude-code-harness:worker",  # worker agent (not harness-work)
+      prompt="Task: ${task_id}\nDoD: <extracted from Plans.md>\ncontract_path: ${CONTRACT_PATH}\nmode: breezing",
       isolation="worktree",
       run_in_background=false
   )
   # worker_result: { commit, branch, worktreePath, files_changed, summary }
   │
   ▼
-[Step 5.5] Lead レビュー実行
+[Step 5.5] Run Lead review
   diff_text = git show worker_result.commit
   verdict = codex_exec_review(diff_text) or reviewer_agent_review(diff_text)
-  ※ 詳細は flow.md 参照
+  * See flow.md for details
   │
   ▼
-[Step 5.6] APPROVE → main に cherry-pick / REQUEST_CHANGES → 修正ループ（contract の max_iterations 回、デフォルト 3）
-  APPROVE: git cherry-pick → Plans.md を cc:完了 [{hash}] に更新 → feature branch 削除
-  REQUEST_CHANGES x MAX_REVIEWS 後も否決: エスカレーション
-  ※ 詳細は flow.md 参照
+[Step 5.6] APPROVE → cherry-pick to main / REQUEST_CHANGES → fix loop (up to max_iterations in contract, default 3)
+  APPROVE: git cherry-pick → update Plans.md to cc:done [{hash}] → delete feature branch
+  REQUEST_CHANGES x MAX_REVIEWS then still rejected: escalate
+  * See flow.md for details
   │
   ▼
-[Step 6] plateau 判定
+[Step 6] Plateau detection
   bash "${HARNESS_PLUGIN_ROOT}/scripts/detect-review-plateau.sh" ${current_task_id}
   │
-  ├── PIVOT_REQUIRED（exit 2）  → ループ停止 + ユーザーエスカレーション
-  ├── INSUFFICIENT_DATA（exit 1）→ 続行
-  └── PIVOT_NOT_REQUIRED（exit 0）→ 続行
+  ├── PIVOT_REQUIRED (exit 2)   → stop loop + escalate to user
+  ├── INSUFFICIENT_DATA (exit 1) → continue
+  └── PIVOT_NOT_REQUIRED (exit 0) → continue
   │
   ▼
-[Step 7] サイクル数チェック
+[Step 7] Cycle count check
   │
-  ├── cycles >= max_cycles → ループ停止（上限到達）
+  ├── cycles >= max_cycles → stop loop (limit reached)
   │
   ▼
-[Step 8] checkpoint 記録
+[Step 8] Record checkpoint
   harness_mem_record_checkpoint(
-      session_id, title, content=サイクル結果サマリ
+      session_id, title, content=cycle result summary
   )
   │
   ▼
-[Step 9] 次 wake-up 予約
+[Step 9] Schedule next wake-up
   ScheduleWakeup(
-      delaySeconds=<pacing値>,
-      prompt="/harness-loop <同じ引数>",
-      reason="サイクル {N}/{max} 完了 — 次タスクへ"
+      delaySeconds=<pacing value>,
+      prompt="/harness-loop <same arguments>",
+      reason="Cycle {N}/{max} complete — moving to next task"
   )
 ```
 
-## サイクル停止条件
+## Cycle Stop Conditions
 
-| 条件 | 停止種別 | 対応 |
+| Condition | Stop type | Response |
 |------|---------|------|
-| `cycles >= max_cycles` | 正常停止（上限到達） | ユーザーに報告 |
-| `PIVOT_REQUIRED`（exit 2） | 異常停止（エスカレーション） | ユーザーに判断を仰ぐ |
-| 未完了タスクなし | 正常停止（全完了） | 完了報告を出力 |
+| `cycles >= max_cycles` | Normal stop (limit reached) | Report to user |
+| `PIVOT_REQUIRED` (exit 2) | Abnormal stop (escalation) | Ask user for decision |
+| No incomplete tasks | Normal stop (all complete) | Output completion report |
 
-`--max-cycles 3` 指定時は 3 サイクル完了後に停止する。
-default（`--max-cycles 8`）時は 8 サイクルで停止する。
+When `--max-cycles 3` is specified, stop after 3 cycles complete.
+With the default (`--max-cycles 8`), stop after 8 cycles.
 
-## 途中報告 / Silence Policy
+## Mid-run Reports / Silence Policy
 
-長時間 loop では、途中報告は「安心のための heartbeat」ではなく「判断が変わった時の通知」として扱う。
-Codex `0.123.0` の background agent が transcript delta を受け取れる環境では、delta 到着だけを理由に返答せず、必要ない時は明示的に沈黙する。
+In long-running loops, mid-run reports are treated as "notification when a decision changes" rather than "heartbeat for reassurance."
+In environments where the Codex `0.123.0` background agent can receive transcript deltas, do not respond solely because a delta arrived — be explicitly silent when not needed.
 
-報告するもの:
+Report:
 
-- cycle 完了、上限到達、全完了、blocked
-- validation failure、review `REQUEST_CHANGES`、plateau、advisor `STOP`
-- advisor / reviewer drift、contract readiness failure
-- user が `status` を求めた時の要約
+- cycle complete, limit reached, all complete, blocked
+- validation failure, review `REQUEST_CHANGES`, plateau, advisor `STOP`
+- advisor / reviewer drift, contract readiness failure
+- summary when user requests `status`
 
-沈黙してよいもの:
+Stay silent for:
 
-- transcript delta だけが増え、task / review / advisor の状態が変わっていない時
-- log に残る細かな stdout だけが増えた時
-- 次 wake-up までの pacing 待機中
+- when only transcript deltas are growing with no change in task / review / advisor state
+- when only fine-grained stdout in logs is growing
+- during pacing wait before the next wake-up
 
-default は「1 cycle につき最終報告 1 回」。
-ただし Advisor request 未応答、Reviewer result 未到着、plateau 直前の警告は silence policy より優先して報告する。
+Default is "1 final report per cycle."
+However, unanswered Advisor requests, pending Reviewer results, and warnings just before plateau take priority over the silence policy.
 
-## /loop との連携
+## Integration with /loop
 
-このスキルは CC の `/loop`（dynamic mode）と組み合わせて使用する。
+This skill is used in combination with CC's `/loop` (dynamic mode).
 
-`/loop` を有効にすると CC は自律的な再入実行を継続し、
-各サイクルの末尾で `ScheduleWakeup` を呼ぶことで次回 wake-up を予約する。
+With `/loop` enabled, CC continues autonomous re-entry,
+and calling `ScheduleWakeup` at the end of each cycle reserves the next wake-up.
 
-`/loop` のセンチネル: `<<autonomous-loop-dynamic>>`
+`/loop` sentinel: `<<autonomous-loop-dynamic>>`
 
-各 wake-up は **fresh context** で開始されるため、前サイクルのコンテキスト汚染を防ぐ。
-`harness-mem resume-pack` による resume pack 再読込が必須（Step 2）。
+Each wake-up starts with **fresh context**, preventing context contamination from the previous cycle.
+Reloading the resume pack via `harness-mem resume-pack` is mandatory (Step 2).
 
-## checkpoint 記録
+## Checkpoint Recording
 
-`harness_mem_record_checkpoint` スキーマ:
+`harness_mem_record_checkpoint` schema:
 
 ```json
 {
-  "session_id": "<セッション ID>",
-  "title": "harness-loop cycle {N}/{max}: {タスク名}",
-  "content": "cycle_result の 1 行サマリ + commit hash"
+  "session_id": "<session ID>",
+  "title": "harness-loop cycle {N}/{max}: {task name}",
+  "content": "One-line summary of cycle_result + commit hash"
 }
 ```
 
 ## Advisor Strategy
 
-この skill の主役は executor で、advisor は必要な時だけ呼ぶ。
-たとえると、担当者が普段は自走し、難所だけベテランに相談する形。
+The main actor in this skill is the executor; the advisor is called only when needed.
+Think of it as the person in charge normally working independently and consulting a senior only at difficult junctures.
 
-相談条件は固定で、自然言語の「自信が低い」判定は使わない。
+Consultation conditions are fixed; natural-language "low confidence" judgments are not used.
 
-| 条件 | 相談するか |
+| Condition | Consult? |
 |------|-----------|
-| `needs-spike` / `security-sensitive` / `state-migration` | する |
-| `<!-- advisor:required -->` | する |
-| 同じ原因の 2 回目失敗 | する |
-| plateau で停止する直前 | する |
+| `needs-spike` / `security-sensitive` / `state-migration` | Yes |
+| `<!-- advisor:required -->` | Yes |
+| 2nd consecutive failure with the same cause | Yes |
+| Just before stopping due to plateau | Yes |
 
-同じ trigger は 1 回しか相談しない。
-その判定には `trigger_hash = task_id + reason_code + normalized_error_signature` を使う。
+The same trigger is consulted only once.
+That determination uses `trigger_hash = task_id + reason_code + normalized_error_signature`.
 
-## 関連スキル
+## Related Skills
 
-- `harness-work` — 各サイクルで実行されるタスク実装スキル
-- `harness-plan` — ループ対象タスクの計画
-- `harness-review` — 個別タスクのレビュー
-- `session-control` — セッション状態管理
+- `harness-work` — task implementation skill executed in each cycle
+- `harness-plan` — planning for loop target tasks
+- `harness-review` — review of individual tasks
+- `session-control` — session state management

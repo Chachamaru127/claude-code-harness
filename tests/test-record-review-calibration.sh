@@ -1,16 +1,16 @@
 #!/bin/bash
 # test-record-review-calibration.sh
-# record-review-calibration.sh の smoke テスト
+# Smoke test for record-review-calibration.sh
 #
-# テスト一覧:
-#   1. arg parsing: 入力ファイルなしで exit 1
-#   2. arg parsing: 存在しないファイルで exit 3
-#   3. arg parsing: calibration なしで正常終了（exit 0、出力なし）
-#   4. arg parsing: 無効な label で exit 4
-#   5. arg parsing: --review-result フラグが positional を汚染しない
-#   6. critical_issues[] と gaps[severity:critical] の両方をカウント
-#   7. findings[severity:high] 2件 → major_count = 2
-#   8. gaps[severity:major] 1件 + findings[severity:high] 1件 → major_count = 2
+# Test list:
+#   1. arg parsing: exit 1 when no input file
+#   2. arg parsing: exit 3 for non-existent file
+#   3. arg parsing: normal exit (exit 0, no output) when no calibration
+#   4. arg parsing: exit 4 for invalid label
+#   5. arg parsing: --review-result flag does not pollute positionals
+#   6. both critical_issues[] and gaps[severity:critical] are counted
+#   7. findings[severity:high] 2 items → major_count = 2
+#   8. gaps[severity:major] 1 item + findings[severity:high] 1 item → major_count = 2
 
 set -euo pipefail
 
@@ -36,9 +36,9 @@ assert_eq() {
   fi
 }
 
-# ---- 共通入力ファイルの準備 ----
+# ---- Prepare common input files ----
 
-# calibration 付き最小入力
+# Minimal input with calibration
 cat > "${TMP_DIR}/with-cal.json" <<'EOF'
 {
   "schema_version": "review-result.v1",
@@ -47,7 +47,7 @@ cat > "${TMP_DIR}/with-cal.json" <<'EOF'
   "calibration": {
     "label": "false_positive",
     "source": "manual",
-    "notes": "テスト用",
+    "notes": "for testing",
     "prompt_hint": "",
     "few_shot_ready": true
   },
@@ -55,7 +55,7 @@ cat > "${TMP_DIR}/with-cal.json" <<'EOF'
 }
 EOF
 
-# calibration なし入力
+# Input without calibration
 cat > "${TMP_DIR}/no-cal.json" <<'EOF'
 {
   "schema_version": "review-result.v1",
@@ -64,7 +64,7 @@ cat > "${TMP_DIR}/no-cal.json" <<'EOF'
 }
 EOF
 
-# 無効 label 入力
+# Invalid label input
 cat > "${TMP_DIR}/bad-label.json" <<'EOF'
 {
   "schema_version": "review-result.v1",
@@ -80,41 +80,41 @@ cat > "${TMP_DIR}/bad-label.json" <<'EOF'
 }
 EOF
 
-# ---- テスト 1: 入力ファイルなしで exit 1 ----
+# ---- Test 1: exit 1 with no input file ----
 actual_exit=0
 "$SCRIPT" 2>/dev/null || actual_exit=$?
-assert_eq "test-1: 引数なし → exit 1" "1" "$actual_exit"
+assert_eq "test-1: no args → exit 1" "1" "$actual_exit"
 
-# ---- テスト 2: 存在しないファイルで exit 3 ----
+# ---- Test 2: exit 3 for non-existent file ----
 actual_exit=0
 "$SCRIPT" "${TMP_DIR}/nonexistent.json" "${TMP_DIR}/out.jsonl" 2>/dev/null || actual_exit=$?
-assert_eq "test-2: 存在しないファイル → exit 3" "3" "$actual_exit"
+assert_eq "test-2: non-existent file → exit 3" "3" "$actual_exit"
 
-# ---- テスト 3: calibration なしで exit 0 ----
+# ---- Test 3: exit 0 with no calibration ----
 actual_exit=0
 "$SCRIPT" "${TMP_DIR}/no-cal.json" "${TMP_DIR}/out3.jsonl" 2>/dev/null || actual_exit=$?
-assert_eq "test-3: calibration なし → exit 0" "0" "$actual_exit"
-# 出力ファイルが作られないこと
+assert_eq "test-3: no calibration → exit 0" "0" "$actual_exit"
+# Output file should not be created
 if [ ! -f "${TMP_DIR}/out3.jsonl" ]; then
-  echo "  PASS: test-3b: 出力ファイルが作られない"
+  echo "  PASS: test-3b: output file not created"
   pass=$((pass + 1))
 else
-  echo "  FAIL: test-3b: 出力ファイルが作られてしまった"
+  echo "  FAIL: test-3b: output file was unexpectedly created"
   fail=$((fail + 1))
 fi
 
-# ---- テスト 4: 無効 label で exit 4 ----
+# ---- Test 4: exit 4 for invalid label ----
 actual_exit=0
 "$SCRIPT" "${TMP_DIR}/bad-label.json" "${TMP_DIR}/out4.jsonl" 2>/dev/null || actual_exit=$?
-assert_eq "test-4: 無効 label → exit 4" "4" "$actual_exit"
+assert_eq "test-4: invalid label → exit 4" "4" "$actual_exit"
 
-# ---- テスト 5: --review-result フラグが positional を汚染しない ----
-# --review-result を入力の前に置いても INPUT_FILE が正しく認識されること
+# ---- Test 5: --review-result flag does not pollute positionals ----
+# INPUT_FILE should be correctly recognized even when --review-result is placed before input
 actual_exit=0
 "$SCRIPT" --review-result "${TMP_DIR}/with-cal.json" "${TMP_DIR}/with-cal.json" "${TMP_DIR}/out5.jsonl" 2>/dev/null || actual_exit=$?
-assert_eq "test-5: --review-result フラグが positional を汚染しない → exit 0" "0" "$actual_exit"
+assert_eq "test-5: --review-result flag does not pollute positionals → exit 0" "0" "$actual_exit"
 
-# ---- テスト 6: critical_issues[] と gaps[severity:critical] の両方をカウント ----
+# ---- Test 6: count both critical_issues[] and gaps[severity:critical] ----
 cat > "${TMP_DIR}/dual-critical.json" <<'EOF'
 {
   "schema_version": "review-result.v1",
@@ -128,7 +128,7 @@ cat > "${TMP_DIR}/dual-critical.json" <<'EOF'
     "few_shot_ready": true
   },
   "critical_issues": [
-    "旧形式 critical issue"
+    "legacy format critical issue"
   ],
   "gaps": [
     {"severity": "critical", "issue": "normalized critical gap"},
@@ -144,7 +144,7 @@ actual_major="$(jq -r '.major_count' "$OUT6")"
 assert_eq "test-6a: critical_issues[1] + gaps[critical][1] → critical_count = 2" "2" "$actual_critical"
 assert_eq "test-6b: gaps[major][1] → major_count = 1" "1" "$actual_major"
 
-# ---- テスト 7: findings[severity:high] 2件 → major_count = 2 ----
+# ---- Test 7: findings[severity:high] 2 items → major_count = 2 ----
 cat > "${TMP_DIR}/high-findings.json" <<'EOF'
 {
   "schema_version": "review-result.v1",
@@ -172,7 +172,7 @@ actual_critical7="$(jq -r '.critical_count' "$OUT7")"
 assert_eq "test-7a: findings[high][2] → major_count = 2" "2" "$actual_major7"
 assert_eq "test-7b: findings[medium] → critical_count = 0" "0" "$actual_critical7"
 
-# ---- テスト 8: gaps[major] 1件 + findings[high] 1件 → major_count = 2（各ソースの合算） ----
+# ---- Test 8: gaps[major] 1 item + findings[high] 1 item → major_count = 2 (sum of all sources) ----
 cat > "${TMP_DIR}/mixed-major.json" <<'EOF'
 {
   "schema_version": "review-result.v1",
@@ -199,7 +199,7 @@ OUT8="${TMP_DIR}/out8.jsonl"
 actual_major8="$(jq -r '.major_count' "$OUT8")"
 assert_eq "test-8: gaps[major][1] + findings[high][1] → major_count = 2" "2" "$actual_major8"
 
-# ---- 結果集計 ----
+# ---- Result summary ----
 echo ""
 echo "test-record-review-calibration: ${pass} passed, ${fail} failed"
 if [ "$fail" -gt 0 ]; then

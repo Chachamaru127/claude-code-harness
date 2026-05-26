@@ -16,33 +16,33 @@ import (
 	"time"
 )
 
-// driftTailWindow は collectDrift が参照する末尾行数。
-// session.events.jsonl が肥大化しても bounded memory (window × 1 行分) に保つため。
+// driftTailWindow is the number of trailing lines that collectDrift inspects.
+// Keeps memory bounded (window × 1 line) even when session.events.jsonl grows large.
 const driftTailWindow = 200
 
-// MonitorHandler は SessionStart フックハンドラ（プロジェクト状態収集）。
-// セッション開始時にプロジェクト状態を収集し、session.json と tooling-policy.json を生成する。
+// MonitorHandler is the SessionStart hook handler (project state collection).
+// Collects project state at session start and generates session.json and tooling-policy.json.
 //
-// shell 版: scripts/session-monitor.sh
+// Shell version: scripts/session-monitor.sh
 type MonitorHandler struct {
-	// StateDir はステートディレクトリのパス。空の場合は cwd から推定する。
+	// StateDir is the path to the state directory. Inferred from cwd if empty.
 	StateDir string
-	// PlansFile は Plans.md のパス。空の場合は projectRoot/Plans.md を使う。
+	// PlansFile is the path to Plans.md. Defaults to projectRoot/Plans.md if empty.
 	PlansFile string
-	// now は現在時刻の注入関数（テスト用）。nil の場合は time.Now() を使う。
+	// now is an injectable time function (for tests). Uses time.Now() if nil.
 	now func() time.Time
-	// MemHealthCommand は harness-mem ヘルスチェック関数（テスト注入用）。
-	// nil の場合は本番デフォルト実装（bin/harness mem health）を使う。
+	// MemHealthCommand is the harness-mem health check function (injectable for tests).
+	// Uses the production default implementation (bin/harness mem health) if nil.
 	MemHealthCommand func(ctx context.Context) (healthy bool, reason string, err error)
 }
 
-// monitorInput は SessionStart フックの stdin JSON。
+// monitorInput is the stdin JSON for the SessionStart hook.
 type monitorInput struct {
 	SessionID string `json:"session_id,omitempty"`
 	CWD       string `json:"cwd,omitempty"`
 }
 
-// sessionStateJSON は session.json の完全なスキーマ。
+// sessionStateJSON is the complete schema for session.json.
 type sessionStateJSON struct {
 	SessionID          string            `json:"session_id"`
 	ParentID           interface{}       `json:"parent_session_id"`
@@ -64,7 +64,7 @@ type sessionStateJSON struct {
 	ChangesThisSession []interface{}     `json:"changes_this_session"`
 }
 
-// harnessMemJSON は session.json の harness_mem フィールドのスキーマ。
+// harnessMemJSON is the schema for the harness_mem field in session.json.
 type harnessMemJSON struct {
 	Healthy     bool   `json:"healthy"`
 	LastChecked string `json:"last_checked"`
@@ -91,8 +91,8 @@ type plansStateJSON struct {
 	CompletedTasks int   `json:"completed_tasks"`
 }
 
-// toolingPolicyJSON は tooling-policy.json のスキーマ（簡略版）。
-// LSP/MCP 検出の重い外部コマンド依存を避け、基本情報のみを生成する。
+// toolingPolicyJSON is the schema for tooling-policy.json (simplified).
+// Avoids heavy external command dependencies for LSP/MCP detection; generates basic info only.
 type toolingPolicyJSON struct {
 	LSP     lspPolicyJSON    `json:"lsp"`
 	Plugins pluginPolicyJSON `json:"plugins"`
@@ -127,8 +127,8 @@ type skillsPolicyJSON struct {
 	DecisionRequired bool          `json:"decision_required"`
 }
 
-// Handle は stdin から SessionStart ペイロードを読み取り、
-// session.json と tooling-policy.json を生成して stdout に状態サマリーを書き出す。
+// Handle reads the SessionStart payload from stdin,
+// generates session.json and tooling-policy.json, and writes a status summary to stdout.
 func (h *MonitorHandler) Handle(r io.Reader, w io.Writer) error {
 	data, _ := io.ReadAll(r)
 
@@ -148,7 +148,7 @@ func (h *MonitorHandler) Handle(r io.Reader, w io.Writer) error {
 		stateDir = filepath.Join(projectRoot, ".claude", "state")
 	}
 
-	// シンボリックリンクチェック
+	// Symlink check
 	if isSymlink(stateDir) || isSymlink(filepath.Dir(stateDir)) {
 		fmt.Fprintf(os.Stderr, "[session-monitor] Warning: symlink detected in state directory path, aborting\n")
 		return nil
@@ -166,12 +166,12 @@ func (h *MonitorHandler) Handle(r io.Reader, w io.Writer) error {
 	now := h.currentTime()
 	nowStr := now.UTC().Format(time.RFC3339)
 
-	// プロジェクト情報を収集
+	// Collect project information
 	projectName := filepath.Base(projectRoot)
 	gitState := h.collectGitState(projectRoot)
 	plansState := h.collectPlansState(plansFile)
 
-	// 48.1.1: harness-mem ヘルスチェック
+	// 48.1.1: harness-mem health check
 	memHealthy, memReason, _ := h.checkMemHealth(projectRoot)
 	memState := harnessMemJSON{
 		Healthy:     memHealthy,
@@ -182,18 +182,18 @@ func (h *MonitorHandler) Handle(r io.Reader, w io.Writer) error {
 		memState.LastError = ""
 	}
 
-	// session.json を生成（resume/新規を判定）
+	// Generate session.json (determine resume vs. new)
 	sessionFile := filepath.Join(stateDir, "session.json")
 	h.generateSessionFile(sessionFile, projectRoot, projectName, nowStr, gitState, plansState, memState)
 
-	// tooling-policy.json を生成
+	// Generate tooling-policy.json
 	policyFile := filepath.Join(stateDir, "tooling-policy.json")
 	h.generateToolingPolicy(policyFile)
 
-	// サマリーを stdout に出力
+	// Write summary to stdout
 	h.writeSummary(w, projectName, gitState, plansState)
 
-	// 48.1.1: harness-mem unhealthy 警告
+	// 48.1.1: harness-mem unhealthy warning
 	if !memHealthy {
 		reason := memReason
 		if reason == "" {
@@ -202,13 +202,13 @@ func (h *MonitorHandler) Handle(r io.Reader, w io.Writer) error {
 		fmt.Fprintf(w, "⚠️ harness-mem unhealthy: %s\n", reason)
 	}
 
-	// 48.1.2: advisor/reviewer drift 検知
+	// 48.1.2: advisor/reviewer drift detection
 	driftLines := h.collectDrift(stateDir, projectRoot)
 	for _, line := range driftLines {
 		fmt.Fprintln(w, line)
 	}
 
-	// 48.1.3: Plans.md 閾値判定
+	// 48.1.3: Plans.md threshold check
 	if warning := h.checkPlansDrift(plansState, projectRoot); warning != "" {
 		fmt.Fprintln(w, warning)
 	}
@@ -216,7 +216,7 @@ func (h *MonitorHandler) Handle(r io.Reader, w io.Writer) error {
 	return nil
 }
 
-// collectGitState は git 情報を収集する。
+// collectGitState collects git information.
 func (h *MonitorHandler) collectGitState(projectRoot string) gitStateJSON {
 	if !isGitRepository(projectRoot) {
 		return gitStateJSON{
@@ -228,12 +228,12 @@ func (h *MonitorHandler) collectGitState(projectRoot string) gitStateJSON {
 
 	return gitStateJSON{
 		Branch:             h.readGitBranch(projectRoot),
-		UncommittedChanges: 0, // 重い操作を避けるため 0 固定
+		UncommittedChanges: 0, // fixed at 0 to avoid expensive operations
 		LastCommit:         h.readGitLastCommit(projectRoot),
 	}
 }
 
-// readGitBranch は git コマンド経由でブランチ名を読み取る。
+// readGitBranch reads the branch name via the git command.
 func (h *MonitorHandler) readGitBranch(projectRoot string) string {
 	branch, err := runGit(projectRoot, "rev-parse", "--abbrev-ref", "HEAD")
 	if err == nil && branch != "" {
@@ -247,7 +247,7 @@ func (h *MonitorHandler) readGitBranch(projectRoot string) string {
 	return "unknown"
 }
 
-// readGitLastCommit は git コマンド経由で最新コミット SHA を読み取る。
+// readGitLastCommit reads the latest commit SHA via the git command.
 func (h *MonitorHandler) readGitLastCommit(projectRoot string) string {
 	sha, err := runGit(projectRoot, "rev-parse", "--short=7", "HEAD")
 	if err == nil && sha != "" {
@@ -273,7 +273,7 @@ func runGit(projectRoot string, args ...string) (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-// collectPlansState は Plans.md の状態を収集する。
+// collectPlansState collects the state of Plans.md.
 func (h *MonitorHandler) collectPlansState(plansFile string) plansStateJSON {
 	fi, err := os.Stat(plansFile)
 	if err != nil {
@@ -295,7 +295,7 @@ func (h *MonitorHandler) collectPlansState(plansFile string) plansStateJSON {
 	}
 }
 
-// generateSessionFile は session.json を生成する（resume/新規を判定）。
+// generateSessionFile generates session.json (determines resume vs. new).
 func (h *MonitorHandler) generateSessionFile(
 	sessionFile, projectRoot, projectName, nowStr string,
 	git gitStateJSON,
@@ -309,11 +309,11 @@ func (h *MonitorHandler) generateSessionFile(
 	resumeMode := false
 	var existing sessionStateJSON
 
-	// 既存セッションを読み込む
+	// Load existing session
 	if data, err := os.ReadFile(sessionFile); err == nil {
 		if json.Unmarshal(data, &existing) == nil {
-			// ended_at が設定されていないなら resume モード
-			// ここでは EventSeq > 0 かつ State が active 系なら resume
+			// Resume mode if ended_at is not set;
+			// here, resume if EventSeq > 0 and State is an active state
 			if existing.SessionID != "" && existing.State != "stopped" && existing.State != "completed" && existing.State != "failed" {
 				resumeMode = true
 			}
@@ -328,7 +328,7 @@ func (h *MonitorHandler) generateSessionFile(
 	var sess sessionStateJSON
 
 	if resumeMode {
-		// 既存セッションを更新
+		// Update existing session
 		existing.CWD = projectRoot
 		existing.ProjectName = projectName
 		existing.UpdatedAt = nowStr
@@ -338,7 +338,7 @@ func (h *MonitorHandler) generateSessionFile(
 		existing.StateVersion = 1
 		sess = existing
 	} else {
-		// 新規セッション
+		// New session
 		sessionID := fmt.Sprintf("session-%d", time.Now().UnixNano())
 		resumeToken := fmt.Sprintf("resume-%d", time.Now().UnixNano())
 		parentID := interface{}(nil)
@@ -379,9 +379,9 @@ func (h *MonitorHandler) generateSessionFile(
 	_ = writeFileAtomic(sessionFile, append(data, '\n'), 0600)
 }
 
-// generateToolingPolicy は tooling-policy.json を生成する。
-// 重い外部コマンド依存（claude plugin list, MCP サーバー検索等）は避け、
-// 基本的なスキャフォールドのみを生成する。
+// generateToolingPolicy generates tooling-policy.json.
+// Avoids heavy external command dependencies (claude plugin list, MCP server search, etc.);
+// generates only a basic scaffold.
 func (h *MonitorHandler) generateToolingPolicy(policyFile string) {
 	if isSymlink(policyFile) {
 		return
@@ -421,18 +421,18 @@ func (h *MonitorHandler) generateToolingPolicy(policyFile string) {
 	_ = writeFileAtomic(policyFile, append(data, '\n'), 0644)
 }
 
-// writeSummary はセッション状態サマリーを w に書き出す。
+// writeSummary writes the session status summary to w.
 func (h *MonitorHandler) writeSummary(w io.Writer, projectName string, git gitStateJSON, plans plansStateJSON) {
 	fmt.Fprintln(w, "")
-	fmt.Fprintln(w, "セッション開始 - プロジェクト状態")
+	fmt.Fprintln(w, "Session start - project state")
 	fmt.Fprintln(w, strings.Repeat("─", 36))
-	fmt.Fprintf(w, "プロジェクト: %s\n", projectName)
-	fmt.Fprintf(w, "ブランチ: %s\n", git.Branch)
+	fmt.Fprintf(w, "Project: %s\n", projectName)
+	fmt.Fprintf(w, "Branch: %s\n", git.Branch)
 
 	if plans.Exists {
 		total := plans.WIPTasks + plans.TODOTasks + plans.PendingTasks
 		if total > 0 {
-			fmt.Fprintf(w, "Plans.md: WIP %d件 / TODO %d件\n", plans.WIPTasks, plans.TODOTasks+plans.PendingTasks)
+			fmt.Fprintf(w, "Plans.md: WIP %d / TODO %d\n", plans.WIPTasks, plans.TODOTasks+plans.PendingTasks)
 		}
 	}
 
@@ -440,7 +440,7 @@ func (h *MonitorHandler) writeSummary(w io.Writer, projectName string, git gitSt
 	fmt.Fprintln(w, "")
 }
 
-// currentTime は現在時刻を返す。
+// currentTime returns the current time.
 func (h *MonitorHandler) currentTime() time.Time {
 	if h.now != nil {
 		return h.now()
@@ -448,29 +448,29 @@ func (h *MonitorHandler) currentTime() time.Time {
 	return time.Now()
 }
 
-// formatInt は int をポインタで返す（tooling-policy の null 値用）。
+// formatInt returns a pointer to an int (for null values in tooling-policy).
 func formatInt(v int) *int {
 	return &v
 }
 
-// atoi は文字列を int に変換する。
+// atoi converts a string to int.
 func atoi(s string) int {
 	v, _ := strconv.Atoi(strings.TrimSpace(s))
 	return v
 }
 
 // ---------------------------------------------------------------------------
-// 48.1.1: harness-mem ヘルスチェック
+// 48.1.1: harness-mem health check
 // ---------------------------------------------------------------------------
 
-// resolveHarnessBinary は harness 実行バイナリの信頼可能なパスを返す。
-// 優先順位:
-//  1. os.Executable() — 現在実行中の harness binary（最も信頼可能）
-//  2. CLAUDE_PLUGIN_ROOT/bin/harness — plugin インストール済みパス
-//  3. exec.LookPath("harness") — PATH 上の harness
+// resolveHarnessBinary returns the trusted path to the harness executable.
+// Priority:
+//  1. os.Executable() — currently running harness binary (most trusted)
+//  2. CLAUDE_PLUGIN_ROOT/bin/harness — plugin-installed path
+//  3. exec.LookPath("harness") — harness on PATH
 //
-// projectRoot/bin/harness は信頼境界外（repo 内に悪意ある binary が混入する
-// 可能性がある）のため解決対象に含めない。
+// projectRoot/bin/harness is excluded (outside the trust boundary — a malicious binary
+// could be injected into the repo).
 func resolveHarnessBinary() (string, error) {
 	if exe, err := os.Executable(); err == nil && exe != "" {
 		return exe, nil
@@ -487,9 +487,9 @@ func resolveHarnessBinary() (string, error) {
 	return "", errors.New("harness binary not found")
 }
 
-// checkMemHealth は harness-mem のヘルスを検査する。
-// h.MemHealthCommand が設定されている場合はそれを使う（テスト注入用）。
-// nil の場合は本番デフォルト実装（bin/harness mem health を exec）を使う。
+// checkMemHealth checks the health of harness-mem.
+// Uses h.MemHealthCommand if set (injectable for tests).
+// Uses the production default implementation (exec bin/harness mem health) if nil.
 func (h *MonitorHandler) checkMemHealth(projectRoot string) (healthy bool, reason string, err error) {
 	if h.MemHealthCommand != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
@@ -499,16 +499,16 @@ func (h *MonitorHandler) checkMemHealth(projectRoot string) (healthy bool, reaso
 	return h.defaultMemHealthCheck(projectRoot)
 }
 
-// defaultMemHealthCheck は bin/harness mem health を exec して結果を返す。
-// projectRoot 引数は signature 後方互換のため保持しているが使用しない。
-// 過去実装は projectRoot/bin/harness を exec していたが、repo 内に悪意ある
-// binary が混入した場合に guardrail を bypass されるリスクがあった。
-// v4.3.1 からは os.Executable() → CLAUDE_PLUGIN_ROOT/bin/harness → PATH
-// の優先順で解決する（いずれも信頼可能なインストール済みパス）。
+// defaultMemHealthCheck execs bin/harness mem health and returns the result.
+// The projectRoot argument is retained for signature backward compatibility but is not used.
+// The previous implementation exec'd projectRoot/bin/harness, which risked guardrail bypass
+// if a malicious binary was injected into the repo.
+// Since v4.3.1, resolution follows the priority: os.Executable() → CLAUDE_PLUGIN_ROOT/bin/harness → PATH
+// (all are trusted installed paths).
 func (h *MonitorHandler) defaultMemHealthCheck(_ string) (healthy bool, reason string, err error) {
 	binaryPath, resolveErr := resolveHarnessBinary()
 	if resolveErr != nil {
-		// バイナリが見つからない場合はスキップ（監視全体は止めない）
+		// Skip if binary not found (do not stop the overall monitor)
 		return true, "", nil
 	}
 
@@ -518,13 +518,13 @@ func (h *MonitorHandler) defaultMemHealthCheck(_ string) (healthy bool, reason s
 	cmd := exec.CommandContext(ctx, binaryPath, "mem", "health")
 	output, cmdErr := cmd.Output()
 
-	// タイムアウト・exec 失敗
+	// Timeout / exec failure
 	if ctx.Err() != nil {
 		return false, "timeout", ctx.Err()
 	}
 	if cmdErr != nil {
-		// exit code 1 は unhealthy を意味する（正常な失敗）
-		// JSON 出力があれば解析する
+		// exit code 1 means unhealthy (expected failure)
+		// Parse JSON output if available
 		if len(output) > 0 {
 			var result struct {
 				Healthy bool   `json:"healthy"`
@@ -537,13 +537,13 @@ func (h *MonitorHandler) defaultMemHealthCheck(_ string) (healthy bool, reason s
 		return false, cmdErr.Error(), cmdErr
 	}
 
-	// exit 0: JSON をパース
+	// exit 0: parse JSON
 	var result struct {
 		Healthy bool   `json:"healthy"`
 		Reason  string `json:"reason"`
 	}
 	if jsonErr := json.Unmarshal(output, &result); jsonErr != nil {
-		return true, "", nil // パース失敗は楽観的に healthy 扱い
+		return true, "", nil // treat parse failure optimistically as healthy
 	}
 	return result.Healthy, result.Reason, nil
 }

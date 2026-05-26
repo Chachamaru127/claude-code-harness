@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 
 describe('CSV Parser', () => {
-  // NOTE: エージェントが実装すべきファイルのパス
+  // NOTE: path to the file the agent should implement
   const IMPL_PATH = '../csv-parser';
 
   let parseCsv: any;
@@ -131,11 +131,11 @@ describe('CSV Parser', () => {
   });
 
   it('should handle Unicode characters', () => {
-    const csv = 'name,location\nさくら,東京\nМария,Москва';
+    const csv = 'name,location\nSakura,Tokyo\nМария,Москва';
     const result = parseCsv(csv);
 
     expect(result.rows).toHaveLength(2);
-    expect(result.rows[0]).toEqual({ name: 'さくら', location: '東京' });
+    expect(result.rows[0]).toEqual({ name: 'Sakura', location: 'Tokyo' });
     expect(result.rows[1]).toEqual({ name: 'Мария', location: 'Москва' });
   });
 });

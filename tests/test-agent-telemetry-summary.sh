@@ -1,5 +1,5 @@
 #!/bin/bash
-# agent telemetry が statusline / trace / usage から役割別に集計されることを確認
+# Verify that agent telemetry is aggregated by role from statusline / trace / usage
 
 set -euo pipefail
 

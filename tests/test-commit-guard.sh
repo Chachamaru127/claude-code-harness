@@ -1,29 +1,29 @@
 #!/bin/bash
 # test-commit-guard.sh
-# Commit Guard 機能のテスト
+# Tests for the Commit Guard feature
 #
-# テスト対象:
-# - scripts/pretooluse-guard.sh (git commit ブロックロジック)
-# - scripts/posttooluse-commit-cleanup.sh (レビュー承認状態クリア)
-# - hooks.json (フック登録)
+# Test targets:
+# - scripts/pretooluse-guard.sh (git commit block logic)
+# - scripts/posttooluse-commit-cleanup.sh (review approval state clear)
+# - hooks.json (hook registration)
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-# テスト結果カウンター
+# Test result counters
 TESTS_RUN=0
 TESTS_PASSED=0
 TESTS_FAILED=0
 
-# カラー出力
+# Color output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-# テスト関数
+# Test function
 run_test() {
   local test_name="$1"
   local test_func="$2"
@@ -41,7 +41,7 @@ run_test() {
 }
 
 # ==================================================
-# Test 1: posttooluse-commit-cleanup.sh が存在するか
+# Test 1: does posttooluse-commit-cleanup.sh exist?
 # ==================================================
 test_cleanup_script_exists() {
   local script="$PROJECT_ROOT/scripts/posttooluse-commit-cleanup.sh"
@@ -55,7 +55,7 @@ test_cleanup_script_exists() {
 }
 
 # ==================================================
-# Test 2: スクリプトに実行権限があるか
+# Test 2: does the script have execute permission?
 # ==================================================
 test_cleanup_script_executable() {
   local script="$PROJECT_ROOT/scripts/posttooluse-commit-cleanup.sh"
@@ -69,7 +69,7 @@ test_cleanup_script_executable() {
 }
 
 # ==================================================
-# Test 3: pretooluse-guard.sh に git commit 検出ロジックがあるか
+# Test 3: does pretooluse-guard.sh have git commit detection logic?
 # ==================================================
 test_pretooluse_has_commit_guard() {
   local script="$PROJECT_ROOT/scripts/pretooluse-guard.sh"
@@ -88,7 +88,7 @@ test_pretooluse_has_commit_guard() {
 }
 
 # ==================================================
-# Test 4: pretooluse-guard.sh にブロックメッセージがあるか
+# Test 4: does pretooluse-guard.sh have a block message?
 # ==================================================
 test_pretooluse_has_block_message() {
   local script="$PROJECT_ROOT/scripts/pretooluse-guard.sh"
@@ -102,7 +102,7 @@ test_pretooluse_has_block_message() {
 }
 
 # ==================================================
-# Test 5: posttooluse-commit-cleanup.sh に git commit 検出があるか
+# Test 5: does posttooluse-commit-cleanup.sh detect git commit?
 # ==================================================
 test_cleanup_detects_git_commit() {
   local script="$PROJECT_ROOT/scripts/posttooluse-commit-cleanup.sh"
@@ -116,18 +116,18 @@ test_cleanup_detects_git_commit() {
 }
 
 # ==================================================
-# Test 6: posttooluse-commit-cleanup.sh に状態ファイル削除ロジックがあるか
+# Test 6: does posttooluse-commit-cleanup.sh have state file removal logic?
 # ==================================================
 test_cleanup_removes_state_file() {
   local script="$PROJECT_ROOT/scripts/posttooluse-commit-cleanup.sh"
 
-  # スクリプトは変数経由で削除: rm -f "$REVIEW_STATE_FILE"
+  # script deletes via variable: rm -f "$REVIEW_STATE_FILE"
   if ! grep -q 'rm -f.*REVIEW_STATE_FILE' "$script" 2>/dev/null; then
     echo "    Error: state file removal logic not found"
     return 1
   fi
 
-  # 状態ファイルパスの定義も確認
+  # also verify state file path definition
   if ! grep -Eq "review-approved.json|review-result.json" "$script" 2>/dev/null; then
     echo "    Error: review artifact path definition not found"
     return 1
@@ -137,14 +137,14 @@ test_cleanup_removes_state_file() {
 }
 
 # ==================================================
-# Test 7: hooks.json に commit-cleanup フックが登録されているか
+# Test 7: is the commit-cleanup hook registered in hooks.json?
 # ==================================================
 test_hooks_has_commit_cleanup() {
   local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
 
   if ! command -v jq &> /dev/null; then
     echo "    Warning: jq not available, skipping JSON validation"
-    # jq がなくても grep で確認
+    # fall back to grep when jq is unavailable
     if ! grep -Eq "posttooluse-commit-cleanup|hook commit-cleanup" "$hooks_file" 2>/dev/null; then
       echo "    Error: commit-cleanup hook not registered in hooks.json"
       return 1
@@ -152,7 +152,7 @@ test_hooks_has_commit_cleanup() {
     return 0
   fi
 
-  # PostToolUse に Bash マッチャーで commit-cleanup が登録されているか
+  # check that commit-cleanup is registered for Bash matcher under PostToolUse
   if ! jq -e '.hooks.PostToolUse[] | select(.matcher == "Bash") | .hooks[] | select(.command | contains("posttooluse-commit-cleanup") or contains("hook commit-cleanup"))' "$hooks_file" > /dev/null 2>&1; then
     echo "    Error: commit-cleanup hook not properly registered for Bash in PostToolUse"
     return 1
@@ -162,7 +162,7 @@ test_hooks_has_commit_cleanup() {
 }
 
 # ==================================================
-# Test 8: .claude-plugin/hooks.json にも同じフックがあるか
+# Test 8: is the same hook also in .claude-plugin/hooks.json?
 # ==================================================
 test_plugin_hooks_has_commit_cleanup() {
   local hooks_file="$PROJECT_ROOT/.claude-plugin/hooks.json"
@@ -176,7 +176,7 @@ test_plugin_hooks_has_commit_cleanup() {
 }
 
 # ==================================================
-# Test 9: config テンプレートに commit_guard 設定があるか
+# Test 9: does the config template have a commit_guard option?
 # ==================================================
 test_config_has_commit_guard_option() {
   local config_template="$PROJECT_ROOT/templates/.claude-code-harness.config.yaml.template"
@@ -190,12 +190,12 @@ test_config_has_commit_guard_option() {
 }
 
 # ==================================================
-# Test 10: posttooluse-commit-cleanup.sh がエラー時に状態を保持するか
+# Test 10: does posttooluse-commit-cleanup.sh preserve state on error?
 # ==================================================
 test_cleanup_preserves_on_error() {
   local script="$PROJECT_ROOT/scripts/posttooluse-commit-cleanup.sh"
 
-  # エラーパターン検出ロジックがあるか確認
+  # verify error pattern detection logic is present
   if ! grep -Eq "error|fatal|failed|nothing to commit" "$script" 2>/dev/null; then
     echo "    Error: error detection logic not found in cleanup script"
     return 1
@@ -205,38 +205,38 @@ test_cleanup_preserves_on_error() {
 }
 
 # ==================================================
-# メイン実行
+# Main execution
 # ==================================================
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo " Commit Guard テスト"
+echo " Commit Guard Tests"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
 echo "  [PreToolUse Guard]"
-run_test "pretooluse-guard.sh に git commit 検出ロジックがある" test_pretooluse_has_commit_guard
-run_test "pretooluse-guard.sh にブロックメッセージがある" test_pretooluse_has_block_message
+run_test "pretooluse-guard.sh has git commit detection logic" test_pretooluse_has_commit_guard
+run_test "pretooluse-guard.sh has a block message" test_pretooluse_has_block_message
 
 echo ""
 echo "  [PostToolUse Cleanup]"
-run_test "posttooluse-commit-cleanup.sh が存在する" test_cleanup_script_exists
-run_test "posttooluse-commit-cleanup.sh に実行権限がある" test_cleanup_script_executable
-run_test "posttooluse-commit-cleanup.sh に git commit 検出がある" test_cleanup_detects_git_commit
-run_test "posttooluse-commit-cleanup.sh に状態ファイル削除ロジックがある" test_cleanup_removes_state_file
-run_test "posttooluse-commit-cleanup.sh がエラー時に状態を保持する" test_cleanup_preserves_on_error
+run_test "posttooluse-commit-cleanup.sh exists" test_cleanup_script_exists
+run_test "posttooluse-commit-cleanup.sh has execute permission" test_cleanup_script_executable
+run_test "posttooluse-commit-cleanup.sh detects git commit" test_cleanup_detects_git_commit
+run_test "posttooluse-commit-cleanup.sh has state file removal logic" test_cleanup_removes_state_file
+run_test "posttooluse-commit-cleanup.sh preserves state on error" test_cleanup_preserves_on_error
 
 echo ""
 echo "  [Hooks Integration]"
-run_test "hooks.json に commit-cleanup フックが登録されている" test_hooks_has_commit_cleanup
-run_test ".claude-plugin/hooks.json にも commit-cleanup フックがある" test_plugin_hooks_has_commit_cleanup
+run_test "hooks.json has commit-cleanup hook registered" test_hooks_has_commit_cleanup
+run_test ".claude-plugin/hooks.json also has commit-cleanup hook" test_plugin_hooks_has_commit_cleanup
 
 echo ""
 echo "  [Configuration]"
-run_test "config テンプレートに commit_guard 設定がある" test_config_has_commit_guard_option
+run_test "config template has commit_guard option" test_config_has_commit_guard_option
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo " テスト結果: $TESTS_PASSED/$TESTS_RUN passed"
+echo " Test Results: $TESTS_PASSED/$TESTS_RUN passed"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 

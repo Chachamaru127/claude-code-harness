@@ -1,11 +1,11 @@
 #!/bin/bash
 # check-template-registry.sh
-# CI: templates/ と template-registry.json の整合性チェック
+# CI: consistency check between templates/ and template-registry.json
 #
-# チェック項目:
-# 1. templates/ 内の *.template ファイルが registry に登録されているか
-# 2. registry 内のファイルが templates/ に存在するか
-# 3. templateVersion が有効な形式か
+# Checks:
+# 1. Are *.template files in templates/ registered in the registry?
+# 2. Do files listed in the registry exist in templates/?
+# 3. Is templateVersion in a valid format?
 
 set -euo pipefail
 
@@ -19,26 +19,26 @@ echo ""
 
 ERRORS=0
 
-# jq の存在確認
+# Check jq is available
 if ! command -v jq >/dev/null 2>&1; then
   echo "⚠️  jq is not installed. Skipping detailed checks."
   exit 0
 fi
 
-# registry ファイルの存在確認
+# Check registry file exists
 if [ ! -f "$REGISTRY_FILE" ]; then
   echo "❌ template-registry.json not found"
   exit 1
 fi
 
-# JSON 構文チェック
+# JSON syntax check
 if ! jq empty "$REGISTRY_FILE" 2>/dev/null; then
   echo "❌ template-registry.json has invalid JSON syntax"
   exit 1
 fi
 echo "✅ template-registry.json: valid JSON"
 
-# 1. templates/ 内のファイルが registry に登録されているかチェック
+# 1. Check whether files in templates/ are registered in the registry
 echo ""
 echo "--- Check 1: Template files in registry ---"
 
@@ -46,10 +46,10 @@ TEMPLATE_FILES=$(find "$TEMPLATES_DIR" -name "*.template" -type f | sort)
 MISSING_IN_REGISTRY=0
 
 for template_path in $TEMPLATE_FILES; do
-  # templates/ からの相対パスを取得
+  # Get relative path from templates/
   rel_path="${template_path#$TEMPLATES_DIR/}"
 
-  # registry に存在するか確認
+  # Check whether the entry exists in the registry
   if ! jq -e ".templates[\"$rel_path\"]" "$REGISTRY_FILE" >/dev/null 2>&1; then
     echo "❌ Missing in registry: $rel_path"
     MISSING_IN_REGISTRY=$((MISSING_IN_REGISTRY + 1))
@@ -63,7 +63,7 @@ else
   echo "⚠️  $MISSING_IN_REGISTRY file(s) missing in registry"
 fi
 
-# 2. registry 内のファイルが templates/ に存在するかチェック
+# 2. Check whether files listed in the registry exist in templates/
 echo ""
 echo "--- Check 2: Registry entries exist in templates/ ---"
 
@@ -85,7 +85,7 @@ else
   echo "⚠️  $MISSING_FILES registry entry/entries have no template file"
 fi
 
-# 3. templateVersion 形式チェック
+# 3. templateVersion format check
 echo ""
 echo "--- Check 3: Template version format ---"
 
@@ -111,7 +111,7 @@ else
   echo "⚠️  $INVALID_VERSIONS invalid version(s) found"
 fi
 
-# 4. output パスの重複チェック
+# 4. Duplicate output path check
 echo ""
 echo "--- Check 4: No duplicate output paths ---"
 
@@ -138,7 +138,7 @@ else
   echo "✅ No duplicate output paths"
 fi
 
-# 結果サマリー
+# Result summary
 echo ""
 echo "=== Summary ==="
 TOTAL_TEMPLATES=$(echo "$TEMPLATE_FILES" | wc -l | tr -d ' ')

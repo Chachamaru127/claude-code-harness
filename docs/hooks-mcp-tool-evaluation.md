@@ -1,117 +1,124 @@
-# Hooks `type: "mcp_tool"` 採用判断 (Phase 62.1.3)
+# Hooks `type: "mcp_tool"` Adoption Decision (Phase 62.1.3)
 
-> **判断**: **保留 (Phase 62 では採用しない)**
-> **再評価条件**: harness-mem の MCP 経路が GA となり、shell wrapper 経由の遅延が telemetry で
-> 月 5 分以上を継続的に超えるようになった時点。
+> **Decision**: **Deferred (not adopted in Phase 62)**
+> **Re-evaluation condition**: when harness-mem's MCP path reaches GA and the delay measured
+> through the shell wrapper exceeds 5 minutes per month on a sustained basis in telemetry.
 
-## ひとことで
+## In a nutshell
 
-Claude Code `2.1.118` で hooks が `type: "mcp_tool"` を使って MCP ツールを直接呼び出せるようになった。
-ただし Harness 側の現行 wrapper (`scripts/hook-handlers/*.sh`) で発生している遅延は実測ベースで小さく、
-fallback 設計と auth scope の追加検討コストの方が大きいため、Phase 62 では保留として記録する。
+Claude Code `2.1.118` added support for hooks using `type: "mcp_tool"` to call MCP tools
+directly. However, the latency introduced by the current Harness wrappers
+(`scripts/hook-handlers/*.sh`) is small in measured terms, and the additional cost of
+designing fallback behavior and the auth scope is larger, so Phase 62 records this as deferred.
 
-## たとえると
+## By analogy
 
-「電動工具を新調する話」と似ている。手動工具 (shell wrapper) でも作業は終わるし、
-電動工具 (MCP 直叩き) に切り替える前に、コンセント (auth) の位置と延長コード (fallback) を整える必要がある。
-今は手動の不便がそこまで効いていないので、買い替えは先送りにする。
+It is similar to the question of upgrading to power tools. Manual tools (shell wrappers) get
+the job done, and before switching to power tools (direct MCP calls), you need to sort out
+where the outlet (auth) is and prepare an extension cord (fallback). The inconvenience of
+manual tools is not great enough right now to justify the switch.
 
-## 背景
+## Background
 
-### Claude Code 2.1.118 の変更点
+### Claude Code 2.1.118 changes
 
-- 既存の `type: "command"` (shell script) と `type: "agent"` (LLM agent) に加えて、
-  `type: "mcp_tool"` が PostToolUse / PreToolUse などで使えるようになった
-- `mcp_tool` を指定すると、hook 実行時に MCP server の特定ツールを直接呼び出せる
-- Harness では `harness_mem_record_event`、`harness_mem_resume_pack` 等の MCP ツールが既に存在
+- In addition to the existing `type: "command"` (shell script) and `type: "agent"` (LLM agent),
+  `type: "mcp_tool"` is now available in PostToolUse / PreToolUse and other hook events.
+- Specifying `mcp_tool` lets a hook call a specific MCP server tool directly at execution time.
+- Harness already has MCP tools such as `harness_mem_record_event` and `harness_mem_resume_pack`.
 
-### Harness の現行 hook 実装
+### Current Harness hook implementation
 
-| Hook 経路 | 仕組み | 例 |
-|-----------|--------|-----|
-| `scripts/hook-handlers/memory-bridge.sh` | shell wrapper が `curl` で harness-mem daemon に POST | UserPromptSubmit, PostToolUse |
-| `scripts/hook-handlers/memory-session-start.sh` | shell wrapper が `harness-mem` 同名 script を `exec` | SessionStart |
-| `scripts/hook-handlers/elicitation-handler.sh` | shell wrapper が `jq` で input を整形して JSON で stdout 返却 | Elicitation |
+| Hook path | Mechanism | Example |
+|-----------|-----------|---------|
+| `scripts/hook-handlers/memory-bridge.sh` | Shell wrapper POSTs to harness-mem daemon via `curl` | UserPromptSubmit, PostToolUse |
+| `scripts/hook-handlers/memory-session-start.sh` | Shell wrapper `exec`s the `harness-mem` script of the same name | SessionStart |
+| `scripts/hook-handlers/elicitation-handler.sh` | Shell wrapper formats input with `jq` and returns JSON to stdout | Elicitation |
 
-これらは Phase 49 (XR-003) で配線済みで、現状ほぼ無風。
+These were wired in Phase 49 (XR-003) and have been running without issues since.
 
-## 比較表
+## Comparison table
 
-| 観点 | shell wrapper 経由 (現状) | `type: "mcp_tool"` 直接呼び出し |
-|------|--------------------------|----------------------------------|
-| latency | 50-200ms (curl + jq + daemon RTT) | 推定 10-50ms (CC 内部 MCP client RTT) |
-| auth scope | wrapper が token を直接持たない (daemon 側で処理) | hook 実行時に MCP auth scope の解決が必要 |
-| error 伝播 | shell exit code + stderr で粒度低 | MCP RPC error code で粒度高 |
-| fallback | wrapper 内で `silent skip` を実装済み | hook 自身では fallback できない (CC 側に依存) |
-| 観測性 | `.claude/state/hook-runs.jsonl` に shell ログ | OTel 経由で MCP call として可視化 |
-| 実装コスト | 既存資産そのまま | hooks.json schema 拡張 + auth 設計 + fallback 配線 |
-| 配布リスク | 低 (shell wrapper は冪等性確保済み) | 中 (MCP server 不達時に hook が失敗する可能性) |
+| Dimension | Shell wrapper (current) | `type: "mcp_tool"` direct call |
+|-----------|------------------------|-------------------------------|
+| Latency | 50-200ms (curl + jq + daemon RTT) | Estimated 10-50ms (CC internal MCP client RTT) |
+| Auth scope | Wrapper does not hold the token directly (handled on the daemon side) | MCP auth scope resolution required at hook execution time |
+| Error propagation | Shell exit code + stderr — coarse granularity | MCP RPC error code — fine granularity |
+| Fallback | `silent skip` implemented inside wrapper | Hook itself cannot fall back (depends on CC) |
+| Observability | Shell logs in `.claude/state/hook-runs.jsonl` | MCP call visible through OTel |
+| Implementation cost | Existing assets intact | hooks.json schema extension + auth design + fallback wiring |
+| Distribution risk | Low (shell wrapper idempotency guaranteed) | Medium (hook may fail if MCP server is unreachable) |
 
-## 判断材料
+## Decision factors
 
-### (i) PostToolUse から `harness_mem_record_event` を直接呼ぶ場合の予測
+### (i) Expected outcome when calling `harness_mem_record_event` directly from PostToolUse
 
-- **遅延**: 現状の `memory-post-tool-use.sh` の実測 (合計 50-150ms) が `mcp_tool` で 10-50ms 程度に減る見込み。
-  ただし PostToolUse hook 自体のクリティカルパスではないため、ユーザー体感に影響しない。
-- **auth**: `harness_mem_record_event` は harness-mem daemon の bearer token (もしくは local socket) を要求する。
-  CC の MCP client が hook 実行コンテキストでこの token を保持できるかは未確認。
-- **error 伝播**: 現状 daemon 不達時は shell wrapper が silent skip するが、
-  `mcp_tool` で同等の挙動を実現するには CC 側の hook timeout / retry 仕様に依存する。
+- **Latency**: The measured latency of the current `memory-post-tool-use.sh` (50-150ms total)
+  is expected to drop to roughly 10-50ms with `mcp_tool`. However, since PostToolUse hooks
+  are not on the critical user-experience path, there would be no perceptible difference.
+- **Auth**: `harness_mem_record_event` requires a bearer token (or local socket) for the
+  harness-mem daemon. Whether the CC MCP client can hold this token in a hook execution
+  context is unconfirmed.
+- **Error propagation**: The shell wrapper currently performs a silent skip when the daemon is
+  unreachable. Achieving equivalent behavior with `mcp_tool` depends on CC's hook timeout and
+  retry specification.
 
-### (ii) shell wrapper 経由 vs 直接呼び出しトレードオフ
+### (ii) Shell wrapper vs. direct call trade-offs
 
-shell wrapper の利点:
+Advantages of shell wrappers:
 
-- 既に Phase 49 で配線済みで運用上の問題が出ていない
-- 失敗時の silent skip / 部分成功が wrapper 内で完結する
-- harness-mem の API スキーマ変更時に CC 側 (hooks.json) を触らずに対応できる
+- Already wired in Phase 49 with no operational issues.
+- Failures produce silent skips or partial successes entirely within the wrapper.
+- Changes to the harness-mem API schema can be handled without touching the CC side (hooks.json).
 
-`mcp_tool` の利点:
+Advantages of `mcp_tool`:
 
-- CC 内部で完結するため、外部プロセス (curl, jq) の依存が消える
-- OTel telemetry が一貫する
-- 将来 `harness-mem` を pure MCP server 化する際の自然な経路となる
+- Eliminates external process dependencies (curl, jq) because everything runs inside CC.
+- OTel telemetry becomes consistent.
+- Provides a natural migration path when harness-mem is converted to a pure MCP server in the future.
 
-### (iii) MCP 不達時の fallback 方針
+### (iii) Fallback strategy when MCP is unreachable
 
-候補と本件での選択:
+Options and the selection for this case:
 
-| 方針 | 説明 | 採用判断 |
-|------|------|----------|
-| `silent skip` | MCP 不達 = no-op で続行 | **本件で採用するなら第一候補**。Phase 49 の現行挙動と整合する |
-| `queue` | 不達時はローカル queue に蓄積し次回 retry | 過剰設計 (harness-mem 自身が queue を持つため二重化) |
-| `drop` | 不達時はイベント自体を破棄 | telemetry の正確性を損なうため非推奨 |
+| Strategy | Description | Selection |
+|----------|-------------|-----------|
+| `silent skip` | MCP unreachable = no-op, continue | **First candidate if adopted**. Consistent with current Phase 49 behavior |
+| `queue` | Buffer locally when unreachable, retry next time | Over-engineering (harness-mem already has a queue, so this would be duplicated) |
+| `drop` | Discard the event when unreachable | Not recommended — degrades telemetry accuracy |
 
-採用する場合は **silent skip** に統一する。
+If adopted, **silent skip** is the unified choice.
 
-### (iv) Phase 61 ローカル ledger との関係
+### (iv) Relationship with the Phase 61 local ledger
 
-Phase 61 で導入した `.claude/state/elicitation/events.jsonl` は、
-harness-mem 不達時の **append-only fallback** として機能する。
-`mcp_tool` 採用後も、daemon 不達時は CC 側 hook → ローカル ledger へ書き込む経路を残す必要がある。
-これは現状の wrapper 構造と同等の二段防御を CC hook 側で再実装する負荷を意味する。
+The `.claude/state/elicitation/events.jsonl` introduced in Phase 61 serves as an
+**append-only fallback** when harness-mem is unreachable.
+Even after adopting `mcp_tool`, the path that writes from the CC hook to the local ledger
+when the daemon is unreachable must be preserved.
+This means re-implementing the two-layer defense in the current wrapper structure on the CC
+hook side, which adds implementation burden.
 
-## 結論
+## Conclusion
 
-| 項目 | 内容 |
-|------|------|
-| 採用判断 | **保留** |
-| 理由 | 現状の shell wrapper で運用上の問題が出ておらず、`mcp_tool` 採用には auth / fallback / Phase 61 ledger との整合検討が追加で必要 |
-| 再評価トリガー | (a) harness-mem の MCP 経路が GA、(b) wrapper 遅延が telemetry で月 5 分以上、(c) CC が hook auth に対する公式ガイドを公開 |
-| Phase 62 でやること | この doc の作成のみ。実装と hooks.json 変更は次フェーズ判断 |
+| Item | Content |
+|------|---------|
+| Adoption decision | **Deferred** |
+| Reason | Shell wrappers have no operational issues; adopting `mcp_tool` would require additional work on auth, fallback, and alignment with the Phase 61 ledger |
+| Re-evaluation triggers | (a) harness-mem MCP path reaches GA, (b) wrapper latency exceeds 5 minutes/month in telemetry, (c) CC publishes official guidance on hook auth |
+| Phase 62 scope | Creating this doc only. Implementation and hooks.json changes are deferred to a later phase |
 
-## Acceptance 条件 (Phase 62.1.3 DoD)
+## Acceptance criteria (Phase 62.1.3 DoD)
 
-- [x] `docs/hooks-mcp-tool-evaluation.md` がある
-- [x] shell wrapper 経由 vs `type: "mcp_tool"` 直接呼び出しの比較表 (latency / auth / error / fallback の 4 項目) がある
-- [x] MCP 不達時の fallback 方針が `silent skip` に明示確定
-- [x] Phase 61 ledger との重複・補完関係が 1 段落で説明
-- [x] 採用 / 保留 / 却下のいずれかで判断結論が記録 → **保留**
-- [x] 採用条件 (再評価トリガー) が 3 項目で書かれる
+- [x] `docs/hooks-mcp-tool-evaluation.md` exists
+- [x] Comparison table (latency / auth / error / fallback — 4 items) for shell wrapper vs. `type: "mcp_tool"` direct call exists
+- [x] Fallback strategy when MCP is unreachable is explicitly set to `silent skip`
+- [x] Overlap and complementary relationship with the Phase 61 ledger is explained in one paragraph
+- [x] Decision recorded as one of adopt / defer / reject → **deferred**
+- [x] Adoption conditions (re-evaluation triggers) written as 3 items
 
-## 参考
+## References
 
 - Claude Code CHANGELOG `2.1.118`: <https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md>
-- Phase 53 snapshot doc: `docs/upstream-update-snapshot-2026-04-23.md` (`53.1.2 MCP tool hook decision` で読み取り専用 MCP のみ許可、書き込み系は禁止と決定)
-- Phase 49 (XR-003): `.claude-plugin/hooks.json` shell wrapper 配線
-- Phase 61: `.claude/state/elicitation/events.jsonl` ローカル ledger
+- Phase 53 snapshot doc: `docs/upstream-update-snapshot-2026-04-23.md` (decision in `53.1.2 MCP tool hook decision`: read-only MCP allowed, write operations prohibited)
+- Phase 49 (XR-003): `.claude-plugin/hooks.json` shell wrapper wiring
+- Phase 61: `.claude/state/elicitation/events.jsonl` local ledger

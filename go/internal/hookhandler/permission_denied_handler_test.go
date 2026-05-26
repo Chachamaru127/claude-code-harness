@@ -15,7 +15,7 @@ func TestHandlePermissionDenied_EmptyInput(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// 空入力は nil 返却（出力なし）
+	// Empty input returns nil (no output)
 	if out.Len() != 0 {
 		t.Errorf("expected no output for empty input, got %q", out.String())
 	}
@@ -28,7 +28,7 @@ func TestHandlePermissionDenied_InvalidJSON(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// パース失敗でも approve を返す
+	// Returns approve even on parse failure
 	var resp permissionDeniedApproveResponse
 	if jsonErr := json.Unmarshal(out.Bytes(), &resp); jsonErr != nil {
 		t.Fatalf("invalid JSON output: %v, raw: %s", jsonErr, out.String())
@@ -58,7 +58,7 @@ func TestHandlePermissionDenied_NonWorkerAgent(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// 非 Worker は approve を返す
+	// Non-Workers return approve
 	var resp permissionDeniedApproveResponse
 	if jsonErr := json.Unmarshal(out.Bytes(), &resp); jsonErr != nil {
 		t.Fatalf("invalid JSON output: %v, raw: %s", jsonErr, out.String())
@@ -88,7 +88,7 @@ func TestHandlePermissionDenied_WorkerAgent(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// Worker は retry=true + systemMessage を返す
+	// Workers return retry=true + systemMessage
 	var resp permissionDeniedRetryResponse
 	if jsonErr := json.Unmarshal(out.Bytes(), &resp); jsonErr != nil {
 		t.Fatalf("invalid JSON output: %v, raw: %s", jsonErr, out.String())
@@ -147,7 +147,7 @@ func TestHandlePermissionDenied_SuffixWorkerAgent(t *testing.T) {
 	t.Setenv("PROJECT_ROOT", tmpDir)
 	t.Setenv("CLAUDE_PLUGIN_DATA", "")
 
-	// ":worker" サフィックスを持つ agent_type
+	// agent_type with ":worker" suffix
 	input := `{"tool":"Bash","denied_reason":"denied","session_id":"s4","agent_id":"w3","agent_type":"claude-code-harness:worker"}`
 	var out bytes.Buffer
 	if err := HandlePermissionDenied(strings.NewReader(input), &out); err != nil {
@@ -183,7 +183,7 @@ func TestHandlePermissionDenied_LogsToJSONL(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// JSONL ログが作成されていること
+	// JSONL log should be created
 	logFile := filepath.Join(tmpDir, ".claude", "state", "permission-denied-events.jsonl")
 	data, readErr := os.ReadFile(logFile)
 	if readErr != nil {
@@ -226,7 +226,7 @@ func TestHandlePermissionDenied_ToolNameFallback(t *testing.T) {
 	t.Setenv("PROJECT_ROOT", tmpDir)
 	t.Setenv("CLAUDE_PLUGIN_DATA", "")
 
-	// tool の代わりに tool_name を使う
+	// Uses tool_name instead of tool
 	input := `{"tool_name":"Read","denied_reason":"reason","session_id":"s5","agent_id":"a5","agent_type":"lead"}`
 	var out bytes.Buffer
 	if err := HandlePermissionDenied(strings.NewReader(input), &out); err != nil {
@@ -260,8 +260,8 @@ func TestIsWorkerAgentType(t *testing.T) {
 		{"lead", false},
 		{"reviewer", false},
 		{"", false},
-		{"worker-extra", false}, // サフィックスではなくプレフィックス
-		{"myworker", false},     // 完全一致しない
+		{"worker-extra", false}, // prefix, not suffix
+		{"myworker", false},     // no exact match
 	}
 
 	for _, tc := range cases {

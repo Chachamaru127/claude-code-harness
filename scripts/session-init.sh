@@ -1,18 +1,18 @@
 #!/bin/bash
 # session-init.sh
-# SessionStart Hook: セッション開始時の初期化処理
+# SessionStart Hook: initialization processing on session start
 #
-# 機能:
-# 1. プラグインキャッシュの整合性チェックと同期
-# 2. Skills Gate の初期化
-# 3. Plans.md の状態表示
+# Features:
+# 1. Plugin cache consistency check and sync
+# 2. Skills Gate initialization
+# 3. Plans.md status display
 #
-# 出力: JSON形式で hookSpecificOutput.additionalContext に情報を出力
-#       → Claude Code が system-reminder として表示
+# Output: Outputs information to hookSpecificOutput.additionalContext in JSON format
+#         → Displayed by Claude Code as system-reminder
 
 set -euo pipefail
 
-# スクリプトディレクトリを取得
+# Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROGRESS_SNAPSHOT_LIB="${SCRIPT_DIR}/lib/progress-snapshot.sh"
 if [ -f "${PROGRESS_SNAPSHOT_LIB}" ]; then
@@ -20,11 +20,11 @@ if [ -f "${PROGRESS_SNAPSHOT_LIB}" ]; then
   source "${PROGRESS_SNAPSHOT_LIB}"
 fi
 
-# ===== バナー表示（stderr でターミナルに表示） =====
+# ===== Banner display (output to terminal via stderr) =====
 VERSION=$(cat "$SCRIPT_DIR/../VERSION" 2>/dev/null || echo "unknown")
 echo -e "\033[0;36m[claude-code-harness v${VERSION}]\033[0m Session initialized" >&2
 
-# ===== SIMPLE モード検出 =====
+# ===== SIMPLE mode detection =====
 SIMPLE_MODE="false"
 if [ -f "$SCRIPT_DIR/check-simple-mode.sh" ]; then
   # shellcheck source=./check-simple-mode.sh
@@ -35,15 +35,15 @@ if [ -f "$SCRIPT_DIR/check-simple-mode.sh" ]; then
   fi
 fi
 
-# ===== stdin から JSON 入力を読み取り =====
+# ===== Read JSON input from stdin =====
 INPUT=""
 if [ -t 0 ]; then
-  : # stdin が TTY の場合は入力なし
+  : # no input when stdin is TTY
 else
   INPUT=$(cat 2>/dev/null || true)
 fi
 
-# ===== agent_type / session_id 判定（Claude Code v2.1.2+） =====
+# ===== agent_type / session_id detection (Claude Code v2.1.2+) =====
 AGENT_TYPE=""
 CC_SESSION_ID=""
 if [ -n "$INPUT" ]; then
@@ -53,26 +53,26 @@ if [ -n "$INPUT" ]; then
   fi
 fi
 
-# サブエージェント時は軽量初期化（早期 return）
-# - プラグインキャッシュ同期をスキップ
-# - Skills Gate 初期化をスキップ
-# - Plans.md チェックをスキップ
-# - テンプレート更新チェックをスキップ
-# - 新規ルールファイルチェックをスキップ
-# - 古いフック設定検出をスキップ
+# Lightweight initialization for subagents (early return)
+# - Skip plugin cache sync
+# - Skip Skills Gate initialization
+# - Skip Plans.md check
+# - Skip template update check
+# - Skip new rule file check
+# - Skip old hook configuration detection
 if [ "$AGENT_TYPE" = "subagent" ]; then
   cat <<EOF
-{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"[subagent] 軽量初期化完了"}}
+{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"[subagent] Lightweight initialization complete"}}
 EOF
   exit 0
 fi
 
-# ===== Hook 使用状況記録 =====
+# ===== Record hook usage =====
 if [ -x "$SCRIPT_DIR/record-usage.js" ] && command -v node >/dev/null 2>&1; then
   node "$SCRIPT_DIR/record-usage.js" hook session-init >/dev/null 2>&1 &
 fi
 
-# 出力メッセージを蓄積する変数
+# Variable to accumulate output messages
 OUTPUT=""
 
 add_line() {
@@ -87,14 +87,14 @@ count_matches() {
   printf '%s' "${count:-0}"
 }
 
-# ===== Step 1: プラグインキャッシュ同期 =====
+# ===== Step 1: Plugin cache sync =====
 if [ -f "$SCRIPT_DIR/sync-plugin-cache.sh" ]; then
-  # 同期処理は静かに実行
+  # Run sync quietly
   bash "$SCRIPT_DIR/sync-plugin-cache.sh" >/dev/null 2>&1 || true
 fi
 
-# ===== Step 1.5: Symlink 健全性チェック（Windows 互換） =====
-# Windows の git clone で symlink が壊れる問題を自動修復
+# ===== Step 1.5: Symlink health check (Windows compatibility) =====
+# Auto-repair broken symlinks from Windows git clone
 SYMLINK_INFO=""
 if [ -f "$SCRIPT_DIR/fix-symlinks.sh" ]; then
   FIX_RESULT=$(bash "$SCRIPT_DIR/fix-symlinks.sh" 2>/dev/null || echo '{"fixed":0}')
@@ -102,13 +102,13 @@ if [ -f "$SCRIPT_DIR/fix-symlinks.sh" ]; then
     SYMLINK_FIXED=$(echo "$FIX_RESULT" | jq -r '.fixed // 0' 2>/dev/null)
     if [ "$SYMLINK_FIXED" -gt 0 ] 2>/dev/null; then
       SYMLINK_DETAILS=$(echo "$FIX_RESULT" | jq -r '.details | join(", ")' 2>/dev/null)
-      SYMLINK_INFO="🔧 Symlink 自動修復: ${SYMLINK_FIXED} 件修復 (${SYMLINK_DETAILS})"
+      SYMLINK_INFO="🔧 Symlink auto-repair: ${SYMLINK_FIXED} repaired (${SYMLINK_DETAILS})"
       echo -e "\033[1;33m[FIX]\033[0m Broken symlinks repaired: ${SYMLINK_FIXED} skills" >&2
     fi
   fi
 fi
 
-# ===== Step 2: Skills Gate 初期化 =====
+# ===== Step 2: Skills Gate initialization =====
 # Resolve to git repository root for consistency with other hooks
 REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || REPO_ROOT="$(pwd)"
 STATE_DIR="${REPO_ROOT}/.claude/state"
@@ -117,7 +117,7 @@ SESSION_SKILLS_USED_FILE="${STATE_DIR}/session-skills-used.json"
 
 mkdir -p "$STATE_DIR"
 
-# session-skills-used.json をリセット（新セッション開始）
+# Reset session-skills-used.json (new session start)
 echo '{"used": [], "session_start": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"}' > "$SESSION_SKILLS_USED_FILE"
 
 RESUME_CONTEXT_FILE="${STATE_DIR}/memory-resume-context.md"
@@ -357,28 +357,28 @@ sync_handoff_session_metadata() {
     ' "$session_file" > "$tmp_file" && mv "$tmp_file" "$session_file"
 }
 
-# SSOT 同期フラグをクリア（新セッション開始時）
-# このフラグは /sync-ssot-from-memory 実行時に作成され、
-# Plans.md クリーンアップ前の SSOT 同期確認に使用される
+# Clear SSOT sync flag (on new session start)
+# This flag is created when /sync-ssot-from-memory runs,
+# and is used to confirm SSOT sync before Plans.md cleanup
 rm -f "${STATE_DIR}/.ssot-synced-this-session" 2>/dev/null || true
 
-# work 警告フラグをクリア（新セッション開始時）
-# このフラグは userprompt-inject-policy.sh で一度だけ警告するために使用される
-# 後方互換: 両方のフラグ名をクリア
+# Clear work warning flag (on new session start)
+# This flag is used by userprompt-inject-policy.sh to warn only once
+# Backward compatibility: clear both flag names
 rm -f "${STATE_DIR}/.work-review-warned" 2>/dev/null || true
 rm -f "${STATE_DIR}/.ultrawork-review-warned" 2>/dev/null || true
 
-# ===== Step 2.5: Harness セッション初期化 & CC session_id マッピング =====
+# ===== Step 2.5: Harness session initialization & CC session_id mapping =====
 SESSION_FILE="${STATE_DIR}/session.json"
 SESSION_MAP_FILE="${STATE_DIR}/session-map.json"
 ARCHIVE_DIR="${STATE_DIR}/sessions"
 mkdir -p "$ARCHIVE_DIR"
 
-# 新規セッション用の Harness session_id を生成
+# Generate Harness session_id for new session
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 HARNESS_SESSION_ID="session-$(date +%s)"
 
-# session.json を初期化（存在しない場合、または stopped 状態の場合）
+# Initialize session.json (if not exists, or if in stopped state)
 INIT_NEW_SESSION="false"
 if [ ! -f "$SESSION_FILE" ]; then
   INIT_NEW_SESSION="true"
@@ -402,16 +402,16 @@ if [ "$INIT_NEW_SESSION" = "true" ]; then
 }
 SESSEOF
 
-  # イベントログを初期化
+  # Initialize event log
   echo "{\"type\":\"session.start\",\"ts\":\"$NOW\",\"state\":\"initialized\",\"data\":{\"cc_session_id\":\"$CC_SESSION_ID\"}}" > "${STATE_DIR}/session.events.jsonl"
 else
-  # 既存セッションの session_id を取得
+  # Get session_id of existing session
   if command -v jq >/dev/null 2>&1; then
     HARNESS_SESSION_ID="$(jq -r '.session_id // empty' "$SESSION_FILE" 2>/dev/null)"
   fi
 fi
 
-# CC session_id と Harness session_id のマッピングを保存
+# Save mapping between CC session_id and Harness session_id
 if [ -n "$CC_SESSION_ID" ] && [ -n "$HARNESS_SESSION_ID" ]; then
   if command -v jq >/dev/null 2>&1; then
     if [ -f "$SESSION_MAP_FILE" ]; then
@@ -424,13 +424,13 @@ if [ -n "$CC_SESSION_ID" ] && [ -n "$HARNESS_SESSION_ID" ]; then
   fi
 fi
 
-# ===== Step 2.6: セッション間通信用の登録 =====
-# active.json に自分を登録（他セッションから認識可能にする）
+# ===== Step 2.6: Register for inter-session communication =====
+# Register self in active.json (so other sessions can recognize this session)
 if [ -f "$SCRIPT_DIR/session-register.sh" ]; then
   bash "$SCRIPT_DIR/session-register.sh" "$HARNESS_SESSION_ID" 2>/dev/null || true
 fi
 
-# skills-config.json の読み込みと表示
+# Load and display skills-config.json
 SKILLS_INFO=""
 if [ -f "$SKILLS_CONFIG_FILE" ]; then
   if command -v jq >/dev/null 2>&1; then
@@ -438,13 +438,13 @@ if [ -f "$SKILLS_CONFIG_FILE" ]; then
     SKILLS_LIST=$(jq -r '.skills // [] | join(", ")' "$SKILLS_CONFIG_FILE" 2>/dev/null)
 
     if [ "$SKILLS_ENABLED" = "true" ] && [ -n "$SKILLS_LIST" ]; then
-      SKILLS_INFO="🎯 Skills Gate: 有効 (${SKILLS_LIST})"
+      SKILLS_INFO="🎯 Skills Gate: enabled (${SKILLS_LIST})"
     fi
   fi
 fi
 
-# ===== Step 3: Plans.md チェック =====
-# plansDirectory 設定を考慮
+# ===== Step 3: Plans.md check =====
+# Consider plansDirectory configuration
 PLANS_PATH="Plans.md"
 if [ -f "${SCRIPT_DIR}/config-utils.sh" ]; then
   source "${SCRIPT_DIR}/config-utils.sh"
@@ -456,9 +456,9 @@ if [ -f "$PLANS_PATH" ]; then
   wip_count="$(count_matches "cc:wip\\|cc:WIP\\|pm:requested\\|pm:依頼中\\|cursor:依頼中" "$PLANS_PATH")"
   todo_count="$(count_matches "cc:todo\\|cc:TODO" "$PLANS_PATH")"
 
-  PLANS_INFO="📄 Plans.md: 進行中 ${wip_count} / 未着手 ${todo_count}"
+  PLANS_INFO="📄 Plans.md: in-progress ${wip_count} / not-started ${todo_count}"
 else
-  PLANS_INFO="📄 Plans.md: 未検出"
+  PLANS_INFO="📄 Plans.md: not found"
 fi
 
 SNAPSHOT_INFO=""
@@ -466,17 +466,17 @@ if declare -F progress_snapshot_summary >/dev/null 2>&1; then
   SNAPSHOT_INFO="$(progress_snapshot_summary "${STATE_DIR}" 2>/dev/null || true)"
 fi
 
-# ===== Step 4: テンプレート更新チェック =====
+# ===== Step 4: Template update check =====
 TEMPLATE_INFO=""
 TEMPLATE_TRACKER="$SCRIPT_DIR/template-tracker.sh"
 
 if [ -f "$TEMPLATE_TRACKER" ] && [ -f "$SCRIPT_DIR/../templates/template-registry.json" ]; then
-  # generated-files.json がない場合は初期化
+  # Initialize if generated-files.json does not exist
   if [ ! -f "${STATE_DIR}/generated-files.json" ]; then
     bash "$TEMPLATE_TRACKER" init >/dev/null 2>&1 || true
-    TEMPLATE_INFO="📦 テンプレート追跡: 初期化完了"
+    TEMPLATE_INFO="📦 Template tracking: initialized"
   else
-    # 更新チェック（JSON出力をパース）
+    # Update check (parse JSON output)
     CHECK_RESULT=$(bash "$TEMPLATE_TRACKER" check 2>/dev/null || echo '{"needsCheck": false}')
 
     if command -v jq >/dev/null 2>&1; then
@@ -487,34 +487,34 @@ if [ -f "$TEMPLATE_TRACKER" ] && [ -f "$SCRIPT_DIR/../templates/template-registr
       if [ "$NEEDS_CHECK" = "true" ]; then
         parts=()
 
-        # 更新が必要なファイル
+        # Files needing update
         if [ "$UPDATES_COUNT" -gt 0 ]; then
           LOCALIZED_COUNT=$(echo "$CHECK_RESULT" | jq '[.updates[] | select(.localized == true)] | length')
           OVERWRITE_COUNT=$((UPDATES_COUNT - LOCALIZED_COUNT))
 
           if [ "$OVERWRITE_COUNT" -gt 0 ]; then
-            parts+=("更新可: ${OVERWRITE_COUNT}")
+            parts+=("updatable: ${OVERWRITE_COUNT}")
           fi
           if [ "$LOCALIZED_COUNT" -gt 0 ]; then
-            parts+=("マージ要: ${LOCALIZED_COUNT}")
+            parts+=("needs-merge: ${LOCALIZED_COUNT}")
           fi
         fi
 
-        # 新規インストールが必要なファイル
+        # Files needing new install
         if [ "$INSTALLS_COUNT" -gt 0 ]; then
-          parts+=("新規追加: ${INSTALLS_COUNT}")
+          parts+=("new-install: ${INSTALLS_COUNT}")
         fi
 
         if [ ${#parts[@]} -gt 0 ]; then
-          TEMPLATE_INFO="⚠️ テンプレート更新: $(IFS=', '; echo "${parts[*]}") → \`/harness-update\` で確認"
+          TEMPLATE_INFO="⚠️ Template updates: $(IFS=', '; echo "${parts[*]}") → check with \`/harness-update\`"
         fi
       fi
     fi
   fi
 fi
 
-# ===== Step 5: 新規追加ルールファイルのチェック =====
-# 品質保護ルール（v2.5.30+）が未導入の場合に通知
+# ===== Step 5: Check for newly added rule files =====
+# Notify if quality protection rules (v2.5.30+) are not installed
 MISSING_RULES_INFO=""
 RULES_DIR=".claude/rules"
 QUALITY_RULES=("test-quality.md" "implementation-quality.md")
@@ -528,26 +528,26 @@ if [ -d "$RULES_DIR" ]; then
   done
 
   if [ ${#MISSING_RULES[@]} -gt 0 ]; then
-    MISSING_RULES_INFO="⚠️ 品質保護ルール未導入: ${MISSING_RULES[*]} → \`/harness-update\` で追加可能"
+    MISSING_RULES_INFO="⚠️ Quality protection rules not installed: ${MISSING_RULES[*]} → can be added with \`/harness-update\`"
   fi
 elif [ -f ".claude-code-harness-version" ]; then
-  # ハーネス導入済みだが rules ディレクトリがない場合
-  MISSING_RULES_INFO="⚠️ 品質保護ルール未導入 → \`/harness-update\` で追加可能"
+  # Harness installed but rules directory is missing
+  MISSING_RULES_INFO="⚠️ Quality protection rules not installed → can be added with \`/harness-update\`"
 fi
 
-# ===== Step 6: 古いフック設定の検出 =====
-# コマンドパスに "claude-code-harness" を含むフックのみ検出（ユーザー独自フックは除外）
+# ===== Step 6: Detect old hook configurations =====
+# Only detect hooks with "claude-code-harness" in command path (exclude user-defined hooks)
 OLD_HOOKS_INFO=""
 SETTINGS_FILE=".claude/settings.json"
 
 if [ -f "$SETTINGS_FILE" ]; then
   if command -v jq >/dev/null 2>&1; then
-    # プラグインが使用しているイベントタイプ
+    # Event types used by the plugin
     PLUGIN_EVENTS=("PreToolUse" "SessionStart" "UserPromptSubmit" "PermissionRequest")
     OLD_HARNESS_EVENTS=()
 
     for event in "${PLUGIN_EVENTS[@]}"; do
-      # イベントが存在し、かつコマンドに "claude-code-harness" が含まれる場合のみ
+      # Only when the event exists and its command contains "claude-code-harness"
       if jq -e ".hooks.${event}" "$SETTINGS_FILE" >/dev/null 2>&1; then
         COMMANDS=$(jq -r ".hooks.${event}[]?.hooks[]?.command // .hooks.${event}[]?.command // empty" "$SETTINGS_FILE" 2>/dev/null)
         if echo "$COMMANDS" | grep -q "claude-code-harness"; then
@@ -557,18 +557,18 @@ if [ -f "$SETTINGS_FILE" ]; then
     done
 
     if [ ${#OLD_HARNESS_EVENTS[@]} -gt 0 ]; then
-      OLD_HOOKS_INFO="⚠️ 古いハーネスフック設定を検出: ${OLD_HARNESS_EVENTS[*]} → \`/harness-update\` で削除を推奨"
+      OLD_HOOKS_INFO="⚠️ Old harness hook configuration detected: ${OLD_HARNESS_EVENTS[*]} → recommend removing with \`/harness-update\`"
     fi
   fi
 fi
 
-# ===== 出力メッセージの構築 =====
-add_line "# [claude-code-harness] セッション初期化"
+# ===== Build output message =====
+add_line "# [claude-code-harness] Session initialized"
 add_line ""
 
-# SIMPLE モード警告（additionalContext にも出力 — check-simple-mode.sh の警告文を再利用）
+# SIMPLE mode warning (also output in additionalContext — reuse warning text from check-simple-mode.sh)
 if [ "$SIMPLE_MODE" = "true" ]; then
-  add_line "⚠️ **CLAUDE_CODE_SIMPLE モード検出** (CC v2.1.50+)"
+  add_line "⚠️ **CLAUDE_CODE_SIMPLE mode detected** (CC v2.1.50+)"
   while IFS= read -r warning_line; do
     add_line "$warning_line"
   done <<< "$(simple_mode_warning ja)"
@@ -592,7 +592,7 @@ fi
 HANDOFF_CONTEXT=""
 HANDOFF_ARTIFACT_PATH="$(get_handoff_artifact_path)"
 if [ -n "$HANDOFF_ARTIFACT_PATH" ]; then
-  # stale handoff を拒否: 24時間以上前の artifact は無視
+  # Reject stale handoff: ignore artifacts older than 24 hours
   HANDOFF_AGE_LIMIT=86400
   if [ -f "$HANDOFF_ARTIFACT_PATH" ]; then
     HANDOFF_MTIME="$(stat -f %m "$HANDOFF_ARTIFACT_PATH" 2>/dev/null || stat -c %Y "$HANDOFF_ARTIFACT_PATH" 2>/dev/null || echo 0)"
@@ -642,30 +642,30 @@ if [ -n "$SYMLINK_INFO" ]; then
 fi
 
 add_line ""
-add_line "## マーカー凡例"
-add_line "| マーカー | 状態 | 説明 |"
-add_line "|---------|------|------|"
-add_line "| \`cc:todo\` | 未着手 | Impl（Claude Code）が実行予定 |"
-add_line "| \`cc:wip\` | 作業中 | Impl が実装中 |"
-add_line "| \`cc:done\` | 完了 | Impl が作業完了、確認待ち |"
-add_line "| \`cc:blocked\` | ブロック中 | 依存タスク待ち |"
-add_line "| \`pm:requested\` | PM から依頼 | 2-Agent 運用時 |"
-add_line "| \`pm:approved\` | PM 確認済み | 2-Agent 運用時 |"
+add_line "## Marker Legend"
+add_line "| Marker | State | Description |"
+add_line "|--------|-------|-------------|"
+add_line "| \`cc:todo\` | not started | Impl (Claude Code) scheduled to run |"
+add_line "| \`cc:wip\` | in progress | Impl is implementing |"
+add_line "| \`cc:done\` | complete | Impl finished, awaiting confirmation |"
+add_line "| \`cc:blocked\` | blocked | Waiting on dependent task |"
+add_line "| \`pm:requested\` | requested by PM | 2-Agent workflow |"
+add_line "| \`pm:approved\` | PM confirmed | 2-Agent workflow |"
 add_line ""
-add_line "> **互換**: \`cc:TODO\` / \`cc:WIP\` / \`cc:完了\` / \`pm:依頼中\` / \`pm:確認済\` / \`cursor:*\` は読み取り可能です。"
+add_line "> **Compatibility**: \`cc:TODO\` / \`cc:WIP\` / \`cc:完了\` / \`pm:依頼中\` / \`pm:確認済\` / \`cursor:*\` are readable."
 
-# ===== JSON 出力 =====
-# Claude Code の SessionStart hook は JSON 形式の hookSpecificOutput を受け付ける
-# additionalContext の内容が system-reminder として表示される
+# ===== JSON output =====
+# Claude Code SessionStart hook accepts hookSpecificOutput in JSON format
+# The additionalContext content is displayed as system-reminder
 
-# エスケープ処理（JSON用）
-# 改行は \n、ダブルクォートは \"、バックスラッシュは \\
+# Escape processing (for JSON)
+# Newlines → \n, double quotes → \", backslashes → \\
 escape_json() {
   local str="$1"
-  str="${str//\\/\\\\}"      # バックスラッシュ
-  str="${str//\"/\\\"}"      # ダブルクォート
-  str="${str//$'\n'/\\n}"    # 改行
-  str="${str//$'\t'/\\t}"    # タブ
+  str="${str//\\/\\\\}"      # backslash
+  str="${str//\"/\\\"}"      # double quote
+  str="${str//$'\n'/\\n}"    # newline
+  str="${str//$'\t'/\\t}"    # tab
   echo "$str"
 }
 

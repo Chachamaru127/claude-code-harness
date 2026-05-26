@@ -1,5 +1,5 @@
 # Plans.md
 
-| Task | 内容 | Status |
-|------|------|--------|
-| 1 | `src/math.js` の `add` だけを修正して、テストをすべて通す | cc:TODO |
+| Task | Description | Status |
+|------|-------------|--------|
+| 1 | Fix only the `add` function in `src/math.js` so that all tests pass | cc:TODO |

@@ -1,13 +1,13 @@
 #!/bin/bash
 # test-auto-checkpoint.sh
-# auto-checkpoint.sh の smoke test
+# smoke test for auto-checkpoint.sh
 #
-# テスト内容:
-#   1. 正常系: harness-mem が応答可能なとき exit 0 + checkpoint-events.jsonl に 1 行
-#   2. 異常系: HARNESS_MEM_DISABLE=1 で API 失敗させ exit 非 0 +
-#              session-events.jsonl にデグレ 1 行 +
-#              checkpoint-events.jsonl に status:"failed" 1 行
-#   3. lock test: 2 プロセス同時起動 → 片方が timeout 後に abort
+# Test cases:
+#   1. success: when harness-mem is responsive, exit 0 + 1 line in checkpoint-events.jsonl
+#   2. failure: set HARNESS_MEM_DISABLE=1 to fail API, exit non-0 +
+#              1 regression line in session-events.jsonl +
+#              1 line with status:"failed" in checkpoint-events.jsonl
+#   3. lock test: 2 processes launched simultaneously → one aborts after timeout
 
 set -euo pipefail
 
@@ -28,7 +28,7 @@ fail_test() {
   FAIL_COUNT=$((FAIL_COUNT + 1))
 }
 
-# テンポラリディレクトリ（各テストで共用するのではなく別々に作成）
+# Temporary directory (created separately per test, not shared)
 make_tmp_dir() {
   mktemp -d
 }
@@ -41,7 +41,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# ── ヘルパー: fake harness-mem-client を作成 ──────────────────────────────
+# ── helper: create fake harness-mem-client ──────────────────────────────
 make_fake_client_ok() {
   local dir="$1"
   local fake_client="${dir}/fake-harness-mem-client.sh"
@@ -68,7 +68,7 @@ EOF
   printf '%s' "${fake_client}"
 }
 
-# ── ヘルパー: 最小 fixture ファイルを作成 ────────────────────────────────────
+# ── helper: create minimal fixture files ────────────────────────────────────
 make_fixtures() {
   local dir="$1"
   local contract="${dir}/test-contract.json"
@@ -79,7 +79,7 @@ make_fixtures() {
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# テスト 1: 正常系
+# Test 1: success case
 # ────────────────────────────────────────────────────────────────────────────
 test_success_case() {
   local tmp
@@ -100,46 +100,46 @@ test_success_case() {
     bash "${AUTO_CHECKPOINT}" "41.0.2" "abc1234" "${contract}" "${review}" \
     >/dev/null 2>&1 || exit_code=$?
 
-  # exit 0 を確認
+  # verify exit 0
   if [ "${exit_code}" -ne 0 ]; then
-    fail_test "正常系: exit code が ${exit_code} (期待: 0)"
+    fail_test "success case: exit code was ${exit_code} (expected: 0)"
     return
   fi
 
-  # checkpoint-events.jsonl に 1 行あること
+  # checkpoint-events.jsonl must have 1 line
   local events_file="${state_dir}/checkpoint-events.jsonl"
   if [ ! -f "${events_file}" ]; then
-    fail_test "正常系: checkpoint-events.jsonl が作成されていない"
+    fail_test "success case: checkpoint-events.jsonl was not created"
     return
   fi
 
   local line_count
   line_count="$(wc -l < "${events_file}" | tr -d ' ')"
   if [ "${line_count}" -lt 1 ]; then
-    fail_test "正常系: checkpoint-events.jsonl に行がない"
+    fail_test "success case: checkpoint-events.jsonl has no lines"
     return
   fi
 
-  # status が "ok" であること
+  # status must be "ok"
   local last_line
   last_line="$(tail -1 "${events_file}")"
   if ! printf '%s' "${last_line}" | grep -q '"status":"ok"'; then
-    fail_test "正常系: checkpoint-events.jsonl の status が ok でない: ${last_line}"
+    fail_test "success case: checkpoint-events.jsonl status is not ok: ${last_line}"
     return
   fi
 
-  # session-events.jsonl が存在しないか、checkpoint_failed がないこと
+  # session-events.jsonl must not exist or must not contain checkpoint_failed
   local session_events_file="${state_dir}/session-events.jsonl"
   if [ -f "${session_events_file}" ] && grep -q '"type":"checkpoint_failed"' "${session_events_file}"; then
-    fail_test "正常系: session-events.jsonl に checkpoint_failed が記録されている"
+    fail_test "success case: checkpoint_failed recorded in session-events.jsonl"
     return
   fi
 
-  pass_test "正常系: exit 0 + checkpoint-events.jsonl に status:ok の行あり"
+  pass_test "success case: exit 0 + checkpoint-events.jsonl has status:ok line"
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# テスト 2: 異常系 — HARNESS_MEM_DISABLE=1
+# Test 2: failure case — HARNESS_MEM_DISABLE=1
 # ────────────────────────────────────────────────────────────────────────────
 test_failure_case_disable_flag() {
   local tmp
@@ -161,43 +161,43 @@ test_failure_case_disable_flag() {
     bash "${AUTO_CHECKPOINT}" "41.0.2" "abc1234" "${contract}" "${review}" \
     >/dev/null 2>&1 || exit_code=$?
 
-  # exit 非 0 を確認
+  # verify non-zero exit
   if [ "${exit_code}" -eq 0 ]; then
-    fail_test "異常系(DISABLE): exit code が 0 (期待: 非 0)"
+    fail_test "failure case (DISABLE): exit code was 0 (expected: non-zero)"
     return
   fi
 
-  # checkpoint-events.jsonl に status:"failed" の行があること
+  # checkpoint-events.jsonl must have a status:"failed" line
   local events_file="${state_dir}/checkpoint-events.jsonl"
   if [ ! -f "${events_file}" ]; then
-    fail_test "異常系(DISABLE): checkpoint-events.jsonl が作成されていない"
+    fail_test "failure case (DISABLE): checkpoint-events.jsonl was not created"
     return
   fi
 
   local last_checkpoint
   last_checkpoint="$(tail -1 "${events_file}")"
   if ! printf '%s' "${last_checkpoint}" | grep -q '"status":"failed"'; then
-    fail_test "異常系(DISABLE): checkpoint-events.jsonl の status が failed でない: ${last_checkpoint}"
+    fail_test "failure case (DISABLE): checkpoint-events.jsonl status is not failed: ${last_checkpoint}"
     return
   fi
 
-  # session-events.jsonl に checkpoint_failed があること
+  # session-events.jsonl must contain checkpoint_failed
   local session_events_file="${state_dir}/session-events.jsonl"
   if [ ! -f "${session_events_file}" ]; then
-    fail_test "異常系(DISABLE): session-events.jsonl が作成されていない"
+    fail_test "failure case (DISABLE): session-events.jsonl was not created"
     return
   fi
 
   if ! grep -q '"type":"checkpoint_failed"' "${session_events_file}"; then
-    fail_test "異常系(DISABLE): session-events.jsonl に checkpoint_failed がない"
+    fail_test "failure case (DISABLE): checkpoint_failed not in session-events.jsonl"
     return
   fi
 
-  pass_test "異常系(DISABLE): exit 非 0 + checkpoint-events status:failed + session-events checkpoint_failed あり"
+  pass_test "failure case (DISABLE): non-zero exit + checkpoint-events status:failed + session-events checkpoint_failed present"
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# テスト 3: 異常系 — API が失敗レスポンスを返す
+# Test 3: failure case — API returns a failure response
 # ────────────────────────────────────────────────────────────────────────────
 test_failure_case_api_error() {
   local tmp
@@ -218,38 +218,38 @@ test_failure_case_api_error() {
     bash "${AUTO_CHECKPOINT}" "41.0.2" "abc1234" "${contract}" "${review}" \
     >/dev/null 2>&1 || exit_code=$?
 
-  # exit 非 0 を確認
+  # verify non-zero exit
   if [ "${exit_code}" -eq 0 ]; then
-    fail_test "異常系(API error): exit code が 0 (期待: 非 0)"
+    fail_test "failure case (API error): exit code was 0 (expected: non-zero)"
     return
   fi
 
-  # checkpoint-events.jsonl に status:"failed" があること
+  # checkpoint-events.jsonl must have status:"failed"
   local events_file="${state_dir}/checkpoint-events.jsonl"
   if [ ! -f "${events_file}" ]; then
-    fail_test "異常系(API error): checkpoint-events.jsonl が作成されていない"
+    fail_test "failure case (API error): checkpoint-events.jsonl was not created"
     return
   fi
 
   local last_checkpoint
   last_checkpoint="$(tail -1 "${events_file}")"
   if ! printf '%s' "${last_checkpoint}" | grep -q '"status":"failed"'; then
-    fail_test "異常系(API error): checkpoint-events.jsonl の status が failed でない: ${last_checkpoint}"
+    fail_test "failure case (API error): checkpoint-events.jsonl status is not failed: ${last_checkpoint}"
     return
   fi
 
-  # session-events.jsonl に checkpoint_failed があること
+  # session-events.jsonl must contain checkpoint_failed
   local session_events_file="${state_dir}/session-events.jsonl"
   if [ ! -f "${session_events_file}" ] || ! grep -q '"type":"checkpoint_failed"' "${session_events_file}"; then
-    fail_test "異常系(API error): session-events.jsonl に checkpoint_failed がない"
+    fail_test "failure case (API error): checkpoint_failed not in session-events.jsonl"
     return
   fi
 
-  pass_test "異常系(API error): exit 非 0 + checkpoint-events status:failed + session-events checkpoint_failed あり"
+  pass_test "failure case (API error): non-zero exit + checkpoint-events status:failed + session-events checkpoint_failed present"
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# テスト 4: lock test — 2 プロセス同時起動 → 片方が timeout 後に abort
+# Test 4: lock test — 2 processes launched simultaneously → one aborts after timeout
 # ────────────────────────────────────────────────────────────────────────────
 test_lock_contention() {
   local tmp
@@ -260,7 +260,7 @@ test_lock_contention() {
   mkdir -p "${state_dir}/locks"
   read -r contract review <<< "$(make_fixtures "${tmp}")"
 
-  # ロックを先に保持する「遅い」fake client（2 秒 sleep）
+  # "slow" fake client that holds the lock first (sleeps 2 seconds)
   local slow_client="${tmp}/slow-client.sh"
   cat > "${slow_client}" << 'EOF'
 #!/bin/bash
@@ -272,7 +272,7 @@ EOF
   local exit_code_fast=99
   local checkpoint_events_file="${state_dir}/checkpoint-events.jsonl"
 
-  # プロセス 1: ロックを保持したまま遅い処理
+  # Process 1: holds the lock while running slow work
   HARNESS_MEM_CLIENT="${slow_client}" \
   CHECKPOINT_LOCK_TIMEOUT=2 \
   PROJECT_ROOT="${tmp}" \
@@ -280,10 +280,10 @@ EOF
     >/dev/null 2>&1 &
   local pid1=$!
 
-  # 少し待ってからプロセス 2 を起動（プロセス 1 がロックを保持している間）
+  # Wait briefly then launch Process 2 (while Process 1 still holds the lock)
   sleep 0.3
 
-  # プロセス 2: lock timeout (2s) で abort するはず
+  # Process 2: should abort after lock timeout (2s)
   HARNESS_MEM_CLIENT="${slow_client}" \
   CHECKPOINT_LOCK_TIMEOUT=2 \
   PROJECT_ROOT="${tmp}" \
@@ -292,27 +292,27 @@ EOF
 
   wait "${pid1}" || true
 
-  # プロセス 2 は exit 非 0（lock timeout で abort）であること
+  # Process 2 must exit non-zero (aborted by lock timeout)
   if [ "${exit_code_fast}" -eq 0 ]; then
-    fail_test "lock test: プロセス 2 が exit 0 (lock timeout で abort するはず)"
+    fail_test "lock test: Process 2 exited 0 (should abort on lock timeout)"
     return
   fi
 
-  # checkpoint-events.jsonl にプロセス 2 のタイムアウト失敗レコードがあること
+  # checkpoint-events.jsonl should have a timeout failure record for Process 2
   if [ -f "${checkpoint_events_file}" ] && grep -q '"error":"lock_timeout"' "${checkpoint_events_file}"; then
-    pass_test "lock test: 2 プロセス同時起動で片方が lock_timeout で abort"
+    pass_test "lock test: 2 simultaneous processes — one aborted with lock_timeout"
   else
-    # タイムアウトレコードがなくても、exit 非 0 なら partial pass
+    # partial pass if no timeout record but exit was non-zero
     if [ "${exit_code_fast}" -ne 0 ]; then
-      pass_test "lock test: プロセス 2 が exit ${exit_code_fast} で abort (lock contention)"
+      pass_test "lock test: Process 2 aborted with exit ${exit_code_fast} (lock contention)"
     else
-      fail_test "lock test: lock_timeout レコードが checkpoint-events.jsonl にない"
+      fail_test "lock test: lock_timeout record not in checkpoint-events.jsonl"
     fi
   fi
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# テスト 5: 10 回連続実行でも lock デッドロックなし
+# Test 5: no lock deadlock after 10 consecutive runs
 # ────────────────────────────────────────────────────────────────────────────
 test_no_deadlock_10_runs() {
   local tmp
@@ -340,24 +340,24 @@ test_no_deadlock_10_runs() {
   done
 
   if [ "${failed}" -ne 0 ]; then
-    fail_test "10 回連続実行: ${failed} 回失敗 (lock デッドロックの可能性)"
+    fail_test "10 consecutive runs: ${failed} failure(s) (possible lock deadlock)"
     return
   fi
 
-  # checkpoint-events.jsonl に 10 行以上あること
+  # checkpoint-events.jsonl must have at least 10 lines
   local events_file="${state_dir}/checkpoint-events.jsonl"
   local line_count
   line_count="$(wc -l < "${events_file}" | tr -d ' ')"
   if [ "${line_count}" -lt 10 ]; then
-    fail_test "10 回連続実行: checkpoint-events.jsonl の行数が ${line_count} (期待: 10 以上)"
+    fail_test "10 consecutive runs: checkpoint-events.jsonl has ${line_count} lines (expected: 10 or more)"
     return
   fi
 
-  pass_test "10 回連続実行: lock デッドロックなし + checkpoint-events.jsonl に ${line_count} 行"
+  pass_test "10 consecutive runs: no lock deadlock + checkpoint-events.jsonl has ${line_count} lines"
 }
 
 # ────────────────────────────────────────────────────────────────────────────
-# テスト実行
+# Run tests
 # ────────────────────────────────────────────────────────────────────────────
 echo "=== auto-checkpoint.sh smoke test ==="
 echo ""
@@ -369,7 +369,7 @@ test_lock_contention
 test_no_deadlock_10_runs
 
 echo ""
-echo "=== 結果: PASS=${PASS_COUNT} FAIL=${FAIL_COUNT} ==="
+echo "=== Result: PASS=${PASS_COUNT} FAIL=${FAIL_COUNT} ==="
 
 if [ "${FAIL_COUNT}" -ne 0 ]; then
   exit 1

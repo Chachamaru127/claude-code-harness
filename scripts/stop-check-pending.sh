@@ -1,29 +1,29 @@
 #!/bin/bash
 # stop-check-pending.sh
-# Stop 時に未解消の pending-skills をチェックして警告
+# Check for unresolved pending-skills on Stop and warn
 #
-# Usage: Stop hook から自動実行（type: command）
+# Usage: Automatically executed from Stop hook (type: command)
 # Input: stdin JSON (Claude Code hooks)
-# Output: 人間向けテキスト警告（stdoutに直接出力）
+# Output: Human-readable text warning (written directly to stdout)
 
 set +e
 
 STATE_DIR=".claude/state"
 PENDING_DIR="${STATE_DIR}/pending-skills"
 
-# pending ディレクトリが無ければ何も出力せず終了
+# Exit silently if pending directory does not exist
 if [ ! -d "$PENDING_DIR" ]; then
   exit 0
 fi
 
-# pending ファイルをチェック
+# Check pending files
 PENDING_FILES=$(ls "$PENDING_DIR"/*.pending 2>/dev/null || true)
 
 if [ -z "$PENDING_FILES" ]; then
   exit 0
 fi
 
-# 未解消の pending がある場合
+# Unresolved pending items exist
 PENDING_COMMANDS=""
 for f in $PENDING_FILES; do
   CMD_NAME=$(basename "$f" .pending)
@@ -31,24 +31,24 @@ for f in $PENDING_FILES; do
 done
 PENDING_COMMANDS=$(echo "$PENDING_COMMANDS" | sed 's/, $//')
 
-# pending をクリア（警告済み）
+# Clear pending files (already warned)
 rm -f "$PENDING_DIR"/*.pending 2>/dev/null || true
 
-# 人間向けテキスト警告を stdout に出力
+# Write human-readable text warning to stdout
 cat <<EOF
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️  品質ゲート未実行の警告
+⚠️  Quality gate not executed
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-以下のコマンドが実行されましたが、対応するSkillが呼び出されませんでした:
+The following commands were run but the corresponding Skill was not invoked:
   → ${PENDING_COMMANDS}
 
-これにより以下の問題が発生する可能性があります:
-  1. 使用統計の欠損: Skills の使用履歴が記録されていません
-  2. 品質ガードレール未実行: レビュー・検証スキルが適用されていない可能性
+This may cause the following issues:
+  1. Missing usage statistics: Skill usage history was not recorded
+  2. Quality guardrails skipped: review/validation skills may not have been applied
 
-推奨: 手動で /harness-review を実行して品質チェックを行ってください。
+Recommendation: run /harness-review manually to perform a quality check.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 EOF

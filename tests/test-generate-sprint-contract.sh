@@ -8,12 +8,12 @@ TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 cat > "${TMP_DIR}/Plans.md" <<'EOF'
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
-| 32.1.1 | contract を作る | runtime validation を contract に載せる | 32.0.1 | cc:TODO |
-| 32.2.2 | browser evaluator を追加する | browser で UI フローを確認する | 32.2.1 | cc:TODO |
-| 32.2.5 | browser_mode: exploratory を扱う | exploratory mode で AgentBrowser を優先する | 32.2.2 | cc:TODO |
-| 43.1.1 | [needs-spike] security migration contract | state migration の guard を確認する <!-- advisor:required --> | - | cc:TODO |
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
+| 32.1.1 | create contract | include runtime validation in contract | 32.0.1 | cc:TODO |
+| 32.2.2 | add browser evaluator | verify UI flow in browser | 32.2.1 | cc:TODO |
+| 32.2.5 | handle browser_mode: exploratory | prefer AgentBrowser in exploratory mode | 32.2.2 | cc:TODO |
+| 43.1.1 | [needs-spike] security migration contract | verify guard for state migration <!-- advisor:required --> | - | cc:TODO |
 EOF
 
 cat > "${TMP_DIR}/package.json" <<'EOF'
@@ -89,9 +89,9 @@ jq -e '
 ' "${ADVISOR_OUTPUT}" >/dev/null
 
 cat > "${TMP_DIR}/ui-plans.md" <<'EOF'
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
-| 41.3.1 | design-heavy task | design と styling と aesthetic を見ながら UI layout を磨く | 41.2.1 | cc:TODO |
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
+| 41.3.1 | design-heavy task | refine UI layout while reviewing design, styling, and aesthetics | 41.2.1 | cc:TODO |
 EOF
 
 UI_RUBRIC_OUTPUT="${TMP_DIR}/out/41.3.1.sprint-contract.json"

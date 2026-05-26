@@ -147,24 +147,24 @@ run_tsc() {
 if [ "$QUALITY_PRETTIER" = "true" ]; then
   if [ "$QUALITY_MODE" = "run" ]; then
     if run_prettier; then
-      append_feedback "🧹 Prettier: 実行済み"
+      append_feedback "🧹 Prettier: executed"
     else
-      append_feedback "🧹 Prettier: 未実行（prettier が見つかりません）"
+      append_feedback "🧹 Prettier: skipped (prettier not found)"
     fi
   else
-    append_feedback "🧹 Prettier: 推奨（例: npx prettier --write \"$FILE_PATH\"）"
+    append_feedback "🧹 Prettier: recommended (e.g. npx prettier --write \"$FILE_PATH\")"
   fi
 fi
 
 if [ "$QUALITY_TSC" = "true" ]; then
   if [ "$QUALITY_MODE" = "run" ]; then
     if run_tsc; then
-      append_feedback "🧪 tsc --noEmit: 実行済み"
+      append_feedback "🧪 tsc --noEmit: executed"
     else
-      append_feedback "🧪 tsc --noEmit: 未実行（tsconfig/tsc 未検出）"
+      append_feedback "🧪 tsc --noEmit: skipped (tsconfig/tsc not found)"
     fi
   else
-    append_feedback "🧪 tsc --noEmit: 推奨"
+    append_feedback "🧪 tsc --noEmit: recommended"
   fi
 fi
 
@@ -172,7 +172,7 @@ if [ "$QUALITY_CONSOLE_LOG" = "true" ]; then
   if [ -f "$FILE_PATH" ]; then
     CONSOLE_LOG_COUNT=$(grep -n "console\.log" "$FILE_PATH" 2>/dev/null | wc -l | tr -d ' ')
     if [ "$CONSOLE_LOG_COUNT" -gt 0 ]; then
-      append_feedback "⚠️ console.log が ${CONSOLE_LOG_COUNT} 件見つかりました"
+      append_feedback "⚠️ console.log found: ${CONSOLE_LOG_COUNT} occurrence(s)"
     fi
   fi
 fi

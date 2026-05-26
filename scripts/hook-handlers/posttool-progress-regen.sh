@@ -1,10 +1,10 @@
 #!/bin/bash
 # posttool-progress-regen.sh
-# Phase 65.4.2 - PostToolUse hook で Progress Tracker HTML を自動再生成
+# Phase 65.4.2 - Auto-regenerate Progress Tracker HTML via PostToolUse hook
 #
-# Trigger: Edit / Write / Bash の発火 (PostToolUse hook 経由)
-# Rate limit: 60 秒以内の連続発火は skip
-# Background: 再生成は background で実行 (hook 自体は即座に return、CC を blockしない)
+# Trigger: Edit / Write / Bash fires (via PostToolUse hook)
+# Rate limit: skip consecutive fires within 60 seconds
+# Background: regeneration runs in the background (the hook itself returns immediately, does not block CC)
 #
 # Input:  stdin (JSON: PostToolUse hook payload)
 # Output: stdout (JSON: {"ok": true} or {"ok": true, "skipped": "rate-limit"})
@@ -12,15 +12,15 @@
 # State file: .claude/state/progress-last-regen.txt
 #   (epoch seconds of last successful regen)
 #
-# Side effect: out/progress-snapshot.html を再生成
+# Side effect: regenerates out/progress-snapshot.html
 
-set +e  # hook はエラーで CC を止めないこと
+set +e  # Hook must not stop CC on errors
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PARENT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 REPO_ROOT="$(cd "${PARENT_DIR}/.." && pwd)"
 
-# project root 検出 (host project が CCH 自体ではない場合は host 側が target)
+# Detect project root (host project is the target when it is not CCH itself)
 if declare -F detect_project_root > /dev/null 2>&1; then
   PROJECT_ROOT="${PROJECT_ROOT:-$(detect_project_root 2>/dev/null || pwd)}"
 else
@@ -35,13 +35,13 @@ RENDER_SCRIPT="${REPO_ROOT}/scripts/render-html.sh"
 
 RATE_LIMIT_SEC=60
 
-# Plans.md がなければ何もしない
+# Do nothing if Plans.md does not exist
 if [[ ! -f "$PLANS_FILE" ]]; then
   echo '{"ok":true,"skipped":"no-plans-md"}'
   exit 0
 fi
 
-# stdin を読み捨てる (hook payload は使わない)
+# Discard stdin (hook payload is not used)
 cat >/dev/null 2>&1
 
 # rate limit check
@@ -58,18 +58,18 @@ if [[ -f "$STATE_FILE" ]]; then
   fi
 fi
 
-# project name
+# Project name
 PROJECT_NAME="$(basename "$(git -C "$PROJECT_ROOT" rev-parse --show-toplevel 2>/dev/null || echo "$PROJECT_ROOT")")"
 
-# state ディレクトリ確保
+# Ensure state directory exists
 mkdir -p "${PROJECT_ROOT}/.claude/state" "${PROJECT_ROOT}/out" 2>/dev/null
 
-# background regen (hook は即座に return)
+# background regen (hook returns immediately)
 (
   SNAP_TMP="$(mktemp /tmp/progress-snap-XXXX.json 2>/dev/null)"
   if bash "$SNAPSHOT_SCRIPT" --plans "$PLANS_FILE" --project "$PROJECT_NAME" > "$SNAP_TMP" 2>/dev/null; then
     if bash "$RENDER_SCRIPT" --template progress --data "$SNAP_TMP" --out "$OUT_HTML" >/dev/null 2>&1; then
-      # 成功: state file 更新
+      # Success: update state file
       echo "$NOW_EPOCH" > "$STATE_FILE"
     fi
   fi

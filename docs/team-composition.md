@@ -1,9 +1,9 @@
 # Team Composition
 
-Harness の標準チーム構成は 5 ロール。
-実装系の teammate を増やす時も、この 5 ロールの責務境界は変えない。
+The Harness standard team has 5 roles.
+Even when adding more implementation teammates, the responsibility boundaries of these 5 roles do not change.
 
-## 構成図
+## Structure
 
 ```text
 Lead
@@ -13,157 +13,158 @@ Lead
 └── Scaffolder x 0..1
 ```
 
-## spawn 権限
+## Spawn permissions
 
-- Lead だけが teammate を spawn する
-- Worker は teammate を spawn しない
-- Reviewer は teammate を spawn しない
-- Scaffolder は teammate を spawn しない
-- Worker が相談したい時は subagent を増やさず `advisor-request.v1` を返す
+- Only Lead spawns teammates
+- Worker does not spawn teammates
+- Reviewer does not spawn teammates
+- Scaffolder does not spawn teammates
+- When Worker needs to consult, it returns `advisor-request.v1` instead of spawning more subagents
 
-## role contract
+## Role contract
 
-| Role | subagent_type | 数 | 使うツール | 返すもの |
+| Role | subagent_type | Count | Tools used | Returns |
 |------|---------------|----|------------|----------|
-| Lead | Execute skill 内部 | 1 | Agent, SendMessage, Bash | task 分解、review 判定、main 反映 |
-| Worker | `claude-code-harness:worker` | 1..3 | Read, Write, Edit, Bash, Grep, Glob | 実装結果または `advisor-request.v1` |
+| Lead | Inside Execute skill | 1 | Agent, SendMessage, Bash | Task decomposition, review judgment, main branch merge |
+| Worker | `claude-code-harness:worker` | 1..3 | Read, Write, Edit, Bash, Grep, Glob | Implementation result or `advisor-request.v1` |
 | Advisor | `claude-code-harness:advisor` | 0..1 | Read, Grep, Glob | `advisor-response.v1` |
 | Reviewer | `claude-code-harness:reviewer` | 1 | Read, Grep, Glob | `review-result.v1` |
-| Scaffolder | `claude-code-harness:scaffolder` | 0..1 | Read, Write, Edit, Bash, Grep, Glob | analyze/scaffold/update-state の結果 JSON |
+| Scaffolder | `claude-code-harness:scaffolder` | 0..1 | Read, Write, Edit, Bash, Grep, Glob | analyze/scaffold/update-state result JSON |
 
-## worker 数の決め方
+## Determining the number of workers
 
-| 条件 | worker 数 |
+| Condition | Number of workers |
 |------|-----------|
-| 書き込み対象ファイルが 1 グループ、またはファイルが重なる | 1 |
-| 書き込み対象ファイルが 2 グループで、互いに重ならない | 2 |
-| 書き込み対象ファイルが 3 グループ以上で、互いに重ならない | 3 |
+| Write targets are 1 group, or files overlap | 1 |
+| Write targets are 2 groups with no overlap | 2 |
+| Write targets are 3 or more groups with no overlap | 3 |
 
-ここでいう「グループ」は、同じ commit にまとめても競合しない書き込み集合を指す。
-同じファイルを 2 worker に書かせる分割は禁止。
+A "group" here refers to a set of writes that can be combined into the same commit without conflicts.
+Splitting writes so that 2 workers write the same file is prohibited.
 
-## Worker stall 時の re-spawn (CC 2.1.113+)
+## Worker stall re-spawn (CC 2.1.113+)
 
-Lead は次の 2 条件のいずれかを満たしたら、同じ task を **最大 1 回** 再 spawn する。
+Lead re-spawns the same task **at most once** when either of the following conditions is met:
 
-- Plans.md `cc:WIP` 状態が **10 分** (600 秒) 超で更新されない
-- CC 本体が stall log を出力 (`subagents stalling mid-stream fail after 10 minutes`)
+- Plans.md `cc:WIP` status has not been updated for more than **10 minutes** (600 seconds)
+- CC core outputs a stall log (`subagents stalling mid-stream fail after 10 minutes`)
 
-再 spawn 後も同じ条件が再現したら escalation する。Worker 並列数の決め方には影響せず、stall 検出は Lead 側のみ責務。詳細は [`agents/worker.md`](../agents/worker.md) の「Stall 検出 — 2 層防御」を参照。
+If the same condition recurs after re-spawn, escalate. This does not affect the worker parallelism decision — stall detection is Lead's responsibility only. See the "Stall Detection — 2-layer defense" section in [`agents/worker.md`](../agents/worker.md) for details.
 
-## 実行フロー
+## Execution flow
 
-1. Lead が task を分解し、`sprint-contract` を作る
-2. Lead が worker を spawn する
-3. Worker が実装、preflight、検証、commit 準備を行う
-4. Worker が相談条件に当たった時だけ `advisor-request.v1` を返す
-5. Lead が Advisor を呼び、`advisor-response.v1` を同じ Worker に返す
-6. Worker が結果を返したら Lead が review を実行する
-7. `APPROVE` の時だけ Lead が main へ反映する
+1. Lead decomposes tasks and creates a `sprint-contract`
+2. Lead spawns workers
+3. Worker performs implementation, preflight, verification, and commit preparation
+4. Worker returns `advisor-request.v1` only when a consultation condition is met
+5. Lead calls Advisor and returns `advisor-response.v1` to the same Worker
+6. After Worker returns results, Lead runs the review
+7. Lead merges to main only on `APPROVE`
 
-## review loop
+## Review loop
 
-| 条件 | Lead の動き |
+| Condition | Lead's action |
 |------|-------------|
-| `review-result.v1.verdict == APPROVE` | cherry-pick して main に commit |
-| `review-result.v1.verdict == REQUEST_CHANGES` | 同じ Worker に修正依頼を返す |
-| 修正に仕様・Plans・API・権限・課金・移行の意思決定が必要 | AskUserQuestion で user decision を取る。推測で修正しない |
+| `review-result.v1.verdict == APPROVE` | Cherry-pick and commit to main |
+| `review-result.v1.verdict == REQUEST_CHANGES` | Return correction request to the same Worker |
+| Correction requires spec / Plans / API / permission / billing / migration decisions | Ask user for decision via AskUserQuestion. Do not guess and correct |
 
-修正ループは最大 3 回。
-4 回目には入らず、Lead が task をエスカレーションする。
+Correction loop maximum: 3 iterations.
+Do not enter a 4th iteration — Lead escalates the task.
 
-`harness-review` は必要時に TeamAgent Debate を使う。
-これは Reviewer の判定権限を増やすものではなく、Spec Agent / Plans Agent / Regression Agent / Skeptic Agent の read-only 視点を衝突させるための材料集めである。
-最終 verdict は引き続き Reviewer が `review-result.v1` と明確な合格ラインに基づいて出す。
+`harness-review` uses TeamAgent Debate when needed.
+This does not expand the Reviewer's decision authority; it is a means of gathering read-only perspectives
+from Spec Agent / Plans Agent / Regression Agent / Skeptic Agent.
+The final verdict is still issued by Reviewer based on `review-result.v1` and clear acceptance criteria.
 
-## SendMessage の固定パターン
+## Fixed SendMessage pattern
 
-Lead が Worker に修正を返す時は、次の構文を使う。
+When Lead returns a correction to Worker, use the following syntax:
 
 ```text
 SendMessage(
   to: "{worker_agent_id}",
-  message: "以下の critical/major 指摘を修正してください:\n\n{issues}\n\n修正後 git commit --amend して完了を返してください。"
+  message: "Please fix the following critical/major findings:\n\n{issues}\n\nAfter fixing, run git commit --amend and return completion."
 )
 ```
 
-## breezing 時の main 反映
+## Merging to main during breezing
 
-Worker は worktree または feature branch で commit する。
-Lead は `APPROVE` 後に次の 2 コマンドで main へ取り込む。
+Worker commits to a worktree or feature branch.
+After `APPROVE`, Lead incorporates into main with the following 2 commands:
 
 ```bash
 git cherry-pick --no-commit {worktree_commit_hash}
 git commit -m "feat: {task_description}"
 ```
 
-Lead が main に反映するまでは、Worker は Plans.md を `cc:完了` に更新しない。
+Worker does not update Plans.md to `cc:done` until Lead has merged to main.
 
-## Advisor の境界
+## Advisor boundaries
 
-- Advisor は `PLAN | CORRECTION | STOP` だけ返す
-- Advisor は `APPROVE | REQUEST_CHANGES` を返さない
-- Advisor はコードを編集しない
-- Reviewer は advisor の提案文ではなく、最終成果物だけを見る
-- Phase 61 の weak-supervision cue は Advisor の入力情報を増やすだけで、返答種類や最終判定権限は増やさない
+- Advisor only returns `PLAN | CORRECTION | STOP`
+- Advisor does not return `APPROVE | REQUEST_CHANGES`
+- Advisor does not edit code
+- Reviewer looks only at the final artifact, not the Advisor's suggestion text
+- Phase 61's weak-supervision cue only increases Advisor's input information — it does not expand the response types or final decision authority
 
 ## Codex bridge
 
-> **Archived for v1**: Codex は非 Claude ランタイムのため v1 では対象外。以下は歴史的設計文脈。
+> **Archived for v1**: Codex is a non-Claude runtime and is out of scope for v1. The following is historical design context.
 
-Claude Code から Codex へ委譲する時の標準コマンドは次の 2 つだけ。
+The two standard commands for delegating from Claude Code to Codex are:
 
 ```bash
-bash scripts/codex-companion.sh task --write "タスク内容"
+bash scripts/codex-companion.sh task --write "task content"
 bash scripts/codex-companion.sh review --base "${TASK_BASE_REF}"
 ```
 
-raw `codex exec` をチーム標準手順として書かない。
+Do not write raw `codex exec` as the team standard procedure.
 
-## 2.1.111 優先ルール
+## 2.1.111 Priority rules
 
-- `xhigh` は caller 側の推論強度指定。worker prompt が文字列から自動判定しない
-- `/ultrareview` は caller 側の review entrypoint。review artifact の契約は `review-result.v1` のまま
-- `--auto-mode` は opt-in rollout。shipped default にしない
+- `xhigh` is the caller-side reasoning intensity setting. Worker prompts do not auto-detect from strings
+- `/ultrareview` is the caller-side review entry point. The review artifact contract stays `review-result.v1`
+- `--auto-mode` is an opt-in rollout. Do not make it the shipped default
 
-## permission mode
+## Permission mode
 
-Plugin subagent frontmatter には `permissionMode` を置かない。
-Claude Code の plugin agent では agent-local `permissionMode` が無視されるため、
-権限は親セッションと plugin settings から継承する。
+Do not include `permissionMode` in plugin subagent frontmatter.
+In Claude Code plugin agents, agent-local `permissionMode` is ignored, so
+permissions are inherited from the parent session and plugin settings.
 
-安全境界は次の層で担保する。
+Safety boundaries are maintained through:
 
-- plugin-level hooks
+- Plugin-level hooks
 - Go guardrails
 - Worker preflight
-- Reviewer 判定
+- Reviewer judgment
 
-`--auto-mode` は rollout 用の opt-in。
-既定値にはしない。
+`--auto-mode` is an opt-in for rollout.
+Do not use it as a default.
 
-### background permission mode 保持 (CC 2.1.141+)
+### Background permission mode retention (CC 2.1.141+)
 
-`/bg` / `←←` / `claude agents` で teammate を background 化した場合、
-CC 2.1.141 以降は起動時の permission mode が保持される (default に戻らない)。
+When a teammate is moved to the background via `/bg` / `←←` / `claude agents`,
+CC 2.1.141+ retains the permission mode at launch time (does not revert to default).
 
-- Lead は `claude agents --permission-mode <mode>` で明示した mode が
-  background 化後も維持される前提で運用する。
-- breezing teammate の permission mode 再注入は不要。
-  従来 `--auto-mode` で扱っていた特殊起動も CC 本体が mode 保持を保証する。
-- 例外: `bypassPermissions` で起動した teammate も `.claude-plugin/settings.json` の
-  `permissions.deny` / `autoMode.hard_deny` を override しない (多層防御は維持)。
+- Lead operates with the assumption that the mode explicitly set with
+  `claude agents --permission-mode <mode>` is maintained after backgrounding.
+- No need to re-inject breezing teammate permission mode.
+  CC core guarantees mode retention even for special launches that previously used `--auto-mode`.
+- Exception: Even teammates launched with `bypassPermissions` do not override
+  `.claude-plugin/settings.json`'s `permissions.deny` / `autoMode.hard_deny` (multi-layer defense is maintained).
 
-### `claude agents` 経由の dispatched session (CC 2.1.142+)
+### Dispatched sessions via `claude agents` (CC 2.1.142+)
 
-Lead が `claude agents --add-dir / --settings / --mcp-config / --plugin-dir /
---permission-mode / --model / --effort / --dangerously-skip-permissions` で
-dispatched background session を起動する場合は、`docs/agent-view-policy.md` の
-flag 利用条件を参照する。teammate spawn workflow (breezing skill / Agent tool) との
-分離が前提。
+When Lead launches a dispatched background session with
+`claude agents --add-dir / --settings / --mcp-config / --plugin-dir /
+--permission-mode / --model / --effort / --dangerously-skip-permissions`,
+refer to `docs/agent-view-policy.md` for flag usage conditions.
+Separation from the teammate spawn workflow (breezing skill / Agent tool) is a prerequisite.
 
-## チームサイズ
+## Team size
 
-- 標準は 3 から 5 teammate
-- Harness の通常構成は `Worker 1..3 + Reviewer 1`
-- Advisor と Scaffolder は必要時のみ追加する
+- Standard is 3 to 5 teammates
+- Typical Harness configuration is `Worker 1..3 + Reviewer 1`
+- Advisor and Scaffolder are added only when needed

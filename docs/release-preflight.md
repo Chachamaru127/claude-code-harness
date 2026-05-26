@@ -1,45 +1,52 @@
 # Release Preflight
 
-`scripts/release-preflight.sh` は、公開前に「今 release してよいか」を先に止めるための read-only チェックです。
-vendor-neutral を前提にしているので、AWS 固定や特定の deploy 基盤に依存しません。
+`scripts/release-preflight.sh` is a read-only check that stops you before publishing — verifying
+"is it safe to release now?" upfront.
+It assumes vendor-neutrality and does not depend on AWS-specific infrastructure or particular deployment platforms.
 
-## 何を見るか
+## What it checks
 
-- working tree が clean か
-- `CHANGELOG.md` に `[Unreleased]` があるか
-- `.env.example` と `.env` が大きくずれていないか。`.env` がない repo は warning に留め、managed secrets 前提の運用を止めすぎない
-- 既存の `healthcheck` / `preflight` コマンドが通るか
-- `agents/` / `core/` / `hooks/` / `scripts/` の shipped surface に `mockData` / `dummy` / `localhost` / `TODO` / `FIXME` などの残骸が残っていないかを警告する
-- tag 作成前に `node scripts/build-opencode.js` / `node scripts/validate-opencode.js` / `bash scripts/sync-skill-mirrors.sh --check` を実行し、`opencode/`, `skills-codex/`, `codex/.codex/skills/` の mirror drift が 0 であるか
-- 取得できる場合は CI の最新状態が成功しているか
+- Whether the working tree is clean
+- Whether `CHANGELOG.md` has an `[Unreleased]` section
+- Whether `.env.example` and `.env` are not significantly out of sync. Repos without `.env` get only a warning — this avoids blocking managed-secrets setups
+- Whether existing `healthcheck` / `preflight` commands pass
+- Warns if residue such as `mockData` / `dummy` / `localhost` / `TODO` / `FIXME` remains on shipped surfaces in `agents/` / `core/` / `hooks/` / `scripts/`
+- Before creating a tag, runs `node scripts/build-opencode.js` / `node scripts/validate-opencode.js` / `bash scripts/sync-skill-mirrors.sh --check` and verifies that mirror drift in `opencode/`, `skills-codex/`, `codex/.codex/skills/` is 0
+- When available, verifies that the latest CI status is successful
 
-mirror drift gate は release tag 前の fail gate です。`build-opencode.js` が差分を生成した場合、preflight は失敗し、その差分を commit してから tag 作成へ進みます。
+The mirror drift gate is a fail gate before the release tag. If `build-opencode.js` generates a diff,
+preflight fails and the diff must be committed before proceeding to tag creation.
 
 Actions runtime audit (2026-05-11): repo workflows use `actions/checkout@v6`; Node setup uses `actions/setup-node@v6`; Go setup uses `actions/setup-go@v6`. These v6 action lines run on the Node 24 action runtime and avoid the Node 20 deprecation warning.
 
-## 使い方
+## Usage
 
 ```bash
 scripts/release-preflight.sh
 scripts/release-preflight.sh --root /path/to/other/repo
 ```
 
-## 環境変数
+## Environment variables
 
-- `HARNESS_RELEASE_PROJECT_ROOT`: 別 repo を点検したいときの root
-- `HARNESS_RELEASE_HEALTHCHECK_CMD`: repo 固有の healthcheck コマンド
-- `HARNESS_RELEASE_CI_STATUS_CMD`: CI 状態確認を差し替えたいときのコマンド
+- `HARNESS_RELEASE_PROJECT_ROOT`: Root path when inspecting another repo
+- `HARNESS_RELEASE_HEALTHCHECK_CMD`: Repo-specific healthcheck command
+- `HARNESS_RELEASE_CI_STATUS_CMD`: Command to replace CI status checking
 
-## dry-run との関係
+## Relationship with dry-run
 
-`/release --dry-run` でも preflight は必ず通す。
-dry-run は「公開操作をしない」という意味で、preflight は「公開してよい状態かを確認する」という意味。
-両者は別物なので、dry-run でも preflight は省略しない。
+Even with `/release --dry-run`, preflight always runs.
+dry-run means "do not perform publishing operations." Preflight means "verify it is safe to publish."
+They are separate concerns — preflight is not skipped even in dry-run mode.
 
 ## GitHub Release workflow
 
-`.github/workflows/release.yml` でも、GitHub Release の作成や既存 release への asset upload より前に `bash ./scripts/release-preflight.sh --check-adapters` を実行する。
+In `.github/workflows/release.yml`, `bash ./scripts/release-preflight.sh --check-adapters`
+is run before creating a GitHub Release or uploading assets to an existing release.
 
-tag-triggered workflow は detached HEAD で動くため、CI status が取得できない場合は warning boundary として扱う。release-ready の判断は、clean tree、mirror drift、adapter smoke、distribution archive gate などの preflight failure が 0 であることを前提にする。
+Tag-triggered workflows run with a detached HEAD, so CI status unavailability is treated as
+a warning boundary. The release-ready judgment is based on the assumption that preflight
+failures — clean tree, mirror drift, adapter smoke, distribution archive gate — are all 0.
 
-`tests/test-distribution-archive.sh` は `git archive HEAD` から配布物の形を検証する。これは committed artifact の検証であり、dirty / untracked local files は含まれない。したがって、release claim の前には clean-tree preflight と組み合わせて使う。
+`tests/test-distribution-archive.sh` validates the shape of the distribution from `git archive HEAD`.
+This verifies committed artifacts; dirty/untracked local files are not included.
+Therefore, use it in combination with clean-tree preflight before making release claims.

@@ -1,24 +1,24 @@
 ---
-description: プロジェクト全体の概要を短く把握
+description: Get a brief overview of the entire project
 ---
 
 # /project-overview
 
-以下を短くまとめてください（箇条書き中心）。
+Please summarize the following concisely (primarily in bullet points).
 
-## 入力
+## Input
 
 - @README.md
 - @Plans.md
 - @AGENTS.md
 
-可能なら：
+If possible:
 - `git status -sb`
 - `git log --oneline -10`
 
-## 出力フォーマット
+## Output Format
 
-- **目的**: このプロジェクトが何を作っているか（1-2行）
-- **現在地**: 今のフェーズ/未完了タスク（Plans.md基準）
-- **技術**: 言語/主要フレームワーク/テスト手段（推測でOK）
-- **次アクション**: 3つまで
+- **Purpose**: What this project is building (1-2 lines)
+- **Current state**: Current phase/incomplete tasks (based on Plans.md)
+- **Technology**: Language/main frameworks/testing approach (estimates OK)
+- **Next actions**: Up to 3

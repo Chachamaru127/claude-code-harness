@@ -1,223 +1,221 @@
 ---
 name: cc-update-review
 description: "Quality guardrail for Claude/Codex update integration. Detects doc-only Feature Table additions and requires implementation or explicit planning. Internal use only."
-description-en: "Quality guardrail for Claude/Codex update integration. Detects doc-only Feature Table additions and requires implementation or explicit planning. Internal use only."
-description-ja: "Claude/Codex upstream update 統合の品質ガードレール。Feature Table 追加時に「書いただけ」を検出し、実装または Plans 化を強制する。内部専用。"
 user-invocable: false
 disable-model-invocation: true
 allowed-tools: ["Read", "Grep", "Glob", "Bash"]
 ---
 
-# Claude/Codex Update Review ガードレール
+# Claude/Codex Update Review Guardrail
 
-Claude Code / OpenAI Codex のアップデート統合時に「Feature Table に書いただけ」を防止する品質ガードレール。
-Feature Table への追加が実装・検証・明示的な将来タスク化を伴っているかを分類し、不足があれば実装案を強制出力する。
+A quality guardrail to prevent "documentation only" additions when integrating Claude Code / OpenAI Codex updates.
+Classifies whether Feature Table additions are accompanied by implementation, verification, or explicit future task planning, and forces output of an implementation proposal if any are missing.
 
 ## Quick Reference
 
-以下の状況でこのスキルがトリガーされる:
+This skill is triggered in the following situations:
 
-- Claude Code / Codex upstream update 統合 PR のレビュー時
-- `docs/CLAUDE-feature-table.md` に新行が追加された diff を検出した時
-- `/harness-review` が upstream update 統合 PR と判定した場合の内部呼び出し
-- `claude-codex-upstream-update` スキル更新のレビュー時
+- When reviewing a Claude Code / Codex upstream update integration PR
+- When a diff adding new rows to `docs/CLAUDE-feature-table.md` is detected
+- When `/harness-review` determines the PR is an upstream update integration, as an internal call
+- When reviewing changes to the `claude-codex-upstream-update` skill
 
-トリガーしない状況:
+This skill is NOT triggered in the following situations:
 
-- 通常の実装作業
-- Feature Table / upstream 追従に関係しない変更
-- セットアップ・初期化作業
+- Normal implementation work
+- Changes unrelated to Feature Table / upstream tracking
+- Setup or initialization work
 
-## 差分入力の取得
+## Getting the Diff Input
 
-このスキルは diff-aware review 専用のため、必ず以下のどちらかでレビュー対象差分を確定する。
+This skill is exclusively for diff-aware review, so always establish the diff to review using one of the following:
 
-1. 呼び出し元の `/harness-review` が PR diff / changed files / Feature Table 追加行を渡す
-2. このスキル自身が read-only Bash で `git status --short`, `git diff --name-only`, `git diff -- docs/CLAUDE-feature-table.md`, `git show --stat --name-only` などを実行して確認する
+1. The calling `/harness-review` passes the PR diff / changed files / Feature Table additions
+2. This skill itself runs read-only Bash commands such as `git status --short`, `git diff --name-only`, `git diff -- docs/CLAUDE-feature-table.md`, `git show --stat --name-only` to verify
 
-Bash は read-only git inspection のみに使う。テスト実行、format、生成、network access、ファイル変更を伴うコマンドは実行しない。
-diff が取得できない場合は `B: 書いただけ 0 件` と推定せず、「差分未提供のため分類不能」としてレビューを止める。
+Bash is used only for read-only git inspection. Do not run tests, formatting, generation, network access, or file-modifying commands.
+If the diff cannot be obtained, do not estimate `B: doc-only 0 items`; instead halt the review with "diff not provided, classification impossible".
 
-## 前提チェック
+## Precondition Checks
 
-レビュー冒頭で必ず確認する:
+At the start of every review, verify:
 
-- diff source が呼び出し元提供または read-only git inspection のどちらかで確定しているか
-- `skills/` や `hooks/` を編集した PR の場合、直後に `/reload-plugins` を実行して runtime cache を更新したか（`{skills,hooks}/**` ガイドライン準拠）
-- upstream のバージョン別分解表があるか
-- Claude Code の一次情報 URL が `anthropics/claude-code` または公式 docs になっているか
-- Codex の一次情報 URL が `openai/codex/releases` または OpenAI 公式記事になっているか
-- `B: 書いただけ` が残っていないか
-- skill mirror を触る場合、`skills/`, `codex/.codex/skills/`, `.agents/skills/` の差分が意図通りか
+- Is the diff source confirmed to be either caller-provided or read-only git inspection?
+- If the PR edited `skills/` or `hooks/`, was `/reload-plugins` run immediately after to refresh the runtime cache (per `{skills,hooks}/**` guidelines)?
+- Is there a version-by-version breakdown table for the upstream changes?
+- Is the primary information URL for Claude Code pointing to `anthropics/claude-code` or official docs?
+- Is the primary information URL for Codex pointing to `openai/codex/releases` or official OpenAI articles?
+- Are there zero `B: doc-only` items remaining?
+- If touching skill mirrors, are the diffs between `skills/`, `codex/.codex/skills/`, and `.agents/skills/` intentional?
 
-禁止する古い参照:
+Prohibited old references:
 
-- 旧 TypeScript guardrail path
-- 旧 TypeScript implementation glob
-- 旧 Codex feature-table path
-- 旧 Codex plugin directory
-- 旧 Codex state directory を現行正本として扱う記述
-- 存在しない Anthropic 側 Codex repo URL
+- Old TypeScript guardrail path
+- Old TypeScript implementation glob
+- Old Codex feature-table path
+- Old Codex plugin directory
+- Any reference to the old Codex state directory as the current source of truth
+- Non-existent Anthropic-side Codex repo URL
 
-## A/B/C/P 分類
+## A/B/C/P Classification
 
-Feature Table に追加された各項目を、以下の A/B/C/P のいずれかに分類する。
+Classify each item added to the Feature Table as one of A, B, C, or P:
 
-### (A) 実装あり
+### (A) Implementation present
 
-定義: Feature Table の追加に対応する hooks / settings / Go / scripts / agents / skills / tests の変更が同じ PR に含まれている。
+Definition: The Feature Table addition is accompanied by corresponding changes in hooks / settings / Go / scripts / agents / skills / tests within the same PR.
 
-判定条件:
+Criteria:
 
-- Feature Table の行で言及されている機能に関連するファイルが変更されている
-- `hooks/hooks.json`, `.claude-plugin/hooks.json`, `.claude-plugin/settings.json`, `go/internal/guardrail/`, `go/internal/hookhandler/`, `scripts/`, `agents/`, `skills/`, `tests/` のいずれかに実体差分がある
-- 対象テストまたは検証スクリプトで固定されている
+- Files related to the feature mentioned in the Feature Table row are changed
+- There is a substantive diff in any of: `hooks/hooks.json`, `.claude-plugin/hooks.json`, `.claude-plugin/settings.json`, `go/internal/guardrail/`, `go/internal/hookhandler/`, `scripts/`, `agents/`, `skills/`, `tests/`
+- Fixed by a corresponding test or verification script
 
-例:
+Examples:
 
-| Feature Table 追加 | 対応する実装変更 | 判定 |
-|-------------------|----------------|------|
+| Feature Table addition | Corresponding implementation change | Verdict |
+|------------------------|--------------------------------------|---------|
 | `AskUserQuestion updatedInput` | Go handler + hooks wiring + upstream integration test | A |
 | `sandbox.network.deniedDomains` | `.claude-plugin/settings.json` + jq test | A |
 | `find -delete hardening` | `go/internal/guardrail/` + unit test | A |
 
-結果: OK。追加のアクション不要。
+Result: OK. No additional action required.
 
 ---
 
-### (B) 書いただけ
+### (B) Doc-only
 
-定義: Feature Table にのみ行が追加され、Harness 側の実装変更も Plans 化もない。かつ upstream 自動継承にも該当しない。
+Definition: A row was added only to the Feature Table, with no corresponding Harness implementation changes or Plans tasks. Also not eligible for upstream auto-inheritance.
 
-判定条件:
+Criteria:
 
-- Feature Table に新行がある
-- 同じ PR 内で関連する実装 / test / skill / Plans の変更がない
-- Harness が独自の付加価値を提供すべき機能である
+- A new row exists in the Feature Table
+- No related implementation / test / skill / Plans changes are in the same PR
+- This is a feature where Harness should provide its own value-add
 
-例:
+Examples:
 
-| Feature Table 追加 | 対応する実装変更 | 判定 |
-|-------------------|----------------|------|
-| `PreCompact hook` | なし | B |
-| `permission hardening` | settings / guardrail / tests の確認なし | B |
-| `Codex marketplace` | Plans への切り出しなし | B |
+| Feature Table addition | Corresponding implementation change | Verdict |
+|------------------------|--------------------------------------|---------|
+| `PreCompact hook` | None | B |
+| `permission hardening` | No settings / guardrail / tests verified | B |
+| `Codex marketplace` | Not extracted to Plans | B |
 
-結果: NG。PR をブロックし、実装案または Plans 化を要求する。
-
----
-
-### (C) upstream 自動継承
-
-定義: Claude Code / Codex 本体のパフォーマンス改善・バグ修正・内部最適化等で、Harness 側の変更が不要な項目。
-
-判定条件:
-
-- upstream 本体の修正であり、Harness がラップ・拡張する余地がない
-- Harness の settings / hooks / guardrail / workflow / tests に影響しない
-- Feature Table に「upstream 自動継承」または「CC 自動継承 / Codex 側自動継承」と明記されている
-
-注意:
-
-- permission / sandbox / security / Bash allowlist / MCP trust boundary は安易に C にしない
-- その項目が Harness の独自 guardrail や settings に影響しないことを確認してから C にする
-- Claude Code 2.1.113 の hardening は、`sandbox.network.deniedDomains`, wrapper Bash deny, `find -exec/-delete`, macOS dangerous rm paths を確認するまで C 判定しない
-
-例:
-
-| Feature Table 追加 | 理由 | 判定 |
-|-------------------|------|------|
-| `Agent Teams permission dialog crash fix` | CC 本体の crash fix。Harness 側変更不要 | C |
-| `Codex Guardian timeout wording` | Codex 側 UX 修正。Harness surface なし | C |
-
-結果: OK。ただし理由を明記する。
+Result: NG. Block the PR and require an implementation proposal or Plans task.
 
 ---
 
-### (P) Plans 化
+### (C) Upstream auto-inheritance
 
-定義: 今回は直接実装しないが、Harness に取り込む価値があるため `Plans.md` に明示タスクとして残す項目。
+Definition: Performance improvements, bug fixes, internal optimizations, etc. in Claude Code / Codex itself where no Harness changes are required.
 
-判定条件:
+Criteria:
 
-- Feature Table の付加価値列が `A: 将来タスク化` または `P: Plans 化` として読める
-- `Plans.md` に対応タスクがあり、setup / guardrails / memory / Codex workflow など実装面が明記されている
-- alpha release や大規模設計変更など、即実装しない理由が書かれている
+- The fix is in upstream itself and there is no room for Harness to wrap or extend it
+- Does not affect Harness settings / hooks / guardrail / workflow / tests
+- Feature Table explicitly states "upstream auto-inheritance" or "CC auto-inheritance / Codex auto-inheritance"
 
-例:
+Note:
 
-| Feature Table 追加 | Plans への切り出し | 判定 |
-|-------------------|-------------------|------|
-| `Codex marketplace / MCP Apps` | Codex workflow 比較軸タスク | P |
-| `Codex 0.122.0-alpha` | stable 化後の compare 調査タスク | P |
+- Do not lightly classify permission / sandbox / security / Bash allowlist / MCP trust boundary items as C
+- Confirm that the item does not affect Harness's own guardrails or settings before marking as C
+- Do not mark Claude Code 2.1.113 hardening as C until `sandbox.network.deniedDomains`, wrapper Bash deny, `find -exec/-delete`, and macOS dangerous rm paths are verified
 
-結果: OK。次回 cycle で拾える。
+Examples:
 
-## Upstream update PR チェックリスト
+| Feature Table addition | Reason | Verdict |
+|------------------------|--------|---------|
+| `Agent Teams permission dialog crash fix` | CC core crash fix. No Harness changes needed | C |
+| `Codex Guardian timeout wording` | Codex-side UX fix. No Harness surface | C |
+
+Result: OK. But state the reason explicitly.
+
+---
+
+### (P) Planned (future task)
+
+Definition: Not implemented this time, but has enough value to include in Harness, so it is left as an explicit task in `Plans.md`.
+
+Criteria:
+
+- The Feature Table value-add column reads as `A: future task` or `P: planned`
+- A corresponding task exists in `Plans.md` with implementation details such as setup / guardrails / memory / Codex workflow
+- A reason for not implementing immediately is given, such as alpha release or major design change
+
+Examples:
+
+| Feature Table addition | Plans extraction | Verdict |
+|------------------------|-----------------|---------|
+| `Codex marketplace / MCP Apps` | Codex workflow comparison axis task | P |
+| `Codex 0.122.0-alpha` | Comparison investigation task after stable release | P |
+
+Result: OK. Can be picked up in the next cycle.
+
+## Upstream Update PR Checklist
 
 ```markdown
-## Claude/Codex update 統合チェックリスト
+## Claude/Codex Update Integration Checklist
 
-### 1. 一次情報と分解表
-- [ ] diff source が呼び出し元提供または read-only git inspection のどちらかで確定している
-- [ ] Claude / Codex の公式 URL を確認した
-- [ ] Version / Upstream item / Category / Harness surface / Action の表がある
-- [ ] alpha / stable / docs-only の区別がある
+### 1. Primary source and breakdown table
+- [ ] Diff source confirmed as either caller-provided or read-only git inspection
+- [ ] Official Claude / Codex URL verified
+- [ ] Table of Version / Upstream item / Category / Harness surface / Action is present
+- [ ] alpha / stable / docs-only distinction is clear
 
-### 2. Feature Table 差分
-- [ ] `docs/CLAUDE-feature-table.md` の追加行を列挙した
-- [ ] 各行に A / C / P のいずれかが付いている
-- [ ] B が 0 件である
+### 2. Feature Table diff
+- [ ] Added rows in `docs/CLAUDE-feature-table.md` are listed
+- [ ] Each row has one of A / C / P
+- [ ] Zero B items
 
-### 3. カテゴリ別の確認
-- [ ] (A) 実装あり: 対応する実装ファイルとテストがある
-- [ ] (B) 書いただけ: 0 件。残る場合は PR ブロック
-- [ ] (C) 自動継承: permission / sandbox / security / workflow 影響を確認済み
-- [ ] (P) Plans 化: `Plans.md` に将来タスクがある
+### 3. Per-category checks
+- [ ] (A) Implementation present: corresponding implementation files and tests exist
+- [ ] (B) Doc-only: 0 items. Block PR if any remain
+- [ ] (C) Auto-inheritance: permission / sandbox / security / workflow impact confirmed
+- [ ] (P) Planned: future tasks exist in `Plans.md`
 
-### 4. Mirror と stale path
-- [ ] `skills/` と `codex/.codex/skills/` の意図しない drift がない
-- [ ] `.agents/skills/` が存在する場合、Claude/Codex 表記が壊れていない
-- [ ] 旧 TypeScript guardrail path、旧 Codex plugin directory、旧 Codex feature-table path などの旧参照がない
+### 4. Mirrors and stale paths
+- [ ] No unintended drift between `skills/` and `codex/.codex/skills/`
+- [ ] If `.agents/skills/` exists, Claude/Codex annotations are intact
+- [ ] No old references: old TypeScript guardrail path, old Codex plugin directory, old Codex feature-table path, etc.
 
 ### 5. CHANGELOG / tests
-- [ ] CHANGELOG に「今まで / 今後」または相当する user-facing 説明がある
-- [ ] upstream integration test または対象 unit test が追加 / 更新されている
+- [ ] CHANGELOG has a "Before / After" or equivalent user-facing description
+- [ ] Upstream integration test or targeted unit test is added / updated
 ```
 
-## カテゴリ B 検出時の出力フォーマット
+## Output Format for Category B Detection
 
-カテゴリ B が 1 件以上検出された場合、以下のフォーマットで実装案を出力する。
-このフォーマットの出力は必須であり、省略は許可されない。
+When one or more Category B items are detected, output implementation proposals in the following format.
+This output is mandatory and cannot be omitted.
 
 ```markdown
-## カテゴリ B 検出: 実装案
+## Category B Detected: Implementation Proposals
 
-### B-{番号}. {Feature Table の項目名}
+### B-{number}. {Feature Table item name}
 
-**現状**: Feature Table に記載のみ。Harness 側の実装 / 検証 / Plans 化なし。
+**Current state**: Listed in Feature Table only. No Harness implementation / verification / Plans task.
 
-**Harness ならではの付加価値**:
-{この機能を Harness がどう活用すべきかの具体的な説明}
+**Harness-specific value-add**:
+{Specific explanation of how Harness should leverage this feature}
 
-**実装案**:
+**Implementation proposal**:
 
-| 対象ファイル | 変更内容 |
-|------------|---------|
-| `{ファイルパス}` | {具体的な変更内容} |
-| `{ファイルパス}` | {具体的な変更内容} |
+| Target file | Changes |
+|-------------|---------|
+| `{file path}` | {specific changes} |
+| `{file path}` | {specific changes} |
 
-**ユーザー体験の改善**:
-- 今まで: {現在のユーザー体験}
-- 今後: {実装後のユーザー体験}
+**User experience improvement**:
+- Before: {current user experience}
+- After: {user experience after implementation}
 
-**実装の優先度**: {高 / 中 / 低}
-**推定工数**: {小 / 中 / 大}
+**Implementation priority**: {High / Medium / Low}
+**Estimated effort**: {Small / Medium / Large}
 ```
 
-## 関連スキル
+## Related Skills
 
-- `claude-codex-upstream-update` - upstream 差分調査と実装 cycle
-- `harness-review` - コードレビュー
-- `harness-work` - カテゴリ B / P の実装
-- `memory` - 分類基準の SSOT 化
+- `claude-codex-upstream-update` - Upstream diff investigation and implementation cycle
+- `harness-review` - Code review
+- `harness-work` - Category B / P implementation
+- `memory` - SSOT-ification of classification criteria

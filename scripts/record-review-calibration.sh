@@ -1,6 +1,6 @@
 #!/bin/bash
 # record-review-calibration.sh
-# review-result.json に calibration が付いている場合に、学習用ログへ追記する。
+# Append to the learning log when review-result.json contains a calibration entry.
 #
 # Usage: ./scripts/record-review-calibration.sh <review-result-file> [output-file] [--review-result <path>]
 
@@ -15,7 +15,7 @@ INPUT_FILE=""
 OUTPUT_FILE=".claude/state/review-calibration.jsonl"
 REVIEW_RESULT_FILE=""
 
-# オプション解析: --review-result を先に吸収し、残った positional を処理する
+# Option parsing: absorb --review-result first, then process remaining positionals
 _positional=()
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -24,7 +24,7 @@ while [ "$#" -gt 0 ]; do
       REVIEW_RESULT_FILE="${1:-}"
       ;;
     --*)
-      # 未知のオプションは無視して続行
+      # Ignore unknown options and continue
       ;;
     *)
       _positional+=("$1")
@@ -33,7 +33,7 @@ while [ "$#" -gt 0 ]; do
   shift
 done
 
-# 位置引数を確定
+# Finalize positional arguments
 if [ "${#_positional[@]}" -ge 1 ]; then
   INPUT_FILE="${_positional[0]}"
 fi
@@ -66,21 +66,21 @@ esac
 
 mkdir -p "$(dirname "$OUTPUT_FILE")"
 
-# review-result ファイルが明示指定されていない場合は INPUT_FILE をフォールバックとして使用
+# If --review-result is not explicitly specified, use INPUT_FILE as fallback
 if [ -z "$REVIEW_RESULT_FILE" ]; then
   REVIEW_RESULT_FILE="$INPUT_FILE"
 fi
 
-# --review-result ファイルが存在しない場合はエラー
+# Error if --review-result file does not exist
 if [ ! -f "$REVIEW_RESULT_FILE" ]; then
   echo "Review result file not found: $REVIEW_RESULT_FILE" >&2
   exit 3
 fi
 
-# タスク ID を取得（score_delta 計算に使用）
+# Get task ID (used for score_delta calculation)
 TASK_ID="$(jq -r '(.task.id // "") | ltrimstr("null")' "$INPUT_FILE")"
 
-# 前回の同一タスクの critical_count + major_count を取得（存在しない場合は null）
+# Get the previous critical_count + major_count for the same task (null if not present)
 PREV_SCORE="null"
 if [ -n "$TASK_ID" ] && [ -f "$OUTPUT_FILE" ]; then
   _prev="$(jq -r --arg tid "$TASK_ID" \
@@ -99,8 +99,8 @@ jq -c -n \
   '
   ($src[0] // {}) as $in
   | ($rr[0] // {}) as $rv
-  # critical_count: write-review-result.sh の normalization と同じ全ソースを合算
-  #   1. legacy: critical_issues[] (旧形式)
+  # critical_count: aggregate all sources same as write-review-result.sh normalization
+  #   1. legacy: critical_issues[] (old format)
   #   2. normalized: gaps[severity == "critical"]
   #   3. companion raw: findings[severity == "critical"]
   #   4. reviewer raw: observations[severity == "critical"]
@@ -108,10 +108,10 @@ jq -c -n \
      + (($rv.gaps // []) | map(select(.severity == "critical")) | length)
      + (($rv.findings // []) | map(select(.severity == "critical")) | length)
      + (($rv.observations // []) | map(select(.severity == "critical")) | length)) as $critical_count
-  # major_count: write-review-result.sh の normalization と同じ全ソースを合算
-  #   1. legacy: major_issues[] (旧形式)
+  # major_count: aggregate all sources same as write-review-result.sh normalization
+  #   1. legacy: major_issues[] (old format)
   #   2. normalized: gaps[severity == "major"]
-  #   3. companion raw: findings[severity == "high"] (!! high は major に射影)
+  #   3. companion raw: findings[severity == "high"] (!! high is projected to major)
   #   4. reviewer raw: observations[severity == "major"]
   | ((($rv.major_issues // []) | length)
      + (($rv.gaps // []) | map(select(.severity == "major")) | length)

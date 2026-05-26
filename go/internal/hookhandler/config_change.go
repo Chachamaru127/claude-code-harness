@@ -10,30 +10,30 @@ import (
 	"time"
 )
 
-// configChangeInput は config-change.sh に渡される stdin JSON。
-// ConfigChange イベントのペイロード。
+// configChangeInput is the stdin JSON passed to config-change.sh.
+// Payload for the ConfigChange event.
 type configChangeInput struct {
 	FilePath   string `json:"file_path"`
 	ChangeType string `json:"change_type"`
 }
 
-// breezingState は .claude/state/breezing.json の構造。
+// breezingState is the structure of .claude/state/breezing.json.
 type breezingState struct {
 	Status string `json:"status"`
 }
 
-// okOutput は {"ok":true} レスポンス。
+// okOutput is a {"ok":true} response.
 type okOutput struct {
 	OK bool `json:"ok"`
 }
 
-// HandleConfigChange は config-change.sh の Go 移植。
+// HandleConfigChange is the Go port of config-change.sh.
 //
-// ConfigChange イベントで呼び出され、Breezing がアクティブな場合のみ
-// .claude/state/breezing-timeline.jsonl に記録する。
-// 常に {"ok":true} を返す（Stop をブロックしない）。
+// Called on ConfigChange events, it records to .claude/state/breezing-timeline.jsonl
+// only when Breezing is active.
+// Always returns {"ok":true} (does not block Stop).
 func HandleConfigChange(in io.Reader, out io.Writer) error {
-	// stdin から JSON を読み取る（サイズ上限 64KB）
+	// Read JSON from stdin (size limit 64 KB).
 	lr := io.LimitReader(in, 65536)
 	data, err := io.ReadAll(lr)
 	if err != nil {
@@ -45,7 +45,7 @@ func HandleConfigChange(in io.Reader, out io.Writer) error {
 		return writeJSON(out, okOutput{OK: true})
 	}
 
-	// PROJECT_ROOT を解決（環境変数優先、なければ cwd）
+	// Resolve PROJECT_ROOT (environment variable takes priority, falls back to cwd).
 	projectRoot := os.Getenv("PROJECT_ROOT")
 	if projectRoot == "" {
 		cwd, cwdErr := os.Getwd()
@@ -55,21 +55,21 @@ func HandleConfigChange(in io.Reader, out io.Writer) error {
 		projectRoot = cwd
 	}
 
-	// breezing がアクティブかどうか確認
+	// Check whether breezing is active.
 	breezingStateFile := filepath.Join(projectRoot, ".claude", "state", "breezing.json")
 	if !isBreezingActive(breezingStateFile) {
 		return writeJSON(out, okOutput{OK: true})
 	}
 
-	// ペイロードをパース
+	// Parse the payload.
 	var input configChangeInput
 	if jsonErr := json.Unmarshal([]byte(payload), &input); jsonErr != nil {
-		// パース失敗でも ok を返す
+		// Return ok even on parse failure.
 		return writeJSON(out, okOutput{OK: true})
 	}
 
-	// file_path をリポジトリ相対パスに正規化（ユーザー名等を隠蔽）。
-	// filepath.Rel を使用することで、Windows のパス区切り文字（\）にも対応する。
+	// Normalise file_path to a repository-relative path (hides usernames etc.).
+	// Using filepath.Rel also handles Windows path separators (\).
 	rawPath := input.FilePath
 	if rawPath == "" {
 		rawPath = "unknown"
@@ -88,7 +88,7 @@ func HandleConfigChange(in io.Reader, out io.Writer) error {
 
 	ts := time.Now().UTC().Format(time.RFC3339)
 
-	// タイムラインに記録
+	// Record to the timeline.
 	timelineFile := filepath.Join(projectRoot, ".claude", "state", "breezing-timeline.jsonl")
 	if mkdirErr := os.MkdirAll(filepath.Dir(timelineFile), 0o755); mkdirErr == nil {
 		event := map[string]string{
@@ -109,7 +109,7 @@ func HandleConfigChange(in io.Reader, out io.Writer) error {
 	return writeJSON(out, okOutput{OK: true})
 }
 
-// isBreezingActive は breezing.json を読み込み、status が active または running かを確認する。
+// isBreezingActive reads breezing.json and checks whether status is active or running.
 func isBreezingActive(stateFile string) bool {
 	data, err := os.ReadFile(stateFile)
 	if err != nil {

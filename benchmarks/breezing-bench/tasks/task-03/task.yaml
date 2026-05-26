@@ -1,7 +1,7 @@
 id: "task-03"
-name: "リファクタ - God Object 分割"
+name: "Refactor - Split God Object"
 difficulty: "Medium-Hard"
-prompt: "user-service.ts の UserService クラスは責務が多すぎます。認証、プロフィール、通知の3つのモジュールに分離してください。既存のテストが全て通ることを確認してください。"
+prompt: "The UserService class in user-service.ts has too many responsibilities. Split it into three modules: authentication, profile, and notifications. Verify that all existing tests still pass."
 hidden_test_count: 12
 setup_files:
   - src/user-service.ts

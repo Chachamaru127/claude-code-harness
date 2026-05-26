@@ -1,8 +1,6 @@
 ---
 name: vibecoder-guide
 description: "Explicit helper for non-technical VibeCoder coaching: what to ask next, how to describe work, and how to stay safe. Do NOT load for: direct implementation, technical review, or Cursor/PM workflow."
-description-en: "Explicit helper for non-technical VibeCoder coaching: what to ask next, how to describe work, and how to stay safe. Do NOT load for: direct implementation, technical review, or Cursor/PM workflow."
-description-ja: "非技術ユーザー向けに、次の頼み方、作業の伝え方、安全な進め方を案内する明示補助スキル。直接実装、技術レビュー、Cursor/PM ワークフローには使わない。"
 allowed-tools: ["Read"]
 user-invocable: false
 disable-model-invocation: true
@@ -10,127 +8,127 @@ disable-model-invocation: true
 
 # VibeCoder Guide Skill
 
-VibeCoder（非技術者）が自然言語だけで開発を進められるようガイドするスキル。
-「どうすればいい？」「次は何？」などの質問に自動で応答します。
+A skill that guides VibeCoder users (non-technical) through development using only natural language.
+Automatically responds to questions like "what should I do?" or "what's next?"
 
 ---
 
-## トリガーフレーズ
+## Trigger Phrases
 
-このスキルは以下のフレーズで自動起動します：
+This skill is invoked automatically by the following phrases:
 
-- 「どうすればいい？」「どうしたらいい？」
-- 「次は何をすればいい？」「次は？」
-- 「何ができる？」「何をすればいい？」
-- 「困った」「わからない」「助けて」
-- 「使い方を教えて」
+- "what should I do?", "what do I do now?"
+- "what should I do next?", "what's next?"
+- "what can I do?", "what should I work on?"
+- "I'm stuck", "I don't know", "help"
+- "show me how to use this"
 - "what should I do?", "what's next?", "help"
 
 ---
 
-## 概要
+## Overview
 
-VibeCoder は技術的なコマンドやワークフローを知らなくても、
-自然な日本語で質問するだけで次のアクションが分かります。
+VibeCoder users can find out what to do next just by asking in plain language —
+no knowledge of technical commands or workflows required.
 
 ---
 
-## 応答パターン
+## Response Patterns
 
-### パターン1: プロジェクトがない場合
+### Pattern 1: No project exists
 
-> 🎯 **まずはプロジェクトを始めましょう！**
+> 🎯 **Let's start a project first!**
 >
-> **言い方の例：**
-> - 「ブログを作りたい」
-> - 「タスク管理アプリを作りたい」
-> - 「ポートフォリオサイトを作りたい」
+> **Examples of what to say:**
+> - "I want to build a blog"
+> - "I want to build a task management app"
+> - "I want to build a portfolio site"
 >
-> ざっくりで大丈夫です。やりたいことを教えてください。
+> A rough idea is fine. Just tell me what you want to make.
 
-### パターン2: Plans.md があるが進行中タスクがない
+### Pattern 2: Plans.md exists but no in-progress tasks
 
-> 📋 **計画があります。作業を始めましょう！**
+> 📋 **There's a plan. Let's get to work!**
 >
-> **現在の計画:**
-> - フェーズ1: 基盤構築
-> - フェーズ2: コア機能
+> **Current plan:**
+> - Phase 1: Foundation
+> - Phase 2: Core features
 > - ...
 >
-> **言い方の例：**
-> - 「フェーズ1を始めて」
-> - 「最初のタスクをやって」
-> - 「全部やって」
+> **Examples of what to say:**
+> - "Start Phase 1"
+> - "Do the first task"
+> - "Do everything"
 
-### パターン3: タスク進行中
+### Pattern 3: Tasks in progress
 
-> 🔧 **作業中です**
+> 🔧 **Work is in progress**
 >
-> **現在のタスク:** {{タスク名}}
-> **進捗:** {{完了数}}/{{全体数}}
+> **Current task:** {{task name}}
+> **Progress:** {{done}}/{{total}}
 >
-> **言い方の例：**
-> - 「続けて」
-> - 「次のタスク」
-> - 「今どこまで進んだ？」
+> **Examples of what to say:**
+> - "Continue"
+> - "Next task"
+> - "How far along are we?"
 
-### パターン4: フェーズ完了後
+### Pattern 4: Phase complete
 
-> ✅ **フェーズが完了しました！**
+> ✅ **Phase complete!**
 >
-> **次にできること：**
-> - 「動作確認して」→ 開発サーバーを起動
-> - 「レビューして」→ コード品質チェック
-> - 「次のフェーズへ」→ 次の作業を開始
-> - 「コミットして」→ 変更を保存
+> **What you can do next:**
+> - "Check it works" → start the dev server
+> - "Review it" → run code quality check
+> - "Move to the next phase" → start the next task
+> - "Commit" → save the changes
 
-### パターン5: エラー発生時
+### Pattern 5: Error occurred
 
-> ⚠️ **問題が発生しました**
+> ⚠️ **A problem occurred**
 >
-> **状況:** {{エラーの要約}}
+> **Situation:** {{error summary}}
 >
-> **言い方の例：**
-> - 「直して」→ 自動修正を試行
-> - 「説明して」→ 問題の詳細を説明
-> - 「スキップして」→ 次のタスクへ
+> **Examples of what to say:**
+> - "Fix it" → attempt auto-fix
+> - "Explain it" → describe the problem in detail
+> - "Skip it" → move to the next task
 
 ---
 
-## よく使うフレーズ対応表
+## Common Phrase Reference
 
-| やりたいこと | 言い方 |
-|-------------|--------|
-| プロジェクト開始 | 「〇〇を作りたい」 |
-| 計画を見たい | 「計画を見せて」「今の状況は？」 |
-| 作業を開始 | 「始めて」「作って」「フェーズ1をやって」 |
-| 続きをやる | 「続けて」「次」 |
-| 動作確認 | 「動かして」「見せて」 |
-| コード確認 | 「レビューして」「チェックして」 |
-| 保存する | 「コミットして」「保存して」 |
-| 困った時 | 「どうすればいい？」「助けて」 |
-| 全部任せる | 「全部やって」「おまかせ」 |
-
----
-
-## コンテキスト判定
-
-このスキルは以下を確認して適切な応答を選択：
-
-1. **AGENTS.md の存在** → プロジェクトが初期化済みか
-2. **Plans.md の内容** → 計画があるか、進捗状況
-3. **現在のタスク状態** → `cc:WIP` マーカーの有無
-4. **直近のエラー** → 問題が発生しているか
+| What you want to do | What to say |
+|---------------------|-------------|
+| Start a project | "I want to build X" |
+| View the plan | "Show me the plan" / "What's the current status?" |
+| Start working | "Begin" / "Build it" / "Do Phase 1" |
+| Continue where you left off | "Continue" / "Next" |
+| Check it works | "Run it" / "Show me" |
+| Check the code | "Review it" / "Check it" |
+| Save changes | "Commit" / "Save" |
+| When stuck | "What should I do?" / "Help" |
+| Hand it all off | "Do everything" / "Take care of it" |
 
 ---
 
-## 実装ノート
+## Context Determination
 
-このスキルが起動したら：
+This skill checks the following to select the appropriate response:
 
-1. 現在の状態を分析
-2. 適切なパターンを選択
-3. 具体的な「言い方の例」を提示
-4. ユーザーの次のアクションを待つ
+1. **AGENTS.md presence** → is the project initialized?
+2. **Plans.md content** → is there a plan? what is the progress?
+3. **Current task state** → is there a `cc:WIP` marker?
+4. **Recent errors** → has a problem occurred?
 
-**重要**: 技術用語を避け、平易な日本語で説明する
+---
+
+## Implementation Notes
+
+When this skill is invoked:
+
+1. Analyze the current state
+2. Select the appropriate response pattern
+3. Present concrete "examples of what to say"
+4. Wait for the user's next action
+
+**Important**: Avoid technical jargon and explain in plain, accessible language

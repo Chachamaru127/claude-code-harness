@@ -17,7 +17,7 @@ func TestPermissionDeniedHandler_EmptyInput(t *testing.T) {
 	if err := h.Handle(strings.NewReader(""), &buf); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// 空入力は何も出力しない
+	// Empty input produces no output
 	if buf.Len() != 0 {
 		t.Errorf("expected empty output for empty input, got: %s", buf.String())
 	}
@@ -106,7 +106,7 @@ func TestPermissionDeniedHandler_SuffixWorkerRetry(t *testing.T) {
 	dir := t.TempDir()
 	h := &PermissionDeniedHandler{StateDir: dir}
 
-	// ":worker" サフィックス
+	// ":worker" suffix
 	input := `{
 		"tool": "Write",
 		"denied_reason": "blocked",
@@ -168,7 +168,7 @@ func TestPermissionDeniedHandler_ToolNameFallback(t *testing.T) {
 	dir := t.TempDir()
 	h := &PermissionDeniedHandler{StateDir: dir}
 
-	// tool_name (snake_case) フィールドを使用
+	// Using the tool_name (snake_case) field
 	input := `{"tool_name": "Glob", "denied_reason": "blocked", "agent_type": "solo"}`
 	var buf bytes.Buffer
 	if err := h.Handle(strings.NewReader(input), &buf); err != nil {

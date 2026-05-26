@@ -16,7 +16,7 @@ func TestPostToolFailureHandler_EmptyInput(t *testing.T) {
 	if err := h.Handle(strings.NewReader(""), &buf); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	// 空の出力でも JSON として有効なはず
+	// Even with empty output, should be valid JSON
 	if buf.Len() == 0 {
 		t.Error("expected some output")
 	}
@@ -55,10 +55,10 @@ func TestPostToolFailureHandler_SecondFailure(t *testing.T) {
 	input := `{"tool_name":"Read","error":"file not found"}`
 
 	var buf bytes.Buffer
-	// 1回目
+	// 1st call
 	_ = h.Handle(strings.NewReader(input), &buf)
 	buf.Reset()
-	// 2回目
+	// 2nd call
 	if err := h.Handle(strings.NewReader(input), &buf); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -116,13 +116,13 @@ func TestPostToolFailureHandler_ResetAfterEscalation(t *testing.T) {
 	input := `{"tool_name":"Bash","error":"error"}`
 	var buf bytes.Buffer
 
-	// 3 回失敗でエスカレーション
+	// Escalation after 3 failures
 	for i := 0; i < 3; i++ {
 		buf.Reset()
 		_ = h.Handle(strings.NewReader(input), &buf)
 	}
 
-	// 4 回目はリセット後の 1 回目
+	// 4th call is the 1st after reset
 	buf.Reset()
 	if err := h.Handle(strings.NewReader(input), &buf); err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -139,7 +139,7 @@ func TestPostToolFailureHandler_ResetAfterEscalation(t *testing.T) {
 
 func TestPostToolFailureHandler_StalenessReset(t *testing.T) {
 	dir := t.TempDir()
-	pastTime := time.Now().Add(-2 * time.Minute) // 2分前
+	pastTime := time.Now().Add(-2 * time.Minute) // 2 minutes ago
 	futureTime := time.Now()
 
 	callCount := 0
@@ -157,11 +157,11 @@ func TestPostToolFailureHandler_StalenessReset(t *testing.T) {
 	input := `{"tool_name":"Bash","error":"error"}`
 	var buf bytes.Buffer
 
-	// 1 回目: 2分前
+	// 1st call: 2 minutes ago
 	_ = h.Handle(strings.NewReader(input), &buf)
 	buf.Reset()
 
-	// 2 回目: 現在（2分経過 > StalenessThreshold=60秒）→ カウントリセット
+	// 2nd call: now (2 minutes elapsed > StalenessThreshold=60s) → count reset
 	if err := h.Handle(strings.NewReader(input), &buf); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -179,7 +179,7 @@ func TestPostToolFailureHandler_ToolNameFallback(t *testing.T) {
 	dir := t.TempDir()
 	h := &PostToolFailureHandler{StateDir: dir}
 
-	// toolName (camelCase) フィールドを使用
+	// Use the toolName (camelCase) field
 	input := `{"toolName":"Edit","error":"write error"}`
 	var buf bytes.Buffer
 	if err := h.Handle(strings.NewReader(input), &buf); err != nil {

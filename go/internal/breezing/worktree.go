@@ -10,37 +10,37 @@ import (
 	"time"
 )
 
-// WorktreeManager は git worktree の作成・クリーンアップを管理する。
-// CC の WorktreeCreate/Remove フックと連携して worktree ライフサイクルを追跡する。
+// WorktreeManager manages creation and cleanup of git worktrees.
+// Tracks the worktree lifecycle in coordination with CC's WorktreeCreate/Remove hooks.
 type WorktreeManager struct {
 	mu sync.Mutex
-	// projectRoot はメインリポジトリのルートパス。
+	// projectRoot is the root path of the main repository.
 	projectRoot string
-	// worktrees は現在管理中の worktree 一覧（path → info）。
+	// worktrees is the list of currently managed worktrees (path → info).
 	worktrees map[string]*WorktreeInfo
-	// staleTimeout は worktree が stale とみなされるまでの期間。
+	// staleTimeout is the duration after which a worktree is considered stale.
 	staleTimeout time.Duration
-	// now はテスト差し替え用の時刻関数。
+	// now is the time function, replaceable in tests.
 	now func() time.Time
 }
 
-// WorktreeInfo は個々の worktree の追跡情報。
+// WorktreeInfo holds tracking information for an individual worktree.
 type WorktreeInfo struct {
-	// Path は worktree のファイルシステムパス。
+	// Path is the filesystem path of the worktree.
 	Path string
-	// Branch は worktree のブランチ名。
+	// Branch is the branch name of the worktree.
 	Branch string
-	// TaskID は worktree に割り当てられたタスク ID。
+	// TaskID is the task ID assigned to the worktree.
 	TaskID string
-	// AgentID は worktree を使用する CC エージェントの ID。
+	// AgentID is the ID of the CC agent using the worktree.
 	AgentID string
-	// CreatedAt は作成時刻。
+	// CreatedAt is the creation time.
 	CreatedAt time.Time
-	// Active は worktree が使用中かどうか。
+	// Active indicates whether the worktree is currently in use.
 	Active bool
 }
 
-// NewWorktreeManager は新しい WorktreeManager を返す。
+// NewWorktreeManager returns a new WorktreeManager.
 func NewWorktreeManager(projectRoot string) *WorktreeManager {
 	return &WorktreeManager{
 		projectRoot:  projectRoot,
@@ -50,9 +50,9 @@ func NewWorktreeManager(projectRoot string) *WorktreeManager {
 	}
 }
 
-// Create は新しい worktree を作成する。
-// branchName が空の場合は taskID から自動生成する。
-// 作成した worktree のパスを返す。
+// Create creates a new worktree.
+// If branchName is empty, it is auto-generated from taskID.
+// Returns the path of the created worktree.
 func (wm *WorktreeManager) Create(taskID, branchName string) (string, error) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
@@ -61,10 +61,10 @@ func (wm *WorktreeManager) Create(taskID, branchName string) (string, error) {
 		branchName = fmt.Sprintf("harness/worker/%s", sanitizeBranch(taskID))
 	}
 
-	// worktree パスを決定
+	// Determine the worktree path
 	worktreeDir := filepath.Join(wm.projectRoot, ".harness-worktrees", sanitizeBranch(taskID))
 
-	// 既に存在する場合は再利用
+	// Reuse if it already exists
 	if info, exists := wm.worktrees[worktreeDir]; exists && info.Active {
 		return worktreeDir, nil
 	}
@@ -85,8 +85,8 @@ func (wm *WorktreeManager) Create(taskID, branchName string) (string, error) {
 	return worktreeDir, nil
 }
 
-// Remove は worktree を削除する。
-// force が true の場合、未コミットの変更があっても削除する。
+// Remove removes a worktree.
+// If force is true, it removes even if there are uncommitted changes.
 func (wm *WorktreeManager) Remove(worktreePath string, force bool) error {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
@@ -102,7 +102,7 @@ func (wm *WorktreeManager) Remove(worktreePath string, force bool) error {
 		return fmt.Errorf("worktree remove: %s: %w", strings.TrimSpace(string(out)), err)
 	}
 
-	// ブランチ削除
+	// Delete the branch
 	if info, exists := wm.worktrees[worktreePath]; exists {
 		wm.deleteBranch(info.Branch)
 		delete(wm.worktrees, worktreePath)
@@ -111,7 +111,7 @@ func (wm *WorktreeManager) Remove(worktreePath string, force bool) error {
 	return nil
 }
 
-// AssignAgent は worktree に CC エージェント ID を関連付ける。
+// AssignAgent associates a CC agent ID with a worktree.
 func (wm *WorktreeManager) AssignAgent(worktreePath, agentID string) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
@@ -120,8 +120,8 @@ func (wm *WorktreeManager) AssignAgent(worktreePath, agentID string) {
 	}
 }
 
-// CleanupStale は staleTimeout を超過した非アクティブな worktree を削除する。
-// 削除された worktree のパス一覧を返す。
+// CleanupStale removes inactive worktrees that have exceeded the staleTimeout.
+// Returns the list of removed worktree paths.
 func (wm *WorktreeManager) CleanupStale() []string {
 	wm.mu.Lock()
 	stale := make([]string, 0)
@@ -144,7 +144,7 @@ func (wm *WorktreeManager) CleanupStale() []string {
 	return cleaned
 }
 
-// MarkInactive は worktree を非アクティブにマークする（エージェント停止時）。
+// MarkInactive marks a worktree as inactive (on agent stop).
 func (wm *WorktreeManager) MarkInactive(worktreePath string) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
@@ -153,7 +153,7 @@ func (wm *WorktreeManager) MarkInactive(worktreePath string) {
 	}
 }
 
-// List は全管理中 worktree の情報を返す。
+// List returns information about all managed worktrees.
 func (wm *WorktreeManager) List() []*WorktreeInfo {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
@@ -165,8 +165,8 @@ func (wm *WorktreeManager) List() []*WorktreeInfo {
 	return result
 }
 
-// HandleWorktreeCreate は CC の WorktreeCreate フックイベントを処理する。
-// stdin の tool_input からパス情報を取り出して追跡を開始する。
+// HandleWorktreeCreate handles a CC WorktreeCreate hook event.
+// Extracts path information from stdin tool_input and starts tracking.
 func (wm *WorktreeManager) HandleWorktreeCreate(worktreePath, branch, agentID string) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
@@ -180,16 +180,16 @@ func (wm *WorktreeManager) HandleWorktreeCreate(worktreePath, branch, agentID st
 	}
 }
 
-// HandleWorktreeRemove は CC の WorktreeRemove フックイベントを処理する。
+// HandleWorktreeRemove handles a CC WorktreeRemove hook event.
 func (wm *WorktreeManager) HandleWorktreeRemove(worktreePath string) {
 	wm.mu.Lock()
 	defer wm.mu.Unlock()
 	delete(wm.worktrees, worktreePath)
 }
 
-// gitWorktreeAdd は git worktree add を実行する。
+// gitWorktreeAdd runs git worktree add.
 func (wm *WorktreeManager) gitWorktreeAdd(worktreeDir, branchName string) error {
-	// ディレクトリが既に存在する場合は削除
+	// Remove the directory if it already exists
 	if _, err := os.Stat(worktreeDir); err == nil {
 		rmCmd := exec.Command("git", "worktree", "remove", worktreeDir, "--force")
 		rmCmd.Dir = wm.projectRoot
@@ -204,7 +204,7 @@ func (wm *WorktreeManager) gitWorktreeAdd(worktreeDir, branchName string) error 
 	return nil
 }
 
-// deleteBranch は worktree 用に作成したブランチを削除する。
+// deleteBranch deletes the branch created for the worktree.
 func (wm *WorktreeManager) deleteBranch(branch string) {
 	if branch == "" {
 		return
@@ -214,7 +214,7 @@ func (wm *WorktreeManager) deleteBranch(branch string) {
 	_ = cmd.Run()
 }
 
-// sanitizeBranch はタスク ID をブランチ名に使えるようサニタイズする。
+// sanitizeBranch sanitizes a task ID so it can be used as a branch name.
 func sanitizeBranch(s string) string {
 	r := strings.NewReplacer(
 		" ", "-",

@@ -1,14 +1,14 @@
 #!/bin/bash
 # tests/test-progress-drift.sh
-# Phase 65.4.3 - drift detection (5 alert kinds) の機械検証
+# Phase 65.4.3 - drift detection (5 alert kinds) mechanical validation
 #
-# 検証ケース (Plans.md §65.4.3 DoD c):
-#   1. scope-creep      — Plans.md にない file 編集 → warn
+# Test cases (Plans.md §65.4.3 DoD c):
+#   1. scope-creep      — file edited not in Plans.md → warn
 #   2. time-overrun     — elapsed > estimate × 1.5 → warn (1.5x), critical (2.0x)
 #   3. repeated-failure — fail count >= 3 → critical
 #   4. cost-warning     — cost ratio >= 80% → warn (80-100%), critical (100%+)
 #   5. high-risk-file   — harness.toml deny path matching → critical
-# 加えて HTML 表示 (DoD d) で色分け CSS が存在することも検証
+# Also validates that color-coded CSS exists in HTML display (DoD d)
 
 set -euo pipefail
 
@@ -140,18 +140,18 @@ else
 fi
 
 # ============================================================
-# 共通: 全 input 空 → 空配列
+# Common: all input empty → empty array
 # ============================================================
 
 OUT="$(bash "$DRIFT" 2>/dev/null)"
 if echo "$OUT" | jq -e 'length == 0' >/dev/null 2>&1; then
-  pass "no input: 空配列を返す"
+  pass "no input: returns empty array"
 else
   fail "no input should return []. got: $OUT"
 fi
 
 # ============================================================
-# 共通: 5 alert 同時発火
+# Common: 5 alerts fired simultaneously
 # ============================================================
 
 OUT="$(bash "$DRIFT" \
@@ -162,7 +162,7 @@ OUT="$(bash "$DRIFT" \
   --high-risk-files ".env" 2>/dev/null)"
 
 if echo "$OUT" | jq -e 'length == 5' >/dev/null 2>&1; then
-  pass "5 input 全部入り: alerts.length == 5"
+  pass "5 input all combined: alerts.length == 5"
 else
   fail "expected 5 alerts. got: $(echo "$OUT" | jq 'length')"
 fi
@@ -170,25 +170,25 @@ fi
 KINDS="$(echo "$OUT" | jq -r '[.[].kind] | sort | join(",")')"
 EXPECTED_KINDS="cost-warning,high-risk-file,repeated-failure,scope-creep,time-overrun"
 if [[ "$KINDS" == "$EXPECTED_KINDS" ]]; then
-  pass "5 input: 全 5 種類の kind が含まれる"
+  pass "5 input: all 5 alert kinds present"
 else
   fail "kinds mismatch. expected: $EXPECTED_KINDS, got: $KINDS"
 fi
 
 # ============================================================
-# DoD d: HTML template に色分け CSS が存在
+# DoD d: HTML template has color-coded CSS
 # ============================================================
 
 if grep -q 'alert-info' "$TEMPLATE" && grep -q 'alert-warn' "$TEMPLATE" && grep -q 'alert-critical' "$TEMPLATE"; then
-  pass "(d) HTML template に alert-info / alert-warn / alert-critical class 定義あり"
+  pass "(d) HTML template has alert-info / alert-warn / alert-critical class definitions"
 else
-  fail "(d) HTML template の alert 色分け定義不足"
+  fail "(d) HTML template alert color definitions insufficient"
 fi
 
 if grep -q '#FBE9E7' "$TEMPLATE" || grep -qi 'alert-crit-bg' "$TEMPLATE"; then
-  pass "(d) critical 用色 (赤系) が定義されている"
+  pass "(d) critical color (red-toned) is defined"
 else
-  fail "(d) critical 色未定義"
+  fail "(d) critical color not defined"
 fi
 
 # Render with alerts injected (smoke test)
@@ -199,7 +199,7 @@ ALERTS_JSON="$(bash "$DRIFT" --repeated-failure-count 3 2>/dev/null)"
 SNAP_JSON="$TMP_DIR/snap.json"
 HTML="$TMP_DIR/out.html"
 
-# 簡易 snapshot を組み立て (alerts に drift 結果を埋める)
+# Assemble minimal snapshot (embed drift results into alerts)
 jq -n --argjson alerts "$ALERTS_JSON" '{
   schema: "progress-snapshot.v1",
   project: "drift-test",

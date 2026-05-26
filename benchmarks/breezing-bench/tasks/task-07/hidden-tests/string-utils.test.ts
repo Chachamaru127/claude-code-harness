@@ -105,7 +105,7 @@ describe('string-utils', () => {
     });
 
     it('should handle Unicode', () => {
-      expect(reverse('こんにちは')).toBe('はちにんこ');
+      expect(reverse('héllo')).toBe('ollèh');
     });
   });
 

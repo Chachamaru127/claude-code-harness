@@ -1,7 +1,7 @@
 id: "task-05"
-name: "エラーハンドリング - API クライアント"
+name: "Error handling - API client"
 difficulty: "Hard"
-prompt: "api-client.ts にリトライ、タイムアウト、エラーハンドリングを追加してください。ネットワークエラー時は自動リトライ、タイムアウトは設定可能、4xx エラーはリトライしない、5xx エラーはリトライする実装にしてください。"
+prompt: "Add retry, timeout, and error handling to api-client.ts. Implement automatic retry on network errors, configurable timeout, no retry on 4xx errors, and retry on 5xx errors."
 hidden_test_count: 10
 setup_files:
   - src/api-client.ts

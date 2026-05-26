@@ -1,6 +1,6 @@
 package hookhandler
 
-// task_completed_finalize.go - harness-mem finalize・Webhook 通知
+// task_completed_finalize.go - harness-mem finalize and Webhook notification
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// finalizeMarkerJSON は harness-mem-finalize-work-completed.json のスキーマ。
+// finalizeMarkerJSON is the schema for harness-mem-finalize-work-completed.json.
 type finalizeMarkerJSON struct {
 	SessionID   string `json:"session_id"`
 	Project     string `json:"project"`
@@ -21,14 +21,14 @@ type finalizeMarkerJSON struct {
 	Status      string `json:"status"`
 }
 
-// maybeFinalizeHarnessMem は全タスク完了時に harness-mem サーバーへ finalize を通知する。
+// maybeFinalizeHarnessMem notifies the harness-mem server of finalize when all tasks are complete.
 func (h *taskCompletedHandler) maybeFinalizeHarnessMem(ts string) {
 	sessionID := h.resolveSessionID()
 	if sessionID == "" {
 		return
 	}
 
-	// すでに finalize 済みか確認
+	// Check if already finalized
 	if h.finalizeMarkerExistsForSession(sessionID) {
 		return
 	}
@@ -76,7 +76,7 @@ func (h *taskCompletedHandler) maybeFinalizeHarnessMem(ts string) {
 	}
 }
 
-// resolveSessionID はセッション ID を取得する。
+// resolveSessionID retrieves the session ID.
 func (h *taskCompletedHandler) resolveSessionID() string {
 	if id := os.Getenv("SESSION_ID"); id != "" {
 		return id
@@ -84,7 +84,7 @@ func (h *taskCompletedHandler) resolveSessionID() string {
 	return h.resolveSessionStateField("session_id")
 }
 
-// resolveProjectName はプロジェクト名を取得する。
+// resolveProjectName retrieves the project name.
 func (h *taskCompletedHandler) resolveProjectName() string {
 	if name := os.Getenv("PROJECT_NAME"); name != "" {
 		return name
@@ -95,7 +95,7 @@ func (h *taskCompletedHandler) resolveProjectName() string {
 	return lastPathComponent(h.projectRoot)
 }
 
-// resolveSessionStateField は session.json から指定フィールドを取得する。
+// resolveSessionStateField retrieves the specified field from session.json.
 func (h *taskCompletedHandler) resolveSessionStateField(field string) string {
 	sessionPath := h.stateDir + "/session.json"
 	data, err := os.ReadFile(sessionPath)
@@ -114,9 +114,9 @@ func (h *taskCompletedHandler) resolveSessionStateField(field string) string {
 	return ""
 }
 
-// finalizeMarkerExistsForSession は指定セッションの finalize マーカーが存在するか確認する。
+// finalizeMarkerExistsForSession checks whether a finalize marker exists for the given session.
 func (h *taskCompletedHandler) finalizeMarkerExistsForSession(sessionID string) bool {
-	// シンボルリンクチェック
+	// Symlink check
 	if info, err := os.Lstat(h.finalizeMarker); err == nil && info.Mode()&os.ModeSymlink != 0 {
 		return false
 	}
@@ -137,16 +137,16 @@ func (h *taskCompletedHandler) finalizeMarkerExistsForSession(sessionID string) 
 		marker.Status == "success"
 }
 
-// writeFinalizeMarker は finalize マーカーを書き出す。
+// writeFinalizeMarker writes the finalize marker.
 func (h *taskCompletedHandler) writeFinalizeMarker(sessionID, projectName, ts string) {
-	// stateDir がシンボリックリンクの場合は書き込みを拒否する。
-	// 攻撃者が stateDir を symlink に差し替えることで任意パスへの書き込みを誘導する
-	// パストラバーサルを防ぐための事前チェック。
+	// Refuse to write if stateDir is a symbolic link.
+	// Pre-check to prevent path traversal where an attacker replaces stateDir
+	// with a symlink to induce writes to arbitrary paths.
 	if isSymlink(h.stateDir) {
 		fmt.Fprintf(os.Stderr, "[WARNING] writeFinalizeMarker: stateDir is a symlink (%s), refusing write\n", h.stateDir)
 		return
 	}
-	// finalizeMarker ファイル自体がシンボリックリンクの場合も書き込みを拒否する。
+	// Also refuse to write if the finalizeMarker file itself is a symbolic link.
 	if info, err := os.Lstat(h.finalizeMarker); err == nil && info.Mode()&os.ModeSymlink != 0 {
 		fmt.Fprintf(os.Stderr, "[WARNING] writeFinalizeMarker: finalizeMarker is a symlink (%s), refusing write\n", h.finalizeMarker)
 		return
@@ -171,16 +171,16 @@ func (h *taskCompletedHandler) writeFinalizeMarker(sessionID, projectName, ts st
 	os.Rename(tmpPath, h.finalizeMarker) //nolint:errcheck
 }
 
-// fireWebhook は HARNESS_WEBHOOK_URL が設定されている場合に Webhook 通知を行う。
-// bash 版 webhook-notify.sh と同様に、元のフック入力 JSON をボディとしてそのまま POST し、
-// X-Harness-Event ヘッダーを付与する。同期実行（5秒タイムアウト）。
+// fireWebhook sends a Webhook notification when HARNESS_WEBHOOK_URL is set.
+// Like the bash version webhook-notify.sh, it POSTs the original hook input JSON as-is
+// and attaches the X-Harness-Event header. Synchronous execution (5-second timeout).
 func (h *taskCompletedHandler) fireWebhook(rawPayload []byte) {
 	webhookURL := os.Getenv("HARNESS_WEBHOOK_URL")
 	if webhookURL == "" {
 		return
 	}
 
-	// ペイロードが空の場合はフォールバック
+	// Fallback when payload is empty
 	body := rawPayload
 	if len(body) == 0 {
 		body = []byte("{}")
@@ -204,7 +204,7 @@ func (h *taskCompletedHandler) fireWebhook(rawPayload []byte) {
 	io.ReadAll(resp.Body) //nolint:errcheck
 }
 
-// lastPathComponent はパスの最後のコンポーネントを返す。
+// lastPathComponent returns the last component of a path.
 func lastPathComponent(path string) string {
 	path = strings.TrimRight(path, "/")
 	if idx := strings.LastIndex(path, "/"); idx >= 0 {

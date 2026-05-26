@@ -1,39 +1,39 @@
 # Asset Customization Guide
 
-ユーザーカスタムアセット（背景、効果音、フォント、画像）の上書き方法とベストプラクティス。
+How to override user custom assets (backgrounds, sound effects, fonts, images) and best practices.
 
 ---
 
-## 概要
+## Overview
 
-動画生成で使用するアセットは以下の優先順位で読み込まれます：
+Assets used during video generation are loaded in the following priority order:
 
 ```
-1. ユーザーアセット (~/.harness/video/assets/)    ← 最優先
-2. スキルデフォルト (skills/generate-video/assets/) ← フォールバック
-3. ビルトインデフォルト (ハードコード)              ← 最終手段
+1. User assets (~/.harness/video/assets/)    ← Highest priority
+2. Skill defaults (skills/generate-video/assets/) ← Fallback
+3. Built-in defaults (hardcoded)              ← Last resort
 ```
 
-この仕組みにより、スキル本体を変更せずに自分好みのアセットを使用できます。
+This system lets you use your own assets without modifying the skill itself.
 
 ---
 
-## ディレクトリ構造
+## Directory Structure
 
-### ユーザーアセットディレクトリ
+### User Asset Directory
 
 ```
 ~/.harness/video/assets/
-├── README.md                    # 使い方ガイド（自動生成）
+├── README.md                    # Usage guide (auto-generated)
 ├── backgrounds/
-│   ├── backgrounds.json         # カスタム背景定義
-│   └── my-custom-bg.png         # カスタム背景画像（オプション）
+│   ├── backgrounds.json         # Custom background definitions
+│   └── my-custom-bg.png         # Custom background image (optional)
 ├── sounds/
-│   ├── sounds.json              # カスタム効果音定義
-│   ├── impact.mp3               # 高強調音
-│   ├── pop.mp3                  # 中強調音
-│   ├── transition.mp3           # 場面転換音
-│   └── subtle.mp3               # 低強調音
+│   ├── sounds.json              # Custom sound effect definitions
+│   ├── impact.mp3               # High-emphasis sound
+│   ├── pop.mp3                  # Medium-emphasis sound
+│   ├── transition.mp3           # Scene transition sound
+│   └── subtle.mp3               # Low-emphasis sound
 ├── fonts/
 │   ├── MyBrand-Bold.ttf
 │   └── MyBrand-Regular.ttf
@@ -42,15 +42,15 @@
     └── icon.png
 ```
 
-### 初期化
+### Initialization
 
-ユーザーアセットディレクトリを作成:
+Create the user asset directory:
 
 ```bash
 node scripts/load-assets.js init
 ```
 
-または手動で作成:
+Or create manually:
 
 ```bash
 mkdir -p ~/.harness/video/assets/{backgrounds,sounds,fonts,images}
@@ -58,20 +58,20 @@ mkdir -p ~/.harness/video/assets/{backgrounds,sounds,fonts,images}
 
 ---
 
-## カスタマイズ方法
+## Customization Methods
 
-### 1. 背景のカスタマイズ
+### 1. Background Customization
 
-#### 手順
+#### Steps
 
-1. **デフォルト設定をコピー**:
+1. **Copy the default configuration**:
 
 ```bash
 cp skills/generate-video/assets/backgrounds/backgrounds.json \
    ~/.harness/video/assets/backgrounds/
 ```
 
-2. **設定を編集**:
+2. **Edit the configuration**:
 
 ```json
 {
@@ -105,7 +105,7 @@ cp skills/generate-video/assets/backgrounds/backgrounds.json \
 }
 ```
 
-3. **動画生成で使用**:
+3. **Use in video generation**:
 
 ```json
 {
@@ -115,16 +115,16 @@ cp skills/generate-video/assets/backgrounds/backgrounds.json \
 }
 ```
 
-#### 背景タイプ
+#### Background Types
 
 | Type | Description | Fields |
 |------|-------------|--------|
-| `gradient` | グラデーション背景 | `colors`, `gradient` |
-| `pattern` | パターン背景（グリッド等） | `colors`, `gradient`, `pattern` |
-| `solid` | 単色背景 | `colors.primary` |
-| `image` | 画像背景 | `file` (path to image) |
+| `gradient` | Gradient background | `colors`, `gradient` |
+| `pattern` | Pattern background (grid, etc.) | `colors`, `gradient`, `pattern` |
+| `solid` | Solid color background | `colors.primary` |
+| `image` | Image background | `file` (path to image) |
 
-#### グラデーションタイプ
+#### Gradient Types
 
 ```json
 // Linear gradient
@@ -143,26 +143,26 @@ cp skills/generate-video/assets/backgrounds/backgrounds.json \
 
 ---
 
-### 2. 効果音のカスタマイズ
+### 2. Sound Effect Customization
 
-#### 手順
+#### Steps
 
-1. **デフォルト設定をコピー**:
+1. **Copy the default configuration**:
 
 ```bash
 cp skills/generate-video/assets/sounds/sounds.json \
    ~/.harness/video/assets/sounds/
 ```
 
-2. **効果音ファイルを配置**:
+2. **Place sound effect files**:
 
 ```bash
-# FreeSoundからダウンロード（CC0ライセンス推奨）
+# Download from FreeSound (CC0 license recommended)
 cp ~/Downloads/my-impact.mp3 ~/.harness/video/assets/sounds/impact.mp3
 cp ~/Downloads/my-pop.mp3 ~/.harness/video/assets/sounds/pop.mp3
 ```
 
-3. **設定を編集**:
+3. **Edit the configuration**:
 
 ```json
 {
@@ -189,36 +189,36 @@ cp ~/Downloads/my-pop.mp3 ~/.harness/video/assets/sounds/pop.mp3
 }
 ```
 
-#### 推奨形式
+#### Recommended Formats
 
 | Format | Sample Rate | Bit Depth | Notes |
 |--------|-------------|-----------|-------|
-| MP3 | 44100 Hz | 16-bit | 推奨（互換性高） |
-| WAV | 44100 Hz | 16-bit | 高品質（ファイルサイズ大） |
-| OGG | 44100 Hz | - | 軽量（ブラウザ互換性注意） |
+| MP3 | 44100 Hz | 16-bit | Recommended (best compatibility) |
+| WAV | 44100 Hz | 16-bit | High quality (large file size) |
+| OGG | 44100 Hz | - | Lightweight (watch for browser compatibility) |
 
-#### ボリューム推奨値
+#### Recommended Volume Values
 
 | Context | Volume Range | Notes |
 |---------|--------------|-------|
-| ナレーションあり | 0.15 - 0.4 | 音声を邪魔しない |
-| BGMあり | 0.25 - 0.6 | BGMをダッキング |
-| 音声なし | 0.3 - 1.0 | フル音量OK |
+| With narration | 0.15 - 0.4 | Don't drown out the voice |
+| With BGM | 0.25 - 0.6 | Duck under BGM |
+| No audio | 0.3 - 1.0 | Full volume OK |
 
 ---
 
-### 3. フォントのカスタマイズ
+### 3. Font Customization
 
-#### 手順
+#### Steps
 
-1. **フォントファイルを配置**:
+1. **Place font files**:
 
 ```bash
 cp ~/Downloads/MyFont-Bold.ttf ~/.harness/video/assets/fonts/
 cp ~/Downloads/MyFont-Regular.ttf ~/.harness/video/assets/fonts/
 ```
 
-2. **シーン設定で参照**:
+2. **Reference in scene configuration**:
 
 ```json
 {
@@ -235,12 +235,12 @@ cp ~/Downloads/MyFont-Regular.ttf ~/.harness/video/assets/fonts/
 }
 ```
 
-#### Remotionでの使用
+#### Using in Remotion
 
 ```typescript
 import { loadFont } from '@remotion/google-fonts/Inter';
 
-// カスタムフォント読み込み
+// Load custom font
 const fontFamily = loadFont({
   src: '~/.harness/video/assets/fonts/MyFont-Bold.ttf',
   fontFamily: 'MyFont',
@@ -248,28 +248,28 @@ const fontFamily = loadFont({
 });
 ```
 
-#### 推奨形式
+#### Recommended Formats
 
 | Format | Web Safe | Notes |
 |--------|----------|-------|
-| TTF | ✅ Yes | 推奨（最も互換性が高い） |
-| OTF | ✅ Yes | OpenType機能が使える |
-| WOFF/WOFF2 | ✅ Yes | Web最適化（軽量） |
+| TTF | ✅ Yes | Recommended (highest compatibility) |
+| OTF | ✅ Yes | Supports OpenType features |
+| WOFF/WOFF2 | ✅ Yes | Web-optimized (lightweight) |
 
 ---
 
-### 4. 画像のカスタマイズ
+### 4. Image Customization
 
-#### 手順
+#### Steps
 
-1. **画像ファイルを配置**:
+1. **Place image files**:
 
 ```bash
 cp ~/Downloads/logo.png ~/.harness/video/assets/images/
 cp ~/Downloads/icon.png ~/.harness/video/assets/images/
 ```
 
-2. **シーン設定で参照**:
+2. **Reference in scene configuration**:
 
 ```json
 {
@@ -283,16 +283,16 @@ cp ~/Downloads/icon.png ~/.harness/video/assets/images/
 }
 ```
 
-#### 推奨形式
+#### Recommended Formats
 
 | Format | Use Case | Notes |
 |--------|----------|-------|
-| PNG | ロゴ、アイコン | 透過対応 |
-| JPG | 写真、背景 | 圧縮率高 |
-| SVG | ベクター図形 | 拡大しても綺麗 |
-| WebP | モダン環境 | 軽量高品質 |
+| PNG | Logos, icons | Transparency support |
+| JPG | Photos, backgrounds | High compression ratio |
+| SVG | Vector graphics | Scales without quality loss |
+| WebP | Modern environments | Lightweight, high quality |
 
-#### サイズガイドライン
+#### Size Guidelines
 
 | Asset Type | Recommended Size | Max Size |
 |------------|------------------|----------|
@@ -303,35 +303,35 @@ cp ~/Downloads/icon.png ~/.harness/video/assets/images/
 
 ---
 
-## 優先順位の詳細
+## Priority Details
 
-### 読み込み順序
+### Load Order
 
-`scripts/load-assets.js` は以下の順序でアセットを検索:
+`scripts/load-assets.js` searches for assets in the following order:
 
 ```javascript
-// 1. ユーザーアセット
+// 1. User assets
 const userPath = '~/.harness/video/assets/{category}/{file}';
 if (exists(userPath)) return userPath;
 
-// 2. スキルデフォルト
+// 2. Skill defaults
 const skillPath = 'skills/generate-video/assets/{category}/{file}';
 if (exists(skillPath)) return skillPath;
 
-// 3. ビルトインデフォルト
+// 3. Built-in defaults
 return getBuiltInDefault();
 ```
 
-### 部分上書き
+### Partial Override
 
-一部のアセットだけ上書き可能:
+You can override only some assets:
 
 ```bash
-# 背景だけカスタマイズ（効果音はデフォルト使用）
+# Customize only backgrounds (use default sound effects)
 cp my-backgrounds.json ~/.harness/video/assets/backgrounds/backgrounds.json
 ```
 
-### JSON内の部分上書き
+### Partial Override Within JSON
 
 ```json
 // ~/.harness/video/assets/backgrounds/backgrounds.json
@@ -341,36 +341,36 @@ cp my-backgrounds.json ~/.harness/video/assets/backgrounds/backgrounds.json
     {
       "id": "my-brand",
       "name": "My Brand"
-      // ... カスタム設定
+      // ... custom settings
     }
-    // "neutral", "highlight" 等は省略 → デフォルトから読み込まれる
+    // "neutral", "highlight", etc. are omitted → loaded from defaults
   ]
 }
 ```
 
-**注意**: 同じ `id` がある場合、ユーザー設定が優先されます。
+**Note**: When the same `id` exists, the user setting takes priority.
 
 ---
 
-## 動作確認
+## Verification
 
-### テストコマンド
+### Test Commands
 
 ```bash
-# アセット読み込みテスト
+# Test asset loading
 node scripts/load-assets.js test
 
-# 背景設定表示
+# Show background configuration
 node scripts/load-assets.js backgrounds
 
-# 効果音設定表示
+# Show sound effect configuration
 node scripts/load-assets.js sounds
 
-# 検索パス表示
+# Show search paths
 node scripts/load-assets.js paths
 ```
 
-### 期待される出力
+### Expected Output
 
 ```
 🧪 Testing asset loader...
@@ -390,104 +390,104 @@ node scripts/load-assets.js paths
 
 ---
 
-## トラブルシューティング
+## Troubleshooting
 
-### 問題: アセットが読み込まれない
+### Problem: Asset Not Loading
 
-**原因**: ファイルパスが間違っている
+**Cause**: Incorrect file path
 
-**解決策**:
+**Solution**:
 ```bash
-# パスを確認
+# Check path
 node scripts/load-assets.js paths
 
-# ファイルの存在確認
+# Verify file exists
 ls -la ~/.harness/video/assets/backgrounds/
 ```
 
-### 問題: JSON解析エラー
+### Problem: JSON Parse Error
 
-**原因**: JSON形式が不正
+**Cause**: Invalid JSON format
 
-**解決策**:
+**Solution**:
 ```bash
-# JSONの妥当性チェック
+# Validate JSON
 cat ~/.harness/video/assets/backgrounds/backgrounds.json | jq .
 
-# エラーメッセージを確認
+# Check error message
 node scripts/load-assets.js test
 ```
 
-### 問題: 効果音が再生されない
+### Problem: Sound Effect Not Playing
 
-**原因**: ファイル形式が非対応
+**Cause**: Unsupported file format
 
-**解決策**:
+**Solution**:
 ```bash
-# MP3に変換
+# Convert to MP3
 ffmpeg -i input.wav -codec:a libmp3lame -b:a 192k output.mp3
 
-# ファイル情報確認
+# Check file info
 ffprobe output.mp3
 ```
 
-### 問題: フォントが表示されない
+### Problem: Font Not Displaying
 
-**原因**: フォントファイルパスが解決できない
+**Cause**: Font file path cannot be resolved
 
-**解決策**:
+**Solution**:
 ```typescript
-// 絶対パスを使用
+// Use absolute path
 const fontPath = path.join(os.homedir(), '.harness/video/assets/fonts/MyFont.ttf');
 ```
 
 ---
 
-## ベストプラクティス
+## Best Practices
 
-### 1. バージョン管理
+### 1. Version Control
 
-カスタムアセットをGit管理したい場合:
+To manage custom assets with Git:
 
 ```bash
-# プロジェクトルートに配置
+# Place at project root
 project-root/
 ├── .video-assets/
 │   ├── backgrounds/
 │   ├── sounds/
 │   └── fonts/
-└── .gitignore  # .harness/ は除外
+└── .gitignore  # Exclude .harness/
 
-# シンボリックリンク作成
+# Create symlink
 ln -s $(pwd)/.video-assets ~/.harness/video/assets
 ```
 
-### 2. チーム共有
+### 2. Team Sharing
 
-チームで共通のアセットを使用:
+Use shared assets across the team:
 
 ```bash
-# 共有リポジトリ
+# Shared repository
 git clone https://github.com/company/video-assets.git ~/.harness/video/assets
 ```
 
-### 3. プロジェクト別アセット
+### 3. Per-Project Assets
 
-プロジェクトごとに異なるアセット:
+Use different assets per project:
 
 ```bash
-# 環境変数で切り替え
+# Switch via environment variable
 export VIDEO_ASSETS_DIR=/path/to/project-specific/assets
 
-# load-assets.js で環境変数を参照
+# Reference environment variable in load-assets.js
 const assetsDir = process.env.VIDEO_ASSETS_DIR || defaultPath;
 ```
 
-### 4. ライセンス管理
+### 4. License Management
 
 ```
 ~/.harness/video/assets/
-└── LICENSES.md    # 各アセットのライセンス情報
+└── LICENSES.md    # License information for each asset
 ```
 
 ```markdown
@@ -505,9 +505,9 @@ const assetsDir = process.env.VIDEO_ASSETS_DIR || defaultPath;
 
 ---
 
-## サンプル集
+## Sample Collection
 
-### ブランドカラー背景
+### Brand Color Background
 
 ```json
 {
@@ -532,7 +532,7 @@ const assetsDir = process.env.VIDEO_ASSETS_DIR || defaultPath;
 }
 ```
 
-### カスタム効果音セット
+### Custom Sound Effect Set
 
 ```json
 {
@@ -554,7 +554,7 @@ const assetsDir = process.env.VIDEO_ASSETS_DIR || defaultPath;
 }
 ```
 
-### 企業ロゴ
+### Company Logo
 
 ```json
 {
@@ -571,7 +571,7 @@ const assetsDir = process.env.VIDEO_ASSETS_DIR || defaultPath;
 
 ---
 
-## 参照
+## References
 
 - **Asset Loader**: `scripts/load-assets.js`
 - **Default Backgrounds**: `assets/backgrounds/backgrounds.json`
@@ -581,6 +581,6 @@ const assetsDir = process.env.VIDEO_ASSETS_DIR || defaultPath;
 
 ---
 
-## 更新履歴
+## Changelog
 
-- **2026-02-02**: 初版作成（Phase 7実装）
+- **2026-02-02**: Initial release (Phase 7 implementation)

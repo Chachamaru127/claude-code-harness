@@ -1,7 +1,7 @@
 #!/bin/bash
 # browser-review-runner.sh
-# generate-browser-review-artifact.sh の出力を受け取り、
-# route / browser_mode / execution_instructions を再利用しながら browser_verdict を返す。
+# Receives output from generate-browser-review-artifact.sh and returns
+# a browser_verdict, reusing route / browser_mode / execution_instructions.
 
 set -euo pipefail
 

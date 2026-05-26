@@ -1,14 +1,14 @@
 #!/bin/bash
 # max-iterations-default.sh
-# review.max_iterations のデフォルト値と手動上書きの動作を検証するユニットテスト
+# Unit test for the default value and manual override behavior of review.max_iterations
 #
 # Usage: ./tests/unit/max-iterations-default.sh
 #
-# 設計方針（Finding 4 対応後）:
-#   generate-sprint-contract.js の detectMaxIterations() は HTML コメントマーカーのみを受け付ける。
-#   記法: <!-- max_iterations: 15 -->（Markdown として表示されないため例示テキストと区別可能）
-#   素のテキスト「max_iterations: 15」は意図的に無視する（自己参照バグ防止）。
-#   範囲ガード: 1-30 の範囲外は profile default にフォールバック + stderr 警告。
+# Design policy (post Finding 4):
+#   detectMaxIterations() in generate-sprint-contract.js only accepts HTML comment markers.
+#   Syntax: <!-- max_iterations: 15 --> (not rendered by Markdown, so distinguishable from example text)
+#   Plain text "max_iterations: 15" is intentionally ignored (prevents self-reference bugs).
+#   Range guard: values outside 1-30 fall back to profile default + stderr warning.
 
 set -euo pipefail
 
@@ -28,23 +28,23 @@ check() {
     echo "  PASS: $label (got $actual)"
     PASS=$((PASS + 1))
   else
-    echo "  FAIL: $label — expected $expected, got $actual" >&2
+    echo "  FAIL: $label - expected $expected, got $actual" >&2
     FAIL=$((FAIL + 1))
   fi
 }
 
-# ベースの Plans.md を用意
+# Prepare the base Plans.md
 cat > "${TMP_DIR}/Plans.md" <<'EOF'
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
-| T-static | static タスク | test を実装する | - | cc:TODO |
-| T-browser | browser タスク | browser で UI フローを確認する | - | cc:TODO |
-| T-html-comment | HTML コメントタスク | <!-- max_iterations: 15 --> を DoD に記載 | - | cc:TODO |
-| T-out-of-range | 範囲外タスク | <!-- max_iterations: 100 --> は無効 | - | cc:TODO |
-| T-plain-text | 素のテキストタスク | max_iterations: 15 とだけ書いてある | - | cc:TODO |
+| Task | Description | DoD | Depends | Status |
+|------|-------------|-----|---------|--------|
+| T-static | static task | implement test | - | cc:TODO |
+| T-browser | browser task | verify UI flow in browser | - | cc:TODO |
+| T-html-comment | HTML comment task | include <!-- max_iterations: 15 --> in DoD | - | cc:TODO |
+| T-out-of-range | out-of-range task | <!-- max_iterations: 100 --> is invalid | - | cc:TODO |
+| T-plain-text | plain text task | only says max_iterations: 15 | - | cc:TODO |
 EOF
 
-echo "=== Case (i): contract なし相当（static profile）→ max_iterations=3 ==="
+echo "=== Case (i): no contract equivalent (static profile) → max_iterations=3 ==="
 OUT_I="${TMP_DIR}/out-i.json"
 (cd "${TMP_DIR}" && node "${PROJECT_ROOT}/scripts/generate-sprint-contract.js" "T-static" "${TMP_DIR}/Plans.md" "${OUT_I}" >/dev/null)
 ACTUAL_I="$(jq -r '.review.max_iterations' "${OUT_I}")"
@@ -57,32 +57,32 @@ OUT_II="${TMP_DIR}/out-ii.json"
 ACTUAL_II="$(jq -r '.review.max_iterations' "${OUT_II}")"
 check "browser profile → 5" "5" "${ACTUAL_II}"
 
-echo "=== Case (iii): HTML コメント <!-- max_iterations: 15 --> → 15（明示指定） ==="
+echo "=== Case (iii): HTML comment <!-- max_iterations: 15 --> → 15 (explicit override) ==="
 OUT_III="${TMP_DIR}/out-iii.json"
 (cd "${TMP_DIR}" && node "${PROJECT_ROOT}/scripts/generate-sprint-contract.js" "T-html-comment" "${TMP_DIR}/Plans.md" "${OUT_III}" >/dev/null)
 ACTUAL_III="$(jq -r '.review.max_iterations' "${OUT_III}")"
-check "HTML コメントマーカーで max_iterations=15 の明示指定" "15" "${ACTUAL_III}"
+check "explicit max_iterations=15 via HTML comment marker" "15" "${ACTUAL_III}"
 
-echo "=== Case (iv): HTML コメント <!-- max_iterations: 100 --> は範囲外 → profile default にフォールバック + stderr 警告 ==="
+echo "=== Case (iv): HTML comment <!-- max_iterations: 100 --> is out of range → falls back to profile default + stderr warning ==="
 OUT_IV="${TMP_DIR}/out-iv.json"
 STDERR_IV="${TMP_DIR}/stderr-iv.txt"
 (cd "${TMP_DIR}" && node "${PROJECT_ROOT}/scripts/generate-sprint-contract.js" "T-out-of-range" "${TMP_DIR}/Plans.md" "${OUT_IV}" 2>"${STDERR_IV}" >/dev/null)
 ACTUAL_IV="$(jq -r '.review.max_iterations' "${OUT_IV}")"
-check "範囲外 max_iterations=100 → profile default の 3" "3" "${ACTUAL_IV}"
-# stderr に警告が出力されているか確認
+check "out-of-range max_iterations=100 → profile default 3" "3" "${ACTUAL_IV}"
+# Check that a warning is emitted to stderr
 if grep -q "out of range" "${STDERR_IV}"; then
-  echo "  PASS: stderr に範囲外警告が出力されている"
+  echo "  PASS: out-of-range warning emitted to stderr"
   PASS=$((PASS + 1))
 else
-  echo "  FAIL: stderr に範囲外警告が出力されていない（内容: $(cat "${STDERR_IV}")）" >&2
+  echo "  FAIL: out-of-range warning not emitted to stderr (content: $(cat "${STDERR_IV}"))" >&2
   FAIL=$((FAIL + 1))
 fi
 
-echo "=== Case (v): 素のテキスト「max_iterations: 15」（HTML コメントなし）→ profile default のまま ==="
+echo "=== Case (v): plain text \"max_iterations: 15\" (no HTML comment) → stays at profile default ==="
 OUT_V="${TMP_DIR}/out-v.json"
 (cd "${TMP_DIR}" && node "${PROJECT_ROOT}/scripts/generate-sprint-contract.js" "T-plain-text" "${TMP_DIR}/Plans.md" "${OUT_V}" >/dev/null)
 ACTUAL_V="$(jq -r '.review.max_iterations' "${OUT_V}")"
-check "素のテキスト max_iterations: 15 は無視 → profile default の 3" "3" "${ACTUAL_V}"
+check "plain text max_iterations: 15 is ignored → profile default 3" "3" "${ACTUAL_V}"
 
 echo ""
 echo "Results: ${PASS} passed, ${FAIL} failed"

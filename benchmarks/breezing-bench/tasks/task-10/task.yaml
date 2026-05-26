@@ -1,7 +1,7 @@
 id: "task-10"
-name: "API 設計 - REST エンドポイント"
+name: "API design - REST endpoints"
 difficulty: "Hard"
-prompt: "BookStore インターフェースを実装してください。CRUD操作、ページネーション、バリデーション（ISBN重複チェック、空title/author禁止）を含めてください。Express は使わず、純粋な関数として実装してください。"
+prompt: "Implement the BookStore interface. Include CRUD operations, pagination, and validation (duplicate ISBN check, empty title/author prohibited). Implement as pure functions without using Express."
 hidden_test_count: 12
 setup_files:
   - src/types.ts

@@ -2,12 +2,12 @@
 # tests/test-progress-e2e.sh
 # Phase 65.4.5 - Phase D Progress Tracker e2e validation
 #
-# 検証フロー (Plans.md §65.4.5 DoD a-c):
-#   Step 1: 初回生成 - fixture Plans.md → snapshot → HTML
-#   Step 2: Plans 編集後再生成 - WIP 追加 → 再 snapshot で current_task 更新
-#   Step 3: scope-creep 発火 - drift detector → alert injection → HTML 表示
-#   Step 4: 過去判断表示 - past-judgments → JSON 出力
-#   Step 5: rate limit 検証 - PostToolUse hook 60s 規約
+# Validation flow (Plans.md §65.4.5 DoD a-c):
+#   Step 1: initial generation - fixture Plans.md → snapshot → HTML
+#   Step 2: re-generate after Plans edit - add WIP → update current_task via re-snapshot
+#   Step 3: scope-creep firing - drift detector → alert injection → HTML display
+#   Step 4: past judgment display - past-judgments → JSON output
+#   Step 5: rate limit validation - PostToolUse hook 60s contract
 
 set -euo pipefail
 
@@ -31,20 +31,20 @@ TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/test-progress-e2e.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 # ============================================================
-# Step 1: 初回生成 - fixture Plans.md (各 status 含む) → HTML
+# Step 1: initial generation - fixture Plans.md (includes various statuses) → HTML
 # ============================================================
 
 PLANS="$TMP_DIR/Plans.md"
 cat > "$PLANS" <<'PLANS'
 # Plans
 
-| Task | 内容 | DoD | Depends | Status |
-|------|------|-----|---------|--------|
-| 1.1 | 完了 task A | dod | - | cc:完了 [aaaaaaa] |
-| 1.2 | 完了 task B | dod | - | cc:完了 [bbbbbbb] |
-| 1.3 | 進行中 task | dod | - | cc:WIP |
-| 1.4 | 未着手 task A | dod | - | cc:TODO |
-| 1.5 | 未着手 task B | dod | - | cc:TODO |
+| Task | Content | DoD | Depends | Status |
+|------|---------|-----|---------|--------|
+| 1.1 | done task A | dod | - | cc:完了 [aaaaaaa] |
+| 1.2 | done task B | dod | - | cc:完了 [bbbbbbb] |
+| 1.3 | in-progress task | dod | - | cc:WIP |
+| 1.4 | not-started task A | dod | - | cc:TODO |
+| 1.5 | not-started task B | dod | - | cc:TODO |
 PLANS
 
 SNAP1="$TMP_DIR/snap1.json"
@@ -53,36 +53,36 @@ HTML1="$TMP_DIR/html1.html"
 bash "$SNAPSHOT" --plans "$PLANS" --project e2e-test > "$SNAP1"
 
 if jq -e '.progress_pct == 40 and (.done_tasks | length == 2) and (.wip_tasks | length == 1)' "$SNAP1" >/dev/null 2>&1; then
-  pass "Step 1: 初回 snapshot — 40% (2/5 完了), WIP 1 件, TODO 2 件"
+  pass "Step 1: initial snapshot — 40% (2/5 done), 1 WIP, 2 TODO"
 else
   fail "Step 1: snapshot incorrect"
 fi
 
 bash "$RENDER" --template progress --data "$SNAP1" --out "$HTML1" 2>/dev/null
 if grep -q "40%" "$HTML1"; then
-  pass "Step 1: HTML に 40% 表示"
+  pass "Step 1: HTML shows 40%"
 else
-  fail "Step 1: HTML に 40% なし"
+  fail "Step 1: HTML missing 40%"
 fi
 
 # ============================================================
-# Step 2: Plans 編集後再生成 - WIP 1.3 を完了に変更 → 再 snapshot
+# Step 2: re-generate after Plans edit - change WIP 1.3 to done → re-snapshot
 # ============================================================
 
-# 1.3 を WIP → 完了 に
+# change 1.3 from WIP → done
 sed -i.bak 's/cc:WIP/cc:完了 [ccccccc]/' "$PLANS"
 
 SNAP2="$TMP_DIR/snap2.json"
 bash "$SNAPSHOT" --plans "$PLANS" --project e2e-test > "$SNAP2"
 
 if jq -e '.progress_pct == 60 and (.done_tasks | length == 3) and (.wip_tasks | length == 0)' "$SNAP2" >/dev/null 2>&1; then
-  pass "Step 2: 再 snapshot — 60% (3/5 完了), WIP 0, current_task 空"
+  pass "Step 2: re-snapshot — 60% (3/5 done), 0 WIP, current_task empty"
 else
-  fail "Step 2: 再 snapshot incorrect"
+  fail "Step 2: re-snapshot incorrect"
 fi
 
 # ============================================================
-# Step 3: scope-creep 発火 - 5 alert を一気に inject → HTML 表示
+# Step 3: scope-creep firing - inject 5 alerts at once → HTML display
 # ============================================================
 
 ALERTS="$(bash "$DRIFT" \
@@ -94,38 +94,38 @@ ALERTS="$(bash "$DRIFT" \
 
 ALERT_COUNT="$(echo "$ALERTS" | jq 'length')"
 if [[ "$ALERT_COUNT" == "5" ]]; then
-  pass "Step 3: drift detector が 5 alert kind を発火"
+  pass "Step 3: drift detector fired 5 alert kinds"
 else
   fail "Step 3: alert count = $ALERT_COUNT (expected 5)"
 fi
 
-# alerts を snapshot に inject
+# inject alerts into snapshot
 SNAP3="$TMP_DIR/snap3.json"
 jq --argjson alerts "$ALERTS" '.alerts = $alerts' "$SNAP2" > "$SNAP3"
 
 HTML3="$TMP_DIR/html3.html"
 bash "$RENDER" --template progress --data "$SNAP3" --out "$HTML3" 2>/dev/null
 
-# 全 5 alert kind が HTML に表示されること (DoD b)
+# All 5 alert kinds must appear in HTML (DoD b)
 ALL_KINDS_OK="true"
 for kind in scope-creep time-overrun repeated-failure cost-warning high-risk-file; do
   if grep -q "$kind" "$HTML3"; then
-    pass "(b) HTML に $kind alert 表示"
+    pass "(b) HTML shows $kind alert"
   else
-    fail "(b) HTML に $kind 表示なし"
+    fail "(b) HTML missing $kind display"
     ALL_KINDS_OK="false"
   fi
 done
 
-# 色分け確認 (alert-warn, alert-critical) (DoD b)
+# color-code check (alert-warn, alert-critical) (DoD b)
 if grep -q "alert-warn" "$HTML3" && grep -q "alert-critical" "$HTML3"; then
-  pass "(b) HTML に warn / critical 色分け CSS 適用"
+  pass "(b) HTML has warn / critical color-coded CSS applied"
 else
-  fail "(b) HTML 色分けなし"
+  fail "(b) HTML missing color coding"
 fi
 
 # ============================================================
-# Step 4: 過去判断表示 - past-judgments で rejection_rate
+# Step 4: past judgment display - rejection_rate via past-judgments
 # ============================================================
 
 JUDGE_RECORDS="$TMP_DIR/judge-records.jsonl"
@@ -138,13 +138,13 @@ JSONL
 JUDGE_OUT="$(bash "$JUDGE" --alert-kind scope-creep --project e2e-test --records-file "$JUDGE_RECORDS")"
 
 if echo "$JUDGE_OUT" | jq -e '.rejection_rate_pct == 66 and .total_count == 3' >/dev/null 2>&1; then
-  pass "Step 4: 過去判断 lookup — rejection_rate 66% (2/3)"
+  pass "Step 4: past judgment lookup — rejection_rate 66% (2/3)"
 else
   fail "Step 4: past-judgments incorrect. got: $JUDGE_OUT"
 fi
 
 # ============================================================
-# Step 5: rate limit 検証 - PostToolUse hook 60s 規約
+# Step 5: rate limit validation - PostToolUse hook 60s contract
 # ============================================================
 
 # isolated project root
@@ -152,51 +152,51 @@ PROJ_ROOT="$TMP_DIR/proj-for-hook"
 mkdir -p "$PROJ_ROOT/.claude/state" "$PROJ_ROOT/out"
 cp "$PLANS" "$PROJ_ROOT/Plans.md"
 
-# 5-a: 初回 (state なし) → regenerated
+# 5-a: first run (no state) → regenerated
 OUT="$(echo "" | PROJECT_ROOT="$PROJ_ROOT" bash "$HOOK" 2>/dev/null)"
 if echo "$OUT" | jq -e '.regenerated == true' >/dev/null 2>&1; then
-  pass "Step 5-a: hook 初回 → regenerated:true"
+  pass "Step 5-a: hook first run → regenerated:true"
 else
   fail "Step 5-a: not regenerated. got: $OUT"
 fi
 
 sleep 1
 
-# 5-b: 直後 (60秒以内) → skipped:rate-limit
+# 5-b: immediately after (within 60s) → skipped:rate-limit
 OUT="$(echo "" | PROJECT_ROOT="$PROJ_ROOT" bash "$HOOK" 2>/dev/null)"
 if echo "$OUT" | jq -e '.skipped == "rate-limit"' >/dev/null 2>&1; then
-  pass "Step 5-b: hook rate-limit (60s 以内 skip)"
+  pass "Step 5-b: hook rate-limit (skip within 60s)"
 else
-  fail "Step 5-b: rate-limit 効いていない. got: $OUT"
+  fail "Step 5-b: rate-limit not effective. got: $OUT"
 fi
 
-# 5-c: 90秒前 state → 再生成
+# 5-c: state from 90s ago → regenerate
 NOW="$(date +%s)"
 echo "$((NOW - 90))" > "$PROJ_ROOT/.claude/state/progress-last-regen.txt"
 OUT="$(echo "" | PROJECT_ROOT="$PROJ_ROOT" bash "$HOOK" 2>/dev/null)"
 if echo "$OUT" | jq -e '.regenerated == true' >/dev/null 2>&1; then
-  pass "Step 5-c: hook 90s 後 → regenerated"
+  pass "Step 5-c: hook 90s later → regenerated"
 else
   fail "Step 5-c: not regenerated. got: $OUT"
 fi
 
 # ============================================================
-# DoD c: audit log には regen 履歴は通常残らない (PostToolUse hook は audit-group なしで呼ばれるため)
-#       ただし state file が更新されることは実質的な audit。state file の存在を確認。
+# DoD c: audit log normally has no regen history (PostToolUse hook called without audit-group)
+#        however, state file being updated is effectively an audit. confirm state file exists.
 # ============================================================
 
 if [[ -f "$PROJ_ROOT/.claude/state/progress-last-regen.txt" ]]; then
-  pass "(c) state file (regen audit) が存在"
+  pass "(c) state file (regen audit) exists"
 else
-  fail "(c) state file 未作成"
+  fail "(c) state file not created"
 fi
 
 # ============================================================
-# DoD d/e: validate-plugin.sh + check-consistency.sh は別実行のため skip
-# (CI 側で別途実行される、ここでは skip mark)
+# DoD d/e: validate-plugin.sh + check-consistency.sh run separately; skip here
+# (run separately by CI; enforced by CI gate)
 # ============================================================
 
-pass "(d/e) validate-plugin.sh / check-consistency.sh は本 e2e 外で実行 (CI gate にて担保)"
+pass "(d/e) validate-plugin.sh / check-consistency.sh run outside this e2e (guaranteed by CI gate)"
 
 # ============================================================
 # Result

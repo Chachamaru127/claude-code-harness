@@ -21,9 +21,9 @@ skills/
         └── ...
 ```
 
-> **CC v2.1.69+ 推奨**: `SKILL.md` から参照ファイルへリンクする場合は、
-> `references/...` の相対パスではなく `${CLAUDE_SKILL_DIR}/references/...` を使用する。
-> これにより、スキル実行場所に依存せず安定して参照できる。
+> **CC v2.1.69+ recommended**: When linking to reference files from `SKILL.md`,
+> use `${CLAUDE_SKILL_DIR}/references/...` rather than relative paths like `references/...`.
+> This ensures stable referencing regardless of where the skill is executed.
 
 ### 2. YAML Frontmatter Format (Required)
 
@@ -33,7 +33,6 @@ skills/
 ---
 name: skill-name
 description: "English description for auto-loading. Include trigger phrases."
-description-ja: "日本語の説明。トリガーフレーズを含む。"
 allowed-tools: ["Read", "Write", "Edit", "Bash", ...]
 ---
 ```
@@ -44,7 +43,6 @@ allowed-tools: ["Read", "Write", "Edit", "Bash", ...]
 |-------|----------|-------------|
 | `name` | Yes | Skill identifier (matches directory name) |
 | `description` | Yes | English description for auto-loading (include trigger phrases). Token-efficient. |
-| `description-ja` | Recommended | Japanese description for i18n. Use `scripts/set-locale.sh ja` to swap into `description`. |
 | `allowed-tools` | No | Tools the skill can use |
 | `argument-hint` | No | Usage hint (e.g., `"[option1|option2]"`) |
 | `disable-model-invocation` | No | Set `true` for dangerous operations |
@@ -56,14 +54,14 @@ allowed-tools: ["Read", "Write", "Edit", "Bash", ...]
 
 | Guideline | Recommendation |
 |-----------|----------------|
-| SKILL.md | 推奨 500 行以下 |
+| SKILL.md | Recommended 500 lines or fewer |
 | Large content | Split into `references/` files |
 | References | Use descriptive filenames |
 
-> **Note (CC 2.1.32+)**: スキルの文字バジェットはコンテキスト窓の **2%** に自動スケールされます。
-> 500 行はあくまで推奨値であり、実効上限はモデルのコンテキスト窓サイズに依存します。
-> 大きなスキルファイルは自動的にトリミングされる可能性があるため、
-> 重要な情報は SKILL.md の先頭付近に配置し、詳細は `references/` に分割してください。
+> **Note (CC 2.1.32+)**: The character budget for skills is automatically scaled to **2%** of the context window.
+> 500 lines is a recommendation only; the effective upper limit depends on the model's context window size.
+> Large skill files may be automatically trimmed, so place important information near the top of SKILL.md
+> and split details into `references/`.
 
 ### 5. Description Best Practices
 
@@ -162,7 +160,7 @@ When creating or editing skill files:
 - [ ] SKILL.md has required frontmatter (`name`, `description`)
 - [ ] `name` matches directory name
 - [ ] `description` includes trigger phrases and exclusions
-- [ ] SKILL.md は推奨 500 行以下 (use references for large content; 2% budget scaling applies)
+- [ ] SKILL.md is recommended 500 lines or fewer (use references for large content; 2% budget scaling applies)
 - [ ] References are under `references/` and linked via `${CLAUDE_SKILL_DIR}/references/...`
 - [ ] Related skills documented
 - [ ] Add entry to CHANGELOG.md (for new skills)
@@ -180,57 +178,58 @@ Commands have been migrated to skills. Key differences:
 | Auto-loading | Limited | Full description-based matching |
 | Supporting files | Not supported | `references/` subdirectory |
 
-## `context: fork` + `disable-model-invocation: true` 時の auto-start pattern
+## Auto-start Pattern for `context: fork` + `disable-model-invocation: true`
 
-`context: fork` を持つスキルは isolated context で動作し、host project の CLAUDE.md を継承しない。
-しかし実際には host session-start rules が fork 先に漏れ込み、スキルが「タスクが不明確」で停止する
-現象が通算 6 回観測された (Issue #84)。このセクションはその対策パターンを定義する。
+Skills with `context: fork` run in an isolated context and do not inherit the host project's CLAUDE.md.
+In practice, however, host session-start rules have been observed to leak into the fork context, causing the skill
+to stop with "task is unclear" — a phenomenon observed 6 times in total (Issue #84). This section defines the countermeasure pattern.
 
-### fork 継承の仕様
+### fork Inheritance Specification
 
-- `context: fork` スキルは起動時に新しい isolated context を作成する
-- 親セッションの CLAUDE.md / session-start rules は原則として継承されない
-- ただし CC の実装上、host project の rules が fork 先に流入するケースが確認されている (#84)
-- 流入した rules が「まず明確な指示を確認する」等の停止トリガーとして働く
+- A `context: fork` skill creates a new isolated context at launch
+- The parent session's CLAUDE.md / session-start rules are in principle not inherited
+- However, based on the CC implementation, cases where the host project's rules flow into the fork have been confirmed (#84)
+- Leaked rules trigger a stop condition such as "first confirm the task is clear"
 
-### auto-start pattern の実装ガイド
+### Implementation Guide for the auto-start Pattern
 
-`context: fork` スキルで即時自動開始が必要な場合、以下の 3 点を SKILL.md の Step 0 冒頭に実装する:
+When immediate automatic start is needed for a `context: fork` skill, implement the following 3 items at the top of Step 0 in SKILL.md:
 
-#### (1) 最冒頭 3 行以内に機械可読条件を literal に配置する
+#### (1) Place machine-readable conditions literally within the first 3 lines
 
 ```
 if $ARGUMENTS == "":
-  → {自動処理の内容} を開始する
-  → 「タスクが不明確」「追加の指示を待つ」は禁止行動
+  → begin {the content of the automatic processing}
+  → "task is unclear" and "waiting for additional instructions" are prohibited actions
 ```
 
-この条件ブロックを Step 0 見出しの直下 3 行以内に置くことで、
-他のルールが流入しても機械的に条件分岐が先に読まれることを保証する。
+Placing this condition block within 3 lines of the Step 0 heading ensures that,
+even if other rules leak in, the conditional branch is read mechanically first.
 
-#### (2) 禁止行動を明示列挙する
+#### (2) Explicitly enumerate prohibited actions
 
-停止パターンを具体的な文言で 3 項目以上列挙する。
-曖昧な「停止するな」ではなく、観測されたパターン（「タスクが不明確」「追加の指示をお待ちします」等）
-を literal に列挙することで、host rules の override を文言レベルで上書きする。
+List at least 3 stop patterns in specific wording.
+Rather than a vague "do not stop," enumerate the observed patterns literally
+(e.g., "task is unclear", "waiting for additional instructions", etc.)
+to textually override any host rules that may have leaked in.
 
-#### (3) `*_AUTOSTART` marker の契約を明記する
+#### (3) Document the `*_AUTOSTART` marker contract
 
-引数なしで呼ばれた時、最初の応答に識別マーカーを必ず出力する契約を書く:
+Write a contract that, when called without arguments, the first response must always include an identifying marker:
 
 ```
 REVIEW_AUTOSTART: base_ref={ref}, type=code
 ```
 
-この契約は次の効果を持つ:
-- 人間・監視スクリプトが自動開始を確認できる
-- marker を出力するという行動契約が、応答の最初の一手を「停止」から「実行」に固定する
-- `grep -c 'REVIEW_AUTOSTART' skills/*/SKILL.md` で実装漏れを検査できる
+This contract has the following effects:
+- Humans and monitoring scripts can confirm automatic start
+- The action contract of outputting the marker pins the very first step of the response to "execute" rather than "stop"
+- Implementation gaps can be inspected with `grep -c 'REVIEW_AUTOSTART' skills/*/SKILL.md`
 
-### 参考: harness-review の実装例
+### Reference: harness-review Implementation Example
 
-`skills/harness-review/SKILL.md` Step 0 が上記 3 パターンのリファレンス実装。
-同様の問題が他のスキルで発生した場合は同じパターンを適用する。
+Step 0 of `skills/harness-review/SKILL.md` is the reference implementation of the above 3 patterns.
+Apply the same pattern if the same problem occurs in other skills.
 
 ## Related Documentation
 

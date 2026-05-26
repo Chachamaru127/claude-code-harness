@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Breezing Benchmark Grader
-隠しテストを実行してスコアを算出する決定論的グレーダー
+Deterministic grader that runs hidden tests and calculates scores
 """
 
 import json
@@ -12,20 +12,20 @@ from typing import Dict, Any
 
 
 class BreezingGrader:
-    """Breezing ベンチマーク用グレーダー"""
+    """Grader for the Breezing benchmark"""
 
     def __init__(self, project_dir: Path, task_dir: Path):
         """
         Args:
-            project_dir: エージェントが作業したプロジェクトディレクトリ
-            task_dir: タスク定義ディレクトリ (hidden-tests/ を含む)
+            project_dir: Project directory where the agent worked
+            task_dir: Task definition directory (containing hidden-tests/)
         """
         self.project_dir = Path(project_dir).resolve()
         self.task_dir = Path(task_dir).resolve()
         self.hidden_tests_dir = self.task_dir / "hidden-tests"
 
     def grade(self) -> Dict[str, Any]:
-        """グレーディングを実行"""
+        """Run grading"""
         result: Dict[str, Any] = {
             "primary": self._grade_correctness(),
             "secondary": {
@@ -36,11 +36,11 @@ class BreezingGrader:
         return result
 
     def _grade_correctness(self) -> Dict[str, Any]:
-        """Primary endpoint: 隠しテスト通過率"""
+        """Primary endpoint: hidden test pass rate"""
         if not self.hidden_tests_dir.exists():
             return {"score": 0.0, "passed": 0, "total": 0, "error": "hidden-tests not found"}
 
-        # 隠しテストをプロジェクトにコピー
+        # Copy hidden tests into the project
         test_dest = self.project_dir / "src" / "__hidden_tests__"
         test_dest.mkdir(parents=True, exist_ok=True)
 
@@ -52,7 +52,7 @@ class BreezingGrader:
             shutil.copy2(test_file, test_dest / test_file.name)
 
         try:
-            # npm ci でインストール (lockfile がある場合)
+            # Install with npm ci (when lockfile exists)
             lock_file = self.project_dir / "package-lock.json"
             install_cmd = ["npm", "ci"] if lock_file.exists() else ["npm", "install"]
             subprocess.run(
@@ -62,7 +62,7 @@ class BreezingGrader:
                 timeout=60,
             )
 
-            # 隠しテストのみ実行
+            # Run only hidden tests
             test_result = subprocess.run(
                 ["npx", "vitest", "run", "--reporter=json", str(test_dest)],
                 cwd=self.project_dir,
@@ -71,9 +71,9 @@ class BreezingGrader:
                 text=True,
             )
 
-            # JSON レポートをパース
+            # Parse JSON report
             try:
-                # vitest の JSON 出力は stdout に出る
+                # vitest JSON output goes to stdout
                 report = json.loads(test_result.stdout)
                 total = report.get("numTotalTests", 0)
                 passed = report.get("numPassedTests", 0)
@@ -87,7 +87,7 @@ class BreezingGrader:
                     "details": self._extract_test_details(report),
                 }
             except (json.JSONDecodeError, KeyError):
-                # JSON パース失敗時はテキスト出力からパース
+                # Fall back to parsing text output when JSON parsing fails
                 return self._parse_text_output(test_result)
 
         except subprocess.TimeoutExpired:
@@ -95,16 +95,16 @@ class BreezingGrader:
         except FileNotFoundError:
             return {"score": 0.0, "passed": 0, "total": 0, "error": "npm/vitest not found"}
         finally:
-            # 隠しテストを削除 (クリーンアップ)
+            # Remove hidden tests (cleanup)
             if test_dest.exists():
                 shutil.rmtree(test_dest)
 
     def _parse_text_output(self, result: subprocess.CompletedProcess) -> Dict[str, Any]:
-        """テキスト出力からテスト結果をパース"""
+        """Parse test results from text output"""
         import re
         output = result.stdout + result.stderr
 
-        # vitest のサマリー行をパース: "Tests  5 passed | 2 failed (7)"
+        # Parse vitest summary line: "Tests  5 passed | 2 failed (7)"
         match = re.search(r"Tests\s+(\d+)\s+passed(?:\s*\|\s*(\d+)\s+failed)?\s*\((\d+)\)", output)
         if match:
             passed = int(match.group(1))
@@ -117,7 +117,7 @@ class BreezingGrader:
                 "failed": failed,
             }
 
-        # パース失敗
+        # Parsing failed
         return {
             "score": 0.0,
             "passed": 0,
@@ -127,7 +127,7 @@ class BreezingGrader:
         }
 
     def _extract_test_details(self, report: Dict[str, Any]) -> list:
-        """テスト詳細を抽出"""
+        """Extract test details"""
         details = []
         for suite in report.get("testResults", []):
             for test in suite.get("assertionResults", []):
@@ -139,7 +139,7 @@ class BreezingGrader:
         return details
 
     def _grade_typecheck(self) -> Dict[str, Any]:
-        """Secondary: tsc --noEmit の結果"""
+        """Secondary: tsc --noEmit result"""
         try:
             result = subprocess.run(
                 ["npx", "tsc", "--noEmit"],
@@ -157,7 +157,7 @@ class BreezingGrader:
             return {"success": False, "error_count": -1}
 
     def _count_self_tests(self) -> int:
-        """Secondary: エージェントが自作したテストファイル数"""
+        """Secondary: number of test files created by the agent"""
         test_patterns = ["*.test.ts", "*.spec.ts", "*.test.js", "*.spec.js"]
         count = 0
         for pattern in test_patterns:

@@ -3,180 +3,180 @@ _harness_template: "CLAUDE.md.template"
 _harness_version: "4.3.3"
 ---
 
-# CLAUDE.md - Claude Code 実行指示書
+# CLAUDE.md - Claude Code Execution Instructions
 
-> **プロジェクト**: {{PROJECT_NAME}}
-> **作成日**: {{DATE}}
-> **言語**: {{LANGUAGE}}
-
----
-
-## ⚠️ 最初に読むこと
-
-**`AGENTS.md` を必ず最初に参照してください。**
-
-- 開発フロー概要
-- 役割分担
-- 禁止事項
-
-本ファイルは **Claude Code 固有の設定** のみを記載しています。
+> **Project**: {{PROJECT_NAME}}
+> **Created**: {{DATE}}
+> **Language**: {{LANGUAGE}}
 
 ---
 
-## 1. Claude Code の責務範囲
+## ⚠️ Read This First
 
-### ✅ 担当する作業
+**Always read `AGENTS.md` first.**
 
-- 4ファイル以上・100行超の実装
-- コミット & プッシュ
-- CI 通過確認（失敗時は自動修正、3回まで）
-- staging デプロイ（該当する場合）
+- Development flow overview
+- Role responsibilities
+- Prohibited actions
 
-### ❌ 禁止事項
-
-- **本番デプロイは禁止**（Cursor の責務）
-- スコープ外の作業
-- セキュリティ設定の変更
+This file contains **Claude Code-specific configuration** only.
 
 ---
 
-## 2. コミットメッセージ規約
+## 1. Claude Code Responsibilities
+
+### Tasks to Handle
+
+- Implementations spanning 4+ files or 100+ lines
+- Commit and push
+- Verify CI passes (auto-fix on failure, up to 3 attempts)
+- Staging deploy (when applicable)
+
+### Prohibited Actions
+
+- **Production deploys are prohibited** (Cursor's responsibility)
+- Working outside requested scope
+- Changing security settings
+
+---
+
+## 2. Commit Message Convention
 
 ```
-feat: 新機能
-fix: バグ修正
-docs: ドキュメント
-refactor: リファクタリング
-test: テスト
-chore: その他
+feat: add a new feature
+fix: fix a bug
+docs: update documentation
+refactor: refactor code
+test: add or update tests
+chore: maintenance work
 ```
 
-例: `feat: ユーザー認証機能を追加`
+Example: `feat: add user authentication`
 
 ---
 
-## 3. CI 失敗時の対応
+## 3. Handling CI Failures
 
-### 対応フロー
+### Response Flow
 
-1. CI 失敗を検知
-2. エラーログを確認
-3. 修正 → 再コミット → CI 再実行
-4. **3回失敗した場合は Cursor にエスカレーション**
+1. Detect CI failure
+2. Check error logs
+3. Fix → re-commit → re-run CI
+4. **Escalate to Cursor after 3 failures**
 
-### エスカレーション報告フォーマット
+### Escalation Report Format
 
 ```markdown
-## ⚠️ CI失敗エスカレーション
+## ⚠️ CI Failure Escalation
 
-**失敗回数**: 3回
-**ブランチ**: {{branch}}
+**Failure count**: 3
+**Branch**: {{branch}}
 
-### エラー内容
-[エラーログの要約]
+### Error Details
+[Summary of error log]
 
-### 試した修正
-1. [修正1]
-2. [修正2]
-3. [修正3]
+### Attempted Fixes
+1. [Fix 1]
+2. [Fix 2]
+3. [Fix 3]
 
-### 推定原因
-[原因の推測]
+### Estimated Root Cause
+[Hypothesis]
 
-### Cursor への依頼
-[具体的な依頼内容]
+### Request to Cursor
+[Specific request]
 ```
 
 ---
 
-## 4. ハンドオフプロトコル
+## 4. Handoff Protocol
 
-### Cursor → Claude Code（作業依頼）
+### Cursor → Claude Code (work assignment)
 
 ```markdown
-## 作業依頼
-- **タスク概要**: 具体的な作業内容
-- **スコープ**: 変更対象ファイル・範囲
-- **完了条件**: 明確な受け入れ基準
+## Work Assignment
+- **Task summary**: specific task description
+- **Scope**: target files and range of changes
+- **Completion criteria**: clear acceptance criteria
 ```
 
-### Claude Code → Cursor（作業完了報告）
+### Claude Code → Cursor (completion report)
 
-`/handoff-to-cursor` コマンドを使用するか、以下のフォーマットで報告：
+Use the `/handoff-to-cursor` command or report in the following format:
 
 ```markdown
-## 🎯 作業完了報告
+## Work Completion Report
 
-**報告日時**: YYYY-MM-DD HH:MM
-**担当**: Claude Code
+**Reported at**: YYYY-MM-DD HH:MM
+**Owner**: Claude Code
 
-### 完了タスク
-- **タスク名**: [タスクの説明]
+### Completed Tasks
+- **Task name**: [task description]
 
-### 実施内容
-1. [実施した作業1]
-2. [実施した作業2]
+### Work Performed
+1. [Action 1]
+2. [Action 2]
 
-### 変更ファイル
-| ファイル | 変更内容 |
-|---------|---------|
-| `path/to/file1` | [変更概要] |
+### Changed Files
+| File | Change summary |
+|------|----------------|
+| `path/to/file1` | [change description] |
 
-### CI 状況
-- CI: ✅ 通過 / ❌ 失敗
+### CI Status
+- CI: Passed / Failed
 
-### 次のアクション（Cursor 向け）
-1. [ ] 変更内容の確認
-2. [ ] 本番デプロイの判断
+### Next Actions (for Cursor)
+1. [ ] Review changes
+2. [ ] Decide on production deploy
 ```
 
 ---
 
-## 5. セッションルーティン
+## 5. Session Routine
 
-### セッション開始時
+### At Session Start
 
 ```bash
-# 状態確認
+# Check state
 git status -sb
 cat Plans.md
 head -50 AGENTS.md
 ```
 
-または「セッション開始」と入力してスキルを起動。
+Or type "session start" to launch the skill.
 
-### 作業完了時
+### When Work Is Complete
 
 ```bash
-# コミット（規約に従う）
+# Commit (follow convention)
 git add -A
-git commit -m "feat: [変更内容]"
+git commit -m "feat: [description of change]"
 git push
 
-# 完了報告
+# Completion report
 /handoff-to-cursor
 ```
 
 ---
 
-## 6. 利用可能なコマンド
+## 6. Available Commands
 
-| コマンド | 用途 |
-|---------|------|
-| `/sync-status` | 状況把握・次アクション提案 |
-| `/work` | タスク実行（着手時に cc:WIP に自動更新） |
-| `/handoff-to-cursor` | 完了報告 |
-
----
-
-## 7. トラブルシューティング
-
-| 症状 | 解決策 |
-|------|--------|
-| タスクが見つからない | Plans.md を確認、または Cursor に依頼 |
-| CI が失敗し続ける | 3回まで修正、その後エスカレーション |
-| スコープが不明確 | Cursor に確認を依頼 |
+| Command | Purpose |
+|---------|---------|
+| `/sync-status` | Check state and suggest next actions |
+| `/work` | Execute tasks (auto-sets cc:WIP on start) |
+| `/handoff-to-cursor` | Completion report |
 
 ---
 
-*このドキュメントは AGENTS.md と連携して使用してください。*
+## 7. Troubleshooting
+
+| Symptom | Solution |
+|---------|---------|
+| Task not found | Check Plans.md, or request from Cursor |
+| CI keeps failing | Fix up to 3 times, then escalate |
+| Scope is unclear | Ask Cursor for clarification |
+
+---
+
+*Use this document together with AGENTS.md.*

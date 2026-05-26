@@ -4,20 +4,20 @@
 #
 # Usage: ./scripts/plan-brief-open.sh <html_path>
 #
-# 動作:
-#   - macOS: `open <path>` で default browser に dispatch
-#   - Linux: `xdg-open <path>` (xdg-utils 必須)
+# Behavior:
+#   - macOS: dispatch to default browser via `open <path>`
+#   - Linux: `xdg-open <path>` (requires xdg-utils)
 #   - Windows (Git Bash / MSYS): `start "" <path>`
-#   - 不明な OS: stderr に警告し、stdout に path を出力 (best-effort)
+#   - Unknown OS: print warning to stderr and output path to stdout (best-effort)
 #
-# Skip 条件:
-#   - 環境変数 BROWSER=true … CI 環境想定。open は skip し、stdout に path だけ出力
-#   - 環境変数 PLAN_BRIEF_NO_OPEN=1 … 明示的な opt-out
+# Skip conditions:
+#   - Env var BROWSER=true … assumed CI environment; skip open, only output path to stdout
+#   - Env var PLAN_BRIEF_NO_OPEN=1 … explicit opt-out
 #
 # Exit code:
-#   - 0: open 成功 (または skip 成功)
-#   - 2: 引数不正
-#   - その他: open コマンドの exit code (best-effort なので fail-soft)
+#   - 0: open succeeded (or skip succeeded)
+#   - 2: invalid arguments
+#   - other: exit code from the open command (fail-soft since best-effort)
 
 set -euo pipefail
 
@@ -25,12 +25,12 @@ usage() {
   cat <<USAGE >&2
 Usage: $0 <html_path>
 
-引数:
-  <html_path>            開きたい HTML ファイルの絶対パスまたは相対パス
+Arguments:
+  <html_path>            Absolute or relative path to the HTML file to open
 
-環境変数:
-  BROWSER=true           open を skip し path だけ stdout 出力
-  PLAN_BRIEF_NO_OPEN=1   open を skip し path だけ stdout 出力 (明示 opt-out)
+Environment variables:
+  BROWSER=true           Skip open and only output path to stdout
+  PLAN_BRIEF_NO_OPEN=1   Skip open and only output path to stdout (explicit opt-out)
 USAGE
   exit 2
 }
@@ -47,13 +47,13 @@ if [[ ! -f "$HTML_PATH" ]]; then
   exit 2
 fi
 
-# 絶対パスに正規化 (relative path だと open が誤動作する OS があるため)
+# normalize to absolute path (some OS open commands misbehave with relative paths)
 case "$HTML_PATH" in
   /*) ABS_PATH="$HTML_PATH" ;;
   *)  ABS_PATH="$(pwd)/$HTML_PATH" ;;
 esac
 
-# CI 環境または明示 opt-out なら skip
+# skip if CI environment or explicit opt-out
 if [[ "${BROWSER:-}" == "true" || "${PLAN_BRIEF_NO_OPEN:-}" == "1" ]]; then
   printf '%s\n' "$ABS_PATH"
   echo "INFO: skipped browser open (BROWSER=true or PLAN_BRIEF_NO_OPEN=1)" >&2

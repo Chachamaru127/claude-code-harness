@@ -10,16 +10,17 @@ import (
 	"strings"
 )
 
-// AutoCleanupHandler は PostToolUse フックハンドラ（自動サイズチェック）。
-// Write/Edit ツールで書き込まれたファイルのサイズ（行数）をチェックし、
-// Plans.md / session-log.md / CLAUDE.md が閾値を超えた場合に systemMessage で警告する。
+// AutoCleanupHandler is a PostToolUse hook handler (automatic size check).
+// It checks the size (line count) of files written by Write/Edit tools and
+// emits a systemMessage warning when Plans.md / session-log.md / CLAUDE.md
+// exceed the configured threshold.
 //
-// shell 版: scripts/auto-cleanup-hook.sh
+// shell equivalent: scripts/auto-cleanup-hook.sh
 type AutoCleanupHandler struct {
-	// ProjectRoot はプロジェクトルートのパス。空の場合は cwd を使用する。
+	// ProjectRoot is the path to the project root. If empty, cwd is used.
 	ProjectRoot string
 
-	// 閾値（0 の場合はデフォルト値を使用）
+	// Thresholds (0 means use the default value).
 	PlansMaxLines      int
 	SessionLogMaxLines int
 	ClaudeMdMaxLines   int
@@ -31,7 +32,7 @@ const (
 	defaultClaudeMdMaxLines   = 100
 )
 
-// autoCleanupInput は PostToolUse フックの stdin JSON。
+// autoCleanupInput is the stdin JSON for the PostToolUse hook.
 type autoCleanupInput struct {
 	ToolInput    autoCleanupToolInput    `json:"tool_input"`
 	ToolResponse autoCleanupToolResponse `json:"tool_response"`
@@ -46,7 +47,7 @@ type autoCleanupToolResponse struct {
 	FilePath string `json:"filePath"`
 }
 
-// Handle は stdin から PostToolUse ペイロードを読み取り、ファイルサイズをチェックする。
+// Handle reads the PostToolUse payload from stdin and checks file sizes.
 func (h *AutoCleanupHandler) Handle(r io.Reader, w io.Writer) error {
 	data, _ := io.ReadAll(r)
 
@@ -76,12 +77,12 @@ func (h *AutoCleanupHandler) Handle(r io.Reader, w io.Writer) error {
 		}
 	}
 
-	// プロジェクト相対パスへ正規化
+	// Normalize to a project-relative path.
 	if strings.HasPrefix(filePath, cwd+"/") {
 		filePath = filePath[len(cwd)+1:]
 	}
 
-	// 閾値を決定
+	// Determine thresholds.
 	plansMax := h.PlansMaxLines
 	if plansMax == 0 {
 		plansMax = h.envInt("PLANS_MAX_LINES", defaultPlansMaxLines)
@@ -95,7 +96,7 @@ func (h *AutoCleanupHandler) Handle(r io.Reader, w io.Writer) error {
 		claudeMax = h.envInt("CLAUDE_MD_MAX_LINES", defaultClaudeMdMaxLines)
 	}
 
-	// 絶対パスを解決（ファイルの存在確認に使う）
+	// Resolve absolute path (used for file existence checks).
 	absPath := filePath
 	if !filepath.IsAbs(absPath) {
 		absPath = filepath.Join(cwd, filePath)
@@ -109,7 +110,7 @@ func (h *AutoCleanupHandler) Handle(r io.Reader, w io.Writer) error {
 	return writeCleanupOutput(w, feedback)
 }
 
-// checkFile はファイルを判別してサイズチェックを行い、フィードバック文字列を返す。
+// checkFile identifies the file and performs a size check, returning a feedback string.
 func (h *AutoCleanupHandler) checkFile(relPath, absPath string, plansMax, sessionMax, claudeMax int, cwd, locale string) string {
 	lower := strings.ToLower(relPath)
 	var feedback string
@@ -126,7 +127,7 @@ func (h *AutoCleanupHandler) checkFile(relPath, absPath string, plansMax, sessio
 	return feedback
 }
 
-// checkPlans は Plans.md の行数をチェックし、アーカイブ検知も行う。
+// checkPlans checks the line count of Plans.md and also detects archive sections.
 func (h *AutoCleanupHandler) checkPlans(absPath string, maxLines int, cwd, locale string) string {
 	lines, err := countLines(absPath)
 	if err != nil {
@@ -137,12 +138,12 @@ func (h *AutoCleanupHandler) checkPlans(absPath string, maxLines int, cwd, local
 	if lines > maxLines {
 		feedback = localizedHarnessMessage(locale,
 			fmt.Sprintf("Warning: Plans.md has %d lines (limit: %d). Consider archiving old tasks with /maintenance.", lines, maxLines),
-			fmt.Sprintf("⚠️ Plans.md が %d 行です（上限: %d行）。/maintenance で古いタスクをアーカイブすることを推奨します。", lines, maxLines))
+			fmt.Sprintf("⚠️ Plans.md has %d lines (limit: %d). Consider archiving old tasks with /maintenance.", lines, maxLines))
 	}
 
-	// アーカイブセクション検知 + SSOT フラグチェック
+	// Detect archive section + check SSOT flag.
 	if containsArchiveSection(absPath) {
-		// リポジトリルートの stateDir を使用
+		// Use the stateDir at the repository root.
 		repoRoot := cwd
 		if root, err := gitRepoRoot(cwd); err == nil {
 			repoRoot = root
@@ -153,11 +154,11 @@ func (h *AutoCleanupHandler) checkPlans(absPath string, maxLines int, cwd, local
 		if !fileExists(ssotFlag) {
 			ssotWarning := localizedHarnessMessage(locale,
 				"**Run /memory sync before cleaning up Plans.md** - important decisions or learnings may not be reflected in the SSOT (decisions.md/patterns.md).",
-				"**Plans.md クリーンアップ前に /memory sync を実行してください** - 重要な決定や学習事項が SSOT (decisions.md/patterns.md) に反映されていない可能性があります。")
+				"**Run /memory sync before cleaning up Plans.md** - important decisions or learnings may not be reflected in the SSOT (decisions.md/patterns.md).")
 			if feedback != "" {
-				feedback = feedback + localizedHarnessMessage(locale, " | Warning: ", " | ⚠️ ") + ssotWarning
+				feedback = feedback + localizedHarnessMessage(locale, " | Warning: ", " | Warning: ") + ssotWarning
 			} else {
-				feedback = localizedHarnessMessage(locale, "Warning: ", "⚠️ ") + ssotWarning
+				feedback = localizedHarnessMessage(locale, "Warning: ", "Warning: ") + ssotWarning
 			}
 		}
 	}
@@ -165,7 +166,7 @@ func (h *AutoCleanupHandler) checkPlans(absPath string, maxLines int, cwd, local
 	return feedback
 }
 
-// checkSessionLog は session-log.md の行数をチェックする。
+// checkSessionLog checks the line count of session-log.md.
 func (h *AutoCleanupHandler) checkSessionLog(absPath string, maxLines int, locale string) string {
 	lines, err := countLines(absPath)
 	if err != nil {
@@ -174,12 +175,12 @@ func (h *AutoCleanupHandler) checkSessionLog(absPath string, maxLines int, local
 	if lines > maxLines {
 		return localizedHarnessMessage(locale,
 			fmt.Sprintf("Warning: session-log.md has %d lines (limit: %d). Consider splitting it by month with /maintenance.", lines, maxLines),
-			fmt.Sprintf("⚠️ session-log.md が %d 行です（上限: %d行）。/maintenance で月別に分割することを推奨します。", lines, maxLines))
+			fmt.Sprintf("⚠️ session-log.md has %d lines (limit: %d). Consider splitting it by month with /maintenance.", lines, maxLines))
 	}
 	return ""
 }
 
-// checkClaudeMd は CLAUDE.md の行数をチェックする。
+// checkClaudeMd checks the line count of CLAUDE.md.
 func (h *AutoCleanupHandler) checkClaudeMd(absPath string, maxLines int, locale string) string {
 	lines, err := countLines(absPath)
 	if err != nil {
@@ -188,12 +189,12 @@ func (h *AutoCleanupHandler) checkClaudeMd(absPath string, maxLines int, locale 
 	if lines > maxLines {
 		return localizedHarnessMessage(locale,
 			fmt.Sprintf("Warning: CLAUDE.md has %d lines. Consider splitting rules into .claude/rules/ or moving long content to docs/ and referencing it with @docs/filename.md.", lines),
-			fmt.Sprintf("⚠️ CLAUDE.md が %d 行です。.claude/rules/ への分割、または docs/ に移動して @docs/filename.md で参照することを検討してください。", lines))
+			fmt.Sprintf("⚠️ CLAUDE.md has %d lines. Consider splitting rules into .claude/rules/ or moving long content to docs/ and referencing it with @docs/filename.md.", lines))
 	}
 	return ""
 }
 
-// countLines はファイルの行数を数える。
+// countLines counts the number of lines in a file.
 func countLines(path string) (int, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -209,7 +210,7 @@ func countLines(path string) (int, error) {
 	return count, sc.Err()
 }
 
-// containsArchiveSection はファイルにアーカイブセクションが含まれているかを確認する。
+// containsArchiveSection reports whether a file contains an archive section.
 func containsArchiveSection(path string) bool {
 	f, err := os.Open(path)
 	if err != nil {
@@ -220,8 +221,8 @@ func containsArchiveSection(path string) bool {
 	sc := bufio.NewScanner(f)
 	for sc.Scan() {
 		line := sc.Text()
-		if strings.Contains(line, "📦 アーカイブ") ||
-			strings.Contains(line, "## アーカイブ") ||
+		if strings.Contains(line, "📦 Archive") ||
+			strings.Contains(line, "## Archive") ||
 			strings.Contains(line, "Archive") {
 			return true
 		}
@@ -229,7 +230,7 @@ func containsArchiveSection(path string) bool {
 	return false
 }
 
-// envInt は環境変数を整数として取得し、未設定またはパース失敗時はデフォルト値を返す。
+// envInt reads an environment variable as an integer; returns defaultVal if unset or parse fails.
 func (h *AutoCleanupHandler) envInt(key string, defaultVal int) int {
 	val := os.Getenv(key)
 	if val == "" {
@@ -242,8 +243,8 @@ func (h *AutoCleanupHandler) envInt(key string, defaultVal int) int {
 	return n
 }
 
-// writeCleanupOutput は feedback を additionalContext として JSON 出力する。
-// bash は単純な JSON 文字列として出力しているため、同じ形式で出力する。
+// writeCleanupOutput writes feedback as additionalContext JSON output.
+// The bash equivalent outputs a plain JSON string, so we use the same format here.
 func writeCleanupOutput(w io.Writer, feedback string) error {
 	type hookOutput struct {
 		HookEventName     string `json:"hookEventName"`

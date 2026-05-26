@@ -1,3 +1,3 @@
-EventEmitter に `once(event, listener)` メソッドを追加してください。
-`types.ts` にインターフェース定義があります。
-一度だけ呼ばれるリスナーを登録し、発火後に自動削除する機能です。
+Add a `once(event, listener)` method to EventEmitter.
+The interface definition is in `types.ts`.
+This registers a listener that fires only once and is automatically removed after being triggered.

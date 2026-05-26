@@ -1,5 +1,5 @@
 #!/bin/bash
-# usage tracking hooks が stdout に record-usage ノイズを出さないことを確認
+# Verify that usage tracking hooks do not emit record-usage noise to stdout
 
 set -euo pipefail
 

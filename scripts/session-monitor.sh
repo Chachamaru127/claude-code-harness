@@ -1,15 +1,15 @@
 #!/bin/bash
 # session-monitor.sh
-# セッション開始時にプロジェクト状態を収集・表示
+# Collect and display project status on session start
 #
-# Usage: SessionStart hook から自動実行
-# Output: プロジェクト状態サマリー + 状態ファイル生成
+# Usage: Auto-executed from SessionStart hook
+# Output: Project status summary + state file generation
 
-# エラーで停止しない（Git エラー等を許容）
+# Do not stop on errors (tolerate Git errors etc.)
 set +e
 
 # ================================
-# 設定
+# Configuration
 # ================================
 STATE_DIR=".claude/state"
 STATE_FILE="$STATE_DIR/session.json"
@@ -17,7 +17,7 @@ TOOLING_POLICY_FILE="$STATE_DIR/tooling-policy.json"
 EVENT_LOG_FILE="$STATE_DIR/session.events.jsonl"
 CONFIG_FILE=".claude-code-harness.config.yaml"
 
-# plansDirectory 設定を考慮して Plans.md のパスを取得
+# Get the path to Plans.md, taking the plansDirectory setting into account
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 if [ -f "${SCRIPT_DIR}/config-utils.sh" ]; then
   source "${SCRIPT_DIR}/config-utils.sh"
@@ -27,24 +27,24 @@ else
 fi
 
 # ================================
-# ヘルパー関数
+# Helper functions
 # ================================
 
-# 相対時間を計算（秒数から「X分前」「X時間前」等）
+# Calculate relative time (from seconds to "X minutes ago", "X hours ago", etc.)
 relative_time() {
   local seconds=$1
   if [ "$seconds" -lt 60 ]; then
-    echo "${seconds}秒前"
+    echo "${seconds}s ago"
   elif [ "$seconds" -lt 3600 ]; then
-    echo "$((seconds / 60))分前"
+    echo "$((seconds / 60))m ago"
   elif [ "$seconds" -lt 86400 ]; then
-    echo "$((seconds / 3600))時間前"
+    echo "$((seconds / 3600))h ago"
   else
-    echo "$((seconds / 86400))日前"
+    echo "$((seconds / 86400))d ago"
   fi
 }
 
-# Plans.md からタスク数をカウント
+# Count tasks from Plans.md
 count_tasks() {
   local marker=$1
   local count=0
@@ -56,14 +56,14 @@ count_tasks() {
 }
 
 # ================================
-# 状態収集
+# Status collection
 # ================================
 
-# プロジェクト情報
+# Project information
 PROJECT_NAME=$(basename "$(pwd)")
 CURRENT_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-# Git 情報
+# Git information
 if [ -d ".git" ]; then
   GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
   [ -z "$GIT_BRANCH" ] && GIT_BRANCH="unknown"
@@ -78,13 +78,13 @@ else
   GIT_LAST_COMMIT_TIME="0"
 fi
 
-# Plans.md 情報
+# Plans.md information
 if [ -f "$PLANS_FILE" ]; then
   PLANS_EXISTS="true"
   PLANS_MODIFIED=$(stat -f "%m" "$PLANS_FILE" 2>/dev/null || stat -c "%Y" "$PLANS_FILE" 2>/dev/null || echo "0")
   WIP_COUNT=$(( $(count_tasks "cc:wip") + $(count_tasks "cc:WIP") ))
   TODO_COUNT=$(( $(count_tasks "cc:todo") + $(count_tasks "cc:TODO") ))
-  # English marker family を正規。日本語 / cursor は互換で同義扱い
+  # Normalize to the English marker family; Japanese / cursor variants are treated as equivalent aliases
   PENDING_COUNT=$(( $(count_tasks "pm:requested") + $(count_tasks "pm:依頼中") + $(count_tasks "cursor:依頼中") ))
   COMPLETED_COUNT=$(( $(count_tasks "cc:done") + $(count_tasks "cc:完了") ))
 else
@@ -96,7 +96,7 @@ else
   COMPLETED_COUNT="0"
 fi
 
-# Orchestration 設定の読み取り（簡易パース）
+# Read Orchestration configuration (simple parse)
 ORCH_MAX_RETRIES="3"
 ORCH_BACKOFF="10"
 if [ -f "$CONFIG_FILE" ]; then
@@ -110,14 +110,14 @@ if [ -f "$CONFIG_FILE" ]; then
   fi
 fi
 
-# 前回セッション情報
+# Previous session information
 LAST_SESSION_TIME="0"
 if [ -f "$STATE_FILE" ]; then
   LAST_SESSION_TIME=$(cat "$STATE_FILE" | grep -o '"started_at":"[^"]*"' | cut -d'"' -f4 | xargs -I{} date -j -f "%Y-%m-%dT%H:%M:%SZ" "{}" "+%s" 2>/dev/null || echo "0")
 fi
 
 # ================================
-# 状態ファイル生成
+# State file generation
 # ================================
 # Security: refuse if STATE_DIR or its parent is a symlink (prevents symlink-based overwrites)
 if [ -L "$STATE_DIR" ] || [ -L "$(dirname "$STATE_DIR")" ]; then
@@ -126,7 +126,7 @@ if [ -L "$STATE_DIR" ] || [ -L "$(dirname "$STATE_DIR")" ]; then
 fi
 mkdir -p "$STATE_DIR"
 
-# 既存セッションが未終了なら resume を試みる
+# Attempt to resume if an existing session has not yet ended
 EXISTING_SESSION_ID=""
 EXISTING_ENDED_AT=""
 EXISTING_RESUME_TOKEN=""
@@ -172,7 +172,7 @@ if [ "$FORK_MODE" = "true" ] && [ -n "$EXISTING_SESSION_ID" ]; then
   RESUME_MODE="false"
 fi
 
-# イベントログ初期化
+# Initialize event log
 touch "$EVENT_LOG_FILE" 2>/dev/null || true
 
 gen_session_id() {
@@ -242,7 +242,7 @@ OLD_UMASK=$(umask)
 umask 077
 
 if [ "$RESUME_MODE" = "true" ] && [ -f "$STATE_FILE" ]; then
-  # 既存セッションを更新（resume）
+  # Update existing session (resume)
   if command -v jq >/dev/null 2>&1; then
     tmp_file=$(mktemp)
     jq --arg cwd "$(pwd)" \
@@ -284,7 +284,7 @@ if [ "$RESUME_MODE" = "true" ] && [ -f "$STATE_FILE" ]; then
 
   append_event "session.resume" "initialized" "$CURRENT_TIME" ""
 else
-  # 新規セッション or fork
+  # New session or fork
   NEW_SESSION_ID="$(gen_session_id)"
   RESUME_TOKEN="$(gen_resume_token)"
   PARENT_SESSION_ID="null"
@@ -342,7 +342,7 @@ fi
 # Restore original umask
 umask "$OLD_UMASK"
 
-# Resume / Fork 情報（表示用）
+# Resume / Fork info (for display)
 RESUME_INFO=""
 FORK_INFO=""
 if [ "$RESUME_MODE" = "true" ]; then
@@ -353,10 +353,10 @@ if [ "$FORK_MODE" = "true" ] && [ -n "$EXISTING_SESSION_ID" ]; then
 fi
 
 # ================================
-# Tooling Policy ファイル生成
+# Tooling Policy file generation
 # ================================
 
-# LSP 可用性の判定（公式LSPプラグイン導入状況）
+# Determine LSP availability (installation status of official LSP plugins)
 LSP_AVAILABLE="false"
 LSP_PLUGINS=""
 PLUGIN_LIST=""
@@ -364,16 +364,16 @@ PLUGIN_COUNT="unknown"
 PLUGIN_ENABLED_ESTIMATE="unknown"
 PLUGIN_SOURCE=""
 
-# 既知の公式LSPプラグイン名（マーケットプレイス）
-# 全10種の公式プラグインをサポート
+# Known official LSP plugin names (marketplace)
+# Supports all 10 official plugin types
 OFFICIAL_LSP_PLUGINS="typescript-lsp pyright-lsp rust-analyzer-lsp gopls-lsp clangd-lsp jdtls-lsp swift-lsp lua-lsp php-lsp csharp-lsp"
 
 if command -v claude >/dev/null 2>&1; then
-  # claude plugin list でインストール済みプラグインを確認
+  # Check installed plugins via claude plugin list
   PLUGIN_LIST=$(claude plugin list 2>/dev/null || true)
   INSTALLED_PLUGINS=$(echo "$PLUGIN_LIST" | grep -o '[a-z-]*lsp' || true)
 
-  # 公式LSPプラグインが1つでも導入されているかチェック
+  # Check whether at least one official LSP plugin is installed
   for plugin in $OFFICIAL_LSP_PLUGINS; do
     if echo "$INSTALLED_PLUGINS" | grep -q "$plugin"; then
       LSP_AVAILABLE="true"
@@ -381,7 +381,7 @@ if command -v claude >/dev/null 2>&1; then
     fi
   done
 
-  # プラグイン数の推定
+  # Estimate plugin count
   if [ -n "$PLUGIN_LIST" ]; then
     PLUGIN_COUNT=$(echo "$PLUGIN_LIST" | grep -E '^[[:space:]]*[a-z0-9][a-z0-9-]*@' | wc -l | tr -d ' ')
     PLUGIN_DISABLED=$(echo "$PLUGIN_LIST" | grep -Ei 'disabled|inactive' | grep -E '^[[:space:]]*[a-z0-9]' | wc -l | tr -d ' ')
@@ -519,7 +519,7 @@ if command -v jq >/dev/null 2>&1 && [ -n "$MCP_SOURCES" ]; then
   MCP_SOURCES_JSON=$(printf "%s\n" $MCP_SOURCES | jq -R . | jq -s '.' 2>/dev/null || echo "[]")
 fi
 
-# JSON用の数値/NULL整形
+# Format numbers/NULL for JSON
 json_number_or_null() {
   local value="$1"
   if [ -z "$value" ] || [ "$value" = "unknown" ]; then
@@ -538,10 +538,10 @@ format_count() {
   fi
 }
 
-# Skillsインデックスの生成（name + description）
+# Generate skills index (name + description)
 SKILLS_INDEX="[]"
 if [ -d "skills" ]; then
-  # JSONフォーマットでskillsを収集（jq優先、なければpythonでフォールバック）
+  # Collect skills in JSON format (prefer jq; fall back to python if unavailable)
   if command -v jq >/dev/null 2>&1; then
     SKILLS_INDEX=$(
       find skills -name 'doc.md' -type f 2>/dev/null | while read -r doc_file; do
@@ -575,10 +575,10 @@ PY
   fi
 fi
 
-# LSP可用性を拡張子別にマッピング（簡略版）
+# Map LSP availability by file extension (abbreviated)
 LSP_BY_EXT="{}"
 if [ "$LSP_AVAILABLE" = "true" ]; then
-  # 公式LSPプラグインが導入されている場合、対応拡張子をマッピング
+  # When official LSP plugins are installed, map them to their supported file extensions
   if echo "$LSP_PLUGINS" | grep -q "typescript-lsp"; then
     LSP_BY_EXT=$(echo "$LSP_BY_EXT" | jq '. + {"ts": true, "tsx": true, "js": true, "jsx": true}' 2>/dev/null || echo '{"ts":true,"tsx":true,"js":true,"jsx":true}')
   fi
@@ -611,7 +611,7 @@ if [ "$LSP_AVAILABLE" = "true" ]; then
   fi
 fi
 
-# tooling-policy.json を生成
+# Generate tooling-policy.json
 cat > "$TOOLING_POLICY_FILE" << EOF
 {
   "lsp": {
@@ -646,22 +646,22 @@ cat > "$TOOLING_POLICY_FILE" << EOF
 EOF
 
 # ================================
-# サマリー出力
+# Summary output
 # ================================
 echo ""
-echo "📊 セッション開始 - プロジェクト状態"
+echo "📊 Session started - project status"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "📂 プロジェクト: $PROJECT_NAME"
-echo "🔀 ブランチ: $GIT_BRANCH"
+echo "📂 Project: $PROJECT_NAME"
+echo "🔀 Branch: $GIT_BRANCH"
 
 if [ "$GIT_UNCOMMITTED" -gt 0 ]; then
-  echo "📝 未コミット: ${GIT_UNCOMMITTED}ファイル"
+  echo "📝 Uncommitted: ${GIT_UNCOMMITTED} file(s)"
 fi
 
 if [ "$PLANS_EXISTS" = "true" ]; then
   TOTAL_ACTIVE=$((WIP_COUNT + TODO_COUNT + PENDING_COUNT))
   if [ "$TOTAL_ACTIVE" -gt 0 ]; then
-    echo "📋 Plans.md: WIP ${WIP_COUNT}件 / TODO $((TODO_COUNT + PENDING_COUNT))件"
+    echo "📋 Plans.md: WIP ${WIP_COUNT} / TODO $((TODO_COUNT + PENDING_COUNT))"
   fi
 fi
 
@@ -669,21 +669,21 @@ if [ "$CONTEXT_BUDGET_ENABLED" = "true" ]; then
   MCP_CONFIG_LABEL="$(format_count "$MCP_CONFIGURED")"
   MCP_ENABLED_LABEL="$(format_count "$MCP_ENABLED_ESTIMATE")"
   PLUGIN_LABEL="$(format_count "$PLUGIN_ENABLED_ESTIMATE")"
-  echo "🧠 コンテキスト予算（推定）: MCP ${MCP_ENABLED_LABEL}/${MCP_CONFIG_LABEL}, Plugins ${PLUGIN_LABEL}"
+  echo "🧠 Context budget (estimate): MCP ${MCP_ENABLED_LABEL}/${MCP_CONFIG_LABEL}, Plugins ${PLUGIN_LABEL}"
 
   if [ "$MCP_ENABLED_ESTIMATE" != "unknown" ] && [ "$MCP_ENABLED_ESTIMATE" -gt "$CONTEXT_MAX_ENABLED_MCPS" ] 2>/dev/null; then
-    echo "⚠️ MCP 有効数の推定値が上限を超えています (${MCP_ENABLED_ESTIMATE}/${CONTEXT_MAX_ENABLED_MCPS})"
+    echo "⚠️ Estimated enabled MCP count exceeds limit (${MCP_ENABLED_ESTIMATE}/${CONTEXT_MAX_ENABLED_MCPS})"
   fi
 
   if [ "$PLUGIN_ENABLED_ESTIMATE" != "unknown" ] && [ "$PLUGIN_ENABLED_ESTIMATE" -gt "$CONTEXT_MAX_INSTALLED_PLUGINS" ] 2>/dev/null; then
-    echo "⚠️ プラグイン数の推定値が上限を超えています (${PLUGIN_ENABLED_ESTIMATE}/${CONTEXT_MAX_INSTALLED_PLUGINS})"
+    echo "⚠️ Estimated plugin count exceeds limit (${PLUGIN_ENABLED_ESTIMATE}/${CONTEXT_MAX_INSTALLED_PLUGINS})"
   fi
 fi
 
 if [ -n "$LAST_SESSION_TIME" ] && [ "$LAST_SESSION_TIME" != "0" ] && [ "$LAST_SESSION_TIME" -gt 0 ] 2>/dev/null; then
   NOW=$(date +%s)
   DIFF=$((NOW - LAST_SESSION_TIME))
-  echo "⏰ 前回セッション: $(relative_time $DIFF)"
+  echo "⏰ Previous session: $(relative_time $DIFF)"
 fi
 
 if [ -n "$RESUME_INFO" ]; then

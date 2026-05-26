@@ -1,11 +1,11 @@
 #!/bin/bash
 # session-list.sh
-# アクティブセッション一覧を表示
+# Display list of active sessions
 #
-# 使用方法:
+# Usage:
 #   ./session-list.sh
 #
-# 出力: アクティブセッション一覧
+# Output: List of active sessions
 
 set -euo pipefail
 
@@ -20,13 +20,13 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# ===== 設定 =====
+# ===== Configuration =====
 SESSIONS_DIR=".claude/sessions"
 ACTIVE_FILE="${SESSIONS_DIR}/active.json"
 SESSION_FILE=".claude/state/session.json"
-STALE_THRESHOLD=3600  # 1時間経過したセッションは stale とみなす
+STALE_THRESHOLD=3600  # sessions inactive for 1 hour are considered stale
 
-# ===== ヘルパー関数 =====
+# ===== Helper functions =====
 get_current_session_id() {
   if [ -f "$SESSION_FILE" ] && command -v jq >/dev/null 2>&1; then
     jq -r '.session_id // "unknown"' "$SESSION_FILE" 2>/dev/null
@@ -39,14 +39,14 @@ get_current_timestamp() {
   date +%s
 }
 
-# ===== メイン処理 =====
+# ===== Main processing =====
 main() {
   mkdir -p "$SESSIONS_DIR"
 
   local current_session=$(get_current_session_id)
   local current_time=$(get_current_timestamp)
 
-  # 現在のセッションを登録/更新
+  # Register/update current session
   if [ -n "$current_session" ] && [ "$current_session" != "unknown" ]; then
     local session_data="{}"
 
@@ -73,58 +73,58 @@ main() {
     fi
   fi
 
-  # セッション一覧を表示
-  echo "📋 アクティブセッション一覧"
+  # Display session list
+  echo "📋 Active session list"
   echo ""
 
   if [ ! -f "$ACTIVE_FILE" ]; then
-    echo "  (セッションなし)"
+    echo "  (no sessions)"
     exit 0
   fi
 
   if ! command -v jq >/dev/null 2>&1; then
-    echo "  ⚠️ jq がインストールされていないため詳細表示できません"
+    echo "  ⚠️ Cannot display details because jq is not installed"
     exit 0
   fi
 
-  # 古いセッションをクリーンアップしながら表示
+  # Display while cleaning up old sessions
   local active_count=0
   local stale_count=0
 
-  echo "| セッションID | 最終アクティブ | 状態 |"
-  echo "|-------------|---------------|------|"
+  echo "| Session ID | Last active | Status |"
+  echo "|------------|-------------|--------|"
 
-  # セッションを処理
+  # Process sessions
   jq -r 'to_entries[] | "\(.key)|\(.value.short_id)|\(.value.last_seen)|\(.value.status)"' "$ACTIVE_FILE" 2>/dev/null | while IFS='|' read -r full_id short_id last_seen status; do
     local age=$((current_time - last_seen))
     local time_ago=""
     local display_status=""
 
     if [ "$age" -lt 60 ]; then
-      time_ago="${age}秒前"
+      time_ago="${age}s ago"
     elif [ "$age" -lt 3600 ]; then
-      time_ago="$((age / 60))分前"
+      time_ago="$((age / 60))m ago"
     elif [ "$age" -lt 86400 ]; then
-      time_ago="$((age / 3600))時間前"
+      time_ago="$((age / 3600))h ago"
     else
-      time_ago="$((age / 86400))日前"
+      time_ago="$((age / 86400))d ago"
     fi
 
     if [ "$full_id" = "$current_session" ]; then
-      display_status="🟢 現在のセッション"
+      display_status="🟢 current session"
     elif [ "$age" -lt "$STALE_THRESHOLD" ]; then
-      display_status="🟡 アクティブ"
+      display_status="🟡 active"
     else
-      display_status="⚪ 非アクティブ"
+      display_status="⚪ inactive"
     fi
 
     echo "| ${short_id} | ${time_ago} | ${display_status} |"
   done
 
   echo ""
-  echo "💡 ヒント:"
-  echo "  - /session broadcast \"メッセージ\" で全セッションに通知"
-  echo "  - /session inbox で受信メッセージを確認"
+  echo "💡 Tips:"
+  echo "  - /session broadcast \"message\" to notify all sessions"
+  echo "  - /session inbox to check received messages"
 }
 
 main "$@"

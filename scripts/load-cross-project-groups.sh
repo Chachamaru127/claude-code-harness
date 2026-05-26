@@ -31,14 +31,14 @@ set -euo pipefail
 usage() {
   cat <<'USAGE' >&2
 Usage:
-  load-cross-project-groups.sh                       全 groups を JSON 出力
-  load-cross-project-groups.sh --group <name>        特定 group の members を JSON array で出力
-  load-cross-project-groups.sh --yaml <path>         yaml ファイル指定 (default: .claude/rules/cross-project-groups.yaml)
+  load-cross-project-groups.sh                       Output all groups as JSON
+  load-cross-project-groups.sh --group <name>        Output members of a specific group as a JSON array
+  load-cross-project-groups.sh --yaml <path>         Specify yaml file (default: .claude/rules/cross-project-groups.yaml)
 
 Options:
-  --group <name>   group 名指定 (members 配列を出力)
-  --yaml <path>    yaml ファイルパス (test 用)
-  -h | --help      このヘルプを表示
+  --group <name>   Specify group name (outputs members array)
+  --yaml <path>    Path to yaml file (for testing)
+  -h | --help      Show this help
 
 Exit code:
   0 = success
@@ -60,7 +60,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# default yaml path = repo root の SSOT
+# default yaml path = repo root SSOT
 if [[ -z "$YAML_PATH" ]]; then
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"

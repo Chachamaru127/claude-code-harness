@@ -11,34 +11,34 @@ import (
 	"time"
 )
 
-// TrackCommandHandler は UserPromptSubmit フックハンドラ（スラッシュコマンド追跡）。
-// ユーザープロンプトから /slash コマンドを検出し、使用回数を記録する。
-// また、必須コマンドは pending-skills マーカーファイルを作成する。
+// TrackCommandHandler is a UserPromptSubmit hook handler (slash-command tracking).
+// Detects /slash commands in the user prompt and records their usage count.
+// Also creates pending-skills marker files for required commands.
 //
-// shell 版: scripts/userprompt-track-command.sh
+// Shell version: scripts/userprompt-track-command.sh
 type TrackCommandHandler struct {
-	// ProjectRoot はプロジェクトルートのパス。空の場合は cwd を使用する。
+	// ProjectRoot is the path to the project root. Falls back to cwd when empty.
 	ProjectRoot string
 }
 
-// trackCommandInput は UserPromptSubmit フックの入力。
+// trackCommandInput is the input for the UserPromptSubmit hook.
 type trackCommandInput struct {
 	Prompt string `json:"prompt"`
 }
 
-// trackCommandResponse は TrackCommand フックのレスポンス。
+// trackCommandResponse is the response for the TrackCommand hook.
 type trackCommandResponse struct {
 	Continue bool `json:"continue"`
 }
 
-// pendingEntry は pending ファイルの内容。
+// pendingEntry is the content of a pending file.
 type pendingEntry struct {
 	Command       string `json:"command"`
 	StartedAt     string `json:"started_at"`
 	PromptPreview string `json:"prompt_preview"`
 }
 
-// skillRequiredCommands は pending マーカーを作成する必須コマンド一覧。
+// skillRequiredCommands is the list of required commands for which a pending marker is created.
 var skillRequiredCommands = map[string]bool{
 	"work":            true,
 	"harness-review":  true,
@@ -46,10 +46,10 @@ var skillRequiredCommands = map[string]bool{
 	"plan-with-agent": true,
 }
 
-// slashCommandRe は行頭の /slash-command を検出する正規表現。
+// slashCommandRe is the regular expression that detects a /slash-command at the start of a line.
 var slashCommandRe = regexp.MustCompile(`^/([a-zA-Z0-9_:/-]+)`)
 
-// Handle は stdin からペイロードを読み取り、スラッシュコマンドを検出・記録する。
+// Handle reads the payload from stdin, detects slash commands, and records them.
 func (h *TrackCommandHandler) Handle(r io.Reader, w io.Writer) error {
 	data, err := io.ReadAll(r)
 	if err != nil {
@@ -69,7 +69,7 @@ func (h *TrackCommandHandler) Handle(r io.Reader, w io.Writer) error {
 		return writeTrackJSON(w, trackCommandResponse{Continue: true})
 	}
 
-	// 最初の行のみチェック
+	// Check only the first line
 	firstLine := strings.SplitN(input.Prompt, "\n", 2)[0]
 	matches := slashCommandRe.FindStringSubmatch(firstLine)
 	if matches == nil {
@@ -78,8 +78,8 @@ func (h *TrackCommandHandler) Handle(r io.Reader, w io.Writer) error {
 
 	rawCommand := matches[1]
 
-	// コマンド名を正規化（プラグインプレフィックスを除去）
-	// company-ai-harness:xxx:yyy → yyy（最後のセグメント）
+	// Normalise the command name (strip plugin prefix)
+	// company-ai-harness:xxx:yyy → yyy (last segment)
 	commandName := rawCommand
 	if strings.HasPrefix(commandName, "company-ai-harness:") || strings.HasPrefix(commandName, "company-ai-harness/") {
 		// 最後のセグメントを取り出す（: または / の後）
@@ -99,10 +99,10 @@ func (h *TrackCommandHandler) Handle(r io.Reader, w io.Writer) error {
 	stateDir := filepath.Join(projectRoot, ".claude", "state")
 	pendingDir := filepath.Join(stateDir, "pending-skills")
 
-	// Skill 必須コマンドかチェック
+	// Check whether this is a skill-required command
 	if skillRequiredCommands[commandName] {
 		if err := h.createPendingMarker(pendingDir, commandName, input.Prompt); err != nil {
-			// pending ファイルの作成失敗は無視してフックを継続
+			// Ignore failure to create pending file and continue the hook
 			_, _ = fmt.Fprintf(os.Stderr, "[track-command] Warning: failed to create pending marker: %v\n", err)
 		}
 	}
@@ -110,28 +110,28 @@ func (h *TrackCommandHandler) Handle(r io.Reader, w io.Writer) error {
 	return writeTrackJSON(w, trackCommandResponse{Continue: true})
 }
 
-// createPendingMarker は pending マーカーファイルを作成する。
-// シンボリックリンク経由のパス横断を防止するため、各パスを検証する。
+// createPendingMarker creates a pending marker file.
+// Each path is validated to prevent path traversal via symbolic links.
 func (h *TrackCommandHandler) createPendingMarker(pendingDir, commandName, prompt string) error {
-	// シンボリックリンクチェック（pendingDir とその親）
+	// Symlink check (pendingDir and its parent)
 	parentDir := filepath.Dir(pendingDir)
 	if isSymlink(parentDir) || isSymlink(pendingDir) {
 		return fmt.Errorf("symlink detected in state path, skipping")
 	}
 
-	// ディレクトリ作成（owner-only パーミッション）
+	// Create directory (owner-only permissions)
 	if err := os.MkdirAll(pendingDir, 0700); err != nil {
 		return fmt.Errorf("mkdir pending dir: %w", err)
 	}
 
 	pendingFile := filepath.Join(pendingDir, commandName+".pending")
 
-	// pending ファイル自体がシンボリックリンクでないか確認
+	// Verify that the pending file itself is not a symbolic link
 	if isSymlink(pendingFile) {
 		return fmt.Errorf("symlink detected at %s, skipping", pendingFile)
 	}
 
-	// prompt preview（最大200文字（rune）、改行をスペースに変換）
+	// Prompt preview (at most 200 runes; newlines converted to spaces)
 	preview := strings.ReplaceAll(prompt, "\n", " ")
 	runes := []rune(preview)
 	if len(runes) > 200 {
@@ -149,11 +149,11 @@ func (h *TrackCommandHandler) createPendingMarker(pendingDir, commandName, promp
 		return fmt.Errorf("marshaling pending entry: %w", err)
 	}
 
-	// owner-only パーミッションで書き込み
+	// Write with owner-only permissions
 	return os.WriteFile(pendingFile, entryData, 0600)
 }
 
-// writeTrackJSON は v を JSON として w に書き出す。
+// writeTrackJSON writes v as JSON to w.
 func writeTrackJSON(w io.Writer, v interface{}) error {
 	data, err := json.Marshal(v)
 	if err != nil {

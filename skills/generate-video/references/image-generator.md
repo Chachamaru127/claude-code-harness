@@ -1,48 +1,48 @@
-# Image Generator - Nano Banana Pro 画像自動生成
+# Image Generator - Nano Banana Pro Automated Image Generation
 
-Nano Banana Pro（Google DeepMind）を使用して、動画シーン用の高品質画像を自動生成します。
-
----
-
-## 概要
-
-`/generate-video` のシーン生成フェーズで、素材画像が必要と判定された場合に自動実行されます。
-2枚生成 → Claude が品質判定 → NG なら再生成、という品質保証ループを実装しています。
-
-## 前提条件
-
-- `GOOGLE_AI_API_KEY` 環境変数が設定済み
-- Google AI Studio で Nano Banana Pro（Gemini 3 Pro Image Preview）が有効化済み
+Uses Nano Banana Pro (Google DeepMind) to automatically generate high-quality images for video scenes.
 
 ---
 
-## API 仕様
+## Overview
 
-> **公式ドキュメント**: [Nano Banana image generation | Gemini API](https://ai.google.dev/gemini-api/docs/image-generation)
+Automatically executed during the scene generation phase of `/generate-video` when asset images are determined to be needed.
+Implements a quality assurance loop: generate 2 images → Claude quality-checks → regenerate if NG.
 
-### エンドポイント
+## Prerequisites
+
+- `GOOGLE_AI_API_KEY` environment variable is set
+- Nano Banana Pro (Gemini 3 Pro Image Preview) is enabled in Google AI Studio
+
+---
+
+## API Specification
+
+> **Official documentation**: [Nano Banana image generation | Gemini API](https://ai.google.dev/gemini-api/docs/image-generation)
+
+### Endpoint
 
 ```
 POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent
 ```
 
-### モデル選択
+### Model Selection
 
-| モデル | 用途 | 最大解像度 |
+| Model | Use | Max Resolution |
 |--------|------|-----------|
-| `gemini-3-pro-image-preview` | プロ品質（推奨） | 4K |
-| `gemini-2.5-flash-image` | 高速・低コスト | 1024px |
+| `gemini-3-pro-image-preview` | Professional quality (recommended) | 4K |
+| `gemini-2.5-flash-image` | Fast, low-cost | 1024px |
 
-### 認証
+### Authentication
 
 ```bash
-# x-goog-api-key ヘッダー（Gemini API 標準方式）
+# x-goog-api-key header (Gemini API standard)
 x-goog-api-key: ${GOOGLE_AI_API_KEY}
 ```
 
-> **注意**: Gemini API は `x-goog-api-key` ヘッダーを使用します。Query parameter 方式 (`?key=...`) も利用可能ですが、ヘッダー方式を推奨します。
+> **Note**: The Gemini API uses the `x-goog-api-key` header. The query parameter method (`?key=...`) is also available, but the header method is recommended.
 
-### リクエスト形式
+### Request Format
 
 ```json
 {
@@ -61,9 +61,9 @@ x-goog-api-key: ${GOOGLE_AI_API_KEY}
 }
 ```
 
-> **注**: `responseModalities` で `["TEXT", "IMAGE"]` または `["IMAGE"]` を指定できます。本フローでは品質判定用にテキスト説明も取得するため、両方を指定しています。
+> **Note**: `responseModalities` can be set to `["TEXT", "IMAGE"]` or `["IMAGE"]`. This flow specifies both to also obtain a text description for quality checking.
 
-### レスポンス形式
+### Response Format
 
 ```json
 {
@@ -83,40 +83,40 @@ x-goog-api-key: ${GOOGLE_AI_API_KEY}
 }
 ```
 
-> **注**: REST API は snake_case を使用します（`inline_data`, `mime_type`）。SDK は camelCase（`inlineData`, `mimeType`）を使用します。
+> **Note**: The REST API uses snake_case (`inline_data`, `mime_type`). The SDK uses camelCase (`inlineData`, `mimeType`).
 
 ---
 
-## 解像度オプション
+## Resolution Options
 
-| 設定 | 解像度 | 用途 | コスト目安 |
+| Setting | Resolution | Use | Estimated Cost |
 |------|--------|------|-----------|
-| `1K` | 1024×1024 | プレビュー、テスト | ~$0.02/枚 |
-| `2K` | 2048×2048 | 標準品質 | ~$0.06/枚 |
-| `4K` | 4096×4096 | 高品質、プロフェッショナル | ~$0.12/枚 |
+| `1K` | 1024×1024 | Preview, testing | ~$0.02/image |
+| `2K` | 2048×2048 | Standard quality | ~$0.06/image |
+| `4K` | 4096×4096 | High quality, professional | ~$0.12/image |
 
-### アスペクト比
+### Aspect Ratios
 
-| 比率 | 用途 |
+| Ratio | Use |
 |------|------|
-| `16:9` | 動画シーン（推奨） |
-| `1:1` | アイコン、ロゴ |
-| `9:16` | 縦型動画 |
-| `4:3` | プレゼン資料 |
+| `16:9` | Video scenes (recommended) |
+| `1:1` | Icons, logos |
+| `9:16` | Vertical videos |
+| `4:3` | Presentation materials |
 
 ---
 
-## プロンプト設計ガイドライン
+## Prompt Design Guidelines
 
-### 基本構造
+### Basic Structure
 
 ```
-[主題] + [スタイル] + [品質指定] + [制約]
+[Subject] + [Style] + [Quality specification] + [Constraints]
 ```
 
-### シーンタイプ別プロンプトテンプレート
+### Prompt Templates by Scene Type
 
-#### イントロ/タイトルシーン
+#### Intro / Title Scene
 
 ```
 Professional product logo and title card for "{product_name}",
@@ -125,7 +125,7 @@ modern minimalist design, clean typography,
 cinematic quality, 4K render
 ```
 
-#### UI デモシーン（補助画像）
+#### UI Demo Scene (Supplementary Image)
 
 ```
 Modern web application interface showing {feature_description},
@@ -134,7 +134,7 @@ professional SaaS aesthetic, mockup style,
 no text labels, focus on visual hierarchy
 ```
 
-#### CTA シーン
+#### CTA Scene
 
 ```
 Call-to-action banner for {product_name},
@@ -143,7 +143,7 @@ action-oriented design, prominent button,
 clear visual hierarchy, engaging composition
 ```
 
-#### アーキテクチャ/概念図
+#### Architecture / Concept Diagram
 
 ```
 Technical architecture diagram showing {concept},
@@ -152,70 +152,70 @@ clear visual flow, connected components,
 professional documentation quality, clean lines
 ```
 
-### プロンプト品質向上のコツ
+### Tips for Better Prompts
 
-| 追加要素 | 効果 |
+| Addition | Effect |
 |---------|------|
-| `professional quality` | 全体の品質向上 |
-| `clean design` | 不要な要素の削減 |
-| `modern aesthetic` | 現代的なデザイン |
-| `cinematic lighting` | ドラマチックな照明 |
-| `4K render` | 高解像度 |
-| `no text` | テキストなし（後で追加する場合） |
+| `professional quality` | Overall quality improvement |
+| `clean design` | Reduce unwanted elements |
+| `modern aesthetic` | Contemporary design |
+| `cinematic lighting` | Dramatic lighting |
+| `4K render` | High resolution |
+| `no text` | No text (when text will be added later) |
 
-### 避けるべきプロンプト
+### Patterns to Avoid
 
-| NG パターン | 理由 |
+| NG Pattern | Reason |
 |------------|------|
-| 曖昧な指示 | 「いい感じの画像」→ 結果が不安定 |
-| 過度に複雑 | 要素が多すぎると品質低下 |
-| テキスト指定 | AI 生成テキストは品質不安定 |
-| 著作権物 | ブランドロゴ等は生成不可 |
+| Vague instructions | "A nice image" → Unstable results |
+| Overly complex | Too many elements degrades quality |
+| Text specification | AI-generated text quality is unstable |
+| Copyrighted material | Brand logos, etc. cannot be generated |
 
 ---
 
-## 実行フロー
+## Execution Flow
 
 ```
-シーン生成フェーズ
+Scene generation phase
     │
-    ├── [Step 1] 素材必要判定
-    │   └─ シーンタイプ、既存素材の有無を確認
-    │       ├── 素材あり → スキップ
-    │       └── 素材なし → Step 2 へ
+    ├── [Step 1] Determine if asset is needed
+    │   └─ Check scene type and existing assets
+    │       ├── Asset exists → Skip
+    │       └── No asset → Proceed to Step 2
     │
-    ├── [Step 2] プロンプト生成
-    │   ├─ シーン情報からプロンプト構築
-    │   ├─ ブランド情報（色、スタイル）を反映
-    │   └─ テンプレートを適用
+    ├── [Step 2] Generate prompt
+    │   ├─ Build prompt from scene information
+    │   ├─ Incorporate brand information (colors, style)
+    │   └─ Apply template
     │
-    ├── [Step 3] 画像生成（2枚並列）
-    │   └─ Nano Banana Pro API 呼び出し（2回並列実行）
-    │       generateContent × 2（同時リクエストで遅延削減）
+    ├── [Step 3] Generate images (2 in parallel)
+    │   └─ Nano Banana Pro API call (2 parallel requests)
+    │       generateContent × 2 (simultaneous requests to reduce latency)
     │
-    ├── [Step 4] 品質判定
-    │   └─ → image-quality-check.md 参照
+    ├── [Step 4] Quality check
+    │   └─ → See image-quality-check.md
     │
-    ├── [Step 5] 結果処理
-    │   ├── 成功 → 画像保存、シーンに組み込み
-    │   └── 失敗 → Step 6 へ
+    ├── [Step 5] Process result
+    │   ├── Success → Save image, incorporate into scene
+    │   └── Failure → Proceed to Step 6
     │
-    └── [Step 6] 再生成ループ（最大3回）
-        ├─ プロンプト改善（Claude が提案）
-        └─ Step 3 に戻る
+    └── [Step 6] Regeneration loop (max 3 times)
+        ├─ Improve prompt (Claude suggests)
+        └─ Return to Step 3
 ```
 
 ---
 
-## Bash 実行例
+## Bash Execution Examples
 
-### curl での API 呼び出し
+### API Call with curl
 
 ```bash
-# 環境変数確認（キーが設定されているか確認）
+# Check environment variable (verify key is set)
 test -n "$GOOGLE_AI_API_KEY" && echo "GOOGLE_AI_API_KEY is set" || echo "GOOGLE_AI_API_KEY is not set"
 
-# 画像生成リクエスト
+# Image generation request
 curl -X POST \
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent" \
   -H "x-goog-api-key: ${GOOGLE_AI_API_KEY}" \
@@ -236,13 +236,13 @@ curl -X POST \
   }' \
   -o response.json
 
-# Base64 デコードして保存（parts配列から画像データを抽出）
+# Decode Base64 and save (extract image data from parts array)
 cat response.json | jq -r '.candidates[0].content.parts[] | select(.inline_data) | .inline_data.data' | head -1 | base64 -d > out/assets/generated/image_1.png
 ```
 
-> **注意**: 1回のリクエストで1枚の画像が生成されます。2枚必要な場合は2回リクエストを実行してください。
+> **Note**: One request generates one image. Run 2 requests to get 2 images.
 
-### 画像保存先
+### Image Save Location
 
 ```
 out/
@@ -256,116 +256,116 @@ out/
 
 ---
 
-## 再生成ループ制御
+## Regeneration Loop Control
 
-### 最大試行回数
+### Maximum Attempts
 
 ```
 max_attempts = 3
 ```
 
-### 再生成時のプロンプト改善
+### Prompt Improvement During Regeneration
 
-各試行で Claude がプロンプトを改善:
+Claude improves the prompt each attempt:
 
-| 試行 | 改善戦略 |
+| Attempt | Improvement Strategy |
 |------|---------|
-| 1回目 | 初期プロンプトで生成 |
-| 2回目 | 品質指摘を反映してプロンプト調整 |
-| 3回目 | より具体的な指示を追加、スタイル変更 |
+| 1st | Generate with initial prompt |
+| 2nd | Adjust prompt based on quality feedback |
+| 3rd | Add more specific instructions, change style |
 
-### 改善プロンプト生成
+### Improved Prompt Generation
 
 ```
-前回の画像が以下の理由で不採用でした:
+The previous image was rejected for the following reason:
 - {rejection_reason}
 
-改善案:
+Improvements:
 1. {improvement_1}
 2. {improvement_2}
 
-新しいプロンプト:
+New prompt:
 {improved_prompt}
 ```
 
-### 3回失敗時のフォールバック
+### Fallback After 3 Failures
 
 ```
-⚠️ 画像生成が3回失敗しました
+⚠️ Image generation failed 3 times
 
-シーン: {scene_name}
-最後のエラー: {last_error}
+Scene: {scene_name}
+Last error: {last_error}
 
-選択肢:
-1. 「続行」→ プレースホルダー画像で進める
-2. 「スキップ」→ このシーンを画像なしで生成
-3. 「手動」→ ユーザーが画像を提供
+Options:
+1. "Continue" → Proceed with placeholder image
+2. "Skip" → Generate this scene without an image
+3. "Manual" → User provides image
 ```
 
 ---
 
-## エラーハンドリング
+## Error Handling
 
-### API エラー
+### API Errors
 
-| エラーコード | 原因 | 対処 |
+| Error Code | Cause | Action |
 |-------------|------|------|
-| `400` | 不正なプロンプト | プロンプト内容を確認 |
-| `401` | 認証失敗 | API キーを確認 |
-| `429` | レート制限 | 60秒待機して再試行 |
-| `500` | サーバーエラー | 30秒待機して再試行 |
+| `400` | Invalid prompt | Check prompt content |
+| `401` | Authentication failure | Verify API key |
+| `429` | Rate limit | Wait 60 seconds and retry |
+| `500` | Server error | Wait 30 seconds and retry |
 
-### コンテンツポリシー違反
+### Content Policy Violation
 
 ```
-⚠️ コンテンツポリシー違反
+⚠️ Content policy violation
 
-プロンプトが Google のポリシーに違反しています。
-以下を削除/変更してください:
+The prompt violates Google's policy.
+Please remove/change the following:
 - {violation_reason}
 
-自動修正を試みますか？ (y/n)
+Would you like to attempt automatic correction? (y/n)
 ```
 
-### 環境変数未設定
+### Missing Environment Variable
 
 ```
-⚠️ GOOGLE_AI_API_KEY が設定されていません
+⚠️ GOOGLE_AI_API_KEY is not set
 
-設定方法:
-1. Google AI Studio でAPIキーを取得
+How to set it:
+1. Get an API key from Google AI Studio
    https://ai.google.dev/aistudio
 
-2. 環境変数に設定
+2. Set the environment variable
    export GOOGLE_AI_API_KEY="your-api-key"
 
-3. または .env.local に追加
+3. Or add to .env.local
    GOOGLE_AI_API_KEY=your-api-key
 ```
 
 ---
 
-## コスト見積もり
+## Cost Estimate
 
-### シーンあたりのコスト
+### Cost Per Scene
 
 ```
-基本: 2枚 × $0.12 = $0.24
-最大（3回再生成）: 6枚 × $0.12 = $0.72
+Basic: 2 images × $0.12 = $0.24
+Maximum (3 regenerations): 6 images × $0.12 = $0.72
 ```
 
-### 動画あたりのコスト目安
+### Estimated Cost Per Video
 
-| 動画タイプ | シーン数 | 画像生成シーン | コスト目安 |
+| Video Type | Scenes | Image Generation Scenes | Estimated Cost |
 |-----------|---------|---------------|-----------|
-| 90秒ティザー | 5 | 2-3 | $0.48-$0.72 |
-| 3分デモ | 8 | 3-4 | $0.72-$0.96 |
-| 5分アーキテクチャ | 12 | 4-6 | $0.96-$1.44 |
+| 90-second teaser | 5 | 2-3 | $0.48-$0.72 |
+| 3-minute demo | 8 | 3-4 | $0.72-$0.96 |
+| 5-minute architecture | 12 | 4-6 | $0.96-$1.44 |
 
 ---
 
-## 関連ドキュメント
+## Related Documentation
 
-- [image-quality-check.md](./image-quality-check.md) - 品質判定ロジック
-- [generator.md](./generator.md) - 並列シーン生成エンジン
-- [planner.md](./planner.md) - シナリオプランナー
+- [image-quality-check.md](./image-quality-check.md) - Quality check logic
+- [generator.md](./generator.md) - Parallel scene generation engine
+- [planner.md](./planner.md) - Scenario planner

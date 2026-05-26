@@ -1,17 +1,17 @@
 # Phase 56 Follow-up Decisions - 2026-04-25
 
-この文書は、Phase 56 の follow-up task `56.2.1` から `56.2.4` について、
-「今すぐ実装するもの」と「記録だけに留めるもの」を分けて固定するための記録です。
+This document records the split between "implement now" and "record only" decisions
+for Phase 56 follow-up tasks `56.2.1` through `56.2.4`.
 
-## ひとことで
+## In a nutshell
 
-Harness は、**既に配布している surface にだけ最小追従し、責務が重なる wrapper は増やしません。**
+Harness **follows up minimally on already-shipped surfaces only and does not add overlapping wrappers.**
 
-## たとえると
+## Analogy
 
-新しい道路標識が増えた時に、
-今ある案内板にそのまま足せるものは足し、
-交通管制そのものを二重に作るような変更は見送る、という整理です。
+When new road signs are added,
+add what can be directly appended to existing signboards,
+and defer changes that would duplicate traffic control itself.
 
 ## Official References
 
@@ -27,50 +27,50 @@ Harness は、**既に配布している surface にだけ最小追従し、責�
 
 | Surface | Current state | Decision impact |
 |---------|---------------|-----------------|
-| `scripts/session-monitor.sh` | `SessionStart` で project / git / Plans 状態を集めるだけで、`PostToolUse` 入力は受け取らない | `duration_ms` をここへ混ぜると責務がずれる |
-| `scripts/statusline-harness.sh` | Claude Code status line stdin JSON をすでに読んでいる | `effort.level` / `thinking.enabled` は低リスクで追従できる |
-| `statusline-telemetry.jsonl` | status line 由来の cost / duration / role を保存している | `effort` / `thinking` も同じ粒度で残せる |
+| `scripts/session-monitor.sh` | Collects project / git / Plans state on `SessionStart` only; does not receive `PostToolUse` input | Mixing `duration_ms` here would shift responsibility |
+| `scripts/statusline-harness.sh` | Already reads Claude Code status line stdin JSON | `effort.level` / `thinking.enabled` can be adopted at low risk |
+| `statusline-telemetry.jsonl` | Stores cost / duration / role from the status line | `effort` / `thinking` can be stored at the same granularity |
 
 ### Decision
 
 | Upstream field | Harness decision | Why |
 |----------------|------------------|-----|
-| `PostToolUse.duration_ms` | **PostToolUse.duration_ms は今回は no-op** | Harness の shipped Session Monitor は `SessionStart` 用であり、per-tool latency sink がまだない。`cost.total_duration_ms` と混ぜると「セッション時間」と「個々の tool 時間」が分かりにくくなる |
-| `effort.level` | **statusline に採用** | `scripts/statusline-harness.sh` が既に status line JSON を読むため、追加の runtime hook を増やさず反映できる |
-| `thinking.enabled` | **statusline に採用** | `effort.level` と同じく、既存 statusline surface で安全に見える化できる |
+| `PostToolUse.duration_ms` | **PostToolUse.duration_ms is no-op for now** | Harness's shipped Session Monitor is for `SessionStart`; there is no per-tool latency sink yet. Mixing with `cost.total_duration_ms` would make "session time" and "individual tool time" confusing |
+| `effort.level` | **Adopt in statusline** | `scripts/statusline-harness.sh` already reads the status line JSON, so it can be reflected without adding extra runtime hooks |
+| `thinking.enabled` | **Adopt in statusline** | Same as `effort.level` — can be safely visualized via the existing statusline surface |
 
 ### Display spec
 
-- status line 1 行目に `effort:<level>` を表示する
-- thinking が有効な時は `think:on`、無効な時は `think:off` を表示する
-- field が無い時は何も出さない
-- telemetry JSONL には `effort_level` と `thinking_enabled` を追加する
+- Display `effort:<level>` on status line line 1
+- Display `think:on` when thinking is enabled, `think:off` when disabled
+- Show nothing when the field is absent
+- Add `effort_level` and `thinking_enabled` to the telemetry JSONL
 
 ## 56.2.2 Codex `0.124.0` stable hooks parity review
 
 ### Parity table
 
-| 観点 | Claude Code | Codex `0.124.0` | Harness decision |
-|------|-------------|-----------------|------------------|
-| Main config surface | `hooks/hooks.json` / `.claude-plugin/hooks.json` | inline `config.toml` と managed `requirements.toml` が release note に明記 | **shipped `codex/.codex/config.toml` には追加しない** |
-| Admin policy surface | project / plugin settings + hook files | `requirements.toml` で security-sensitive policy を固定できる | org policy は docs に残し、配布 default には入れない |
-| MCP tools observation | Claude Code hook matcher で tool name ごとに扱う | release note で MCP tools observation を明記 | 読み取り系診断の価値はあるが、Claude 側 hook と二重化しない |
-| `apply_patch` observation | Claude 側は `Write` / `Edit` 系 guardrail が主 | release note で `apply_patch` observation を明記 | Codex package 専用 test が無い間は no-op |
-| long-running Bash observation | Claude 側は `PermissionRequest` / `PostToolUseFailure` / `Monitor` を併用 | release note で long-running Bash observation を明記 | Codex runtime へ二重の log policy を載せない |
-| Block timing | 実行前 deny / 実行後 feedback が強い | surface が異なり、admin requirements も絡む | parity は「同じポリシーをどう分担するか」で合わせる |
+| Aspect | Claude Code | Codex `0.124.0` | Harness decision |
+|--------|-------------|-----------------|------------------|
+| Main config surface | `hooks/hooks.json` / `.claude-plugin/hooks.json` | inline `config.toml` and managed `requirements.toml` are explicitly mentioned in the release note | **Do not add to shipped `codex/.codex/config.toml`** |
+| Admin policy surface | project / plugin settings + hook files | `requirements.toml` allows fixing security-sensitive policy | Keep org policy in docs; do not include in distribution defaults |
+| MCP tools observation | Claude Code hook matcher handles each tool name individually | MCP tools observation explicitly mentioned in release note | Read-only diagnostic value exists, but do not duplicate Claude-side hooks |
+| `apply_patch` observation | Claude side uses `Write` / `Edit` guardrails primarily | `apply_patch` observation mentioned in release note | No-op while there are no Codex-package-specific tests |
+| long-running Bash observation | Claude side uses `PermissionRequest` / `PostToolUseFailure` / `Monitor` together | long-running Bash observation mentioned in release note | Do not add double log policy to Codex runtime |
+| Block timing | Strong pre-execution deny / post-execution feedback | Different surface; admin requirements also involved | Parity is aligned in terms of "how to divide the same policy" |
 
 ### Decision
 
-- **Codex hooks は parity review のみ行い、shipped config は no-op にする**
-- `codex/.codex/config.toml` には「なぜ追加していないか」のコメントだけ残す
-- managed `requirements.toml` は組織ポリシーなので、配布 template に推測で書かない
-- Claude Code 側ですでに持っている guardrail と同じ責務を、Codex 側へ即時に二重実装しない
+- **Perform parity review for Codex hooks only; make shipped config a no-op**
+- Leave only comments in `codex/.codex/config.toml` explaining why additions were not made
+- `requirements.toml` is organizational policy; do not speculatively write it into distribution templates
+- Do not immediately duplicate the same responsibilities into Codex that Claude Code guardrails already hold
 
 ### Note on docs drift
 
-`rust-v0.124.0` release では hooks の stable 化と inline / managed config が明記されています。
-一方で current config reference には `hooks.json` 読み込み向けの feature flag 記述も残っています。
-Harness はこの docs drift を理由に、**今は parity table と no-op 理由だけを残し、config 推測実装をしません。**
+`rust-v0.124.0` release explicitly states stable hooks and inline/managed config.
+However, the current config reference still retains feature flag descriptions for `hooks.json` loading.
+Harness, citing this docs drift, **records only the parity table and no-op reasoning for now, without speculative config implementation.**
 
 ## 56.2.3 `prUrlTemplate` / `--from-pr` multi-host review support
 
@@ -78,16 +78,16 @@ Harness はこの docs drift を理由に、**今は parity table と no-op 理�
 
 | Surface | Current assumption | Decision |
 |---------|--------------------|----------|
-| `harness-review` | diff / file review は git ベースで host 非依存だが、PR metadata の自動取得はまだ抽象化していない | review core はそのまま、PR host abstraction は後続 |
-| `harness-release` | `gh` CLI と GitHub remote を前提に release automation を組んでいる | GitHub-first automation を維持 |
-| footer PR links | `prUrlTemplate` があれば human-facing link は multi-host にできる | **docs-only** で整理し、automation surface にはまだ広げない |
+| `harness-review` | diff / file review is git-based and host-agnostic, but PR metadata auto-retrieval is not yet abstracted | Keep review core as-is; PR host abstraction comes later |
+| `harness-release` | Release automation is built assuming `gh` CLI and GitHub remote | Maintain GitHub-first automation |
+| footer PR links | If `prUrlTemplate` is available, human-facing links can be multi-host | Organize as **docs-only**; do not extend to automation surfaces yet |
 
 ### Decision
 
-- `prUrlTemplate` / `--from-pr` multi-host support は **docs-only** に留める
-- GitHub Enterprise / GitLab / Bitbucket で review URL を出すこと自体は将来候補として残す
-- ただし owner / branch / CI / release asset 取得は **GitHub CLI remains primary**
-- 非 GitHub host を automation に混ぜるのは、host ごとの API / auth / CI surface を切り分ける task を別に起こしてからにする
+- `prUrlTemplate` / `--from-pr` multi-host support is limited to **docs-only**
+- Keep future candidate for showing review URLs in GitHub Enterprise / GitLab / Bitbucket
+- However, **GitHub CLI remains primary** for owner / branch / CI / release asset retrieval
+- Do not mix non-GitHub hosts into automation until a separate task is created to split the API / auth / CI surface per host
 
 ## 56.2.4 Codex `0.124.0` multi-environment app-server and branch/workdir policy
 
@@ -95,39 +95,41 @@ Harness はこの docs drift を理由に、**今は parity table と no-op 理�
 
 | Current mechanism | What it protects | Multi-environment implication |
 |-------------------|------------------|-------------------------------|
-| Worker `isolation: worktree` | 同一 repo 内の並列書き込み競合を減らす | primary repo の branch/worktree 境界は維持する |
-| Codex sandbox / remote policy docs | remote host ごとの sandbox 差を整理する | environment を増やしても sandbox policy の置き場所は requirements 側 |
-| cherry-pick based merge | main 取り込み境界を明確化する | 複数 environment の成果物をそのまま混ぜない |
+| Worker `isolation: worktree` | Reduces parallel write conflicts within the same repo | Maintains branch/worktree boundary for the primary repo |
+| Codex sandbox / remote policy docs | Organizes sandbox differences per remote host | Even with more environments, policy storage belongs on the requirements side |
+| cherry-pick based merge | Clarifies the main branch integration boundary | Does not mix artifacts from multiple environments directly |
 
 ### Safe default
 
 | Scenario | Safe default |
 |----------|--------------|
-| 1 session で複数 environment を見たい | 調査はよいが、**write は 1 turn につき 1 primary environment** に絞る |
-| remote environment を混ぜる | 非 primary environment はまず read-only で確認し、write は明示的に切り替える |
-| branch / workdir が複数ある | merge / cherry-pick / Plans 更新は primary repo/worktree だけで行う |
-| environment を切り替える | 次の write 前に target repo / branch / workdir を明文化する |
+| Want to inspect multiple environments in 1 session | Inspection is fine, but **writes are limited to 1 primary environment per turn** |
+| Mixing a remote environment | Confirm the non-primary environment as read-only first, then explicitly switch for writes |
+| Multiple branches / workdirs | Perform merge / cherry-pick / Plans updates only in the primary repo/worktree |
+| Switching environments | Document the target repo / branch / workdir explicitly before the next write |
 
 ### Decision
 
-- Codex App Server の multi-environment は **workflow guidance として採用**
-- Harness 自身の branch/workdir 実装は、単一 repo / primary worktree を safe default にしたうえで、**Codex write 前の primary-environment guard** を追加する
-- `codex/README.md` に **one primary environment per write turn** を safe default として追記する
-- remote workspace を含む時も、primary 以外は read-only から始める
+- Codex App Server's multi-environment is **adopted as workflow guidance**
+- Harness's own branch/workdir implementation uses single repo / primary worktree as safe default,
+  and adds a **Codex pre-write primary-environment guard**
+- Add **one primary environment per write turn** as safe default to `codex/README.md`
+- Even with remote workspaces, start with read-only for non-primary ones
 
 ### Runtime guard
 
-- `scripts/codex-primary-environment-guard.sh` が初回 write 先を primary environment として記録する
-- 後続の write が別 worktree / 別 repo を向いた時は、デフォルトでは停止する
-- 一時的に許可したい時は `HARNESS_CODEX_ALLOW_NON_PRIMARY_WRITE=1`
-- primary 自体を切り替える時は `HARNESS_CODEX_RESET_PRIMARY_ENVIRONMENT=1`
-- guard を無効化したい特殊環境だけ `HARNESS_CODEX_DISABLE_PRIMARY_ENV_GUARD=1`
+- `scripts/codex-primary-environment-guard.sh` records the first write destination as the primary environment
+- Subsequent writes targeting a different worktree / different repo are stopped by default
+- To temporarily allow: `HARNESS_CODEX_ALLOW_NON_PRIMARY_WRITE=1`
+- To switch the primary itself: `HARNESS_CODEX_RESET_PRIMARY_ENVIRONMENT=1`
+- To disable the guard only for special environments: `HARNESS_CODEX_DISABLE_PRIMARY_ENV_GUARD=1`
 
 ## Why This Way
 
-Harness が守りたいのは、「upstream の新機能を取り逃さないこと」と、
-「便利そうだからといって wrapper を二重に増やさないこと」の両立です。
+Harness aims to balance two goals:
+"not missing upstream new features" and
+"not adding duplicate wrappers just because something looks convenient."
 
-そのため Phase 56.2 では、
-すでに配布している statusline には小さく追従し、
-hook / multi-host / multi-environment は docs と safe default で先に境界を固定しました。
+Therefore in Phase 56.2:
+small follow-up was made to the already-shipped statusline,
+while hooks / multi-host / multi-environment boundaries were fixed first in docs and safe defaults.

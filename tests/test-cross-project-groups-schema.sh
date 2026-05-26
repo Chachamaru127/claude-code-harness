@@ -1,18 +1,18 @@
 #!/bin/bash
 # tests/test-cross-project-groups-schema.sh
-# Phase 65.3.1 - cross-project-groups.yaml schema 機械検証
+# Phase 65.3.1 - mechanical schema validation of cross-project-groups.yaml
 #
-# 検証ケース (Plans.md §65.3.1 DoD d に対応):
-#   1. 空 (groups: [])           → exit 0、json 出力に "groups": [] を含む
-#   2. 1 group (members 2 件)    → exit 0、--group 指定で members 配列を出力
-#   3. member 重複                → exit 1、stderr に "duplicate"
-#   4. 不正 schema (groups not array) → exit 1、stderr に "must be a list"
+# Validation cases (Plans.md §65.3.1 DoD d):
+#   1. empty (groups: [])         → exit 0, json output contains "groups": []
+#   2. 1 group (2 members)        → exit 0, --group returns members array
+#   3. duplicate member           → exit 1, stderr contains "duplicate"
+#   4. invalid schema (groups not array) → exit 1, stderr contains "must be a list"
 #
-# 共通検証:
-#   (a) load-cross-project-groups.sh 実行可能
-#   (b) default yaml (.claude/rules/cross-project-groups.yaml) も valid
-#   (c) --group <存在しない名前> は exit 1
-#   (d) yaml file not found は exit 1
+# Common validation:
+#   (a) load-cross-project-groups.sh is executable
+#   (b) default yaml (.claude/rules/cross-project-groups.yaml) is also valid
+#   (c) --group <non-existent name> exits 1
+#   (d) yaml file not found exits 1
 
 set -euo pipefail
 
@@ -51,7 +51,7 @@ TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/test-cross-project-groups.XXXXXX")"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
 # ============================================================
-# Case 1: 空 (groups: [])
+# Case 1: empty (groups: [])
 # ============================================================
 
 CASE1_YAML="$TMP_DIR/case1-empty.yaml"
@@ -76,6 +76,7 @@ fi
 # Case 2: 1 group with 2 members
 # ============================================================
 
+
 CASE2_YAML="$TMP_DIR/case2-one-group.yaml"
 cat > "$CASE2_YAML" <<'YAML'
 schema_version: cross-project-group.v1
@@ -87,7 +88,7 @@ groups:
       - project-b
 YAML
 
-# 2-1: 全 groups 出力
+# 2-1: full groups output
 if OUTPUT="$(bash "$SCRIPT" --yaml "$CASE2_YAML" 2>&1)"; then
   pass "Case 2 (1 group, full output): exit 0"
 else
@@ -100,7 +101,7 @@ else
   fail "Case 2: output does not contain expected group. output: $OUTPUT"
 fi
 
-# 2-2: --group filter で members 配列を出力
+# 2-2: output members array with --group filter
 if OUTPUT="$(bash "$SCRIPT" --yaml "$CASE2_YAML" --group "TestGroup" 2>&1)"; then
   pass "Case 2 (--group filter): exit 0"
 else
@@ -114,7 +115,7 @@ else
 fi
 
 # ============================================================
-# Case 3: member 重複 (group 内で同じ project が 2 回)
+# Case 3: duplicate member (same project appears twice in a group)
 # ============================================================
 
 CASE3_YAML="$TMP_DIR/case3-duplicate-member.yaml"
@@ -140,7 +141,7 @@ else
 fi
 
 # ============================================================
-# Case 4: 不正 schema (groups が array でない)
+# Case 4: invalid schema (groups is not an array)
 # ============================================================
 
 CASE4_YAML="$TMP_DIR/case4-bad-schema.yaml"
@@ -162,7 +163,7 @@ else
 fi
 
 # ============================================================
-# 共通検証 (b): default yaml も valid
+# Common validation (b): default yaml is also valid
 # ============================================================
 
 if bash "$SCRIPT" >/dev/null 2>&1; then
@@ -172,7 +173,7 @@ else
 fi
 
 # ============================================================
-# 共通検証 (c): 存在しない group は exit 1
+# Common validation (c): non-existent group exits 1
 # ============================================================
 
 if bash "$SCRIPT" --yaml "$CASE2_YAML" --group "DoesNotExist" 2>"$TMP_DIR/notfound-stderr.txt" >/dev/null; then
@@ -188,7 +189,7 @@ else
 fi
 
 # ============================================================
-# 共通検証 (d): yaml file not found は exit 1
+# Common validation (d): yaml file not found exits 1
 # ============================================================
 
 if bash "$SCRIPT" --yaml "/nonexistent/path/missing.yaml" 2>"$TMP_DIR/missing-stderr.txt" >/dev/null; then
@@ -204,7 +205,7 @@ else
 fi
 
 # ============================================================
-# 共通検証 (e): 追加 schema 制約 (name 空文字)
+# Common validation (e): additional schema constraint (empty name)
 # ============================================================
 
 CASE5_YAML="$TMP_DIR/case5-empty-name.yaml"
@@ -229,7 +230,7 @@ else
 fi
 
 # ============================================================
-# 共通検証 (f): schema_version mismatch は exit 1
+# Common validation (f): schema_version mismatch exits 1
 # ============================================================
 
 CASE6_YAML="$TMP_DIR/case6-wrong-version.yaml"

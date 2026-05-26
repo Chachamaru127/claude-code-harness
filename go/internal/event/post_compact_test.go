@@ -30,7 +30,7 @@ func TestPostCompactHandler_EmptyInput(t *testing.T) {
 func TestPostCompactHandler_NoWIPTasks(t *testing.T) {
 	dir := t.TempDir()
 	plansFile := filepath.Join(dir, "Plans.md")
-	// WIP タスクなし
+	// No WIP tasks
 	if err := os.WriteFile(plansFile, []byte("# Plans\n\n| 1 | Task A | Done | cc:完了 |\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func TestPostCompactHandler_WithWIPTasks(t *testing.T) {
 func TestPostCompactHandler_WithPrecompactSnapshot(t *testing.T) {
 	dir := t.TempDir()
 
-	// precompact-snapshot.json を作成
+	// Create precompact-snapshot.json
 	snapshot := `{
 		"wipTasks": ["35.3.1 hook-handlers Go migration", "35.3.2 session actions"],
 		"recentEdits": ["go/internal/event/event.go", "go/internal/event/session_env.go"]
@@ -123,7 +123,7 @@ func TestPostCompactHandler_WithPrecompactSnapshot(t *testing.T) {
 func TestPostCompactHandler_WithHandoffArtifact(t *testing.T) {
 	dir := t.TempDir()
 
-	// handoff-artifact.json を作成（v2.0.0 フォーマット）
+	// Create handoff-artifact.json (v2.0.0 format)
 	artifact := map[string]interface{}{
 		"version":      "2.0.0",
 		"artifactType": "structured-handoff",
@@ -188,19 +188,19 @@ func TestPostCompactHandler_WithHandoffArtifact(t *testing.T) {
 	if resp.AdditionalContext == "" {
 		t.Fatal("expected additionalContext from handoff artifact")
 	}
-	// structured handoff のヘッダーを確認
+	// Verify the structured handoff header
 	if !strings.Contains(resp.AdditionalContext, "Structured Handoff") {
 		t.Errorf("expected Structured Handoff header, got: %s", resp.AdditionalContext)
 	}
-	// next action の情報を確認
+	// Verify next action information
 	if !strings.Contains(resp.AdditionalContext, "Next action") {
 		t.Errorf("expected Next action entry, got: %s", resp.AdditionalContext)
 	}
-	// WIP tasks を確認
+	// Verify WIP tasks
 	if !strings.Contains(resp.AdditionalContext, "pre-compact-save Go migration") {
 		t.Errorf("expected WIP task in context, got: %s", resp.AdditionalContext)
 	}
-	// continuity を確認
+	// Verify continuity
 	if !strings.Contains(resp.AdditionalContext, "Continuity") {
 		t.Errorf("expected Continuity entry, got: %s", resp.AdditionalContext)
 	}

@@ -1,34 +1,34 @@
 ---
 name: notebooklm-yaml
-description: "NotebookLMの「スライド資料をカスタマイズ」で使うデザインYAMLを2案生成。プレゼン資料を作りたい場合に使用します。"
+description: "Generate two design YAML variations for use in NotebookLM's 'Customize slide deck' feature. Use when the user wants to create presentation materials."
 allowed-tools: ["Read", "Write"]
 ---
 
 # NotebookLM YAML Skill
 
-NotebookLM のスライド生成で、デザインの方向性をYAMLでコントロールするためのスキル。
+A skill for controlling the design direction of NotebookLM slide generation via YAML.
 
 ---
 
-## トリガーフレーズ
+## Trigger Phrases
 
-- 「NotebookLMのスライドをいい感じのデザインで作りたい」
-- 「プレゼン用のYAMLを作って」
-- 「スライドデザインを2案出して」
-
----
-
-## ヒアリング項目
-
-1. 目的（社内共有/営業/採用/投資家向け）
-2. 想定読者（経営/開発/非エンジニア）
-3. トーン（信頼感/革新/親しみ）
-4. ブランド要素（ロゴ/ブランドカラー/フォント指定）
-5. 写真/図表の比率（写真多め/データ多め）
+- "I want to create NotebookLM slides with a nice design"
+- "Create a YAML for a presentation"
+- "Give me 2 slide design variations"
 
 ---
 
-## 出力
+## Information to Gather
 
-- **案A**: ミニマル/コーポレート（可読性・信頼感・データ重視）
-- **案B**: エディトリアル/ストーリー（余白・写真・情緒重視）
+1. Purpose (internal sharing / sales / recruiting / investor-facing)
+2. Target audience (management / engineering / non-engineers)
+3. Tone (trustworthy / innovative / approachable)
+4. Brand elements (logo / brand colors / font specification)
+5. Photo-to-chart ratio (photo-heavy / data-heavy)
+
+---
+
+## Output
+
+- **Variation A**: Minimal / Corporate (readability, trustworthiness, data-focused)
+- **Variation B**: Editorial / Story (whitespace, photography, emotion-focused)

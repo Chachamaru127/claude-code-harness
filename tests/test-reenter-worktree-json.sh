@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# reenter-worktree.sh が stdout に JSON のみを出力することを検証する
+# Validates that reenter-worktree.sh outputs only JSON to stdout
 
 set -euo pipefail
 
@@ -43,14 +43,14 @@ if data.get("task_id") != "45.3":
     raise SystemExit(1)
 PY
 then
-  echo "FAIL: stdout が JSON として parse できないか、期待値と一致しません"
+  echo "FAIL: stdout could not be parsed as JSON or does not match expected values"
   echo "stdout:"
   cat "${STDOUT_FILE}"
   exit 1
 fi
 
 if ! grep -q "EnterWorktree path 再入確認" "${STDERR_FILE}"; then
-  echo "FAIL: 人間向けガイダンスが stderr に出ていません"
+  echo "FAIL: human-facing guidance is not printed to stderr"
   echo "stderr:"
   cat "${STDERR_FILE}"
   exit 1

@@ -10,7 +10,7 @@ import (
 )
 
 func TestInitHandler_Subagent(t *testing.T) {
-	// サブエージェント時は軽量初期化
+	// Lightweight initialization for subagents
 	h := &InitHandler{}
 	inp := `{"agent_type":"subagent","session_id":"cc-123"}`
 	var out bytes.Buffer
@@ -58,7 +58,7 @@ func TestInitHandler_NewSession(t *testing.T) {
 	if !strings.Contains(resp.HookSpecificOutput.AdditionalContext, "Plans.md") {
 		t.Errorf("expected Plans.md info in context, got %q", resp.HookSpecificOutput.AdditionalContext)
 	}
-	// マーカー凡例が含まれるか
+	// Verify that the marker legend is included
 	if !strings.Contains(resp.HookSpecificOutput.AdditionalContext, "cc:TODO") {
 		t.Errorf("expected marker legend in context")
 	}
@@ -105,18 +105,18 @@ func TestInitHandler_WithPlans(t *testing.T) {
 	}
 
 	ctx := resp.HookSpecificOutput.AdditionalContext
-	// WIP=1 (cc:WIP) + pm:依頼中=1 → 進行中 2
+	// WIP=1 (cc:WIP) + pm:依頼中=1 → in-progress 2
 	// TODO=2
-	if !strings.Contains(ctx, "進行中 2") {
-		t.Errorf("expected 進行中 2 in context, got %q", ctx)
+	if !strings.Contains(ctx, "in-progress 2") {
+		t.Errorf("expected in-progress 2 in context, got %q", ctx)
 	}
-	if !strings.Contains(ctx, "未着手 2") {
-		t.Errorf("expected 未着手 2 in context, got %q", ctx)
+	if !strings.Contains(ctx, "pending 2") {
+		t.Errorf("expected pending 2 in context, got %q", ctx)
 	}
 }
 
 func TestInitHandler_SymlinkSessionFile(t *testing.T) {
-	// シンボリックリンクの場合はセキュリティエラー（エラーは無視してレスポンスを返す）
+	// Symlink causes a security error (error is ignored and a response is still returned)
 	dir := t.TempDir()
 	stateDir := filepath.Join(dir, "state")
 	if err := os.MkdirAll(stateDir, 0700); err != nil {
@@ -139,13 +139,13 @@ func TestInitHandler_SymlinkSessionFile(t *testing.T) {
 	}
 
 	var out bytes.Buffer
-	// エラーにならず、レスポンスが返る
+	// Should not return an error; a response is returned
 	err := h.Handle(strings.NewReader(`{}`), &out)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	// レスポンスが valid JSON であること
+	// Response must be valid JSON
 	var resp initResponse
 	if json.Unmarshal(bytes.TrimRight(out.Bytes(), "\n"), &resp) != nil {
 		t.Errorf("invalid JSON output: %s", out.String())

@@ -7,10 +7,10 @@
 
 ## Why Go
 
-| 要件 | Go | Rust | 現行 (bash+TS) |
+| Requirement | Go | Rust | Current (bash+TS) |
 |------|-----|------|---------------|
 | Cold start | 1-2ms | 0.5-1ms | 40-60ms |
-| Cross-compile | `GOOS=x go build` | toolchain 管理 | N/A (interpreter) |
+| Cross-compile | `GOOS=x go build` | toolchain management | N/A (interpreter) |
 | JSON handling | stdlib `encoding/json` | serde (verbose) | jq + node |
 | HTTP client | stdlib `net/http` | reqwest (dep) | curl spawn |
 | Development speed | seconds | minutes | immediate but fragile |
@@ -18,13 +18,13 @@
 | Dependencies | stdlib + 1-2 (uuid) | many crates | node + jq + bash |
 | Self-referential dev | compile in 2s | compile in 30s+ | edit & run |
 
-**結論**: Harness は「毎秒数回起動され、JSON を読んで判断を返す」ツール。Go の stdlib 中心 + 高速コンパイルが最適。
+**Conclusion**: Harness is a tool that "starts multiple times per second, reads JSON, and returns decisions." Go's stdlib-centric approach + fast compilation is the best fit.
 
-### 許容する外部依存
+### Acceptable external dependencies
 
-- `github.com/google/uuid` — OTel trace ID 生成。stdlib に UUID v4 がない
-- `github.com/mattn/go-isatty` — TTY 検出（省略可: `os.Stdin.Stat()` で代替）
-- **それ以外は不可。** MCP プロトコルも OTel フォーマットも stdlib の `encoding/json` + `net/http` で自前実装
+- `github.com/google/uuid` — OTel trace ID generation. No UUID v4 in stdlib
+- `github.com/mattn/go-isatty` — TTY detection (optional: replaceable with `os.Stdin.Stat()`)
+- **Nothing else is allowed.** MCP protocol and OTel format are implemented in-house using stdlib `encoding/json` + `net/http`
 
 ## Directory Structure
 
@@ -116,15 +116,15 @@ harness-go/
 └── go.sum
 ```
 
-**internal パッケージ: 9** (guardrail, session, event, hook, hookhandler, breezing, ci, lifecycle, state)。`pkg/` は hookproto + config。
-通知機能 (OTel span export, broadcast) は `hookhandler/` に統合。独立 notify パッケージは設けず、各 handler が直接送信する設計に変更。
-webhook POST は未実装（config 定義のみ将来対応予定）。
-review (security/dual) はスキル側のプロンプト指示で完結するため Go binary から除外。
+**internal packages: 9** (guardrail, session, event, hook, hookhandler, breezing, ci, lifecycle, state). `pkg/` contains hookproto + config.
+Notification functionality (OTel span export, broadcast) is consolidated into `hookhandler/`. No separate notify package; each handler sends directly.
+Webhook POST is unimplemented (config definition only; planned for future implementation).
+review (security/dual) is fully handled by skill-side prompt instructions and excluded from the Go binary.
 
 ## Core Design: Single Binary, Subcommand Routing
 
 ```
-# === Hook events (全 20 event を網羅。現行 hooks.json の全 command hook に対応) ===
+# === Hook events (covers all 20 events. Corresponds to all command hooks in the current hooks.json) ===
 bin/harness hook pretool            # PreToolUse
 bin/harness hook pretool --browser  # PreToolUse (browser MCP tools)
 bin/harness hook posttool           # PostToolUse
@@ -162,8 +162,8 @@ bin/harness plans update <id> <status>  # Marker update
 bin/harness version                 # Version info
 ```
 
-**40+ shell scripts → 1 binary, ~28 subcommands。現行 hooks.json の全 command hook を漏れなくカバー。**
-**MCP subcommand は削除（D3: 分離プロセス維持）。**
+**40+ shell scripts → 1 binary, ~28 subcommands. Covers all command hooks in the current hooks.json without omission.**
+**MCP subcommand removed (D3: keep separate process).**
 
 ## hooks.json (Simplified)
 
@@ -448,14 +448,14 @@ bin/harness version                 # Version info
 }
 ```
 
-**現行 hooks.json の全 command hook event を網羅。** agent hooks (type: "agent") は PreToolUse/PostToolUse/Stop/PreCompact 内にそのまま残る。
+**Covers all command hook events in the current hooks.json.** agent hooks (type: "agent") remain intact inside PreToolUse/PostToolUse/Stop/PreCompact.
 
-### Memory Bridge の内蔵
+### Built-in Memory Bridge
 
-`hookhandler/memory_bridge.go` が 5 つのイベントターゲットを処理する。
-JSONL ログは常に記録し、harness-mem デーモンが起動している場合は HTTP POST で連携する。
+`hookhandler/memory_bridge.go` handles 5 event targets.
+JSONL logs are always recorded; when the harness-mem daemon is running, events are also sent via HTTP POST.
 
-**イベントフロー**:
+**Event flow**:
 
 | hook target | harness-mem endpoint | event_type |
 |------------|---------------------|------------|
@@ -465,14 +465,14 @@ JSONL ログは常に記録し、harness-mem デーモンが起動している�
 | stop | POST /v1/sessions/finalize | (finalize) |
 | codex-notify *(archived for v1)* | POST /v1/events/record | checkpoint |
 
-**harness-mem 未導入時の動作**: HTTP POST は `connection refused` で即座に失敗し、
-stderr にログを出力して approve を返す。JSONL ログのみが記録される。
-レイテンシ追加はコネクション拒否の数ミリ秒のみ。
+**Behavior when harness-mem is not installed**: HTTP POST fails immediately with `connection refused`,
+logs to stderr, and returns approve. Only JSONL logs are recorded.
+Latency overhead is only the few milliseconds for the connection refusal.
 
-**設定**:
+**Configuration**:
 - `HARNESS_MEM_HOST` (default: 127.0.0.1)
 - `HARNESS_MEM_PORT` (default: 37888)
-- `HARNESS_MEM_ADMIN_TOKEN` (optional: Bearer ヘッダに付与)
+- `HARNESS_MEM_ADMIN_TOKEN` (optional: attached as Bearer header)
 
 ## Guardrail Engine Design
 
@@ -529,12 +529,12 @@ var Rules = []Rule{
 }
 ```
 
-**宣言的ルールテーブル。** ルール追加は struct を 1 つ足すだけ。shell の if/else 連鎖と比較して可読性が桁違い。
+**Declarative rule table.** Adding a rule is as simple as adding one struct. Readability is orders of magnitude better than shell if/else chains.
 
 ## State Management
 
 ```go
-// 設計方針: State directory resolution（各 handler で適用）
+// Design policy: State directory resolution (applied in each handler)
 
 func stateDir() string {
     if d := os.Getenv("CLAUDE_PLUGIN_DATA"); d != "" {
@@ -544,7 +544,7 @@ func stateDir() string {
     return filepath.Join(projectRoot(), ".claude", "state")
 }
 
-// 設計方針: Symlink safety（ファイル I/O 前に検証）
+// Design policy: Symlink safety (validated before file I/O)
 func safeAppend(path string, data []byte) error {
     if isSymlink(path) || isSymlink(filepath.Dir(path)) {
         return ErrSymlinkRefused
@@ -553,76 +553,76 @@ func safeAppend(path string, data []byte) error {
 }
 ```
 
-**セキュリティチェック（symlink 拒否、ディレクトリ検証）は設計方針として全 handler に適用。**
-現在は各 handler が個別にパス解決・ファイル I/O を行っている。
-共通ユーティリティへの統合は将来のリファクタリング候補。
+**Security checks (symlink rejection, directory validation) are applied as a design policy in all handlers.**
+Currently each handler resolves paths and performs file I/O independently.
+Consolidation into a shared utility is a candidate for future refactoring.
 
 ## Security Design
 
-| 脅威 | 対策 | 実装場所 |
+| Threat | Countermeasure | Implementation |
 |------|------|---------|
-| **Symlink traversal** | ファイル I/O 前に symlink チェック。symlink は即拒否 | 設計方針。各 handler で個別に `os.Lstat` 実施 |
-| **Path traversal (../)** | `filepath.Clean` + `filepath.Rel` で state dir 外への書込を拒否 | 設計方針。各 handler で個別に適用 |
-| **Secret leak (logs)** | URL、トークン、API キーをログ出力時にマスク | 設計方針（将来 webhook 実装時に統合予定） |
-| **Command injection** | guardrail ホットパス（pretool/posttool/permission）は shell・exec.Command を使わず全て内部処理。worker サブコマンド（auto-test, ci-check）は exec.Command でプロジェクトの test/CI コマンドを実行する（現行 shell 版と同等） | guardrail/* は内部処理。hookhandler/auto_test_runner.go, hookhandler/ci_status_checker.go は exec.Command 許可 |
-| **TOCTOU** | ファイル存在チェックせず直接操作 → エラーハンドリング | 各 handler で直接操作 → error handling パターンを適用 |
-| **Unbounded growth** | JSONL rotation (500行超 → 400行に切詰) | hookhandler/emit_agent_trace.go (MaxFileSize による rotation) |
-| **Secret in hook output** | PreToolUse deny 理由にユーザー入力を含める際はサニタイズ | guardrail/pre_tool.go |
-| **Memory injection** | harness-mem POST 前に必須フィールド・長さチェック (K-1.2) | hookhandler/memory_bridge.go `validateBridgeInput` |
+| **Symlink traversal** | Symlink check before file I/O. Symlinks are immediately rejected | Design policy. Each handler performs `os.Lstat` individually |
+| **Path traversal (../)** | `filepath.Clean` + `filepath.Rel` rejects writes outside the state dir | Design policy. Applied in each handler individually |
+| **Secret leak (logs)** | URLs, tokens, and API keys are masked when logged | Design policy (planned for consolidation when webhook is implemented in the future) |
+| **Command injection** | Guardrail hot path (pretool/posttool/permission) uses no shell or exec.Command; all processing is internal. Worker subcommands (auto-test, ci-check) use exec.Command to run the project's test/CI commands (equivalent to current shell version) | guardrail/* is internal. hookhandler/auto_test_runner.go, hookhandler/ci_status_checker.go allow exec.Command |
+| **TOCTOU** | Direct operation without file existence check → error handling | Apply direct operation → error handling pattern in each handler |
+| **Unbounded growth** | JSONL rotation (trim to 400 lines when exceeding 500 lines) | hookhandler/emit_agent_trace.go (rotation via MaxFileSize) |
+| **Secret in hook output** | Sanitize when including user input in PreToolUse deny reason | guardrail/pre_tool.go |
+| **Memory injection** | Required field and length checks before harness-mem POST (K-1.2) | hookhandler/memory_bridge.go `validateBridgeInput` |
 
-### SafeResult の fail-open 設計判断
+### SafeResult fail-open design decision
 
-`hook.SafeResult` は stdin パースエラー等のエンジンエラー時に `approve` を返す（fail-open）。
-これは S-1.5「安全側をデフォルトにする」と表面上矛盾するが、意図的な設計判断である。
+`hook.SafeResult` returns `approve` on engine errors such as stdin parse failures (fail-open).
+This appears to contradict S-1.5 "default to safe", but it is an intentional design decision.
 
-**理由**: CC プロトコルにおいて hook は「ツール使用を補助的に検査する層」であり、
-hook 自体の障害でユーザーのセッションが停止することは、ガードレール不在での続行より
-被害が大きい。deny の判断は `GuardRule` テーブルの正規表現マッチで確定的に行われ、
-SafeResult に到達するのは「ルール評価自体が不可能だった場合」のみ。
+**Reason**: In the CC protocol, hooks are "a supplementary inspection layer for tool use";
+stopping the user's session due to a hook's own failure causes more harm than continuing without guardrails.
+Deny decisions are made deterministically by regex matching in the `GuardRule` table,
+and `SafeResult` is only reached when "rule evaluation itself was impossible."
 
-**ガードの位置**: deny 判定は exit code 2 で確実にブロックされる。
-SafeResult は「ルール評価の前段階でのインフラ障害」であり、
-「安全性判定を skip した」のではなく「安全性判定のインプットが得られなかった」ケース。
+**Guard position**: Deny decisions are reliably blocked with exit code 2.
+`SafeResult` represents "infrastructure failure before rule evaluation,"
+not "skipped safety judgment" — it's the case where "the input for safety judgment was unavailable."
 
-## Delivery Model: Short-Lived Process での通知
+## Delivery Model: Notifications in Short-Lived Processes
 
-Go binary は都度起動→即終了の短命プロセス。async goroutine はプロセス終了で消える。
+The Go binary is a short-lived process that starts and exits immediately. Async goroutines disappear when the process exits.
 
-**現在の実装状況**:
+**Current implementation status**:
 
-| 通知チャネル | 状態 | 実装場所 |
+| Notification channel | Status | Implementation |
 |------------|------|---------|
-| OTel span export | **実装済み** (sync, 3s timeout) | `hookhandler/emit_agent_trace.go` |
-| Inter-session broadcast | **実装済み** (file-based) | `hookhandler/session_auto_broadcast.go` |
-| Webhook POST | **未実装** (将来対応予定) | — |
+| OTel span export | **Implemented** (sync, 3s timeout) | `hookhandler/emit_agent_trace.go` |
+| Inter-session broadcast | **Implemented** (file-based) | `hookhandler/session_auto_broadcast.go` |
+| Webhook POST | **Not implemented** (planned for future) | — |
 
-**OTel span export フロー** (emit-agent-trace handler):
+**OTel span export flow** (emit-agent-trace handler):
 
 ```
 bin/harness hook PostToolUse (agent trace)
-  → trace record を agent-trace.jsonl に追記
-  → OTEL_EXPORTER_OTLP_ENDPOINT が設定されている場合:
+  → append trace record to agent-trace.jsonl
+  → if OTEL_EXPORTER_OTLP_ENDPOINT is set:
     → HTTP POST (sync, 3s timeout, Content-Type: application/json)
-    → 失敗は stderr ログのみ。リトライしない
+    → failure is logged to stderr only. No retry
   → stdout JSON response
   → exit
 ```
 
-- OTel 送信は sync with timeout (3s)。プロセス内で完了を待つ
-- 送信失敗は stderr ログのみ。リトライしない（次回の hook 起動時に新イベントを送る）
-- JSONL は常に書き込まれる（OTel 送信失敗時のフォールバック兼ローカル記録）
+- OTel send is sync with timeout (3s). Completion is awaited within the process
+- Send failure is logged to stderr only. No retry (new event is sent on next hook invocation)
+- JSONL is always written (fallback for OTel send failure and local record)
 
-**Webhook POST** は config struct (`harness.toml` の `[telemetry]` セクション) に
-フィールド定義があるが、送信ロジックは未実装。必要性が確認された時点で
-`hookhandler/` 内の該当 handler に sync POST を追加する方針。
+**Webhook POST** has field definitions in the config struct (`[telemetry]` section of `harness.toml`),
+but the send logic is unimplemented. When the need is confirmed,
+sync POST will be added to the relevant handler in `hookhandler/`.
 
-**長時間系 hook (PostToolUse) の扱い**:
+**Handling long-running hooks (PostToolUse)**:
 
-現行の `auto-test-runner` (120s, async) や `ci-status-checker` (30s, async) は
-短命プロセスに収まらない。これらは **分離ワーカー** として扱う:
+The current `auto-test-runner` (120s, async) and `ci-status-checker` (30s, async)
+cannot fit within a short-lived process. These are treated as **separate workers**:
 
 ```json
-// hooks.json で Go binary と分離ワーカーを並列配置
+// hooks.json: Go binary and separate workers run in parallel
 "PostToolUse": [{
   "matcher": "Write|Edit|MultiEdit|Bash",
   "hooks": [{
@@ -649,17 +649,17 @@ bin/harness hook PostToolUse (agent trace)
 }]
 ```
 
-`bin/harness worker <name>` は長時間実行用のサブコマンド。
-`bin/harness hook posttool` は高速判定 (10s) のみ担当し、重い処理は worker に分離。
+`bin/harness worker <name>` is a subcommand for long-running execution.
+`bin/harness hook posttool` handles only fast decisions (10s), with heavy processing offloaded to workers.
 
-## Agent Hooks (type: "agent") の扱い
+## Agent Hooks (type: "agent") Handling
 
-**決定: hooks.json に残す。Go binary は関与しない。**
+**Decision: Remain in hooks.json. The Go binary is not involved.**
 
-agent hooks は CC が LLM を起動して判断を委任する仕組み。Go binary が置換するのは `type: "command"` のフックのみ。
+Agent hooks are a mechanism for CC to start an LLM and delegate decisions. The Go binary only replaces `type: "command"` hooks.
 
 ```json
-// hooks.json で agent hooks はそのまま残る
+// hooks.json: agent hooks remain as-is
 {
   "matcher": "Write|Edit",
   "hooks": [
@@ -678,16 +678,16 @@ agent hooks は CC が LLM を起動して判断を委任する仕組み。Go bi
 }
 ```
 
-Go binary (command) が高速にガードレール判定を返し、agent hook (LLM) がその後に非同期で品質チェックを行う。責務分離。
+The Go binary (command) returns fast guardrail decisions, and the agent hook (LLM) performs quality checks asynchronously afterward. Separation of concerns.
 
-## MCP Server の扱い
+## MCP Server Handling
 
-**決定: 分離プロセス。Go binary に内蔵しない。HTTP API で連携。**
+**Decision: Separate process. Not embedded in Go binary. Communicate via HTTP API.**
 
-理由:
-- harness-mem は SQLite ベースの永続ストア。Go で CGO なしの SQLite は制約が多い
-- MCP server は常駐プロセス。hook handler は短命プロセス。ライフサイクルが異なる
-- Go binary は `hookhandler/memory_bridge.go` で harness-mem の HTTP API に直接 POST する
+Reasons:
+- harness-mem is a SQLite-based persistent store. SQLite without CGO in Go has many limitations
+- MCP server is a resident process. Hook handlers are short-lived processes. Their lifecycles differ
+- The Go binary directly POSTs to harness-mem's HTTP API via `hookhandler/memory_bridge.go`
 
 ```
 bin/harness hook session-start → memory_bridge.go → JSONL log + POST /v1/events/record
@@ -697,8 +697,8 @@ bin/harness hook stop          → memory_bridge.go → JSONL log + POST /v1/ses
 bin/harness hook codex-notify  → memory_bridge.go → JSONL log + POST /v1/events/record  # archived for v1
 ```
 
-harness-mem が未起動の場合は connection refused で即座にフォールバック（JSONL のみ）。
-将来 Go 純粋の MCP server が必要になった場合は、`modernc.org/sqlite` (CGO-free) で別バイナリとして実装する。
+If harness-mem is not running, connection refused causes an immediate fallback (JSONL only).
+If a pure-Go MCP server becomes necessary in the future, it will be implemented as a separate binary using `modernc.org/sqlite` (CGO-free).
 
 ## Performance Comparison (Estimated)
 
@@ -712,7 +712,7 @@ harness-mem が未起動の場合は connection refused で即座にフォール
 | Plans.md parse | 50-100ms (bash+jq) | 1-2ms | **50x** |
 | Total per tool call | 60-90ms overhead | 3-5ms overhead | **20x** |
 
-**Breezing 1000 回のツール呼び出し: 60-90 秒 → 3-5 秒**
+**Breezing with 1000 tool calls: 60-90 seconds → 3-5 seconds**
 
 ### Worst Case Analysis (PreToolUse)
 
@@ -740,24 +740,24 @@ Worst case total:    5ms
 
 | Component | Format | Reason |
 |-----------|--------|--------|
-| skills/*.md | Markdown | CC がプロンプトとして読む。コンパイル不要 |
-| agents/*.md | Markdown | CC がプロンプトとして読む |
-| .claude/rules/*.md | Markdown | CC がルールとして読む |
-| CLAUDE.md | Markdown | CC が instructions として読む |
-| Plans.md | Markdown | Go がパースするが、人間も読む |
-| CHANGELOG.md | Markdown | リリースノート |
+| skills/*.md | Markdown | CC reads as prompts. No compilation needed |
+| agents/*.md | Markdown | CC reads as prompts |
+| .claude/rules/*.md | Markdown | CC reads as rules |
+| CLAUDE.md | Markdown | CC reads as instructions |
+| Plans.md | Markdown | Parsed by Go, but also read by humans |
+| CHANGELOG.md | Markdown | Release notes |
 
 ## What Disappears
 
 | Current | Go Rewrite | Reason |
 |---------|------------|--------|
-| 40+ shell scripts in scripts/ | 0 | 全て Go binary に統合 |
-| core/src/ TypeScript | 0 | Go internal/ に置換 |
-| node_modules/ | 0 | Go は stdlib 完結 |
-| scripts/run-hook.sh routing | 0 | Go の subcommand routing |
+| 40+ shell scripts in scripts/ | 0 | All integrated into Go binary |
+| core/src/ TypeScript | 0 | Replaced by Go internal/ |
+| node_modules/ | 0 | Go is stdlib-complete |
+| scripts/run-hook.sh routing | 0 | Go subcommand routing |
 | jq dependency | 0 | Go encoding/json |
-| scripts/path-utils.sh | 0 | 各 handler でパス解決を内包 |
-| scripts/sync-plugin-cache.sh | Go 版に更新 | hooks.json + bin/* を .claude-plugin/ にコピー。二重管理は維持（テスト互換） |
+| scripts/path-utils.sh | 0 | Path resolution is contained within each handler |
+| scripts/sync-plugin-cache.sh | Updated to Go version | Copies hooks.json + bin/* to .claude-plugin/. Dual management maintained (test compatibility) |
 
 ## Build & Distribution
 
@@ -795,19 +795,19 @@ This is a **zero-base rewrite**, not a migration. Both versions coexist:
 - `feat/harness-go-rewrite` branch: Go version (development)
 
 Switch is atomic: replace `hooks/hooks.json` + `.claude-plugin/hooks.json` + `.claude-plugin/` metadata + `bin/` in one commit.
-`hooks/hooks.json` と `.claude-plugin/hooks.json` の二重管理は維持（test-hooks-sync.sh 互換）。
+Dual management of `hooks/hooks.json` and `.claude-plugin/hooks.json` is maintained (test-hooks-sync.sh compatibility).
 
 ## Design Decisions (formerly Open Questions)
 
-| # | 質問 | 決定 | 理由 |
+| # | Question | Decision | Reason |
 |---|------|------|------|
-| D1 | agent hooks (type: "agent") | **hooks.json に残す。Go は command hooks のみ** | LLM judgment は CC の責務。Go は高速なルール評価に集中 |
-| D2 | Codex companion *(archived for v1)* | **現行 shell wrapper を維持** | companion は codex-plugin-cc の proxy。Go 化の ROI が低い |
-| D3 | Memory MCP | **分離プロセス。Go に内蔵しない** | SQLite CGO 問題、ライフサイクル不一致。Node 版を継続利用 |
-| D4 | Plugin bin/ auto-selection | **CC の bin/ feature を使う** | CC v2.1.91+ がプラットフォーム別にバイナリを選択。Makefile で命名規則を合わせるだけ |
-| D5 | パッケージ構造 | **internal 9 + pkg 2** (guardrail, session, event, hook, hookhandler, breezing, ci, lifecycle, state / hookproto, config) | 通知は hookhandler に統合。機能単位で分割しつつ依存方向を一方向に維持 |
-| D6 | review (security/dual) | **Go binary から除外。スキルのプロンプト指示で完結** | review の判断は LLM が行う。Go が持つ必要がない |
-| D7 | 外部依存 | **uuid のみ許容。他は stdlib** | MCP/OTel も encoding/json + net/http で自前実装 |
+| D1 | agent hooks (type: "agent") | **Remain in hooks.json. Go handles command hooks only** | LLM judgment is CC's responsibility. Go focuses on fast rule evaluation |
+| D2 | Codex companion *(archived for v1)* | **Maintain current shell wrapper** | companion is a proxy for codex-plugin-cc. Low ROI for Go port |
+| D3 | Memory MCP | **Separate process. Not embedded in Go** | SQLite CGO issues, lifecycle mismatch. Continue using Node version |
+| D4 | Plugin bin/ auto-selection | **Use CC's bin/ feature** | CC v2.1.91+ selects binary by platform. Just match naming convention in Makefile |
+| D5 | Package structure | **internal 9 + pkg 2** (guardrail, session, event, hook, hookhandler, breezing, ci, lifecycle, state / hookproto, config) | Notifications consolidated into hookhandler. Split by feature while maintaining one-directional dependencies |
+| D6 | review (security/dual) | **Excluded from Go binary. Completed by skill prompt instructions** | Review decisions are made by LLM. Go doesn't need to hold them |
+| D7 | External dependencies | **Only uuid is allowed. Others use stdlib** | MCP/OTel also self-implemented with encoding/json + net/http |
 
 ## Binary Size Estimate (Revised)
 
@@ -821,4 +821,4 @@ Go stdlib minimal:     1.5MB
 Expected:              ~2.5MB (darwin/arm64)
 ```
 
-5 プラットフォーム合計: ~12MB（bin/ ディレクトリ全体）
+Total for 5 platforms: ~12MB (entire bin/ directory)

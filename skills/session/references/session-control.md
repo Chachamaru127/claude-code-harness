@@ -6,31 +6,31 @@ allowed-tools: ["Read", "Bash", "Write", "Edit"]
 
 # Session Control
 
-## 入力
+## Input
 
-workflow 変数:
+Workflow variables:
 - `resume_session_id` (string)
 - `resume_latest` (boolean)
 - `fork_session_id` (string)
 - `fork_reason` (string)
 
-## 実行
+## Execution
 
-### 1) 引数の決定
+### 1) Determine arguments
 - resume:
   - `resume_latest == true` → `--resume latest`
-  - それ以外で `resume_session_id` があれば `--resume <id>`
+  - Otherwise, if `resume_session_id` is set → `--resume <id>`
 - fork:
-  - `fork_session_id` があれば `--fork <id>`、なければ `--fork current`
-  - `fork_reason` があれば `--reason "<text>"`
+  - If `fork_session_id` is set → `--fork <id>`, otherwise `--fork current`
+  - If `fork_reason` is set → `--reason "<text>"`
 
-### 2) スクリプト実行
+### 2) Run script
 ```bash
 ./scripts/session-control.sh --resume <id|latest>
 ./scripts/session-control.sh --fork <id|current> --reason "<text>"
 ```
 
-## 期待される結果
-- `.claude/state/session.json` が更新される
-- `.claude/state/session.events.jsonl` に `session.resume` または `session.fork` が追記される
-- エラー時は stderr に理由が出力される
+## Expected Results
+- `.claude/state/session.json` is updated
+- `session.resume` or `session.fork` is appended to `.claude/state/session.events.jsonl`
+- On error, the reason is written to stderr
