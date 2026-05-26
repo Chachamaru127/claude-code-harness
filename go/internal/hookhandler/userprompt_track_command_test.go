@@ -171,7 +171,7 @@ func TestTrackCommandHandler_PluginPrefixCommand(t *testing.T) {
 
 	// プラグインプレフィックス付きコマンド
 	var out bytes.Buffer
-	err := h.Handle(strings.NewReader(`{"prompt":"/claude-code-harness:core:work タスクを実行"}`), &out)
+	err := h.Handle(strings.NewReader(`{"prompt":"/company-ai-harness:core:work タスクを実行"}`), &out)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
