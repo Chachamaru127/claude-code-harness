@@ -65,6 +65,13 @@ The following runtimes and surfaces are explicitly excluded from v1:
 | Tests | `tests/` | Plugin validation and integration tests |
 | Rules | `.claude/rules/` | Operational rules loaded into Claude context |
 
+## Plans.md Marker Vocabulary
+
+Plans.md markers use a canonical English family (`cc:todo`, `cc:done`,
+`pm:requested`, `pm:approved`, etc.). Legacy Japanese markers (`cc:完了`,
+`pm:依頼中`, `cursor:依頼中`, etc.) are read-compatible but must not be
+newly generated. Full reference: [docs/PLANS_MARKERS.md](PLANS_MARKERS.md).
+
 ## Language Policy
 
 All active docs, skills, scripts, and commit messages: **English**.

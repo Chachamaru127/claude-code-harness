@@ -184,3 +184,67 @@ needed updating).
 ### Result
 
 `scripts/ci/check-consistency.sh`: **✅ すべてのチェックに合格しました** (0 failures)
+
+---
+
+## Phase 1.5 — Plans Marker Compatibility Documentation (2026-05-26)
+
+### Objective
+
+Document the preferred v1 Plans.md marker family and the legacy read-compatible
+markers, and define a sunset path so future work can remove legacy marker
+recognition in a planned, non-breaking way.
+
+### Background
+
+The codebase supports legacy Japanese and Cursor-style markers such as `cc:完了`,
+`pm:依頼中`, and `cursor:依頼中`. This is intentional backward compatibility, not
+active Cursor IDE support. Without documentation, future contributors may (a) not
+know which marker family to use for new output, or (b) mistake `cursor:*` read
+support for Cursor IDE support.
+
+### Actions
+
+| File | Change |
+|------|--------|
+| `docs/PLANS_MARKERS.md` | Created — full marker reference, preferred/legacy split, migration plan |
+| `docs/PROJECT_SCOPE.md` | Added "Plans.md Marker Vocabulary" section with link to PLANS_MARKERS.md |
+| `docs/PHASE_1_5_CLEANUP.md` | This section |
+
+### Generator audit findings
+
+Known occurrences of legacy marker generation as of 2026-05-26:
+
+| Location | Occurrence type | Action needed |
+|----------|----------------|---------------|
+| `skills/workflow-guide/SKILL.md` | Documentation table / flow diagram | Update to preferred markers in a follow-up |
+| `skills/workflow-guide/examples/typical-workflow.md` | Workflow example text | Update to preferred markers in a follow-up |
+| `skills/workflow-guide/references/commands.md` | Reference example | Update to preferred markers in a follow-up |
+| `skills/memory/references/sync-project-specs.md` | Reference table | Update in follow-up |
+| `skills/memory/references/plans-merging.md` | Reference table | Update in follow-up |
+| `skills/session-init/SKILL.md` | Descriptive list | Update in follow-up |
+| `skills/harness-loop/SKILL.md` | Flow comment | Update in follow-up |
+| `skills/harness-loop/references/flow.md` | Code comment | Update in follow-up |
+| `skills/harness-work/references/execution-modes.md` | Reference text | Update in follow-up |
+| `skills/harness-work/references/failure-reticketing.md` | Reference table | Update in follow-up |
+| `skills/principles/references/general-principles.md` | Rule text | Update in follow-up |
+| `skills/harness-plan-brief/SKILL.md` | Schema enum (uses `cc:完了`) | Update enum to `cc:done` in follow-up |
+| `skills/harness-plan-brief/schemas/plan-brief-context.v1.schema.json` | Schema enum | Update in follow-up |
+| `skills/harness-progress/SKILL.md` | Description + count text | Update in follow-up |
+| `skills/harness-progress/schemas/progress-snapshot.v1.schema.json` | Description strings | Update in follow-up |
+| `templates/AGENTS.md.template` | Marker table | Documentation only; acceptable |
+| `templates/Plans.md.template` | Compat table | Documentation only; acceptable |
+| `templates/locales/ja/Plans.md.template` | Compat table | Documentation only; acceptable |
+| `templates/locales/ja/AGENTS.md.template` | Marker table | Documentation only; acceptable |
+
+All occurrences are in documentation examples or descriptive text, not in active
+code paths that write to Plans.md. The most impactful follow-ups are the
+`harness-plan-brief` schema (`cc:完了` enum value) and the `harness-progress`
+SKILL.md descriptions, which reference legacy markers in user-visible output text.
+
+### Invariants
+
+- No production Plans.md write path was changed in this task.
+- Read compatibility for legacy markers is unchanged.
+- The `cursor:*` compatibility clarification is now documented and removes
+  ambiguity without changing any behavior.
