@@ -2,6 +2,7 @@
 #
 # Verify locale switching is idempotent on a temp copy and never dirties this
 # repository while checking the ja -> en roundtrip.
+# Phase 1.5: restricted to active skills/ surface only (codex/opencode archived).
 
 set -euo pipefail
 
@@ -20,7 +21,7 @@ is_git_ignored() {
 }
 
 list_skill_files() {
-  find skills skills-codex codex/.codex/skills -mindepth 2 -maxdepth 2 -type f -name "SKILL.md" \
+  find skills -mindepth 2 -maxdepth 2 -type f -name "SKILL.md" \
     | sort \
     | while IFS= read -r file; do
         if is_git_ignored "$file"; then
@@ -59,8 +60,6 @@ root = Path(sys.argv[2])
 target_key = "description-ja" if locale == "ja" else "description-en"
 surfaces = [
     root / "skills",
-    root / "skills-codex",
-    root / "codex/.codex/skills",
 ]
 
 

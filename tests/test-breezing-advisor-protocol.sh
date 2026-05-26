@@ -1,6 +1,7 @@
 #!/bin/bash
 # test-breezing-advisor-protocol.sh
-# breezing / harness-work 系スキルの advisor protocol と mirror 同期を固定する
+# breezing / harness-work スキルの advisor protocol contract を固定する
+# Phase 1.5: codex/opencode mirror checks removed (runtimes archived)
 
 set -euo pipefail
 
@@ -21,36 +22,15 @@ assert_contains() {
 
 SHARED_WORK="${PROJECT_ROOT}/skills/harness-work/SKILL.md"
 SHARED_BREEZING="${PROJECT_ROOT}/skills/breezing/SKILL.md"
-CODEX_WORK="${PROJECT_ROOT}/skills-codex/harness-work/SKILL.md"
-CODEX_BREEZING="${PROJECT_ROOT}/skills-codex/breezing/SKILL.md"
-CODEX_MIRROR_WORK="${PROJECT_ROOT}/codex/.codex/skills/harness-work/SKILL.md"
-CODEX_MIRROR_BREEZING="${PROJECT_ROOT}/codex/.codex/skills/breezing/SKILL.md"
-OPENCODE_MIRROR_WORK="${PROJECT_ROOT}/opencode/skills/harness-work/SKILL.md"
 
-for file in \
-  "${SHARED_WORK}" "${SHARED_BREEZING}" \
-  "${CODEX_WORK}" "${CODEX_BREEZING}" \
-  "${CODEX_MIRROR_WORK}" "${CODEX_MIRROR_BREEZING}" "${OPENCODE_MIRROR_WORK}"
-do
+for file in "${SHARED_WORK}" "${SHARED_BREEZING}"; do
   [ -f "${file}" ] || fail "missing file: ${file}"
 done
 
 assert_contains "${SHARED_WORK}" 'advisor-request.v1' "shared harness-work"
 assert_contains "${SHARED_WORK}" 'advisor-response.v1' "shared harness-work"
-assert_contains "${SHARED_WORK}" 'task ごとの相談回数は最大 3 回' "shared harness-work"
+assert_contains "${SHARED_WORK}" 'Maximum 3 consultations per task' "shared harness-work"
 assert_contains "${SHARED_BREEZING}" 'Worker → `advisor-request.v1`' "shared breezing"
-assert_contains "${SHARED_BREEZING}" 'task ごとの相談回数は最大 3 回' "shared breezing"
-
-assert_contains "${CODEX_WORK}" 'advisor-request.v1' "codex harness-work"
-assert_contains "${CODEX_WORK}" 'Advisor Protocol' "codex harness-work"
-assert_contains "${CODEX_BREEZING}" 'advisor-response.v1' "codex breezing"
-assert_contains "${CODEX_BREEZING}" 'PIVOT_REQUIRED' "codex breezing"
-
-diff -q "${SHARED_WORK}" "${OPENCODE_MIRROR_WORK}" >/dev/null \
-  || fail "opencode mirror の harness-work が SSOT と不一致です"
-diff -q "${CODEX_WORK}" "${CODEX_MIRROR_WORK}" >/dev/null \
-  || fail "codex mirror の harness-work が SSOT と不一致です"
-diff -q "${CODEX_BREEZING}" "${CODEX_MIRROR_BREEZING}" >/dev/null \
-  || fail "codex mirror の breezing が SSOT と不一致です"
+assert_contains "${SHARED_BREEZING}" 'maximum 3 consultations per task' "shared breezing"
 
 echo "test-breezing-advisor-protocol: ok"

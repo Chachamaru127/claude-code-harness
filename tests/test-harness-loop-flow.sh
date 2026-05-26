@@ -1,6 +1,7 @@
 #!/bin/bash
 # test-harness-loop-flow.sh
 # harness-loop flow.md の contract_path / reviewer_profile / advisor 導線の回帰テスト
+# Phase 1.5: SCRIPT_PATH_SURFACES restricted to active skills/ (codex/opencode archived)
 
 set -euo pipefail
 
@@ -9,14 +10,8 @@ PROJECT_ROOT="$(dirname "${SCRIPT_DIR}")"
 FLOW_FILE="${PROJECT_ROOT}/skills/harness-loop/references/flow.md"
 SCRIPT_PATH_SURFACES=(
   "${PROJECT_ROOT}/skills/harness-work/SKILL.md"
-  "${PROJECT_ROOT}/skills-codex/harness-work/SKILL.md"
-  "${PROJECT_ROOT}/skills-codex/harness-loop/SKILL.md"
-  "${PROJECT_ROOT}/codex/.codex/skills/harness-work/SKILL.md"
-  "${PROJECT_ROOT}/codex/.codex/skills/harness-loop/SKILL.md"
-  "${PROJECT_ROOT}/.agents/skills/harness-work/SKILL.md"
-  "${PROJECT_ROOT}/.agents/skills/harness-loop/SKILL.md"
-  "${PROJECT_ROOT}/opencode/skills/harness-work/SKILL.md"
-  "${PROJECT_ROOT}/opencode/skills/harness-loop/SKILL.md"
+  "${PROJECT_ROOT}/skills/harness-loop/SKILL.md"
+  "${PROJECT_ROOT}/skills/breezing/SKILL.md"
 )
 
 fail() {

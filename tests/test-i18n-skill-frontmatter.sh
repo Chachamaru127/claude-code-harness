@@ -2,6 +2,7 @@
 #
 # Verify every shipped skill surface keeps bilingual metadata and ships with
 # description set to the English default.
+# Phase 1.5: restricted to active skills/ surface only (codex/opencode archived).
 
 set -euo pipefail
 
@@ -17,8 +18,6 @@ from pathlib import Path
 
 SURFACES = [
     Path("skills"),
-    Path("skills-codex"),
-    Path("codex/.codex/skills"),
 ]
 
 
@@ -65,7 +64,5 @@ for phrase in ("実装して", "レビューして", "計画作って"):
 
 print(f"validated {skill_count} shipped skill files")
 PY
-
-node scripts/validate-opencode.js >/dev/null
 
 echo "✓ shipped skill frontmatter preserves English default and Japanese routing"

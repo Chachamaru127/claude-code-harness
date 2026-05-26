@@ -36,8 +36,6 @@ copy_dir() {
 mkdir -p "$tmpdir/repo/scripts/i18n"
 cp scripts/i18n/set-locale.sh "$tmpdir/repo/scripts/i18n/set-locale.sh"
 copy_dir skills
-copy_dir skills-codex
-copy_dir codex/.codex/skills
 copy_dir .agents/skills
 
 # `.agents/skills/` is a local-only mirror (gitignored). On CI / fresh
@@ -89,9 +87,6 @@ key_skills = [
     ("skills/harness-work/SKILL.md", "実装して"),
     ("skills/harness-review/SKILL.md", "レビューして"),
     ("skills/harness-plan/SKILL.md", "計画作って"),
-    ("codex/.codex/skills/harness-work/SKILL.md", "実装して"),
-    ("codex/.codex/skills/harness-review/SKILL.md", "レビューして"),
-    ("codex/.codex/skills/harness-plan/SKILL.md", "計画作って"),
     (".agents/skills/harness-work/SKILL.md", "実装して"),
     (".agents/skills/harness-review/SKILL.md", "レビューして"),
     (".agents/skills/harness-plan/SKILL.md", "計画作って"),
@@ -114,14 +109,17 @@ for relative, phrase in key_skills:
     )
     assert "## Quick Reference" in text, f"{relative}: Quick Reference disappeared"
 
-assert checked >= 9, f"expected to check major skill surfaces, checked {checked}"
+assert checked >= 6, f"expected to check major skill surfaces, checked {checked}"
 print(f"checked {checked} Japanese skill descriptions")
 PY
 
-assert_contains README_ja.md "配布時の既定言語は English"
-assert_contains README_ja.md "CLAUDE_CODE_HARNESS_LANG=ja claude"
-assert_contains README_ja.md "/harness-work all"
-assert_contains README_ja.md "5動詞ワークフロー"
+# README_ja.md is upstream-specific; only validate if present in this fork
+if [ -f "README_ja.md" ]; then
+  assert_contains README_ja.md "配布時の既定言語は English"
+  assert_contains README_ja.md "CLAUDE_CODE_HARNESS_LANG=ja claude"
+  assert_contains README_ja.md "/harness-work all"
+  assert_contains README_ja.md "5動詞ワークフロー"
+fi
 
 for template in \
   templates/locales/ja/AGENTS.md.template \

@@ -102,9 +102,6 @@ if [ -f "$VERSION_FILE" ] && [ -f "$PLUGIN_JSON" ]; then
   fi
 fi
 
-LATEST_RELEASE_URL="https://github.com/Chachamaru127/claude-code-harness/releases/latest"
-LATEST_RELEASE_BADGE="https://img.shields.io/github/v/release/Chachamaru127/claude-code-harness?display_name=tag&sort=semver"
-
 # ================================
 # 4. スキルの期待ファイル構成
 # ================================
@@ -622,19 +619,51 @@ check_exists() {
   fi
 }
 
-check_fixed_string "$README_EN" "$LATEST_RELEASE_URL" "README.md latest release link"
-check_fixed_string "$README_EN" "$LATEST_RELEASE_BADGE" "README.md latest release badge"
+# Fork-specific checks (replaced upstream public-release checks)
+check_fixed_string "$README_EN" "Internal fork" "README.md internal-fork declaration"
+check_fixed_string "$README_EN" "Claude Code" "README.md Claude Code-first target"
+check_fixed_string "$README_EN" "archived and out of scope" "README.md marks non-Claude runtimes as archived"
+check_fixed_string "$README_EN" "archive/" "README.md references archive/ for non-Claude surfaces"
+check_absent_string "$README_EN" "img.shields.io/github/v/release/Chachamaru127" "README.md upstream public release badge absent"
+check_absent_string "$README_EN" "Production-ready code." "README.md stale production-ready wording"
+
+# Plugin name must be company-ai-harness
+PLUGIN_NAME_CHECK=$(python3 -c "import json; d=json.load(open('$PLUGIN_JSON')); print(d.get('name',''))" 2>/dev/null || echo "")
+if [ "$PLUGIN_NAME_CHECK" = "company-ai-harness" ]; then
+  echo "  ✅ plugin.json name: $PLUGIN_NAME_CHECK"
+else
+  echo "  ❌ plugin.json name unexpected: '$PLUGIN_NAME_CHECK' (expected: company-ai-harness)"
+  README_ISSUES=$((README_ISSUES + 1))
+fi
+
+# hooks/hooks.json must be valid JSON
+if [ -f "$HOOKS_JSON" ] && python3 -c "import json; json.load(open('$HOOKS_JSON'))" 2>/dev/null; then
+  echo "  ✅ hooks/hooks.json is valid JSON"
+elif [ ! -f "$HOOKS_JSON" ]; then
+  echo "  ❌ hooks/hooks.json does not exist"
+  README_ISSUES=$((README_ISSUES + 1))
+else
+  echo "  ❌ hooks/hooks.json is not valid JSON"
+  README_ISSUES=$((README_ISSUES + 1))
+fi
+
+# Archived non-Claude surfaces must not remain at top level
+ARCHIVE_TOP_LEVEL_ISSUES=0
+for archived_root in codex opencode ".cursor" ".codex-plugin"; do
+  if [ -d "$PLUGIN_ROOT/$archived_root" ]; then
+    echo "  ❌ archived surface '$archived_root' at top level (should be under archive/)"
+    ARCHIVE_TOP_LEVEL_ISSUES=$((ARCHIVE_TOP_LEVEL_ISSUES + 1))
+  fi
+done
+if [ $ARCHIVE_TOP_LEVEL_ISSUES -eq 0 ]; then
+  echo "  ✅ archived non-Claude surfaces not at top level"
+else
+  README_ISSUES=$((README_ISSUES + ARCHIVE_TOP_LEVEL_ISSUES))
+fi
 
 check_exists "$SCOPE_DOC" "distribution-scope.md"
 check_exists "$RUBRIC_DOC" "benchmark-rubric.md"
 check_exists "$WORK_ALL_DOC" "work-all evidence doc"
-
-check_fixed_string "$README_EN" "docs/CLAUDE_CODE_COMPATIBILITY.md" "README.md compatibility doc link"
-check_fixed_string "$README_EN" "docs/evidence/work-all.md" "README.md work-all evidence link"
-check_fixed_string "$README_EN" "docs/distribution-scope.md" "README.md distribution scope link"
-check_fixed_string "$README_EN" "5 verb skills" "README.md 5 verb skills message"
-check_fixed_string "$README_EN" "Go-native guardrail engine" "README.md Go-native guardrail engine message"
-check_absent_string "$README_EN" "Production-ready code." "README.md stale production-ready wording"
 
 check_fixed_string "$SCOPE_DOC" '| `commands/` | Compatibility-retained |' "distribution-scope commands classification"
 check_fixed_string "$SCOPE_DOC" '| `mcp-server/` | Development-only and distribution-excluded |' "distribution-scope mcp-server classification"

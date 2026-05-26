@@ -7,8 +7,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 CONFIG_UTILS="${PROJECT_ROOT}/scripts/config-utils.sh"
-WORKER_ENGINE="${PROJECT_ROOT}/scripts/codex-worker-engine.sh"
-LOOP_SCRIPT="${PROJECT_ROOT}/scripts/codex-loop.sh"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
 
@@ -100,19 +98,6 @@ EOF
   grep -q '^{}$' "$(get_advisor_last_request_file)" || fail "advisor last-request initialized"
   grep -q '^{}$' "$(get_advisor_last_response_file)" || fail "advisor last-response initialized"
   pass "advisor state files initialized"
-)
-
-(
-  cd "${TMP_DIR}/project"
-  grep -q 'ensure_advisor_state_files' "${WORKER_ENGINE}" || fail "worker engine references advisor state helper"
-  pass "worker engine references advisor state helper"
-
-  PROJECT_ROOT="${TMP_DIR}/project" bash "${LOOP_SCRIPT}" status --json >/dev/null
-  [ -d "${TMP_DIR}/project/.claude/state/advisor" ] || fail "loop status creates advisor state dir"
-  [ -f "${TMP_DIR}/project/.claude/state/advisor/history.jsonl" ] || fail "loop status creates advisor history file"
-  [ -f "${TMP_DIR}/project/.claude/state/advisor/last-request.json" ] || fail "loop status creates advisor last-request file"
-  [ -f "${TMP_DIR}/project/.claude/state/advisor/last-response.json" ] || fail "loop status creates advisor last-response file"
-  pass "loop can reference advisor state helper"
 )
 
 echo "test-advisor-config: ok"
