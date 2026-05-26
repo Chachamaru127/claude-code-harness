@@ -31,22 +31,21 @@ claude
 Then inside Claude Code:
 
 ```text
-/plugin marketplace add Chachamaru127/claude-code-harness
-/plugin install claude-code-harness@claude-code-harness-marketplace
+/plugin install company-ai-harness@company-ai-harness-marketplace
 /harness-setup
 ```
 
 Update:
 
 ```text
-/plugin update claude-code-harness
+/plugin update company-ai-harness
 /harness-setup
 ```
 
 Uninstall:
 
 ```text
-/plugin uninstall claude-code-harness
+/plugin uninstall company-ai-harness
 ```
 
 First prompt:

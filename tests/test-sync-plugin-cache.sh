@@ -13,8 +13,8 @@ mkdir -p "${PRIVATE_SYNC_TEST_DIR}"
 printf '%s\n' '---' 'name: test-private-sync' 'description: local-only sync test' '---' > "${PRIVATE_SYNC_TEST_DIR}/SKILL.md"
 
 SOURCE_VERSION="$(tr -d '[:space:]' < "${ROOT_DIR}/VERSION")"
-CACHE_DIR="${TMP_HOME}/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/${SOURCE_VERSION}"
-MARKETPLACE_DIR="${TMP_HOME}/.claude/plugins/marketplaces/claude-code-harness-marketplace"
+CACHE_DIR="${TMP_HOME}/.claude/plugins/cache/company-ai-harness-marketplace/company-ai-harness/${SOURCE_VERSION}"
+MARKETPLACE_DIR="${TMP_HOME}/.claude/plugins/marketplaces/company-ai-harness-marketplace"
 mkdir -p "${CACHE_DIR}" "${MARKETPLACE_DIR}/.claude-plugin"
 mkdir -p \
   "${CACHE_DIR}/codex/.codex/skills/x-article" \

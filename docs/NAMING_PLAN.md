@@ -3,8 +3,9 @@
 Internal rename from upstream branding (`claude-code-harness` / Chachamaru127) to internal
 project identity (`company-ai-harness` / Company AI Harness).
 
-**Status**: Phase 0 — planning only. No runtime changes have been made.  
-**Goal of Phase 1**: display-name and metadata changes that carry zero runtime risk.
+**Status**: Phase 1 + Phase 2 complete (commit `chore: rename fork to company ai harness`).
+Phase 1 (display-only metadata) and Phase 2 (plugin ID atomic rename + hook validation update) were
+applied together. Phase 3 (config file rename) and Phase 4 (Go module rename) are deferred.
 
 ---
 

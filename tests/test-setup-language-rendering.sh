@@ -158,7 +158,7 @@ hooks = json.loads(Path(".claude-plugin/hooks.json").read_text(encoding="utf-8")
 hooks_mirror = json.loads(Path("hooks/hooks.json").read_text(encoding="utf-8"))
 
 assert marketplace["metadata"]["description"].startswith("Marketplace entry"), "marketplace metadata must be English default"
-assert hooks["description"] == "claude-code-harness: automation hooks", "plugin hooks description must be English default"
+assert hooks["description"] == "company-ai-harness: automation hooks", "plugin hooks description must be English default"
 assert hooks_mirror["description"] == hooks["description"], "hooks mirror description must stay synchronized"
 PY
 

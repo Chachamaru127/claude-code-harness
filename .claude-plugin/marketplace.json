@@ -1,29 +1,25 @@
 {
-  "name": "claude-code-harness-marketplace",
+  "name": "company-ai-harness-marketplace",
   "metadata": {
     "version": "4.12.3",
-    "description": "Marketplace entry for distributing and installing claude-code-harness as a single plugin."
+    "description": "Marketplace entry for distributing and installing company-ai-harness as a single plugin."
   },
   "owner": {
-    "name": "Chachamaru"
+    "name": "Company Engineering"
   },
   "plugins": [
     {
-      "name": "claude-code-harness",
+      "name": "company-ai-harness",
       "version": "4.12.3",
       "source": "./",
-      "description": "A harness for solo developers (Vibecoders) to handle full-cycle contract development.",
+      "description": "Company AI Harness — an AI-assisted engineering workflow harness for Claude Code.",
       "author": {
-        "name": "Chachamaru",
-        "url": "https://github.com/Chachamaru127"
+        "name": "Company Engineering"
       },
-      "homepage": "https://github.com/Chachamaru127/claude-code-harness",
-      "repository": "https://github.com/Chachamaru127/claude-code-harness",
       "license": "MIT",
       "keywords": [
         "claude-code",
         "plugin",
-        "vibecoder",
         "workflow",
         "plan-work-review"
       ],

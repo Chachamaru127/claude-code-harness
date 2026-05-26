@@ -79,7 +79,7 @@ for root in "${PUBLIC_SKILL_ROOTS[@]}"; do
 done
 
 if command -v claude >/dev/null 2>&1; then
-  DETAILS_OUTPUT="$(cd "${ROOT_DIR}" && claude --bare --plugin-dir . plugin details claude-code-harness 2>/dev/null || true)"
+  DETAILS_OUTPUT="$(cd "${ROOT_DIR}" && claude --bare --plugin-dir . plugin details company-ai-harness 2>/dev/null || true)"
   if [ -n "${DETAILS_OUTPUT}" ]; then
     for skill_name in "${PRIVATE_SKILL_NAMES[@]}"; do
       if grep -Eq "(^|[[:space:],])${skill_name}($|[[:space:],])" <<<"${DETAILS_OUTPUT}"; then

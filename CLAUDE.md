@@ -4,7 +4,7 @@ This file provides guidance for Claude Code when working in this repository.
 
 ## Project Overview
 
-**Claude harness** is a plugin for autonomous operation of Claude Code in a "Plan → Work → Review" workflow.
+**Company AI Harness** is a plugin for autonomous operation of Claude Code in a "Plan → Work → Review" workflow.
 
 **Special note**: This project is self-referential — it uses the harness itself to improve the harness.
 

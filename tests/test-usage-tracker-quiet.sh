@@ -22,7 +22,7 @@ echo "${userprompt_output}" | grep -q '{"continue":true}' || {
   exit 1
 }
 
-usage_output="$(cd "${TMP_DIR}" && printf '%s' '{"tool_name":"Skill","tool_input":{"skill":"claude-code-harness:memory"}}' | bash "${USAGE_TRACKER_SCRIPT}")"
+usage_output="$(cd "${TMP_DIR}" && printf '%s' '{"tool_name":"Skill","tool_input":{"skill":"company-ai-harness:memory"}}' | bash "${USAGE_TRACKER_SCRIPT}")"
 if echo "${usage_output}" | grep -q '\[record-usage\]'; then
   echo "usage-tracker stdout should not include record-usage noise"
   exit 1

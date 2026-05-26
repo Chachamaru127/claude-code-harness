@@ -78,8 +78,8 @@ done <<EOF
 $HOST_TIERS
 EOF
 
-assert_section_contains "Claude Code" "/plugin install claude-code-harness@claude-code-harness-marketplace"
-assert_section_contains "Claude Code" "/plugin update claude-code-harness"
+assert_section_contains "Claude Code" "/plugin install company-ai-harness@company-ai-harness-marketplace"
+assert_section_contains "Claude Code" "/plugin update company-ai-harness"
 assert_section_contains "Codex CLI" "./scripts/setup-codex.sh --user"
 assert_section_contains "Codex CLI" 'test -d "${CODEX_HOME:-$HOME/.codex}/skills/harness-plan"'
 assert_section_contains "OpenCode" "scripts/setup-opencode.sh"

@@ -2,18 +2,15 @@
 # Edit this file, then run `harness sync` to generate CC plugin files.
 
 [project]
-name = "claude-code-harness"
+name = "company-ai-harness"
 version = "4.12.3"
-description = "Claude harness - A harness for solo developers (Vibecoders) to handle full-cycle contract development."
-homepage = "https://github.com/Chachamaru127/claude-code-harness"
-repository = "https://github.com/Chachamaru127/claude-code-harness"
+description = "Company AI Harness — an AI-assisted engineering workflow harness for Claude Code."
 license = "MIT"
-keywords = ["claude-code", "plugin", "vibecoder", "workflow", "plan-work-review"]
+keywords = ["claude-code", "plugin", "workflow", "plan-work-review"]
 outputStyles = "./output-styles/"
 
 [project.author]
-name = "Chachamaru"
-url = "https://github.com/Chachamaru127"
+name = "Company Engineering"
 
 [env]
 CLAUDE_CODE_SUBPROCESS_ENV_SCRUB = "1"
