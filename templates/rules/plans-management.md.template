@@ -1,5 +1,5 @@
 ---
-description: Plans.md タスク管理ルール（Plans.md 編集時のみ適用）
+description: Plans.md task management rules (applies only when editing Plans.md)
 paths:
   - "**/Plans.md"
 _harness_template: "rules/plans-management.md.template"
@@ -8,71 +8,71 @@ _harness_version: "2.5.27"
 
 # Plans.md Management Rules
 
-## タスク記述フォーマット
+## Task Format
 
 ```markdown
-- [ ] タスク説明 `マーカー`
-  - サブタスク1
-  - サブタスク2
+- [ ] Task description `marker`
+  - Subtask 1
+  - Subtask 2
 ```
 
-## マーカー運用
+## Marker Usage
 
-| マーカー | 付与者 | 意味 |
-|---------|--------|------|
-| `pm:依頼中` | PM（Cursor/PM Claude） | タスクを依頼 |
-| `cc:TODO` | Claude Code | 未着手 |
-| `cc:WIP` | Claude Code | 作業中 |
-| `cc:完了` | Claude Code | 完了 |
-| `pm:確認済` | PM（Cursor/PM Claude） | レビュー完了 |
-| `cursor:依頼中` | Cursor | （互換）`pm:依頼中` と同義 |
-| `cursor:確認済` | Cursor | （互換）`pm:確認済` と同義 |
+| Marker | Set by | Meaning |
+|--------|--------|---------|
+| `pm:requested` | PM (Cursor/PM Claude) | PM has assigned the task (legacy: `pm:依頼中`) |
+| `cc:todo` | Claude Code | Not started |
+| `cc:wip` | Claude Code | In progress |
+| `cc:done` | Claude Code | Completed (legacy: `cc:完了`) |
+| `pm:approved` | PM (Cursor/PM Claude) | Review complete (legacy: `pm:確認済`) |
+| `cursor:依頼中` | Cursor | Legacy alias for `pm:requested` |
+| `cursor:確認済` | Cursor | Legacy alias for `pm:approved` |
 
-## セクション構成
+## Section Structure
 
 ```markdown
-## 🔴 進行中のタスク
-（cc:WIP のタスク）
+## 🔴 In Progress
+(cc:wip tasks)
 
-## 🟡 未着手のタスク
-（cc:TODO, pm:依頼中（互換: cursor:依頼中） のタスク）
+## 🟡 Pending
+(cc:todo, pm:requested tasks)
 
-## 🟢 完了タスク
-（cc:完了, pm:確認済（互換: cursor:確認済） のタスク）
+## 🟢 Completed
+(cc:done, pm:approved tasks)
 
-## 📦 アーカイブ
-（古い完了タスク）
+## 📦 Archive
+(older completed tasks)
 ```
 
-## 更新ルール
+## Update Rules
 
-1. **即時更新**: タスク開始時に `cc:WIP`、完了時に `cc:完了` を即座に付与
-2. **サマリー記載**: 完了時は作業内容のサマリーを追記
-3. **日付記録**: 完了セクションには日付を記載 `(YYYY-MM-DD)`
-4. **アーカイブ**: 7日以上前の完了タスクは📦アーカイブへ移動
+1. **Immediate update**: Set `cc:wip` when starting a task, `cc:done` when complete
+2. **Summary**: Add a brief summary of work done at completion
+3. **Date**: Record date in completed section `(YYYY-MM-DD)`
+4. **Archive**: Move tasks completed more than 7 days ago to the 📦 Archive
 
-## 禁止事項
+## Prohibitions
 
-- ❌ 他者のマーカーを勝手に変更
-- ❌ 進行中タスクの削除
-- ❌ サマリーなしでの完了マーク
+- ❌ Changing another agent's markers without permission
+- ❌ Deleting in-progress tasks
+- ❌ Marking complete without a summary
 
 ---
 
-## 拡張記法（オプション）
+## Extended Notation (Optional)
 
-大規模プロジェクトでは以下の記法を**オプション**で使用可能：
+For large projects, the following notation is available as an **option**:
 
 ```markdown
-- [ ] T001: 認証機能 `cc:TODO`
-- [ ] T002: ユーザーAPI `cc:TODO` depends:T001
-- [ ] T003: 商品API `cc:TODO` [P]
+- [ ] T001: Authentication feature `cc:todo`
+- [ ] T002: User API `cc:todo` depends:T001
+- [ ] T003: Products API `cc:todo` [P]
 ```
 
-| 記法 | 意味 |
-|------|------|
-| `T001:` | タスクID（依存指定用） |
-| `depends:ID` | 依存タスク（カンマ区切り可） |
-| `[P]` | 並列実行可（Parallelizable） |
+| Notation | Meaning |
+|----------|---------|
+| `T001:` | Task ID (for dependency references) |
+| `depends:ID` | Dependency (comma-separated) |
+| `[P]` | Parallelizable |
 
-**後方互換**: これらがなくても従来通り動作する。
+**Backward compatible**: Works without these notations.

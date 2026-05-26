@@ -14,23 +14,23 @@ skill_files=(
 
 required_terms=(
   "AskUserQuestion"
-  "今までの作業をコミットしてリリースしたい"
+  "I want to commit my current work and release it"
   "Bare invocation contract"
   "Review Gate"
   "Work Commit Gate"
-  "レビューから開始"
+  "Start with review"
   "harness-review"
   "APPROVE"
   "REQUEST_CHANGES"
   "harness-work"
-  "修正後再レビュー loop"
-  "\`REQUEST_CHANGES\` 単体を最終停止理由にしてはいけない"
+  "fix-then-re-review loop"
+  "\`REQUEST_CHANGES\` alone must not be used as a final stopping reason"
   "release dry-run"
   "working tree clean check"
   "RELEASE_AUTOSTART:"
   'if $ARGUMENTS == ""'
-  "タスクが不明確"
-  "↑この結果は Claude が要約します"
+  "task is unclear"
+  "↑ Claude will summarize these results"
 )
 
 failures=0

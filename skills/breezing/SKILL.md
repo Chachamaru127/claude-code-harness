@@ -19,88 +19,88 @@ user-invocable: true
 
 # Breezing — Team Execution Mode
 
-> **後方互換エイリアス**: `harness-work` をチーム実行モードで動かします。
+> **Backward-compatible alias**: Runs `harness-work` in team execution mode.
 
 ## Quick Reference
 
 ```bash
-/breezing                       # スコープを聞いてから実行
-/breezing all                   # Plans.md 全タスクを完走
-/breezing 3-6                   # タスク3〜6を完走
-/breezing --codex all           # Codex CLI で全タスク完走
-/breezing --parallel 2 all      # 2並列で全タスク完走
-/breezing --no-discuss all      # 計画議論スキップで全タスク完走
-/breezing --auto-mode all       # 互換な親セッションで Auto Mode rollout を試す
+/breezing                       # Ask for scope, then execute
+/breezing all                   # Run all tasks in Plans.md to completion
+/breezing 3-6                   # Run tasks 3–6 to completion
+/breezing --codex all           # Run all tasks to completion via Codex CLI
+/breezing --parallel 2 all      # Run all tasks to completion with 2 workers in parallel
+/breezing --no-discuss all      # Run all tasks to completion, skipping planning discussion
+/breezing --auto-mode all       # Try Auto Mode rollout in a compatible parent session
 ```
 
 ## Options
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `all` | 全未完了タスクを対象 | - |
-| `N` or `N-M` | タスク番号/範囲指定 | - |
-| `--codex` | Codex CLI で実装委託 | false |
-| `--parallel N` | Implementer 並列数 | auto |
-| `--no-commit` | 自動コミット抑制 | false |
-| `--no-discuss` | 計画議論スキップ | false |
-| `--auto-mode` | Harness 側の Auto Mode rollout を明示。CC 2.1.111 で不要になった `--enable-auto-mode` とは別物 | false |
+| `all` | Target all incomplete tasks | - |
+| `N` or `N-M` | Specify task number / range | - |
+| `--codex` | Delegate implementation to Codex CLI | false |
+| `--parallel N` | Number of parallel Implementers | auto |
+| `--no-commit` | Suppress automatic commit | false |
+| `--no-discuss` | Skip planning discussion | false |
+| `--auto-mode` | Explicitly use the Harness-side Auto Mode rollout. Separate from `--enable-auto-mode`, which became unnecessary in CC 2.1.111 | false |
 
 > **CC 2.1.111 note**:
-> Opus 4.7 では literal に `/effort xhigh` が使える。
-> built-in `/ultrareview` は明示要求時だけ追加で使い、既定レビューは置き換えない。
+> With Opus 4.7, `/effort xhigh` can be used literally.
+> The built-in `/ultrareview` should only be added upon explicit request and does not replace the default review.
 
-> **長時間セッション推奨 (CC 2.1.108+)**:
-> セッション長が 30 分を超える見込みの場合、plugin bundle root 解決後に
-> `bash "${HARNESS_PLUGIN_ROOT}/scripts/enable-1h-cache.sh"` を実行して 1 時間 prompt cache を opt-in すること。
-> このスクリプトは `env.local` に `export ENABLE_PROMPT_CACHING_1H=1` を追記する (冪等)。
-> 5 分 TTL の既定キャッシュでは breezing の 1 時間超セッションで cache miss が累積し
-> input token コストが最大 12 倍になりうるため、長時間 team 実行では明示的に opt-in する。
-> Codex CLI 子プロセス (`scripts/codex-companion.sh task --write` 等) は通常 env 継承で
-> `ENABLE_PROMPT_CACHING_1H` を読むが、`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1` が有効な場合は
-> 明示的に export を維持する shell wrapper が必要。詳細は
-> [`docs/long-running-harness.md`](../../docs/long-running-harness.md) を参照。
+> **Long-session recommendation (CC 2.1.108+)**:
+> If a session is expected to exceed 30 minutes, opt in to 1-hour prompt caching after resolving
+> the plugin bundle root by running `bash "${HARNESS_PLUGIN_ROOT}/scripts/enable-1h-cache.sh"`.
+> This script appends `export ENABLE_PROMPT_CACHING_1H=1` to `env.local` (idempotent).
+> With the default 5-minute TTL cache, cache misses accumulate in breezing sessions exceeding
+> 1 hour, which can raise input token costs by up to 12×; opt in explicitly for long team runs.
+> Codex CLI child processes (`scripts/codex-companion.sh task --write`, etc.) normally inherit
+> `ENABLE_PROMPT_CACHING_1H` via env, but if `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1` is active,
+> a shell wrapper that explicitly maintains the export is needed. See
+> [`docs/long-running-harness.md`](../../docs/long-running-harness.md) for details.
 
 ## Execution
 
-**このスキルは `harness-work` に委譲します。** 以下の設定で `harness-work` を実行してください:
+**This skill delegates to `harness-work`.** Run `harness-work` with the following settings:
 
-1. **引数をそのまま `harness-work` に渡す**
-2. **チーム実行モードを強制** — Lead → Worker spawn → Reviewer spawn の三者分離
-3. **Lead は delegate 専念** — コードを直接書かない
-4. **Auto Mode は opt-in 扱い** — `--auto-mode` は互換な親セッションでの rollout 用フラグとして受け付ける
-5. **Advisor は必要時のみ** — Worker が `advisor-request.v1` を返した時だけ Lead が advisor を呼ぶ
+1. **Pass arguments as-is to `harness-work`**
+2. **Force team execution mode** — three-way separation of Lead → Worker spawn → Reviewer spawn
+3. **Lead focuses on delegation** — does not write code directly
+4. **Auto Mode is opt-in** — `--auto-mode` is accepted as a rollout flag for compatible parent sessions
+5. **Advisor only when needed** — Lead calls an advisor only when Worker returns `advisor-request.v1`
 
-### `harness-work` との違い
+### Differences from `harness-work`
 
-| 特徴 | `harness-work` | `breezing` (このスキル) |
-|------|-----------------|------------------------|
-| 並列手段 | 必要数に応じた自動分割 | **Lead/Worker/Reviewer の役割分離** |
-| Lead の役割 | 調整+実装 | **delegate (調整専念)** |
-| レビュー | Lead 自己レビュー | **独立 Reviewer** |
-| デフォルトスコープ | 次のタスク | **全部** |
+| Feature | `harness-work` | `breezing` (this skill) |
+|---------|----------------|------------------------|
+| Parallelism | Auto-split based on need | **Role separation: Lead / Worker / Reviewer** |
+| Lead's role | Coordination + implementation | **delegate (coordination only)** |
+| Review | Lead self-review | **Independent Reviewer** |
+| Default scope | Next task | **All tasks** |
 
 ### Team Composition
 
-| Role | Agent Type | Mode | 責務 |
-|------|-----------|------|------|
-| Lead | (self) | - | 調整・指揮・タスク分配 |
-| Worker ×N | `claude-code-harness:worker` | `bypassPermissions`（現行） / Auto Mode（follow-up）* | 実装 |
-| Advisor | `claude-code-harness:advisor` | 読み取り専用 | 方針助言 (`PLAN` / `CORRECTION` / `STOP`) |
-| Reviewer | `claude-code-harness:reviewer` | `bypassPermissions`（現行） / Auto Mode（follow-up）* | 独立レビュー |
+| Role | Agent Type | Mode | Responsibility |
+|------|-----------|------|---------------|
+| Lead | (self) | - | Coordination, direction, task distribution |
+| Worker ×N | `claude-code-harness:worker` | `bypassPermissions` (current) / Auto Mode (follow-up)* | Implementation |
+| Advisor | `claude-code-harness:advisor` | Read-only | Policy advice (`PLAN` / `CORRECTION` / `STOP`) |
+| Reviewer | `claude-code-harness:reviewer` | `bypassPermissions` (current) / Auto Mode (follow-up)* | Independent review |
 
-> *親セッションまたは frontmatter が `bypassPermissions` の場合はそちらが優先される。配布テンプレートは現在も `bypassPermissions` を使うため、Auto Mode は follow-up の rollout 対象であり、既定挙動ではない。
+> *If the parent session or frontmatter specifies `bypassPermissions`, that takes precedence. Distribution templates currently use `bypassPermissions`, so Auto Mode is a follow-up rollout target and is not the default behavior.
 
 ### Codex Mode (`--codex`)
 
-公式プラグイン `codex-plugin-cc` 経由で Codex CLI にすべての実装を委託するモード:
+Delegates all implementation to the Codex CLI via the official plugin `codex-plugin-cc`:
 
 ```bash
-# タスク委託（書き込み可能）
-bash "${HARNESS_PLUGIN_ROOT}/scripts/codex-companion.sh" task --write "タスク内容"
+# Delegate task (with write access)
+bash "${HARNESS_PLUGIN_ROOT}/scripts/codex-companion.sh" task --write "task content"
 
-# stdin 経由（大きなプロンプト向け）
+# Via stdin (for large prompts)
 CODEX_PROMPT=$(mktemp /tmp/codex-prompt-XXXXXX.md)
-# タスク内容を書き出し
+# Write task content
 cat "$CODEX_PROMPT" | bash "${HARNESS_PLUGIN_ROOT}/scripts/codex-companion.sh" task --write
 rm -f "$CODEX_PROMPT"
 ```
@@ -112,203 +112,211 @@ breezing [scope] [--codex] [--parallel N] [--no-discuss] [--auto-mode]
     │
     ↓ Load harness-work with team mode
     │
-Phase 0: Planning Discussion (--no-discuss でスキップ)
-Phase A: Pre-delegate（チーム初期化）
-Phase B: Delegate（Worker 実装 + 必要時 Advisor + Reviewer レビュー）
-Phase C: Post-delegate（統合検証 + Plans.md 更新 + commit）
+Phase 0: Planning Discussion (skipped with --no-discuss)
+Phase A: Pre-delegate (team initialization)
+Phase B: Delegate (Worker implementation + Advisor when needed + Reviewer review)
+Phase C: Post-delegate (integration validation + Plans.md update + commit)
 ```
 
 ## Advisor Protocol
 
-Worker は generic な subagent を増やさない。
-迷った時は構造化 JSON で相談要求だけ返し、Lead が advisor を呼ぶ。
+Workers do not spawn generic subagents.
+When uncertain, return a structured JSON consultation request only, and Lead calls the advisor.
 
 1. Worker → `advisor-request.v1`
 2. Lead → Advisor
 3. Advisor → `advisor-response.v1`
-4. Lead → 同じ Worker に advice を返して続行
-5. Reviewer は最後の成果物だけを見る
+4. Lead → returns advice to the same Worker to continue
+5. Reviewer only looks at the final deliverable
 
-相談条件は loop / solo とそろえる。
+Consultation conditions align with loop / solo mode.
 
-- 高リスク task（`needs-spike` / `security-sensitive` / `state-migration`）の初回実行前
-- 同じ原因の失敗が 2 回続いた後
-- plateau により `PIVOT_REQUIRED` を返す直前
-- 同じ `trigger_hash` は 1 回だけ。task ごとの相談回数は最大 3 回
+- Before the first run of high-risk tasks (`needs-spike` / `security-sensitive` / `state-migration`)
+- After the same root cause fails 2 consecutive times
+- Just before returning `PIVOT_REQUIRED` due to a plateau
+- Same `trigger_hash` only once; maximum 3 consultations per task
 
-### Progress Feed（Phase B 中の進捗通知）
+### Progress Feed (progress notifications during Phase B)
 
-Lead は Worker のタスク完了ごとに、以下のフォーマットで進捗を出力する:
+Lead outputs progress in the following format on each task completion by a Worker:
 
 ```
-📊 Progress: Task {completed}/{total} 完了 — "{task_subject}"
+📊 Progress: Task {completed}/{total} done — "{task_subject}"
 ```
 
-**出力例**:
+**Output examples**:
 ```
-📊 Progress: Task 1/5 完了 — "harness-work に失敗再チケット化を追加"
-📊 Progress: Task 2/5 完了 — "harness-sync に --snapshot を追加"
-📊 Progress: Task 3/5 完了 — "breezing にプログレスフィードを追加"
+📊 Progress: Task 1/5 done — "Add failure re-ticketing to harness-work"
+📊 Progress: Task 2/5 done — "Add --snapshot to harness-sync"
+📊 Progress: Task 3/5 done — "Add progress feed to breezing"
 ```
 
-> **設計意図**: breezing は長時間実行になることが多い。
-> ユーザーがターミナルをチラ見した時に「今どこまで進んでいるか」が一目で分かるようにする。
-> task-completed.sh フックが systemMessage で同等の情報を出力するため、Lead の出力と補完し合う。
+> **Design intent**: Breezing often runs for a long time.
+> This ensures that when the user glances at the terminal, they can immediately see how far things have progressed.
+> The task-completed.sh hook outputs equivalent information via systemMessage, complementing Lead's output.
 
-### Silence Policy（長時間実行の通知整理）
+### Silence Policy (notification management for long runs)
 
-Codex `0.123.0` の realtime handoff では、background agent が transcript delta を受け取り、必要ない時は明示的に沈黙できる。
-Breezing の progress feed はこの前提に合わせ、通知を「作業の節目」に絞る。
+In Codex `0.123.0` realtime handoff, background agents receive transcript deltas and can
+explicitly go silent when not needed. Breezing's progress feed aligns with this premise and
+focuses notifications on "milestones in the work."
 
-報告するもの:
+Report:
 
-- task 完了、blocked、validation failure、review `REQUEST_CHANGES`
-- Advisor の `PLAN` / `CORRECTION` / `STOP`
-- Reviewer の `APPROVE` / `REQUEST_CHANGES`
-- advisor / reviewer drift、plateau、contract readiness failure
-- user が明示的に status を求めた時の要約
+- Task completion, blocked, validation failure, review `REQUEST_CHANGES`
+- Advisor's `PLAN` / `CORRECTION` / `STOP`
+- Reviewer's `APPROVE` / `REQUEST_CHANGES`
+- Advisor / reviewer drift, plateau, contract readiness failure
+- Summary when the user explicitly asks for status
 
-沈黙してよいもの:
+Stay silent for:
 
-- transcript delta を受け取っただけで、判定や status が変わっていない時
-- tool stdout の細かな増分で、log に残っていれば十分な時
-- 並列 Worker の待機中 heartbeat
+- Receiving a transcript delta with no change in decision or status
+- Fine-grained increments in tool stdout that are sufficient to remain in logs
+- Parallel Worker waiting heartbeats
 
-頻度は「task 完了ごとに 1 回」を基本にする。
-heartbeat を増やして安心感を作るのではなく、status / log / drift 検知に責務を分ける。
-ただし Advisor request 未応答、Reviewer result 未到着、plateau 直前の警告は silence 対象にしない。
+The basic frequency is once per task completion.
+Rather than increasing heartbeats to create a sense of reassurance, separate responsibilities into status / log / drift detection.
+However, do not silence unanswered Advisor requests, missing Reviewer results, or pre-plateau warnings.
 
-### Monitor ツール活用ガイド (CC 2.1.98+)
+### Monitor Tool Usage Guide (CC 2.1.98+)
 
-長時間実行コマンドを監視する時は、ポーリング (Read で定期的にファイル末尾を読む) ではなく **Monitor ツール** を使用する。Monitor はバックグラウンドプロセスの stdout 各行を逐次通知として Lead に届けるため、polling より低レイテンシかつ低トークン消費で状況を把握できる。
+When monitoring long-running commands, use the **Monitor tool** rather than polling
+(periodically reading file tails with Read). Monitor delivers each stdout line from
+a background process as a sequential notification to Lead, enabling lower latency and
+lower token consumption than polling.
 
-**適用例**:
-- `go test ./... -v` の実行中進捗監視
-- `gh run watch` による GitHub Actions 進捗追跡
-- `npm run build --watch` / `vite build --watch` のビルドエラー即時検知
-- `codex-companion.sh status <job-id>` での Codex job 完了検知
-- `docker-compose logs -f` / `kubectl logs -f` のデプロイログ追跡
+**Application examples**:
+- Progress monitoring during `go test ./... -v`
+- GitHub Actions progress tracking via `gh run watch`
+- Immediate build error detection with `npm run build --watch` / `vite build --watch`
+- Codex job completion detection via `codex-companion.sh status <job-id>`
+- Deploy log tracking with `docker-compose logs -f` / `kubectl logs -f`
 
-**使い分けの判断基準**:
+**Decision criteria**:
 
-| 対象 | Monitor 使う? | 理由 |
-|---|---|---|
-| Agent (Worker / Reviewer) の完了監視 | 不要 | Agent 層が自前で完了通知する |
-| `run_in_background: true` で投げた shell process | 推奨 | stdout 各行を逐次通知で拾える |
-| 短時間の一発コマンド (`go test` 1 回実行) | 不要 | 通常の Bash tool 実行で十分 |
-| 長時間 tail / watch / stream 系コマンド | 推奨 | polling より効率的 |
+| Target | Use Monitor? | Reason |
+|--------|-------------|--------|
+| Completion monitoring for Agent (Worker / Reviewer) | Not needed | The Agent layer sends its own completion notification |
+| Shell process launched with `run_in_background: true` | Recommended | Each stdout line can be captured as a sequential notification |
+| Short one-shot command (single `go test` run) | Not needed | Normal Bash tool execution is sufficient |
+| Long-running tail / watch / stream commands | Recommended | More efficient than polling |
 
-**Breezing Lead での典型パターン**:
+**Typical pattern in Breezing Lead**:
 
 ```
 Lead:
-  Task(Worker1, ...)           ← Agent 完了待ち (Monitor 不要)
-  Task(Worker2, ...)           ← 同上
+  Task(Worker1, ...)           ← Wait for Agent completion (Monitor not needed)
+  Task(Worker2, ...)           ← Same
   Bash(run_in_background, "gh run watch --exit-status")
-  Monitor(tailCommand="...")   ← CI 失敗を即時検知 → Worker に修正指示
+  Monitor(tailCommand="...")   ← Detect CI failure immediately → instruct Worker to fix
 ```
 
-これにより Lead が「Worker 完了 → CI 失敗検知 → 修正指示」の反応速度を上げられる。
+This enables Lead to speed up the "Worker completes → detect CI failure → instruct fix" reaction cycle.
 
-### Review Policy（全モード統一）
+### Review Policy (unified across all modes)
 
-Breezing モードでもレビューは **Codex exec 優先 → 内部 Reviewer フォールバック** の統一ポリシーに従う。
-詳細は `harness-work` の「レビューループ」セクションを参照。
+Even in Breezing mode, reviews follow the unified policy of **Codex exec first → internal Reviewer fallback**.
+See the "Review loop" section of `harness-work` for details.
 
-- Worker が worktree 内で実装・commit → `worker-report.v1` (self_review 5 件) を Lead に返却
-- **self_review ゲート (Reviewer spawn 前)**: Lead が `self_review[].verified` と `evidence` を機械検証。1 件でも `verified:false` or `evidence:""` なら Reviewer を spawn せず Worker に自動差し戻し（同一セッション内 最大 2 回、3 回目で escalate）
-- Lead が Codex exec でレビュー（120s タイムアウト、フォールバック: Reviewer agent）
-- REQUEST_CHANGES → Lead が SendMessage で Worker に修正指示、Worker が amend（最大 `MAX_REVIEWS` 回。`MAX_REVIEWS = read_contract(contract_path, ".review.max_iterations") or 3`）
-- APPROVE → **Lead** が main に cherry-pick → Plans.md を `cc:完了 [{hash}]` に更新
+- Worker implements and commits within worktree → returns `worker-report.v1` (5 self_review items) to Lead
+- **self_review gate (before Reviewer spawn)**: Lead mechanically verifies `self_review[].verified` and `evidence`. If even 1 item has `verified:false` or `evidence:""`, Lead automatically sends it back to Worker without spawning a Reviewer (maximum 2 times within the same session; escalate on the 3rd)
+- Lead reviews via Codex exec (120s timeout, fallback: Reviewer agent)
+- REQUEST_CHANGES → Lead instructs Worker to amend via SendMessage (up to `MAX_REVIEWS` times; `MAX_REVIEWS = read_contract(contract_path, ".review.max_iterations") or 3`)
+- APPROVE → **Lead** cherry-picks to main → updates Plans.md to `cc:done [{hash}]`
 
-### 完了報告（Phase C — Lead が生成）
+### Completion Report (Phase C — generated by Lead)
 
-全タスク完了後、**Lead** が以下の手順でリッチ完了報告を生成する:
+After all tasks complete, **Lead** generates a rich completion report following these steps:
 
-1. `git log --oneline {base_ref}..HEAD` で全 cherry-pick コミットを収集
-2. `git diff --stat {base_ref}..HEAD` で全体の変更規模を取得
-3. Plans.md の `cc:TODO` / `cc:WIP` 残タスクを抽出
-4. `harness-work` の「完了報告フォーマット」の Breezing テンプレートに従い出力
+1. Collect all cherry-pick commits with `git log --oneline {base_ref}..HEAD`
+2. Get overall change scale with `git diff --stat {base_ref}..HEAD`
+3. Extract remaining `cc:TODO` / `cc:WIP` tasks from Plans.md
+4. Output following the Breezing template in `harness-work`'s "Completion Report Format"
 
-> **生成者は Lead**。Worker や hook ではない。Lead が Phase C で git + Plans.md を読んで生成する。
+> **Generated by Lead**. Not by Worker or a hook. Lead reads git + Plans.md in Phase C to generate it.
 
-### Phase 0: Planning Discussion（構造化 3 問チェック）
+### Phase 0: Planning Discussion (structured 3-question check)
 
-全タスク実行前に、以下の 3 問で計画の健全性を確認する。
-`--no-discuss` 指定時は全スキップ。
+Before executing all tasks, confirm plan health with the following 3 questions.
+All are skipped when `--no-discuss` is specified.
 
-**Q1. スコープ確認**:
-> 「{{N}} 件のタスクを実行します。スコープは適切ですか？」
+**Q1. Scope confirmation**:
+> "I will execute {{N}} tasks. Is the scope appropriate?"
 
-多すぎる場合は優先度（Required > Recommended > Optional）で絞り込みを提案。
+If too many, propose narrowing by priority (Required > Recommended > Optional).
 
-**Q2. 依存関係確認**（Plans.md に Depends カラムがある場合のみ）:
-> 「タスク {{X}} は {{Y}} に依存しています。実行順序は合っていますか？」
+**Q2. Dependency confirmation** (only when Plans.md has a Depends column):
+> "Task {{X}} depends on {{Y}}. Is the execution order correct?"
 
-Depends カラムを読み取り、依存チェーンを表示。循環依存があればエラー。
+Read the Depends column and display the dependency chain. Error if a circular dependency is found.
 
-**Q3. リスクフラグ**（`[needs-spike]` タスクがある場合のみ）:
-> 「タスク {{Z}} は [needs-spike] です。先に spike しますか？」
+**Q3. Risk flags** (only when there are `[needs-spike]` tasks):
+> "Task {{Z}} is marked [needs-spike]. Would you like to spike it first?"
 
-spike 未完了の `[needs-spike]` タスクがある場合、spike を先行実行するか確認。
+If there are incomplete `[needs-spike]` tasks, confirm whether to run the spike first.
 
-3 問とも問題なければ、Phase A に進む（合計 30 秒で完了する設計）。
+When all 3 questions pass, proceed to Phase A (designed to complete in 30 seconds total).
 
-### Universal Violations Injection（セッション内 Worker 間の学習伝播）
+### Universal Violations Injection (learning propagation between Workers in a session)
 
-同一 `/breezing` 起動内で蓄積された Reviewer の universal gotchas を次 Worker の briefing 冒頭に自動注入する。**同一セッション内のみ有効**（セッション終了で破棄、`session-memory` には書かない）。
+Automatically injects Reviewer universal gotchas accumulated within the same `/breezing` invocation
+into the briefing header of the next Worker. **Valid within the same session only**
+(discarded when the session ends; not written to `session-memory`).
 
 ```python
-# Phase A 開始時に Lead プロセスの in-memory 配列を初期化
-universal_violations = []  # List[str] — このセッション内で蓄積
+# Initialize Lead process in-memory array at Phase A start
+universal_violations = []  # List[str] — accumulated within this session
 
-# Phase B で Worker を spawn する直前、briefing 冒頭に注入:
+# Just before spawning a Worker in Phase B, inject at the top of the briefing:
 def build_worker_briefing(task, contract_path):
     header = ""
     if universal_violations:
         header = (
-            "🚨 同一セッションで既に検出された universal 違反（再発禁止）:\n"
+            "🚨 Universal violations already detected in this session (must not recur):\n"
             + "\n".join(f"- {v}" for v in universal_violations)
             + "\n\n"
         )
-    return header + f"タスク: {task.内容}\nDoD: {task.DoD}\ncontract_path: {contract_path}\nmode: breezing"
+    return header + f"Task: {task.content}\nDoD: {task.DoD}\ncontract_path: {contract_path}\nmode: breezing"
 
-# Reviewer が review-result.v1 を返した後、Lead が scope="universal" のみ抽出して累積:
+# After Reviewer returns review-result.v1, Lead extracts scope="universal" only and accumulates:
 for update in reviewer_result.memory_updates:
-    # 後方互換: 文字列は task-specific 扱い → 無視
+    # Backward compat: strings are treated as task-specific → ignore
     if isinstance(update, str):
         continue
     if update.get("scope") == "universal":
         universal_violations.append(update["text"])
 ```
 
-**方針**: 過剰設計回避のため、`session-memory` や `decisions.md` への永続化は行わない。Lead プロセスの in-memory 配列に保持するだけで、`/breezing` セッション終了時に破棄する（issue #87 本文の方針）。
+**Policy**: To avoid over-engineering, do not persist to `session-memory` or `decisions.md`.
+Keep only in the Lead process's in-memory array, discarded when the `/breezing` session ends
+(per the policy in issue #87).
 
-### 依存グラフに基づくタスク割り当て
+### Dependency-graph-based task assignment
 
-Plans.md に Depends カラムがある場合（v2 フォーマット）、依存グラフに従ってタスクを実行する:
+When Plans.md has a Depends column (v2 format), execute tasks following the dependency graph:
 
-1. **Depends が `-` のタスク**を先に実行。独立タスクが複数あれば並列 spawn 可能
-2. 各 Worker 完了後、Lead がレビュー→cherry-pick（harness-work Phase B 参照）
-3. 依存元タスクが main に cherry-pick されたら、そのタスクに依存していたタスクを次に実行
-4. 全タスクが完了するまで繰り返す
+1. **Execute tasks with Depends `-` first.** Multiple independent tasks can be spawned in parallel.
+2. After each Worker completes, Lead reviews → cherry-picks (see harness-work Phase B).
+3. Once a depended-on task is cherry-picked to main, execute the tasks that depended on it next.
+4. Repeat until all tasks are complete.
 
-> **注意**: 各タスクの「Worker 完了→レビュー→cherry-pick」は逐次処理。
-> 並列化できるのは独立タスク（Depends が `-`）の Worker spawn 部分のみ。
+> **Note**: "Worker completes → review → cherry-pick" for each task is sequential.
+> Parallelization is only possible for the Worker spawn portion of independent tasks (Depends is `-`).
 
 ## Codex Native Orchestration
 
-Codex では native subagent を使う。
-代表的な制御面は `spawn_agent`, `wait`, `send_input`, `resume_agent`, `close_agent`。
+In Codex, use native subagents.
+Representative control surfaces are `spawn_agent`, `wait`, `send_input`, `resume_agent`, `close_agent`.
 
-> **Claude Code vs Codex の通信 API**（SSOT: `team-composition.md` の API マッピング表）:
-> - Claude Code: `SendMessage(to: agentId, message: "...")` で Worker に修正指示
-> - Codex: `resume_agent(agent_id)` で Worker を再開 → `send_input(agent_id, "...")` で指示送信
+> **Claude Code vs Codex communication API** (SSOT: API mapping table in `team-composition.md`):
+> - Claude Code: instruct Worker to amend via `SendMessage(to: agentId, message: "...")`
+> - Codex: resume Worker with `resume_agent(agent_id)` → send instruction with `send_input(agent_id, "...")`
 >
-> harness-work の擬似コードは Claude Code 構文で記述。Codex 環境では上記に読み替えること。
+> Pseudocode in harness-work is written in Claude Code syntax. Translate to the above for Codex environments.
 
 ## Related Skills
 
-- `harness-work` — 単一タスクからチーム実行まで（本体）
-- `harness-sync` — 進捗同期
-- `harness-review` — コードレビュー（breezing 内で自動起動）
+- `harness-work` — From single tasks to team execution (core)
+- `harness-sync` — Progress sync
+- `harness-review` — Code review (auto-triggered within breezing)

@@ -11,43 +11,43 @@ context: fork
 
 # Memory Skills
 
-メモリとSSOT管理を担当するスキル群です。
+Skills responsible for memory and SSOT management.
 
-## 機能詳細
+## Feature Details
 
-| 機能 | 詳細 |
-|------|------|
-| **SSOT初期化** | See [references/ssot-initialization.md](${CLAUDE_SKILL_DIR}/references/ssot-initialization.md) |
-| **Plans.mdマージ** | See [references/plans-merging.md](${CLAUDE_SKILL_DIR}/references/plans-merging.md) |
-| **移行処理** | See [references/workflow-migration.md](${CLAUDE_SKILL_DIR}/references/workflow-migration.md) |
-| **プロジェクト仕様同期** | See [references/sync-project-specs.md](${CLAUDE_SKILL_DIR}/references/sync-project-specs.md) |
-| **メモリ→SSOT昇格** | See [references/sync-ssot-from-memory.md](${CLAUDE_SKILL_DIR}/references/sync-ssot-from-memory.md) |
+| Feature | Details |
+|---------|---------|
+| **SSOT initialization** | See [references/ssot-initialization.md](${CLAUDE_SKILL_DIR}/references/ssot-initialization.md) |
+| **Plans.md merging** | See [references/plans-merging.md](${CLAUDE_SKILL_DIR}/references/plans-merging.md) |
+| **Migration processing** | See [references/workflow-migration.md](${CLAUDE_SKILL_DIR}/references/workflow-migration.md) |
+| **Project spec sync** | See [references/sync-project-specs.md](${CLAUDE_SKILL_DIR}/references/sync-project-specs.md) |
+| **Memory → SSOT promotion** | See [references/sync-ssot-from-memory.md](${CLAUDE_SKILL_DIR}/references/sync-ssot-from-memory.md) |
 
-## Unified Harness Memory（共通DB）
+## Unified Harness Memory (shared DB)
 
-Claude Code / Codex / OpenCode 共通の記録・検索は `harness_mem_*` MCP を優先する。
+For recording and searching shared across Claude Code / Codex / OpenCode, prefer `harness_mem_*` MCP.
 
-- 検索: `harness_mem_search`, `harness_mem_timeline`, `harness_mem_get_observations`
-- 注入: `harness_mem_resume_pack`
-- 記録: `harness_mem_record_checkpoint`, `harness_mem_finalize_session`, `harness_mem_record_event`
+- Search: `harness_mem_search`, `harness_mem_timeline`, `harness_mem_get_observations`
+- Inject: `harness_mem_resume_pack`
+- Record: `harness_mem_record_checkpoint`, `harness_mem_finalize_session`, `harness_mem_record_event`
 
-## Claude Code 自動メモリとの関係（D22）
+## Relationship with Claude Code Auto-Memory (D22)
 
-Harness の SSOT メモリ（Layer 2）は Claude Code の自動メモリ（Layer 1）と共存します。
-自動メモリは汎用的な学習を暗黙的に記録し、SSOT はプロジェクト固有の意思決定を明示的に管理します。
-Layer 1 の知見がプロジェクト全体に重要な場合、`/memory ssot` で Layer 2 に昇格してください。
+Harness SSOT memory (Layer 2) coexists with Claude Code's auto-memory (Layer 1).
+Auto-memory implicitly records general learnings, while SSOT explicitly manages project-specific decisions.
+When Layer 1 insights are important to the entire project, promote them to Layer 2 with `/memory ssot`.
 
-詳細: [D22: 3層メモリアーキテクチャ](../../.claude/memory/decisions.md#d22-3層メモリアーキテクチャ)
+Details: [D22: 3-layer memory architecture](../../.claude/memory/decisions.md#d22-3層メモリアーキテクチャ)
 
-## 実行手順
+## Execution Steps
 
-1. ユーザーのリクエストを分類
-2. 上記の「機能詳細」から適切な参照ファイルを読む
-3. その内容に従って実行
+1. Classify the user's request
+2. Read the appropriate reference file from "Feature Details" above
+3. Execute according to its contents
 
-## SSOT昇格
+## SSOT Promotion
 
-メモリシステム（Claude-mem / Serena）から重要な学びをSSOTに永続化します。
+Persists important learnings from the memory system (Claude-mem / Serena) into SSOT.
 
 - "**Save what we learned**" → [references/sync-ssot-from-memory.md](${CLAUDE_SKILL_DIR}/references/sync-ssot-from-memory.md)
 - "**Promote decisions to SSOT**" → [references/sync-ssot-from-memory.md](${CLAUDE_SKILL_DIR}/references/sync-ssot-from-memory.md)

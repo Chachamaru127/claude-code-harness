@@ -18,85 +18,83 @@ effort: high
 user-invocable: true
 ---
 
-# Harness Release (汎用)
+# Harness Release (Generic)
 
-Keep a Changelog + GitHub を使う**あらゆるプロジェクト向け**の汎用リリース自動化スキル。
+Generic release automation skill for **any project** using Keep a Changelog + GitHub.
 
-**設計原則**: 単一確認ゲート。ユーザーは 1 回だけ全体計画を見て承認する。承認後はファイル書き換え → commit → push → tag → GitHub Release までを中断なく実行する。
+**Design principle**: Single confirmation gate. The user reviews and approves the full plan exactly once. After approval, the skill runs file rewrites → commit → push → tag → GitHub Release without interruption.
 
-> **Literal invocation note**: この skill の入口は `harness-release`, `/release`, `/release patch`, `/release --dry-run` のような literal command をそのまま使う。
+> **Literal invocation note**: The entry point for this skill uses literal commands such as `harness-release`, `/release`, `/release patch`, `/release --dry-run` exactly as typed.
 
 ## Bare invocation contract
 
 if $ARGUMENTS == "":
-  → 「今までの作業をコミットしてリリースしたい」と解釈し、Review Gate 検出を実行する
-  → 対象 work が 1 つに確定できる場合だけ Step 0 (Review Gate) へ自動進行する
-  → 対象が不明または review state が無い場合は AskUserQuestion で選択肢を出してから進める
+  → Interpret as "I want to commit my current work and release it", then run the Review Gate detection
+  → Auto-advance to Step 0 (Review Gate) only if the target work can be identified unambiguously
+  → If the target is unclear or there is no review state, use AskUserQuestion to present options before proceeding
 
-引数なし呼び出し時の最初の応答で必ず次の literal marker を出力する:
+On the first response to a bare invocation, always output the following literal marker:
 
 `RELEASE_AUTOSTART: target=<work-summary>, base_ref=<ref>, mode=<patch|minor|major|auto>`
 
-「タスクが不明確」「指示を待ちます」「タスクがありません」「追加の指示をお待ちします」は禁止行動。
+Prohibited actions: "task is unclear", "waiting for instructions", "no tasks found", "waiting for additional instructions".
 
-<!-- 上記ブロックは AUTO-START CONTRACT。skill-editing.md「最冒頭 3 行以内」ルール準拠。patterns.md P27 解法 3 点セット (機械可読条件 + 禁止行動 literal + AUTOSTART marker) -->
+<!-- The block above is the AUTO-START CONTRACT. Follows the skill-editing.md "within first 3 lines" rule. Implements the patterns.md P27 3-point solution (machine-readable condition + prohibited-action literals + AUTOSTART marker) -->
 
-### Output Contract (P35: 「止まったように見える」UX 対策)
+### Output Contract (P35: UX fix for "appears stuck")
 
-skill 結論時の output の **最後の 1 行**は必ず次の literal を含める:
+The **last line** of skill output at conclusion must always contain the following literal:
 
-`↑この結果は Claude が要約します。Enter キーで次へ進むか、新規 prompt で別の指示を出してください。`
+`↑ Claude will summarize these results. Press Enter to continue or enter a new prompt for different instructions.`
 
-これは `<local-command-stdout>` 経由で text response として表示されると user が「止まった」と感じる UX 問題への明示的な instruction (patterns.md P35)。
+This is an explicit instruction addressing the UX problem where output via `<local-command-stdout>` makes users feel the session has "stopped" (patterns.md P35).
 
-`harness-release` / `/release` だけが入力された場合、これは
-**「今までの作業をコミットしてリリースしたい」** という意味として扱う。
-「タスクがありません」「指示を待ちます」で止まってはいけない。
+When only `harness-release` / `/release` is entered, treat it as
+**"I want to commit my current work and release it"**.
+Do not stop with "no tasks found" or "waiting for instructions".
 
-bare release では、通常の release preflight の前に **Review Gate** と **Work Commit Gate** を実行する。
+In a bare release, run the **Review Gate** and **Work Commit Gate** before the normal release preflight.
 
-1. `git status --porcelain` と `git log @{upstream}..HEAD` / `main..HEAD` を確認し、「今までの作業」の対象を特定する
-2. `.claude/state/review-result.json` と `.claude/state/review-approved.json` を確認し、対象 work に `APPROVE` 済み review があるか確認する
-3. APPROVE 済み review が無い場合は `AskUserQuestion` で確認する
-4. ユーザーが「レビューから開始」を選んだら、`harness-review` を起動し、`APPROVE` になるまで release へ進まない
-5. `harness-review` が `REQUEST_CHANGES` を返した場合は release を保留し、`harness-work` で修正してから `harness-review` を再実行する。これを `APPROVE` までループする
-6. `harness-review` が `APPROVE` を返した後、working tree の作業 commit を作る
-7. working tree clean になってから通常の release preflight / confirmation gate / tag / GitHub Release へ進む
+1. Check `git status --porcelain` and `git log @{upstream}..HEAD` / `main..HEAD` to identify the target "current work"
+2. Check `.claude/state/review-result.json` and `.claude/state/review-approved.json` to see if the target work has an `APPROVE` review
+3. If no APPROVE review exists, confirm with `AskUserQuestion`
+4. If the user selects "Start with review", launch `harness-review` and do not proceed to release until `APPROVE` is returned
+5. If `harness-review` returns `REQUEST_CHANGES`, hold the release and re-run `harness-review` after fixing with `harness-work`. Loop until `APPROVE`
+6. After `harness-review` returns `APPROVE`, create a work commit for the working tree changes
+7. Once the working tree is clean, proceed to the normal release preflight / confirmation gate / tag / GitHub Release
 
 ### Review Gate AskUserQuestion
 
-`harness-release` 実行時に review approval が確認できない場合は、推測で release しない。
-次の Ask を出す。
+When `harness-release` runs and review approval cannot be confirmed, do not guess and release. Show the following Ask:
 
 ```text
-question: "harness-release は今までの作業をコミットしてリリースしますが、この作業の APPROVE review が見つかりません。どう進めますか？"
+question: "harness-release will commit your current work and release it, but no APPROVE review was found for this work. How would you like to proceed?"
 options:
-  - label: "レビューから開始 (Recommended)"
-    description: "harness-review を実行し、APPROVE になった場合だけ commit/release へ進みます。"
+  - label: "Start with review (Recommended)"
+    description: "Runs harness-review and proceeds to commit/release only if APPROVE is returned."
   - label: "release dry-run"
-    description: "ファイルを書き換えず、release 計画と不足 gate だけ確認します。"
-  - label: "中止"
-    description: "review も release も行わず止めます。"
+    description: "No file changes — only shows the release plan and missing gates."
+  - label: "Cancel"
+    description: "Stop without review or release."
 ```
 
-ユーザーが「レビューから開始」を選んだ場合は、同じセッション内で `harness-review` から始める。
-`harness-review` の対象決定は `harness-review` 側の bare review contract に従う。
-review が `APPROVE` なら、そのまま `harness-release` の Work Commit Gate へ戻る。
-review が `REQUEST_CHANGES` なら release は保留し、`harness-work` で修正してから `harness-review` を再実行する。
-この修正後再レビュー loop は `APPROVE` まで継続する。
+If the user selects "Start with review", run `harness-review` within the same session.
+The target for `harness-review` is determined by `harness-review`'s own bare review contract.
+If the review returns `APPROVE`, return to the `harness-release` Work Commit Gate.
+If the review returns `REQUEST_CHANGES`, hold the release and re-run `harness-review` after fixing with `harness-work`.
+This fix-then-re-review loop continues until `APPROVE`.
 
-ユーザーに戻してよいのは次の場合だけ。
+Return control to the user only in these cases:
 
-1. 修正に仕様正本 / Plans.md / API / permission / migration / billing などの意思決定が必要で、`AskUserQuestion` が必要
-2. 修正方針が複数あり、どれを採るかでユーザー価値や互換性が変わる
-3. ユーザーが Ask で `release dry-run` または `中止` を選んだ
+1. The fix requires a decision that needs the spec document / Plans.md / API / permission / migration / billing input, requiring `AskUserQuestion`
+2. Multiple fix approaches exist and the choice affects user value or compatibility
+3. The user chose `release dry-run` or `Cancel` in the Ask
 
-`REQUEST_CHANGES` 単体を最終停止理由にしてはいけない。
+`REQUEST_CHANGES` alone must not be used as a final stopping reason.
 
 ### Work Commit Gate
 
-bare release で working tree に未コミット変更がある場合、release version bump commit とは別に、
-review 済み work commit を先に作る。
+In a bare release, if the working tree has uncommitted changes, create a review-approved work commit separately from the release version bump commit.
 
 ```bash
 git status --short
@@ -105,123 +103,122 @@ git add <reviewed files>
 git commit -m "<type>: <summary>"
 ```
 
-commit message は review summary / Plans.md task / branch name から短く生成する。
-判断できない場合は `AskUserQuestion` で 2〜3 個の commit message 候補を出す。
-work commit 作成後に `.claude/state/review-result.json` の `commit_hash` を確認または更新し、
-release preflight へ進む。
+Generate a short commit message from the review summary / Plans.md task / branch name.
+If a message cannot be determined, use `AskUserQuestion` to present 2–3 commit message candidates.
+After creating the work commit, verify or update `commit_hash` in `.claude/state/review-result.json`, then proceed to release preflight.
 
-通常の release preflight に入った後は、これまで通り working tree dirty を fail とする。
-dirty tree のまま version bump / tag / GitHub Release に進まない。
+After entering the normal release preflight, treat a dirty working tree as a failure as usual.
+Do not proceed to version bump / tag / GitHub Release with a dirty tree.
 
 ## Quick Reference
 
 ```bash
-/release              # 今までの作業を review gate → commit → release する
-/release patch        # bump を patch に明示指定
-/release minor        # bump を minor に明示指定
-/release major        # bump を major に明示指定
-/release --dry-run    # 計画の表示のみ、実行しない
+/release              # Review gate → commit → release current work
+/release patch        # Explicitly specify patch bump
+/release minor        # Explicitly specify minor bump
+/release major        # Explicitly specify major bump
+/release --dry-run    # Show plan only, do not execute
 ```
 
-## 前提条件
+## Prerequisites
 
-このスキルが動くプロジェクトは以下を満たす必要があります:
+Projects using this skill must satisfy the following:
 
-1. `CHANGELOG.md` が [Keep a Changelog](https://keepachangelog.com/) 形式
-2. `[Unreleased]` セクションが存在する
-3. 以下のいずれかの version file を持つ:
-   - `VERSION` (単独ファイル)
+1. `CHANGELOG.md` follows [Keep a Changelog](https://keepachangelog.com/) format
+2. An `[Unreleased]` section exists
+3. The project has one of the following version files:
+   - `VERSION` (standalone file)
    - `package.json` (npm)
-   - `pyproject.toml` (Python, `[project]` または `[tool.poetry]`)
+   - `pyproject.toml` (Python, `[project]` or `[tool.poetry]`)
    - `Cargo.toml` (Rust, `[package]`)
-4. `gh` CLI がインストール済みで、認証済み
-5. git リモート `origin` が GitHub を指す
-6. Claude Code plugin project の場合は、`claude` CLI が `plugin tag` をサポートしている
+4. `gh` CLI is installed and authenticated
+5. git remote `origin` points to GitHub
+6. For Claude Code plugin projects, the `claude` CLI supports `plugin tag`
 
-これらが満たされない場合、Preflight で detect して abort します。
+If these conditions are not met, Preflight will detect and abort.
 
-`prUrlTemplate` による multi-host review URL は将来候補として認識するが、
-このスキルの release automation は今も `gh` CLI と GitHub remote を primary path とする。
-owner / branch / release asset / CI metadata の自動取得は host ごとの差が大きいため、Phase 56.2.3 では docs-only に留める。
+`prUrlTemplate` for multi-host review URLs is recognized as a future candidate,
+but this skill's release automation uses `gh` CLI and GitHub remote as the primary path.
+Auto-retrieval of owner / branch / release assets / CI metadata varies too much per host, so Phase 56.2.3 keeps this docs-only.
 
-## 単一ゲートフロー
+## Single Gate Flow
 
 ```
-[Bare release only: 作業 review/commit 前段]
+[Bare release only: Work review/commit pre-stage]
   ↓
-  0. Review Gate (未レビューなら AskUserQuestion → harness-review)
-  0.5 Work Commit Gate (review APPROVE 済み work を release bump と分けて commit)
+  0. Review Gate (AskUserQuestion → harness-review if not yet reviewed)
+  0.5 Work Commit Gate (commit review-APPROVE work separately from release bump)
   ↓
-[Pre-Gate: 情報収集のみ、ファイル未変更]
+[Pre-Gate: information gathering only, no file changes]
   ↓
-  1. Preflight (working tree clean / CHANGELOG / gh 等の確認)
-  2. Version file 自動検出
-  3. 現在バージョンの読み取り
-  4. Claude plugin tag preflight (plugin project の場合のみ)
-  5. [Unreleased] 内容の解析 → bump level 推定
-  6. 新バージョン算出
-  7. CHANGELOG 差分ドラフト作成 (メモリ上)
-  8. GitHub Release notes ドラフト作成 (メモリ上)
+  1. Preflight (working tree clean / CHANGELOG / gh etc.)
+  2. Automatic version file detection
+  3. Read current version
+  4. Claude plugin tag preflight (plugin projects only)
+  5. Parse [Unreleased] content → estimate bump level
+  6. Calculate new version
+  7. Create CHANGELOG diff draft (in memory)
+  8. Create GitHub Release notes draft (in memory)
 
-★━━━━━━ 単一確認ゲート ━━━━━━★
-  ユーザーに全計画を 1 回だけ提示:
-    - 検出された version file
-    - 現バージョン → 新バージョン
-    - bump 判定理由 ("[Unreleased] に ### Added があるため minor" 等)
-    - CHANGELOG 変更プレビュー
-    - GitHub Release notes ドラフト
-    - コミット対象ファイル一覧
-    - 最終アクション (push + tag + release publish)
+★━━━━━━ Single Confirmation Gate ━━━━━━★
+  Present the full plan to the user exactly once:
+    - Detected version file
+    - Current version → new version
+    - Bump detection reason (e.g., "[Unreleased] has ### Added → minor")
+    - CHANGELOG change preview
+    - GitHub Release notes draft
+    - List of files to commit
+    - Final actions (push + tag + release publish)
 
-  ユーザー応答:
-    "yes"        → Post-Gate へ進む
-    "<修正指示>"  → 指示に応じて draft を再生成、再確認
-    "cancel/no"  → 何もせず終了
-★━━━━━━━━━━━━━━━━━━━━━━━★
+  User response:
+    "yes"              → Proceed to Post-Gate
+    "<revision>"       → Regenerate draft per instruction, re-confirm
+    "cancel/no"        → Exit without doing anything
+★━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━★
   ↓
-[Post-Gate: 承認後、中断なし]
+[Post-Gate: no interruptions after approval]
 
-  9. Version file 書き換え
-  10. CHANGELOG.md 書き換え ([Unreleased] → [X.Y.Z] 昇格 + compare link)
+  9.  Rewrite version file
+  10. Rewrite CHANGELOG.md ([Unreleased] → [X.Y.Z] promotion + compare link)
   11. git add + commit
-  12. Claude plugin tag validation + tag (plugin project の場合のみ)
-  13. GitHub Release 用 semver tag (必要な project のみ)
+  12. Claude plugin tag validation + tag (plugin projects only)
+  13. GitHub Release semver tag (only for projects that need it)
   14. git push origin <branch> --tags
   15. gh release create vX.Y.Z
-  16. 完了報告
+  16. Completion report
 ```
 
-## Pre-Gate 詳細
+## Pre-Gate Details
 
 ### 1. Preflight
 
 ```bash
-# 必須ツール
-command -v gh >/dev/null || { echo "gh CLI がありません"; exit 1; }
-command -v python3 >/dev/null || { echo "python3 が必要です"; exit 1; }
+# Required tools
+command -v gh >/dev/null || { echo "gh CLI not found"; exit 1; }
+command -v python3 >/dev/null || { echo "python3 required"; exit 1; }
 
 # working tree
 if [ -n "$(git status --porcelain)" ]; then
-  echo "working tree に未コミット変更があります"; exit 1;
+  echo "Working tree has uncommitted changes"; exit 1;
 fi
 
 # CHANGELOG
-[ -f CHANGELOG.md ] || { echo "CHANGELOG.md がありません"; exit 1; }
-grep -q "^## \[Unreleased\]" CHANGELOG.md || { echo "[Unreleased] セクションがありません"; exit 1; }
+[ -f CHANGELOG.md ] || { echo "CHANGELOG.md not found"; exit 1; }
+grep -q "^## \[Unreleased\]" CHANGELOG.md || { echo "[Unreleased] section not found"; exit 1; }
 
 # plugin/mirror projects
 scripts/release-preflight.sh
 ```
 
-この working tree clean check は通常 release preflight の gate である。
-bare release で「今までの作業」を commit したい場合は、この check の前に Review Gate と Work Commit Gate を完了させる。
-未レビューの dirty tree をこの check だけで abort して終わらせてはいけない。
+This working tree clean check is the gate for the normal release preflight.
+In a bare release where you want to commit "current work", complete the Review Gate and Work Commit Gate before this check.
+Do not abort and stop on this check alone for an unreviewed dirty tree.
 
-`scripts/release-preflight.sh` は tag 作成前に `opencode/`, `skills-codex/`, `codex/.codex/skills/` の mirror drift も検出する。`node scripts/build-opencode.js` が差分を生成した場合は release を止め、その差分を commit してから tag に進む。
+`scripts/release-preflight.sh` also detects mirror drift in `opencode/`, `skills-codex/`, and `codex/.codex/skills/` before tag creation. If `node scripts/build-opencode.js` generates a diff, the release stops — commit that diff first, then proceed to the tag.
 
-### 2. Version File 自動検出
+### 2. Automatic Version File Detection
 
-以下を優先順で探索。最初に見つかったものを正本とする:
+Search in priority order. The first match is the canonical source:
 
 ```python
 # Python snippet to run inline
@@ -250,19 +247,19 @@ def detect_version_file():
     raise RuntimeError("No supported version file found")
 ```
 
-詳細: [version-files.md](${CLAUDE_SKILL_DIR}/references/version-files.md)
+Details: [version-files.md](${CLAUDE_SKILL_DIR}/references/version-files.md)
 
 ### 3. Claude Plugin Tag Preflight
 
-`.claude-plugin/plugin.json` が存在する project では、通常の GitHub Release tag とは別に Claude plugin release tag も作る。
+Projects with `.claude-plugin/plugin.json` also create a Claude plugin release tag in addition to the normal GitHub Release tag.
 
-ひとことで言うと、`git tag -a` を手で組み立てる前に、Claude Code 本体の plugin validation に通してから `{plugin-name}--v{version}` tag を作る。
+In short, before manually assembling `git tag -a`, pass through Claude Code's own plugin validation, then create the `{plugin-name}--v{version}` tag.
 
-Pre-Gate ではファイルを書き換えず、以下を確認する。
-version sync は `grep` / `sed` で拾わず、JSON は structured parser で読む:
+In Pre-Gate, do not rewrite any files. Verify the following.
+Read version sync with a structured parser — do not use `grep` / `sed` on JSON:
 
 ```bash
-command -v claude >/dev/null || { echo "claude CLI がありません"; exit 1; }
+command -v claude >/dev/null || { echo "claude CLI not found"; exit 1; }
 claude plugin validate .claude-plugin/plugin.json
 
 HARNESS_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-.}"
@@ -271,81 +268,81 @@ python3 "${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py" --root .
 claude plugin tag .claude-plugin --dry-run
 ```
 
-`${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py` は、存在する release surface をすべて読み取り、canonical を `VERSION > package.json > .claude-plugin/plugin.json > .codex-plugin/plugin.json` の順で決める。
-そのうえで、以下の不一致・欠落が 1 つでもあれば tag / release に進まない:
+`${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py` reads all existing release surfaces and determines the canonical in the order `VERSION > package.json > .claude-plugin/plugin.json > .codex-plugin/plugin.json`.
+If any of the following are mismatched or missing, do not proceed to tag / release:
 
 - `VERSION`
-- `package.json` の `.version`
-- `.claude-plugin/plugin.json` の `.version`
-- `.codex-plugin/plugin.json` の `.version`
-- `.claude-plugin/marketplace.json` の `.metadata.version`
-- `.claude-plugin/marketplace.json` の `.plugins[].version`（配列内の各 plugin entry）
+- `package.json` `.version`
+- `.claude-plugin/plugin.json` `.version`
+- `.codex-plugin/plugin.json` `.version`
+- `.claude-plugin/marketplace.json` `.metadata.version`
+- `.claude-plugin/marketplace.json` `.plugins[].version` (each plugin entry in the array)
 
-不一致時は、どの surface が canonical と違うか、またはどの field が missing / invalid かを表示する。
-機械処理や CI で読む場合は `--json` を使う:
+On mismatch, display which surface differs from canonical, or which field is missing / invalid.
+For machine processing or CI use `--json`:
 
 ```bash
 python3 "${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py" --root . --json
 ```
 
-この check は 3 つの事故を防ぐためにある:
+This check prevents three types of accidents:
 
-- `VERSION` と `.claude-plugin/plugin.json` の version がずれたまま tag を切る事故
-- `package.json` / marketplace entry の version が古いまま release workflow に進む事故
-- plugin manifest / marketplace entry の validation を通さず、あとで plugin install / update 側で詰まる事故
+- Cutting a tag while `VERSION` and `.claude-plugin/plugin.json` version are out of sync
+- Entering the release workflow while `package.json` / marketplace entry version is stale
+- Skipping plugin manifest / marketplace entry validation and hitting issues on the plugin install / update side
 
-`--dry-run` では `claude plugin tag` が実際に作る tag 名と内部の `git tag -a` / push 相当コマンドが見える。ここで見えた command を Confirmation Gate の plan に含める。
+`--dry-run` shows the tag name that `claude plugin tag` would create and the equivalent `git tag -a` / push command. Include the commands shown here in the Confirmation Gate plan.
 
-### 4. Bump 自動推定
+### 4. Automatic Bump Detection
 
-`[Unreleased]` 直下の見出しを解析して bump level を決定:
+Parse headings directly under `[Unreleased]` to determine bump level:
 
-| [Unreleased] 内の見出し | 推定 bump |
-|------------------------|-----------|
-| `### Breaking Changes` または `### Removed` を含む | **major** |
-| `### Added` を含む (Removed/Breaking なし) | **minor** |
-| `### Fixed` / `### Changed` / `### Security` のみ | **patch** |
-| 空セクション | **error: リリース対象なし** |
+| Headings in [Unreleased] | Estimated bump |
+|--------------------------|----------------|
+| Contains `### Breaking Changes` or `### Removed` | **major** |
+| Contains `### Added` (no Removed/Breaking) | **minor** |
+| Only `### Fixed` / `### Changed` / `### Security` | **patch** |
+| Empty section | **error: nothing to release** |
 
-ユーザーが `/release patch|minor|major` で明示指定した場合はそちらを優先。
-詳細: [bump-detection.md](${CLAUDE_SKILL_DIR}/references/bump-detection.md)
+If the user explicitly specifies `/release patch|minor|major`, that takes priority.
+Details: [bump-detection.md](${CLAUDE_SKILL_DIR}/references/bump-detection.md)
 
-### 5. CHANGELOG ドラフト作成 (メモリ上)
+### 5. CHANGELOG Draft Creation (in memory)
 
-以下を計算、まだ書き込まない:
+Calculate the following without writing yet:
 
-1. `## [Unreleased]` の本文を切り出し
-2. `## [Unreleased]` と `## [<previous>]` の間に `## [<new>] - YYYY-MM-DD` を挿入した形を作成
-3. 末尾 compare link:
+1. Extract the body of `## [Unreleased]`
+2. Build the result with `## [<new>] - YYYY-MM-DD` inserted between `## [Unreleased]` and `## [<previous>]`
+3. Footer compare links:
    - `[Unreleased]: .../compare/v<prev>...HEAD` → `v<new>...HEAD`
-   - `[<new>]: .../compare/v<prev>...v<new>` を追加
-4. repo URL は既存の `[Unreleased]: ` 行から動的抽出
+   - Add `[<new>]: .../compare/v<prev>...v<new>`
+4. Dynamically extract the repo URL from the existing `[Unreleased]: ` line
 
-### 6. Release Notes ドラフト作成 (メモリ上)
+### 6. Release Notes Draft Creation (in memory)
 
-`## [<new>]` セクションの内容を元に、GitHub Release 用のマークダウンを生成:
+Generate GitHub Release markdown from the `## [<new>]` section content:
 
 ```markdown
 ## What's Changed
 
-**<リリーステーマ(1行)>**
+**<release theme (1 line)>**
 
 ### Before / After
-<テーブル>
+<table>
 
 ### Added / Changed / Fixed / Removed
-<該当セクションをコピー>
+<copy relevant sections>
 
 ---
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
-詳細: [release-notes.md](${CLAUDE_SKILL_DIR}/references/release-notes.md)
+Details: [release-notes.md](${CLAUDE_SKILL_DIR}/references/release-notes.md)
 
 ## Confirmation Gate
 
-すべてのドラフトが揃ったら、ユーザーに 1 回だけ提示:
+Once all drafts are ready, present to the user exactly once:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -355,12 +352,12 @@ Release Plan: v<old> → v<new> (<bump>)
  Bump reason:  <why this level was chosen>
 
  CHANGELOG changes:
-   [Unreleased] に <N> 項目の変更を検出
-   [<new>] - YYYY-MM-DD として確定
-   Compare link を追加
+   <N> changes detected in [Unreleased]
+   Finalized as [<new>] - YYYY-MM-DD
+   Compare link added
 
  GitHub Release notes preview:
-   <最初の 10 行>
+   <first 10 lines>
    ...
 
  Files to modify:
@@ -369,29 +366,29 @@ Release Plan: v<old> → v<new> (<bump>)
 
  Final actions:
    - git commit -m "chore: release v<new>"
-   - claude plugin tag .claude-plugin --push --remote origin  # plugin project の場合
-   - git tag -a v<new>                                        # GitHub Release 用 semver tag が必要な場合
+   - claude plugin tag .claude-plugin --push --remote origin  # plugin projects only
+   - git tag -a v<new>                                        # if GitHub Release semver tag is needed
    - git push origin <branch> --tags
    - gh release create v<new>
 
-Proceed? [yes / cancel / <修正指示>]
+Proceed? [yes / cancel / <revision>]
 ```
 
-## Post-Gate 詳細
+## Post-Gate Details
 
-承認後は中断なしで実行。失敗時は以下の方針:
+Execute without interruption after approval. On failure, follow this policy:
 
-| 失敗箇所 | 復旧 |
-|---------|------|
-| ファイル書き換え失敗 | そこで abort、ローカルは dirty なまま人間が判断 |
-| commit 失敗 | hook 拒否等。ユーザーに原因を提示して修正を促す |
-| plugin tag validation 失敗 | `VERSION` / `.claude-plugin/plugin.json` / marketplace entry の不一致を修正し、tag 作成には進まない |
-| push 失敗 | リモート側の問題。ローカル commit/tag は残す |
-| `gh release create` 失敗 | tag は push 済みなので、既存の release.yml セーフティネットが発火するか、手動で `gh release create` |
+| Failure point | Recovery |
+|---------------|----------|
+| File rewrite failure | Abort there; local state remains dirty for human judgment |
+| Commit failure | Hook rejection etc. Show cause to user and prompt to fix |
+| Plugin tag validation failure | Fix `VERSION` / `.claude-plugin/plugin.json` / marketplace entry mismatch; do not proceed to tag creation |
+| Push failure | Remote-side issue. Local commit/tag remain intact |
+| `gh release create` failure | Tag is already pushed; existing release.yml safety net may fire, or run `gh release create` manually |
 
-### Claude plugin project の tag 作成
+### Tag Creation for Claude Plugin Projects
 
-`.claude-plugin/plugin.json` がある project では、commit 後にもう一度 version sync を確認してから plugin tag を作る:
+For projects with `.claude-plugin/plugin.json`, verify version sync once more after commit, then create the plugin tag:
 
 ```bash
 HARNESS_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-.}"
@@ -401,28 +398,28 @@ claude plugin tag .claude-plugin --dry-run
 claude plugin tag .claude-plugin --push --remote origin
 ```
 
-`claude plugin tag` が作る tag は `{plugin-name}--v{version}` 形式。既存の GitHub Release workflow が `vX.Y.Z` tag を前提にしている project では、plugin tag とは別に `git tag -a v<new>` を作る。plugin 配布の tag は `claude plugin tag` に任せ、GitHub Release 用 semver tag は release automation の互換 surface として扱う。
+The tag created by `claude plugin tag` has the form `{plugin-name}--v{version}`. For projects where the existing GitHub Release workflow expects a `vX.Y.Z` tag, create `git tag -a v<new>` separately from the plugin tag. Delegate plugin distribution tags to `claude plugin tag` and treat the GitHub Release semver tag as a compatibility surface for release automation.
 
-## `--dry-run` モード
+## `--dry-run` Mode
 
-Pre-Gate 全てを実行し、Confirmation Gate までの内容を表示するが、**gate で止まり Post-Gate に進まない**。
+Run all Pre-Gate steps and display everything up to the Confirmation Gate, but **stop at the gate without proceeding to Post-Gate**.
 
-Claude plugin project の場合、dry-run でも `python3 "${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py" --root .` と `claude plugin tag .claude-plugin --dry-run` を実行し、実際に作られる plugin tag 名と push 対象を表示する。ここで `VERSION` / `package.json` / `.claude-plugin/plugin.json` / `.codex-plugin/plugin.json` / `.claude-plugin/marketplace.json` の version surface が不一致または欠落していれば、dry-run の時点で止める。
+For Claude plugin projects, even in dry-run, execute `python3 "${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py" --root .` and `claude plugin tag .claude-plugin --dry-run` to display the plugin tag name that would be created and the push target. If any of `VERSION` / `package.json` / `.claude-plugin/plugin.json` / `.codex-plugin/plugin.json` / `.claude-plugin/marketplace.json` version surfaces are mismatched or missing, stop at dry-run time.
 
-## 環境変数
+## Environment Variables
 
-プロジェクトごとの調整に使用:
+Used for per-project customization:
 
-| 変数 | 説明 |
-|------|------|
-| `HARNESS_RELEASE_PROJECT_ROOT` | リポジトリルート (デフォルト: `$(pwd)`) |
-| `HARNESS_RELEASE_BRANCH` | push 対象ブランチ (デフォルト: 現在のブランチ) |
-| `HARNESS_RELEASE_HEALTHCHECK_CMD` | Preflight で追加実行するコマンド |
-| `HARNESS_RELEASE_SKIP_GH` | `1` で GitHub Release 作成をスキップ |
+| Variable | Description |
+|----------|-------------|
+| `HARNESS_RELEASE_PROJECT_ROOT` | Repository root (default: `$(pwd)`) |
+| `HARNESS_RELEASE_BRANCH` | Branch to push to (default: current branch) |
+| `HARNESS_RELEASE_HEALTHCHECK_CMD` | Additional command to run during Preflight |
+| `HARNESS_RELEASE_SKIP_GH` | Set to `1` to skip GitHub Release creation |
 
-## CHANGELOG 書き方ルール
+## CHANGELOG Writing Rules
 
-`[Unreleased]` セクションは必ず以下のいずれかのサブセクションを持つ:
+The `[Unreleased]` section must contain at least one of the following subsections:
 
 ```markdown
 ## [Unreleased]
@@ -433,20 +430,20 @@ Claude plugin project の場合、dry-run でも `python3 "${HARNESS_PLUGIN_ROOT
 ### Removed     ← major
 ### Fixed       ← patch
 ### Security    ← patch
-### Breaking Changes  ← major (Keep a Changelog 非標準だが一般的)
+### Breaking Changes  ← major (non-standard in Keep a Changelog but widely used)
 ```
 
-このスキルはこれらの見出しを機械的に解析するため、見出しの表記揺れ（`### Fix` / `### Bug Fixes` 等）は認識できません。KaCL 標準の見出しを使用してください。
+This skill parses these headings mechanically, so spelling variations (`### Fix` / `### Bug Fixes` etc.) are not recognized. Use the KaCL standard headings.
 
-## 関連スキル
+## Related Skills
 
-- `harness-release-internal` - 本体 claude-code-harness のリリース時に追加で走らせる harness 固有 preflight/finalization（配布対象外）
-- `harness-plan` - Plans.md 管理
-- `harness-review` - リリース前のコードレビュー
+- `harness-release-internal` - Additional harness-specific preflight/finalization run when releasing the `claude-code-harness` itself (not for distribution)
+- `harness-plan` - Plans.md management
+- `harness-review` - Code review before release
 
-## 設計思想
+## Design Philosophy
 
-- **単一ゲート**: ユーザーの判断タイミングは 1 回だけ。mini-confirmation を挟むとラバースタンプ化して意味を失う
-- **事前に全て描く**: Post-Gate に入ってからの「考え直し」を禁ずる。Gate 前に全 draft を揃える
-- **失敗は transparent**: 途中で失敗したら自動ロールバックは試みず、ユーザーに現状を提示して判断させる
-- **プロジェクト非依存**: VERSION file 形式、mirror、residue check など特定環境の前提を持たない。本体 harness 固有の処理は `harness-release-internal` に分離
+- **Single gate**: The user makes a judgment call exactly once. Multiple mini-confirmations become rubber stamps and lose meaning
+- **Draft everything upfront**: No "rethinking" once Post-Gate begins. All drafts must be ready before the gate
+- **Transparent failures**: On mid-execution failure, do not attempt automatic rollback — show the current state to the user and let them decide
+- **Project-agnostic**: No assumptions about specific environments such as VERSION file format, mirrors, or residue checks. Harness-specific processing is isolated in `harness-release-internal`

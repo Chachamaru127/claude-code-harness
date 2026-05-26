@@ -1,213 +1,213 @@
 # Cleanup Reference
 
-`/maintenance` 各サブコマンドの実行手順・閾値・アーカイブ先の詳細。
+Detailed execution steps, thresholds, and archive destinations for each `/maintenance` subcommand.
 
-## 共通: 環境変数（auto-cleanup-hook と同一 SSOT）
+## Common: Environment Variables (same SSOT as auto-cleanup-hook)
 
-| 変数 | デフォルト | 参照元 |
-|------|---------|-------|
+| Variable | Default | Source |
+|----------|---------|--------|
 | `PLANS_MAX_LINES` | 200 | `scripts/auto-cleanup-hook.sh` |
-| `SESSION_LOG_MAX_LINES` | 500 | 同上 |
-| `CLAUDE_MD_MAX_LINES` | 100 | 同上 |
-| `ARCHIVE_AFTER_DAYS` | 7 | Plans.md 完了タスクの年齢閾値 |
-| `LOGS_RETAIN_DAYS` | 30 | `.claude/logs/` の保持日数 |
+| `SESSION_LOG_MAX_LINES` | 500 | Same |
+| `CLAUDE_MD_MAX_LINES` | 100 | Same |
+| `ARCHIVE_AFTER_DAYS` | 7 | Age threshold for completed tasks in Plans.md |
+| `LOGS_RETAIN_DAYS` | 30 | Retention period for `.claude/logs/` |
 
-ユーザーが自由記述で別の閾値を指定したらそちらを優先。
+If the user specifies a different threshold in free-form text, that value takes priority.
 
 ---
 
-## plans — Plans.md アーカイブ
+## plans — Plans.md Archive
 
-### 前提
+### Prerequisites
 
-1. `.claude/state/.ssot-synced-this-session` フラグ未存在 → `/memory sync` を促す
-2. `cc:WIP`, `pm:依頼中`, `cursor:依頼中` タグの行は**絶対に動かさない**
+1. `.claude/state/.ssot-synced-this-session` flag absent → prompt `/memory sync`
+2. Lines tagged `cc:WIP`, `pm:requested`, `cursor:requested` **must never be moved**
 
-### 手順
+### Steps
 
 ```bash
 PLANS="Plans.md"
 cp "$PLANS" "$PLANS.bak.$(date +%s)"
 
-# 1. 現状を計測
+# 1. Measure current state
 wc -l "$PLANS"
-grep -c '\[x\].*pm:確認済\|cursor:確認済' "$PLANS" || true
+grep -c '\[x\].*pm:confirmed\|cursor:confirmed' "$PLANS" || true
 
-# 2. 7日以上前に完了した行を抽出（Edit ツールで個別に）
-#    対象: `- [x] ... (YYYY-MM-DD) ... pm:確認済|cursor:確認済`
-#    例外: cc:WIP / pm:依頼中 / cursor:依頼中 を含む行は除外
+# 2. Extract lines completed 7+ days ago (individually with Edit tool)
+#    Targets: `- [x] ... (YYYY-MM-DD) ... pm:confirmed|cursor:confirmed`
+#    Exceptions: exclude lines containing cc:WIP / pm:requested / cursor:requested
 
-# 3. 抽出した行を「## 📦 アーカイブ」セクションへ append
-#    アーカイブセクションが無ければ末尾に新設
+# 3. Append extracted lines to the "## 📦 Archive" section
+#    Create the section at the bottom if it does not exist
 ```
 
-### アーカイブセクションの書式
+### Archive Section Format
 
 ```markdown
-## 📦 アーカイブ
+## 📦 Archive
 
-### YYYY-MM (月ごとにグルーピング)
+### YYYY-MM (grouped by month)
 
-- [x] 旧タスク A (2026-04-05) pm:確認済
-- [x] 旧タスク B (2026-04-07) cursor:確認済
+- [x] Old task A (2026-04-05) pm:confirmed
+- [x] Old task B (2026-04-07) cursor:confirmed
 ```
 
-### 検知しない場合の出力
+### Output When Nothing Is Detected
 
 ```
-✅ Plans.md: 180行（上限 200）。完了タスク 6件、うち7日以上前 0件。整理不要。
+✅ Plans.md: 180 lines (limit 200). 6 completed tasks, 0 older than 7 days. No cleanup needed.
 ```
 
-### 実行後の報告例
+### Post-execution Report Example
 
 ```
-✅ Plans.md 整理完了
-- 行数: 250 → 178 (-72)
-- アーカイブ移動: 9件 (2026-03 グループ)
-- バックアップ: Plans.md.bak.1712900000
+✅ Plans.md cleanup complete
+- Lines: 250 → 178 (-72)
+- Archived: 9 tasks (2026-03 group)
+- Backup: Plans.md.bak.1712900000
 ```
 
 ---
 
-## session-log — session-log.md 月別分割
+## session-log — session-log.md Monthly Split
 
-対象は `.claude/memory/session-log.md`。500行超で分割推奨。
+Target is `.claude/memory/session-log.md`. Split recommended above 500 lines.
 
-### 手順
+### Steps
 
 ```bash
 LOG=".claude/memory/session-log.md"
 ARCHIVE_DIR=".claude/memory/archive/sessions"
 mkdir -p "$ARCHIVE_DIR"
 
-# 1. エントリは `## YYYY-MM-DD` ヘッダーで区切られている前提
-# 2. 直近30日分を残し、それより古いものを月別に分割
-#    出力: .claude/memory/archive/sessions/YYYY-MM.md (append)
-# 3. 元ファイルからは移動分を削除
+# 1. Entries are delimited by `## YYYY-MM-DD` headers
+# 2. Keep the most recent 30 days; split older entries by month
+#    Output: .claude/memory/archive/sessions/YYYY-MM.md (append)
+# 3. Remove moved entries from the source file
 ```
 
-### 分割ファイルの書式
+### Split File Format
 
-各 `archive/sessions/YYYY-MM.md` の先頭に以下を記載:
+Add the following header to each `archive/sessions/YYYY-MM.md`:
 
 ```markdown
 # Session Log — YYYY-MM
 
-元ファイル: `.claude/memory/session-log.md` から N 日以降に移動。
-移動日: YYYY-MM-DD
+Moved from `.claude/memory/session-log.md` on day N or later.
+Move date: YYYY-MM-DD
 ```
 
-### 実行後の報告例
+### Post-execution Report Example
 
 ```
-✅ session-log.md 分割完了
-- 行数: 620 → 180
-- 分割先: archive/sessions/2026-03.md (+230行), 2026-02.md (+210行)
+✅ session-log.md split complete
+- Lines: 620 → 180
+- Split to: archive/sessions/2026-03.md (+230 lines), 2026-02.md (+210 lines)
 ```
 
 ---
 
-## logs — `.claude/logs/` の古いファイル削除
+## logs — Delete Old Files Under `.claude/logs/`
 
-### 手順
+### Steps
 
 ```bash
 LOGS_DIR=".claude/logs"
 [ -d "$LOGS_DIR" ] || exit 0
 
-# dry-run で対象を列挙
+# List targets in dry-run
 find "$LOGS_DIR" -type f -mtime +${LOGS_RETAIN_DAYS:-30} -print
 
-# 実行
+# Execute
 find "$LOGS_DIR" -type f -mtime +${LOGS_RETAIN_DAYS:-30} -delete
 ```
 
-### 報告例
+### Report Example
 
 ```
-✅ logs/ クリーンアップ完了
-- 削除: 12 ファイル (30日以上前)
-- 残存: 34 ファイル
+✅ logs/ cleanup complete
+- Deleted: 12 files (older than 30 days)
+- Remaining: 34 files
 ```
 
 ---
 
-## state — agent-trace / harness-usage のトリム
+## state — Trim agent-trace / harness-usage
 
-`.claude/state/agent-trace.jsonl` と `.claude/state/harness-usage.json` は
-append-only / growing JSON で放置すると数十MBになりうる。
+`.claude/state/agent-trace.jsonl` and `.claude/state/harness-usage.json` are
+append-only / growing JSON files that can reach tens of MB if left unattended.
 
-### agent-trace.jsonl のトリム
+### Trim agent-trace.jsonl
 
 ```bash
 TRACE=".claude/state/agent-trace.jsonl"
 [ -f "$TRACE" ] || exit 0
 
-# 末尾1000行だけ残す
+# Keep only the last 1000 lines
 tail -1000 "$TRACE" > "$TRACE.tmp" && mv "$TRACE.tmp" "$TRACE"
 ```
 
-### harness-usage.json の圧縮
+### Compact harness-usage.json
 
 ```bash
 USAGE=".claude/state/harness-usage.json"
 [ -f "$USAGE" ] || exit 0
 
-# 60日以上前のエントリを削除（構造依存なので jq で条件を適切に書く）
-# 実装前に現物構造を Read で確認してから処理する
+# Delete entries older than 60 days (write the jq condition after checking
+# the actual structure with Read, since this is structure-dependent)
 ```
 
-### 報告例
+### Report Example
 
 ```
-✅ state トリム完了
-- agent-trace.jsonl: 8421行 → 1000行
-- harness-usage.json: 2026-02 以前のエントリを削除
-```
-
----
-
-## all — 全部実行
-
-plans → session-log → logs → state の順で実行。途中でエラーが出たら停止してユーザーに報告。
-
-### 実行フロー
-
-1. SSOT 同期チェック（plans が対象に含まれる時のみ）
-2. 各サブコマンドを順次実行
-3. 最後に Before/After を一覧表示
-
-### 報告例
-
-```
-✅ 総メンテナンス完了
-
-| 対象 | Before | After | 変化 |
-|------|--------|-------|------|
-| Plans.md | 250行 | 178行 | -72 (アーカイブ 9件) |
-| session-log.md | 620行 | 180行 | -440 (2ファイル分割) |
-| logs/ | 46 files | 34 files | -12 (30日超) |
-| agent-trace.jsonl | 8421行 | 1000行 | -7421 |
-
-バックアップ: Plans.md.bak.1712900000
+✅ State trim complete
+- agent-trace.jsonl: 8421 lines → 1000 lines
+- harness-usage.json: entries before 2026-02 deleted
 ```
 
 ---
 
-## よくある追加指示の処理例
+## all — Run Everything
 
-| 指示 | 処理 |
-|------|------|
-| 「古いアーカイブも消して」 | `.claude/memory/archive/` 内の N 日超過を追加削除 |
-| 「dry-run で」 | すべての削除・移動を `echo` に差し替え、何を消すかだけ列挙 |
-| 「このファイルは残して」 | 対象リストから該当ファイルを除外して実行 |
-| 「閾値を 300 行に上げて」 | `PLANS_MAX_LINES=300 ` 等の環境変数を一時的に上書き |
+Execute in order: plans → session-log → logs → state. Stop and report to the user if an error occurs.
+
+### Execution Flow
+
+1. SSOT sync check (only when plans is included in the targets)
+2. Run each subcommand sequentially
+3. Display Before/After summary at the end
+
+### Report Example
+
+```
+✅ Full maintenance complete
+
+| Target | Before | After | Change |
+|--------|--------|-------|--------|
+| Plans.md | 250 lines | 178 lines | -72 (9 archived) |
+| session-log.md | 620 lines | 180 lines | -440 (2 files split) |
+| logs/ | 46 files | 34 files | -12 (older than 30 days) |
+| agent-trace.jsonl | 8421 lines | 1000 lines | -7421 |
+
+Backup: Plans.md.bak.1712900000
+```
 
 ---
 
-## 禁止事項
+## Handling Common Additional Instructions
 
-- ❌ `.claude/memory/decisions.md` / `patterns.md` の自動編集（SSOT 直接改変は禁止）
-- ❌ `CHANGELOG.md` の圧縮・アーカイブ（歴史は削除しない）
-- ❌ `.git/` 配下の操作
-- ❌ バックアップ無しでの行削除（200行超ファイルは必ずバックアップを取る）
+| Instruction | Action |
+|-------------|--------|
+| "Also delete old archives" | Additonally delete items older than N days under `.claude/memory/archive/` |
+| "Dry-run mode" | Replace all deletions/moves with `echo`; list what would be removed |
+| "Keep this file" | Exclude the specified file from the target list and proceed |
+| "Raise threshold to 300 lines" | Temporarily override environment variables such as `PLANS_MAX_LINES=300` |
+
+---
+
+## Prohibited Actions
+
+- ❌ Auto-editing `.claude/memory/decisions.md` / `patterns.md` (direct SSOT modification is prohibited)
+- ❌ Compressing or archiving `CHANGELOG.md` (history must not be deleted)
+- ❌ Any operations under `.git/`
+- ❌ Deleting lines without a backup (always back up files over 200 lines)

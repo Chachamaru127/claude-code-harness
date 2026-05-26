@@ -1,25 +1,25 @@
 # Version File Detection & Update
 
-このスキルが扱う 4 種類の version file について、検出と書き換えの詳細。
+Details on detecting and rewriting the four types of version files handled by this skill.
 
-## 優先順位
+## Priority Order
 
 ```
 VERSION  >  package.json  >  pyproject.toml  >  Cargo.toml
 ```
 
-プロジェクトに複数存在する場合、優先順が高いものを正本とする。
-通常はいずれか 1 つだけ存在する想定。
+If multiple version files exist in a project, the one with the highest priority is the canonical source.
+Normally only one of them is expected to exist.
 
-## 検出と読み取り
+## Detection and Reading
 
-### VERSION (単独ファイル)
+### VERSION (standalone file)
 
 ```bash
 cat VERSION | tr -d '\n'
 ```
 
-1 行のみ、セマンティックバージョン (`x.y.z`)。
+Single line, semantic version (`x.y.z`).
 
 ### package.json (npm)
 
@@ -30,11 +30,11 @@ with open("package.json") as f:
 current_version = data["version"]
 ```
 
-トップレベル `"version": "x.y.z"`。
+Top-level `"version": "x.y.z"`.
 
 ### pyproject.toml (Python)
 
-PEP 621 準拠 (`[project]`) と Poetry (`[tool.poetry]`) の両方に対応:
+Supports both PEP 621 (`[project]`) and Poetry (`[tool.poetry]`):
 
 ```python
 import tomllib
@@ -46,10 +46,10 @@ if "project" in data and "version" in data["project"]:
 elif "tool" in data and "poetry" in data["tool"]:
     current_version = data["tool"]["poetry"]["version"]
 else:
-    raise RuntimeError("pyproject.toml に version が見つかりません")
+    raise RuntimeError("version not found in pyproject.toml")
 ```
 
-**注意**: `pyproject.toml` では `dynamic = ["version"]` などで version を別ファイル (`_version.py` 等) から読む設定がある。この場合スキルは対応しない（事前に static version に切り替えるか、`VERSION` ファイルを併用してもらう）。
+**Note**: Some `pyproject.toml` configurations read the version from a separate file (e.g., `_version.py`) using `dynamic = ["version"]`. This skill does not support that case — either switch to a static version beforehand or use a `VERSION` file alongside it.
 
 ### Cargo.toml (Rust)
 
@@ -60,9 +60,9 @@ with open("Cargo.toml", "rb") as f:
 current_version = data["package"]["version"]
 ```
 
-## 書き換え
+## Rewriting
 
-書き換えは「最小限のフィールド差し替え」で行う。整形スタイルやコメントを壊さないよう、regex 置換を推奨:
+Rewrites are performed as "minimal field replacement". Regex substitution is recommended to avoid breaking formatting style or comments:
 
 ### VERSION
 
@@ -72,12 +72,12 @@ echo "$NEW_VERSION" > VERSION
 
 ### package.json
 
-`jq` があれば:
+With `jq`:
 ```bash
 jq --arg v "$NEW_VERSION" '.version = $v' package.json > /tmp/package.json && mv /tmp/package.json package.json
 ```
 
-`jq` がなければ Python:
+Without `jq`, use Python:
 ```python
 import json
 with open("package.json", "r") as f:
@@ -90,14 +90,14 @@ with open("package.json", "w") as f:
 
 ### pyproject.toml / Cargo.toml
 
-TOML は書き換えスタイルを壊したくないため、regex で最初の `version = "..."` 行のみ置換:
+To avoid breaking TOML formatting style, replace only the first `version = "..."` line using regex:
 
 ```python
 import re
 with open("pyproject.toml", "r") as f:
     content = f.read()
 
-# [project] または [tool.poetry] セクション内の version を置換
+# Replace version inside [project] or [tool.poetry] section
 section_pattern = None
 if re.search(r"^\[project\]", content, re.M):
     section_pattern = r"(\[project\][^\[]*?version\s*=\s*\")[^\"]+(\")"
@@ -115,23 +115,23 @@ with open("pyproject.toml", "w") as f:
     f.write(new_content)
 ```
 
-Cargo.toml も同様 (`[package]` セクション内):
+Cargo.toml follows the same approach (inside the `[package]` section):
 
 ```python
 section_pattern = r"(\[package\][^\[]*?version\s*=\s*\")[^\"]+(\")"
 ```
 
-## サブパッケージの扱い
+## Handling Sub-packages
 
-monorepo で複数の version file が存在するケース（例: npm workspaces）はこのスキルの対象外。
-ルートの 1 ファイルだけを正本とする設計。
-複数 package を同期したい場合は専用のリリースオーケストレーターを別途構築してください。
+Monorepos with multiple version files (e.g., npm workspaces) are out of scope for this skill.
+The design treats only the root file as the canonical source.
+If you need to sync multiple packages, build a dedicated release orchestrator separately.
 
-## 非対応の version 表現
+## Unsupported Version Formats
 
-以下は非対応。事前に SemVer 形式に正規化してください:
+The following are not supported. Normalize to SemVer format beforehand:
 
-- `v1.0.0` (先頭の `v` を許容しない、tag だけが `v` プレフィックス)
-- `1.0.0-alpha.1` (pre-release suffix は保持するが bump 対象にしない)
-- `1.0.0+build.1` (build metadata は保持)
+- `v1.0.0` (leading `v` not accepted in the file; only tags use the `v` prefix)
+- `1.0.0-alpha.1` (pre-release suffix is preserved but not bumped)
+- `1.0.0+build.1` (build metadata is preserved)
 - Calendar versioning (`2024.01`)

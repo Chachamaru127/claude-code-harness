@@ -1,8 +1,8 @@
 # Japanese Text Cleanup Inventory
 
-**Task**: AIH-012A  
+**Task**: AIH-012A / AIH-012B  
 **Date**: 2026-05-26  
-**Status**: Inventory complete — no runtime changes in this task
+**Status**: Pass 1 complete — Groups C, I, L, M translated; governance test assertions updated
 
 Catalogues all Japanese text found in the active Claude Code path, classified by surface type and recommended action.
 Does not include `archive/`, `.git/`, vendor output, or binary files.
@@ -11,23 +11,23 @@ Does not include `archive/`, `.git/`, vendor output, or binary files.
 
 ## Summary
 
-| Group | Files | Lines (approx) | Action |
-|-------|-------|----------------|--------|
-| A — i18n infrastructure | 12 | — | **keep** |
-| B — `description-ja` frontmatter in skills | 30+ SKILL.md | ~30 | **keep** |
-| C — Japanese body text in skills | 30 SKILL.md + 60 references | >1 000 | **translate now** |
-| D — Legacy Plans markers | templates, docs | ~20 refs | **keep (compat)** |
-| E — Go user-facing strings | 20+ `.go` | ~213 | **translate now** |
-| F — Go comments / docstrings | 132 `.go` | ~3 285 | **defer** |
-| G — Shell scripts — user output | ~15 scripts | ~50 | **translate now** |
-| H — Shell scripts — comments only | ~105 scripts | large | **defer** |
-| I — Templates deployed to user projects | ~30 templates | large | **translate now** |
-| J — `docs/` internal dev notes | 80 docs | large | **defer** |
-| K — `CHANGELOG.md` history | 1 | 1 535 | **defer** |
-| L — `CONTRIBUTING.md` | 1 | 21 | **translate now** |
-| M — `harness.toml` config comments | 1 | 15 | **translate now** |
-| N — Tests with Japanese fixtures | ~110 tests | — | **keep** |
-| O — `spec.md` legacy marker refs | 1 | 2 | **keep (compat)** |
+| Group | Files | Lines (approx) | Action | Status |
+|-------|-------|----------------|--------|--------|
+| A — i18n infrastructure | 12 | — | **keep** | ✓ kept |
+| B — `description-ja` frontmatter in skills | 30+ SKILL.md | ~30 | **keep** | ✓ kept |
+| C — Japanese body text in skills | 30 SKILL.md + 60 references | >1 000 | **translate now** | ✅ done (pass 1) |
+| D — Legacy Plans markers | templates, docs | ~20 refs | **keep (compat)** | ✓ kept |
+| E — Go user-facing strings | 20+ `.go` | ~213 | **translate now** | ⏳ pending |
+| F — Go comments / docstrings | 132 `.go` | ~3 285 | **defer** | deferred |
+| G — Shell scripts — user output | ~15 scripts | ~50 | **translate now** | ⏳ pending |
+| H — Shell scripts — comments only | ~105 scripts | large | **defer** | deferred |
+| I — Templates deployed to user projects | ~30 templates | large | **translate now** | ✅ done (pass 1) |
+| J — `docs/` internal dev notes | 80 docs | large | **defer** | deferred |
+| K — `CHANGELOG.md` history | 1 | 1 535 | **defer** | deferred |
+| L — `CONTRIBUTING.md` | 1 | 21 | **translate now** | ✅ done |
+| M — `harness.toml` config comments | 1 | 15 | **translate now** | ✅ done |
+| N — Tests with Japanese fixtures | ~110 tests | — | **keep** | ✓ kept; governance test assertions updated to English |
+| O — `spec.md` legacy marker refs | 1 | 2 | **keep (compat)** | ✓ kept |
 
 ---
 
@@ -93,6 +93,10 @@ Representative samples:
 
 **Action**: translate now, skill by skill. Preserve `description-ja` frontmatter.
 Target: all body text in `description` locale should be English in the English distribution.
+
+**AIH-012B result**: All active `skills/*/SKILL.md` and their `references/` files translated to English.
+Remaining Japanese in skills: `description-ja` frontmatter only (intentional, Group B).
+Japanese trigger phrases in `harness-review/SKILL.md` `trigger:` field preserved for locale support.
 
 ---
 
@@ -209,6 +213,10 @@ during `harness-setup`. Japanese body text in these files becomes visible to pro
 **Action**: translate rule templates, cursor/opencode commands, and memory templates now.
 HTML templates contain layout and label strings — translate labels, keep compat marker legend rows.
 
+**AIH-012B result**: All `templates/rules/*.md.template` and `templates/memory/*.md.template` files translated.
+Remaining deferred: `templates/cursor/`, `templates/opencode/`, `templates/html/` (planned pass 2).
+Legacy compat marker aliases preserved in `workflow.md.template` and `plans-management.md.template`.
+
 ---
 
 ## Group J — `docs/` Internal Development Notes
@@ -253,6 +261,8 @@ Section `## CHANGELOG 記載ルール` and surrounding content are in Japanese.
 
 **Action**: translate now. Small scope, high visibility.
 
+**AIH-012B result**: Done. Section `## CHANGELOG Entry Rules (Required)` is now in English.
+
 ---
 
 ## Group M — `harness.toml` Config Comments
@@ -267,6 +277,8 @@ Key commented sections:
 - Worker self-review rule comments (lines 151-167)
 
 **Action**: translate now. Small scope, direct user impact.
+
+**AIH-012B result**: Done. All user-visible comments in `harness.toml` translated to English.
 
 ---
 
@@ -283,6 +295,12 @@ used as compatibility fixtures or test inputs. These verify:
 
 **Action**: keep. Modifying these would break test coverage for the compatibility surface.
 When Group E strings are translated, update corresponding test assertions in the same PR.
+
+**AIH-012B result**: Governance test assertions updated to match translated skill content:
+- `tests/test-harness-review-governance.sh` — 8 Japanese terms → English equivalents in `required_skill_terms`; 3 terms in `required_reference_terms`
+- `tests/test-harness-release-governance.sh` — 6 Japanese terms → English equivalents in `required_terms`
+- `tests/test-spec-ssot-workflow.sh` — 8 Japanese grep patterns → English equivalents
+Remaining Japanese in tests: compat fixture tests (Group D markers), i18n regression tests (Group A) — kept intentionally.
 
 ---
 

@@ -1,5 +1,5 @@
 ---
-description: テストファイル作成・編集時のルール
+description: Rules for creating and editing test files
 paths:
   - "**/*.{test,spec}.{ts,tsx,js,jsx}"
   - "**/test/**/*.*"
@@ -11,50 +11,50 @@ _harness_version: "2.5.27"
 
 # Testing Rules
 
-## テスト作成の原則
+## Principles for Writing Tests
 
-1. **境界テスト**: 入力の境界値を必ずテスト
-2. **正常系・異常系**: 両方のケースをカバー
-3. **独立性**: 各テストは他のテストに依存しない
-4. **明確な命名**: テスト名で何をテストしているか分かる
+1. **Boundary testing**: Always test boundary values for inputs
+2. **Happy path and error path**: Cover both cases
+3. **Independence**: Each test must not depend on other tests
+4. **Clear naming**: The test name should make it obvious what is being tested
 
-## テストファイル構成
+## Test File Structure
 
 ```
 src/
 ├── feature/
 │   ├── index.ts
-│   └── index.test.ts  # 同じディレクトリに配置
+│   └── index.test.ts  # Place in the same directory
 tests/
-├── integration/       # 統合テスト
-└── e2e/               # E2Eテスト
+├── integration/       # Integration tests
+└── e2e/               # E2E tests
 ```
 
-## テスト命名規約
+## Test Naming Convention
 
 ```typescript
-describe('機能名', () => {
-  it('should 期待する動作 when 条件', () => {
+describe('FeatureName', () => {
+  it('should expected behavior when condition', () => {
     // ...
   });
 });
 ```
 
-例:
+Examples:
 - `should return user when valid ID is provided`
 - `should throw error when email is invalid`
 
-## カバレッジ目標
+## Coverage Targets
 
-| 種類 | 目標 |
-|------|------|
-| ユニットテスト | 80%+ |
-| 統合テスト | 主要フロー |
-| E2Eテスト | クリティカルパス |
+| Type | Target |
+|------|--------|
+| Unit tests | 80%+ |
+| Integration tests | Major flows |
+| E2E tests | Critical paths |
 
-## 禁止事項
+## Prohibitions
 
-- ❌ 実装の内部詳細に依存したテスト
-- ❌ 外部サービスへの実際の接続（モックを使用）
-- ❌ テスト間の状態共有
-- ❌ `any` や `// @ts-ignore` でのテスト回避
+- ❌ Tests that depend on internal implementation details
+- ❌ Real connections to external services (use mocks)
+- ❌ Shared state between tests
+- ❌ Bypassing tests with `any` or `// @ts-ignore`

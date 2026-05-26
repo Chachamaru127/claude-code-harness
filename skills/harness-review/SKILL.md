@@ -20,54 +20,54 @@ user-invocable: true
 
 # Harness Review
 
-Harness の統合レビュースキル。
-この `SKILL.md` は薄い dispatcher であり、詳細な品質基準は `references/` を読む。
+The integrated review skill for Harness.
+This `SKILL.md` is a thin dispatcher; detailed quality criteria are in `references/`.
 
 if $ARGUMENTS == "":
-  → 「今までの作業のレビュー」と解釈し、Review target detection を実行する
-  → review target が 1 つに確定できる場合だけ自動開始する
-  → review target が不明または複数候補の場合は AskUserQuestion で選択肢を出し、認識を揃えてから開始する
+  → interpret as "review of previous work" and run Review Target Detection
+  → auto-start only if review target can be resolved to exactly one candidate
+  → if review target is unknown or has multiple candidates, use AskUserQuestion to present options and confirm understanding before starting
 
-<!-- 上記 3 行は AUTO-START CONTRACT。skill-editing.md の「最冒頭 3 行以内」ルールに従い fence / HTML コメントで押し下げない -->
+<!-- The 3 lines above are the AUTO-START CONTRACT. Per skill-editing.md "within the first 3 lines" rule, do not push them down with fences or HTML comments -->
 
-### Output Contract (P35: 「止まったように見える」UX 対策)
+### Output Contract (P35: UX fix for "looks frozen")
 
-skill 結論時の output の **最後の 1 行**は必ず次の literal を含める:
+The **last line** of the skill's concluding output must always include the following literal:
 
-`↑この結果は Claude が要約します。Enter キーで次へ進むか、新規 prompt で別の指示を出してください。`
+`↑ Claude will summarize these results. Press Enter to continue or enter a new prompt for a different instruction.`
 
-これは `<local-command-stdout>` 経由で text response として表示されると user が「止まった」と感じる UX 問題への明示的な instruction (patterns.md P35)。
+This is an explicit instruction (patterns.md P35) for the UX problem where users feel the session "froze" when output is displayed as a text response via `<local-command-stdout>`.
 
 ## Dispatcher Contract
 
-この skill の責務は review 判定だけ。
-commit / push / release は既定では行わない。
+This skill's responsibility is review verdicts only.
+It does not commit, push, or release by default.
 
-- review default read-only boundary: 既定は read-only。`APPROVE` でも自動 commit しない
-- Do not push just to review: review 目的だけで push しない
-- commit が必要な場合は、ユーザー明示依頼、`harness-work`、または `harness-release` の Work Commit Gate に委譲する
-- `--commit-on-approve` のような明示 opt-in が設計されるまで、この skill 単体の default side effect は禁止
+- review default read-only boundary: read-only by default. Does not auto-commit even on `APPROVE`
+- Do not push just to review: do not push solely for review purposes
+- If a commit is needed, delegate to an explicit user request, `harness-work`, or the `harness-release` Work Commit Gate
+- Until an explicit opt-in such as `--commit-on-approve` is designed, this skill's default side effects are prohibited
 
 ## Quick Reference
 
 | Command | Mode | Purpose |
 |---|---|---|
-| `/harness-review` | `code` | 今までの作業を自動検出して review |
-| `/harness-review --quick` | `quick` | 小さな dirty change を軽く closeout |
-| `/harness-review --codex-closeout` | `codex-closeout` | Codex 助言 + focused tests で closeout |
+| `/harness-review` | `code` | Auto-detect previous work and review |
+| `/harness-review --quick` | `quick` | Lightweight closeout of a small dirty change |
+| `/harness-review --codex-closeout` | `codex-closeout` | Codex advisory + focused tests for closeout |
 | `/harness-review --dual` | `dual` | Claude + Codex second opinion |
-| `/harness-review --team-debate` | `team-debate` | TeamAgent Debate を強制 |
-| `/harness-review --security` | `security` | security 専用 review |
-| `/harness-review plan` | `plan` | `Plans.md` の計画 review |
-| `/harness-review scope` | `scope` | scope creep / 漏れ review |
+| `/harness-review --team-debate` | `team-debate` | Force TeamAgent Debate |
+| `/harness-review --security` | `security` | Security-focused review |
+| `/harness-review plan` | `plan` | Review plans in `Plans.md` |
+| `/harness-review scope` | `scope` | Review scope creep / gaps |
 
 ## Mode Decision
 
-引数から実行 mode を決定し、必要な `references/` を選択ロードする。
+Determine the execution mode from arguments and selectively load the required `references/`.
 
-| 入力 | mode | 読む reference |
+| Input | mode | References to load |
 |---|---|---|
-| 引数なし / `code` | `code` | `references/code-review.md`, `references/governance.md` |
+| No args / `code` | `code` | `references/code-review.md`, `references/governance.md` |
 | `--quick` | `quick` | `references/codex-closeout.md`, `references/code-review.md` |
 | `--codex-closeout` | `codex-closeout` | `references/codex-closeout.md` |
 | `--dual` | `dual` | `references/dual-review.md`, `references/team-debate.md` |
@@ -78,111 +78,111 @@ commit / push / release は既定では行わない。
 | `scope` | `scope` | `references/scope-review.md`, `references/governance.md` |
 | `full` | `full` | `references/code-review.md`, `references/team-debate.md`, `references/dual-review.md` |
 
-`quick` と `codex-closeout` は軽量 path。
-小さな dirty change、single commit、PR branch の closeout を速く見る。
-品質 gate を捨てるものではない。
+`quick` and `codex-closeout` are lightweight paths.
+They are for quickly reviewing small dirty changes, single commits, or PR branch closeouts.
+They do not abandon quality gates.
 
 ## Review Target Detection
 
-`REVIEW_AUTOSTART` 契約:
-引数なし (`$ARGUMENTS == ""`) で呼ばれた場合、`review` / `/review` / `/harness-review` だけの入力を「今までの作業のレビュー」と解釈する。
-Step 1 開始前の handshake 行として次を 1 行だけ出力する。
+`REVIEW_AUTOSTART` contract:
+When called with no arguments (`$ARGUMENTS == ""`), interpret input of just `review` / `/review` / `/harness-review` as "review of previous work".
+Output the following single line as a handshake before starting Step 1.
 
 ```text
 REVIEW_AUTOSTART: target={resolved_target}, base_ref={resolved_base_ref}, type={mode}
 ```
 
-`REVIEW_TARGET_ASK` 契約:
-bare 呼び出しで review target が不明または複数候補の場合、Step 1 に進む前に `AskUserQuestion` を 1 回だけ使い、候補を 2-3 個に絞って確認する。
+`REVIEW_TARGET_ASK` contract:
+On a bare call where the review target is unknown or has multiple candidates, use `AskUserQuestion` exactly once before proceeding to Step 1, narrowing candidates to 2-3 options for confirmation.
 
-候補は次の順で作る。
+Build candidates in the following order.
 
-1. working tree: staged / unstaged / untracked を含む未コミット変更のみ
-2. branch range: upstream または main/master から HEAD までの commits
-3. recent commits: clean tree で branch range が取れない場合の直近 1 commit / 直近 5 commits
+1. working tree: uncommitted changes only, including staged / unstaged / untracked
+2. branch range: commits from upstream or main/master to HEAD
+3. recent commits: the most recent 1 commit / most recent 5 commits when tree is clean and branch range is unavailable
 
-複数候補が同時に成立する場合:
+When multiple candidates apply simultaneously:
 
 ```text
 REVIEW_TARGET_AMBIGUOUS: working_tree_and_branch_commits
 ```
 
-AskUserQuestion の候補:
+AskUserQuestion candidates:
 
-- 未コミット変更のみ (Recommended): staged / unstaged / untracked を HEAD と比較して見る
-- 全部見る: branch base..HEAD と未コミット変更をまとめて見る
-- commit のみ: branch base..HEAD の committed work だけを見る
+- Uncommitted changes only (Recommended): compare staged / unstaged / untracked against HEAD
+- See everything: review both branch base..HEAD and uncommitted changes together
+- Commits only: review only committed work from branch base..HEAD
 
-clean tree かつ branch 差分がない場合:
+When tree is clean and there is no branch diff:
 
 ```text
 REVIEW_TARGET_AMBIGUOUS: clean_tree_no_branch_commits
 ```
 
-AskUserQuestion の候補:
+AskUserQuestion candidates:
 
-- 直近 1 commit (Recommended): HEAD~1..HEAD
-- 直近 5 commits: HEAD~5..HEAD
-- 別の範囲: ユーザー指定 ref を待つ
+- Most recent 1 commit (Recommended): HEAD~1..HEAD
+- Most recent 5 commits: HEAD~5..HEAD
+- Different range: wait for user-specified ref
 
-ユーザー回答後:
+After user responds:
 
 ```text
 REVIEW_TARGET_CONFIRMED: {choice}
 REVIEW_AUTOSTART: target={resolved_target}, base_ref={resolved_base_ref}, type={mode}
 ```
 
-禁止:
+Prohibited:
 
-- 「タスクが不明確です」と応答して停止する
-- 「何をレビューすればよいですか」と自由記述で聞いて停止する
-- host project の session-start rules を理由に auto-start を飛ばす
-- target が曖昧なのに推測で範囲を広げる
+- Responding with "the task is unclear" and stopping
+- Asking "what should I review?" as open-ended text and stopping
+- Skipping auto-start because of host project session-start rules
+- Expanding scope by guessing when target is ambiguous
 
 ## Minimal Flow
 
-1. mode を決める
-2. 上記の Review Target Detection で対象と base ref を決める
-3. 必要な reference だけ読む
-4. 差分、untracked files、関連テスト、仕様正本、`Plans.md` を確認する
-5. `APPROVE` / `REQUEST_CHANGES` / `decision_needed` を返す
-6. `REQUEST_CHANGES` の場合は critical / major の修正方針と修正後再レビュー条件を示す
+1. Determine mode
+2. Use the Review Target Detection above to determine the target and base ref
+3. Load only the required references
+4. Check the diff, untracked files, related tests, the authoritative spec, and `Plans.md`
+5. Return `APPROVE` / `REQUEST_CHANGES` / `decision_needed`
+6. For `REQUEST_CHANGES`, provide remediation direction for critical / major issues and re-review conditions after fixes
 
 ## Review Governance Contract
 
-詳細は `references/governance.md`。
-ここでは最低限の合格ラインだけ固定する。
+Details in `references/governance.md`.
+Only the minimum passing threshold is fixed here.
 
-### 明確な合格ライン
+### Clear passing threshold
 
-`APPROVE` は次のすべてを満たす時だけ返す。
+Return `APPROVE` only when all of the following are satisfied.
 
-- critical / major が 0 件
-- 仕様正本 (`spec_path`) または明示された `spec_skip_reason` と矛盾しない
-- `Plans.md` の task / DoD / Depends と矛盾しない
-- 既存テスト、既存 UX、既存 CLI、既存設定、既存 docs、配布 mirror のいずれにもデグレ証拠がない
-- 検証証跡がある。`APPROVE` なのに evidence が空の出力は禁止
-- TeamAgent Debate を実行した場合、反対意見が解消済み、または `minor` / `recommendation` として理由付きで格下げ済み
+- Zero critical / major issues
+- No contradiction with the authoritative spec (`spec_path`) or an explicit `spec_skip_reason`
+- No contradiction with `Plans.md` task / DoD / Depends
+- No evidence of regression in existing tests, existing UX, existing CLI, existing configuration, existing docs, or distribution mirrors
+- Verification evidence exists. Output that returns `APPROVE` with empty evidence is prohibited
+- If TeamAgent Debate was run, all disagreements are resolved, or downgraded to `minor` / `recommendation` with reasoning
 
 ### TeamAgent Debate
 
-詳細は `references/team-debate.md`。
-TeamAgent Debate は、異なる見解を read-only で衝突させる review pass。
+Details in `references/team-debate.md`.
+TeamAgent Debate is a review pass that deliberately collides different perspectives in read-only mode.
 
-| Agent | 主な問い |
+| Agent | Primary question |
 |---|---|
-| Spec Agent | 仕様正本と実装差分の矛盾を探す |
-| Plans Agent | `Plans.md` の task / DoD / Depends と差分の対応を確認する |
-| Regression Agent | 既存挙動・テスト・配布 mirror・CLI/skill UX のデグレを探す |
-| Skeptic Agent | 合格させたい前提で見落としている major risk を探す |
+| Spec Agent | Find contradictions between the authoritative spec and the implementation diff |
+| Plans Agent | Verify that `Plans.md` task / DoD / Depends correspond to the diff |
+| Regression Agent | Find regressions in existing behavior, tests, distribution mirrors, CLI/skill UX |
+| Skeptic Agent | Find major risks being overlooked under the assumption that the change should pass |
 
-Codex 環境で native TeamAgent が使えない場合でも、この gate を省略してはいけない。
-`codex-companion.sh review`、利用可能な reviewer subagent、または明示的に分けた read-only manual-pass で同じ 2-4 視点を再現し、`team_agent_mode` に `native` / `codex-companion` / `manual-pass` / `unavailable` を記録する。
+Even in Codex environments where native TeamAgent is unavailable, this gate must not be skipped.
+Reproduce the same 2-4 perspectives using `codex-companion.sh review`, available reviewer subagents, or explicitly separate read-only manual passes, and record the mode in `team_agent_mode` as `native` / `codex-companion` / `manual-pass` / `unavailable`.
 
 ## Code Review Summary
 
-詳細は `references/code-review.md`。
-通常 code review は次を見る。
+Details in `references/code-review.md`.
+Standard code review examines the following.
 
 - Security
 - Performance
@@ -194,30 +194,30 @@ Codex 環境で native TeamAgent が使えない場合でも、この gate を�
 - Regression Safety
 - TDD compliance
 
-仕様正本 alignment check は必須。
-`spec_path` がある場合は差分が仕様正本と矛盾しないか確認し、仕様正本が必要なのに無い場合は `spec_skip_reason` の妥当性を見る。
-`Plans.md` alignment check とデグレ alignment check も同じ gate で扱う。
+Spec alignment check is mandatory.
+When `spec_path` exists, verify that the diff does not contradict the authoritative spec; when a spec is needed but absent, examine the validity of `spec_skip_reason`.
+Plans.md alignment check and regression alignment check are handled at the same gate.
 
-`AI Residuals` は `scripts/review-ai-residuals.sh` と `scripts/review-weak-supervision-report.sh` を優先して使う。
-untracked も見る場合は `--include-untracked` を使う。
-`mockData`, `dummy`, `fake`, `localhost`, `TODO`, `FIXME`, `it.skip`, `test.skip`, `expect(true).toBe(true)` などは候補であり、diff 文脈で severity を決める。
+For `AI Residuals`, prefer using `scripts/review-ai-residuals.sh` and `scripts/review-weak-supervision-report.sh`.
+Use `--include-untracked` when untracked files should also be included.
+`mockData`, `dummy`, `fake`, `localhost`, `TODO`, `FIXME`, `it.skip`, `test.skip`, `expect(true).toBe(true)`, etc. are candidates; determine severity based on diff context.
 
 ### TDD compliance check
 
-TDD が required の task では `skip_tdd_reason`、red-log、focused tests の証跡を確認する。
-証跡なしで `APPROVE` しない。
+For tasks where TDD is required, verify evidence of `skip_tdd_reason`, red-log, and focused tests.
+Do not `APPROVE` without evidence.
 
 ## Quick / Codex Closeout Summary
 
-詳細は `references/codex-closeout.md`。
+Details in `references/codex-closeout.md`.
 
-軽量 path の原則:
+Lightweight path principles:
 
-- target selection を先に固定する
-- Codex 指摘は advisory として扱い、実コードで確認してから採否を決める
-- final report には review command / tests / accepted findings / rejected findings / clean result を含める
-- stop-on-clean: clean result 後に、見栄えのためだけの追加 review をしない
-- Codex が使えない場合は full manual pass に fallback し、失敗を成功扱いしない
+- Fix target selection first
+- Treat Codex findings as advisory — verify in actual code before accepting or rejecting
+- The final report must include: review command / tests / accepted findings / rejected findings / clean result
+- stop-on-clean: do not add extra review solely for appearances after a clean result
+- If Codex is unavailable, fall back to a full manual pass and do not treat failure as success
 
 helper:
 
@@ -229,15 +229,15 @@ bash scripts/harness-review-closeout.sh --commit HEAD
 
 ## Plan Review Summary
 
-詳細は `references/plan-review.md`。
-Plan Review は `Plans.md` の DoD / Depends / Status と実装順序を見る。
-仕様正本が必要なタスクで `spec_path` がない場合は、`decision_needed` として止める。
+Details in `references/plan-review.md`.
+Plan Review examines `Plans.md` DoD / Depends / Status and implementation ordering.
+When a task that requires an authoritative spec has no `spec_path`, stop with `decision_needed`.
 
 ## Scope Review Summary
 
-詳細は `references/scope-review.md`。
-Scope Review は、要求・差分・テスト・docs の境界が膨らんでいないかを見る。
-範囲変更が必要なら、推測で進めず `AskUserQuestion` または plan 更新に戻す。
+Details in `references/scope-review.md`.
+Scope Review checks whether the boundaries of requirements, diffs, tests, and docs have expanded beyond what is needed.
+If scope changes are required, do not proceed by guessing — return to `AskUserQuestion` or plan updates.
 
 ## Security / UI / Dual
 
@@ -246,41 +246,41 @@ Scope Review は、要求・差分・テスト・docs の境界が膨らんで�
 - high-res vision flow: `references/vision-high-res-flow.md`
 - Dual review: `references/dual-review.md`
 
-`/ultrareview` は Harness flow 内では既定で呼ばない。
-Harness flow の review-result.v1、commit guard、sprint-contract との接続を置き換えないため。
-`claude ultrareview [target] --json` は CI / script からの second-opinion としてだけ扱う。
+`/ultrareview` is not called by default within the Harness flow.
+This is to avoid replacing the connections with review-result.v1, commit guard, and sprint-contract in the Harness flow.
+`claude ultrareview [target] --json` is treated only as a second-opinion from CI / scripts.
 
 ## PR Host Boundary
 
-GitHub-first。
-PR host 上の review 事実は GitHub を正とし、local diff は補助証拠として扱う。
-ただし local uncommitted review は GitHub に push しない。
+GitHub-first.
+Review facts on the PR host are authoritative from GitHub; local diffs are treated as supplementary evidence.
+However, local uncommitted reviews are not pushed to GitHub.
 
 ## Output Contract
 
-出力は日本語。
-機械可読値だけ英語を使う。
+Output in English.
+Use machine-readable values in English only.
 
-最初に結果サマリーを出す。
+Output a result summary first.
 
 ~~~markdown
-## レビュー結果
+## Review Result
 
-### {合格 (APPROVE) | 要修正 (REQUEST_CHANGES) | 判断待ち (decision_needed)} - {1 行結論}
+### {Passed (APPROVE) | Changes Required (REQUEST_CHANGES) | Decision Needed (decision_needed)} - {one-line conclusion}
 
-対象: `{BASE_REF}..HEAD` または `{target}`
-検証: {実行したコマンド}
+Target: `{BASE_REF}..HEAD` or `{target}`
+Verified: {commands executed}
 
-良かったところ:
+What went well:
 - ...
 
-気になったところ:
-- [severity] file:line - 問題と根拠
+Concerns:
+- [severity] file:line - issue and rationale
 
-次のアクション:
+Next actions:
 - ...
 
-詳細データ:
+Detailed data:
 ```json
 {
   "schema_version": "review-result.v1",
@@ -315,17 +315,17 @@ PR host 上の review 事実は GitHub を正とし、local diff は補助証拠
 
 ## Codex Environment
 
-Codex 環境では使える tool が異なる。
-それでも、合格ライン、仕様正本、`Plans.md`、デグレ、修正後再レビュー、AskUserQuestion / `decision_needed.v1` の契約は同じ。
+Available tools differ in Codex environments.
+Even so, the contracts for passing threshold, authoritative spec, `Plans.md`, regressions, post-fix re-review, and AskUserQuestion / `decision_needed.v1` remain the same.
 
-| 通常環境 | Codex fallback |
+| Standard environment | Codex fallback |
 |---|---|
-| Task tool の TeamAgent Debate | reviewer subagent / `codex-companion.sh review` / manual-pass |
-| AskUserQuestion | 使えない場合は `decision_needed.v1` を stdout に出し、推測で進めない |
-| TaskList | `Plans.md` を直接読む |
+| Task tool TeamAgent Debate | reviewer subagent / `codex-companion.sh review` / manual-pass |
+| AskUserQuestion | If unavailable, output `decision_needed.v1` to stdout and do not proceed by guessing |
+| TaskList | Read `Plans.md` directly |
 
 ## Related Skills
 
-- `harness-work`: `REQUEST_CHANGES` 後の修正実行
-- `harness-plan`: plan / scope / spec の更新
-- `harness-release`: review 済み work の commit / release
+- `harness-work`: execute fixes after `REQUEST_CHANGES`
+- `harness-plan`: update plan / scope / spec
+- `harness-release`: commit / release reviewed work

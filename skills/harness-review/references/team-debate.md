@@ -1,51 +1,51 @@
 # TeamAgent Debate
 
-## ひとことで
+## In a nutshell
 
-TeamAgent Debate は、別々の視点で同じ変更を読み、見落としを減らす read-only review pass。
+TeamAgent Debate is a read-only review pass where the same change is read from separate perspectives to reduce oversights.
 
 ## When required
 
-次のいずれかなら実行する。
+Run when any of the following apply.
 
-- 変更が複数モジュールにまたがる
-- security / auth / release / distribution / mirror に触る
-- 仕様正本や `Plans.md` との対応が曖昧
-- regression risk が高い
-- Claude と Codex の verdict が割れた
-- reviewer の中で観点別評価が割れた
-- 同じ issue を修正後再レビューで 2 回連続で落とした
+- The change spans multiple modules
+- Touches security / auth / release / distribution / mirror
+- The correspondence with the authoritative spec or `Plans.md` is ambiguous
+- Regression risk is high
+- Claude and Codex verdicts diverge
+- Perspective-based evaluation diverged among reviewers
+- The same issue was rejected in post-fix re-review two consecutive times
 
 ## Agents
 
-| Agent | 主な問い |
+| Agent | Primary question |
 |---|---|
-| Spec Agent | 仕様正本と実装差分の矛盾を探す |
-| Plans Agent | `Plans.md` の task / DoD / Depends と差分の対応を確認する |
-| Regression Agent | 既存挙動・テスト・配布 mirror・CLI/skill UX のデグレを探す |
-| Skeptic Agent | 合格させたい前提で見落としている major risk を探す |
+| Spec Agent | Find contradictions between the authoritative spec and the implementation diff |
+| Plans Agent | Verify that `Plans.md` task / DoD / Depends correspond to the diff |
+| Regression Agent | Find regressions in existing behavior, tests, distribution mirrors, CLI/skill UX |
+| Skeptic Agent | Find major risks being overlooked under the assumption that the change should pass |
 
-最低 2 視点、必要時 4 視点まで。
-全員 read-only。
+Minimum 2 perspectives, up to 4 when needed.
+All are read-only.
 
 ## Codex fallback
 
-Codex 環境で native TeamAgent が使えない場合も、省略しない。
+Even in Codex environments where native TeamAgent is unavailable, do not skip.
 
-使える fallback:
+Available fallbacks:
 
 - `codex-companion.sh review`
 - reviewer subagent
-- 明示的に分けた manual-pass
+- explicitly separate manual-pass
 
-`team_agent_mode` には次のどれかを記録する。
+Record one of the following in `team_agent_mode`.
 
 - `native`
 - `codex-companion`
 - `manual-pass`
 - `unavailable`
 
-`unavailable` のまま manual-pass もできない場合は、`decision_needed` として止める。
+If `unavailable` and a manual-pass is also impossible, stop with `decision_needed`.
 
 ## Output
 
@@ -66,7 +66,7 @@ Codex 環境で native TeamAgent が使えない場合も、省略しない。
 }
 ```
 
-## 合格ライン
+## Passing Threshold
 
-TeamAgent Debate の disagreement が critical / major 相当なら `REQUEST_CHANGES`。
-minor / recommendation に格下げする場合は、理由を evidence 付きで書く。
+If a TeamAgent Debate disagreement is equivalent to critical / major, return `REQUEST_CHANGES`.
+When downgrading to minor / recommendation, write the reason with evidence.

@@ -1,40 +1,40 @@
 # Bump Level Detection
 
-`[Unreleased]` セクションの内容から bump level (patch/minor/major) を推定するロジック。
+Logic for estimating the bump level (patch/minor/major) from the contents of the `[Unreleased]` section.
 
-## 判定ルール
+## Detection Rules
 
-`[Unreleased]` 直下の `### <category>` 見出しを全てスキャンし、以下の優先順位で判定:
+Scan all `### <category>` headings directly under `[Unreleased]` and determine the level by the following priority:
 
 ```
-1. "### Breaking Changes" が含まれる             → major
-2. "### Removed" が含まれる                      → major
-3. "### Added" が含まれる (上記なし)             → minor
-4. "### Deprecated" が含まれる (上記なし)        → minor
-5. "### Fixed" / "### Changed" / "### Security" のみ → patch
-6. サブセクションが 1 つもない (空)              → error
+1. "### Breaking Changes" is present                    → major
+2. "### Removed" is present                             → major
+3. "### Added" is present (none of the above)           → minor
+4. "### Deprecated" is present (none of the above)      → minor
+5. Only "### Fixed" / "### Changed" / "### Security"    → patch
+6. No subsections at all (empty)                        → error
 ```
 
-## 実装
+## Implementation
 
 ```python
 import re
 
 def detect_bump(changelog_text: str) -> str:
     """Return 'major' | 'minor' | 'patch'. Raises on empty [Unreleased]."""
-    # [Unreleased] セクションを抽出
+    # Extract the [Unreleased] section
     m = re.search(
         r"## \[Unreleased\]\s*\n(.*?)(?=\n## \[|\Z)",
         changelog_text,
         re.S,
     )
     if not m:
-        raise RuntimeError("[Unreleased] セクションが見つかりません")
+        raise RuntimeError("[Unreleased] section not found")
     body = m.group(1).strip()
     if not body:
-        raise RuntimeError("[Unreleased] が空です。リリース対象がありません")
+        raise RuntimeError("[Unreleased] is empty. Nothing to release")
 
-    # 見出しを収集
+    # Collect headings
     headings = set(re.findall(r"^### (.+?)\s*$", body, re.M))
 
     if "Breaking Changes" in headings or "Removed" in headings:
@@ -43,48 +43,48 @@ def detect_bump(changelog_text: str) -> str:
         return "minor"
     if headings & {"Fixed", "Changed", "Security"}:
         return "patch"
-    raise RuntimeError(f"認識できるサブセクションが [Unreleased] にありません: {headings}")
+    raise RuntimeError(f"No recognized subsections found in [Unreleased]: {headings}")
 ```
 
-## なぜ Deprecated は minor か
+## Why is Deprecated a minor bump?
 
-Keep a Changelog の仕様上、Deprecated は「将来 Removed される予定の通告」。
-機能追加/変更と同等のユーザー影響があるため minor で扱う。
-実際の Removed 時点で major に上がる。
+Per the Keep a Changelog spec, Deprecated is "a notice that something will be Removed in the future".
+It has the same user impact as a new feature or change, so it is treated as minor.
+When the actual Removed happens, it escalates to major.
 
-## ユーザー override
+## User Override
 
-`/release patch|minor|major` と明示指定された場合はこの自動判定を skip し、指定値を使う。
-ただし **bump 対象セクションが空** のときは override されていても abort する（リリース内容がないため）。
+If `/release patch|minor|major` is explicitly specified, skip this automatic detection and use the given value.
+However, if the **bump target section is empty**, abort even with an override (there is nothing to release).
 
-## 表記揺れは非対応
+## Unrecognized Spelling Variations
 
-以下は認識しない:
+The following are not recognized:
 
-| 書かれがちな表記 | 正しい表記 |
-|-----------------|-----------|
+| Commonly written | Correct heading |
+|------------------|-----------------|
 | `### Features` | `### Added` |
 | `### Bug Fixes` / `### Fix` | `### Fixed` |
 | `### BREAKING CHANGE` / `### Breaking` | `### Breaking Changes` |
-| `### Enhancements` | `### Changed` または `### Added` |
+| `### Enhancements` | `### Changed` or `### Added` |
 
-KaCL の標準見出しに揃えてから `/release` を呼ぶこと。
-Gate 前に認識できない見出しを検出したら警告を出し、ユーザーに修正を促す。
+Align to KaCL standard headings before calling `/release`.
+If unrecognized headings are detected before the gate, emit a warning and prompt the user to fix them.
 
-## pre-release / build metadata の扱い
+## Handling pre-release / build metadata
 
-現バージョンが `1.0.0-alpha.1` のような pre-release suffix を持つ場合、このスキルは
+If the current version has a pre-release suffix such as `1.0.0-alpha.1`, this skill:
 
-1. suffix 部分を無視して bump 計算（`1.0.0-alpha.1` → patch → `1.0.1`）
-2. suffix は破棄（`1.0.1-alpha.1` にはしない）
+1. Ignores the suffix for bump calculation (`1.0.0-alpha.1` → patch → `1.0.1`)
+2. Discards the suffix (does not produce `1.0.1-alpha.1`)
 
-pre-release のまま bump したい場合は override で bump 指定しても挙動は変わらない。
-pre-release を意図的に継続したいプロジェクトはこのスキル非対応。
+Specifying an override bump does not change this behavior.
+Projects that intentionally want to stay on a pre-release are not supported by this skill.
 
-## 空 [Unreleased] への対処
+## Handling an empty [Unreleased]
 
-`/release` が空 [Unreleased] で呼ばれたら、以下を提案:
+If `/release` is called with an empty `[Unreleased]`, suggest the following:
 
-- 「リリース対象がありません。`[Unreleased]` に `### Fixed` 等を追加するか、マーカーだけのメンテナンスリリースを希望するなら `--empty` フラグを検討してください」
+- "Nothing to release. Add `### Fixed` or similar to `[Unreleased]`, or if you want a maintenance release with only a marker, consider the `--empty` flag."
 
-`--empty` フラグは本スキル未対応（空 release は原則作成しない）。
+`--empty` flag is not supported by this skill (empty releases are not created by default).

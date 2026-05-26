@@ -1,55 +1,55 @@
 # Quick / Codex Closeout
 
-## ひとことで
+## In a nutshell
 
-小さな変更は、対象を固定し、Codex の助言を実コードで確認し、clean ならそこで止める。
+For small changes: fix the target, verify Codex findings in actual code, and stop once the result is clean.
 
 ## target selection decision tree
 
-1. working tree が dirty
-   - 推奨: 未コミット変更のみ
+1. working tree is dirty
+   - Recommended: uncommitted changes only
    - base: `HEAD`
-   - untracked を含める
-2. PR branch / feature branch に commits がある
-   - 推奨: `upstream..HEAD` または `origin/main..HEAD`
-   - working tree も dirty なら AskUserQuestion で「未コミット変更のみ / 全部 / commit のみ」を選ぶ
-3. clean tree で branch 差分がない
-   - 推奨: 直近 1 commit
-   - 必要なら直近 5 commits
-4. user が `--base` / `--commit` を指定
-   - 明示指定を優先
+   - include untracked files
+2. PR branch / feature branch has commits
+   - Recommended: `upstream..HEAD` or `origin/main..HEAD`
+   - if working tree is also dirty, use AskUserQuestion to choose "uncommitted only / everything / commits only"
+3. clean tree with no branch diff
+   - Recommended: most recent 1 commit
+   - most recent 5 commits if needed
+4. user specifies `--base` / `--commit`
+   - explicit specification takes priority
 
 ## Advisory rule
 
-Codex の指摘は advisory。
-つまり「参考意見」であり、事実そのものではない。
+Codex findings are advisory.
+That is, they are "reference opinions," not facts themselves.
 
-必ず次を行う。
+Always do the following.
 
-- 指摘箇所を実コードで読む
-- diff とテストで再現性を確認する
-- accepted findings / rejected findings に分ける
-- rejected には「なぜ採用しないか」を書く
+- Read the flagged location in the actual code
+- Confirm reproducibility with the diff and tests
+- Split into accepted findings / rejected findings
+- For rejected findings, write "why not accepted"
 
 ## Stop-on-clean
 
 stop-on-clean:
-clean result が出た後に、見栄えのためだけの追加 review をしない。
+Do not add extra review solely for appearances after a clean result.
 
-例:
+Example:
 
 - Codex review: no major issues
 - focused tests: pass
 - manual spot check: pass
 
-この状態なら止める。
-追加の重い review は、release 前、security-sensitive、仕様正本変更、またはユーザー明示時だけ行う。
+Stop here.
+Additional heavy review is only done before a release, for security-sensitive changes, spec changes, or when the user explicitly requests it.
 
 ## Helper contract
 
-`scripts/harness-review-closeout.sh` は lightweight closeout の実行計画を固定する helper。
+`scripts/harness-review-closeout.sh` is a helper that fixes the execution plan for lightweight closeout.
 
-対応する入力:
+Supported inputs:
 
 - `--dry-run`
 - `--parallel-tests`
@@ -59,7 +59,7 @@ clean result が出た後に、見栄えのためだけの追加 review をし�
 - `--test CMD`
 - `--json`
 
-例:
+Examples:
 
 ```bash
 bash scripts/harness-review-closeout.sh --dry-run --uncommitted
@@ -67,15 +67,15 @@ bash scripts/harness-review-closeout.sh --base origin/main --parallel-tests --te
 bash scripts/harness-review-closeout.sh --commit HEAD --json
 ```
 
-Codex が利用できない場合:
+When Codex is unavailable:
 
-- full manual pass に fallback
-- failure を success と扱わない
-- final report に `codex_available:false` を残す
+- fall back to full manual pass
+- do not treat failure as success
+- leave `codex_available:false` in the final report
 
 ## Final report
 
-必須項目:
+Required fields:
 
 - review command
 - tests
@@ -84,7 +84,7 @@ Codex が利用できない場合:
 - clean result
 - fallback reason
 
-JSON では最低限こう残す。
+At minimum, record this in JSON.
 
 ```json
 {

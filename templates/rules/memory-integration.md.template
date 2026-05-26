@@ -1,5 +1,5 @@
 ---
-description: Memory Integration ルール - Claude-mem との連携によるセッション跨ぎ品質強化
+description: Memory Integration rules - Cross-session quality and context retention via Claude-mem integration
 paths:
   - "**"
 _harness_template: "rules/memory-integration.md.template"
@@ -9,175 +9,175 @@ _harness_condition: "claude_mem.enabled"
 
 # Memory Integration
 
-このプロジェクトでは **Claude-mem 統合**が有効です。
+This project has **Claude-mem integration** enabled.
 
-セッション跨ぎの品質・文脈維持機能により、過去の学習が活用されます。
-
----
-
-## 機能概要
-
-| 機能 | 説明 |
-|------|------|
-| 過去の記憶検索 | `mem-search` スキルで過去の作業履歴を検索 |
-| ガードレール履歴 | 過去のテスト改ざん防止記録を参照 |
-| 文脈継続 | 前回セッションの状態から即座に継続 |
-| パターン学習 | 過去のバグ修正・設計決定を再利用 |
+Cross-session quality and context retention is active — past learnings are available throughout your work.
 
 ---
 
-## スキルでの活用方法
+## Feature Overview
 
-### 1. セッション開始時（session-init）
+| Feature | Description |
+|---------|-------------|
+| Past memory search | Search past work history with the `mem-search` skill |
+| Guardrail history | Reference past test tampering prevention records |
+| Context continuity | Resume immediately from the state of the previous session |
+| Pattern learning | Reuse past bug fixes and design decisions |
 
-セッション開始時に過去の文脈が自動表示されます：
+---
 
-```
-🚀 セッション開始
+## How to Use in Skills
 
-📚 過去の文脈:
-- 前回: Feature X の設計完了（RBAC採用）
-- ガードレール発動: 過去2回テスト改ざんを防止
+### 1. Session start (session-init)
 
-📋 継続タスク:
-- Feature X 実装フェーズ
-```
-
-### 2. 実装時（impl スキル）
-
-実装前に過去の関連パターンを自動検索：
+Past context is automatically displayed when a session starts:
 
 ```
-# 例: API エンドポイント実装時
+🚀 Session started
+
+📚 Past context:
+- Last session: Feature X design completed (RBAC adopted)
+- Guardrail activations: 2 test tampering attempts blocked
+
+📋 Ongoing tasks:
+- Feature X implementation phase
+```
+
+### 2. During implementation (impl skill)
+
+Automatically searches past related patterns before implementation:
+
+```
+# Example: when implementing an API endpoint
 mem-search: "API endpoint pattern" "error handling"
 
-# 過去の実装パターン、gotcha（落とし穴）が表示される
+# Past implementation patterns and gotchas are displayed
 ```
 
-### 3. レビュー時（harness-review スキル）
+### 3. During review (harness-review skill)
 
-過去の類似レビュー指摘を参照：
+References past similar review findings:
 
 ```
-# 例: 認証コードレビュー時
+# Example: when reviewing authentication code
 mem-search: "authentication review" "security"
 
-# 過去に指摘した認証関連の問題パターンが表示される
+# Past authentication-related issue patterns are displayed
 ```
 
-### 4. 検証時（verify スキル）
+### 4. During verification (verify skill)
 
-過去のビルドエラー・解決策を参照：
-
-```
-# 例: ビルドエラー発生時
-mem-search: "build error" "CORS" "解決"
-
-# 過去の類似エラーと解決方法が表示される
-```
-
----
-
-## 記録される内容
-
-### ハーネスモードで自動記録
-
-| 観測タイプ | 説明 | 例 |
-|-----------|------|-----|
-| `plan` | Plans.md へのタスク追加・更新 | 「Feature X を3タスクに分割」 |
-| `guard` | ガードレール発動 | 「it.skip() 追加をブロック」 |
-| `decision` | 設計決定と理由 | 「RBAC 採用: スケーラビリティ重視」 |
-| `bugfix` | バグ修正内容 | 「CORS エラー: Allow-Origin 追加」 |
-| `handoff` | PM ↔ Impl 役割移行 | 「PM → Impl: 認証機能実装依頼」 |
-
-### 観測コンセプト
-
-| コンセプト | 検索キーワード例 |
-|-----------|-----------------|
-| `user-intent` | 「ユーザーが何を求めていたか」 |
-| `gotcha` | 「落とし穴」「注意点」 |
-| `pattern` | 「再利用パターン」 |
-| `test-quality` | 「テスト改ざん」「品質」 |
-
----
-
-## 手動検索
-
-過去の記憶を手動で検索する場合：
+References past build errors and their resolutions:
 
 ```
-# mem-search スキルを使用
-Skill ツールで 'mem-search' を呼び出す
+# Example: when a build error occurs
+mem-search: "build error" "CORS" "resolution"
 
-# 検索クエリ例
-「認証の実装パターン」
-「CORS エラー 解決」
-「テスト改ざん 防止」
-「前回のセッションで何をした？」
+# Past similar errors and their solutions are displayed
 ```
 
 ---
 
-## ガードレール強化
+## What Gets Recorded
 
-過去のガードレール発動履歴が累積学習されます：
+### Auto-recorded in harness mode
 
-### 例: テスト改ざん防止
+| Observation Type | Description | Example |
+|-----------------|-------------|---------|
+| `plan` | Task additions/updates in Plans.md | "Feature X split into 3 tasks" |
+| `guard` | Guardrail activations | "Blocked: it.skip() added to payment tests" |
+| `decision` | Design decisions and rationale | "Adopted RBAC: scalability priority" |
+| `bugfix` | Bug fix details | "CORS error: added Allow-Origin header" |
+| `handoff` | PM ↔ Impl role transitions | "PM → Impl: authentication feature implementation requested" |
+
+### Observation Concepts
+
+| Concept | Example Search Keywords |
+|---------|------------------------|
+| `user-intent` | "what the user was asking for" |
+| `gotcha` | "pitfall" "watch out" |
+| `pattern` | "reusable pattern" |
+| `test-quality` | "test tampering" "quality" |
+
+---
+
+## Manual Search
+
+To manually search past memories:
 
 ```
-⚠️ このプロジェクトでは過去に以下を防止しました:
+# Use the mem-search skill
+Invoke 'mem-search' via the Skill tool
 
-- 2024-01-15: it.skip() 追加を防止（支払いテスト）
-- 2024-01-20: expect.toEqual() の緩和を防止
-
-💡 テスト改ざんは禁止されています。
-   実装を修正してテストを通してください。
+# Example search queries
+"authentication implementation pattern"
+"CORS error resolution"
+"test tampering prevention"
+"what did we do last session?"
 ```
 
 ---
 
-## SSOT との連携
+## Enhanced Guardrails
 
-重要な観測は SSOT（decisions.md / patterns.md）に昇格できます：
+Past guardrail activation history accumulates for continuous learning:
+
+### Example: test tampering prevention
+
+```
+⚠️ This project has previously prevented the following:
+
+- 2024-01-15: Prevented it.skip() addition (payment tests)
+- 2024-01-20: Prevented weakening of expect.toEqual()
+
+💡 Test tampering is prohibited.
+   Fix the implementation to make the tests pass.
+```
+
+---
+
+## SSOT Integration
+
+Important observations can be promoted to SSOT (decisions.md / patterns.md):
 
 ```bash
-# 重要な決定を SSOT に昇格
+# Promote an important decision to SSOT
 /memory sync
 
-# 昇格対象:
-# - decision タイプの観測 → decisions.md
-# - pattern コンセプトの観測 → patterns.md
+# Promotion targets:
+# - 'decision' type observations → decisions.md
+# - 'pattern' concept observations → patterns.md
 ```
 
 ---
 
-## トークンコスト
+## Token Cost
 
-Claude-mem 統合により、セッションあたり約 **+500〜1,000 トークン** の追加コストが発生します。
+Claude-mem integration adds approximately **+500–1,000 tokens** per session.
 
-### コスト対効果
+### Cost-Benefit
 
-| 観点 | メリット |
-|------|---------|
-| ウォームスタート | コンテキスト再構築の手間削減（数千トークン節約） |
-| 重複防止 | 同じ調査の繰り返し回避 |
-| 品質累積 | 過去のミスを繰り返さない |
+| Perspective | Benefit |
+|-------------|---------|
+| Warm start | Eliminates context reconstruction overhead (saves thousands of tokens) |
+| Deduplication | Avoids repeating the same research |
+| Quality accumulation | Prevents repeating past mistakes |
 
 ---
 
-## 無効化
+## Disabling
 
-Claude-mem 統合を一時的に無効化する場合：
+To temporarily disable Claude-mem integration:
 
 ```bash
-# settings.json を編集
-# "CLAUDE_MEM_MODE": "code" に変更
+# Edit settings.json
+# Change "CLAUDE_MEM_MODE" to "code"
 ```
 
 ---
 
-## 関連
+## Related
 
-- `/setup harness-mem` - Claude-mem 統合セットアップ
-- `mem-search` スキル - 過去の記憶検索
-- `/memory sync` - 観測の SSOT 昇格
+- `/setup harness-mem` - Claude-mem integration setup
+- `mem-search` skill - Search past memories
+- `/memory sync` - Promote observations to SSOT

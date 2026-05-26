@@ -1,16 +1,16 @@
 # Release Notes Format
 
-CHANGELOG の `## [X.Y.Z]` セクションを GitHub Release 用のノートに変換するルール。
+Rules for converting a CHANGELOG `## [X.Y.Z]` section into GitHub Release notes.
 
-## 言語
+## Language
 
-- **GitHub Release notes: 英語** (公開リポジトリ向けの標準)
-- **CHANGELOG.md: 日本語** (プロジェクトの第一言語が日本語の場合)
+- **GitHub Release notes: English** (standard for public repositories)
+- **CHANGELOG.md: Japanese** (when the project's primary language is Japanese)
 
-CHANGELOG を日本語で書いている場合、GitHub Release を作る際に英訳が必要。
-スキルは Claude を呼んで draft 生成し、Confirmation Gate でユーザーに確認させる。
+If CHANGELOG is written in Japanese, an English translation is required when creating the GitHub Release.
+The skill calls Claude to generate a draft and has the user review it at the Confirmation Gate.
 
-## 必須要素
+## Required Elements
 
 ```markdown
 ## What's Changed
@@ -39,30 +39,30 @@ CHANGELOG を日本語で書いている場合、GitHub Release を作る際に�
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 ```
 
-## 要素の生成方法
+## How to Generate Each Element
 
-### "What's Changed" のサマリー
+### "What's Changed" Summary
 
-CHANGELOG `[X.Y.Z]` セクションの `### テーマ` 行から抽出。
-ない場合は Added/Changed/Fixed の最初の項目から 1 文で要約。
+Extract from the `### Theme` line in the CHANGELOG `[X.Y.Z]` section.
+If absent, summarize in one sentence from the first item in Added/Changed/Fixed.
 
-### Before / After テーブル
+### Before / After Table
 
-CHANGELOG の「今まで / 今後」記述から抽出。
-ない場合は以下から推測:
-- Fixed 項目 → 「<bug description>」 vs 「Fixed」
-- Added 項目 → 「<feature>が使えなかった」 vs 「使えるように」
-- Changed 項目 → 「<old behavior>」 vs 「<new behavior>」
+Extract from the "Before / After" descriptions in the CHANGELOG.
+If absent, infer from:
+- Fixed items → `<bug description>` vs `Fixed`
+- Added items → `<feature> was not available` vs `Now available`
+- Changed items → `<old behavior>` vs `<new behavior>`
 
 ### Added / Changed / Fixed
 
-CHANGELOG の該当セクションをそのまま英訳して転記。
+Translate and copy the relevant CHANGELOG sections directly.
 
-### フッター
+### Footer
 
-固定: `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
+Fixed: `🤖 Generated with [Claude Code](https://claude.com/claude-code)`
 
-## GitHub Release 作成コマンド
+## GitHub Release Creation Command
 
 ```bash
 gh release create "v$NEW_VERSION" \
@@ -73,9 +73,9 @@ EOF
 )"
 ```
 
-## Draft 確認
+## Draft Review
 
-Confirmation Gate では以下を提示:
+At the Confirmation Gate, show the following:
 
 ```
 GitHub Release Preview:
@@ -92,24 +92,24 @@ Body (first 20 lines):
 ━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-ユーザーが "修正して:..." と指示した場合は再生成。
+If the user instructs "revise: ...", regenerate.
 
-## 検証
+## Validation
 
-`gh release create` の前に、Release Notes が以下を満たすかチェック:
+Before `gh release create`, check that the Release Notes satisfy:
 
-1. `## What's Changed` セクションが存在する
-2. **太字サマリー**行が存在する
-3. `### Before / After` テーブルが存在する
-4. フッター `Generated with [Claude Code]` が存在する
+1. `## What's Changed` section exists
+2. A **bold summary** line exists
+3. A `### Before / After` table exists
+4. Footer `Generated with [Claude Code]` exists
 
-満たさない場合は Gate に戻して修正を促す。
+If any check fails, return to the gate and prompt for fixes.
 
-## 複数変更のまとめ方
+## Consolidating Multiple Changes
 
-CHANGELOG の `[X.Y.Z]` に 2 つ以上の機能がある場合:
+When the CHANGELOG `[X.Y.Z]` has two or more features:
 
-- Title: 最も重要な 1 つで代表 (または "Multiple fixes and improvements")
-- Body: 各機能を `### N. <feature name>` で分割して英訳
+- Title: Use the most important one as representative (or "Multiple fixes and improvements")
+- Body: Split each feature into `### N. <feature name>` sections with English translation
 
-同日に複数バージョンを出すのは非推奨（versioning.md）。バッチリリースでまとめること。
+Releasing multiple versions on the same day is not recommended (see versioning.md). Batch releases into one.

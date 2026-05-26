@@ -1,5 +1,5 @@
 ---
-description: Skills Gate ルール - コード編集前にスキル使用を促す
+description: Skills Gate rules - Encourage skill usage before editing code
 paths:
   - "**/*.{ts,tsx,js,jsx,py,rb,go,rs,java,kt,swift,c,cpp,h,hpp,cs,php}"
 _harness_template: "rules/skills-gate.md.template"
@@ -9,153 +9,153 @@ _harness_condition: "skills_gate.enabled"
 
 # Skills Gate
 
-このプロジェクトでは **Skills Gate** が有効です。
+This project has **Skills Gate** enabled.
 
-## 原則
+## Principle
 
-**コード編集（Write/Edit）を行う前に、適切なスキルを使用してください。**
+**Use the appropriate skill before editing code (Write/Edit).**
 
-スキルは作業の品質を向上させるガイドラインを提供します。
-
----
-
-## スキルを使うタイミング
-
-| 作業 | スキル | 呼び出し方 |
-|------|--------|-----------|
-| 機能を実装する | `impl` | Skill ツールで「impl」を呼び出す |
-| コードをレビューする | `harness-review` | Skill ツールで「harness-review」を呼び出す |
-| UI を作成する | `ui` | Skill ツールで「ui」を呼び出す |
-| 認証・決済を実装する | `auth` | Skill ツールで「auth」を呼び出す |
-| デプロイ設定をする | `deploy` | Skill ツールで「deploy」を呼び出す |
+Skills provide guidelines that improve the quality of your work.
 
 ---
 
-## なぜスキルを使うのか
+## When to Use a Skill
 
-### 1. 品質の向上
-
-スキルには、その作業に必要なチェックリストやベストプラクティスが含まれています。
-見落としを防ぎ、一貫した品質を維持できます。
-
-### 2. 効率的な作業
-
-スキルは作業の標準フローを提供します。
-何から始めるべきか、何を確認すべきかが明確になります。
-
-### 3. 知識の蓄積
-
-スキルを通じて、プロジェクト固有のパターンや決定事項にアクセスできます。
+| Task | Skill | How to invoke |
+|------|-------|---------------|
+| Implement a feature | `impl` | Invoke "impl" via the Skill tool |
+| Review code | `harness-review` | Invoke "harness-review" via the Skill tool |
+| Build a UI | `ui` | Invoke "ui" via the Skill tool |
+| Implement auth or payments | `auth` | Invoke "auth" via the Skill tool |
+| Configure deployment | `deploy` | Invoke "deploy" via the Skill tool |
 
 ---
 
-## 除外（スキル不要）
+## Why Use Skills?
 
-以下のファイルは Skills Gate の対象外です：
+### 1. Improved quality
 
-| パターン | 理由 |
-|---------|------|
-| `*.md`, `*.txt` | ドキュメント |
-| `*.json` | 設定ファイル |
-| `.claude/*` | ハーネス内部ファイル |
-| `docs/*`, `templates/*` | ドキュメント・テンプレート |
+Skills contain the checklists and best practices needed for the task.
+They prevent oversights and maintain consistent quality.
+
+### 2. Efficient work
+
+Skills provide a standard workflow for each task.
+They make it clear where to start and what to verify.
+
+### 3. Knowledge accumulation
+
+Skills give access to project-specific patterns and decisions.
 
 ---
 
-## 動作の仕組み
+## Exclusions (no skill required)
+
+The following files are exempt from Skills Gate:
+
+| Pattern | Reason |
+|---------|--------|
+| `*.md`, `*.txt` | Documentation |
+| `*.json` | Configuration files |
+| `.claude/*` | Harness internal files |
+| `docs/*`, `templates/*` | Documentation and templates |
+
+---
+
+## How It Works
 
 ```
-コード編集を試みる
+Attempt to edit code
     ↓
-このセッションでスキルを使った？
-    ├── YES → 通過（編集可能）
-    └── NO  → ブロック（スキル使用を促す）
+Has a skill been used in this session?
+    ├── YES → Proceed (editing allowed)
+    └── NO  → Blocked (prompted to use a skill)
 ```
 
-- **1回でもスキルを使えば**、そのセッション中は解除されます
-- スキル使用は `session-skills-used.json` で追跡されます
+- **Using any skill once** unlocks editing for the rest of the session
+- Skill usage is tracked in `session-skills-used.json`
 
 ---
 
-## ブロックされた場合
+## If You Are Blocked
 
-スキルを使わずにコード編集しようとすると、以下のメッセージが表示されます：
+If you try to edit code without using a skill, the following message appears:
 
 ```
-[Skills Gate] コード編集前にスキルを使用してください。
+[Skills Gate] Please use a skill before editing code.
 
-利用可能なスキル: impl, review, ui, ...
+Available skills: impl, review, ui, ...
 
-例: Skill ツールで 'impl' や 'review' を呼び出す
+Example: invoke 'impl' or 'review' via the Skill tool
 ```
 
-この場合は、適切なスキルを Skill ツールで呼び出してから、再度編集を試みてください。
+In this case, invoke the appropriate skill via the Skill tool, then try editing again.
 
 ---
 
-## スキルの選び方
+## How to Choose a Skill
 
-### 迷ったら `impl` を使う
+### When unsure, use `impl`
 
-`impl` スキルは汎用的な実装ガイダンスを提供します。
-何を使うべきか分からない場合は、まず `impl` を呼び出してください。
+The `impl` skill provides general-purpose implementation guidance.
+If you are not sure which skill to use, start with `impl`.
 
-### 複数のスキルを使う
+### Using multiple skills
 
-1つの作業で複数のスキルを使うこともできます。
-例: UI コンポーネントを実装する場合 → `impl` + `ui`
+You can use more than one skill for a single task.
+Example: implementing a UI component → `impl` + `ui`
 
 ---
 
-## 設定の変更
+## Changing the Configuration
 
-Skills Gate の有効/無効は `.claude/state/skills-config.json` で管理されます。
+Skills Gate enabled/disabled state is managed in `.claude/state/skills-config.json`.
 
-`.claude/state/skills-config.json` を直接編集するか、`/setup` スキルで再設定してください。
+Edit `.claude/state/skills-config.json` directly, or reconfigure via the `/setup` skill.
 
 ```json
-// 無効化（非推奨）
+// Disable (not recommended)
 { "skills_gate_enabled": false }
 
-// スキルの追加
+// Add skills
 { "active_skills": ["impl", "auth"] }
 ```
 
 ---
 
-## Memory-Enhanced Skills（Claude-mem 統合時）
+## Memory-Enhanced Skills (with Claude-mem integration)
 
-Claude-mem が有効な場合、スキルは過去の記憶を活用して品質を向上させます。
+When Claude-mem is enabled, skills leverage past memories to improve quality.
 
-### 機能強化されるスキル
+### Skills with enhanced capabilities
 
-| スキル | 強化内容 |
-|--------|---------|
-| `impl` | 過去の実装パターン・gotcha を自動参照 |
-| `harness-review` | 過去の類似レビュー指摘を参照 |
-| `verify` | 過去のビルドエラー解決策を参照 |
-| `session-init` | ガードレール発動履歴・作業サマリーを表示 |
+| Skill | Enhancement |
+|-------|-------------|
+| `impl` | Automatically references past implementation patterns and gotchas |
+| `harness-review` | References past similar review findings |
+| `verify` | References past build error resolutions |
+| `session-init` | Displays guardrail activation history and work summary |
 
-### 活用例
+### Usage example
 
 ```
-# impl スキル使用時
-📚 過去の関連パターン:
-- API エンドポイント: RESTful 設計パターン採用
-- エラーハンドリング: 統一例外ハンドラー使用
+# When using the impl skill
+📚 Past related patterns:
+- API endpoint: RESTful design pattern adopted
+- Error handling: unified exception handler in use
 
-💡 過去の gotcha:
-- CORS 設定: Allow-Origin ヘッダー必須
+💡 Past gotchas:
+- CORS configuration: Allow-Origin header required
 ```
 
-### Claude-mem なし環境
+### Environments without Claude-mem
 
-Claude-mem が未設定の場合、各スキルは通常通り動作します。
-Memory-Enhanced 機能は自動的にスキップされます。
+If Claude-mem is not configured, each skill operates normally.
+Memory-Enhanced features are automatically skipped.
 
-### セットアップ
+### Setup
 
 ```bash
-# Claude-mem 統合を有効化
+# Enable Claude-mem integration
 /setup harness-mem
 ```

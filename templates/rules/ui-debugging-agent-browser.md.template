@@ -1,5 +1,5 @@
 ---
-description: UIデバッグ/検証は agent-browser（インストール済みの場合）を優先する
+description: Prefer agent-browser (if installed) for UI debugging and verification
 alwaysApply: true
 _harness_template: "rules/ui-debugging-agent-browser.md.template"
 _harness_version: "2.7.13"
@@ -7,104 +7,104 @@ _harness_version: "2.7.13"
 
 # UI Debugging Rule (Prefer Agent Browser)
 
-## 基本方針
+## Core Principle
 
-- UI/UXの不具合・画面上の再現が必要な調査は、**agent-browser を最優先で使う**
-- 他のブラウザ系ツール（MCP の chrome-devtools、playwright）より先に agent-browser を試す
-- 画面とソースコードを往復しながら、**再現 → 原因推定 → 修正 → 再検証** を短いサイクルで回す
+- For UI/UX defects and issues that require on-screen reproduction, **use agent-browser first**
+- Try agent-browser before other browser tools (MCP chrome-devtools, playwright)
+- Cycle through **reproduce → hypothesize → check source → fix → re-verify** in short loops by moving between the browser and source code
 
-## agent-browser の優位性
+## Why agent-browser?
 
-| 特徴 | 説明 |
-|------|------|
-| **AI 最適化** | `snapshot -i -c` で要素参照（`@e1`, `@e2`）を取得可能 |
-| **シンプル** | CLI で直接実行、MCP 経由不要 |
-| **高速** | Rust 製バイナリ |
-| **セッション管理** | `--session` で複数タブを並列管理 |
+| Feature | Description |
+|---------|-------------|
+| **AI-optimized** | `snapshot -i -c` gives element references (`@e1`, `@e2`) |
+| **Simple** | Run directly from CLI, no MCP required |
+| **Fast** | Rust binary |
+| **Session management** | Manage multiple tabs in parallel with `--session` |
 
-## 進め方（推奨）
+## Recommended Workflow
 
-### 1. 再現条件を固める
+### 1. Pin down the reproduction conditions
 
-- 対象URL、ユーザー状態（ログイン/権限/データ）、期待値/実際の挙動を明文化
+- Document the target URL, user state (login/permissions/data), expected behavior, and actual behavior
 
-### 2. agent-browser で再現
+### 2. Reproduce with agent-browser
 
 ```bash
-# ページを開く
+# Open the page
 agent-browser open https://example.com/target-page
 
-# AI 向けスナップショットを取得（インタラクティブ要素のみ）
+# Get AI-optimized snapshot (interactive elements only)
 agent-browser snapshot -i -c
 
-# 出力例:
+# Example output:
 # - button "Login" [ref=e1]
 # - input "Email" [ref=e2]
 # - input "Password" [ref=e3]
 ```
 
-### 3. 操作を実行して問題を再現
+### 3. Perform actions to reproduce the issue
 
 ```bash
-# 要素参照でクリック
+# Click using element reference
 agent-browser click @e1
 
-# フォームに入力
+# Fill the form
 agent-browser fill @e2 "test@example.com"
 agent-browser fill @e3 "password123"
 
-# 状態を確認
+# Check state
 agent-browser snapshot -i -c
 ```
 
-### 4. 観測→仮説→コード確認
+### 4. Observe → hypothesize → check source
 
-- スナップショット/スクリーンショット/コンソールログの情報を根拠に、原因候補を絞る
-- 関連するソース（UI/状態管理/API/バリデーション）を確認
+- Use snapshot/screenshot/console log evidence to narrow down the root cause
+- Check related source (UI / state management / API / validation)
 
-### 5. 最小修正で直す
+### 5. Fix with minimal changes
 
-- 変更範囲を抑え、意図と副作用を説明できる修正にする
+- Keep the change scope small; make changes you can explain in terms of intent and side effects
 
-### 6. agent-browser で再検証
+### 6. Re-verify with agent-browser
 
 ```bash
-# 同じ手順で再現しないことを確認
+# Confirm the issue no longer reproduces with the same steps
 agent-browser open https://example.com/target-page
 agent-browser snapshot -i -c
 agent-browser click @e1
 # ...
 ```
 
-## agent-browser が使えない場合のフォールバック
+## Fallback When agent-browser Is Unavailable
 
-以下の順序で代替手段を試す：
+Try alternatives in the following order:
 
-1. **MCP ブラウザツール**（chrome-devtools, playwright）
-2. **手動再現**:
-   - 再現手順（URL/操作/期待値/実際）
-   - スクリーンショット/動画
-   - コンソールログ/ネットワークログ
-3. **自動E2E**:
-   - 可能なら最小の Playwright/Cypress テストを追加して回帰を防ぐ
+1. **MCP browser tools** (chrome-devtools, playwright)
+2. **Manual reproduction**:
+   - Reproduction steps (URL / actions / expected / actual)
+   - Screenshots / video
+   - Console logs / network logs
+3. **Automated E2E**:
+   - If feasible, add a minimal Playwright/Cypress test to prevent regression
 
-## よく使うコマンド
+## Common Commands
 
 ```bash
-# 基本操作
-agent-browser open <url>          # ページを開く
-agent-browser snapshot -i -c      # スナップショット（AI向け）
-agent-browser click @e1           # クリック
-agent-browser fill @e2 "text"     # 入力
-agent-browser screenshot out.png  # スクリーンショット
+# Basic operations
+agent-browser open <url>          # Open a page
+agent-browser snapshot -i -c      # Snapshot (AI-optimized)
+agent-browser click @e1           # Click
+agent-browser fill @e2 "text"     # Fill input
+agent-browser screenshot out.png  # Take screenshot
 
-# デバッグ
-agent-browser --headed open <url> # ブラウザを表示
-agent-browser console             # コンソールログ表示
-agent-browser errors              # ページエラー表示
+# Debugging
+agent-browser --headed open <url> # Show browser window
+agent-browser console             # Display console logs
+agent-browser errors              # Display page errors
 
-# 情報取得
-agent-browser get text @e1        # テキスト取得
-agent-browser get html @e1        # HTML取得
-agent-browser get url             # 現在のURL
+# Get information
+agent-browser get text @e1        # Get text content
+agent-browser get html @e1        # Get HTML
+agent-browser get url             # Get current URL
 ```

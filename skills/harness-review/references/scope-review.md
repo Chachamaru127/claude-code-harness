@@ -1,32 +1,32 @@
 # Scope Review
 
-## ひとことで
+## In a nutshell
 
-Scope Review は、やるべきことを漏らしていないか、逆に余計なことまでやっていないかを見る。
+Scope Review examines whether required work is missing, or conversely, whether unnecessary work has been included.
 
 ## Checkpoints
 
-- user request と差分が一致している
-- task の DoD を満たしている
-- unrelated refactor が混ざっていない
-- docs / tests / mirror / changelog の必要範囲が揃っている
-- 新しい public surface が増えていないか確認している
-- migration / release / permission 境界を勝手に変えていない
+- The user request matches the diff
+- The task's DoD is satisfied
+- Unrelated refactoring is not mixed in
+- The required scope of docs / tests / mirror / changelog is in place
+- Checked that no new public surfaces have been added
+- migration / release / permission boundaries have not been changed without authorization
 
 ## Scope creep
 
-scope creep は「作業範囲が必要以上に膨らむこと」。
-たとえば docs 修正の task で release script を変え始めるのは危険。
+Scope creep is "when the scope of work expands beyond what is necessary."
+For example, starting to change release scripts during a docs-only task is dangerous.
 
-scope creep を見つけたら、次のどちらかに分ける。
+When scope creep is found, split it into one of the following.
 
-- 今回の DoD に必要: plan に明記して進める
-- 今回の DoD に不要: 別 task に切り出す
+- Required for the current DoD: explicitly note in the plan and proceed
+- Not required for the current DoD: extract as a separate task
 
 ## Verdict
 
-| 状態 | 判定 |
+| State | Verdict |
 |---|---|
-| 要求と差分が一致 | APPROVE |
-| DoD 未達または不要変更が混入 | REQUEST_CHANGES |
-| scope 変更の事業判断が必要 | decision_needed |
+| Request matches diff | APPROVE |
+| DoD not met or unnecessary changes mixed in | REQUEST_CHANGES |
+| Business decision needed for scope change | decision_needed |

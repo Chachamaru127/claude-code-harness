@@ -3,18 +3,18 @@ _harness_template: rules/skill-hierarchy.md
 _harness_version: 2.6.1
 ---
 
-# Skill の階層構造ガイドライン
+# Skill Hierarchy Guidelines
 
-## 概要
+## Overview
 
-claude-code-harness のスキルは **親スキル（カテゴリ）** と **子スキル（具体的な機能）** の2層構造になっています。
+Skills in claude-code-harness follow a **two-layer structure**: **parent skills (categories)** and **child skills (specific functionality)**.
 
 ```
 skills/
-├── impl/                      # 親スキル（SKILL.md）
-│   ├── SKILL.md              # カテゴリ概要・ルーティング
-│   └── work-impl-feature/    # 子スキル
-│       └── doc.md            # 具体的な手順
+├── impl/                      # Parent skill (SKILL.md)
+│   ├── SKILL.md              # Category overview and routing
+│   └── work-impl-feature/    # Child skill
+│       └── doc.md            # Concrete steps
 ├── harness-review/
 │   ├── SKILL.md
 │   ├── code-review/
@@ -24,48 +24,48 @@ skills/
 ...
 ```
 
-## 必須ルール
+## Required Rules
 
-### 1. 親スキルを読んだら、子スキルも読む
+### 1. After reading a parent skill, also read the child skill
 
-Skill ツールで親スキルを起動した後、**ユーザーの意図に該当する子スキル（doc.md）も必ず Read すること**。
+After launching a parent skill via the Skill tool, **always Read the child skill (doc.md) that matches the user's intent**.
 
 ```
-✅ 正しい流れ:
-1. Skill ツールで "impl" を起動 → SKILL.md の内容を取得
-2. ユーザーの意図を判断（例: 機能実装）
-3. Read ツールで work-impl-feature/doc.md を読む
-4. doc.md の手順に従って作業
+✅ Correct flow:
+1. Launch "impl" via the Skill tool → retrieve SKILL.md content
+2. Determine the user's intent (e.g., feature implementation)
+3. Read work-impl-feature/doc.md with the Read tool
+4. Follow the steps in doc.md
 
-❌ 間違い:
-1. Skill ツールで "impl" を起動
-2. SKILL.md だけ読んで作業開始（子スキルを無視）
+❌ Incorrect:
+1. Launch "impl" via the Skill tool
+2. Read only SKILL.md and start working (child skill ignored)
 ```
 
-### 2. 子スキルの選び方
+### 2. How to choose a child skill
 
-| ユーザーの意図 | 起動するスキル | 読むべき子スキル |
-|---------------|---------------|-----------------|
-| 「機能を実装して」 | impl | work-impl-feature/doc.md |
-| 「コードレビューして」 | harness-review | code-review/doc.md |
-| 「セキュリティチェック」 | harness-review | security-review/doc.md |
-| 「ビルドして」 | verify | build-verify/doc.md |
+| User's intent | Skill to launch | Child skill to read |
+|--------------|----------------|---------------------|
+| "Implement this feature" | impl | work-impl-feature/doc.md |
+| "Review this code" | harness-review | code-review/doc.md |
+| "Security check" | harness-review | security-review/doc.md |
+| "Run the build" | verify | build-verify/doc.md |
 
-### 3. 複数の子スキルが該当する場合
+### 3. When multiple child skills apply
 
-ユーザーに確認するか、最も関連性の高いものを1つ選んで開始。
+Ask the user, or select the single most relevant one to start.
 
 ---
 
-## なぜ重要か？
+## Why This Matters
 
-- 親 SKILL.md は「概要とルーティング」のみ
-- 子 doc.md に「具体的な手順・チェックリスト・パターン集」がある
-- 子スキルを読まないと、不完全な作業になる
+- Parent SKILL.md contains only "overview and routing"
+- Child doc.md contains "concrete steps, checklists, and pattern collections"
+- Skipping the child skill results in incomplete work
 
 ---
 
-## PostToolUse Hook との連携
+## Integration with PostToolUse Hook
 
-Skill ツール使用後に自動でリマインダーが表示されます。
-表示された子スキル一覧から、該当するものを Read してください。
+A reminder is automatically displayed after using the Skill tool.
+Read the relevant child skill from the displayed list.

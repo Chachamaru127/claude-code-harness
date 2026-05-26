@@ -1,5 +1,5 @@
 ---
-description: 2エージェントワークフローの基本ルール
+description: 2-agent workflow fundamental rules
 alwaysApply: true
 _harness_template: "rules/workflow.md.template"
 _harness_version: "2.5.27"
@@ -7,42 +7,42 @@ _harness_version: "2.5.27"
 
 # 2-Agent Workflow Rules
 
-このプロジェクトは **PM ↔ Impl** の2ロールワークフローを採用しています。
-PMは **Cursor** でも **PM Claude** でもOKです（ソロ運用では PM Claude を推奨）。
+This project uses a **PM ↔ Impl** two-role workflow.
+PM can be **Cursor**, **PM Claude**, or any planning surface (solo: PM Claude recommended).
 
-## 役割分担
+## Role Responsibilities
 
-| エージェント | 責務 |
-|-------------|------|
-| **PM（Cursor / PM Claude）** | 計画・レビュー・意思決定・（必要なら）本番デプロイ |
-| **Impl（Claude Code / Impl Claude）** | 実装・テスト・コミット・（必要なら）staging |
+| Agent | Responsibilities |
+|-------|-----------------|
+| **PM (Cursor / PM Claude)** | Planning, review, decisions, production deploy (if needed) |
+| **Impl (Claude Code / Impl Claude)** | Implementation, testing, commits, staging (if needed) |
 
-## タスク管理
+## Task Management
 
-- タスクは `Plans.md` で一元管理
-- マーカーでステータスを追跡:
-  - `pm:依頼中` → PM から依頼（互換: `cursor:依頼中`）
-  - `cc:WIP` → Claude Code 作業中
-  - `cc:完了` → Claude Code 完了
-  - `pm:確認済` → PM レビュー完了（互換: `cursor:確認済`）
+- Tasks are managed centrally in `Plans.md`
+- Track status with markers:
+  - `pm:requested` → PM has assigned the task (legacy compat: `pm:依頼中`, `cursor:依頼中`)
+  - `cc:wip` → Claude Code is working on it
+  - `cc:done` → Claude Code has completed it (legacy compat: `cc:完了`)
+  - `pm:approved` → PM review complete (legacy compat: `pm:確認済`, `cursor:確認済`)
 
-## ハンドオフプロトコル
+## Handoff Protocol
 
 ### PM → Impl
-1. Plans.md にタスクを記載し `pm:依頼中` マーカー（互換: `cursor:依頼中`）
-2. **PM Claude の場合**: `/handoff-to-impl-claude` で依頼文を生成
-3. **Cursor の場合**: `/handoff-to-claude`（Cursor側コマンド）で依頼文を生成
-4. Impl Claude（Claude Code）へ貼り付け
+1. Add task to Plans.md with `pm:requested` marker (legacy compat: `cursor:依頼中`)
+2. **If PM Claude**: use `/handoff-to-impl-claude` to generate the assignment message
+3. **If Cursor**: use `/handoff-to-claude` (Cursor-side command) to generate the message
+4. Paste into Impl Claude (Claude Code)
 
 ### Impl → PM
-1. 作業完了後 `cc:完了` マーカーを付与
-2. **PM Claude の場合**: `/handoff-to-pm-claude` で完了報告を生成
-3. **Cursor の場合**: `/handoff-to-cursor` で完了報告を生成
-4. PMへ貼り付けてレビュー依頼（レビュー後に `pm:確認済`）
+1. After work is complete, set `cc:done` marker
+2. **If PM Claude**: use `/handoff-to-pm-claude` to generate the completion report
+3. **If Cursor**: use `/handoff-to-cursor` to generate the completion report
+4. Paste to PM and request review (PM sets `pm:approved` after review)
 
-## 禁止事項
+## Prohibitions
 
-- ❌ 開発用ファイルの外部公開（CLAUDE.md, AGENTS.md, Plans.md）
-- ❌ 明示的な依頼なしの大規模リファクタリング
-- ❌ テストなしの機能追加
-- ❌ 本番環境への直接デプロイ（PM の承認必須）
+- ❌ Publishing internal files externally (CLAUDE.md, AGENTS.md, Plans.md)
+- ❌ Large-scale refactoring without explicit request
+- ❌ Adding features without tests
+- ❌ Direct production deploy without PM approval
