@@ -1,0 +1,78 @@
+{
+  "type": "flow",
+  "topic": "Video Generation Workflow",
+  "style": "modern",
+  "colorScheme": {
+    "primary": "#F59E0B",
+    "secondary": "#EF4444",
+    "accent": "#10B981",
+    "background": "#111827"
+  },
+  "flow": {
+    "steps": [
+      {
+        "id": "analyze",
+        "label": "Analyze Codebase",
+        "description": "Automatically detect project structure and features",
+        "order": 1,
+        "type": "start",
+        "icon": "circle",
+        "duration": "10 seconds"
+      },
+      {
+        "id": "plan",
+        "label": "Generate Scenario",
+        "description": "Propose optimal video structure",
+        "order": 2,
+        "type": "process",
+        "icon": "square",
+        "duration": "20 seconds"
+      },
+      {
+        "id": "generate",
+        "label": "Parallel Generation",
+        "description": "Create all scenes simultaneously",
+        "order": 3,
+        "type": "parallel",
+        "icon": "rounded",
+        "duration": "2 minutes"
+      },
+      {
+        "id": "merge",
+        "label": "Merge Scenes",
+        "description": "Combine scenes with transitions",
+        "order": 4,
+        "type": "process",
+        "icon": "square",
+        "duration": "5 seconds"
+      },
+      {
+        "id": "render",
+        "label": "Final Render",
+        "description": "Output high-quality video",
+        "order": 5,
+        "type": "end",
+        "icon": "hexagon",
+        "duration": "30 seconds"
+      }
+    ],
+    "direction": "horizontal",
+    "arrowStyle": "solid",
+    "showNumbers": true
+  },
+  "dimensions": {
+    "width": 1920,
+    "height": 1080,
+    "aspectRatio": "16:9"
+  },
+  "generation": {
+    "seed": 200,
+    "quality": "standard",
+    "retries": 3
+  },
+  "metadata": {
+    "scene_id": "scene-003",
+    "purpose": "demo-workflow",
+    "tags": ["workflow", "process", "automation"]
+  }
+}

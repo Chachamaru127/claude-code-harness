@@ -1,0 +1,280 @@
+# /work ワークフロー定義
+# Plans.md の計画を実行し、実際のコードを生成
+
+phase: work
+description: "計画されたタスクを実行し、動くコードを生成するフェーズ"
+
+steps:
+  # Step 1: 現在のタスク状況を確認
+  - id: read-context
+    skill: core-read-repo-context
+    input:
+      files:
+        - Plans.md
+        - AGENTS.md
+      context_from:
+        - repo_tree
+        - git_status
+    mode: required
+
+  # Step 1.5: /workコマンドのフラグ解析
+  - id: parse-work-flags
+    skill: parse-work-flags
+    input:
+      context_from:
+        - user_prompt
+    output:
+      variables:
+        - full_mode
+        - parallel_count
+        - isolation_mode
+        - commit_strategy
+        - deploy_after_commit
+        - max_iterations
+        - skip_cross_review
+        - resume_session_id
+        - resume_latest
+        - fork_session_id
+        - fork_reason
+    mode: required
+
+  # Step 1.6: セッション再開/分岐制御（指定時のみ）
+  - id: session-control
+    skill: session-control
+    condition: "resume_latest == true || resume_session_id != '' || fork_session_id != '' || fork_reason != ''"
+    input:
+      variables:
+        - resume_session_id
+        - resume_latest
+        - fork_session_id
+        - fork_reason
+    mode: required
+
+  # Step 2: 実行対象タスクの特定
+  - id: identify-tasks
+    skill: plans-management
+    input:
+      files:
+        - Plans.md
+      context_from:
+        - user_prompt
+    output:
+      variables:
+        - target_tasks
+        - current_phase
+    mode: required
+
+  # Step 2.5: タスク開始時のマーカー更新（/start-task 相当の機能を吸収）
+  # pm:依頼中 / cursor:依頼中 / cc:TODO → cc:WIP に自動遷移
+  - id: update-marker-to-wip
+    skill: plans-management
+    input:
+      files:
+        - Plans.md
+      action: update_marker
+      from: "pm:依頼中|cursor:依頼中|cc:TODO"
+      to: "cc:WIP"
+      target: target_tasks
+    output:
+      update_files:
+        - Plans.md
+    mode: required
+
+  # Step 3: タスクの実行（--fullモード分岐）
+  # --fullモード: Phase1〜4を実行
+  # 通常モード: 既存のexecute-taskフローを実行
+
+  # === Phase 1: 依存グラフ構築とtask-worker並列起動（--full時のみ） ===
+  # Step 3.1: 依存グラフ構築
+  - id: build-dependency-graph
+    skill: build-dependency-graph
+    condition: "full_mode == true"
+    input:
+      files:
+        - Plans.md
+      variables:
+        - target_tasks
+    output:
+      variables:
+        - parallel_groups
+        - task_files
+    mode: required
+
+  # Step 3.2: worktree準備（isolation=worktree時のみ）
+  - id: setup-worktrees
+    skill: setup-worktrees
+    condition: "full_mode == true && isolation_mode == 'worktree'"
+    input:
+      variables:
+        - parallel_groups
+        - task_files
+      context_from:
+        - git_status
+    output:
+      variables:
+        - worktree_paths
+        - worktree_branches
+    mode: required
+
+  # Step 3.3: task-worker並列起動
+  - id: run-task-workers
+    skill: run-task-workers
+    condition: "full_mode == true"
+    input:
+      variables:
+        - parallel_groups
+        - task_files
+        - parallel_count
+        - max_iterations
+        - isolation_mode
+        - commit_strategy
+        - worktree_paths
+        - worktree_branches
+    output:
+      variables:
+        - worker_results
+        - all_ready
+        - escalation_count
+        - changed_files
+    mode: required
+
+  # Step 3.4: worktreeマージ（isolation=worktree時のみ）
+  - id: merge-worktrees
+    skill: merge-worktrees
+    condition: "full_mode == true && isolation_mode == 'worktree'"
+    input:
+      variables:
+        - worktree_branches
+        - worker_results
+        - commit_strategy
+      context_from:
+        - git_status
+    output:
+      variables:
+        - merged
+        - conflict_files
+    mode: required
+
+  # Step 3.5: レビューモードの決定（Phase2用）
+  - id: determine-review-mode
+    skill: determine-review-mode
+    condition: "full_mode == true && skip_cross_review == false"
+    input:
+      context_from:
+        - config_file
+    output:
+      variables:
+        - review_mode
+    mode: required
+
+  # === Phase 2: クロスレビュー（--full時、skip_cross_review=false時のみ） ===
+  - id: cross-review
+    skill: harness-review
+    condition: "full_mode == true && skip_cross_review == false"
+    input:
+      files: "{{changed_files}}"
+      context_from:
+        - code_content
+      variables:
+        - review_mode
+    output:
+      variables:
+        - review_result
+        - review_grade
+        - review_issues
+    mode: required
+
+  # === Phase 3: コミット実行（--full時のみ） ===
+  # Step 3.6: コミット実行
+  - id: execute-commit
+    skill: execute-commit
+    condition: "full_mode == true && commit_strategy != 'task'"
+    input:
+      variables:
+        - commit_strategy
+        - worker_results
+        - review_result
+        - changed_files
+    output:
+      variables:
+        - committed
+        - commit_hash
+        - commit_message
+    mode: required
+
+  # === Phase 4: Deploy（--full時、deploy_after_commit=true時のみ） ===
+  - id: deploy
+    skill: deploy
+    condition: "full_mode == true && deploy_after_commit == true"
+    input:
+      variables:
+        - commit_hash
+      context_from:
+        - config_file
+    output:
+      variables:
+        - deploy_url
+        - deploy_status
+    mode: required
+
+  # === 通常モード（--full未指定時）: 既存フロー ===
+  # Step 3: タスクの実行（ループ）
+  - id: execute-task
+    skill: work-impl-feature
+    condition: "full_mode == false"
+    input:
+      variables:
+        - target_tasks
+      context_from:
+        - tech_stack
+        - existing_code
+    output:
+      update_files:
+        - Plans.md
+      created_files: true
+    mode: required
+    loop: target_tasks
+
+  # Step 4: 動作確認
+  - id: verify-build
+    skill: verify-build
+    condition: "full_mode == false"
+    input:
+      commands:
+        - npm run build
+        - npm run dev
+    mode: optional
+
+  # Step 5: セルフレビュー（オプション）
+  - id: self-review
+    skill: review-changes
+    condition: "full_mode == false"
+    input:
+      context_from:
+        - git_diff
+    mode: optional
+
+# 成功時の出力
+on_success:
+  message: |
+    ✅ フェーズ完了！
+
+    **完了したタスク:**
+    {{completed_tasks}}
+
+    **生成されたファイル:**
+    {{created_files}}
+
+    次にやること：
+    - 「動かして」→ 動作確認
+    - 「レビューして」→ コード品質チェック
+    - 「次のフェーズへ」→ 続きを実行
+
+# エラー時の出力
+on_error:
+  skill: error-recovery
+  max_retries: 3
+  message: |
+    ⚠️ 実行中にエラーが発生しました。
+
+    自動修正を試みています...

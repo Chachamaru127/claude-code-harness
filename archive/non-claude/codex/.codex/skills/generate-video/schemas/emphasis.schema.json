@@ -1,0 +1,301 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://claude-code-harness.com/schemas/emphasis.schema.json",
+  "title": "Emphasis Schema",
+  "description": "強調表現のスキーマ。テキスト強調、効果音、カラー、配置を定義します。",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["level"],
+  "properties": {
+    "level": {
+      "type": "string",
+      "description": "強調レベル",
+      "enum": ["high", "medium", "low"]
+    },
+    "text": {
+      "type": "array",
+      "description": "強調するテキスト要素（キーワード・フレーズ）",
+      "items": {
+        "type": "object",
+        "required": ["content"],
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "強調するテキスト内容"
+          },
+          "start_ms": {
+            "type": "integer",
+            "description": "強調開始時刻（シーン内での相対位置、ミリ秒）",
+            "minimum": 0
+          },
+          "duration_ms": {
+            "type": "integer",
+            "description": "強調表示の長さ（ミリ秒）",
+            "minimum": 1,
+            "default": 1000
+          },
+          "style": {
+            "type": "string",
+            "description": "テキストスタイル",
+            "enum": ["bold", "glitch", "underline", "highlight", "glow"],
+            "default": "bold"
+          }
+        },
+        "additionalProperties": false
+      },
+      "default": []
+    },
+    "sound": {
+      "type": "object",
+      "description": "効果音設定",
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "効果音の種類",
+          "enum": ["none", "pop", "whoosh", "chime", "ding"],
+          "default": "none"
+        },
+        "volume": {
+          "type": "number",
+          "description": "音量（0.0-1.0）",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.5
+        },
+        "timing": {
+          "type": "string",
+          "description": "効果音のタイミング",
+          "enum": ["start", "end", "peak"],
+          "default": "start"
+        },
+        "trigger_ms": {
+          "type": "integer",
+          "description": "効果音発動時刻（シーン内での相対位置、ミリ秒）",
+          "minimum": 0,
+          "default": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "color": {
+      "type": "object",
+      "description": "強調カラー設定",
+      "properties": {
+        "primary": {
+          "type": "string",
+          "description": "プライマリカラー（HEX形式）",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "default": "#00F5FF"
+        },
+        "secondary": {
+          "type": "string",
+          "description": "セカンダリカラー（HEX形式、グラデーション用）",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "glow": {
+          "type": "boolean",
+          "description": "グロー効果を適用するか",
+          "default": true
+        },
+        "glow_intensity": {
+          "type": "number",
+          "description": "グロー強度（ぼかし半径、ピクセル）",
+          "minimum": 0,
+          "maximum": 100,
+          "default": 20
+        }
+      },
+      "additionalProperties": false
+    },
+    "position": {
+      "type": "object",
+      "description": "強調要素の配置設定",
+      "properties": {
+        "alignment": {
+          "type": "string",
+          "description": "配置位置",
+          "enum": ["center", "top", "bottom", "left", "right", "top_left", "top_right", "bottom_left", "bottom_right"],
+          "default": "center"
+        },
+        "offset": {
+          "type": "object",
+          "description": "配置オフセット（ピクセル）",
+          "properties": {
+            "x": {
+              "type": "number",
+              "description": "X軸オフセット",
+              "default": 0
+            },
+            "y": {
+              "type": "number",
+              "description": "Y軸オフセット",
+              "default": 0
+            }
+          },
+          "additionalProperties": false
+        },
+        "padding": {
+          "type": "number",
+          "description": "画面端からのパディング（ピクセル）",
+          "minimum": 0,
+          "default": 40
+        }
+      },
+      "additionalProperties": false
+    },
+    "animation": {
+      "type": "object",
+      "description": "強調表示のアニメーション設定",
+      "properties": {
+        "entry": {
+          "type": "string",
+          "description": "登場アニメーション",
+          "enum": ["none", "fade_in", "slide_in", "zoom_in", "bounce"],
+          "default": "fade_in"
+        },
+        "exit": {
+          "type": "string",
+          "description": "退場アニメーション",
+          "enum": ["none", "fade_out", "slide_out", "zoom_out"],
+          "default": "fade_out"
+        },
+        "duration_ms": {
+          "type": "integer",
+          "description": "アニメーション長さ（ミリ秒）",
+          "minimum": 1,
+          "maximum": 2000,
+          "default": 500
+        },
+        "pulse": {
+          "type": "boolean",
+          "description": "パルス効果（点滅・拡縮）を有効にするか",
+          "default": false
+        },
+        "pulse_speed": {
+          "type": "number",
+          "description": "パルス速度（1秒あたりのサイクル数）",
+          "minimum": 0.1,
+          "maximum": 10,
+          "default": 1.0
+        }
+      },
+      "additionalProperties": false
+    },
+    "background": {
+      "type": "object",
+      "description": "強調要素の背景設定（ボックス表示など）",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "背景を表示するか",
+          "default": false
+        },
+        "color": {
+          "type": "string",
+          "description": "背景カラー（HEX形式またはRGBA）",
+          "default": "rgba(0, 0, 0, 0.8)"
+        },
+        "border_radius": {
+          "type": "number",
+          "description": "角丸の半径（ピクセル）",
+          "minimum": 0,
+          "default": 8
+        },
+        "padding": {
+          "type": "object",
+          "description": "背景内のパディング（ピクセル）",
+          "properties": {
+            "top": {
+              "type": "number",
+              "minimum": 0,
+              "default": 16
+            },
+            "right": {
+              "type": "number",
+              "minimum": 0,
+              "default": 32
+            },
+            "bottom": {
+              "type": "number",
+              "minimum": 0,
+              "default": 16
+            },
+            "left": {
+              "type": "number",
+              "minimum": 0,
+              "default": 32
+            }
+          },
+          "additionalProperties": false
+        },
+        "border": {
+          "type": "object",
+          "description": "ボーダー設定",
+          "properties": {
+            "enabled": {
+              "type": "boolean",
+              "default": false
+            },
+            "width": {
+              "type": "number",
+              "minimum": 0,
+              "default": 2
+            },
+            "color": {
+              "type": "string",
+              "description": "ボーダーカラー（HEX形式）",
+              "pattern": "^#[0-9A-Fa-f]{6}$",
+              "default": "#00F5FF"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "typography": {
+      "type": "object",
+      "description": "タイポグラフィ設定",
+      "properties": {
+        "font_size": {
+          "type": "number",
+          "description": "フォントサイズ（ピクセル）",
+          "minimum": 12,
+          "maximum": 200,
+          "default": 48
+        },
+        "font_weight": {
+          "type": ["string", "number"],
+          "description": "フォントの太さ",
+          "enum": [100, 200, 300, 400, 500, 600, 700, 800, 900, "normal", "bold"],
+          "default": 700
+        },
+        "font_family": {
+          "type": "string",
+          "description": "フォントファミリー",
+          "default": "sans-serif"
+        },
+        "line_height": {
+          "type": "number",
+          "description": "行の高さ（倍率）",
+          "minimum": 0.5,
+          "maximum": 3,
+          "default": 1.5
+        },
+        "letter_spacing": {
+          "type": "number",
+          "description": "文字間隔（ピクセル）",
+          "default": 0
+        },
+        "text_transform": {
+          "type": "string",
+          "description": "テキスト変換",
+          "enum": ["none", "uppercase", "lowercase", "capitalize"],
+          "default": "none"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

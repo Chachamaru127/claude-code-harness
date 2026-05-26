@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://claude-code-harness.local/schemas/acceptance-context.v1.schema.json",
+  "title": "acceptance-context.v1",
+  "description": "Acceptance Demo 用の context 構造体。harness-accept skill が Plan Brief 側 personal-preference.v1 と user_request_hash で join して組み立てる。",
+  "type": "object",
+  "required": [
+    "schema",
+    "user_request",
+    "user_request_hash",
+    "demo_artifacts",
+    "verified_criteria",
+    "unverified_caveats",
+    "past_issue_patterns",
+    "recommendation",
+    "recommendation_evidence",
+    "project",
+    "generated_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "acceptance-context.v1"
+    },
+    "user_request": {
+      "type": "string",
+      "minLength": 1
+    },
+    "user_request_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$",
+      "description": "Plan Brief 側 personal-preference.v1.data.user_request_hash と join するキー"
+    },
+    "demo_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "path"],
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["video", "screenshot", "text"]
+          },
+          "path": { "type": "string" }
+        }
+      }
+    },
+    "verified_criteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "passed", "evidence"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "passed": { "type": "boolean" },
+          "evidence": {
+            "type": "string",
+            "description": "空文字列の場合 HTML 上で警告表示される (DoD c)"
+          }
+        }
+      }
+    },
+    "unverified_caveats": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "past_issue_patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["pattern_id", "title"],
+        "additionalProperties": false,
+        "properties": {
+          "pattern_id": { "type": "string" },
+          "title": { "type": "string" },
+          "verified_in_current_task": { "type": "boolean" }
+        }
+      }
+    },
+    "recommendation": {
+      "type": "string",
+      "enum": ["ship", "wait", "reject"]
+    },
+    "recommendation_evidence": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "project": {
+      "type": "string",
+      "minLength": 1
+    },
+    "generated_at": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"
+    },
+    "verified_criteria_items": {
+      "type": "array",
+      "description": "Derived rendering helper for render-html.sh. Wraps verified_criteria with display attributes (status_label, evidence_warn 等). Compile / skill が populate。Optional: not required by canonical context.",
+      "items": {
+        "type": "object",
+        "required": ["name", "status_label"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "status_label": { "type": "string" },
+          "evidence": { "type": "string" },
+          "evidence_warn": { "type": "string" }
+        }
+      }
+    },
+    "recommendation_evidence_items": {
+      "type": "array",
+      "description": "Derived rendering helper for render-html.sh. Wraps recommendation_evidence string[] as [{text}].",
+      "items": {
+        "type": "object",
+        "required": ["text"],
+        "additionalProperties": false,
+        "properties": {
+          "text": { "type": "string" }
+        }
+      }
+    },
+    "unverified_caveats_items": {
+      "type": "array",
+      "description": "Derived rendering helper for render-html.sh. Wraps unverified_caveats string[] as [{text}].",
+      "items": {
+        "type": "object",
+        "required": ["text"],
+        "additionalProperties": false,
+        "properties": {
+          "text": { "type": "string" }
+        }
+      }
+    }
+  }
+}

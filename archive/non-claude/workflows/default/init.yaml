@@ -1,0 +1,148 @@
+# /harness-init ワークフロー定義（旧名: init）
+# 新規プロジェクトまたは既存プロジェクトへのワークフロー追加
+# 実際の初期化ロジックは skills/harness-init/ が担当
+
+phase: init
+description: "プロジェクトを初期化し、開発ワークフローをセットアップする"
+
+steps:
+  # Step 1: プロジェクト分析（3値判定）
+  # harness-init スキルの execution-flow.md 内でプロジェクト分析を実施
+  - id: analyze-project
+    skill: harness-init
+    input:
+      files:
+        - README.md
+        - package.json
+        - AGENTS.md
+        - CLAUDE.md
+        - Plans.md
+      context_from:
+        - repo_tree
+        - git_status
+    output:
+      variables:
+        - project_type      # new | existing | ambiguous
+        - ambiguity_reason  # null | template_only | few_files | readme_only | scaffold_only
+        - tech_stack
+        - code_file_count
+    mode: required
+
+  # Step 1.5: 曖昧ケースの確認（ambiguous の場合のみ）
+  # harness-init スキルの対話フロー内で処理
+  - id: clarify-project-type
+    skill: harness-init
+    condition: "project_type == 'ambiguous'"
+    input:
+      context_from:
+        - ambiguity_reason
+        - code_file_count
+        - tech_stack
+    output:
+      variables:
+        - project_type  # ユーザー選択で new | existing に確定
+    mode: required
+
+  # Step 2: 要件のヒアリング（新規プロジェクトの場合）
+  # harness-init スキルの対話フロー内で処理
+  - id: init-requirements
+    skill: harness-init
+    condition: "project_type == 'new'"
+    input:
+      context_from:
+        - user_prompt
+        - previous_step_output
+    output:
+      variables:
+        - project_name
+        - tech_choice
+        - initial_tasks
+    mode: required
+
+  # Step 3: プロジェクトの生成（新規の場合）
+  # harness-init スキルのスキャフォールド機能で処理
+  - id: scaffold-project
+    skill: harness-init
+    condition: "project_type == 'new'"
+    input:
+      variables:
+        - project_name
+        - tech_choice
+      context_from:
+        - config_file  # claude-code-harness.config.json
+    output:
+      update_files:
+        - package.json
+        - src/
+    mode: required
+
+  # Step 4: ワークフローファイルの生成
+  # harness-init スキルの generated-files.md で定義
+  - id: generate-workflow-files
+    skill: harness-init
+    input:
+      templates:
+        - templates/AGENTS.md.template
+        - templates/CLAUDE.md.template
+        - templates/Plans.md.template
+      context_from:
+        - project_context
+    output:
+      create_files:
+        - AGENTS.md
+        - CLAUDE.md
+        - Plans.md
+    mode: required
+
+  # Step 4.5: メモリ（SSOT）の初期化
+  # memory スキルが担当
+  - id: init-memory-ssot
+    skill: memory
+    input:
+      templates:
+        - templates/memory/decisions.md.template
+        - templates/memory/patterns.md.template
+        - templates/memory/session-log.md.template
+    output:
+      create_files:
+        - .claude/memory/decisions.md
+        - .claude/memory/patterns.md
+        - .claude/memory/session-log.md
+    mode: optional
+
+  # Step 5: 計画のレビュー（オプション）
+  # planning スキルが担当
+  - id: review-plan
+    skill: planning
+    input:
+      files:
+        - Plans.md
+    mode: optional
+
+  # Step 6: 次のアクション案内
+  - id: next-action-guide
+    skill: vibecoder-guide
+    input:
+      context_from:
+        - completed_steps
+        - plans_md
+    output:
+      user_message: true
+    mode: required
+
+# 成功時の出力
+on_success:
+  message: |
+    ✅ プロジェクトを初期化しました！
+
+    次にやること：
+    - 「動かして」→ 開発サーバーを起動
+    - 「フェーズ1を始めて」→ 最初のタスクを実行
+    - 「計画を見せて」→ Plans.md を確認
+
+# エラー時の出力
+on_error:
+  message: |
+    ⚠️ 初期化中にエラーが発生しました。
+
+    詳細を確認して、「もう一度」と言ってください。

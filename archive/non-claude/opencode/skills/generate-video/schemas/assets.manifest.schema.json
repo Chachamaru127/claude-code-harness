@@ -1,0 +1,199 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AssetManifest",
+  "description": "Asset manifest for video generation with SHA-256 hash management (version 1.0.0)",
+  "type": "object",
+  "required": ["version", "generated_at", "assets"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Schema version",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "examples": ["1.0.0"]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when manifest was generated",
+      "examples": ["2026-02-02T14:30:00Z"]
+    },
+    "project": {
+      "type": "object",
+      "description": "Project metadata",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Project name"
+        },
+        "video_id": {
+          "type": "string",
+          "description": "Unique video ID",
+          "pattern": "^video-\\d{8}-[a-z0-9]{8}$",
+          "examples": ["video-20260202-abc12345"]
+        }
+      }
+    },
+    "assets": {
+      "type": "array",
+      "description": "List of all assets with hash verification",
+      "items": {
+        "$ref": "#/definitions/Asset"
+      }
+    }
+  },
+  "definitions": {
+    "Asset": {
+      "type": "object",
+      "required": ["id", "path", "type", "hash", "size"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique asset identifier",
+          "examples": ["scene-001-highlight", "intro-logo"]
+        },
+        "path": {
+          "type": "string",
+          "description": "Relative path from output directory",
+          "examples": ["assets/scene-001-highlight.webp", "assets/intro-logo.png"]
+        },
+        "type": {
+          "type": "string",
+          "description": "Asset type",
+          "enum": ["image", "audio", "video", "font", "data"],
+          "examples": ["image", "audio"]
+        },
+        "hash": {
+          "type": "string",
+          "description": "SHA-256 hash of the asset file",
+          "pattern": "^[a-f0-9]{64}$",
+          "examples": ["e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"]
+        },
+        "size": {
+          "type": "integer",
+          "description": "File size in bytes",
+          "minimum": 0,
+          "examples": [1024, 2048576]
+        },
+        "mime_type": {
+          "type": "string",
+          "description": "MIME type of the asset",
+          "examples": ["image/webp", "audio/wav", "image/png"]
+        },
+        "dimensions": {
+          "type": "object",
+          "description": "Image or video dimensions",
+          "properties": {
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "examples": [1920]
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "examples": [1080]
+            }
+          },
+          "required": ["width", "height"]
+        },
+        "duration": {
+          "type": "number",
+          "description": "Duration in seconds (for audio/video)",
+          "minimum": 0,
+          "examples": [3.5, 120.0]
+        },
+        "source": {
+          "type": "object",
+          "description": "Asset source information",
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Source type",
+              "enum": ["generated", "captured", "uploaded", "template"],
+              "examples": ["generated", "captured"]
+            },
+            "generator": {
+              "type": "string",
+              "description": "Generator name (if generated)",
+              "examples": ["nano-banana-pro", "playwright", "mermaid"]
+            },
+            "prompt": {
+              "type": "string",
+              "description": "Generation prompt (if AI-generated)"
+            },
+            "seed": {
+              "type": "integer",
+              "description": "Random seed for deterministic generation"
+            },
+            "url": {
+              "type": "string",
+              "description": "Original URL (if downloaded)"
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional metadata",
+          "additionalProperties": true
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Asset creation timestamp"
+        },
+        "verified_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Last hash verification timestamp"
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "version": "1.0.0",
+      "generated_at": "2026-02-02T14:30:00Z",
+      "project": {
+        "name": "Product Demo",
+        "video_id": "video-20260202-abc12345"
+      },
+      "assets": [
+        {
+          "id": "scene-001-highlight",
+          "path": "assets/scene-001-highlight.webp",
+          "type": "image",
+          "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "size": 245760,
+          "mime_type": "image/webp",
+          "dimensions": {
+            "width": 1920,
+            "height": 1080
+          },
+          "source": {
+            "type": "generated",
+            "generator": "nano-banana-pro",
+            "prompt": "Professional tech product screenshot with gradient background",
+            "seed": 42
+          },
+          "created_at": "2026-02-02T14:25:00Z",
+          "verified_at": "2026-02-02T14:30:00Z"
+        },
+        {
+          "id": "scene-001-audio",
+          "path": "assets/scene-001.wav",
+          "type": "audio",
+          "hash": "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd",
+          "size": 524288,
+          "mime_type": "audio/wav",
+          "duration": 5.5,
+          "source": {
+            "type": "generated",
+            "generator": "tts-service"
+          },
+          "created_at": "2026-02-02T14:26:00Z",
+          "verified_at": "2026-02-02T14:30:00Z"
+        }
+      ]
+    }
+  ]
+}

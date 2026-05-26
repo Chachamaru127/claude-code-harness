@@ -1,0 +1,29 @@
+{
+  "name": "generate-video-skill",
+  "version": "0.1.0",
+  "description": "Skill for generating product demo videos with Remotion",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "generate:schemas": "node scripts/generate-schemas.js",
+    "test": "jest",
+    "test:schemas": "jest tests/schema-validation.test.js"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "remotion": "^4.0.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "ajv": "^8.12.0",
+    "ajv-formats": "^2.1.1",
+    "jest": "^29.7.0",
+    "json-schema-deref-sync": "^0.13.0",
+    "json-schema-to-zod": "^2.0.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

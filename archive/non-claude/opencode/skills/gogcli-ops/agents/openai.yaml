@@ -1,0 +1,4 @@
+interface:
+  display_name: "Gogcli Ops"
+  short_description: "Use gogcli for Google Workspace tasks safely and repeatably."
+  default_prompt: "Use gogcli to handle Google Workspace tasks; verify auth, resolve IDs from URLs, default to read-only, and show exact commands."

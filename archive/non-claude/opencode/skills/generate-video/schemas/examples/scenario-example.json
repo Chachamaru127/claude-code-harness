@@ -1,0 +1,56 @@
+{
+  "$schema": "../scenario.schema.json",
+  "title": "MyApp Product Demo Scenario",
+  "description": "A 90-second teaser video for landing page and social media advertising, focusing on the pain-to-solution narrative",
+  "sections": [
+    {
+      "id": "hook",
+      "title": "Hook",
+      "description": "Opening hook highlighting user pain point",
+      "order": 0,
+      "duration_estimate_ms": 5000,
+      "tags": ["intro", "hook"]
+    },
+    {
+      "id": "problem-promise",
+      "title": "Problem + Promise",
+      "description": "Identify target user and make a clear promise",
+      "order": 1,
+      "duration_estimate_ms": 10000,
+      "tags": ["problem", "value-prop"]
+    },
+    {
+      "id": "workflow",
+      "title": "Workflow Demo",
+      "description": "Show the iconic workflow that solves the pain",
+      "order": 2,
+      "duration_estimate_ms": 40000,
+      "tags": ["demo", "workflow"]
+    },
+    {
+      "id": "differentiator",
+      "title": "Differentiator",
+      "description": "Highlight what makes this solution unique",
+      "order": 3,
+      "duration_estimate_ms": 15000,
+      "tags": ["features", "unique-value"]
+    },
+    {
+      "id": "cta",
+      "title": "Call to Action",
+      "description": "Clear next step for the viewer",
+      "order": 4,
+      "duration_estimate_ms": 20000,
+      "tags": ["cta", "conversion"]
+    }
+  ],
+  "metadata": {
+    "seed": "myapp-demo-2026-02-02",
+    "version": "1.0.0",
+    "generated_at": "2026-02-02T14:30:00Z",
+    "generator": "claude-code-harness/generate-video",
+    "project_name": "MyApp",
+    "video_type": "lp-teaser",
+    "target_funnel": "awareness"
+  }
+}

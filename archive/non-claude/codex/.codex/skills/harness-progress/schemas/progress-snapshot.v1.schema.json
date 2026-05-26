@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://claude-code-harness.local/schemas/progress-snapshot.v1.schema.json",
+  "title": "progress-snapshot.v1",
+  "description": "Progress Tracker (Phase 65.4) の進捗 snapshot 構造体。harness-progress skill が Plans.md と state file から組み立てる。",
+  "type": "object",
+  "required": [
+    "schema",
+    "project",
+    "current_task",
+    "progress_pct",
+    "todo_tasks",
+    "wip_tasks",
+    "done_tasks",
+    "elapsed_minutes",
+    "estimated_total_minutes",
+    "cost_so_far_usd",
+    "cost_estimate_usd",
+    "alerts",
+    "generated_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "string",
+      "const": "progress-snapshot.v1"
+    },
+    "project": {
+      "type": "string",
+      "description": "プロジェクト名 (basename of git repo)"
+    },
+    "current_task": {
+      "type": "string",
+      "description": "現在進行中のタスク 1 行サマリ (cc:WIP の最初の項目)。WIP がない場合は空文字"
+    },
+    "progress_pct": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "完了率 (cc:完了 ÷ (TODO+WIP+完了) × 100、四捨五入)"
+    },
+    "todo_tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["number", "title"],
+        "additionalProperties": false,
+        "properties": {
+          "number": {"type": "string"},
+          "title": {"type": "string"}
+        }
+      }
+    },
+    "wip_tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["number", "title"],
+        "additionalProperties": false,
+        "properties": {
+          "number": {"type": "string"},
+          "title": {"type": "string"}
+        }
+      }
+    },
+    "done_tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["number", "title", "commit"],
+        "additionalProperties": false,
+        "properties": {
+          "number": {"type": "string"},
+          "title": {"type": "string"},
+          "commit": {"type": "string", "description": "cc:完了 [hash] の hash 部分 (7 chars)"}
+        }
+      }
+    },
+    "elapsed_minutes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "セッション開始からの経過分数 (state file から読む、なければ 0)"
+    },
+    "estimated_total_minutes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "全タスク完了までの推定総分数 (state file から読む、なければ 0)"
+    },
+    "cost_so_far_usd": {
+      "type": "number",
+      "minimum": 0,
+      "description": "このセッションのこれまでの推定コスト USD (state file から読む、なければ 0)"
+    },
+    "cost_estimate_usd": {
+      "type": "number",
+      "minimum": 0,
+      "description": "全タスク完了までの推定コスト USD (state file から読む、なければ 0)"
+    },
+    "alerts": {
+      "type": "array",
+      "description": "drift detection の結果 alert (Phase 65.4.3 で populate、本 cycle では空配列)",
+      "items": {"type": "object"}
+    },
+    "generated_at": {
+      "type": "string",
+      "description": "ISO8601 UTC タイムスタンプ"
+    },
+    "_done_recent_items": {
+      "type": "array",
+      "description": "render-html.sh 用 derived helper: 直近 5 件の done タスク",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "number": {"type": "string"},
+          "title": {"type": "string"},
+          "commit": {"type": "string"}
+        }
+      }
+    },
+    "_todo_count": {"type": "integer"},
+    "_wip_count": {"type": "integer"},
+    "_done_count": {"type": "integer"}
+  }
+}

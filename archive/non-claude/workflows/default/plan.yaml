@@ -1,0 +1,80 @@
+# /plan ワークフロー定義
+# 機能要望を構造化されたタスクリストに変換
+
+phase: plan
+description: "Plans.md を更新し、タスクを分解するフェーズ"
+
+steps:
+  # Step 1: リポジトリコンテキストの読み取り
+  - id: read-context
+    skill: core-read-repo-context
+    input:
+      files:
+        - README.md
+        - Plans.md
+        - package.json
+      context_from:
+        - repo_tree
+        - open_files
+    mode: required
+
+  # Step 2: 要望のヒアリング（入力がない場合）
+  - id: gather-requirements
+    skill: init-requirements
+    condition: "!user_prompt"
+    input:
+      context_from:
+        - user_intent
+    output:
+      variables:
+        - feature_request
+    mode: optional
+
+  # Step 3: 機能の計画
+  - id: plan-feature
+    skill: plan-feature
+    input:
+      files:
+        - Plans.md
+      context_from:
+        - user_prompt
+        - repo_diff
+        - tech_stack
+      variables:
+        - feature_request
+    output:
+      update_files:
+        - Plans.md
+      variables:
+        - task_count
+        - phase_name
+    mode: required
+
+  # Step 4: 計画のレビュー（オプション）
+  - id: review-plan
+    skill: plan-review
+    input:
+      files:
+        - Plans.md
+      context_from:
+        - previous_step_output
+    mode: optional
+
+# 成功時の出力
+on_success:
+  message: |
+    ✅ 計画が完成しました！
+
+    📄 Plans.md に {{task_count}} 個のタスクを追加しました。
+
+    次にやること：
+    - 「{{phase_name}}を始めて」→ 実装を開始
+    - 「計画を見せて」→ 詳細を確認
+    - 「修正して」→ 計画を調整
+
+# エラー時の出力
+on_error:
+  message: |
+    ⚠️ 計画作成中にエラーが発生しました。
+
+    やりたいことをもう一度教えてください。

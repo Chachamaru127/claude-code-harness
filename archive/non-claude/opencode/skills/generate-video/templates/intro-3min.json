@@ -1,0 +1,309 @@
+{
+  "$schema": "../schemas/video-script.schema.json",
+  "metadata": {
+    "title": "{{PROJECT_NAME}} - Product Introduction Demo",
+    "description": "3-minute introduction video showcasing a complete use case walkthrough",
+    "version": "1.0.0",
+    "created_at": "{{TIMESTAMP}}",
+    "author": "claude-code-harness/generate-video",
+    "project": "{{PROJECT_ID}}",
+    "video_type": "intro-demo",
+    "tags": ["product-demo", "introduction", "tutorial", "walkthrough"]
+  },
+  "scenes": [
+    {
+      "scene_id": "hook",
+      "section_id": "hook",
+      "order": 0,
+      "type": "intro",
+      "content": {
+        "text": "{{HOOK_TEXT}}",
+        "duration_ms": 10000,
+        "title": "{{PROJECT_NAME}}",
+        "subtitle": "{{TAGLINE}}"
+      },
+      "direction": {
+        "transition": {
+          "in": "fade",
+          "out": "fade",
+          "duration_ms": 500
+        },
+        "background": {
+          "type": "gradient",
+          "value": "linear-gradient(135deg, {{PRIMARY_COLOR}} 0%, {{SECONDARY_COLOR}} 100%)"
+        }
+      },
+      "assets": [
+        {
+          "type": "image",
+          "source": "{{GENERATED_ASSETS_DIR}}/hook.png",
+          "generated": true,
+          "prompt_template": "highlight"
+        }
+      ],
+      "template": "intro",
+      "notes": "Hook: Start with conclusion + pain. 10 seconds to grab attention."
+    },
+    {
+      "scene_id": "use-case",
+      "section_id": "use-case",
+      "order": 1,
+      "type": "text",
+      "content": {
+        "text": "{{USE_CASE_DESCRIPTION}}",
+        "duration_ms": 20000,
+        "title": "{{USE_CASE_TITLE}}"
+      },
+      "direction": {
+        "transition": {
+          "in": "slide_in",
+          "out": "fade",
+          "duration_ms": 500
+        },
+        "background": {
+          "type": "solid",
+          "value": "{{BACKGROUND_COLOR}}"
+        }
+      },
+      "assets": [
+        {
+          "type": "image",
+          "source": "{{GENERATED_ASSETS_DIR}}/use-case.png",
+          "generated": true,
+          "prompt_template": "flow"
+        }
+      ],
+      "notes": "Use Case: Declare the specific use case you'll demonstrate. 20 seconds."
+    },
+    {
+      "scene_id": "demo-part1",
+      "section_id": "demo",
+      "order": 2,
+      "type": "ui-demo",
+      "content": {
+        "text": "{{DEMO_PART1_DESCRIPTION}}",
+        "duration_ms": 40000,
+        "url": "{{APP_URL}}/{{DEMO_PATH}}",
+        "actions": "{{DEMO_PART1_ACTIONS}}"
+      },
+      "direction": {
+        "transition": {
+          "in": "fade",
+          "out": "fade",
+          "duration_ms": 500
+        }
+      },
+      "assets": [],
+      "audio": {
+        "narration": {
+          "text": "{{DEMO_PART1_NARRATION}}",
+          "file": "{{AUDIO_DIR}}/demo-part1.mp3",
+          "start_offset_ms": 1000
+        }
+      },
+      "template": "ui-demo",
+      "notes": "Demo Part 1: First part of the workflow. 40 seconds."
+    },
+    {
+      "scene_id": "demo-part2",
+      "section_id": "demo",
+      "order": 3,
+      "type": "ui-demo",
+      "content": {
+        "text": "{{DEMO_PART2_DESCRIPTION}}",
+        "duration_ms": 40000,
+        "url": "{{APP_URL}}/{{DEMO_PATH}}",
+        "actions": "{{DEMO_PART2_ACTIONS}}"
+      },
+      "direction": {
+        "transition": {
+          "in": "fade",
+          "out": "fade",
+          "duration_ms": 500
+        }
+      },
+      "assets": [],
+      "audio": {
+        "narration": {
+          "text": "{{DEMO_PART2_NARRATION}}",
+          "file": "{{AUDIO_DIR}}/demo-part2.mp3",
+          "start_offset_ms": 1000
+        }
+      },
+      "template": "ui-demo",
+      "notes": "Demo Part 2: Middle part showing key interactions. 40 seconds."
+    },
+    {
+      "scene_id": "demo-part3",
+      "section_id": "demo",
+      "order": 4,
+      "type": "ui-demo",
+      "content": {
+        "text": "{{DEMO_PART3_DESCRIPTION}}",
+        "duration_ms": 30000,
+        "url": "{{APP_URL}}/{{DEMO_PATH}}",
+        "actions": "{{DEMO_PART3_ACTIONS}}"
+      },
+      "direction": {
+        "transition": {
+          "in": "fade",
+          "out": "fade",
+          "duration_ms": 500
+        }
+      },
+      "assets": [],
+      "audio": {
+        "narration": {
+          "text": "{{DEMO_PART3_NARRATION}}",
+          "file": "{{AUDIO_DIR}}/demo-part3.mp3",
+          "start_offset_ms": 1000
+        }
+      },
+      "template": "ui-demo",
+      "notes": "Demo Part 3: Final part showing results. 30 seconds."
+    },
+    {
+      "scene_id": "objection",
+      "section_id": "objection",
+      "order": 5,
+      "type": "feature-highlight",
+      "content": {
+        "text": "{{OBJECTION_RESPONSE}}",
+        "duration_ms": 30000,
+        "title": "{{OBJECTION_TITLE}}"
+      },
+      "direction": {
+        "transition": {
+          "in": "zoom",
+          "out": "fade",
+          "duration_ms": 500
+        },
+        "emphasis": {
+          "effect": "pulse",
+          "timing": "3s"
+        }
+      },
+      "assets": [
+        {
+          "type": "image",
+          "source": "{{GENERATED_ASSETS_DIR}}/objection.png",
+          "generated": true,
+          "prompt_template": "comparison"
+        }
+      ],
+      "notes": "Objection: Address one common concern or question. 30 seconds."
+    },
+    {
+      "scene_id": "cta",
+      "section_id": "cta",
+      "order": 6,
+      "type": "cta",
+      "content": {
+        "text": "{{CTA_TEXT}}",
+        "duration_ms": 10000,
+        "url": "{{CTA_URL}}",
+        "button_text": "{{CTA_BUTTON_TEXT}}"
+      },
+      "direction": {
+        "transition": {
+          "in": "fade",
+          "out": "fade",
+          "duration_ms": 800
+        },
+        "background": {
+          "type": "solid",
+          "value": "{{PRIMARY_COLOR}}"
+        }
+      },
+      "assets": [
+        {
+          "type": "image",
+          "source": "{{GENERATED_ASSETS_DIR}}/cta.png",
+          "generated": true,
+          "prompt_template": "highlight"
+        }
+      ],
+      "template": "cta",
+      "notes": "CTA: Clear call to action. 10 seconds for next steps."
+    }
+  ],
+  "total_duration_ms": 180000,
+  "output_settings": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "codec": "h264",
+    "format": "mp4",
+    "quality": "high",
+    "preset": "1080p",
+    "bitrate": "8M"
+  },
+  "audio_settings": {
+    "bgm": {
+      "file": "{{BGM_FILE}}",
+      "volume": 0.2,
+      "fade_in_ms": 1000,
+      "fade_out_ms": 2000,
+      "loop": true
+    },
+    "master_volume": 1.0
+  },
+  "branding": {
+    "logo": "{{LOGO_PATH}}",
+    "colors": {
+      "primary": "{{PRIMARY_COLOR}}",
+      "secondary": "{{SECONDARY_COLOR}}",
+      "accent": "{{ACCENT_COLOR}}",
+      "background": "{{BACKGROUND_COLOR}}",
+      "text": "{{TEXT_COLOR}}"
+    },
+    "fonts": {
+      "primary": "{{PRIMARY_FONT}}",
+      "secondary": "{{SECONDARY_FONT}}",
+      "monospace": "{{MONOSPACE_FONT}}"
+    }
+  },
+  "transitions": {
+    "default_duration_ms": 500,
+    "overlap_ms": 450,
+    "type": "fade"
+  },
+  "notes": "3-minute intro demo template. Complete use case walkthrough. Scene timings: Hook(10s) → UseCase(20s) → Demo-Part1(40s) → Demo-Part2(40s) → Demo-Part3(30s) → Objection(30s) → CTA(10s) = 180s total.",
+  "_template_variables": {
+    "PROJECT_NAME": "Your product name",
+    "PROJECT_ID": "product-slug",
+    "TIMESTAMP": "Auto-generated ISO 8601 timestamp",
+    "TAGLINE": "One-line value proposition",
+    "HOOK_TEXT": "Start with conclusion + pain (e.g., 'Manage your projects 3x faster with AI-powered insights')",
+    "USE_CASE_TITLE": "Title of the use case (e.g., 'Creating and managing a product launch')",
+    "USE_CASE_DESCRIPTION": "Brief description of what you'll demonstrate",
+    "DEMO_PART1_DESCRIPTION": "First part of demo",
+    "DEMO_PART1_NARRATION": "Narration for first demo part",
+    "DEMO_PART1_ACTIONS": "Playwright actions for first part",
+    "DEMO_PART2_DESCRIPTION": "Second part of demo",
+    "DEMO_PART2_NARRATION": "Narration for second demo part",
+    "DEMO_PART2_ACTIONS": "Playwright actions for second part",
+    "DEMO_PART3_DESCRIPTION": "Third part of demo showing results",
+    "DEMO_PART3_NARRATION": "Narration for third demo part",
+    "DEMO_PART3_ACTIONS": "Playwright actions for third part",
+    "OBJECTION_TITLE": "Common concern (e.g., 'What about data security?')",
+    "OBJECTION_RESPONSE": "How you address the concern",
+    "APP_URL": "URL to your app for Playwright capture",
+    "DEMO_PATH": "Path to demo page",
+    "CTA_TEXT": "Call to action text",
+    "CTA_URL": "URL for CTA button",
+    "CTA_BUTTON_TEXT": "Button text (e.g., 'Try It Free')",
+    "PRIMARY_COLOR": "Hex color (e.g., #667eea)",
+    "SECONDARY_COLOR": "Hex color",
+    "ACCENT_COLOR": "Hex color",
+    "BACKGROUND_COLOR": "Hex color",
+    "TEXT_COLOR": "Hex color",
+    "PRIMARY_FONT": "Font family",
+    "SECONDARY_FONT": "Font family",
+    "MONOSPACE_FONT": "Font family for code",
+    "LOGO_PATH": "Path to logo file",
+    "BGM_FILE": "Path to background music file (lower volume for narration)",
+    "AUDIO_DIR": "Directory for narration audio files",
+    "GENERATED_ASSETS_DIR": "Directory for AI-generated images"
+  }
+}

@@ -1,0 +1,90 @@
+# Codex Team Config template (Codex CLI 0.110.0+, policy aligned through 0.130.0 stable)
+# Copy to ${CODEX_HOME:-~/.codex}/config.toml (user) or .codex/config.toml (project).
+
+[features]
+multi_agent = true
+
+# Phase 56.2.2: Codex 0.124.0 stable hooks parity review
+# Harness intentionally ships no inline hooks in the distributed config:
+# - Claude Code already owns the primary runtime hook/guardrail path in this repo
+# - managed requirements.toml is the right place for org-level Codex hook policy
+# - MCP/apply_patch/long-running Bash observation needs dedicated Codex package tests
+# - Codex 0.130.0 plugin details can show bundled hooks, but Harness keeps
+#   bundled hooks opt-in and does not add inline hooks here
+# Details: docs/upstream-followups-phase56-2026-04-25.md
+
+# Codex 0.130.0 adds `codex remote-control` as the simpler top-level entrypoint
+# for a headless remotely controllable app-server. Harness does not enable remote-control defaults
+# in shipped config; operators should start it explicitly
+# and confirm port/auth/environment boundaries per
+# docs/codex-plugin-workflows-policy.md.
+#
+# Codex 0.130.0 also adds configurable OpenTelemetry trace metadata,
+# built-in MCPs as first-class runtime servers, and a CODEX_HOME environments
+# TOML provider. Keep these as explicit user/project policy. Do not put secrets
+# in trace metadata, do not conflate built-in MCP ownership with plugin MCP
+# ownership, and keep write turns pinned to one primary environment.
+
+# Codex 0.123.0+ has a built-in amazon-bedrock provider.
+# Harness does not set it as the default. Add this only in user/project config
+# when the current environment should use Bedrock. Codex 0.130.0 can use
+# AWS console-login credentials from `aws login` profiles; Harness still only
+# points at the profile name and never writes AWS credential material:
+#
+# model_provider = "amazon-bedrock"
+#
+# [model_providers.amazon-bedrock.aws]
+# profile = "codex-bedrock"
+#
+# Leave model unset to inherit Codex bundled model metadata, including the
+# current gpt-5.4 default. Pin model only for reproducible or managed setups.
+
+[agents]
+max_threads = 8
+
+[agents.implementer]
+description = "Codex implementation worker for harness task execution"
+
+[agents.reviewer]
+description = "Codex reviewer worker for harness review and retake loops"
+sandbox = "workspace-read-only"
+
+[agents.task_worker]
+description = "Standard Breezing implementer (impl_mode: standard). Implements tasks, runs self-review, build, and tests. Alias for implementer in the Breezing workflow."
+
+[agents.code_reviewer]
+description = "Breezing reviewer. Performs independent code review with harness-review 4-point assessment. Issues APPROVE / REQUEST_CHANGES / REJECT / STOP. Read-only."
+sandbox = "workspace-read-only"
+
+[agents.codex_implementer]
+description = "Codex Breezing implementer (impl_mode: codex, used with --codex flag). Invokes Codex CLI, verifies AGENTS_SUMMARY, enforces Quality Gates."
+
+[agents.claude_implementer]
+description = "Claude CLI delegated implementation worker (used when --claude)"
+
+[agents.claude_reviewer]
+description = "Claude CLI delegated reviewer worker (used when --claude)"
+sandbox = "workspace-read-only"
+
+[agents.plan_analyst]
+description = "Phase 0 planning analyst: analyzes task granularity, estimates owns files, proposes dependencies, and evaluates risk. Read-only access to codebase."
+sandbox = "workspace-read-only"
+
+[agents.plan_critic]
+description = "Phase 0 plan critic: red-teaming review of task decomposition. Checks goal coverage, granularity, dependency accuracy, parallelism, and risk. Read-only access."
+sandbox = "workspace-read-only"
+
+# Path-based skill loading (0.110.0+): alternative to file-copy installation.
+# Uncomment and set absolute paths to load skills directly from cloned repo.
+# [[skills.config]]
+# path = "/path/to/claude-code-harness/codex/.codex/skills/harness-work"
+# enabled = true
+
+[memories]
+# 0.110.0: workspace-write sandbox auto-includes ~/.codex/memories/ as writable root
+# 0.110.0: web search / MCP tool calls mark thread as "polluted" (memories not generated)
+no_memories_if_mcp_or_web_search = false  # harness workers use MCP sparingly; keep memories
+
+[notify]
+# Session end notification: log to harness state + codex memories (0.110.0: ~/.codex/memories/ auto-writable)
+after_agent = "mkdir -p .claude/state && echo \"[HARNESS-LEARNING] $(date -u +%Y-%m-%dT%H:%M:%SZ) Session completed\" >> .claude/state/session-log.txt"

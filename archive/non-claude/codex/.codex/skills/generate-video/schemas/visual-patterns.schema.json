@@ -1,0 +1,474 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://claude-code-harness.com/schemas/visual-patterns.schema.json",
+  "title": "Visual Patterns Schema",
+  "description": "画像生成パターンのスキーマ。比較図、概念図、フロー図、強調画像の4パターンを定義します。",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["type", "topic"],
+  "properties": {
+    "type": {
+      "type": "string",
+      "description": "画像パターンの種類",
+      "enum": ["comparison", "concept", "flow", "highlight"]
+    },
+    "topic": {
+      "type": "string",
+      "description": "画像の主題・テーマ",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "style": {
+      "type": "string",
+      "description": "視覚スタイル（オプション）",
+      "enum": ["minimalist", "technical", "modern", "gradient", "flat", "3d"],
+      "default": "modern"
+    },
+    "color_scheme": {
+      "type": "object",
+      "description": "カラースキーム設定",
+      "properties": {
+        "primary": {
+          "type": "string",
+          "description": "プライマリカラー（例: #3B82F6）",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "secondary": {
+          "type": "string",
+          "description": "セカンダリカラー（例: #10B981）",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "accent": {
+          "type": "string",
+          "description": "アクセントカラー（例: #F59E0B）",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "background": {
+          "type": "string",
+          "description": "背景色（例: #1F2937）",
+          "pattern": "^#[0-9A-Fa-f]{6}$",
+          "default": "#1F2937"
+        }
+      },
+      "additionalProperties": false
+    },
+    "comparison": {
+      "type": "object",
+      "description": "comparison（比較図）パターン用の設定",
+      "required": ["left_side", "right_side"],
+      "properties": {
+        "left_side": {
+          "type": "object",
+          "description": "左側（Before / 悪い例）",
+          "required": ["label", "items"],
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "ラベル（例: Before, 悪い例）",
+              "minLength": 1,
+              "maxLength": 50
+            },
+            "items": {
+              "type": "array",
+              "description": "表示項目リスト",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "minItems": 1,
+              "maxItems": 5
+            },
+            "icon": {
+              "type": "string",
+              "description": "アイコンタイプ（例: x, warning, sad）",
+              "enum": ["x", "warning", "sad", "slow", "confused", "broken"]
+            },
+            "sentiment": {
+              "type": "string",
+              "description": "感情・印象",
+              "enum": ["negative", "neutral", "caution"],
+              "default": "negative"
+            }
+          },
+          "additionalProperties": false
+        },
+        "right_side": {
+          "type": "object",
+          "description": "右側（After / 良い例）",
+          "required": ["label", "items"],
+          "properties": {
+            "label": {
+              "type": "string",
+              "description": "ラベル（例: After, 良い例）",
+              "minLength": 1,
+              "maxLength": 50
+            },
+            "items": {
+              "type": "array",
+              "description": "表示項目リスト",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "minItems": 1,
+              "maxItems": 5
+            },
+            "icon": {
+              "type": "string",
+              "description": "アイコンタイプ（例: check, star, happy）",
+              "enum": ["check", "star", "happy", "fast", "clear", "solid"]
+            },
+            "sentiment": {
+              "type": "string",
+              "description": "感情・印象",
+              "enum": ["positive", "neutral", "success"],
+              "default": "positive"
+            }
+          },
+          "additionalProperties": false
+        },
+        "divider": {
+          "type": "string",
+          "description": "区切り線の種類",
+          "enum": ["arrow", "vs", "line", "gradient"],
+          "default": "arrow"
+        }
+      },
+      "additionalProperties": false
+    },
+    "concept": {
+      "type": "object",
+      "description": "concept（概念図）パターン用の設定",
+      "required": ["elements"],
+      "properties": {
+        "elements": {
+          "type": "array",
+          "description": "概念要素のリスト",
+          "items": {
+            "type": "object",
+            "required": ["id", "label"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "要素の一意なID",
+                "pattern": "^[a-z0-9_-]+$"
+              },
+              "label": {
+                "type": "string",
+                "description": "要素のラベル",
+                "minLength": 1,
+                "maxLength": 50
+              },
+              "description": {
+                "type": "string",
+                "description": "要素の説明（オプション）",
+                "maxLength": 200
+              },
+              "level": {
+                "type": "integer",
+                "description": "階層レベル（0=最上位）",
+                "minimum": 0,
+                "maximum": 5,
+                "default": 0
+              },
+              "parent_id": {
+                "type": "string",
+                "description": "親要素のID（階層構造を表現）",
+                "pattern": "^[a-z0-9_-]+$"
+              },
+              "icon": {
+                "type": "string",
+                "description": "アイコンタイプ",
+                "enum": ["box", "circle", "diamond", "hexagon", "cloud", "gear", "database", "server", "user", "code"]
+              },
+              "emphasis": {
+                "type": "string",
+                "description": "強調度",
+                "enum": ["high", "medium", "low"],
+                "default": "medium"
+              }
+            },
+            "additionalProperties": false
+          },
+          "minItems": 2,
+          "maxItems": 10
+        },
+        "relationships": {
+          "type": "array",
+          "description": "要素間の関係性",
+          "items": {
+            "type": "object",
+            "required": ["from", "to"],
+            "properties": {
+              "from": {
+                "type": "string",
+                "description": "関係の始点となる要素ID",
+                "pattern": "^[a-z0-9_-]+$"
+              },
+              "to": {
+                "type": "string",
+                "description": "関係の終点となる要素ID",
+                "pattern": "^[a-z0-9_-]+$"
+              },
+              "label": {
+                "type": "string",
+                "description": "関係のラベル（例: 含む、生成、依存）",
+                "maxLength": 30
+              },
+              "type": {
+                "type": "string",
+                "description": "関係のタイプ",
+                "enum": ["hierarchy", "flow", "dependency", "association"],
+                "default": "association"
+              },
+              "bidirectional": {
+                "type": "boolean",
+                "description": "双方向の関係か",
+                "default": false
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "layout": {
+          "type": "string",
+          "description": "レイアウトタイプ",
+          "enum": ["hierarchy", "radial", "grid", "flow", "circular"],
+          "default": "hierarchy"
+        }
+      },
+      "additionalProperties": false
+    },
+    "flow": {
+      "type": "object",
+      "description": "flow（フロー図）パターン用の設定",
+      "required": ["steps"],
+      "properties": {
+        "steps": {
+          "type": "array",
+          "description": "フローのステップ",
+          "items": {
+            "type": "object",
+            "required": ["id", "label"],
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "ステップの一意なID",
+                "pattern": "^[a-z0-9_-]+$"
+              },
+              "label": {
+                "type": "string",
+                "description": "ステップのラベル",
+                "minLength": 1,
+                "maxLength": 50
+              },
+              "description": {
+                "type": "string",
+                "description": "ステップの詳細説明",
+                "maxLength": 150
+              },
+              "order": {
+                "type": "integer",
+                "description": "ステップの順序（1始まり）",
+                "minimum": 1,
+                "maximum": 20
+              },
+              "type": {
+                "type": "string",
+                "description": "ステップのタイプ",
+                "enum": ["start", "process", "decision", "end", "parallel", "subprocess"],
+                "default": "process"
+              },
+              "icon": {
+                "type": "string",
+                "description": "アイコンタイプ",
+                "enum": ["circle", "square", "diamond", "rounded", "hexagon"]
+              },
+              "duration": {
+                "type": "string",
+                "description": "所要時間の目安（例: 2分、即座）",
+                "maxLength": 20
+              }
+            },
+            "additionalProperties": false
+          },
+          "minItems": 2,
+          "maxItems": 10
+        },
+        "direction": {
+          "type": "string",
+          "description": "フローの方向",
+          "enum": ["horizontal", "vertical", "zigzag"],
+          "default": "horizontal"
+        },
+        "arrow_style": {
+          "type": "string",
+          "description": "矢印のスタイル",
+          "enum": ["solid", "dashed", "dotted", "thick", "animated"],
+          "default": "solid"
+        },
+        "show_numbers": {
+          "type": "boolean",
+          "description": "ステップ番号を表示するか",
+          "default": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "highlight": {
+      "type": "object",
+      "description": "highlight（強調）パターン用の設定",
+      "required": ["main_text"],
+      "properties": {
+        "main_text": {
+          "type": "string",
+          "description": "メインテキスト（強調する内容）",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "sub_text": {
+          "type": "string",
+          "description": "サブテキスト（補足説明）",
+          "maxLength": 150
+        },
+        "icon": {
+          "type": "string",
+          "description": "アイコンタイプ",
+          "enum": ["star", "check", "alert", "info", "trophy", "rocket", "fire", "bolt", "heart", "none"],
+          "default": "none"
+        },
+        "position": {
+          "type": "string",
+          "description": "テキストの配置",
+          "enum": ["center", "top", "bottom", "left", "right"],
+          "default": "center"
+        },
+        "effect": {
+          "type": "string",
+          "description": "視覚効果",
+          "enum": ["glow", "shadow", "gradient", "outline", "none"],
+          "default": "glow"
+        },
+        "font_size": {
+          "type": "string",
+          "description": "フォントサイズ",
+          "enum": ["small", "medium", "large", "xlarge"],
+          "default": "large"
+        },
+        "emphasis": {
+          "type": "string",
+          "description": "強調度",
+          "enum": ["high", "medium", "low"],
+          "default": "high"
+        }
+      },
+      "additionalProperties": false
+    },
+    "dimensions": {
+      "type": "object",
+      "description": "画像サイズ設定",
+      "properties": {
+        "width": {
+          "type": "integer",
+          "description": "幅（ピクセル）",
+          "minimum": 256,
+          "maximum": 2048,
+          "default": 1920
+        },
+        "height": {
+          "type": "integer",
+          "description": "高さ（ピクセル）",
+          "minimum": 256,
+          "maximum": 2048,
+          "default": 1080
+        },
+        "aspect_ratio": {
+          "type": "string",
+          "description": "アスペクト比",
+          "enum": ["16:9", "4:3", "1:1", "9:16"],
+          "default": "16:9"
+        }
+      },
+      "additionalProperties": false
+    },
+    "generation": {
+      "type": "object",
+      "description": "生成設定",
+      "properties": {
+        "seed": {
+          "type": "integer",
+          "description": "決定性シード値（再現性のため）",
+          "minimum": 0
+        },
+        "quality": {
+          "type": "string",
+          "description": "画像品質",
+          "enum": ["draft", "standard", "high"],
+          "default": "standard"
+        },
+        "retries": {
+          "type": "integer",
+          "description": "品質不合格時の最大再試行回数",
+          "minimum": 0,
+          "maximum": 5,
+          "default": 3
+        }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "description": "メタデータ（追加情報）",
+      "properties": {
+        "scene_id": {
+          "type": "string",
+          "description": "関連するシーンID"
+        },
+        "purpose": {
+          "type": "string",
+          "description": "画像の目的（例: intro, demo, cta）",
+          "maxLength": 50
+        },
+        "tags": {
+          "type": "array",
+          "description": "タグ",
+          "items": {
+            "type": "string",
+            "maxLength": 30
+          },
+          "maxItems": 10
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false,
+  "oneOf": [
+    {
+      "properties": {
+        "type": { "const": "comparison" }
+      },
+      "required": ["comparison"]
+    },
+    {
+      "properties": {
+        "type": { "const": "concept" }
+      },
+      "required": ["concept"]
+    },
+    {
+      "properties": {
+        "type": { "const": "flow" }
+      },
+      "required": ["flow"]
+    },
+    {
+      "properties": {
+        "type": { "const": "highlight" }
+      },
+      "required": ["highlight"]
+    }
+  ]
+}
