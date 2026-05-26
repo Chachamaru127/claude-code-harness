@@ -1,12 +1,21 @@
 #!/bin/bash
-# worktree-create.sh — WorktreeCreate hook handler
-# Breezing 並列ワーカー用の worktree 環境を初期化する
+# worktree-create.sh — WorktreeCreate hook handler (shell fallback)
 #
-# 入力 (stdin JSON):
-#   session_id, cwd, hook_event_name
+# Claude Code WorktreeCreate hook contract
+# (https://code.claude.com/docs/en/hooks):
+#   - This hook "replaces default git behavior".
+#   - A command hook must ensure the worktree directory exists and print ONLY
+#     that directory path on stdout.
+#   - Missing path or non-zero exit aborts worktree creation.
 #
-# 設計: WorktreeCreate/Remove は worktree 固有リソースのみ担当
-#       SessionEnd はセッション全体リソースを担当（分離設計）
+# Emitting a decision JSON (the legacy behavior) makes the runtime treat the
+# JSON text as a path → "returned a path that is not a directory".
+#
+# Defensive about non-determinism: never assume the worktree exists or does
+# not. Reuse a valid existing worktree; otherwise create one. On unrecoverable
+# ambiguity, emit nothing (aborts creation safely) rather than corrupt state.
+#
+# 入力 (stdin JSON): session_id, cwd, hook_event_name, tool_input
 
 set -euo pipefail
 
@@ -16,119 +25,141 @@ if [ ! -t 0 ]; then
   INPUT="$(cat 2>/dev/null)"
 fi
 
-# ペイロードが空の場合はスキップ
-if [ -z "${INPUT}" ]; then
-  echo '{"decision":"approve","reason":"WorktreeCreate: no payload"}'
-  exit 0
-fi
-
-# === フィールド抽出 ===
-SESSION_ID=""
-CWD=""
+# No payload: emit nothing, let the runtime fall back to default git behavior.
+[ -z "${INPUT}" ] && exit 0
 
 looks_like_hook_decision_json() {
   local value
   value="$(printf '%s' "$1" | sed 's/^[[:space:]]*//; s/[[:space:]]*$//')"
-
   case "${value}" in
     \{*) ;;
     *) return 1 ;;
   esac
-
   if command -v jq >/dev/null 2>&1; then
-    printf '%s' "${value}" \
-      | jq -e 'type == "object" and has("decision") and has("reason")' >/dev/null 2>&1
+    printf '%s' "${value}" | jq -e 'type == "object" and has("decision") and has("reason")' >/dev/null 2>&1
     return $?
   fi
-
-  if command -v python3 >/dev/null 2>&1; then
-    printf '%s' "${value}" | python3 -c '
-import json
-import sys
-
-try:
-    data = json.load(sys.stdin)
-except Exception:
-    raise SystemExit(1)
-
-raise SystemExit(0 if isinstance(data, dict) and "decision" in data and "reason" in data else 1)
-' >/dev/null 2>&1
-    return $?
-  fi
-
   case "${value}" in
     *'"decision"'*'"reason"'*) return 0 ;;
     *) return 1 ;;
   esac
 }
 
+# === フィールド抽出 ===
+SESSION_ID=""
+CWD=""
+TOOL_WORKTREE_PATH=""
+
 if command -v jq >/dev/null 2>&1; then
-  _jq_parsed="$(echo "${INPUT}" | jq -r '[
+  _parsed="$(printf '%s' "${INPUT}" | jq -r '[
     (.session_id // ""),
-    (.cwd // "")
-  ] | @tsv' 2>/dev/null)"
-  if [ -n "${_jq_parsed}" ]; then
-    IFS=$'\t' read -r SESSION_ID CWD <<< "${_jq_parsed}"
+    (.cwd // ""),
+    (.tool_input.worktreePath // .tool_input.path // .tool_input.worktree_path // "")
+  ] | @tsv' 2>/dev/null || true)"
+  if [ -n "${_parsed}" ]; then
+    IFS=$'\t' read -r SESSION_ID CWD TOOL_WORKTREE_PATH <<< "${_parsed}"
   fi
-  unset _jq_parsed
+  unset _parsed
 elif command -v python3 >/dev/null 2>&1; then
-  _parsed="$(echo "${INPUT}" | python3 -c "
+  _parsed="$(printf '%s' "${INPUT}" | python3 -c "
 import sys, json
 try:
     d = json.load(sys.stdin)
+    ti = d.get('tool_input') or {}
     print(d.get('session_id', ''))
     print(d.get('cwd', ''))
-except:
-    print('')
-    print('')
-" 2>/dev/null)"
-  SESSION_ID="$(echo "${_parsed}" | sed -n '1p')"
-  CWD="$(echo "${_parsed}" | sed -n '2p')"
+    print(ti.get('worktreePath') or ti.get('path') or ti.get('worktree_path') or '')
+except Exception:
+    print(''); print(''); print('')
+" 2>/dev/null || true)"
+  SESSION_ID="$(printf '%s' "${_parsed}" | sed -n '1p')"
+  CWD="$(printf '%s' "${_parsed}" | sed -n '2p')"
+  TOOL_WORKTREE_PATH="$(printf '%s' "${_parsed}" | sed -n '3p')"
+  unset _parsed
 fi
 
-if [ -z "${CWD}" ]; then
-  echo '{"decision":"approve","reason":"WorktreeCreate: no cwd"}'
-  exit 0
-fi
-
+# Malformed cwd (empty or the legacy decision-JSON-as-cwd bug): abort safely.
+[ -z "${CWD}" ] && exit 0
 if looks_like_hook_decision_json "${CWD}"; then
-  echo '{"decision":"approve","reason":"WorktreeCreate: invalid cwd"}'
   exit 0
 fi
 
-# === worktree 内に .claude/state/ ディレクトリを確保 ===
-WORKTREE_STATE_DIR="${CWD}/.claude/state"
-mkdir -p "${WORKTREE_STATE_DIR}" 2>/dev/null || true
+# === worktree パスを決定 ===
+sanitize_slug() {
+  printf '%s' "$1" | sed 's#[ /\\.:]#-#g; s/^-*//; s/-*$//'
+}
 
-# === ワーカー ID を記録（Breezing チームでの識別用） ===
+if [ -n "${TOOL_WORKTREE_PATH}" ] && ! looks_like_hook_decision_json "${TOOL_WORKTREE_PATH}"; then
+  TARGET="${TOOL_WORKTREE_PATH}"
+else
+  SLUG="$(sanitize_slug "${SESSION_ID}")"
+  [ -z "${SLUG}" ] && SLUG="worker"
+  TARGET="${CWD}/.harness-worktrees/${SLUG}"
+fi
+
+is_git_worktree() {
+  [ -e "$1" ] || return 1
+  git -C "$1" rev-parse --is-inside-work-tree >/dev/null 2>&1
+}
+
+origin_default_ref() {
+  local ref
+  ref="$(git -C "${CWD}" symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || true)"
+  if [ -n "${ref}" ]; then printf '%s' "${ref}"; return 0; fi
+  for name in origin/main origin/master; do
+    if git -C "${CWD}" rev-parse --verify --quiet "${name}" >/dev/null 2>&1; then
+      printf '%s' "${name}"; return 0
+    fi
+  done
+  printf ''
+}
+
+# === worktree を確保（reuse or create）===
+if ! is_git_worktree "${TARGET}"; then
+  # Pre-existing non-empty non-worktree dir: never clobber, report as-is.
+  if [ -d "${TARGET}" ] && [ -n "$(ls -A "${TARGET}" 2>/dev/null)" ]; then
+    : # fall through and report TARGET below
+  else
+    # Empty placeholder would block `git worktree add`; remove it.
+    [ -d "${TARGET}" ] && rmdir "${TARGET}" 2>/dev/null || true
+
+    BRANCH="harness/worker/$(sanitize_slug "$(basename "${TARGET}")")"
+    BASE="$(origin_default_ref)"
+    if [ -n "${BASE}" ]; then
+      git -C "${CWD}" worktree add -b "${BRANCH}" "${TARGET}" "${BASE}" >/dev/null 2>&1 \
+        || git -C "${CWD}" worktree add "${TARGET}" >/dev/null 2>&1 || true
+    else
+      git -C "${CWD}" worktree add -b "${BRANCH}" "${TARGET}" >/dev/null 2>&1 \
+        || git -C "${CWD}" worktree add "${TARGET}" >/dev/null 2>&1 || true
+    fi
+
+    # If creation failed, abort safely (emit nothing).
+    if ! is_git_worktree "${TARGET}"; then
+      echo "[claude-code-harness] worktree-create: failed to create ${TARGET}" >&2
+      exit 0
+    fi
+  fi
+fi
+
+# === worktree 内に .claude/state/ を初期化（best-effort, idempotent）===
+WORKTREE_STATE_DIR="${TARGET}/.claude/state"
+mkdir -p "${WORKTREE_STATE_DIR}" 2>/dev/null || true
 WORKTREE_INFO_FILE="${WORKTREE_STATE_DIR}/worktree-info.json"
+CREATED_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 if command -v jq >/dev/null 2>&1; then
   jq -nc \
     --arg worker_id "${SESSION_ID}" \
-    --arg created_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-    --arg cwd "${CWD}" \
+    --arg created_at "${CREATED_AT}" \
+    --arg cwd "${TARGET}" \
     '{"worker_id":$worker_id,"created_at":$created_at,"cwd":$cwd}' \
     > "${WORKTREE_INFO_FILE}" 2>/dev/null || true
-elif command -v python3 >/dev/null 2>&1; then
-  python3 -c "
-import json, sys
-print(json.dumps({
-    'worker_id': sys.argv[1],
-    'created_at': sys.argv[2],
-    'cwd': sys.argv[3]
-}, ensure_ascii=False))
-" "${SESSION_ID}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${CWD}" \
-    > "${WORKTREE_INFO_FILE}" 2>/dev/null || true
 else
-  # フォールバック: シンプルな JSON 書き出し
   printf '{"worker_id":"%s","created_at":"%s","cwd":"%s"}\n' \
-    "${SESSION_ID//\"/\\\"}" \
-    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-    "${CWD//\"/\\\"}" \
+    "${SESSION_ID//\"/\\\"}" "${CREATED_AT}" "${TARGET//\"/\\\"}" \
     > "${WORKTREE_INFO_FILE}" 2>/dev/null || true
 fi
 
-# === レスポンス ===
-echo '{"decision":"approve","reason":"WorktreeCreate: initialized worktree state"}'
+# === Contract: print ONLY the worktree directory path on stdout ===
+printf '%s\n' "${TARGET}"
 exit 0

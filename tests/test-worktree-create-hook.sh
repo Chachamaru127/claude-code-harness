@@ -1,5 +1,9 @@
 #!/bin/bash
 # Regression checks for the WorktreeCreate shell hook.
+#
+# Contract (https://code.claude.com/docs/en/hooks): the hook ensures the
+# worktree directory exists and prints ONLY that path on stdout. Malformed
+# input emits nothing (aborts creation safely).
 
 set -euo pipefail
 
@@ -13,56 +17,67 @@ fail() {
   exit 1
 }
 
-json_get() {
-  local file="$1"
-  local key="$2"
-  python3 - "$file" "$key" <<'PY'
-import json
-import sys
-
-with open(sys.argv[1], "r", encoding="utf-8") as fh:
-    data = json.load(fh)
-print(data.get(sys.argv[2], ""))
-PY
+json_str() {
+  python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$1"
 }
 
 run_hook() {
-  local payload="$1"
-  local output_file="$2"
-  (
-    cd "${TMP_DIR}"
-    printf '%s' "${payload}" | bash "${HOOK}"
-  ) >"${output_file}"
+  local payload="$1" output_file="$2" dir="${3:-${TMP_DIR}}"
+  ( cd "${dir}" && printf '%s' "${payload}" | bash "${HOOK}" ) >"${output_file}" 2>/dev/null || true
 }
 
+# --- A throwaway git repo so `git worktree add` works ---
+REPO="${TMP_DIR}/repo"
+mkdir -p "${REPO}"
+(
+  cd "${REPO}"
+  git init -q
+  git config user.email test@test
+  git config user.name test
+  echo seed > README
+  git add README
+  git commit -qm seed
+)
+
+# === 1. decision-JSON-as-cwd must NOT be treated as a path, emits nothing ===
 INVALID_CWD='{"decision":"approve","reason":"WorktreeCreate: initialized worktree state"}'
 INVALID_OUT="${TMP_DIR}/invalid.out"
-run_hook "{\"session_id\":\"worker-json\",\"cwd\":$(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "${INVALID_CWD}")}" "${INVALID_OUT}"
-
-[ "$(json_get "${INVALID_OUT}" decision)" = "approve" ] || fail "invalid cwd did not approve/no-op"
-[ "$(json_get "${INVALID_OUT}" reason)" = "WorktreeCreate: invalid cwd" ] || fail "invalid cwd reason mismatch"
+run_hook "{\"session_id\":\"worker-json\",\"cwd\":$(json_str "${INVALID_CWD}")}" "${INVALID_OUT}"
+[ ! -s "${INVALID_OUT}" ] || fail "invalid cwd produced output: $(cat "${INVALID_OUT}")"
 [ ! -e "${TMP_DIR}/${INVALID_CWD}" ] || fail "hook decision JSON was treated as a directory"
 
-REAL_CWD="${TMP_DIR}/real-worktree"
-mkdir -p "${REAL_CWD}"
+# === 2. empty cwd emits nothing ===
+EMPTY_OUT="${TMP_DIR}/empty.out"
+run_hook '{"session_id":"s","cwd":""}' "${EMPTY_OUT}"
+[ ! -s "${EMPTY_OUT}" ] || fail "empty cwd produced output: $(cat "${EMPTY_OUT}")"
+
+# === 3. valid repo cwd → creates worktree, prints ONLY the path ===
 REAL_OUT="${TMP_DIR}/real.out"
-run_hook "{\"session_id\":\"worker-123\",\"cwd\":\"${REAL_CWD}\"}" "${REAL_OUT}"
+run_hook "{\"session_id\":\"worker-123\",\"cwd\":$(json_str "${REPO}")}" "${REAL_OUT}" "${REPO}"
+PRINTED="$(tr -d '\n' < "${REAL_OUT}")"
+[ -n "${PRINTED}" ] || fail "valid cwd produced no path"
+case "${PRINTED}" in
+  \{*) fail "stdout must be a path, not JSON: ${PRINTED}" ;;
+esac
+[ -d "${PRINTED}" ] || fail "printed path is not a directory: ${PRINTED}"
+git -C "${PRINTED}" rev-parse --is-inside-work-tree >/dev/null 2>&1 || fail "printed path is not a git worktree: ${PRINTED}"
+[ -d "${PRINTED}/.claude/state" ] || fail "state dir not created in worktree"
+[ -f "${PRINTED}/.claude/state/worktree-info.json" ] || fail "worktree-info.json not created"
 
-[ "$(json_get "${REAL_OUT}" decision)" = "approve" ] || fail "real cwd did not approve"
-[ "$(json_get "${REAL_OUT}" reason)" = "WorktreeCreate: initialized worktree state" ] || fail "real cwd reason mismatch"
-[ -d "${REAL_CWD}/.claude/state" ] || fail "real cwd state dir was not created"
-[ -f "${REAL_CWD}/.claude/state/worktree-info.json" ] || fail "worktree-info.json was not created"
-
-python3 - "${REAL_CWD}/.claude/state/worktree-info.json" <<'PY'
-import json
-import sys
-
+python3 - "${PRINTED}/.claude/state/worktree-info.json" <<'PY'
+import json, sys
 with open(sys.argv[1], "r", encoding="utf-8") as fh:
     data = json.load(fh)
 if data.get("worker_id") != "worker-123":
     raise SystemExit("worker_id mismatch")
-if data.get("cwd") == "":
+if not data.get("cwd"):
     raise SystemExit("cwd missing")
 PY
 
-echo "PASS: WorktreeCreate shell hook rejects decision JSON cwd and initializes real cwd"
+# === 4. idempotent: second call reuses, prints the same path ===
+REAL_OUT2="${TMP_DIR}/real2.out"
+run_hook "{\"session_id\":\"worker-123\",\"cwd\":$(json_str "${REPO}")}" "${REAL_OUT2}" "${REPO}"
+PRINTED2="$(tr -d '\n' < "${REAL_OUT2}")"
+[ "${PRINTED2}" = "${PRINTED}" ] || fail "idempotency broken: ${PRINTED2} != ${PRINTED}"
+
+echo "PASS: WorktreeCreate shell hook creates worktree, prints path, idempotent, rejects decision JSON"
