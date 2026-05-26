@@ -1,181 +1,110 @@
 > **Internal fork** — This is a private, customized fork of [Chachamaru127/claude-code-harness](https://github.com/Chachamaru127/claude-code-harness) maintained by our engineering team. See [docs/FORK_NOTES.md](docs/FORK_NOTES.md) and [docs/PROJECT_SCOPE.md](docs/PROJECT_SCOPE.md) for scope and assumptions.
 
-# Claude Code Harness
+# AI Engineering Harness (Internal)
 
-<p align="center">
-  <img src="docs/images/claude-harness-logo-with-text.png" alt="Claude Harness" width="400">
-</p>
+An internal Claude Code-first AI Engineering Harness for disciplined, evidence-based delivery.
 
-<p align="center">
-  <strong>Plan. Work. Review. Ship.</strong><br>
-  <em>A disciplined delivery loop for Claude Code.</em>
-</p>
+**Status:** Fork cleanup in progress. Not yet rolled out to production.
 
-<p align="center">
-  <a href="https://github.com/Chachamaru127/claude-code-harness/releases/latest"><img src="https://img.shields.io/github/v/release/Chachamaru127/claude-code-harness?display_name=tag&sort=semver" alt="Latest Release"></a>
-  <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
-  <a href="docs/CLAUDE_CODE_COMPATIBILITY.md"><img src="https://img.shields.io/badge/Claude_Code-v2.1+-purple.svg" alt="Claude Code"></a>
-  <img src="https://img.shields.io/badge/Skills-5_Verbs-orange.svg" alt="Skills">
-  <img src="https://img.shields.io/badge/Core-Go_Native-00ADD8.svg" alt="Go Core">
-</p>
+---
 
+## What It Does
 
-<p align="center">
-  <img src="docs/images/readme/hero-operating-loop-en.png" alt="Claude Code Harness operating loop: Spec, Plan, Work, Review, Release" width="900">
-</p>
+Harness enforces a repeatable operating path around Claude Code agent work:
 
-Claude Code is powerful, but raw agent work drifts: plans live in chat, tests
-become optional, review happens too late, and release evidence gets rebuilt by
-memory. Harness turns that into one repeatable operating path.
-
-After install, the default changes from "ask the agent to code" to:
-
-1. write the spec and plan,
-2. implement only the approved slice,
-3. verify the result,
-4. review independently,
-5. package evidence for PR or release.
-
-## Quickstart
-
-New users should start from the tool they already use. Existing users should
-run the migration report before cleanup or reinstall.
-
-| Path | Start |
-|---|---|
-| New user | [Tool-first onboarding](docs/onboarding/index.md) |
-| Existing user | [Migration check](docs/onboarding/migration.md) |
-| Claude Code fast path | [Install in 30 seconds](#install-in-30-seconds) |
-| Trigger proof | [Skill trigger gate](docs/onboarding/skill-trigger-acceptance.md) |
-
-## Install in 30 Seconds
-
-```bash
-claude
-/plugin marketplace add Chachamaru127/claude-code-harness
-/plugin install claude-code-harness@claude-code-harness-marketplace
-/harness-setup
+```
+spec → plan → work → review → release
 ```
 
-Next command: run `/harness-plan` with one small request.
+- **Guardrails** — fail-closed hooks block destructive operations before they run (no force push, no secrets, no production deploy automation).
+- **Evidence-based review** — review runs independently from implementation; major findings block completion.
+- **Company-specific safety policy** — deny rules and hook guards are configured for our internal risk posture, not a generic public default.
 
-```bash
-/harness-plan Improve the README onboarding flow
-```
+The goal is to turn "ask the agent to code" into a repeatable, auditable loop with a human approval gate at plan time and review time.
 
-## First 15 Minutes
+---
 
-1. Install through your tool route.
-2. Run `/harness-setup` or the equivalent setup script.
-3. Run `/harness-plan` with a small request; Harness writes the `spec.md` and
-   `Plans.md` drafts for you to check.
-4. Approve the generated contract or reply with the correction you want.
-5. Run the smallest approved task, for example `/harness-work 1.1.1`.
-6. Run `/harness-review` and keep the verification output.
+## What v1 Supports
 
-Your job is not to hand-write the plan. It is to approve or correct the
-generated contract before execution continues.
+- **Claude Code only.** This fork targets Claude Code exclusively.
 
-## How It Works
+## What v1 Does Not Support
 
-Harness adds a source-of-truth loop around agent work.
-The 5 verb skills keep that surface small: plan, work, review, sync, release.
+The following runtimes are archived and out of scope:
 
-1. You describe the outcome in normal language.
-2. `/harness-plan` drafts or updates `spec.md` and `Plans.md` with scope,
-   acceptance criteria, unknowns, and stop conditions.
-3. Harness treats those files as the source of truth. Data the agent has not
-   seen stays `unknown` instead of being silently invented.
-4. `/harness-work` implements the approved slice with TDD and verification.
-5. `/harness-review` separates review from implementation.
-6. `/harness-release` packages only verified evidence.
+- Codex CLI
+- OpenCode
+- Cursor
+- GitHub Copilot CLI
+- Antigravity
+
+Archived surfaces live under `archive/`. See [docs/PROJECT_SCOPE.md](docs/PROJECT_SCOPE.md) for the full active vs. archived component list.
+
+---
 
 ## Commands
 
-| Command | What happens inside |
-|---------|---------------------|
-| `/harness-setup` | Installs project guidance, command surfaces, hooks, and checks so the workflow starts from one known baseline. |
-| `/harness-plan` | Turns intent into `spec.md` and `Plans.md`, including scope, acceptance criteria, dependencies, unknowns, and stop conditions. |
-| `/harness-work` | Executes one approved task or range, adds tests when required, runs verification, and keeps work inside the plan. |
-| `/harness-work all` | Runs the approved plan through implementation and review paths; use after the plan is clear and the repo baseline is known. |
-| `/harness-review` | Reviews the result separately from implementation and treats major findings as blockers. |
-| `/harness-release` | Checks release readiness, CHANGELOG/tag boundaries, and evidence packaging after implementation and review are complete. |
-| `bin/harness doctor --migration-report` | Inventories old plugin caches, symlinks, and memory state without deleting data. |
+The intended short-form command surface is listed below. Where a short alias is not yet wired, the existing harness skill is the current entry point.
+
+| Intended alias | Current skill | Description |
+|---|---|---|
+| `/setup` | `/harness-setup` | Install project guidance, hooks, and checks. One-time per repo. |
+| `/plan` | `/harness-plan` | Turn intent into `spec.md` and `Plans.md`. User approves before work starts. |
+| `/work` | `/harness-work` | Implement one approved task or range. Stays inside the plan. |
+| `/review` | `/harness-review` | Independent review after implementation. Major findings block completion. |
+| `/release` | `/harness-release` | Check readiness, CHANGELOG/tag boundaries, and evidence packaging. |
+| `/status` | `/harness-sync` | Check alignment between Plans.md, git state, and implementation. _(alias planned)_ |
+
+Short aliases (`/plan`, `/work`, etc.) are planned convenience wrappers. Until they are wired, use the `/harness-*` forms directly.
+
+---
 
 ## Basic Workflow
 
 | Stage | Output | Gate |
-|-------|--------|------|
-| Investigate | Evidence and unknowns | Do not promote unobserved data into claims. |
-| Plan | `spec.md` + `Plans.md` | User approves or corrects the generated contract. |
-| Work | Code and tests | TDD required when the task says so. |
-| Review | Independent verdict | Major findings block completion. |
-| PR | Evidence pack | PR ready is not release ready. |
-| Release | Tag/release artifacts | Release preflight must pass on the release path. |
-
-## Install By Tool
-
-| Tool | Tier | Route |
 |---|---|---|
-| Claude Code | `supported` | Claude plugin marketplace, then `/harness-setup`. |
+| Plan | `spec.md` + `Plans.md` | User approves or corrects the generated contract before work starts. |
+| Work | Code and tests | TDD required when the task calls for it. Stays inside the approved slice. |
+| Review | Independent verdict | Major findings block completion. |
+| Release | Tag and release artifacts | Release preflight must pass. Evidence must be present. |
 
-Other runtimes (Codex CLI, OpenCode, Cursor, GitHub Copilot CLI) are out of scope for v1 and archived under `archive/non-claude/`. See [docs/PROJECT_SCOPE.md](docs/PROJECT_SCOPE.md).
+---
 
-## Existing User Migration
+## Safety Philosophy
 
-Run `bin/harness doctor --migration-report` before changing an existing setup.
-The report inventories stale Claude plugin caches, old symlinks, and harness-mem
-state without deleting anything.
+- **Fail-closed.** When a guardrail cannot determine intent, it blocks and asks rather than proceeding.
+- **No secrets.** Hooks prevent credentials and tokens from appearing in commits or agent context.
+- **No force push.** `git push --force` is denied at the hook layer and requires explicit human override.
+- **No production deploy automation.** Harness does not wire deploy steps. Release prepares evidence; a human initiates the deploy.
+- **Review before release.** The review stage is structurally separate from implementation and must complete before release packaging begins.
 
-## Support Boundary
-
-Harness can describe candidate paths, but it does not inherit support claims
-from Superpowers, Hermes Agent, or any other project. A host only moves up when
-Harness has its own bootstrap, trigger, runtime, and release evidence.
-
-`not_observed != absent`: missing local proof means "not proven here", not
-"impossible" and not "supported".
+---
 
 ## Requirements
 
-- Claude Code v2.1+ for the supported Claude path.
-- A project repository with write access for local setup.
-- No Node.js is required for the Go-native guardrail engine.
-- Optional [harness-mem](https://github.com/Chachamaru127/harness-mem) for
-  cross-session memory when configured and healthy.
+- Claude Code v2.1+
+- A project repository with write access for local setup
+- No Node.js required (guardrail engine is Go-native)
 
-## Advanced
-
-Use these after the basic trigger path is visible.
-
-| Capability | What it adds | Boundary |
-|------------|--------------|----------|
-| Breezing | Planner/Critic/Worker style team execution for larger task lists. | Still gated by plan quality and review. |
-| harness-mem | Project-scoped memory and recall across sessions. | Optional companion; purge remains explicit. |
+---
 
 ## Documentation
 
-| Resource | Description |
-|----------|-------------|
-| [Tool-first onboarding](docs/onboarding/index.md) | Where to start by host tool. |
-| [Install routes](docs/onboarding/install.md) | Per-tool setup and support-tier boundaries. |
-| [Migration check](docs/onboarding/migration.md) | Existing-user impact, compatibility, and rollback path. |
-| [Skill trigger gate](docs/onboarding/skill-trigger-acceptance.md) | How install success is verified. |
-| [Capability matrix](docs/tool-capability-matrix.md) | Supported, internal-compatible, candidate, and unsupported host claims. |
-| [Claude Code Compatibility](docs/CLAUDE_CODE_COMPATIBILITY.md) | Current Claude Code requirements and compatibility notes. |
-| [Distribution Scope](docs/distribution-scope.md) | Included vs compatibility vs development-only paths. |
-| [Hardening parity](docs/hardening-parity.md) | Claude Code hook guardrail policy (Codex comparison sections are historical). |
-| [Work All Evidence Pack](docs/evidence/work-all.md) | Success/failure verification contract for full-plan execution. |
-| [Changelog](CHANGELOG.md) | User-facing version history. |
+| Document | Description |
+|---|---|
+| [docs/PROJECT_SCOPE.md](docs/PROJECT_SCOPE.md) | Active vs. archived components, v1 scope boundaries. |
+| [docs/FORK_NOTES.md](docs/FORK_NOTES.md) | What was changed from upstream and why. |
+| [docs/REPO_INVENTORY.md](docs/REPO_INVENTORY.md) | Full file-level inventory of the repository. |
+| [docs/NAMING_PLAN.md](docs/NAMING_PLAN.md) | Internal naming conventions and cleanup plan. |
+| [docs/JAPANESE_TEXT_CLEANUP.md](docs/JAPANESE_TEXT_CLEANUP.md) | Status of Japanese text removal across the codebase. |
+| [CHANGELOG.md](CHANGELOG.md) | Version history. |
 
-## Contributing
-
-Issues and PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+---
 
 ## Acknowledgments
 
-- [AI Masao](https://note.com/masa_wunder) - Hierarchical skill design
-- [Beagle](https://github.com/beagleworks) - Test tampering prevention patterns
+- [AI Masao](https://note.com/masa_wunder) — Hierarchical skill design
+- [Beagle](https://github.com/beagleworks) — Test tampering prevention patterns
 
 ## License
 
