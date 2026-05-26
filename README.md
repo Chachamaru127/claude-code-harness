@@ -1,3 +1,5 @@
+> **Internal fork** — This is a private, customized fork of [Chachamaru127/claude-code-harness](https://github.com/Chachamaru127/claude-code-harness) maintained by our engineering team. See [docs/FORK_NOTES.md](docs/FORK_NOTES.md) and [docs/PROJECT_SCOPE.md](docs/PROJECT_SCOPE.md) for scope and assumptions.
+
 # Claude Code Harness
 
 <p align="center">

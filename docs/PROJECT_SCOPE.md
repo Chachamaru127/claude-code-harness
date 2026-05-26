@@ -1,9 +1,13 @@
-# Project Scope — Internal AI Engineering Harness
+# Project Scope — Company AI Harness (v1)
+
+## Project Name
+
+**Company AI Harness** — an internal fork of [Chachamaru127/claude-code-harness](https://github.com/Chachamaru127/claude-code-harness).
 
 ## What This Is
 
 An internal harness for AI-assisted engineering workflows, built on top of Claude Code.
-It provides a structured **Plan → Work → Review** cycle with:
+It provides a structured **Spec → Plan → Work → Review → Release** cycle with:
 
 - Skill-based slash commands (Claude Code plugin)
 - Go-native guardrail engine and session monitor
@@ -14,8 +18,38 @@ It provides a structured **Plan → Work → Review** cycle with:
 
 **Claude Code only** (v1).
 
-Other runtimes (Codex CLI, OpenCode, Cursor) are out of scope for v1.
-Archived material is preserved under `archive/` in case future scope expands.
+Other runtimes are out of scope for v1 and archived under `archive/`.
+
+## Core v1 Goals
+
+| Goal | Description |
+|------|-------------|
+| Structured workflow | Spec → Plan → Work → Review → Release loop with Plans.md as the SSOT |
+| Fail-closed guardrails | All destructive or irreversible operations require explicit human approval |
+| Company safety policy | Internal rules wired into hooks and agents (no skip-permissions autonomy) |
+| Stack awareness | Skills and agents tuned for Next.js, Metronic, Node.js, PostgreSQL, Docker, Proxmox |
+| Evidence-based gates | Review and release require structured evidence; no rubber-stamp approvals |
+
+## Out of Scope (v1)
+
+The following runtimes and surfaces are explicitly excluded from v1:
+
+| Surface | Status |
+|---------|--------|
+| Codex CLI | Archived under `archive/` |
+| Codex app | Not supported |
+| OpenCode | Archived under `archive/` |
+| Cursor IDE | Archived under `archive/` |
+| GitHub Copilot CLI | Not supported |
+| Antigravity | Not supported |
+
+## Non-Goals (v1)
+
+- Public marketplace / plugin store publishing
+- Multi-host parity (supporting more than Claude Code)
+- Dashboard UI for plan or task management
+- Production deploy automation
+- Autonomous skip-permissions workflow
 
 ## Active Components
 
@@ -30,14 +64,6 @@ Archived material is preserved under `archive/` in case future scope expands.
 | Scripts | `scripts/` | Supporting shell scripts |
 | Tests | `tests/` | Plugin validation and integration tests |
 | Rules | `.claude/rules/` | Operational rules loaded into Claude context |
-
-## Out of Scope (v1)
-
-- Codex CLI integration
-- OpenCode integration
-- Cursor IDE integration
-- Japanese-language UI / docs (English only going forward)
-- `Plans.md` upstream project tracker (archived for reference)
 
 ## Language Policy
 
