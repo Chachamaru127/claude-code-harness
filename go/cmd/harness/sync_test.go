@@ -121,8 +121,12 @@ func TestSync_GeneratesPluginJSON(t *testing.T) {
 	if v["description"] != "Claude harness" {
 		t.Errorf("plugin.json description = %v, want 'Claude harness'", v["description"])
 	}
-	if v["author"] != "Chachamaru" {
-		t.Errorf("plugin.json author = %v, want Chachamaru", v["author"])
+	// sync.go emits author as {"name": ...} object per CC plugin validator contract.
+	authorObj, ok := v["author"].(map[string]interface{})
+	if !ok {
+		t.Errorf("plugin.json author = %v (type %T), want object", v["author"], v["author"])
+	} else if authorObj["name"] != "Chachamaru" {
+		t.Errorf("plugin.json author.name = %v, want Chachamaru", authorObj["name"])
 	}
 	if v["homepage"] != "https://github.com/Chachamaru127/claude-code-harness" {
 		t.Errorf("plugin.json homepage = %v", v["homepage"])
