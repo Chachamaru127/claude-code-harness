@@ -7,7 +7,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 
-LOOP_SCRIPT="${PROJECT_ROOT}/scripts/codex-loop.sh"
+LOOP_SCRIPT="${PROJECT_ROOT}/archive/non-claude/scripts/codex-loop.sh"
 
 cat > "${TMP_DIR}/Plans.md" <<'EOF'
 # Plans
@@ -122,16 +122,24 @@ jq -e '
   (.task.title | contains("cc:done") | not)
 ' "${CONTRACT_JSON}" >/dev/null
 
-grep -q 'cc:done' "${PROJECT_ROOT}/scripts/codex-worker-merge.sh"
-if grep -q 'Plans.md 更新: .*cc:完了' "${PROJECT_ROOT}/scripts/codex-worker-merge.sh"; then
-  echo "[FAIL] codex-worker-merge must emit canonical cc:done writer output" >&2
-  exit 1
+# scripts/codex-worker-merge.sh and scripts/codex-loop.sh are archived
+# use archive paths when checking these scripts
+CODEX_WORKER_MERGE="${PROJECT_ROOT}/archive/non-claude/scripts/codex-worker-merge.sh"
+CODEX_LOOP_ARCHIVE="${PROJECT_ROOT}/archive/non-claude/scripts/codex-loop.sh"
+if [ -f "${CODEX_WORKER_MERGE}" ]; then
+  grep -q 'cc:done' "${CODEX_WORKER_MERGE}"
+  if grep -q 'Plans.md 更新: .*cc:完了' "${CODEX_WORKER_MERGE}"; then
+    echo "[FAIL] codex-worker-merge must emit canonical cc:done writer output" >&2
+    exit 1
+  fi
 fi
 
-grep -q 'cc:done \[<commit>\]' "${PROJECT_ROOT}/scripts/codex-loop.sh"
-if grep -q 'update Plans.md.*cc:完了 \[<commit>\]' "${PROJECT_ROOT}/scripts/codex-loop.sh"; then
-  echo "[FAIL] codex-loop prompts must ask workers to write cc:done" >&2
-  exit 1
+if [ -f "${CODEX_LOOP_ARCHIVE}" ]; then
+  grep -q 'cc:done \[<commit>\]' "${CODEX_LOOP_ARCHIVE}"
+  if grep -q 'update Plans.md.*cc:完了 \[<commit>\]' "${CODEX_LOOP_ARCHIVE}"; then
+    echo "[FAIL] codex-loop prompts must ask workers to write cc:done" >&2
+    exit 1
+  fi
 fi
 
 grep -q 'cc:done' "${PROJECT_ROOT}/templates/Plans.md.template"

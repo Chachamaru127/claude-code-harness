@@ -120,7 +120,8 @@ func generatePluginJSON(projectRoot string, cfg *config.Config) error {
 		if url != "" {
 			author = map[string]string{"name": name, "url": url}
 		} else {
-			author = name
+			// CC plugin validator expects author as object, not string
+			author = map[string]string{"name": name}
 		}
 	}
 

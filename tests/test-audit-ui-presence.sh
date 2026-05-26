@@ -126,7 +126,7 @@ trap "rm -f '$TMP_AUDIT'; rm -rf '$TMP_DIR'" EXIT
 
 # progress fixture with audit fields
 SNAP="$TMP_DIR/snap.json"
-bash "$ROOT_DIR/scripts/progress-snapshot.sh" --plans Plans.md --project test > "$SNAP"
+bash "$ROOT_DIR/scripts/progress-snapshot.sh" --plans "$ROOT_DIR/archive/Plans.md" --project test > "$SNAP"
 
 # Inject audit fields
 SNAP2="$TMP_DIR/snap-audit.json"

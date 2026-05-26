@@ -107,8 +107,8 @@ assert_fails "symlink escape manifest path fails" bash "${HARNESS_ROOT}/scripts/
   export HARNESS_CODEX_LOOP_SOURCE_ONLY=1
   export PROJECT_ROOT="${TMP_DIR}"
   export HARNESS_INSTALL_ROOT="${HARNESS_ROOT}"
-  # shellcheck source=../scripts/codex-loop.sh
-  source "${HARNESS_ROOT}/scripts/codex-loop.sh"
+  # shellcheck source=../archive/non-claude/scripts/codex-loop.sh
+  source "${HARNESS_ROOT}/archive/non-claude/scripts/codex-loop.sh"
   assert_eq "$(HARNESS_PLAN_NAME=roadmap plans_file_path)" "${TMP_DIR}/plans/roadmap.md" "codex-loop resolves named plan to absolute file"
   assert_eq "$(next_task_id all "${TMP_DIR}/plans/roadmap.md")" "9.1.1" "codex-loop next task reads roadmap task"
 )

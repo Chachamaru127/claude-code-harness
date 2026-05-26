@@ -8,8 +8,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 skill_files=(
   "$ROOT_DIR/skills/harness-review/SKILL.md"
-  "$ROOT_DIR/codex/.codex/skills/harness-review/SKILL.md"
-  "$ROOT_DIR/opencode/skills/harness-review/SKILL.md"
 )
 
 reference_names=(
@@ -116,19 +114,11 @@ for file in "${skill_files[@]}"; do
 done
 
 for reference_name in "${reference_names[@]}"; do
-  reference_files=(
-    "$ROOT_DIR/skills/harness-review/references/$reference_name"
-    "$ROOT_DIR/codex/.codex/skills/harness-review/references/$reference_name"
-    "$ROOT_DIR/opencode/skills/harness-review/references/$reference_name"
-  )
-
-  for file in "${reference_files[@]}"; do
-    if [ ! -f "$file" ]; then
-      echo "missing reference file: ${file#$ROOT_DIR/}" >&2
-      failures=$((failures + 1))
-      continue
-    fi
-  done
+  file="$ROOT_DIR/skills/harness-review/references/$reference_name"
+  if [ ! -f "$file" ]; then
+    echo "missing reference file: ${file#$ROOT_DIR/}" >&2
+    failures=$((failures + 1))
+  fi
 done
 
 for term in "${required_reference_terms[@]}"; do
@@ -160,20 +150,6 @@ else
   done
 fi
 
-if ! diff -qr --exclude='.DS_Store' "$ROOT_DIR/skills/harness-review" "$ROOT_DIR/codex/.codex/skills/harness-review" >/dev/null; then
-  echo "codex harness-review mirror drifted from skills/ SSOT" >&2
-  failures=$((failures + 1))
-fi
-
-if ! diff -qr --exclude='.DS_Store' "$ROOT_DIR/skills/harness-review/references" "$ROOT_DIR/opencode/skills/harness-review/references" >/dev/null; then
-  echo "opencode harness-review references drifted from skills/ SSOT" >&2
-  failures=$((failures + 1))
-fi
-
-if ! node "$ROOT_DIR/scripts/validate-opencode.js" >/dev/null; then
-  echo "opencode skill frontmatter failed native validation" >&2
-  failures=$((failures + 1))
-fi
 
 if [ "$failures" -gt 0 ]; then
   exit 1

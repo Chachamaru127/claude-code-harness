@@ -29,6 +29,12 @@ grep_plans_or_archive() {
         return 0
     fi
 
+    # Also check archive/Plans.md (moved here during claude-first fork cleanup)
+    local archive_plans="${ROOT_DIR}/archive/Plans.md"
+    if [ -f "${archive_plans}" ] && grep -q -- "${pattern}" "${archive_plans}" 2>/dev/null; then
+        return 0
+    fi
+
     if [ -d "${archive_dir}" ]; then
         for archive_file in "${archive_dir}"/Plans-*.md; do
             [ -f "${archive_file}" ] || continue

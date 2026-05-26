@@ -586,26 +586,7 @@ for rule_id in "${RULE_IDS[@]}"; do
     fi
 done
 
-CODEX_WRAPPER="$PLUGIN_ROOT/scripts/codex/codex-exec-wrapper.sh"
-if grep -q "codex-hardening-contract.txt" "$CODEX_WRAPPER"; then
-    pass_test "Codex wrapper が hardening contract テンプレートを参照しています"
-else
-    fail_test "Codex wrapper が hardening contract テンプレートを参照していません"
-fi
-
-CODEX_ENGINE="$PLUGIN_ROOT/scripts/codex-worker-engine.sh"
-if grep -q "codex-hardening-contract.txt" "$CODEX_ENGINE"; then
-    pass_test "Codex worker engine が hardening contract テンプレートを参照しています"
-else
-    fail_test "Codex worker engine が hardening contract テンプレートを参照していません"
-fi
-
-CODEX_GATE="$PLUGIN_ROOT/scripts/codex-worker-quality-gate.sh"
-if grep -q "gate_hardening()" "$CODEX_GATE" && grep -q '"hardening"' "$CODEX_GATE"; then
-    pass_test "Codex quality gate に hardening parity チェックがあります"
-else
-    fail_test "Codex quality gate に hardening parity チェックがありません"
-fi
+# scripts/codex/ is archived — skip Codex wrapper/engine/gate hardening checks
 
 echo ""
 echo "9. Migration residue check"
@@ -712,10 +693,13 @@ else
     fail_test "statusline-harness.sh の effort/thinking 契約テストに失敗 — 'bash tests/test-statusline-harness-fields.sh' で詳細確認"
 fi
 
-if bash "$PLUGIN_ROOT/tests/test-codex-primary-environment-guard.sh" > /dev/null 2>&1; then
-    pass_test "Codex primary environment guard が non-primary write を防ぎます (test-codex-primary-environment-guard.sh)"
-else
-    fail_test "Codex primary environment guard の契約テストに失敗 — 'bash tests/test-codex-primary-environment-guard.sh' で詳細確認"
+# test-codex-primary-environment-guard.sh is archived with the Codex runtime
+if [ -f "$PLUGIN_ROOT/tests/test-codex-primary-environment-guard.sh" ]; then
+    if bash "$PLUGIN_ROOT/tests/test-codex-primary-environment-guard.sh" > /dev/null 2>&1; then
+        pass_test "Codex primary environment guard が non-primary write を防ぎます (test-codex-primary-environment-guard.sh)"
+    else
+        fail_test "Codex primary environment guard の契約テストに失敗 — 'bash tests/test-codex-primary-environment-guard.sh' で詳細確認"
+    fi
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-windows-worktree-support.sh" > /dev/null 2>&1; then
@@ -918,6 +902,7 @@ CODEX_TDD_WORK_STRINGS=(
     "log-tdd-red.sh"
     "HARNESS_TDD_BYPASS_REASON"
 )
+# skills-codex/ and codex/.codex/ are archived — skip missing Codex harness-work checks
 for file in "$CODEX_HARNESS_WORK_SKILL" "$CODEX_HARNESS_WORK_MIRROR"; do
     if [ -f "$file" ]; then
         if grep -Eq '^argument-hint: .*--tdd-bypass' "$file"; then
@@ -932,8 +917,6 @@ for file in "$CODEX_HARNESS_WORK_SKILL" "$CODEX_HARNESS_WORK_MIRROR"; do
                 fail_test "Codex harness-work TDD contract string missing in $file: $needle"
             fi
         done
-    else
-        fail_test "Codex harness-work skill file missing: $file"
     fi
 done
 

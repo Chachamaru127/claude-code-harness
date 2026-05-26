@@ -84,6 +84,7 @@ deleted_concepts:
       - "docs/positioning-notes.md"  # 旧ポジショニング文書
       - "docs/release-copy-phase21.md"  # Phase 21 リリースコピー
       - ".claude/rules/"  # rules ファイル（versioning.md が歴史的言及を含む）
+      - "archive/"  # non-Claude runtime 歴史アーカイブ（archiváció után nem aktív）
       - "Plans.md"
       - "out/"
       - "output/"
@@ -109,6 +110,7 @@ deleted_concepts:
       - "tests/test-codex-package.sh"  # v3 legacy skill テスト（コメント）
       - "skills-codex/"  # codex スキルミラー（独立管理）
       - ".claude/rules/migration-policy.md"  # Phase 40 歴史記述（事例付録に旧バージョン名を含む）
+      - "archive/"  # non-Claude runtime 歴史アーカイブ
       - "out/"
       - "output/"
       - "Plans.md"
@@ -145,6 +147,7 @@ deleted_concepts:
       - "codex/"  # codex は別ランタイム
       - "skills/generate-video/"  # 動画生成スキルは Node.js を使う可能性
       - "opencode/"
+      - "archive/"  # non-Claude runtime 歴史アーカイブ
       - ".claude/rules/migration-policy.md"  # Phase 40 歴史記述（事例付録に旧ランタイム要件を含む）
 
   - term: "claude-mem"

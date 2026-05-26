@@ -93,13 +93,18 @@ require_contains "$WORK_SKILL" "Spec SSOT preflight" "harness-work has Spec SSOT
 require_contains "$WORK_SKILL" "spec_path" "harness-work が Worker / Reviewer へ spec_path を渡す"
 require_contains "$WORK_EXEC_REF" "project spec SSOT" "shared execution mode が spec SSOT preflight を持つ"
 
-require_contains "$CODEX_WORK_SKILL" "Spec SSOT preflight" "Codex harness-work has Spec SSOT preflight"
-require_contains "$CODEX_WORK_SKILL" "spec_skip_reason" "Codex harness-work が spec_skip_reason を Worker に渡す"
-require_contains "$CODEX_WORK_EXEC_REF" "project spec SSOT" "Codex execution mode が spec SSOT preflight を持つ"
+# skills-codex/ is archived — skip Codex harness-work checks
+if [ -f "$CODEX_WORK_SKILL" ]; then
+  require_contains "$CODEX_WORK_SKILL" "Spec SSOT preflight" "Codex harness-work has Spec SSOT preflight"
+  require_contains "$CODEX_WORK_SKILL" "spec_skip_reason" "Codex harness-work が spec_skip_reason を Worker に渡す"
+fi
+if [ -f "$CODEX_WORK_EXEC_REF" ]; then
+  require_contains "$CODEX_WORK_EXEC_REF" "project spec SSOT" "Codex execution mode が spec SSOT preflight を持つ"
+fi
 
 require_contains "$WORKER_AGENT" "spec_path" "Worker input が spec_path を受け取る"
 require_contains "$SCAFFOLDER_AGENT" "spec_required" "Scaffolder analyze が spec_required を返す"
 require_contains "$REVIEWER_AGENT" "spec_path" "Reviewer input が spec_path を受け取る"
-require_contains "$REVIEW_SKILL" "仕様正本 alignment check" "harness-review が spec alignment を確認する"
+require_contains "$REVIEW_SKILL" "Spec alignment check" "harness-review が spec alignment を確認する"
 
 echo "All spec SSOT workflow checks passed."

@@ -8,8 +8,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 skill_files=(
   "$ROOT_DIR/skills/harness-release/SKILL.md"
-  "$ROOT_DIR/codex/.codex/skills/harness-release/SKILL.md"
-  "$ROOT_DIR/opencode/skills/harness-release/SKILL.md"
 )
 
 required_terms=(
@@ -62,15 +60,6 @@ for file in "${skill_files[@]}"; do
   fi
 done
 
-if ! diff -qr --exclude='.DS_Store' "$ROOT_DIR/skills/harness-release" "$ROOT_DIR/codex/.codex/skills/harness-release" >/dev/null; then
-  echo "codex harness-release mirror drifted from skills/ SSOT" >&2
-  failures=$((failures + 1))
-fi
-
-if ! node "$ROOT_DIR/scripts/validate-opencode.js" >/dev/null; then
-  echo "opencode skill frontmatter failed native validation" >&2
-  failures=$((failures + 1))
-fi
 
 if [ "$failures" -gt 0 ]; then
   exit 1

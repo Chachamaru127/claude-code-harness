@@ -3,6 +3,12 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# Guard flags: codex/ and skills-codex/ are archived in the claude-first fork
+CODEX_ACTIVE=false
+[ -d "${ROOT_DIR}/codex" ] && CODEX_ACTIVE=true
+SKILLS_CODEX_ACTIVE=false
+[ -d "${ROOT_DIR}/skills-codex" ] && SKILLS_CODEX_ACTIVE=true
+
 # Phase 64.1.1 / 64.1.3: archive-aware Plans.md grep helper を共有 library から source
 # helper 実装と説明は tests/lib/grep_plans_or_archive.sh を参照。
 # tests/test-grep-plans-or-archive.sh が 4 状態 (Plans only / archive only / both / miss) を独立検証する。
@@ -210,7 +216,6 @@ grep_plans_or_archive 'upstream-update-snapshot-2026-04-21' || {
 # Phase 52: upstream update skill review contract and mirror drift checks
 for skill_name in "${UPSTREAM_SKILL_NAMES[@]}"; do
   CANONICAL_SKILL="${ROOT_DIR}/skills/${skill_name}/SKILL.md"
-  CODEX_SKILL="${ROOT_DIR}/codex/.codex/skills/${skill_name}/SKILL.md"
   LOCAL_AGENT_SKILL="${ROOT_DIR}/.agents/skills/${skill_name}/SKILL.md"
 
   [ -f "${CANONICAL_SKILL}" ] || {
@@ -221,14 +226,18 @@ for skill_name in "${UPSTREAM_SKILL_NAMES[@]}"; do
     echo "${CANONICAL_SKILL} does not exist"
     exit 1
   }
-  [ -f "${CODEX_SKILL}" ] || {
-    echo "${CODEX_SKILL} does not exist"
-    exit 1
-  }
-  cmp -s "${CANONICAL_SKILL}" "${CODEX_SKILL}" || {
-    echo "${skill_name} skill mirror drift: skills/ and codex/.codex/ differ"
-    exit 1
-  }
+  # Codex mirror check skipped when codex/ is archived
+  if $CODEX_ACTIVE; then
+    CODEX_SKILL="${ROOT_DIR}/codex/.codex/skills/${skill_name}/SKILL.md"
+    [ -f "${CODEX_SKILL}" ] || {
+      echo "${CODEX_SKILL} does not exist"
+      exit 1
+    }
+    cmp -s "${CANONICAL_SKILL}" "${CODEX_SKILL}" || {
+      echo "${skill_name} skill mirror drift: skills/ and codex/.codex/ differ"
+      exit 1
+    }
+  fi
   if [ -f "${LOCAL_AGENT_SKILL}" ]; then
     cmp -s "${CANONICAL_SKILL}" "${LOCAL_AGENT_SKILL}" || {
       echo "${skill_name} skill mirror drift: skills/ and .agents/ differ"
@@ -447,43 +456,47 @@ grep -q '`/usage` usage / cost / stats view' "${ROOT_DIR}/docs/CLAUDE-feature-ta
 }
 
 # Phase 53.2.1: Codex Bedrock provider and model metadata setup policy
+# docs/codex-provider-setup-policy.md is archived — skip when absent
 CODEX_PROVIDER_POLICY_DOC="${ROOT_DIR}/docs/codex-provider-setup-policy.md"
-[ -f "${CODEX_PROVIDER_POLICY_DOC}" ] || {
-  echo "${CODEX_PROVIDER_POLICY_DOC} does not exist"
-  exit 1
-}
-grep -q 'model_provider = "amazon-bedrock"' "${CODEX_PROVIDER_POLICY_DOC}" || {
-  echo "Codex provider policy doc must show the amazon-bedrock provider id"
-  exit 1
-}
-grep -q 'model_providers.amazon-bedrock.aws' "${CODEX_PROVIDER_POLICY_DOC}" || {
-  echo "Codex provider policy doc must document the AWS profile config path"
-  exit 1
-}
-grep -q 'Harness の配布用 `codex/.codex/config.toml` には `model = "gpt-5.4"` を default として書かない' "${CODEX_PROVIDER_POLICY_DOC}" || {
-  echo "Codex provider policy doc must not pin gpt-5.4 in shipped setup defaults"
-  exit 1
-}
-grep -q 'Claude Code 側の Bedrock guidance' "${CODEX_PROVIDER_POLICY_DOC}" || {
-  echo "Codex provider policy doc must separate Claude Code Bedrock guidance from Codex provider config"
-  exit 1
-}
-grep -q 'docs/codex-provider-setup-policy.md' "${ROOT_DIR}/skills/harness-setup/SKILL.md" || {
-  echo "harness-setup must link to Codex provider setup policy"
-  exit 1
-}
-grep -q 'amazon-bedrock' "${ROOT_DIR}/skills/harness-setup/SKILL.md" || {
-  echo "harness-setup must mention the amazon-bedrock provider"
-  exit 1
-}
-grep -q 'model_provider = "amazon-bedrock"' "${ROOT_DIR}/codex/README.md" || {
-  echo "codex/README.md must show the amazon-bedrock provider setup"
-  exit 1
-}
-grep -q 'model_provider = "amazon-bedrock"' "${ROOT_DIR}/codex/.codex/config.toml" || {
-  echo "codex/.codex/config.toml must include a commented amazon-bedrock setup note"
-  exit 1
-}
+if [ -f "${CODEX_PROVIDER_POLICY_DOC}" ]; then
+  grep -q 'model_provider = "amazon-bedrock"' "${CODEX_PROVIDER_POLICY_DOC}" || {
+    echo "Codex provider policy doc must show the amazon-bedrock provider id"
+    exit 1
+  }
+  grep -q 'model_providers.amazon-bedrock.aws' "${CODEX_PROVIDER_POLICY_DOC}" || {
+    echo "Codex provider policy doc must document the AWS profile config path"
+    exit 1
+  }
+  grep -q 'Harness の配布用 `codex/.codex/config.toml` には `model = "gpt-5.4"` を default として書かない' "${CODEX_PROVIDER_POLICY_DOC}" || {
+    echo "Codex provider policy doc must not pin gpt-5.4 in shipped setup defaults"
+    exit 1
+  }
+  grep -q 'Claude Code 側の Bedrock guidance' "${CODEX_PROVIDER_POLICY_DOC}" || {
+    echo "Codex provider policy doc must separate Claude Code Bedrock guidance from Codex provider config"
+    exit 1
+  }
+fi
+if [ -f "${ROOT_DIR}/skills/harness-setup/SKILL.md" ]; then
+  grep -q 'docs/codex-provider-setup-policy.md' "${ROOT_DIR}/skills/harness-setup/SKILL.md" || {
+    echo "harness-setup must link to Codex provider setup policy"
+    exit 1
+  }
+  grep -q 'amazon-bedrock' "${ROOT_DIR}/skills/harness-setup/SKILL.md" || {
+    echo "harness-setup must mention the amazon-bedrock provider"
+    exit 1
+  }
+fi
+# codex/ is archived — skip codex-specific provider config checks
+if $CODEX_ACTIVE; then
+  grep -q 'model_provider = "amazon-bedrock"' "${ROOT_DIR}/codex/README.md" || {
+    echo "codex/README.md must show the amazon-bedrock provider setup"
+    exit 1
+  }
+  grep -q 'model_provider = "amazon-bedrock"' "${ROOT_DIR}/codex/.codex/config.toml" || {
+    echo "codex/.codex/config.toml must include a commented amazon-bedrock setup note"
+    exit 1
+  }
+fi
 if grep -q 'gpt-5.2-codex  # 推奨モデル' "${ROOT_DIR}/scripts/check-codex.sh"; then
   echo "check-codex.sh must not recommend the stale gpt-5.2-codex model slug"
   exit 1
@@ -502,11 +515,9 @@ grep -q 'Codex 0.123.0 provider / model metadata.*A: docs 化済み' "${ROOT_DIR
 }
 
 # Phase 53.2.2: Codex /mcp verbose diagnostics and plugin .mcp.json loading policy
+# docs/codex-mcp-diagnostics.md is archived — skip whole section when absent
 CODEX_MCP_DIAGNOSTICS_DOC="${ROOT_DIR}/docs/codex-mcp-diagnostics.md"
-[ -f "${CODEX_MCP_DIAGNOSTICS_DOC}" ] || {
-  echo "${CODEX_MCP_DIAGNOSTICS_DOC} does not exist"
-  exit 1
-}
+if [ -f "${CODEX_MCP_DIAGNOSTICS_DOC}" ]; then
 grep -q 'Codex MCP diagnostics / plugin loading' "${ROOT_DIR}/CHANGELOG.md" || {
   echo "CHANGELOG must mention Codex MCP diagnostics / plugin loading"
   exit 1
@@ -587,6 +598,7 @@ grep -q 'Codex 0.123.0 MCP diagnostics / plugin loading.*A: docs 化済み' "${R
   echo "Feature Table must mark 53.2.2 MCP diagnostics/plugin loading guidance as done"
   exit 1
 }
+fi # end codex-mcp-diagnostics.md section
 
 # Phase 53.2.3: Codex realtime handoff / background agent silence policy
 grep -q '53.2.3 Codex realtime handoff silence policy' "${PHASE53_SNAPSHOT_DOC}" || {
@@ -601,38 +613,46 @@ grep -q 'advisor / reviewer drift は silence 対象にしない' "${PHASE53_SNA
   echo "Phase 53 snapshot must keep advisor / reviewer drift outside silence policy"
   exit 1
 }
-grep -q 'Realtime Handoff / Silence Policy' "${ROOT_DIR}/skills-codex/harness-loop/SKILL.md" || {
-  echo "Codex harness-loop skill must document realtime handoff silence policy"
-  exit 1
-}
-grep -q 'Realtime Handoff / Silence Policy' "${ROOT_DIR}/codex/.codex/skills/harness-loop/SKILL.md" || {
-  echo "Codex harness-loop mirror must document realtime handoff silence policy"
-  exit 1
-}
-grep -q 'Realtime Handoff / Silence Policy' "${ROOT_DIR}/skills-codex/breezing/SKILL.md" || {
-  echo "Codex breezing skill must document realtime handoff silence policy"
-  exit 1
-}
-grep -q 'Realtime Handoff / Silence Policy' "${ROOT_DIR}/codex/.codex/skills/breezing/SKILL.md" || {
-  echo "Codex breezing mirror must document realtime handoff silence policy"
-  exit 1
-}
-grep -q 'Silence Policy（長時間実行の通知整理）' "${ROOT_DIR}/skills/breezing/SKILL.md" || {
+# skills-codex/ and codex/.codex/ are archived — skip Codex-specific silence policy checks
+if $SKILLS_CODEX_ACTIVE; then
+  grep -q 'Realtime Handoff / Silence Policy' "${ROOT_DIR}/skills-codex/harness-loop/SKILL.md" || {
+    echo "Codex harness-loop skill must document realtime handoff silence policy"
+    exit 1
+  }
+  grep -q 'Realtime Handoff / Silence Policy' "${ROOT_DIR}/skills-codex/breezing/SKILL.md" || {
+    echo "Codex breezing skill must document realtime handoff silence policy"
+    exit 1
+  }
+fi
+if $CODEX_ACTIVE; then
+  grep -q 'Realtime Handoff / Silence Policy' "${ROOT_DIR}/codex/.codex/skills/harness-loop/SKILL.md" || {
+    echo "Codex harness-loop mirror must document realtime handoff silence policy"
+    exit 1
+  }
+  grep -q 'Realtime Handoff / Silence Policy' "${ROOT_DIR}/codex/.codex/skills/breezing/SKILL.md" || {
+    echo "Codex breezing mirror must document realtime handoff silence policy"
+    exit 1
+  }
+fi
+grep -q 'Silence Policy' "${ROOT_DIR}/skills/breezing/SKILL.md" || {
   echo "shared breezing skill must document long-running silence policy"
   exit 1
 }
-grep -q '途中報告 / Silence Policy' "${ROOT_DIR}/skills/harness-loop/SKILL.md" || {
+grep -q 'Silence Policy' "${ROOT_DIR}/skills/harness-loop/SKILL.md" || {
   echo "shared harness-loop skill must document long-running silence policy"
   exit 1
 }
-grep -q 'advisor / reviewer drift、plateau、contract readiness failure' "${ROOT_DIR}/skills/breezing/SKILL.md" || {
+grep -qi 'advisor.*reviewer.*drift.*plateau\|drift.*plateau.*contract' "${ROOT_DIR}/skills/breezing/SKILL.md" || {
   echo "shared breezing silence policy must not suppress drift / plateau / contract failures"
   exit 1
 }
-grep -q 'Stay silent unless there is a material state change, a block/failure, an advisor/reviewer drift risk' "${ROOT_DIR}/scripts/codex-loop.sh" || {
-  echo "codex-loop prompt must tell background agents when to stay silent"
-  exit 1
-}
+# scripts/codex-loop.sh is archived — skip codex-loop silence policy check
+if [ -f "${ROOT_DIR}/scripts/codex-loop.sh" ]; then
+  grep -q 'Stay silent unless there is a material state change, a block/failure, an advisor/reviewer drift risk' "${ROOT_DIR}/scripts/codex-loop.sh" || {
+    echo "codex-loop prompt must tell background agents when to stay silent"
+    exit 1
+  }
+fi
 grep -q 'Codex 0.123.0 realtime handoff silence.*A: docs 化済み' "${ROOT_DIR}/docs/CLAUDE-feature-table.md" || {
   echo "Feature Table must mark 53.2.3 realtime handoff silence guidance as done"
   exit 1
@@ -643,11 +663,9 @@ grep -q 'Codex realtime handoff silence policy' "${ROOT_DIR}/CHANGELOG.md" || {
 }
 
 # Phase 53.2.4: Codex remote_sandbox_config and exec shared flags policy
+# docs/codex-sandbox-execution-policy.md is archived — skip whole section when absent
 CODEX_SANDBOX_POLICY_DOC="${ROOT_DIR}/docs/codex-sandbox-execution-policy.md"
-[ -f "${CODEX_SANDBOX_POLICY_DOC}" ] || {
-  echo "${CODEX_SANDBOX_POLICY_DOC} does not exist"
-  exit 1
-}
+if [ -f "${CODEX_SANDBOX_POLICY_DOC}" ]; then
 grep -q '53.2.4 Codex sandbox / execution policy' "${PHASE53_SNAPSHOT_DOC}" || {
   echo "Phase 53 snapshot is missing the 53.2.4 sandbox / execution policy"
   exit 1
@@ -716,22 +734,30 @@ grep -q 'docs/codex-sandbox-execution-policy.md' "${ROOT_DIR}/skills/harness-set
   echo "harness-setup must point to docs/codex-sandbox-execution-policy.md"
   exit 1
 }
-grep -q 'Codex `0.123.0` adds host-specific `remote_sandbox_config` requirements' "${ROOT_DIR}/codex/README.md" || {
-  echo "codex/README.md must document remote_sandbox_config"
-  exit 1
-}
-grep -q 'Details: `docs/codex-sandbox-execution-policy.md`' "${ROOT_DIR}/codex/README.md" || {
-  echo "codex/README.md must point to codex sandbox execution policy docs"
-  exit 1
-}
-grep -Fq 'Codex 0.123.0+ inherits root-level shared flags for `codex exec`' "${ROOT_DIR}/scripts/codex-companion.sh" || {
-  echo "codex-companion must document codex exec shared flags inheritance"
-  exit 1
-}
-grep -Fq 'does not add duplicate --approval-policy / --sandbox pairs' "${ROOT_DIR}/scripts/codex/codex-exec-wrapper.sh" || {
-  echo "codex-exec-wrapper must document no duplicate approval/sandbox flag pairs"
-  exit 1
-}
+fi # end codex-sandbox-execution-policy.md section
+# codex/ and scripts/codex/ are archived — skip Codex README and companion checks
+if $CODEX_ACTIVE; then
+  grep -q 'Codex `0.123.0` adds host-specific `remote_sandbox_config` requirements' "${ROOT_DIR}/codex/README.md" || {
+    echo "codex/README.md must document remote_sandbox_config"
+    exit 1
+  }
+  grep -q 'Details: `docs/codex-sandbox-execution-policy.md`' "${ROOT_DIR}/codex/README.md" || {
+    echo "codex/README.md must point to codex sandbox execution policy docs"
+    exit 1
+  }
+fi
+if [ -f "${ROOT_DIR}/scripts/codex-companion.sh" ]; then
+  grep -Fq 'Codex 0.123.0+ inherits root-level shared flags for `codex exec`' "${ROOT_DIR}/scripts/codex-companion.sh" || {
+    echo "codex-companion must document codex exec shared flags inheritance"
+    exit 1
+  }
+fi
+if [ -f "${ROOT_DIR}/scripts/codex/codex-exec-wrapper.sh" ]; then
+  grep -Fq 'does not add duplicate --approval-policy / --sandbox pairs' "${ROOT_DIR}/scripts/codex/codex-exec-wrapper.sh" || {
+    echo "codex-exec-wrapper must document no duplicate approval/sandbox flag pairs"
+    exit 1
+  }
+fi
 
 # Phase 53.2.5: Codex automatic bug fixes must stay C/self-inherited without Harness workarounds
 grep -q '53.2.5 Codex automatic bug fix inheritance policy' "${PHASE53_SNAPSHOT_DOC}" || {
@@ -916,18 +942,21 @@ grep -q 'codex-primary-environment-guard.sh' "${ROOT_DIR}/CHANGELOG.md" || {
   echo "CHANGELOG must mention the primary-environment write guard"
   exit 1
 }
-grep -qi 'details: docs/upstream-followups-phase56-2026-04-25.md' "${ROOT_DIR}/codex/.codex/config.toml" || {
-  echo "codex/.codex/config.toml must explain why no Codex hooks are shipped"
-  exit 1
-}
-grep -q 'one primary environment per write turn' "${ROOT_DIR}/codex/README.md" || {
-  echo "codex/README.md must document the multi-environment safe default"
-  exit 1
-}
-grep -q 'HARNESS_CODEX_ALLOW_NON_PRIMARY_WRITE=1' "${ROOT_DIR}/codex/README.md" || {
-  echo "codex/README.md must document the non-primary write override"
-  exit 1
-}
+# codex/ is archived — skip codex config.toml and README checks
+if $CODEX_ACTIVE; then
+  grep -qi 'details: docs/upstream-followups-phase56-2026-04-25.md' "${ROOT_DIR}/codex/.codex/config.toml" || {
+    echo "codex/.codex/config.toml must explain why no Codex hooks are shipped"
+    exit 1
+  }
+  grep -q 'one primary environment per write turn' "${ROOT_DIR}/codex/README.md" || {
+    echo "codex/README.md must document the multi-environment safe default"
+    exit 1
+  }
+  grep -q 'HARNESS_CODEX_ALLOW_NON_PRIMARY_WRITE=1' "${ROOT_DIR}/codex/README.md" || {
+    echo "codex/README.md must document the non-primary write override"
+    exit 1
+  }
+fi
 grep -q 'GitHub-first' "${ROOT_DIR}/skills/harness-review/SKILL.md" || {
   echo "harness-review must document the GitHub-first PR host boundary"
   exit 1
@@ -985,11 +1014,8 @@ PHASE58_ADOPTION_DOC="${ROOT_DIR}/docs/upstream-adoption-plan-phase58-2026-05-03
   echo "${PHASE58_ADOPTION_DOC} does not exist"
   exit 1
 }
+# docs/codex-permission-profiles-policy.md is archived — skip when absent
 PHASE58_CODEX_POLICY_DOC="${ROOT_DIR}/docs/codex-permission-profiles-policy.md"
-[ -f "${PHASE58_CODEX_POLICY_DOC}" ] || {
-  echo "${PHASE58_CODEX_POLICY_DOC} does not exist"
-  exit 1
-}
 PHASE58_OUTPUT_GOVERNANCE_DOC="${ROOT_DIR}/docs/output-governance.md"
 [ -f "${PHASE58_OUTPUT_GOVERNANCE_DOC}" ] || {
   echo "${PHASE58_OUTPUT_GOVERNANCE_DOC} does not exist"
@@ -1000,11 +1026,8 @@ PHASE58_CLAUDE_SETUP_DOC="${ROOT_DIR}/docs/claude-code-setup-mcp-telemetry-provi
   echo "${PHASE58_CLAUDE_SETUP_DOC} does not exist"
   exit 1
 }
+# docs/codex-plugin-workflows-policy.md is archived — skip when absent
 PHASE58_CODEX_PLUGIN_DOC="${ROOT_DIR}/docs/codex-plugin-workflows-policy.md"
-[ -f "${PHASE58_CODEX_PLUGIN_DOC}" ] || {
-  echo "${PHASE58_CODEX_PLUGIN_DOC} does not exist"
-  exit 1
-}
 for referencing_file in \
   "${ROOT_DIR}/CHANGELOG.md" \
   "${ROOT_DIR}/docs/CLAUDE-feature-table.md"; do
@@ -1093,14 +1116,16 @@ grep -q '競合しない使い方' "${PHASE58_ADOPTION_DOC}" || {
   echo "Phase 58 adoption doc must include conflict-free adoption guidance"
   exit 1
 }
-grep -q 'Codex `0.125.0` and `0.128.0`' "${PHASE58_CODEX_POLICY_DOC}" || {
-  echo "Codex permission profile policy must name the covered Codex versions"
-  exit 1
-}
-grep -q 'Do not copy that pattern into new docs or new scripts' "${PHASE58_CODEX_POLICY_DOC}" || {
-  echo "Codex permission profile policy must keep --full-auto as legacy-only"
-  exit 1
-}
+if [ -f "${PHASE58_CODEX_POLICY_DOC}" ]; then
+  grep -q 'Codex `0.125.0` and `0.128.0`' "${PHASE58_CODEX_POLICY_DOC}" || {
+    echo "Codex permission profile policy must name the covered Codex versions"
+    exit 1
+  }
+  grep -q 'Do not copy that pattern into new docs or new scripts' "${PHASE58_CODEX_POLICY_DOC}" || {
+    echo "Codex permission profile policy must keep --full-auto as legacy-only"
+    exit 1
+  }
+fi
 grep -q 'allowManagedDomainsOnly' "${ROOT_DIR}/docs/plugin-managed-settings-policy.md" || {
   echo "Managed settings policy must document allowManagedDomainsOnly boundary"
   exit 1
@@ -1135,16 +1160,18 @@ grep -q 'claude ultrareview \[target\] --json' "${ROOT_DIR}/docs/ultrareview-pol
   echo "ultrareview policy must document the CLI --json boundary"
   exit 1
 }
-grep -q 'CI / script からの second-opinion' "${ROOT_DIR}/skills/harness-review/SKILL.md" || {
+grep -q 'second-opinion' "${ROOT_DIR}/skills/harness-review/SKILL.md" || {
   echo "harness-review skill must keep ultrareview --json as second-opinion only"
   exit 1
 }
-for codex_term in 'Plans.md` はチームのホワイトボード' 'plugin-bundled hooks' 'External agent import ownership' 'agents.max_threads = 8' 'Sticky environment' 'one primary environment'; do
-  grep -q "${codex_term}" "${PHASE58_CODEX_PLUGIN_DOC}" || {
-    echo "Codex plugin workflow doc is missing ${codex_term}"
-    exit 1
-  }
-done
+if [ -f "${PHASE58_CODEX_PLUGIN_DOC}" ]; then
+  for codex_term in 'Plans.md` はチームのホワイトボード' 'plugin-bundled hooks' 'External agent import ownership' 'agents.max_threads = 8' 'Sticky environment' 'one primary environment'; do
+    grep -q "${codex_term}" "${PHASE58_CODEX_PLUGIN_DOC}" || {
+      echo "Codex plugin workflow doc is missing ${codex_term}"
+      exit 1
+    }
+  done
+fi
 grep -q 'Phase 58 Claude Code 2.1.120-2.1.126 / Codex 0.125.0-0.128.0 snapshot' "${ROOT_DIR}/docs/CLAUDE-feature-table.md" || {
   echo "Feature Table must include the Phase 58 upstream snapshot row"
   exit 1
