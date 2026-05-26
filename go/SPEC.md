@@ -5,6 +5,9 @@
 最終更新: 2026-04-06
 CC 確認バージョン: 2.1.92
 
+> **Internal fork note (v1)**: non-Claude runtime surfaces (Codex, OpenCode, Cursor) are archived for v1.
+> Codex/OpenCode/Cursor references below are historical upstream context unless explicitly marked active.
+
 ---
 
 ## 1. スコープ定義
@@ -339,7 +342,7 @@ RECOVERING → ABORTED     (リカバリ失敗、人間介入必要)
 | R04 | Write/Edit/MultiEdit | プロジェクトルート外への絶対パス | ask | workMode |
 | R05 | Bash | `rm -rf` / `rm --recursive` | ask | workMode |
 | R06 | Bash | `git push --force` / `-f` | deny | なし |
-| R07 | Write/Edit/MultiEdit | codexMode 中の直接書き込み | deny | なし |
+| R07 | Write/Edit/MultiEdit | codexMode 中の直接書き込み *(historical: codexMode is a Codex companion guard; archived for v1)* | deny | なし |
 | R08 | Write/Edit/MultiEdit/Bash | breezing reviewer の書き込み/変更コマンド | deny | なし |
 | R09 | Read | 機密ファイル (.env, id_rsa, *.pem, secrets/) | approve + warn | なし |
 | R10 | Bash | `--no-verify` / `--no-gpg-sign` | deny | なし |
@@ -417,6 +420,9 @@ worker-runtime ←── protocol (共有)
 ---
 
 ## 決定事項: codex-companion.sh
+
+> **Archived for v1**: codex-companion.sh と Codex CLI は非 Claude ランタイムのため v1 では対象外。
+> 以下は歴史的設計判断 — upstream からの cherry-pick 参照用。
 
 **方針**: Go 統合 **対象外**。shell wrapper を維持する。
 

@@ -14,7 +14,7 @@ Harness はこれを **Lead (operator) が複数の Worker / Reviewer / Scaffold
 |------|----------|
 | Lead (operator, 人間) | `claude agents` で複数 project の状態を 1 画面で確認 |
 | Harness teammate spawn (Worker / Reviewer / Scaffolder) | `claude agents` ではなく Agent tool / breezing skill 経由 |
-| Codex teammate | `bash scripts/codex-companion.sh task` (raw `codex exec` も `claude agents` も使わない) |
+| Codex teammate *(archived for v1)* | `bash scripts/codex-companion.sh task` (raw `codex exec` も `claude agents` も使わない) |
 
 ## 動作前提 (2.1.139-2.1.142)
 

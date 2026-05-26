@@ -41,7 +41,7 @@ We do **not** maintain a full version-by-version support matrix in the README. T
 
 ## Windows Checkout Note
 
-On Windows, Git often defaults to `core.symlinks=false`. Public `harness-*` command skills are therefore shipped as real directories in `skills/`, `codex/.codex/skills/`, and `opencode/skills/` so they still appear in command lists after checkout. Session start repair still handles broken extension links inside `skills/extensions/`.
+On Windows, Git often defaults to `core.symlinks=false`. Public `harness-*` command skills are therefore shipped as real directories in `skills/`, `codex/.codex/skills/`, and `opencode/skills/` so they still appear in command lists after checkout. *(Note: `codex/` and `opencode/` directories are archived for v1 — Claude Code surface only.)* Session start repair still handles broken extension links inside `skills/extensions/`.
 
 Native Windows Git Bash/MSYS/Cygwin sessions resolve `bin/harness-windows-amd64.exe` through the `bin/harness` shim. WSL2 sessions keep using the Linux binary. Breezing worktree isolation should therefore have a real hook binary on Windows amd64 instead of silently falling back because no platform binary was found.
 
@@ -50,8 +50,8 @@ Native Windows Git Bash/MSYS/Cygwin sessions resolve `bin/harness-windows-amd64.
 These flows are supported, but they depend on extra tools or environment setup and should be verified in your own environment:
 
 - Breezing / agent teams
-- Codex CLI integration
-- Cursor 2-agent workflow
+- Codex CLI integration *(archived for v1)*
+- Cursor 2-agent workflow *(archived for v1)*
 - Video or slide generation
 - Memory / daemon integrations
 

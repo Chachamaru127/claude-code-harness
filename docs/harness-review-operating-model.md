@@ -25,7 +25,7 @@
 | mode | 使う場面 | 重さ | 主な出力 |
 |---|---|---:|---|
 | `quick` | 小さな未コミット変更を閉じたい時 | 軽い | accepted/rejected findings と focused tests |
-| `codex-closeout` | Codex review を助言として使い、実コードで確認したい時 | 軽い | review command / tests / clean result |
+| `codex-closeout` *(archived for v1)* | Codex review を助言として使い、実コードで確認したい時 | 軽い | review command / tests / clean result |
 | `code` | 普通の実装差分レビュー | 中 | `APPROVE` / `REQUEST_CHANGES` |
 | `plan` | `Plans.md` の DoD / Depends / Status を見る時 | 中 | plan 修正点 |
 | `scope` | やりすぎ、漏れ、不要変更を見たい時 | 中 | scope 判定 |
@@ -33,7 +33,7 @@
 | `ui-rubric` | 見た目、使いやすさ、完成度を点数化する時 | 中 | design quality score |
 | `full` | release 前や重要変更の最終 gate | 重い | TeamAgent Debate + governance gate |
 
-## Adopted from external codex-review
+## Adopted from external codex-review *(historical upstream context, Codex archived for v1)*
 
 | 採用項目 | harness-review での扱い |
 |---|---|

@@ -248,3 +248,56 @@ SKILL.md descriptions, which reference legacy markers in user-visible output tex
 - Read compatibility for legacy markers is unchanged.
 - The `cursor:*` compatibility clarification is now documented and removes
   ambiguity without changing any behavior.
+
+---
+
+## Phase 1.5 — Design Docs Non-Claude Reference Audit (2026-05-26)
+
+### Objective
+
+Mark Codex/OpenCode/Cursor references in active design docs as archived context
+rather than active support claims. The active test suite and runtime already operate
+Claude-only; this task aligns the design documentation with that reality.
+
+### Reference Classification
+
+| File | Location | Kind | Classification | Action taken |
+|------|----------|------|----------------|--------------|
+| `go/SPEC.md` | top of file | design doc | primary target | Added fork note at top |
+| `go/SPEC.md` | §10 R07 `codexMode` | guardrail rule | historical (Codex companion guard) | Inline `*(historical)*` note |
+| `go/SPEC.md` | §決定事項 codex-companion.sh | design decision | historical | Added `Archived for v1` callout |
+| `go/SPEC.md` | §4 `mcp__codex__*` deny | security rule | **active** (MCP deny still valid) | No change |
+| `go/DESIGN.md` | top of file | design doc | primary target | Added fork note at top |
+| `go/DESIGN.md` | Memory Bridge `codex-notify` row | hook target | historical | Inline `*(archived for v1)*` note |
+| `go/DESIGN.md` | `codex-notify` flow comment | flow diagram | historical | Inline `# archived for v1` comment |
+| `go/DESIGN.md` | D2 Codex companion | design decision | historical | Inline `*(archived for v1)*` note |
+| `docs/CLAUDE_CODE_COMPATIBILITY.md` | Windows checkout note | compat note | historical dirs mentioned | Inline note about archived dirs |
+| `docs/CLAUDE_CODE_COMPATIBILITY.md` | "What Requires Extra Validation" list | compat claim | historical | `*(archived for v1)*` inline |
+| `docs/team-composition.md` | "Codex bridge" section | bridge doc | historical | `Archived for v1` callout |
+| `docs/agent-view-policy.md` | "Codex teammate" row | policy table | historical | Inline `*(archived for v1)*` |
+| `docs/harness-review-operating-model.md` | `codex-closeout` mode row | mode table | historical | Inline `*(archived for v1)*` |
+| `docs/harness-review-operating-model.md` | "Adopted from external codex-review" heading | design note | historical upstream | Heading note added |
+| `docs/ultrareview-policy.md` | "Codex adversarial review" rows | comparison table | **null entry** (no claim) | No change needed |
+| `docs/upstream-update-snapshot-2026-04-23.md` | Codex 0.123.0 rows | upstream snapshot | **archive doc** (snapshot by design) | Not edited |
+| `docs/claims-audit.md` | Codex setup / Cursor entries | audit record | **archive by design** | Not edited |
+
+### Invariants
+
+- No technical history was removed; all Codex design context is preserved for
+  potential future cherry-picks.
+- Active security rule `mcp__codex__*` deny in `go/SPEC.md` was not touched.
+- Archive docs and upstream snapshot docs were not edited (task scope excludes them).
+- `go/SPEC.md` `mcp__codex__*` in the example settings.json remains valid:
+  the deny rule still applies even when Codex is not an active surface.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `go/SPEC.md` | Added fork note; R07 historical annotation; codex-companion.sh archived callout |
+| `go/DESIGN.md` | Added fork note; codex-notify historical annotations; D2 archived annotation |
+| `docs/CLAUDE_CODE_COMPATIBILITY.md` | Windows note + validation list archived annotations |
+| `docs/team-composition.md` | Codex bridge archived callout |
+| `docs/agent-view-policy.md` | Codex teammate row archived annotation |
+| `docs/harness-review-operating-model.md` | codex-closeout archived annotation; section heading note |
+| `docs/PHASE_1_5_CLEANUP.md` | This section appended |

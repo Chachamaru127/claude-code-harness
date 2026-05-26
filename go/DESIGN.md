@@ -2,6 +2,9 @@
 
 > Zero-base rewrite. No backward compatibility. All accumulated knowledge applied.
 
+> **Internal fork note (v1)**: non-Claude runtime surfaces (Codex, OpenCode, Cursor) are archived for v1.
+> Codex/OpenCode/Cursor references below are historical upstream context unless explicitly marked active.
+
 ## Why Go
 
 | 要件 | Go | Rust | 現行 (bash+TS) |
@@ -460,7 +463,7 @@ JSONL ログは常に記録し、harness-mem デーモンが起動している�
 | user-prompt | POST /v1/events/record | user_prompt |
 | post-tool-use | POST /v1/events/record | tool_use |
 | stop | POST /v1/sessions/finalize | (finalize) |
-| codex-notify | POST /v1/events/record | checkpoint |
+| codex-notify *(archived for v1)* | POST /v1/events/record | checkpoint |
 
 **harness-mem 未導入時の動作**: HTTP POST は `connection refused` で即座に失敗し、
 stderr にログを出力して approve を返す。JSONL ログのみが記録される。
@@ -691,7 +694,7 @@ bin/harness hook session-start → memory_bridge.go → JSONL log + POST /v1/eve
 bin/harness hook user-prompt   → memory_bridge.go → JSONL log + POST /v1/events/record
 bin/harness hook post-tool-use → memory_bridge.go → JSONL log + POST /v1/events/record
 bin/harness hook stop          → memory_bridge.go → JSONL log + POST /v1/sessions/finalize
-bin/harness hook codex-notify  → memory_bridge.go → JSONL log + POST /v1/events/record
+bin/harness hook codex-notify  → memory_bridge.go → JSONL log + POST /v1/events/record  # archived for v1
 ```
 
 harness-mem が未起動の場合は connection refused で即座にフォールバック（JSONL のみ）。
@@ -799,7 +802,7 @@ Switch is atomic: replace `hooks/hooks.json` + `.claude-plugin/hooks.json` + `.c
 | # | 質問 | 決定 | 理由 |
 |---|------|------|------|
 | D1 | agent hooks (type: "agent") | **hooks.json に残す。Go は command hooks のみ** | LLM judgment は CC の責務。Go は高速なルール評価に集中 |
-| D2 | Codex companion | **現行 shell wrapper を維持** | companion は codex-plugin-cc の proxy。Go 化の ROI が低い |
+| D2 | Codex companion *(archived for v1)* | **現行 shell wrapper を維持** | companion は codex-plugin-cc の proxy。Go 化の ROI が低い |
 | D3 | Memory MCP | **分離プロセス。Go に内蔵しない** | SQLite CGO 問題、ライフサイクル不一致。Node 版を継続利用 |
 | D4 | Plugin bin/ auto-selection | **CC の bin/ feature を使う** | CC v2.1.91+ がプラットフォーム別にバイナリを選択。Makefile で命名規則を合わせるだけ |
 | D5 | パッケージ構造 | **internal 9 + pkg 2** (guardrail, session, event, hook, hookhandler, breezing, ci, lifecycle, state / hookproto, config) | 通知は hookhandler に統合。機能単位で分割しつつ依存方向を一方向に維持 |

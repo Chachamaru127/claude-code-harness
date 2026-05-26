@@ -109,6 +109,8 @@ Lead が main に反映するまでは、Worker は Plans.md を `cc:完了` に
 
 ## Codex bridge
 
+> **Archived for v1**: Codex は非 Claude ランタイムのため v1 では対象外。以下は歴史的設計文脈。
+
 Claude Code から Codex へ委譲する時の標準コマンドは次の 2 つだけ。
 
 ```bash
