@@ -21,7 +21,6 @@ var migrationRequiredSkills = []string{
 
 type migrationReportEnv struct {
 	Home              string
-	CodexHome         string
 	ClaudePluginCache string
 	HarnessMemHome    string
 }
@@ -55,10 +54,6 @@ type pluginCacheHit struct {
 	SkillDirs    []string
 }
 
-type skillEntryForMigration struct {
-	Path string
-	Name string
-}
 
 func runMigrationReportCheck(projectRoot string) bool {
 	report := buildExistingUserMigrationReport(projectRoot, migrationReportEnvFromOS())
@@ -70,11 +65,6 @@ func migrationReportEnvFromOS() migrationReportEnv {
 	home, _ := os.UserHomeDir()
 	env := migrationReportEnv{
 		Home: home,
-	}
-	if v := os.Getenv("CODEX_HOME"); v != "" {
-		env.CodexHome = v
-	} else if home != "" {
-		env.CodexHome = filepath.Join(home, ".codex")
 	}
 	if v := os.Getenv("CLAUDE_PLUGIN_CACHE"); v != "" {
 		env.ClaudePluginCache = v
@@ -99,31 +89,6 @@ func buildExistingUserMigrationReport(projectRoot string, env migrationReportEnv
 	pluginHits := findClaudeHarnessPluginCaches(env.ClaudePluginCache)
 	report.Entries = append(report.Entries, reportClaudePluginCache(env.ClaudePluginCache, currentVersion, pluginHits))
 	report.Entries = append(report.Entries, reportClaudeSlashEntries(pluginHits))
-
-	codexSkills := filepath.Join(env.CodexHome, "skills")
-	report.Entries = append(report.Entries, reportDuplicateLocalSkills(codexSkills))
-	report.Entries = append(report.Entries, reportOldSymlinks("Codex old symlinks", codexSkills, "Run scripts/setup-codex.sh --user to copy real skill directories; restore from CODEX_HOME backups if needed."))
-	report.Entries = append(report.Entries, migrationReportEntry{
-		Area:             "Codex backup path",
-		Status:           "ok",
-		Path:             filepath.Join(env.CodexHome, "backups", "setup-codex"),
-		Evidence:         "scripts/setup-codex.sh stores replaced user-mode files outside the skill scan path",
-		Impact:           "Existing Codex skills are moved aside before replacement instead of being deleted.",
-		BackupLocation:   filepath.Join(env.CodexHome, "backups", "setup-codex"),
-		RollbackProposal: "Move the backed-up skill or config entry back into CODEX_HOME after inspecting it.",
-	})
-
-	opencodeSkills := filepath.Join(projectRoot, ".opencode", "skills")
-	report.Entries = append(report.Entries, reportOldSymlinks("OpenCode old symlinks", opencodeSkills, "Re-run scripts/setup-opencode.sh; inspect .opencode/*.backup.<timestamp> before restoring."))
-	report.Entries = append(report.Entries, migrationReportEntry{
-		Area:             "OpenCode backup path",
-		Status:           "ok",
-		Path:             filepath.Join(projectRoot, ".opencode"),
-		Evidence:         "scripts/setup-opencode.sh creates timestamped backups such as .opencode/skills.backup.<timestamp> and .opencode/plugins/harness-bootstrap.mjs.backup.<timestamp>",
-		Impact:           "Existing OpenCode files are moved aside before replacement.",
-		BackupLocation:   ".opencode/*.backup.<timestamp>",
-		RollbackProposal: "Move the timestamped backup back to its original path after confirming it belongs to Harness.",
-	})
 
 	report.Entries = append(report.Entries, reportHarnessMemState(projectRoot, env.HarnessMemHome))
 	report.Entries = append(report.Entries, migrationReportEntry{
@@ -352,89 +317,6 @@ func reportClaudeSlashEntries(hits []pluginCacheHit) migrationReportEntry {
 	}
 }
 
-func reportDuplicateLocalSkills(skillsDir string) migrationReportEntry {
-	entries := readSkillEntries(skillsDir)
-	if len(entries) == 0 {
-		return migrationReportEntry{
-			Area:             "Codex duplicate local skills",
-			Status:           "not_observed",
-			Path:             skillsDir,
-			Evidence:         "No Codex skill entries were available to inspect",
-			Impact:           "Duplicate local skills cannot be ruled out.",
-			BackupLocation:   filepath.Join(filepath.Dir(skillsDir), "backups", "setup-codex"),
-			RollbackProposal: "Run scripts/setup-codex.sh --user after reviewing CODEX_HOME.",
-			SupportBoundary:  "not_observed != absent",
-		}
-	}
-	byName := map[string][]string{}
-	for _, entry := range entries {
-		if entry.Name == "" {
-			continue
-		}
-		byName[entry.Name] = append(byName[entry.Name], entry.Path)
-	}
-	var duplicates []string
-	for name, paths := range byName {
-		if len(paths) > 1 {
-			sort.Strings(paths)
-			duplicates = append(duplicates, fmt.Sprintf("%s => %s", name, strings.Join(paths, ",")))
-		}
-	}
-	sort.Strings(duplicates)
-	if len(duplicates) > 0 {
-		return migrationReportEntry{
-			Area:             "Codex duplicate local skills",
-			Status:           "warn",
-			Path:             skillsDir,
-			Evidence:         strings.Join(duplicates, "; "),
-			Impact:           "Codex may show duplicate aliases or route to an older skill body.",
-			BackupLocation:   filepath.Join(filepath.Dir(skillsDir), "backups", "setup-codex"),
-			RollbackProposal: "Run scripts/setup-codex.sh --user; it moves duplicate Harness skill aliases into backups before copying current skills.",
-		}
-	}
-	return migrationReportEntry{
-		Area:             "Codex duplicate local skills",
-		Status:           "ok",
-		Path:             skillsDir,
-		Evidence:         "No duplicate SKILL.md frontmatter names observed",
-		Impact:           "No duplicate local skill evidence was observed.",
-		BackupLocation:   filepath.Join(filepath.Dir(skillsDir), "backups", "setup-codex"),
-		RollbackProposal: "No action required.",
-	}
-}
-
-func reportOldSymlinks(area, skillsDir, rollback string) migrationReportEntry {
-	symlinks := findSymlinks(skillsDir)
-	if !pathExists(skillsDir) {
-		return migrationReportEntry{
-			Area:             area,
-			Status:           "not_observed",
-			Path:             skillsDir,
-			Evidence:         "Skill directory was not present",
-			Impact:           "Symlink state cannot be inferred.",
-			RollbackProposal: rollback,
-			SupportBoundary:  "not_observed != absent",
-		}
-	}
-	if len(symlinks) > 0 {
-		return migrationReportEntry{
-			Area:             area,
-			Status:           "warn",
-			Path:             skillsDir,
-			Evidence:         strings.Join(symlinks, "; "),
-			Impact:           "Symlinked skill installs can break on Windows or after moving the source checkout.",
-			RollbackProposal: rollback,
-		}
-	}
-	return migrationReportEntry{
-		Area:             area,
-		Status:           "ok",
-		Path:             skillsDir,
-		Evidence:         "No symlinked skill entries observed",
-		Impact:           "No old symlink evidence was observed.",
-		RollbackProposal: "No action required.",
-	}
-}
 
 func reportHarnessMemState(projectRoot, harnessMemHome string) migrationReportEntry {
 	paths := []string{}
@@ -476,102 +358,6 @@ func reportHarnessMemState(projectRoot, harnessMemHome string) migrationReportEn
 	}
 }
 
-func readSkillEntries(skillsDir string) []skillEntryForMigration {
-	if !pathExists(skillsDir) {
-		return nil
-	}
-	var entries []skillEntryForMigration
-	children, err := os.ReadDir(skillsDir)
-	if err != nil {
-		return nil
-	}
-	for _, child := range children {
-		if !child.IsDir() && child.Type()&os.ModeSymlink == 0 {
-			continue
-		}
-		skillPath := filepath.Join(skillsDir, child.Name(), "SKILL.md")
-		name := readSkillFrontmatterName(skillPath)
-		if name == "" {
-			continue
-		}
-		entries = append(entries, skillEntryForMigration{Path: filepath.Join(skillsDir, child.Name()), Name: name})
-	}
-	sort.Slice(entries, func(i, j int) bool { return entries[i].Path < entries[j].Path })
-	return entries
-}
-
-func readSkillFrontmatterName(skillPath string) string {
-	data, err := os.ReadFile(skillPath)
-	if err != nil {
-		return ""
-	}
-	lines := strings.Split(string(data), "\n")
-	inFrontmatter := false
-	for _, line := range lines {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "---" {
-			if !inFrontmatter {
-				inFrontmatter = true
-				continue
-			}
-			break
-		}
-		if !inFrontmatter || !strings.HasPrefix(trimmed, "name:") {
-			continue
-		}
-		name := strings.TrimSpace(strings.TrimPrefix(trimmed, "name:"))
-		return strings.Trim(name, `"'`)
-	}
-	return ""
-}
-
-func findSymlinks(root string) []string {
-	if !pathExists(root) {
-		return nil
-	}
-	children, err := os.ReadDir(root)
-	if err != nil {
-		return nil
-	}
-	var symlinks []string
-	for _, child := range children {
-		if child.Type()&os.ModeSymlink == 0 {
-			continue
-		}
-		path := filepath.Join(root, child.Name())
-		target, err := os.Readlink(path)
-		if err != nil {
-			target = "unreadable"
-		}
-		if !isLikelyHarnessSymlink(child.Name(), target) {
-			continue
-		}
-		status := "symlink"
-		resolved := target
-		if target != "unreadable" && !filepath.IsAbs(target) {
-			resolved = filepath.Join(root, target)
-		}
-		if target == "unreadable" || !pathExists(resolved) {
-			status = "broken symlink"
-		}
-		symlinks = append(symlinks, fmt.Sprintf("%s -> %s (%s)", path, target, status))
-	}
-	sort.Strings(symlinks)
-	return symlinks
-}
-
-func isLikelyHarnessSymlink(name, target string) bool {
-	for _, required := range migrationRequiredSkills {
-		if name == required {
-			return true
-		}
-	}
-	combined := strings.ToLower(name + " " + target)
-	return strings.Contains(combined, "claude-code-harness") ||
-		strings.Contains(combined, "cc-harness") ||
-		strings.Contains(combined, "/harness-") ||
-		strings.HasPrefix(name, "harness-")
-}
 
 func skillExistsInAnyDir(skill string, dirs []string) bool {
 	for _, dir := range dirs {

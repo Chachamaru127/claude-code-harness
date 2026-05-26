@@ -479,41 +479,7 @@ if [ $MIRROR_ISSUES -gt 0 ]; then
   ERRORS=$((ERRORS + MIRROR_ISSUES))
 fi
 
-# breezing alias は codex mirror のみ。
-# Codex ネイティブ版が skills-codex/ にある場合はそちらを SSOT とみなす。
-BREEZING_SRC="$SKILLS_DIR/breezing"
-if [ -d "$CODEX_SKILLS_DIR/breezing" ]; then
-  BREEZING_SRC="$CODEX_SKILLS_DIR/breezing"
-fi
-
-if [ -d "$BREEZING_SRC" ]; then
-  BREEZING_CODEX="$CODEX_MIRROR/breezing"
-  if [ ! -d "$BREEZING_CODEX" ]; then
-    echo "  ❌ codex: breezing がディレクトリとして存在しません"
-    ERRORS=$((ERRORS + 1))
-  elif [ -L "$BREEZING_CODEX" ]; then
-    echo "  ❌ codex: breezing が symlink のままです"
-    ERRORS=$((ERRORS + 1))
-  elif diff_mirror "$BREEZING_SRC" "$BREEZING_CODEX"; then
-    echo "  ✅ codex: breezing mirror is in sync"
-  else
-    echo "  ❌ codex: breezing mirror が SSOT と不一致"
-    ERRORS=$((ERRORS + 1))
-  fi
-else
-  echo "  ❌ breezing の SSOT が見つかりません（skills/ または skills-codex/）"
-  ERRORS=$((ERRORS + 1))
-fi
-
-FULL_MIRROR_LOG="$(mktemp "${TMPDIR:-/tmp}/harness-skill-mirrors.XXXXXX")"
-if bash "$PLUGIN_ROOT/scripts/sync-skill-mirrors.sh" --check >"$FULL_MIRROR_LOG" 2>&1; then
-  echo "  ✅ all shipped skill mirrors are in sync"
-else
-  echo "  ❌ full skill mirror check failed"
-  sed 's/^/      /' "$FULL_MIRROR_LOG" | tail -80
-  ERRORS=$((ERRORS + 1))
-fi
-rm -f "$FULL_MIRROR_LOG"
+# Codex and OpenCode mirrors are archived — skip mirror sync checks for non-Claude surfaces.
 
 # ================================
 # 10.5 Skill orchestration design contract
@@ -602,10 +568,8 @@ echo "📚 [12/14] README claim drift チェック..."
 
 README_ISSUES=0
 README_EN="$PLUGIN_ROOT/README.md"
-README_JA="$PLUGIN_ROOT/README_ja.md"
 SCOPE_DOC="$PLUGIN_ROOT/docs/distribution-scope.md"
 RUBRIC_DOC="$PLUGIN_ROOT/docs/benchmark-rubric.md"
-POSITIONING_DOC="$PLUGIN_ROOT/docs/positioning-notes.md"
 WORK_ALL_DOC="$PLUGIN_ROOT/docs/evidence/work-all.md"
 
 check_fixed_string() {
@@ -659,36 +623,23 @@ check_exists() {
 }
 
 check_fixed_string "$README_EN" "$LATEST_RELEASE_URL" "README.md latest release link"
-check_fixed_string "$README_JA" "$LATEST_RELEASE_URL" "README_ja.md latest release link"
 check_fixed_string "$README_EN" "$LATEST_RELEASE_BADGE" "README.md latest release badge"
-check_fixed_string "$README_JA" "$LATEST_RELEASE_BADGE" "README_ja.md latest release badge"
 
 check_exists "$SCOPE_DOC" "distribution-scope.md"
 check_exists "$RUBRIC_DOC" "benchmark-rubric.md"
-check_exists "$POSITIONING_DOC" "positioning-notes.md"
 check_exists "$WORK_ALL_DOC" "work-all evidence doc"
 
 check_fixed_string "$README_EN" "docs/CLAUDE_CODE_COMPATIBILITY.md" "README.md compatibility doc link"
-check_fixed_string "$README_EN" "docs/CURSOR_INTEGRATION.md" "README.md cursor doc link"
 check_fixed_string "$README_EN" "docs/evidence/work-all.md" "README.md work-all evidence link"
 check_fixed_string "$README_EN" "docs/distribution-scope.md" "README.md distribution scope link"
 check_fixed_string "$README_EN" "5 verb skills" "README.md 5 verb skills message"
 check_fixed_string "$README_EN" "Go-native guardrail engine" "README.md Go-native guardrail engine message"
 check_absent_string "$README_EN" "Production-ready code." "README.md stale production-ready wording"
 
-check_fixed_string "$README_JA" "docs/CLAUDE_CODE_COMPATIBILITY.md" "README_ja.md compatibility doc link"
-check_fixed_string "$README_JA" "docs/CURSOR_INTEGRATION.md" "README_ja.md cursor doc link"
-check_fixed_string "$README_JA" "docs/evidence/work-all.md" "README_ja.md work-all evidence link"
-check_fixed_string "$README_JA" "docs/distribution-scope.md" "README_ja.md distribution scope link"
-check_fixed_string "$README_JA" "5動詞スキル" "README_ja.md 5動詞スキル message"
-check_fixed_string "$README_JA" "Go ネイティブガードレールエンジン" "README_ja.md Go ネイティブガードレールエンジン message"
-check_absent_string "$README_JA" "本番品質のコード。" "README_ja.md stale production-ready wording"
-
 check_fixed_string "$SCOPE_DOC" '| `commands/` | Compatibility-retained |' "distribution-scope commands classification"
 check_fixed_string "$SCOPE_DOC" '| `mcp-server/` | Development-only and distribution-excluded |' "distribution-scope mcp-server classification"
 check_fixed_string "$RUBRIC_DOC" "| Static evidence |" "benchmark-rubric static evidence"
 check_fixed_string "$RUBRIC_DOC" "| Executed evidence |" "benchmark-rubric executed evidence"
-check_fixed_string "$POSITIONING_DOC" "runtime enforcement" "positioning-notes runtime enforcement"
 
 if [ $README_ISSUES -eq 0 ]; then
   echo "  ✅ README claim drift チェックOK"

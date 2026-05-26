@@ -17,8 +17,6 @@ command -v shellcheck >/dev/null 2>&1 || fail "shellcheck is not available"
 
 targets=(
   "scripts/release-preflight.sh"
-  "scripts/setup-codex.sh"
-  "scripts/setup-opencode.sh"
   "scripts/ci/check-checklist-sync.sh"
   "scripts/ci/check-consistency.sh"
   "scripts/ci/check-template-registry.sh"

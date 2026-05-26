@@ -11,7 +11,6 @@ import (
 func TestBuildExistingUserMigrationReportDetectsRisks(t *testing.T) {
 	projectRoot := t.TempDir()
 	home := t.TempDir()
-	codexHome := filepath.Join(home, ".codex")
 	claudeCache := filepath.Join(home, ".claude", "plugins", "cache")
 	harnessMemHome := filepath.Join(home, ".harness-mem")
 
@@ -21,32 +20,17 @@ func TestBuildExistingUserMigrationReportDetectsRisks(t *testing.T) {
 	writeTestFile(t, filepath.Join(cachedPlugin, "plugin.json"), `{"name":"claude-code-harness","version":"4.0.0","skills":["./skills/"]}`)
 	writeSkill(t, filepath.Join(cachedPlugin, "skills", "harness-plan"), "harness-plan")
 
-	writeSkill(t, filepath.Join(codexHome, "skills", "harness-plan"), "harness-plan")
-	writeSkill(t, filepath.Join(codexHome, "skills", "old-plan-alias"), "harness-plan")
-	makeBrokenSymlink(t, filepath.Join(codexHome, "skills", "old-symlink"), "/missing/claude-code-harness/harness-skill")
-
-	if err := os.MkdirAll(filepath.Join(projectRoot, ".opencode", "skills"), 0o755); err != nil {
-		t.Fatalf("mkdir opencode skills: %v", err)
-	}
-	makeBrokenSymlink(t, filepath.Join(projectRoot, ".opencode", "skills", "harness-plan"), "/missing/claude-code-harness/opencode-skill")
-
 	writeTestFile(t, filepath.Join(projectRoot, ".harness-mem", "state", "continuity.json"), `{}`)
 	writeTestFile(t, filepath.Join(harnessMemHome, "harness-mem.db"), ``)
 
 	report := buildExistingUserMigrationReport(projectRoot, migrationReportEnv{
 		Home:              home,
-		CodexHome:         codexHome,
 		ClaudePluginCache: claudeCache,
 		HarnessMemHome:    harnessMemHome,
 	})
 
 	assertReportEntry(t, report, "Claude plugin cache", "warn", "stale plugin cache")
 	assertReportEntry(t, report, "Claude slash entries", "warn", "missing harness-work")
-	assertReportEntry(t, report, "Codex duplicate local skills", "warn", "harness-plan")
-	assertReportEntry(t, report, "Codex old symlinks", "warn", "broken symlink")
-	assertReportEntry(t, report, "Codex backup path", "ok", "backups/setup-codex")
-	assertReportEntry(t, report, "OpenCode old symlinks", "warn", "broken symlink")
-	assertReportEntry(t, report, "OpenCode backup path", "ok", ".opencode/skills.backup.<timestamp>")
 	assertReportEntry(t, report, "harness-mem state", "observed", "harness-mem.db")
 	assertReportEntry(t, report, "Destructive cleanup gate", "ok", "report never deletes")
 }

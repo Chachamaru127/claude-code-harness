@@ -4,12 +4,10 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PUBLIC_FILES=(
   "${ROOT_DIR}/README.md"
-  "${ROOT_DIR}/README_ja.md"
   "${ROOT_DIR}/docs/onboarding/index.md"
   "${ROOT_DIR}/docs/onboarding/install.md"
   "${ROOT_DIR}/docs/onboarding/migration.md"
   "${ROOT_DIR}/docs/onboarding/skill-trigger-acceptance.md"
-  "${ROOT_DIR}/docs/CURSOR_INTEGRATION.md"
   "${ROOT_DIR}/docs/research/cursor-adapter-candidate.md"
   "${ROOT_DIR}/docs/research/github-copilot-cli-adapter.md"
   "${ROOT_DIR}/docs/research/antigravity-cli-adapter.md"

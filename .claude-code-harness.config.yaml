@@ -8,13 +8,8 @@ safety:
 
 # Review settings
 review:
-  # Codex second opinion (requires Codex MCP server)
-  codex:
-    enabled: true
-    timeout_ms: 60000 # Codex MCP timeout (ms)
-
-  # Default mode: "default" (4 perspectives) or "codex" (parallel MCP execution)
-  mode: codex
+  # Default mode for multi-perspective review
+  mode: default
 
 # Breezing settings (Agent Teams)
 breezing:
@@ -36,9 +31,8 @@ advisor:
   retry_threshold: 2
   # Ask advisor once before escalating plateau/user-stop decisions
   consult_before_user_escalation: true
-  # Default model mapping by runtime
+  # Default model
   claude_model: opus
-  codex_model: gpt-5.4
 
 # Cleanup thresholds
 cleanup:

@@ -19,14 +19,9 @@ assert_contains() {
 assert_contains "$DOC" 'bin/harness doctor --migration-report'
 assert_contains "$DOC" "Claude plugin cache"
 assert_contains "$DOC" "Claude slash entries"
-assert_contains "$DOC" "Codex local skills"
-assert_contains "$DOC" "Codex symlinks"
-assert_contains "$DOC" "OpenCode files"
 assert_contains "$DOC" "harness-mem state"
 assert_contains "$DOC" 'memory DB を削除しない'
 assert_contains "$DOC" "explicit confirmation"
-assert_contains "$DOC" '${CODEX_HOME:-$HOME/.codex}/backups/setup-codex'
-assert_contains "$DOC" ".opencode/skills.backup.<timestamp>"
 assert_contains "$DOC" "not_observed != absent"
 
 (
