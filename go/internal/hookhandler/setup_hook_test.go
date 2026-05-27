@@ -412,6 +412,28 @@ func TestResolveSetupScriptDir_CWDFallback(t *testing.T) {
 	}
 }
 
+func TestNewYAMLValidationCommand_PassesConfigAsArg(t *testing.T) {
+	configFile := `bad"path;import os;os.system("touch pwned")#.yaml`
+
+	cmd := newYAMLValidationCommand(configFile)
+
+	if cmd.Path != "python3" && filepath.Base(cmd.Path) != "python3" {
+		t.Fatalf("cmd.Path = %q, want python3", cmd.Path)
+	}
+	if len(cmd.Args) != 4 {
+		t.Fatalf("cmd.Args = %#v, want 4 args", cmd.Args)
+	}
+	if cmd.Args[1] != "-c" {
+		t.Fatalf("cmd.Args[1] = %q, want -c", cmd.Args[1])
+	}
+	if strings.Contains(cmd.Args[2], configFile) {
+		t.Fatalf("python script must not interpolate config path: %q", cmd.Args[2])
+	}
+	if cmd.Args[3] != configFile {
+		t.Fatalf("config arg = %q, want %q", cmd.Args[3], configFile)
+	}
+}
+
 // time パッケージを setup_hook_test.go でも使用するため
 var _ = time.Now
 

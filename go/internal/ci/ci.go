@@ -366,6 +366,14 @@ func (c *EvidenceCollector) Collect(opts CollectOptions) CollectResult {
 	if label == "" {
 		label = "general"
 	}
+	safeLabel, err := sanitizeEvidenceLabel(label)
+	if err != nil {
+		return CollectResult{
+			Label:     label,
+			Timestamp: ts,
+			Error:     err.Error(),
+		}
+	}
 
 	// コンテンツを取得
 	content := opts.Content
@@ -395,7 +403,7 @@ func (c *EvidenceCollector) Collect(opts CollectOptions) CollectResult {
 		root, _ = os.Getwd()
 	}
 
-	evidenceDir := filepath.Join(root, ".claude", "state", "evidence", label)
+	evidenceDir := filepath.Join(root, ".claude", "state", "evidence", safeLabel)
 	if err := ensureDir(evidenceDir); err != nil {
 		return CollectResult{
 			Label:     label,
@@ -427,9 +435,28 @@ func (c *EvidenceCollector) Collect(opts CollectOptions) CollectResult {
 
 	return CollectResult{
 		SavedPath: savePath,
-		Label:     label,
+		Label:     safeLabel,
 		Timestamp: ts,
 	}
+}
+
+func sanitizeEvidenceLabel(label string) (string, error) {
+	if label == "" {
+		return "", fmt.Errorf("security: evidence label must not be empty")
+	}
+	if label == "." || label == ".." {
+		return "", fmt.Errorf("security: invalid evidence label %q", label)
+	}
+	if !filepath.IsLocal(label) || filepath.IsAbs(label) || strings.ContainsAny(label, `/\`) {
+		return "", fmt.Errorf("security: invalid evidence label %q", label)
+	}
+	for _, r := range label {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' || r == '_' || r == '.' {
+			continue
+		}
+		return "", fmt.Errorf("security: invalid evidence label %q", label)
+	}
+	return label, nil
 }
 
 // CollectFromStdin は stdin からコンテンツを読み取ってエビデンスを保存する。
@@ -442,7 +469,13 @@ func (c *EvidenceCollector) CollectFromStdin(r io.Reader, w io.Writer, opts Coll
 	opts.Content = string(data)
 	result := c.Collect(opts)
 
-	return json.NewEncoder(w).Encode(result)
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		return err
+	}
+	if result.Error != "" {
+		return fmt.Errorf("%s", result.Error)
+	}
+	return nil
 }
 
 // now は現在時刻を ISO 8601 UTC 形式で返す。

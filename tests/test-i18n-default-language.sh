@@ -11,6 +11,7 @@ cd "$PROJECT_ROOT"
 
 python3 - <<'PY'
 import json
+import subprocess
 from pathlib import Path
 
 root = Path(".")
@@ -30,6 +31,38 @@ assert "User-facing default locale is `en`." in contract
 assert "Japanese remains supported" in contract
 assert "`description-en` and `description-ja`" in contract
 assert "Default | `en`" in contract
+
+claude_md = Path("CLAUDE.md").read_text(encoding="utf-8")
+assert "All responses must be in **Japanese**" not in claude_md, "root CLAUDE.md must not force Japanese for distributed users"
+assert "If no\nlanguage is configured, use English" in claude_md, "root CLAUDE.md must preserve English default"
+assert "user asks in\nJapanese" not in claude_md, "Japanese input alone must not override the English default"
+
+opencode_agents = Path("opencode/AGENTS.md").read_text(encoding="utf-8")
+assert "All responses must be in **Japanese**" not in opencode_agents, "opencode AGENTS.md must not force Japanese for distributed users"
+assert "If no\nlanguage is configured, use English" in opencode_agents, "opencode AGENTS.md must preserve English default"
+assert "user asks in\nJapanese" not in opencode_agents, "Japanese input alone must not override the English default"
+
+codex_agents = Path("codex/AGENTS.md").read_text(encoding="utf-8")
+assert "All responses must be in **Japanese**" not in codex_agents, "codex AGENTS.md must not force Japanese for distributed users"
+assert "If no\nlanguage is configured, use English" in codex_agents, "codex AGENTS.md must preserve English default"
+assert "user asks in\nJapanese" not in codex_agents, "Japanese input alone must not override the English default"
+
+tracked_files = subprocess.check_output(["git", "ls-files"], text=True).splitlines()
+for file_name in tracked_files:
+    path = Path(file_name)
+    parts = path.parts
+    if path.name != "SKILL.md":
+        continue
+    is_shipped_skill = (
+        parts[:1] == ("skills",)
+        or parts[:1] == ("skills-codex",)
+        or parts[:3] == ("codex", ".codex", "skills")
+        or parts[:2] == ("opencode", "skills")
+    )
+    if not is_shipped_skill:
+        continue
+    text = path.read_text(encoding="utf-8")
+    assert "出力は日本語" not in text, f"{path} must not force Japanese output"
 
 template = Path("templates/.claude-code-harness.config.yaml.template").read_text(encoding="utf-8")
 assert "i18n:" in template, "setup config template must include i18n"

@@ -356,7 +356,10 @@ func validateYAMLConfig(configFile string) error {
 	if _, err := exec.LookPath("python3"); err != nil {
 		return nil // python3 がない場合はスキップ
 	}
-	script := fmt.Sprintf("import yaml; yaml.safe_load(open(%q))", configFile)
-	cmd := exec.Command("python3", "-c", script)
+	cmd := newYAMLValidationCommand(configFile)
 	return cmd.Run()
+}
+
+func newYAMLValidationCommand(configFile string) *exec.Cmd {
+	return exec.Command("python3", "-c", "import sys, yaml; yaml.safe_load(open(sys.argv[1]))", configFile)
 }

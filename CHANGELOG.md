@@ -6,6 +6,20 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Added
+
+- Added `SECURITY.md` with a private vulnerability reporting route and public issue guidance for security reports.
+
+### Fixed
+
+- Restored the English-default language contract in root `CLAUDE.md` and `AGENTS.md`, keeping Japanese output as an explicit opt-in through user language, `i18n.language: ja`, or `CLAUDE_CODE_HARNESS_LANG=ja`.
+
+### Security
+
+- Hardened `harness evidence collect --label` against path traversal by rejecting absolute, parent-relative, nested, and non-slug evidence labels.
+- Removed shell interpretation from the Go auto test runner so related test file paths are passed as process arguments instead of through `bash -c`.
+- Changed YAML config validation to pass the config path through `sys.argv` instead of interpolating it into Python source.
+
 ## [4.12.3] - 2026-05-25
 
 ### Changed

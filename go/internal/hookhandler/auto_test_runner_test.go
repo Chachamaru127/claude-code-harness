@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -580,6 +581,67 @@ func TestBuildExecCommand_NpmTest_NoFileArg(t *testing.T) {
 	got := buildExecCommand("npm test", "src/utils.ts", "")
 	if got != "npm test" {
 		t.Errorf("want 'npm test' (no file arg), got %q", got)
+	}
+}
+
+func TestBuildExecInvocation_ShellMetacharPathIsArgument(t *testing.T) {
+	relatedTest := `tests/$(touch pwned).test.ts`
+
+	invocation := buildExecInvocation("npx vitest run --reporter=verbose", relatedTest, "/repo")
+
+	if invocation.Name != "npx" {
+		t.Fatalf("Name = %q, want npx", invocation.Name)
+	}
+	wantArgs := []string{"vitest", "run", "--reporter=verbose", "--", relatedTest}
+	if strings.Join(invocation.Args, "\x00") != strings.Join(wantArgs, "\x00") {
+		t.Fatalf("Args = %#v, want %#v", invocation.Args, wantArgs)
+	}
+	for _, arg := range invocation.Args {
+		if arg == "-c" {
+			t.Fatalf("Args must not include shell -c: %#v", invocation.Args)
+		}
+	}
+}
+
+func TestRunTestsAndReport_DoesNotShellExpandRelatedTest(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("fake npx shell script is POSIX-only")
+	}
+
+	projectRoot := t.TempDir()
+	stateDir := filepath.Join(projectRoot, ".claude", "state")
+	if err := os.MkdirAll(stateDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	binDir := filepath.Join(projectRoot, "bin")
+	if err := os.MkdirAll(binDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	fakeLog := filepath.Join(projectRoot, "fake-npx-args.txt")
+	fakeNpx := filepath.Join(binDir, "npx")
+	script := "#!/usr/bin/env bash\nprintf '%s\\n' \"$@\" > \"$FAKE_NPX_LOG\"\n"
+	if err := os.WriteFile(fakeNpx, []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("FAKE_NPX_LOG", fakeLog)
+	t.Setenv("PATH", binDir+string(os.PathListSeparator)+os.Getenv("PATH"))
+
+	relatedTest := `src/$(touch pwned).test.ts`
+	var out bytes.Buffer
+	err := runTestsAndReport(&out, projectRoot, stateDir, "src/app.ts", "npx vitest run --reporter=verbose", relatedTest)
+	if err != nil {
+		t.Fatalf("runTestsAndReport() error = %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(projectRoot, "pwned")); !os.IsNotExist(err) {
+		t.Fatalf("related test path was shell-expanded, pwned stat err=%v", err)
+	}
+	logData, err := os.ReadFile(fakeLog)
+	if err != nil {
+		t.Fatalf("read fake npx log: %v", err)
+	}
+	if !strings.Contains(string(logData), relatedTest) {
+		t.Fatalf("fake npx args did not include raw related test path: %q", string(logData))
 	}
 }
 

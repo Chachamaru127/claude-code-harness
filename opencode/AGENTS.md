@@ -37,7 +37,10 @@ Details: [.claude/rules/github-release.md](.claude/rules/github-release.md) (Kee
 
 ### Language
 
-All responses must be in **Japanese** (including `context: fork` skills).
+User-facing responses follow the explicit session or project language. If no
+language is configured, use English. Use Japanese only when `i18n.language: ja`,
+`CLAUDE_CODE_HARNESS_LANG=ja`, or an explicit session instruction requests
+Japanese output.
 
 ### Code Style
 

@@ -6,6 +6,10 @@ Thank you for your interest in contributing to **claude-code-harness**! This doc
 
 ### Reporting Issues
 
+Security vulnerabilities are not normal issues. Follow [SECURITY.md](SECURITY.md)
+and do not include exploit details, secrets, tokens, or private data in public
+GitHub issues.
+
 1. Check if the issue already exists in [GitHub Issues](https://github.com/Chachamaru127/claude-code-harness/issues)
 2. If not, create a new issue with:
    - Clear title describing the problem

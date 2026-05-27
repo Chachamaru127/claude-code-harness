@@ -243,29 +243,32 @@ PR host 上の review 事実は GitHub を正とし、local diff は補助証拠
 
 ## Output Contract
 
-出力は日本語。
-機械可読値だけ英語を使う。
+User-facing prose follows the explicit session or project language.
+If no language is configured, use English. Use Japanese only when
+`i18n.language: ja`, `CLAUDE_CODE_HARNESS_LANG=ja`, or an explicit session
+instruction requests Japanese output.
+Machine-readable values stay English.
 
-最初に結果サマリーを出す。
+Start with the result summary.
 
 ~~~markdown
-## レビュー結果
+## Review Result
 
-### {合格 (APPROVE) | 要修正 (REQUEST_CHANGES) | 判断待ち (decision_needed)} - {1 行結論}
+### {APPROVE | REQUEST_CHANGES | decision_needed} - {one-line conclusion}
 
-対象: `{BASE_REF}..HEAD` または `{target}`
-検証: {実行したコマンド}
+Target: `{BASE_REF}..HEAD` or `{target}`
+Verification: {commands run}
 
-良かったところ:
+Strengths:
 - ...
 
-気になったところ:
-- [severity] file:line - 問題と根拠
+Findings:
+- [severity] file:line - issue and evidence
 
-次のアクション:
+Next Actions:
 - ...
 
-詳細データ:
+Details:
 ```json
 {
   "schema_version": "review-result.v1",

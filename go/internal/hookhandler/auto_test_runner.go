@@ -45,6 +45,12 @@ type autoTestRecommendation struct {
 	Recommendation string `json:"recommendation"`
 }
 
+type autoTestCommandInvocation struct {
+	Name    string
+	Args    []string
+	Display string
+}
+
 // autoTestHookOutput は additionalContext 付きの hookSpecificOutput。
 type autoTestHookOutput struct {
 	HookSpecificOutput struct {
@@ -397,8 +403,12 @@ func findRelatedTests(file, projectRoot string) string {
 //   - jest/vitest: npx jest -- path/to/test.ts / npx vitest run -- path/to/test.ts
 //   - npm test   : npm test (ファイル指定なし)
 func buildExecCommand(testCmd, relatedTest, projectRoot string) string {
+	return buildExecInvocation(testCmd, relatedTest, projectRoot).Display
+}
+
+func buildExecInvocation(testCmd, relatedTest, projectRoot string) autoTestCommandInvocation {
 	if relatedTest == "" {
-		return testCmd
+		return invocationFromKnownTestCommand(testCmd)
 	}
 
 	switch {
@@ -412,37 +422,85 @@ func buildExecCommand(testCmd, relatedTest, projectRoot string) string {
 			}
 		}
 		// _test.go ファイルが属するディレクトリのパッケージパスを生成する。
-		// 例: internal/foo/bar_test.go → go test ./internal/foo/...
-		pkgDir := filepath.Dir(rel)
-		return "go test ./" + filepath.ToSlash(pkgDir) + "/..."
+		// 例: internal/foo/bar_test.go -> go test ./internal/foo/...
+		return newAutoTestInvocation("go", []string{"test", goTestPackageArg(rel)})
 
 	case strings.HasPrefix(testCmd, "pytest"):
 		// pytest はファイルパスを直接引数に渡せる。
-		return testCmd + " " + relatedTest
+		return newAutoTestInvocation("pytest", []string{"-v", relatedTest})
 
 	case strings.HasPrefix(testCmd, "cargo test"):
 		// cargo test はファイル単位の指定をサポートしないため、ファイル指定なしで実行する。
-		return testCmd
+		return newAutoTestInvocation("cargo", []string{"test"})
 
 	case strings.HasPrefix(testCmd, "npx jest"),
 		strings.HasPrefix(testCmd, "npx vitest"):
 		// jest/vitest は `-- <file>` 形式でテストファイルを絞り込める。
-		return testCmd + " -- " + relatedTest
+		inv := invocationFromKnownTestCommand(testCmd)
+		inv.Args = append(inv.Args, "--", relatedTest)
+		inv.Display = displayCommand(inv.Name, inv.Args)
+		return inv
 
 	case strings.HasPrefix(testCmd, "npm test"):
 		// npm test はファイル指定のインターフェースが不定のため、ファイル指定なしで実行する。
-		return testCmd
+		return newAutoTestInvocation("npm", []string{"test"})
 
 	default:
 		// 不明なランナーはファイル指定なしで安全側に倒す。
-		return testCmd
+		return invocationFromKnownTestCommand(testCmd)
 	}
+}
+
+func goTestPackageArg(relatedTest string) string {
+	pkgDir := filepath.ToSlash(filepath.Dir(relatedTest))
+	pkgDir = strings.TrimPrefix(pkgDir, "./")
+	if pkgDir == "." || pkgDir == "" {
+		return "./..."
+	}
+	return "./" + pkgDir + "/..."
+}
+
+func invocationFromKnownTestCommand(testCmd string) autoTestCommandInvocation {
+	switch testCmd {
+	case "npx vitest run --reporter=verbose":
+		return newAutoTestInvocation("npx", []string{"vitest", "run", "--reporter=verbose"})
+	case "npx jest --verbose":
+		return newAutoTestInvocation("npx", []string{"jest", "--verbose"})
+	case "pytest -v":
+		return newAutoTestInvocation("pytest", []string{"-v"})
+	case "cargo test":
+		return newAutoTestInvocation("cargo", []string{"test"})
+	case "go test ./...":
+		return newAutoTestInvocation("go", []string{"test", "./..."})
+	case "npm test":
+		return newAutoTestInvocation("npm", []string{"test"})
+	default:
+		fields := strings.Fields(testCmd)
+		if len(fields) == 0 {
+			return autoTestCommandInvocation{}
+		}
+		return newAutoTestInvocation(fields[0], fields[1:])
+	}
+}
+
+func newAutoTestInvocation(name string, args []string) autoTestCommandInvocation {
+	return autoTestCommandInvocation{
+		Name:    name,
+		Args:    args,
+		Display: displayCommand(name, args),
+	}
+}
+
+func displayCommand(name string, args []string) string {
+	parts := append([]string{name}, args...)
+	return strings.Join(parts, " ")
 }
 
 // runTestsAndReport はテストを実行して結果を記録し、additionalContext で通知する。
 func runTestsAndReport(out io.Writer, projectRoot, stateDir, changedFile, testCmd, relatedTest string) error {
 	// 実行コマンドを決定（P1 修正: ランナーごとにファイル引数を分岐）
-	execCmd := buildExecCommand(testCmd, relatedTest, projectRoot)
+	invocation := buildExecInvocation(testCmd, relatedTest, projectRoot)
+	execCmd := invocation.Display
 
 	ts := time.Now().UTC().Format(time.RFC3339)
 
@@ -450,7 +508,7 @@ func runTestsAndReport(out io.Writer, projectRoot, stateDir, changedFile, testCm
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, "bash", "-c", execCmd) //nolint:gosec
+	cmd := exec.CommandContext(ctx, invocation.Name, invocation.Args...)
 	cmd.Dir = projectRoot
 
 	var buf bytes.Buffer

@@ -17,6 +17,13 @@
 - Codex は `AGENTS.override.md` を優先し、次に `AGENTS.md`、必要なら設定された fallback 名を参照する
 - Hooks は未対応のため、暫定ガードは `.codex/rules/*.rules` の `prefix_rule()` で行う
 
+## Language
+
+User-facing responses follow the explicit session or project language. If no
+language is configured, use English. Use Japanese only when `i18n.language: ja`,
+`CLAUDE_CODE_HARNESS_LANG=ja`, or an explicit session instruction requests
+Japanese output.
+
 ## 開発ルール
 
 ### コミットメッセージ

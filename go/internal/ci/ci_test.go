@@ -287,6 +287,46 @@ func TestEvidenceCollector_Collect_DefaultLabel(t *testing.T) {
 	}
 }
 
+func TestEvidenceCollector_Collect_RejectsTraversalLabel(t *testing.T) {
+	parent := t.TempDir()
+	dir := filepath.Join(parent, "project")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	outside := filepath.Join(parent, "outside")
+	c := &EvidenceCollector{
+		nowFunc: func() string { return "2026-04-05T00:00:00Z" },
+	}
+
+	labels := []string{
+		"../outside",
+		"../../../../outside",
+		"/tmp/outside",
+		"nested/label",
+		`nested\label`,
+		".",
+		"..",
+		"label with spaces",
+	}
+
+	for _, label := range labels {
+		result := c.Collect(CollectOptions{
+			ProjectRoot: dir,
+			Label:       label,
+			Content:     "content",
+		})
+		if result.Error == "" {
+			t.Fatalf("Collect() with label %q succeeded; want security error", label)
+		}
+		if !strings.Contains(result.Error, "invalid evidence label") {
+			t.Fatalf("Collect() error = %q, want invalid evidence label", result.Error)
+		}
+	}
+	if _, err := os.Stat(outside); !os.IsNotExist(err) {
+		t.Fatalf("traversal label created outside path %q, stat err=%v", outside, err)
+	}
+}
+
 func TestEvidenceCollector_Collect_NoContent(t *testing.T) {
 	dir := t.TempDir()
 	c := &EvidenceCollector{}
@@ -379,6 +419,40 @@ func TestEvidenceCollector_CollectFromStdin(t *testing.T) {
 	}
 	if result.SavedPath == "" {
 		t.Error("SavedPath should not be empty")
+	}
+}
+
+func TestEvidenceCollector_CollectFromStdin_RejectsTraversalLabel(t *testing.T) {
+	dir := t.TempDir()
+	c := &EvidenceCollector{
+		nowFunc: func() string { return "2026-04-05T00:00:00Z" },
+	}
+
+	var out bytes.Buffer
+	err := c.CollectFromStdin(
+		strings.NewReader("stdin content"),
+		&out,
+		CollectOptions{
+			ProjectRoot: dir,
+			Label:       "../outside",
+		},
+	)
+	if err == nil {
+		t.Fatal("CollectFromStdin() error = nil, want invalid evidence label error")
+	}
+	if !strings.Contains(err.Error(), "invalid evidence label") {
+		t.Fatalf("CollectFromStdin() error = %q, want invalid evidence label", err)
+	}
+
+	var result CollectResult
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("unmarshal result: %v", err)
+	}
+	if !strings.Contains(result.Error, "invalid evidence label") {
+		t.Fatalf("result error = %q, want invalid evidence label", result.Error)
+	}
+	if result.SavedPath != "" {
+		t.Fatalf("SavedPath = %q, want empty", result.SavedPath)
 	}
 }
 
