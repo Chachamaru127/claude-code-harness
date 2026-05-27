@@ -195,14 +195,14 @@ func bashProtectedWriteHookResult(ctx hookproto.RuleContext, command string) *ho
 				}
 				continue
 			}
-			return protectedPathHookResult(match, match.Path, "保護パスへのシェル書き込み")
+			return protectedPathHookResult(match, match.Path, "shell write to a protected path")
 		case protectedPathAsk:
 			if askResult == nil {
-				askResult = protectedPathHookResult(match, match.Path, "保護パスへのシェル書き込み")
+				askResult = protectedPathHookResult(match, match.Path, "shell write to a protected path")
 			}
 		case protectedPathWarn:
 			if warnResult == nil {
-				warnResult = protectedPathHookResult(match, match.Path, "保護パスへのシェル書き込み")
+				warnResult = protectedPathHookResult(match, match.Path, "shell write to a protected path")
 			}
 		}
 	}

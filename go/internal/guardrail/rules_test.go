@@ -897,7 +897,7 @@ func TestR14_TddBypassDoesNotBypassCodexWriteDeny(t *testing.T) {
 	if result.Decision != hookproto.DecisionDeny {
 		t.Fatalf("expected TDD bypass to continue into Codex write deny, got %s", result.Decision)
 	}
-	if !strings.Contains(result.Reason, "Codex モード中") {
+	if !strings.Contains(result.Reason, "Codex mode") {
 		t.Fatalf("expected Codex write denial reason, got %q", result.Reason)
 	}
 }
@@ -912,7 +912,7 @@ func TestFirstMatchWins(t *testing.T) {
 	// R01 reason mentions sudo
 	if result.Reason == "" || result.Reason[0:4] != "sudo" {
 		// Check that the reason is about sudo, not rm -rf
-		if result.Reason != "sudo の使用は禁止されています。必要な場合はユーザーに手動実行を依頼してください。" {
+		if result.Reason != "sudo is not allowed. If it is required, ask the user to run it manually." {
 			t.Errorf("expected sudo reason, got: %s", result.Reason)
 		}
 	}

@@ -34,7 +34,7 @@ func TestPostTool_TamperingDetected(t *testing.T) {
 	if result.Decision != hookproto.DecisionApprove {
 		t.Errorf("expected approve (warning only), got %s", result.Decision)
 	}
-	if !strings.Contains(result.SystemMessage, "テスト改ざん") {
+	if !strings.Contains(result.SystemMessage, "Test-tampering") {
 		t.Errorf("expected tampering warning, got: %s", result.SystemMessage)
 	}
 }
@@ -48,7 +48,7 @@ func TestPostTool_SecurityRiskDetected(t *testing.T) {
 		},
 	}
 	result := EvaluatePostTool(input)
-	if !strings.Contains(result.SystemMessage, "セキュリティリスク") {
+	if !strings.Contains(result.SystemMessage, "Security risk") {
 		t.Errorf("expected security warning, got: %s", result.SystemMessage)
 	}
 }
@@ -76,7 +76,7 @@ func TestPostTool_EditNewString(t *testing.T) {
 		},
 	}
 	result := EvaluatePostTool(input)
-	if !strings.Contains(result.SystemMessage, "テスト改ざん") {
+	if !strings.Contains(result.SystemMessage, "Test-tampering") {
 		t.Errorf("expected tampering warning for Edit, got: %s", result.SystemMessage)
 	}
 }
@@ -90,7 +90,7 @@ func TestPostTool_CIConfigTampering(t *testing.T) {
 		},
 	}
 	result := EvaluatePostTool(input)
-	if !strings.Contains(result.SystemMessage, "テスト改ざん") {
+	if !strings.Contains(result.SystemMessage, "Test-tampering") {
 		t.Errorf("expected CI tampering warning, got: %s", result.SystemMessage)
 	}
 }

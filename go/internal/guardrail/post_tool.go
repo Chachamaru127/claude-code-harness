@@ -20,23 +20,23 @@ type securityPattern struct {
 var securityPatterns = []securityPattern{
 	{
 		Pattern: regexp.MustCompile(`(?i)process\.env\.[A-Z_]+.*(?:password|secret|key|token)`),
-		Message: "機密情報を環境変数から直接文字列に埋め込んでいる可能性があります",
+		Message: "Sensitive data may be embedded directly from an environment variable into a string",
 	},
 	{
 		Pattern: regexp.MustCompile(`(?i)eval\s*\(\s*(?:request|req|input|param|query)`),
-		Message: "ユーザー入力を eval() に渡すコードを検出しました（RCE リスク）",
+		Message: "Detected code passing user input to eval() (RCE risk)",
 	},
 	{
 		Pattern: regexp.MustCompile(`exec\s*\(\s*` + "`" + `[^` + "`" + `]*\$\{`),
-		Message: "テンプレートリテラルを exec() に渡すコードを検出しました（コマンドインジェクションリスク）",
+		Message: "Detected code passing a template literal to exec() (command injection risk)",
 	},
 	{
 		Pattern: regexp.MustCompile(`innerHTML\s*=\s*(?:.*\+.*|` + "`" + `[^` + "`" + `]*\$\{)`),
-		Message: "ユーザー入力を innerHTML に設定しているコードを検出しました（XSS リスク）",
+		Message: "Detected code assigning user input to innerHTML (XSS risk)",
 	},
 	{
 		Pattern: regexp.MustCompile(`(?i)(?:password|passwd|secret|api_key|apikey)\s*=\s*["'][^"']{8,}["']`),
-		Message: "ハードコードされた機密情報（パスワード/APIキー）を検出しました",
+		Message: "Detected a hardcoded secret (password / API key)",
 	},
 }
 
@@ -74,15 +74,15 @@ func EvaluatePostTool(input hookproto.HookInput) hookproto.HookResult {
 			if content != "" {
 				warnings := detectTampering(content, isTest)
 				if len(warnings) > 0 {
-					fileType := "テストファイル"
+					fileType := "test file"
 					if !isTest {
-						fileType = "CI/設定ファイル"
+						fileType = "CI/config file"
 					}
 					var lines []string
 					for _, w := range warnings {
-						lines = append(lines, fmt.Sprintf("- [%s] %s\n  検出箇所: %s", w.PatternID, w.Description, w.MatchedText))
+						lines = append(lines, fmt.Sprintf("- [%s] %s\n  location: %s", w.PatternID, w.Description, w.MatchedText))
 					}
-					msg := fmt.Sprintf("[v4] テスト改ざん検出警告\n\n%s `%s` に疑わしいパターンが検出されました:\n\n%s\n\n【確認してください】\nこの変更がテストを意図的に無効化したり、実装品質を下げるものでないかを確認してください。\n改ざんと判断した場合は変更を元に戻してください。",
+					msg := fmt.Sprintf("[v4] Test-tampering warning\n\nSuspicious patterns detected in %s `%s`:\n\n%s\n\n[Please review]\nConfirm this change does not intentionally disable tests or reduce implementation quality.\nIf you determine it is tampering, revert the change.",
 						fileType, filePath, strings.Join(lines, "\n"))
 					systemMessages = append(systemMessages, msg)
 				}
@@ -99,7 +99,7 @@ func EvaluatePostTool(input hookproto.HookInput) hookproto.HookResult {
 			for _, w := range secWarnings {
 				lines = append(lines, fmt.Sprintf("- %s", w))
 			}
-			msg := fmt.Sprintf("[v4] セキュリティリスク検出:\n%s", strings.Join(lines, "\n"))
+			msg := fmt.Sprintf("[v4] Security risk detected:\n%s", strings.Join(lines, "\n"))
 			systemMessages = append(systemMessages, msg)
 		}
 	}

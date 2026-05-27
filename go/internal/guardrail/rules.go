@@ -46,17 +46,17 @@ func protectedPathHookResult(match protectedPathMatch, filePath, operation strin
 	case protectedPathDeny:
 		return &hookproto.HookResult{
 			Decision: hookproto.DecisionDeny,
-			Reason:   fmt.Sprintf("%s は禁止されています: %s（%s）", operation, filePath, match.Reason),
+			Reason:   fmt.Sprintf("%s is not allowed: %s (%s)", operation, filePath, match.Reason),
 		}
 	case protectedPathAsk:
 		return &hookproto.HookResult{
 			Decision: hookproto.DecisionAsk,
-			Reason:   fmt.Sprintf("%s は確認が必要です: %s（%s）", operation, filePath, match.Reason),
+			Reason:   fmt.Sprintf("%s requires confirmation: %s (%s)", operation, filePath, match.Reason),
 		}
 	case protectedPathWarn:
 		return &hookproto.HookResult{
 			Decision:      hookproto.DecisionApprove,
-			SystemMessage: fmt.Sprintf("警告: %s を検出しました: %s（%s）", operation, filePath, match.Reason),
+			SystemMessage: fmt.Sprintf("Warning: detected %s: %s (%s)", operation, filePath, match.Reason),
 		}
 	default:
 		return nil
@@ -129,7 +129,7 @@ var Rules = []GuardRule{
 			}
 			return &hookproto.HookResult{
 				Decision: hookproto.DecisionDeny,
-				Reason:   "sudo の使用は禁止されています。必要な場合はユーザーに手動実行を依頼してください。",
+				Reason:   "sudo is not allowed. If it is required, ask the user to run it manually.",
 			}
 		},
 	},
@@ -147,7 +147,7 @@ var Rules = []GuardRule{
 			if match.Level == protectedPathNone {
 				return nil
 			}
-			return protectedPathHookResult(match, filePath, "保護パスへのファイル書き込み")
+			return protectedPathHookResult(match, filePath, "file write to a protected path")
 		},
 	},
 
@@ -189,7 +189,7 @@ var Rules = []GuardRule{
 			}
 			return &hookproto.HookResult{
 				Decision: hookproto.DecisionAsk,
-				Reason:   fmt.Sprintf("プロジェクトルート外への書き込みです: %s\n許可しますか？", filePath),
+				Reason:   fmt.Sprintf("Write outside the project root: %s\nAllow it?", filePath),
 			}
 		},
 	},
@@ -211,7 +211,7 @@ var Rules = []GuardRule{
 			}
 			return &hookproto.HookResult{
 				Decision: hookproto.DecisionAsk,
-				Reason:   fmt.Sprintf("危険な削除コマンドを検出しました:\n%s\n実行しますか？", command),
+				Reason:   fmt.Sprintf("Detected a destructive delete command:\n%s\nRun it?", command),
 			}
 		},
 	},
@@ -230,7 +230,7 @@ var Rules = []GuardRule{
 			}
 			return &hookproto.HookResult{
 				Decision: hookproto.DecisionDeny,
-				Reason:   "git push --force は禁止されています。履歴を破壊する操作は許可されません。",
+				Reason:   "git push --force is not allowed. History-destroying operations are forbidden.",
 			}
 		},
 	},
@@ -245,7 +245,7 @@ var Rules = []GuardRule{
 			}
 			return &hookproto.HookResult{
 				Decision: hookproto.DecisionDeny,
-				Reason:   "Codex モード中は Claude が直接ファイルを書き込めません。実装は Codex Worker (codex exec) に委譲してください。",
+				Reason:   "During Codex mode Claude cannot write files directly. Delegate implementation to the Codex Worker (codex exec).",
 			}
 		},
 	},
@@ -277,7 +277,7 @@ var Rules = []GuardRule{
 			}
 			return &hookproto.HookResult{
 				Decision: hookproto.DecisionDeny,
-				Reason:   "Breezing reviewer ロールはファイル書き込みおよびデータ変更コマンドを実行できません。",
+				Reason:   "The Breezing reviewer role cannot write files or run data-mutating commands.",
 			}
 		},
 	},
@@ -295,7 +295,7 @@ var Rules = []GuardRule{
 				if p.MatchString(filePath) {
 					return &hookproto.HookResult{
 						Decision:      hookproto.DecisionApprove,
-						SystemMessage: fmt.Sprintf("警告: 機密情報が含まれる可能性のあるファイルを読み取っています: %s", filePath),
+						SystemMessage: fmt.Sprintf("Warning: reading a file that may contain sensitive data: %s", filePath),
 					}
 				}
 			}
@@ -317,7 +317,7 @@ var Rules = []GuardRule{
 			}
 			return &hookproto.HookResult{
 				Decision: hookproto.DecisionDeny,
-				Reason:   "--no-verify / --no-gpg-sign の使用は禁止されています。フックや署名検証を迂回しないでください。",
+				Reason:   "--no-verify / --no-gpg-sign is not allowed. Do not bypass hooks or signature verification.",
 			}
 		},
 	},
@@ -336,7 +336,7 @@ var Rules = []GuardRule{
 			}
 			return &hookproto.HookResult{
 				Decision: hookproto.DecisionDeny,
-				Reason:   "protected branch への git reset --hard は禁止されています。履歴を壊さない方法を使ってください。",
+				Reason:   "git reset --hard on a protected branch is not allowed. Use a method that does not destroy history.",
 			}
 		},
 	},
@@ -358,14 +358,14 @@ var Rules = []GuardRule{
 			case protectedBranchPushPolicyDeny:
 				return &hookproto.HookResult{
 					Decision: hookproto.DecisionDeny,
-					Reason:   "main/master への直接 push は設定で禁止されています。feature branch 経由で PR を作成してください。",
+					Reason:   "Direct push to main/master is disabled by configuration. Create a PR via a feature branch.",
 				}
 			case protectedBranchPushPolicyAllow:
 				return nil
 			default:
 				return &hookproto.HookResult{
 					Decision: hookproto.DecisionAsk,
-					Reason:   "main/master への直接 push です。ユーザー確認後に実行しますか？（設定: protected_branch_push=ask）",
+					Reason:   "Direct push to main/master. Run it after user confirmation? (setting: protected_branch_push=ask)",
 				}
 			}
 		},
@@ -385,7 +385,7 @@ var Rules = []GuardRule{
 			}
 			return &hookproto.HookResult{
 				Decision:      hookproto.DecisionApprove,
-				SystemMessage: fmt.Sprintf("警告: 重要ファイルへの変更を検出しました: %s", filePath),
+				SystemMessage: fmt.Sprintf("Warning: detected a change to an important file: %s", filePath),
 			}
 		},
 	},
