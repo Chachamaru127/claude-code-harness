@@ -318,3 +318,50 @@ func TestIsGitWorktree_NonWorktree(t *testing.T) {
 		t.Error("a bare temp dir (not under git) should not be a worktree")
 	}
 }
+
+// A subdirectory of the repo is "inside the work tree" but is NOT a worktree
+// root; it must not be reused as a worktree (would print a path still part of
+// the main checkout). Regression for the --is-inside-work-tree → --show-toplevel fix.
+func TestIsGitWorktree_RepoSubdirNotWorktreeRoot(t *testing.T) {
+	repo := initTestRepo(t)
+	if !isGitWorktree(repo) {
+		t.Fatalf("repo root should be a worktree root: %q", repo)
+	}
+	sub := filepath.Join(repo, "subdir")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if isGitWorktree(sub) {
+		t.Errorf("repo subdir must not be treated as a worktree root: %q", sub)
+	}
+}
+
+// When the target branch already exists, gitWorktreeAdd must retry by checking
+// out that exact branch (not one derived from the directory basename).
+func TestGitWorktreeAdd_ReusesExistingBranch(t *testing.T) {
+	repo := initTestRepo(t)
+	branch := "harness/worker/existing"
+	mk := exec.Command("git", "branch", branch)
+	mk.Dir = repo
+	if out, err := mk.CombinedOutput(); err != nil {
+		t.Fatalf("git branch: %s: %v", out, err)
+	}
+
+	target := filepath.Join(t.TempDir(), "wt-existing")
+	if err := gitWorktreeAdd(repo, target, branch); err != nil {
+		t.Fatalf("gitWorktreeAdd with pre-existing branch: %v", err)
+	}
+	if !isGitWorktree(target) {
+		t.Fatalf("target is not a git worktree: %q", target)
+	}
+
+	cur := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+	cur.Dir = target
+	out, err := cur.Output()
+	if err != nil {
+		t.Fatalf("rev-parse HEAD: %v", err)
+	}
+	if got := strings.TrimSpace(string(out)); got != branch {
+		t.Errorf("worktree checked out %q, want intended branch %q", got, branch)
+	}
+}

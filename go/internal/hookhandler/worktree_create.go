@@ -159,9 +159,10 @@ func gitWorktreeAdd(repoCWD, path, branch string) error {
 	cmd := exec.Command("git", args...)
 	cmd.Dir = repoCWD
 	if outBytes, err := cmd.CombinedOutput(); err != nil {
-		// Branch may already exist from a prior run; retry without -b so
-		// git checks out the existing branch into the new worktree.
-		retry := exec.Command("git", "worktree", "add", path)
+		// Branch may already exist from a prior run; retry without -b but
+		// name the branch explicitly so git checks out the intended
+		// existing branch (not one derived from the target's basename).
+		retry := exec.Command("git", "worktree", "add", path, branch)
 		retry.Dir = repoCWD
 		if outBytes2, err2 := retry.CombinedOutput(); err2 != nil {
 			return fmt.Errorf("%s / %s: %w",
@@ -201,13 +202,33 @@ func isGitWorktree(path string) bool {
 	if _, err := os.Stat(path); err != nil {
 		return false
 	}
-	cmd := exec.Command("git", "rev-parse", "--is-inside-work-tree")
+	// --is-inside-work-tree is true for ANY path inside a checkout, so a repo
+	// subdirectory (or a leftover dir inside the main checkout) would be
+	// misreported as a reusable worktree. A worktree root requires git's
+	// toplevel to equal path itself.
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
 	cmd.Dir = path
 	outBytes, err := cmd.Output()
 	if err != nil {
 		return false
 	}
-	return strings.TrimSpace(string(outBytes)) == "true"
+	return sameDir(strings.TrimSpace(string(outBytes)), path)
+}
+
+// sameDir reports whether two paths resolve to the same directory, accounting
+// for relative paths and symlinks (e.g. macOS /var -> /private/var).
+func sameDir(a, b string) bool {
+	return resolveDir(a) == resolveDir(b)
+}
+
+func resolveDir(p string) string {
+	if abs, err := filepath.Abs(p); err == nil {
+		p = abs
+	}
+	if real, err := filepath.EvalSymlinks(p); err == nil {
+		return real
+	}
+	return filepath.Clean(p)
 }
 
 // initWorktreeState creates .claude/state/ inside the worktree and records

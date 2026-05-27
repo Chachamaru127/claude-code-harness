@@ -97,9 +97,21 @@ else
   TARGET="${CWD}/.harness-worktrees/${SLUG}"
 fi
 
+# resolve_dir canonicalizes an existing directory (follows symlinks) without
+# changing the caller's working directory (uses a subshell).
+resolve_dir() {
+  ( cd "$1" 2>/dev/null && pwd -P ) || printf '%s' "$1"
+}
+
 is_git_worktree() {
   [ -e "$1" ] || return 1
-  git -C "$1" rev-parse --is-inside-work-tree >/dev/null 2>&1
+  # --is-inside-work-tree is true for ANY path inside a checkout, so a repo
+  # subdirectory would be misreported as a reusable worktree. Require git's
+  # toplevel to equal the path itself (a worktree root).
+  local top
+  top="$(git -C "$1" rev-parse --show-toplevel 2>/dev/null)" || return 1
+  [ -n "${top}" ] || return 1
+  [ "$(resolve_dir "${top}")" = "$(resolve_dir "$1")" ]
 }
 
 origin_default_ref() {
@@ -127,10 +139,10 @@ if ! is_git_worktree "${TARGET}"; then
     BASE="$(origin_default_ref)"
     if [ -n "${BASE}" ]; then
       git -C "${CWD}" worktree add -b "${BRANCH}" "${TARGET}" "${BASE}" >/dev/null 2>&1 \
-        || git -C "${CWD}" worktree add "${TARGET}" >/dev/null 2>&1 || true
+        || git -C "${CWD}" worktree add "${TARGET}" "${BRANCH}" >/dev/null 2>&1 || true
     else
       git -C "${CWD}" worktree add -b "${BRANCH}" "${TARGET}" >/dev/null 2>&1 \
-        || git -C "${CWD}" worktree add "${TARGET}" >/dev/null 2>&1 || true
+        || git -C "${CWD}" worktree add "${TARGET}" "${BRANCH}" >/dev/null 2>&1 || true
     fi
 
     # If creation failed, abort safely (emit nothing).
