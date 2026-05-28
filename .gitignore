@@ -60,6 +60,8 @@ harness-ui/CLAUDE.md
 /.cursor/hooks.json
 /.cursor/hooks/
 /.cursor/mcp.json
+!/.cursor/hooks.json
+!/.cursor/mcp.json
 /.cursor/commands/
 /.cursor/plans/
 /.cursor/skills/

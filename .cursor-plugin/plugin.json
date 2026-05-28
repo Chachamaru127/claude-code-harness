@@ -1,7 +1,7 @@
 {
   "name": "claude-code-harness",
   "version": "4.12.11",
-  "description": "Plan, work, review, and release workflows for Codex CLI users of Claude Code Harness.",
+  "description": "Candidate Cursor adapter for Claude Code Harness Plan, Work, Review, and Release workflows.",
   "author": {
     "name": "Chachamaru",
     "url": "https://github.com/Chachamaru127"
@@ -10,17 +10,18 @@
   "repository": "https://github.com/Chachamaru127/claude-code-harness",
   "license": "MIT",
   "keywords": [
-    "codex",
+    "cursor",
     "skills",
     "workflow",
     "plan-work-review",
     "harness"
   ],
-  "skills": "../codex/.codex/skills/",
+  "skills": "../skills/",
+  "agents": "../.cursor/agents/",
   "interface": {
     "displayName": "Claude Code Harness",
-    "shortDescription": "Harness workflow skills for Codex CLI",
-    "longDescription": "Use Claude Code Harness skills in Codex CLI for evidence-backed planning, implementation, review, release, setup, sync, and team execution workflows. This is a Codex CLI compatibility route; Codex app proof is tracked separately.",
+    "shortDescription": "Candidate Harness workflow adapter for Cursor",
+    "longDescription": "Use Claude Code Harness skills in Cursor for evidence-backed planning, implementation, review, release, setup, sync, and team execution workflows. This is a Cursor adapter candidate route; Cursor remains candidate until workflow smoke and release preflight pass.",
     "developerName": "Chachamaru",
     "category": "Coding",
     "capabilities": [
@@ -29,8 +30,8 @@
       "Interactive"
     ],
     "defaultPrompt": [
-      "Use $harness-plan to plan this change.",
-      "Use $harness-work to execute the next Plans.md task."
+      "Use harness-plan to plan this change.",
+      "Use harness-work to execute the next Plans.md task."
     ],
     "websiteURL": "https://github.com/Chachamaru127/claude-code-harness",
     "privacyPolicyURL": "https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement",

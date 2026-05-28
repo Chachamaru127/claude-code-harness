@@ -718,6 +718,12 @@ else
     fail_test "Codex primary environment guard の契約テストに失敗 — 'bash tests/test-codex-primary-environment-guard.sh' で詳細確認"
 fi
 
+if bash "$PLUGIN_ROOT/tests/test-model-routing.sh" > /dev/null 2>&1; then
+    pass_test "Claude/Codex model routing が role tier と Codex reasoning config 変換を満たします (test-model-routing.sh)"
+else
+    fail_test "Claude/Codex model routing の契約テストに失敗 — 'bash tests/test-model-routing.sh' で詳細確認"
+fi
+
 if bash "$PLUGIN_ROOT/tests/test-windows-worktree-support.sh" > /dev/null 2>&1; then
     pass_test "Windows Breezing worktree support の配布・hook 契約が維持されています (test-windows-worktree-support.sh)"
 else

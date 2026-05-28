@@ -1410,4 +1410,93 @@ for required_term in \
   }
 done
 
+# Phase 80.1.1 / 80.1.3 / 80.1.6: Claude 2.1.143-2.1.152 + Codex 0.131-0.134 snapshot
+PHASE80_SNAPSHOT_DOC="${ROOT_DIR}/docs/upstream-update-snapshot-2026-05-27.md"
+PHASE80_ADOPTION_DOC="${ROOT_DIR}/docs/upstream-adoption-plan-2026-05-27.md"
+[ -f "${PHASE80_SNAPSHOT_DOC}" ] || {
+  echo "${PHASE80_SNAPSHOT_DOC} does not exist — Phase 80.1.1"
+  exit 1
+}
+[ -f "${PHASE80_ADOPTION_DOC}" ] || {
+  echo "${PHASE80_ADOPTION_DOC} does not exist — Phase 80.1.2"
+  exit 1
+}
+for referencing_file in \
+  "${ROOT_DIR}/CHANGELOG.md" \
+  "${ROOT_DIR}/docs/CLAUDE-feature-table.md"; do
+  grep -q 'Phase 80' "${referencing_file}" || {
+    echo "${referencing_file} is missing the expected Phase 80 reference"
+    exit 1
+  }
+done
+grep_plans_or_archive 'Phase 80' || {
+  echo "Plans.md (or archive) is missing the expected Phase 80 reference"
+  exit 1
+}
+grep_plans_or_archive 'upstream-update-snapshot-2026-05-27' || {
+  echo "Plans.md (or archive) is missing upstream-update-snapshot-2026-05-27 reference"
+  exit 1
+}
+for phase80_rule in \
+  "${ROOT_DIR}/.claude/rules/skill-frontmatter-2.1.152-plus.md" \
+  "${ROOT_DIR}/.claude/rules/hooks-2.1.152-plus.md" \
+  "${ROOT_DIR}/docs/message-display-policy.md"; do
+  [ -f "${phase80_rule}" ] || {
+    echo "${phase80_rule} does not exist — Phase 80.1.3"
+    exit 1
+  }
+done
+grep -q 'disallowed-tools' "${ROOT_DIR}/.claude/rules/skill-frontmatter-2.1.152-plus.md" || {
+  echo "skill-frontmatter-2.1.152-plus.md must document disallowed-tools — Phase 80.1.3"
+  exit 1
+}
+grep -q '/reload-skills' "${ROOT_DIR}/CLAUDE.md" || {
+  echo "CLAUDE.md must document /reload-skills — Phase 80.1.3"
+  exit 1
+}
+grep -q 'claude agents --json' "${ROOT_DIR}/docs/agent-view-policy.md" || {
+  echo "agent-view-policy.md must document claude agents --json — Phase 80.1.3"
+  exit 1
+}
+grep -q 'MessageDisplay' "${PHASE80_SNAPSHOT_DOC}" || {
+  echo "${PHASE80_SNAPSHOT_DOC} must include MessageDisplay — Phase 80.1.1"
+  exit 1
+}
+grep -q 'disallowed-tools' "${PHASE80_SNAPSHOT_DOC}" || {
+  echo "${PHASE80_SNAPSHOT_DOC} must include disallowed-tools — Phase 80.1.1"
+  exit 1
+}
+grep -q 'SessionStart.reloadSkills' "${PHASE80_SNAPSHOT_DOC}" || {
+  echo "${PHASE80_SNAPSHOT_DOC} must include SessionStart.reloadSkills — Phase 80.1.1"
+  exit 1
+}
+grep -q 'Auto mode no longer requires opt-in consent' "${PHASE80_SNAPSHOT_DOC}" || {
+  echo "${PHASE80_SNAPSHOT_DOC} must include Auto mode consent change — Phase 80.1.1"
+  exit 1
+}
+grep -q 'rust-v0.134.0' "${PHASE80_SNAPSHOT_DOC}" || {
+  echo "${PHASE80_SNAPSHOT_DOC} must include rust-v0.134.0 — Phase 80.1.1"
+  exit 1
+}
+grep -q '\-\-profile' "${PHASE80_SNAPSHOT_DOC}" || {
+  echo "${PHASE80_SNAPSHOT_DOC} must include --profile — Phase 80.1.1"
+  exit 1
+}
+grep -q 'readOnlyHint' "${PHASE80_SNAPSHOT_DOC}" || {
+  echo "${PHASE80_SNAPSHOT_DOC} must include read-only MCP parallelism — Phase 80.1.1"
+  exit 1
+}
+grep -q 'B: 書いただけ 0 件' "${PHASE80_SNAPSHOT_DOC}" || {
+  echo "${PHASE80_SNAPSHOT_DOC} must record B: 書いただけ 0 件 — Phase 80.1.1"
+  exit 1
+}
+grep -q 'Auto-inherit' "${PHASE80_ADOPTION_DOC}" || {
+  echo "${PHASE80_ADOPTION_DOC} must include Auto-inherit decisions — Phase 80.1.2"
+  exit 1
+}
+grep -q 'internal-compatible' "${PHASE80_ADOPTION_DOC}" || {
+  echo "${PHASE80_ADOPTION_DOC} must preserve Codex CLI internal-compatible tier — Phase 80.1.2"
+  exit 1
+}
+
 echo "OK"

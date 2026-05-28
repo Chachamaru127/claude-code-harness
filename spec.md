@@ -1,7 +1,7 @@
 # Claude Code Harness V2 Spec
 
-Status: draft SSOT for Phase 72 through Phase 76
-Last updated: 2026-05-24
+Status: draft SSOT for Phase 72 through Phase 81
+Last updated: 2026-05-28
 
 This file is the root product contract for Claude Code Harness V2.
 Plans.md is the task ledger. `spec.md` is the product contract.
@@ -151,7 +151,7 @@ Adapters own the host-specific mechanics:
 | Claude Code | Claude plugin manifest, hooks, settings, output styles, runtime guardrails | That non-Claude hosts have identical hook enforcement |
 | Codex CLI / Codex app | Codex skills, `AGENTS.md` guidance, companion wrapper, local plugin marketplace path, post-exec quality gates | That Codex can always stop unsafe actions before execution |
 | OpenCode | native skill packaging, OpenCode config, `AGENTS.md` guidance, setup docs, package validation, bootstrap injection when verified | That mirror sync alone proves runtime parity |
-| Cursor | rules/adapter investigation, install candidate docs, smoke proof when available | Support before bootstrap and workflow smoke pass |
+| Cursor | `.cursor-plugin/plugin.json`, `.cursor/AGENTS.md`, project rules/skills/agents, optional hooks/MCP config shape, `scripts/model-routing.sh --host cursor`, static adapter smoke | Support before bootstrap + workflow smoke + release preflight pass; PM handoff docs are not adapter support |
 | GitHub Copilot CLI | CLI command investigation, tool mapping candidate, smoke proof when available | Support based only on Superpowers evidence |
 | Antigravity CLI | CLI/rules investigation, manual profile candidate if no plugin contract exists | Adapter support without an official or verified bootstrap route |
 
@@ -178,7 +178,7 @@ Current default stance:
 | Codex CLI | `internal-compatible` until direct plugin install and companion smoke are verified together | Existing Codex mirror and setup path exist; direct plugin path must be proven separately. |
 | Codex app | `candidate` under the Codex adapter | App behavior must be verified separately from CLI help output. |
 | OpenCode | `internal-compatible` until runtime bootstrap smoke passes | Existing mirror/setup validation exists; runtime parity is not yet proven. |
-| Cursor | `candidate` | Superpowers has a useful reference shape, but Harness has no verified adapter gate yet. |
+| Cursor | `candidate` | Adapter skeleton, static smoke, and model routing exist; workflow smoke and release gate have not yet promoted Cursor beyond candidate. |
 | GitHub Copilot CLI | `candidate` | Current CLI docs must be verified and Harness-specific bootstrap proof is missing. |
 | Antigravity CLI | `future/unsupported` until an official/verified adapter route exists | No local Harness or Superpowers adapter evidence has been observed. |
 
@@ -438,6 +438,41 @@ Preferred memory targets:
 
 If harness-mem is unavailable, the agent must say so and keep the local SSOT
 updated instead of pretending memory was written.
+
+## Upstream Tracking Contract
+
+Claude Code and Codex updates must be turned into Harness changes through an
+evidence gate, not by copying release notes into docs.
+
+Every non-trivial upstream refresh must:
+
+- compare the local installed versions with the latest official upstream
+  versions,
+- use official Anthropic, OpenAI, or first-party GitHub release sources,
+- record a dated snapshot document with release URLs, local version output, and
+  observed gaps,
+- classify each relevant item as `A: adopt now`, `C: inherit upstream`,
+  `P: plan/spike`, or `Reject`,
+- keep `B: explanation only` at zero unless the plan explicitly explains why a
+  non-actionable note is still worth preserving,
+- connect adopted items to `Plans.md`, tests, docs, CHANGELOG, and review gates,
+- avoid support-tier upgrades until host bootstrap, runtime smoke, and release
+  gates prove the claim.
+
+The following upstream surfaces are product-affecting and must not be treated as
+automatic documentation updates:
+
+- skill or slash-command frontmatter semantics,
+- hooks, message display, session start, and plugin marketplace behavior,
+- agent, subagent, background-session, worktree, or permission behavior,
+- sandbox, approval, profile, or managed policy behavior,
+- Codex companion, CLI, SDK, MCP, app-server, or GitHub Action behavior,
+- installer, package, release artifact, or supply-chain behavior.
+
+If an upstream product weakens a previous opt-in barrier, such as an auto mode
+consent change, Harness must keep its own safety default until a dedicated phase
+updates the contract, tests, and release notes. Upstream convenience is evidence
+to evaluate, not permission to silently relax Harness guardrails.
 
 ## Non-Goals
 

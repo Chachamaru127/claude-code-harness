@@ -23,6 +23,7 @@ Harness の統合実行スキル。
 | `/harness-work 3` | solo | タスク3だけ即実行 |
 | `/harness-work --parallel 5` | parallel | 5ワーカーで並列実行（強制） |
 | `/harness-work --codex` | codex | Codex CLI に委託（明示時のみ） |
+| Cursor host (adapter candidate) | cursor | Task/subagent routing via `.cursor/AGENTS.md`; not auto-selected |
 | `/harness-work --breezing` | breezing | チーム実行を強制 |
 | `/harness-work 3 --plan roadmap` | solo | named Plans の `roadmap` からタスク3を実行 |
 
@@ -230,12 +231,39 @@ companion は App Server Protocol 経由で Codex と通信し、
 Job 管理・thread resume・構造化出力を提供する。
 結果を検証し、品質基準を満たさない場合は自力で修正。
 
+### Cursor モード（adapter candidate、自動選択しない）
+
+Cursor host では `.cursor/AGENTS.md` と `.cursor-plugin/plugin.json` が
+bootstrap route。Cursor は `candidate` のまま — supported claim は禁止。
+
+- **Solo / Parallel**: Task tool または `.cursor/agents/worker.md` subagent
+- **Breezing**: Worker 並列は non-overlapping file groups のみ;
+  Reviewer / cherry-pick / Advisor は core どおり直列
+- **Multitask / background agents**: smoke target のみ。Claude Agent Teams parity
+  を主張しない
+
+Model routing:
+
+```bash
+bash scripts/model-routing.sh --host cursor --role worker --format json
+```
+
+Explicit Task/subagent `model` が routed default より優先。
+
+検証:
+
+```bash
+bash tests/test-cursor-adapter-candidate.sh
+```
+
 ### Breezing モード（4 件以上で自動選択 / `--breezing` で強制）
 
 Lead / Worker / Advisor / Reviewer の役割分離でチーム実行する。
 Codex では `spawn_agent`, `wait`, `send_input`, `resume_agent`, `close_agent`
 を使った native subagent orchestration を前提にし、
 古い TeamCreate / TaskCreate ベースの説明を採らない。
+Cursor では Task/subagent/background agents へ mapping するが、
+review/cherry-pick の直列責務は core 側に残す（adapter smoke target）。
 
 **権限ポリシー**:
 - 現行の shipped default は `bypassPermissions`

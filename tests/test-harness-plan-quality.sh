@@ -50,6 +50,7 @@ nontrivial_planning_gate_valid() {
     && grep -qF "Memory / Wheel Check:" <<<"$output" \
     && grep -qF "Product Fit:" <<<"$output" \
     && grep -qF "Security Fit:" <<<"$output" \
+    && grep -qF "Quality Baseline Fit:" <<<"$output" \
     && grep -qF "Works In Practice:" <<<"$output" \
     && ! grep -qF "team_validation_mode: unavailable" <<<"$output"
 }
@@ -151,6 +152,8 @@ check_plan_surface() {
   assert_contains "$skill" "車輪の再発明防止確認"
   assert_contains "$skill" "プロダクト目的から外れていないか"
   assert_contains "$skill" "セキュリティ、権限、秘密情報、サプライチェーン"
+  assert_contains "$skill" "lint / formatter baseline"
+  assert_contains "$skill" "source code changes"
   assert_contains "$skill" "ちゃんと動く計画か"
   assert_contains "$skill" '`team_validation_mode`: `not_required_lightweight` / `native` / `subagent` / `manual-pass` / `unavailable`'
   assert_contains "$skill" '`unavailable` のまま Required にしてはいけない'
@@ -176,6 +179,9 @@ check_plan_surface() {
   assert_contains "$create_ref" "TeamAgent またはサブエージェント前提"
   assert_contains "$create_ref" "Product / Architecture / Security / QA / Skeptic"
   assert_contains "$create_ref" "product fit、security fit、works in practice"
+  assert_contains "$create_ref" '`formatter_baseline`'
+  assert_contains "$create_ref" "lint / formatter が未設定なら setup task"
+  assert_contains "$create_ref" "planning では package install しない"
   assert_contains "$create_ref" "Product Fit、Evidence Strength、User Value、Implementation Feasibility、Regression Safety、Strategic Leverage、Security Safety、Works In Practice"
   assert_contains "$create_ref" '`harness-mem` の DB は直接読まない'
   assert_contains "$create_ref" "車輪の再発明を避ける"
@@ -221,6 +227,10 @@ check_plan_surface() {
   assert_contains "$quality_ref" "Spec / Plans Fit"
   assert_contains "$quality_ref" "Memory / Wheel Check"
   assert_contains "$quality_ref" "Security Fit"
+  assert_contains "$quality_ref" "Quality Baseline Fit"
+  assert_contains "$quality_ref" "formatter_baseline setup task"
+  assert_contains "$quality_ref" "source code changes"
+  assert_contains "$quality_ref" "planning では package install しない"
   assert_contains "$quality_ref" "Works In Practice"
   assert_contains "$quality_ref" "Security Fit は secret の実読取を要求しない"
   assert_contains "$quality_ref" "Risk Gate として止める"
@@ -287,6 +297,7 @@ Spec / Plans Fit: pass
 Memory / Wheel Check: pass
 Product Fit: pass
 Security Fit: pass
+Quality Baseline Fit: pass
 Works In Practice: pass
 Plans.md:
 | Task | 内容 | DoD | Depends | Status |"
@@ -300,6 +311,7 @@ Spec / Plans Fit: pass
 Memory / Wheel Check: pass
 Product Fit: pass
 Security Fit: pass
+Quality Baseline Fit: pass
 Works In Practice: pass
 Plans.md:
 | Task | 内容 | DoD | Depends | Status |"
@@ -308,6 +320,7 @@ assert_nontrivial_gate_invalid "non-trivial missing security gate" "team_validat
 Spec / Plans Fit: pass
 Memory / Wheel Check: pass
 Product Fit: pass
+Quality Baseline Fit: pass
 Works In Practice: pass
 Plans.md:
 | Task | 内容 | DoD | Depends | Status |"
@@ -317,6 +330,7 @@ Spec / Plans Fit: pass
 Memory / Wheel Check: pass
 Product Fit: pass
 Security Fit: pass
+Quality Baseline Fit: pass
 Works In Practice: pass
 Plans.md:
 | Task | 内容 | DoD | Depends | Status |"

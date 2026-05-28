@@ -204,6 +204,13 @@ echo "opencode bootstrap fixture ok"
 EOF
   chmod +x "$repo/tests/test-opencode-bootstrap-plugin.sh"
 
+  cat > "$repo/tests/test-cursor-adapter-candidate.sh" <<'EOF'
+#!/bin/bash
+set -euo pipefail
+echo "cursor adapter candidate fixture ok"
+EOF
+  chmod +x "$repo/tests/test-cursor-adapter-candidate.sh"
+
   cat > "$repo/tests/test-bootstrap-skill-trigger-acceptance.sh" <<'EOF'
 #!/bin/bash
 set -euo pipefail
@@ -333,6 +340,7 @@ test_preflight_pass_and_fail() {
   assert_contains "$success_output" "\\[PASS\\] CCH branch protection policy"
   assert_contains "$success_output" "\\[PASS\\] codex plugin adapter smoke"
   assert_contains "$success_output" "\\[PASS\\] opencode bootstrap smoke"
+  assert_contains "$success_output" "\\[PASS\\] cursor adapter candidate smoke"
   assert_contains "$success_output" "\\[PASS\\] bootstrap skill trigger acceptance gate"
   assert_contains "$success_output" "Summary: "
 
@@ -381,6 +389,30 @@ test_preflight_fails_on_opencode_mirror_drift() {
   assert_contains "$output" "opencode/skills/example/SKILL.md"
 }
 
+test_preflight_warns_on_github_actions_branch_protection_403() {
+  local repo="$TMP_DIR/release-preflight-branch-protection-403"
+  setup_repo "$repo" valid
+
+  cat > "$repo/scripts/check-cch-branch-protection-policy.sh" <<'EOF'
+#!/bin/bash
+printf "%s\n" "gh: Resource not accessible by integration (HTTP 403)" >&2
+exit 1
+EOF
+  chmod +x "$repo/scripts/check-cch-branch-protection-policy.sh"
+  git -C "$repo" add scripts/check-cch-branch-protection-policy.sh
+  git -C "$repo" commit -qm "add branch protection 403 fixture"
+
+  local output="$TMP_DIR/branch-protection-403.txt"
+  HARNESS_RELEASE_PROJECT_ROOT="$repo" \
+  HARNESS_RELEASE_HEALTHCHECK_CMD='true' \
+  HARNESS_RELEASE_CI_STATUS_CMD='true' \
+    "$PROJECT_ROOT/scripts/release-preflight.sh" >"$output" 2>&1
+
+  assert_contains "$output" "\\[WARN\\] CCH branch protection policy unavailable to GitHub Actions token"
+  assert_contains "$output" "Resource not accessible by integration"
+  assert_contains "$output" "Summary: "
+}
+
 test_preflight_checks_plugin_version_sync() {
   local repo="$TMP_DIR/release-preflight-plugin"
   setup_repo "$repo" valid
@@ -397,6 +429,7 @@ test_preflight_checks_plugin_version_sync() {
 }
 EOF
   mkdir -p "$repo/.claude-plugin"
+  mkdir -p "$repo/.cursor-plugin"
   cat > "$repo/.claude-plugin/plugin.json" <<'EOF'
 {
   "name": "release-preflight-plugin-fixture",
@@ -417,6 +450,12 @@ EOF
   ]
 }
 EOF
+  cat > "$repo/.cursor-plugin/plugin.json" <<'EOF'
+{
+  "name": "release-preflight-cursor-fixture",
+  "version": "1.2.3"
+}
+EOF
   git -C "$repo" add .
   git -C "$repo" commit -qm "add plugin metadata"
 
@@ -428,6 +467,44 @@ EOF
     "$PROJECT_ROOT/scripts/release-preflight.sh" >"$success_output"
 
   assert_contains "$success_output" "\\[PASS\\] release version sync"
+
+  python3 - "$repo/.cursor-plugin/plugin.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+data = json.loads(path.read_text(encoding="utf-8"))
+data["version"] = "1.2.2"
+path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+PY
+  git -C "$repo" add .cursor-plugin/plugin.json
+  git -C "$repo" commit -qm "drift cursor plugin version"
+
+  local cursor_failure_output="$TMP_DIR/cursor-plugin-version-failure.txt"
+  if HARNESS_RELEASE_PROJECT_ROOT="$repo" \
+    HARNESS_RELEASE_HEALTHCHECK_CMD='true' \
+    HARNESS_RELEASE_CI_STATUS_CMD='true' \
+    HARNESS_RELEASE_BRANCH_PROTECTION_CMD='true' \
+      "$PROJECT_ROOT/scripts/release-preflight.sh" >"$cursor_failure_output" 2>&1; then
+    fail "preflight should fail on cursor plugin version mismatch"
+  fi
+
+  assert_contains "$cursor_failure_output" "\\[FAIL\\] release version sync"
+  assert_contains "$cursor_failure_output" "MISMATCH .cursor-plugin/plugin.json"
+
+  python3 - "$repo/.cursor-plugin/plugin.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+data = json.loads(path.read_text(encoding="utf-8"))
+data["version"] = "1.2.3"
+path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+PY
+  git -C "$repo" add .cursor-plugin/plugin.json
+  git -C "$repo" commit -qm "restore cursor plugin version"
 
   python3 - "$repo/.claude-plugin/marketplace.json" <<'PY'
 import json
@@ -480,6 +557,7 @@ test_doc_mentions_overrides
 test_release_workflow_runs_preflight_before_assets
 test_preflight_pass_and_fail
 test_preflight_fails_on_opencode_mirror_drift
+test_preflight_warns_on_github_actions_branch_protection_403
 test_preflight_checks_plugin_version_sync
 test_preflight_warns_when_env_is_managed_elsewhere
 

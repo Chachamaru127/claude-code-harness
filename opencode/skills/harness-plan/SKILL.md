@@ -60,6 +60,7 @@ non-trivial planning の出力には、次の検証を必ず含める。
 - harness-mem / harness-recall / repo memory による車輪の再発明防止確認
 - プロダクト目的から外れていないか
 - セキュリティ、権限、秘密情報、サプライチェーンに問題がないか
+- lint / formatter baseline があるか。source code changes を含む plan で未設定なら、実装 task の前に setup task を置く
 - ちゃんと動く計画か。つまり test / smoke / CI / review / release gate が task DoD に落ちているか
 
 軽量 task は `team_validation_mode: not_required_lightweight` でよい。
@@ -90,9 +91,10 @@ Security gate は秘密情報の実読取を要求しない。
 3. 既存仕様・root `spec.md`・Plans.md・README・docs・CLAUDE.md・関連 skill を確認する
 4. harness-mem / harness-recall / `.claude/agent-memory/` / `.claude/state/` など、利用可能な記憶面を project-scoped で確認する
 5. non-trivial planning では TeamAgent / Task サブエージェントを使い、Product / Architecture / Security / QA / Skeptic など異なる視点で独立レビューする
-6. 中立的な採点レビューを出し、Required / Recommended / Optional / Reject に分類する
-7. `$easy` 形式で、提案内容・理由・どうなるのかを報告する
-8. 採用する案だけを root `spec.md` / Plans.md / test task へ落とし込む
+6. source code changes を含む plan では lint / formatter baseline を確認し、未設定なら setup task を先行させる
+7. 中立的な採点レビューを出し、Required / Recommended / Optional / Reject に分類する
+8. `$easy` 形式で、提案内容・理由・どうなるのかを報告する
+9. 採用する案だけを root `spec.md` / Plans.md / test task へ落とし込む
 
 ### create — 計画作成
 

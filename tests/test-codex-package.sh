@@ -492,6 +492,30 @@ else
   log_fail "Codex 0.130.0 provider/workflow policy checks failed"
 fi
 
+log_test "Phase 80 Codex 0.131-0.134 policy is documented"
+phase80_codex_ok=true
+for required_phase80_term in \
+  'rust-v0.134.0' \
+  'primary selector' \
+  'install.sh' \
+  'on-failure' \
+  'extended through 0.134.0'; do
+  if ! rg -q --fixed-strings "$required_phase80_term" \
+    "docs/upstream-update-snapshot-2026-05-27.md" \
+    "docs/codex-permission-profiles-policy.md" \
+    "codex/AGENTS.md" \
+    "scripts/setup-codex.sh" \
+    "codex/.codex/config.toml"; then
+    echo "  missing Phase 80 Codex term: $required_phase80_term"
+    phase80_codex_ok=false
+  fi
+done
+if $phase80_codex_ok; then
+  log_pass "Phase 80 Codex 0.131-0.134 policy is documented"
+else
+  log_fail "Phase 80 Codex policy checks failed"
+fi
+
 log_test "codex README documents MCP verbose diagnostics and .mcp.json loading"
 readme_mcp_ok=true
 if ! rg -q --fixed-strings 'Codex `0.123.0` keeps the normal `/mcp` view fast' "codex/README.md"; then

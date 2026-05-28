@@ -75,7 +75,7 @@ Cognitive-load 3 surface 詳細: [docs/cognitive-load-surfaces.md](docs/cognitiv
 
 ## Development Flow
 
-0. **When editing skills/hooks**: run `/reload-plugins` to refresh runtime cache immediately
+0. **When editing skills/hooks**: run `/reload-skills` after skill-only changes, or `/reload-plugins` after plugin manifest/hook changes, to refresh runtime cache immediately
 1. **Plan**: Use `/plan-with-agent` to add tasks to Plans.md
 2. **Implement**: `/work` (Claude implements) or `/breezing` (team full-run). Both support `--codex`
 3. **Review**: Runs automatically (manual: `/harness-review`)

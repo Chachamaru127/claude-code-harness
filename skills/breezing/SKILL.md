@@ -105,6 +105,34 @@ cat "$CODEX_PROMPT" | bash "${HARNESS_PLUGIN_ROOT}/scripts/codex-companion.sh" t
 rm -f "$CODEX_PROMPT"
 ```
 
+### Cursor Mode (adapter candidate)
+
+Cursor stays `candidate`. Parallel team execution maps to Cursor subagents /
+background agents / multitask only as a **smoke target**; core Breezing contract
+is unchanged:
+
+- **Parallel**: Workers with non-overlapping file groups may run via Task tool
+  or `.cursor/agents/worker.md` with `run_in_background: true` when safe.
+- **Serial**: Reviewer verdict, cherry-pick to main, Advisor escalation.
+
+Bootstrap route: `.cursor/AGENTS.md` + `.cursor-plugin/plugin.json`.
+
+Model routing:
+
+```bash
+bash scripts/model-routing.sh --host cursor --role worker --format json
+bash scripts/model-routing.sh --host cursor --role reviewer --format json
+```
+
+Explicit Task/subagent `model` override outranks routed defaults. Multitask mode
+does not imply Claude Agent Teams parity or supported Cursor adapter claim.
+
+Verification:
+
+```bash
+bash tests/test-cursor-adapter-candidate.sh
+```
+
 ## Flow Summary
 
 ```

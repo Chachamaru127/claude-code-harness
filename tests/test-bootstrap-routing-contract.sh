@@ -70,6 +70,8 @@ assert_contains "Candidate and unsupported hosts must not inherit"
 assert_contains '`not observed` means evidence is missing'
 assert_contains "contract injection + post quality gate + merge gate"
 assert_contains "Codex app | \`candidate\`"
+assert_contains "Cursor AGENTS.md and Plugin Route"
+assert_contains "tests/test-cursor-adapter-candidate.sh"
 assert_contains "Cursor | \`candidate\`"
 assert_contains "GitHub Copilot CLI | \`candidate\`"
 assert_contains "Antigravity CLI | \`future/unsupported\`"
