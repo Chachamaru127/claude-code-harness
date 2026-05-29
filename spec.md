@@ -556,6 +556,36 @@ consent change, Harness must keep its own safety default until a dedicated phase
 updates the contract, tests, and release notes. Upstream convenience is evidence
 to evaluate, not permission to silently relax Harness guardrails.
 
+## Session Coordination Contract
+
+When multiple local Claude Code sessions work on the same project, Harness may
+coordinate them to reduce file conflicts, but only under these rules.
+
+- Coordination state is local-only and never depends on harness-mem. The
+  cross-repo boundary in `.claude/rules/cross-repo-handoff.md` stays intact.
+- The lease store lives in one shared location resolved from
+  `git --git-common-dir`, never under a worktree-local `.claude/`, so parallel
+  worktree Workers share a single lease space. Lease keys are the sha256 of the
+  repo-relative path, never an absolute path.
+- Lease acquisition is atomic (`O_CREAT|O_EXCL`). Staleness requires both TTL
+  expiry and the holder session id being absent from the live-session set; pid
+  liveness is only an auxiliary signal.
+- Conflict handling changes behavior through diagnostic feedback
+  (`continueOnBlock`), not a silent advisory. It is feedback, not a guard rail,
+  so it never blocks irreversible operations and stays fail-open: if the lease
+  mechanism is unavailable, edits pass and no false assurance is implied.
+- Cross-session content (broadcast, lock metadata) is injected into model
+  context as data, not instructions: only structured trusted fields (sanitized
+  path, short session id, age-seconds), wrapped with the existing
+  non-instruction disclaimer. Free text from other sessions is never echoed
+  verbatim, control characters are stripped, and a byte cap bounds the payload.
+- Coordination health uses the tri-state model in
+  `.claude/rules/active-watching-test-policy.md`: `not-configured` is silent;
+  only `unreachable` / `corrupted` warn.
+- A broadcast channel whose fire conditions are too narrow dies silently, as
+  the 2026-02 broadcast corpse proved. Any revival must prove via tests that
+  its fire strategy triggers on normal edits.
+
 ## Non-Goals
 
 V2 does not:
