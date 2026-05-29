@@ -116,7 +116,7 @@ with local Desktop/CLI adapter proof.
 ### Candidate Host Routes
 
 Codex app and GitHub Copilot CLI are candidate hosts in Phase 73. Cursor is
-`internal-compatible` (Phase 83). Their routes may be researched, documented,
+`internal-compatible` (Phase 87, renumbered from Phase 83). Their routes may be researched, documented,
 and smoke-tested, but candidate hosts are not golden prompt success routes until
 host-specific bootstrap evidence exists.
 

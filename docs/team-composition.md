@@ -29,7 +29,6 @@ Lead
 | Worker | `claude-code-harness:worker` | 1..3 | Read, Write, Edit, Bash, Grep, Glob | 実装結果または `advisor-request.v1` |
 | Advisor | `claude-code-harness:advisor` | 0..1 | Read, Grep, Glob | `advisor-response.v1` |
 | Reviewer | `claude-code-harness:reviewer` | 1 | Read, Grep, Glob | `review-result.v1` |
-| Scaffolder | `claude-code-harness:scaffolder` | 0..1 | Read, Write, Edit, Bash, Grep, Glob | analyze/scaffold/update-state の結果 JSON |
 
 ## worker 数の決め方
 

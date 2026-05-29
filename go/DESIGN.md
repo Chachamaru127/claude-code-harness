@@ -308,7 +308,7 @@ bin/harness version                 # Version info
       }]
     }],
     "SubagentStart": [{
-      "matcher": "worker|reviewer|scaffolder|video-scene-generator",
+      "matcher": "worker|reviewer|video-scene-generator",
       "hooks": [{
         "type": "command",
         "command": "${CLAUDE_PLUGIN_ROOT}/bin/harness hook subagent-start",
@@ -316,7 +316,7 @@ bin/harness version                 # Version info
       }]
     }],
     "SubagentStop": [{
-      "matcher": "worker|reviewer|scaffolder|video-scene-generator",
+      "matcher": "worker|reviewer|video-scene-generator",
       "hooks": [{
         "type": "command",
         "command": "${CLAUDE_PLUGIN_ROOT}/bin/harness hook subagent-stop",

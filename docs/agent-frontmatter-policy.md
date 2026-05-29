@@ -16,7 +16,7 @@ Plugin subagents do not support these frontmatter fields:
 
 Claude Code ignores those fields when agents are loaded from a plugin. Harness
 therefore does not keep them in `agents/worker.md`, `agents/reviewer.md`,
-`agents/advisor.md`, or `agents/scaffolder.md`.
+or `agents/advisor.md`.
 
 If an operator needs per-agent hooks or permission mode experiments, copy the
 agent into `.claude/agents/` or `~/.claude/agents/` and treat that as a local
@@ -46,7 +46,6 @@ override, not a shipped plugin contract.
 | `worker` | Yes | No | Implementation worker. Uses `tools` plus Worker preflight. |
 | `reviewer` | No | Yes | `Write`, `Edit`, `Bash`, and `Agent` are denied. |
 | `advisor` | No | Yes | Returns `advisor-response.v1`; does not execute commands. |
-| `scaffolder` | Yes | No | Creates setup scaffolding with explicit file scope. |
 
 `rg -n "permissionMode:|hooks:" agents/*.md` should return no matches.
 

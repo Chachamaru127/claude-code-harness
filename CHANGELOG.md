@@ -6,6 +6,15 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Removed
+
+- **未配線の Scaffolder エージェントを削除 (#170)**: `agents/scaffolder.md` は `analyze` / `scaffolder` / `update-state` の 3 モードを定義していたが、どの skill / hook からも `subagent_type="claude-code-harness:scaffolder"` で spawn される経路が存在せず（worker / reviewer は spawn 経路あり）、登録だけされて使われない dead agent だった。足場生成は `harness-setup` が、状態同期は `harness-plan` が Lead inline で実行しており、setup/plan は対話的フローのため worktree 隔離はむしろ不向き。混乱を避けるためエージェント定義を削除し、hooks の SubagentStart/Stop matcher・docs（team-composition / agent-frontmatter-policy / distribution-scope）・関連テスト・skill mirror の参照を整理。worker / reviewer / advisor の 3 エージェント構成に変更なし。
+
+### Fixed
+
+- **`--no-verify` / `--no-gpg-sign` ガードレールのバイパス修正 (#171)**: R10 ガードレールの検出正規表現が `\s`（空白）のみを境界としていたため、`git commit --no-verify&&echo done` のようにシェルメタ文字（`&&` / `;` / `|` など）を空白なしで続けると検出をすり抜け、pre-commit フックや署名検証を迂回できてしまう問題を修正。境界判定にシェルのトークン区切り文字（`[\s;&|()<>]`）を含めるよう `go/internal/guardrail/helpers.go` を更新し、バイパス系・誤検出防止の回帰テストを追加。
+- **`harness.toml` のバージョン同期ずれを修正 (#178)**: v4.13.1 リリースで `VERSION` と `.claude-plugin/plugin.json` は `4.13.1` に bump されたが `harness.toml` が `4.13.0` のまま残っていた。`harness sync`（`scripts/sync-plugin-cache.sh`）は `harness.toml` から `plugin.json` のバージョンを再生成するため、sync 実行のたびに `plugin.json` が `4.13.0` へ巻き戻り、CI の `validate` ジョブ（`check-consistency.sh` のバージョン一致ゲート）が失敗していた。`harness.toml` を `4.13.1` に揃え、3 点（VERSION / plugin.json / harness.toml）同期を回復。
+
 ### Changed
 
 | Before | After |
@@ -17,17 +26,45 @@ Change history for claude-code-harness.
 | Cursor local plugin registered via symlink was rejected (target outside `~/.cursor/plugins/local`). | Documented real-directory copy install; symlink route no longer recommended. |
 | Cursor adapter tier remained `candidate` despite observed Desktop skill loading. | Cursor promoted to `internal-compatible` with `scripts/setup-cursor.sh`, runtime evidence doc, and tier gates; public `supported` claim still blocked. |
 
-- **Phase 82 Harness Duplication Cleanup**: Added host-specific dist builder
+- **Phase 86 Harness Duplication Cleanup**: Added host-specific dist builder
   (`scripts/build-host-plugin-dist.sh`), duplication dry-run diagnostic
   (`scripts/diagnose-harness-skill-duplication.sh`), local cleanup guide
   (`docs/local-harness-environment-cleanup.md`), archive contamination fix for
   `.cursor-plugin/`, and `tests/test-host-plugin-dist.sh` with generated-package
-  adapter smoke updates.
+  adapter smoke updates. (Renumbered from Phase 82 to avoid collision with the
+  archived Phase 80-84 numbering space; see Plans.md.)
 
-- **Phase 83 Cursor Internal-Compatible Promotion**: Added `scripts/setup-cursor.sh`
+- **Phase 87 Cursor Internal-Compatible Promotion**: Added `scripts/setup-cursor.sh`
   (real-directory install + `--check`), promoted Cursor tier to
   `internal-compatible` in `spec.md` and capability matrix, recorded 2026-05-29
   Desktop skill-loading evidence, and extended adapter/preflight gates.
+  (Renumbered from Phase 83 to avoid collision with the archived Phase 80-84
+  numbering space; see Plans.md.)
+
+## [4.13.1] - 2026-05-29
+
+### Documentation
+
+- **非 claude backend のトポロジー SSOT 化**: `HARNESS_IMPL_BACKEND=cursor` / `=codex` のとき、Lead は Worker agent (`claude-code-harness:worker`) を spawn せず、`scripts/cursor-companion.sh` / `scripts/codex-companion.sh` を直接呼ぶ運用を skill 正本と shareable rule に明記。Worker 層介在は backend=`claude` のときだけ（agent 契約 `worker-report.v1` / `self_review` が非 claude では生成されないため）。
+- **Lead の cherry-pick 前ゲートに contract-grep 必須を明記**: 非 claude backend の出力を main に取り込む前に、目視 diff だけでなく `test-support-claim-wording.sh` / `check-consistency.sh` / `validate-plugin.sh` の固定文字列契約チェックを必ず通す運用を `skills/harness-work/SKILL.md` に追記。composer の表面的 dedup 傾向と docs/locale/matrix の固定句契約 (`5動詞ワークフロー` 等) の衝突を防ぐ。
+
+## [4.13.0] - 2026-05-29
+
+### Added
+
+- **実装バックエンド選択（Cursor candidate / 脳 Opus・体 composer）**: 実装の手を `claude`(既定) / `codex` / `cursor`(composer-2.5-fast) から選べる実行バックエンドを追加。`scripts/set-impl-backend.sh [--user] <claude|codex|cursor>` で一度設定すれば、`/breezing`・`/harness-work` の worker（実装）ロールが選択バックエンドに委譲し、review/advisor は Opus 固定（自作レビュー防止）。precedence は flag > `HARNESS_IMPL_BACKEND` env > project `env.local` > user `~/.config/claude-harness/impl-backend.env` > `claude`。
+  - 安全境界は専用 `.git` worktree + Lead の diff レビュー + cherry-pick（R01-R13）。Cursor の allowlist は公式に best-effort のため依存せず、cursor 出力は untrusted 扱い。読取委譲は `--mode ask`、`--force`/Run Everything は不使用。
+  - Cursor は `candidate` のまま（consumer 配布・公開 support claim なし、ローカル opt-in）。
+  - 新規: `scripts/resolve-impl-backend.sh`, `scripts/cursor-companion.sh`, `.claude/rules/cursor-cli-only.md`、spec.md「Execution Backend Contract」。`harness-work`/`breezing`/`worker.md` に 3-way backend スイッチを配線。
+- **`cursor-companion.sh --debug` 観測経路（デバッグ用）**: `--debug` フラグ または `HARNESS_CURSOR_DEBUG=1` 環境変数で、(a) `model-routing.sh` の stderr、(b) 実行直前の cmd 配列（`--api-key` / `--auth-token` / `Authorization:` 値を `[REDACTED]` にマスク）、(c) cursor-agent の stderr を `[cursor-companion DEBUG]` prefix で stderr に出す。既定挙動（DEBUG=0）は不変・後方互換。
+
+### Changed
+
+- **`scripts/resolve-impl-backend.sh` / `scripts/set-impl-backend.sh`**: shellcheck SC2295 / SC2005 を解消（内部 hygiene、挙動不変）。
+
+### Documentation
+
+- **Cursor ACP（Agent Client Protocol）= 不採用**を `docs/research/cursor-adapter-candidate.md` に判断と再評価条件付きで記録。ACP は双方向 streaming プロトコルで harness の whole-task 委譲には過剰。streaming UX / 非 Cursor IDE への埋込 / per-action permission gating のいずれかが要件化したら再評価。Cursor は `candidate` のまま。
 
 ## [4.12.11] - 2026-05-28
 
@@ -4645,7 +4682,9 @@ Purpose: 自己修正ループ失敗時に「止まるだけ」から「次の�
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.11...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.13.1...HEAD
+[4.13.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.13.0...v4.13.1
+[4.13.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.11...v4.13.0
 [4.12.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.10...v4.12.11
 [4.12.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.9...v4.12.10
 [4.12.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.8...v4.12.9

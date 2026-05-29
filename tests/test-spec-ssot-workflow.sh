@@ -36,7 +36,6 @@ WORK_EXEC_REF="$PLUGIN_ROOT/skills/harness-work/references/execution-modes.md"
 CODEX_WORK_SKILL="$PLUGIN_ROOT/skills-codex/harness-work/SKILL.md"
 CODEX_WORK_EXEC_REF="$PLUGIN_ROOT/skills-codex/harness-work/references/execution-modes.md"
 WORKER_AGENT="$PLUGIN_ROOT/agents/worker.md"
-SCAFFOLDER_AGENT="$PLUGIN_ROOT/agents/scaffolder.md"
 REVIEWER_AGENT="$PLUGIN_ROOT/agents/reviewer.md"
 REVIEW_SKILL="$PLUGIN_ROOT/skills/harness-review/SKILL.md"
 
@@ -121,7 +120,6 @@ require_contains "$CODEX_WORK_SKILL" "spec_skip_reason" "Codex harness-work が 
 require_contains "$CODEX_WORK_EXEC_REF" "project spec SSOT" "Codex execution mode が spec SSOT preflight を持つ"
 
 require_contains "$WORKER_AGENT" "spec_path" "Worker input が spec_path を受け取る"
-require_contains "$SCAFFOLDER_AGENT" "spec_required" "Scaffolder analyze が spec_required を返す"
 require_contains "$REVIEWER_AGENT" "spec_path" "Reviewer input が spec_path を受け取る"
 require_contains "$REVIEW_SKILL" "仕様正本 alignment check" "harness-review が spec alignment を確認する"
 
