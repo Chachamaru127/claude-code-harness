@@ -1,42 +1,67 @@
-# Cursor Adapter Candidate
+# Cursor Adapter Evidence
 
-Status: candidate evidence boundary
-Checked at: 2026-05-28 JST
-Phase: `Plans.md` 81.1
+Status: internal-compatible evidence boundary
+Checked at: 2026-05-29 JST
+Phase: `Plans.md` 83.x (promoted from Phase 81 candidate skeleton)
 
 ## Conclusion
 
-Cursor remains `candidate`.
+Cursor is **`internal-compatible`**.
 
-Harness now has a Cursor adapter skeleton (`.cursor-plugin/`, `.cursor/AGENTS.md`,
-`.cursor/agents/`, hooks/MCP config shape) and static smoke tests, but it does not
-have verified workflow smoke that proves Plan → Work → Review from Cursor alone.
-The existing `docs/CURSOR_INTEGRATION.md` PM handoff path is separate from adapter
-support.
+Harness has a Cursor adapter route (`.cursor-plugin/`, `.cursor/AGENTS.md`,
+`.cursor/agents/`, host-specific dist build, `scripts/setup-cursor.sh`, static
+smoke tests) and **observed Desktop skill loading** (`/breezing`, workflow
+skills). It does **not** have CI-gated workflow smoke that proves full Plan →
+Work → Review from Cursor alone, nor runtime guard / hook / Cloud Agent parity.
+The existing `docs/CURSOR_INTEGRATION.md` PM handoff path remains separate from
+adapter support.
+
+Do not promote Cursor beyond **`internal-compatible`** until CI-gated workflow
+smoke and the full release/preflight claim path pass in the same tier boundary.
 
 ## Evidence Boundary
 
-`not_observed != absent`: missing Cursor runtime smoke is not proof that Cursor
-cannot support Harness. It is proof that Harness must not claim support yet.
+`not_observed != absent`: missing CI-gated Cursor workflow smoke is not proof
+that the host cannot run Harness workflows. It is proof that Harness must not use
+the public support tier yet.
 
-Do not promote Cursor beyond the `candidate` tier until:
+## Observed Runtime Evidence (2026-05-29)
 
-- host-specific bootstrap smoke passes,
-- release preflight consumes the adapter route,
-- README/onboarding wording still separates handoff integration from adapter
-  support.
+Manual Desktop observation (operator-local, not CI-gated):
+
+| Observation | Evidence | Limit |
+|---|---|---|
+| Local plugin load after real-directory install | Cursor Plugins log no longer shows `loadUserLocalPlugin ... rejected: symlink target ... is outside ...` | Symlink installs are rejected by Cursor |
+| Skill menu visibility | Operator confirmed `/breezing` and other workflow skills appear after Reload Window | Single-session manual proof only |
+| Frontmatter normalization | `scripts/build-host-plugin-dist.sh` rewrites `user-invocable: true` → `false` for Cursor package | Claude Code slash contract preserved in Claude dist |
+
+Pre-fix failures that informed Phase 82/83:
+
+- Symlink install at `~/.cursor/plugins/local/claude-code-harness` → **rejected**
+  (target outside `~/.cursor/plugins/local`)
+- Raw repo skills with `user-invocable: true` → **dropped** by Cursor (skills
+  invisible in `/` menu)
+
+Fix applied:
+
+```bash
+bash scripts/setup-cursor.sh --check   # build + validate only
+bash scripts/setup-cursor.sh           # real copy to ~/.cursor/plugins/local/
+```
 
 ## Harness Evidence (This Repository)
 
 | Artifact | What it proves | What it does not prove |
 |---|---|---|
 | `docs/CURSOR_INTEGRATION.md` | Cursor PM ↔ Claude Code Harness handoff workflow | Cursor adapter support |
-| `.cursor-plugin/plugin.json` | Plugin manifest points at core `skills/` | Marketplace install or runtime skill loading |
+| `.cursor-plugin/plugin.json` | Plugin manifest points at core `skills/` | Marketplace install |
+| `scripts/build-host-plugin-dist.sh` | Host-specific cursor package with in-package paths | Runtime guard parity |
+| `scripts/setup-cursor.sh` | Real-directory local install + `--check` validation | CI-gated Desktop workflow smoke |
 | `.cursor/AGENTS.md` | Bootstrap routing guidance for plan/work/review | Automatic runtime routing |
 | `.cursor/agents/*.md` | Subagent shape for worker/reviewer/advisor roles | Team execution parity with Claude Agent Teams |
 | `.cursor/hooks.json` | Config shape for optional session hooks | Hook enforcement parity with Claude Code |
 | `.cursor/mcp.json` | MCP config shape placeholder | MCP trust or runtime wiring |
-| `tests/test-cursor-adapter-candidate.sh` | Static adapter contract + optional CLI smoke | Full Breezing multitask proof |
+| `tests/test-cursor-adapter-candidate.sh` | Static adapter contract + setup-cursor smoke | Full Breezing multitask proof |
 | `scripts/model-routing.sh --host cursor` | Role-tier → Cursor model mapping contract | Account-specific model availability |
 
 Superpowers reference shape (external, not Harness proof):
@@ -57,64 +82,76 @@ Sources checked:
 - https://cursor.com/docs/context/mcp — MCP server configuration
 - https://cursor.com/docs/cloud-agent/api — Cloud Agent API (`mode`, `model.id`, `model.params`)
 - https://cursor.com/docs/cli/overview — CLI agent with `--model` and mode flags
+- https://cursor.com/docs/plugins — local plugin install under `~/.cursor/plugins/local`
 
 Observed adapter-relevant mechanics:
 
 | Surface | Harness mapping | Notes |
 |---|---|---|
 | Rules / `AGENTS.md` | Bootstrap notice + prompt routing | Same conceptual layer as Codex `AGENTS.md`, different enforcement |
-| Skills | Core workflow skills via plugin `skills/` path | Skill tool / `$skill` style invocation varies by host |
+| Skills | Core workflow skills via plugin `skills/` path | Cursor drops `user-invocable: true` skills; Cursor package normalizes to `false` |
+| Local plugins | `scripts/setup-cursor.sh` → real directory copy | Symlinks whose target is outside `~/.cursor/plugins/local` are rejected |
 | Subagents | Worker / Reviewer / Advisor adapter roles | `model: inherit` or explicit model slug; `readonly` for review |
 | Task / background agents | Breezing parallel worker smoke target only | Core keeps review + cherry-pick serial |
 | Hooks | Optional sessionStart / preflight gate | Secret-free config-shape validation only in static smoke |
 | MCP | Optional harness-mem / tool bridge | Trust policy applies; no secret reads in smoke |
-| Cloud Agent API | Optional paid/auth evidence | Not required for local Desktop/CLI static gate |
+| Cloud Agent API | Optional paid/auth evidence | Not required for internal-compatible local Desktop evidence |
 | CLI `--model` | Explicit override surface | Outranks routed default when caller sets it |
 
-Not observed in this repo's smoke (2026-05-28):
+Not observed in this repo's smoke (2026-05-29):
 
-- Cursor Desktop plugin marketplace install transcript for this manifest
+- CI-gated Desktop workflow smoke with transcript artifact
 - Cloud Agent API workflow smoke with auth
 - Multitask mode proof for full Breezing cherry-pick loop
 - Hook runtime block parity with Claude PreToolUse
 
 ## Separation: PM Handoff vs Adapter Support
 
-| Concern | PM handoff (`CURSOR_INTEGRATION.md`) | Adapter candidate (this doc) |
+| Concern | PM handoff (`CURSOR_INTEGRATION.md`) | Adapter route (this doc) |
 |---|---|---|
 | Primary user | Cursor plans/reviews, Claude implements | Operator stays in Cursor for Plan → Work → Review |
 | Bootstrap | Shared `Plans.md` + Cursor command templates | `.cursor-plugin/` + `.cursor/AGENTS.md` + skills/agents |
 | Parallelism | Out of scope | Maps to subagents / background agents / multitask (smoke target) |
-| Support claim | Never implies Cursor adapter support | Remains `candidate` until smoke + preflight pass |
-| Verification | Branch + marker sanity | `bash tests/test-cursor-adapter-candidate.sh` |
+| Support claim | Never implies Cursor adapter support | `internal-compatible` only; not a public support-tier claim |
+| Verification | Branch + marker sanity | `bash tests/test-cursor-adapter-candidate.sh` + `bash scripts/setup-cursor.sh --check` |
 
-## Promotion Conditions
+## Tier Boundaries
 
-Cursor can move beyond `candidate` only after all of the following in the same
-claim path:
+| Tier | Cursor status | Allowed wording | Blocked wording |
+|---|---|---|---|
+| `internal-compatible` | **current** | experimental/internal compatibility, setup-cursor install, observed Desktop skill loading | marketing Cursor as production-ready |
+| production tier | not yet | — | public adapter claim beyond internal-compatible |
+| `candidate` | superseded for Cursor (Phase 83) | historical Phase 81 research only | current tier label |
 
-1. Current official docs captured with extractable evidence (this doc + tests).
-2. Harness-specific Cursor bootstrap route consumed by setup or release preflight.
-3. Workflow smoke proves at least one of `harness-plan`, `harness-work`, or
-   `harness-review` routing from Cursor with transcript or CI artifact.
-4. Breezing Cursor mapping recorded as smoke target, not as public parity claim.
-5. `tests/test-support-claim-wording.sh` still passes (no public Cursor tier
-   claim beyond `candidate`).
-6. Optional Cloud Agent API smoke recorded separately; failure does not block
-   local Desktop/CLI candidate evidence if tier wording stays honest.
+## Promotion To Production Tier (Remaining Conditions)
 
-Residual risks after Phase 81:
+The public support tier requires all of the following in the same claim path
+before this host may be described as production-ready:
+
+1. CI-gated workflow smoke proves at least one of `harness-plan`, `harness-work`,
+   or `harness-review` routing from Cursor with transcript or CI artifact.
+2. Release preflight and support-wording gates pass with the upgraded tier.
+3. README/onboarding wording still separates handoff integration from adapter
+   support and preserves the false-parity rule.
+4. Breezing Cursor mapping remains a smoke target, not a public parity claim.
+5. Optional Cloud Agent API smoke recorded separately; failure does not block
+   local Desktop internal-compatible evidence if tier wording stays honest.
+
+Residual risks after Phase 83:
 
 - Explicit subagent `model` override wins; team/admin/plan unavailable models
   fall back silently unless smoke catches them.
 - Multitask / background agent behavior may differ from Claude Agent Teams.
 - MCP and hooks can affect external sends; config-shape tests do not prove runtime
   policy enforcement.
+- Manual Desktop skill-loading proof can regress when Cursor Desktop import or
+  duplicate skill paths are re-enabled.
 
 ## Verification Commands
 
 ```bash
 bash tests/test-cursor-adapter-candidate.sh
+bash scripts/setup-cursor.sh --check
 bash tests/test-bootstrap-routing-contract.sh
 bash tests/test-tool-capability-matrix.sh
 bash tests/test-model-routing.sh

@@ -80,6 +80,9 @@ harness-ui/CLAUDE.md
 # Local build artifacts
 /go/bin/
 
+# Generated host-specific distribution packages
+/dist/
+
 # Go workspace checksum (environment-specific; go.work itself is tracked)
 go.work.sum
 

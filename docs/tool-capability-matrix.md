@@ -1,6 +1,6 @@
 # Tool Capability Matrix
 
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 
 ## Purpose
 
@@ -15,7 +15,7 @@ The current support-tier scope is:
 | Codex CLI | `internal-compatible` | Existing mirrors, setup, companion review, local CLI command surface, and CI-gated direct plugin marketplace/install smoke can be described as internal compatibility; Codex app and hook parity are not implied. |
 | Codex app | `candidate` | App behavior must be proven separately from Codex CLI help output. |
 | OpenCode | `internal-compatible` | Existing mirror/package validation and Node-level bootstrap plugin checks can be described as internal compatibility; real OpenCode binary runtime bootstrap parity is not proven. |
-| Cursor | `candidate` | Adapter skeleton + static smoke only; PM handoff docs are not adapter support; no supported claim until workflow smoke passes. |
+| Cursor | `internal-compatible` | Host-specific dist build, `scripts/setup-cursor.sh` real-directory install, CI-gated package smoke, and observed Desktop skill loading justify internal compatibility; CI-gated workflow smoke and runtime guard/hook parity are not proven; no public supported claim. |
 | GitHub Copilot CLI | `candidate` | Candidate adapter only; Superpowers evidence and official docs are not Harness bootstrap proof. |
 | Antigravity CLI | `future/unsupported` | No public setup, README support, or release claim until an official or verified route plus local bootstrap smoke exists. |
 
@@ -53,7 +53,7 @@ bootstrap claims of supported hosts.
 | Host | Phase 73 status | Allowed wording | Blocked wording |
 |---|---|---|
 | Codex app | `candidate` | app-specific candidate or research gate | supported, same as Codex CLI |
-| Cursor | `candidate` | adapter candidate, handoff integration, static smoke, `.cursor-plugin/` skeleton | supported Cursor adapter |
+| Cursor | `internal-compatible` | adapter candidate route, handoff integration, setup-cursor install, static smoke, observed Desktop skill loading | supported Cursor adapter |
 | GitHub Copilot CLI | `candidate` | adapter candidate, CLI capability investigation | supported Copilot adapter |
 | Antigravity CLI | `future/unsupported` | future scope, unsupported public claim, not observed | supported Antigravity adapter |
 
@@ -64,7 +64,8 @@ The matrix is valid only when all of the following stay true:
 - All required capability names are present exactly as code-formatted labels.
 - Claude Code is `supported`.
 - Codex CLI and OpenCode are `internal-compatible`.
-- Codex app, Cursor, and GitHub Copilot CLI are `candidate`.
+- Cursor is `internal-compatible` with observed Desktop skill-loading evidence.
+- Codex app and GitHub Copilot CLI are `candidate`.
 - Antigravity CLI is `future/unsupported` for public claim.
 - Codex CLI runtime evidence is limited to direct plugin marketplace/install
   smoke in an isolated `CODEX_HOME`.
@@ -74,5 +75,8 @@ The matrix is valid only when all of the following stay true:
   merge gate.
 - Any public support wording preserves the false parity rule.
 - Cursor adapter static smoke is limited to `tests/test-cursor-adapter-candidate.sh`
-  until Desktop/CLI workflow smoke is observed.
+  and `scripts/setup-cursor.sh --check` until CI-gated Desktop workflow smoke is
+  observed.
 - Cursor Breezing multitask mapping is a smoke target, not a public parity claim.
+- `scripts/setup-cursor.sh` must install a real directory under
+  `~/.cursor/plugins/local/` (symlink installs are rejected by Cursor).

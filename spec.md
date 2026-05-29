@@ -1,6 +1,6 @@
 # Claude Code Harness V2 Spec
 
-Status: draft SSOT for Phase 72 through Phase 81
+Status: draft SSOT for Phase 72 through Phase 83
 Last updated: 2026-05-28
 
 This file is the root product contract for Claude Code Harness V2.
@@ -151,7 +151,7 @@ Adapters own the host-specific mechanics:
 | Claude Code | Claude plugin manifest, hooks, settings, output styles, runtime guardrails | That non-Claude hosts have identical hook enforcement |
 | Codex CLI / Codex app | Codex skills, `AGENTS.md` guidance, companion wrapper, local plugin marketplace path, post-exec quality gates | That Codex can always stop unsafe actions before execution |
 | OpenCode | native skill packaging, OpenCode config, `AGENTS.md` guidance, setup docs, package validation, bootstrap injection when verified | That mirror sync alone proves runtime parity |
-| Cursor | `.cursor-plugin/plugin.json`, `.cursor/AGENTS.md`, project rules/skills/agents, optional hooks/MCP config shape, `scripts/model-routing.sh --host cursor`, static adapter smoke | Support before bootstrap + workflow smoke + release preflight pass; PM handoff docs are not adapter support |
+| Cursor | `.cursor-plugin/plugin.json`, `.cursor/AGENTS.md`, project rules/skills/agents, optional hooks/MCP config shape, `scripts/model-routing.sh --host cursor`, `scripts/setup-cursor.sh`, host-specific dist + static adapter smoke | Internal compatibility via setup route + observed Desktop skill loading; not public supported claim; PM handoff docs are not adapter support; runtime guard / hook / Cloud Agent parity unproven |
 | GitHub Copilot CLI | CLI command investigation, tool mapping candidate, smoke proof when available | Support based only on Superpowers evidence |
 | Antigravity CLI | CLI/rules investigation, manual profile candidate if no plugin contract exists | Adapter support without an official or verified bootstrap route |
 
@@ -178,7 +178,7 @@ Current default stance:
 | Codex CLI | `internal-compatible` until direct plugin install and companion smoke are verified together | Existing Codex mirror and setup path exist; direct plugin path must be proven separately. |
 | Codex app | `candidate` under the Codex adapter | App behavior must be verified separately from CLI help output. |
 | OpenCode | `internal-compatible` until runtime bootstrap smoke passes | Existing mirror/setup validation exists; runtime parity is not yet proven. |
-| Cursor | `candidate` | Adapter skeleton, static smoke, and model routing exist; workflow smoke and release gate have not yet promoted Cursor beyond candidate. |
+| Cursor | `internal-compatible` | Host-specific dist build, `scripts/setup-cursor.sh` real-directory install, CI-gated package smoke, and observed Desktop skill loading (`/breezing` etc.) justify internal compatibility; CI-gated workflow smoke and runtime guard/hook parity are not proven; no public supported claim |
 | GitHub Copilot CLI | `candidate` | Current CLI docs must be verified and Harness-specific bootstrap proof is missing. |
 | Antigravity CLI | `future/unsupported` until an official/verified adapter route exists | No local Harness or Superpowers adapter evidence has been observed. |
 
@@ -225,6 +225,55 @@ thin host adapters, bootstrap guidance, skill-trigger tests, and explicit host
 tool mapping. Harness may cherry-pick that pattern, but every copied idea must
 be translated into Harness lanes, Plans.md tasks, TDD/review gates, and support
 tier evidence.
+
+## Host Distribution Contract
+
+Host-specific distribution packages must not cross-contaminate adapter surfaces.
+
+Rules:
+
+- A Claude Code distribution payload must not include `.codex-plugin/`,
+  `.cursor-plugin/`, `codex/`, `.cursor/`, or other non-Claude adapter
+  manifests.
+- A Codex distribution package must expose only Codex skills and a Codex plugin
+  manifest whose component paths stay inside the package root.
+- A Cursor distribution package must expose only Cursor skills, agents, and a
+  Cursor plugin manifest whose component paths stay inside the package root.
+- Distribution manifests must not use `..` relative paths. Source-repo adapter
+  metadata may use sibling paths for development, but generated install
+  packages must normalize paths to `./skills/`, `./agents/`, or equivalent
+  in-package locations.
+- A host distribution package must normalize component metadata so the target
+  host actually surfaces it. Skills authored for the Claude Code slash-only
+  convention (`user-invocable: true`) are dropped by Cursor; the Cursor package
+  must rewrite them to `user-invocable: false` so they register as
+  Agent-Decides skills invokable via `/skill-name`. The Claude package must keep
+  the original `user-invocable: true` slash contract.
+- A Cursor local install must be a real directory under
+  `~/.cursor/plugins/local/<name>`. Cursor rejects symlinks whose target is
+  outside that directory, so distribution tooling must copy the package in
+  rather than linking to an external build path.
+- Cursor, Codex CLI, and OpenCode remain below Claude Code in support tier
+  until their own workflow smoke and release gates pass. Distribution cleanup
+  does not by itself promote a host to `supported`.
+
+## Clean Mode And Compatibility Mode
+
+Harness defines two user-facing environment profiles. These are Harness
+diagnostic and guidance profiles, not host-native global toggles. Cursor may
+still load Claude/Codex skill directories when the user enables host
+compatibility import in the Desktop app.
+
+| Profile | Meaning | Expected UX |
+|---------|---------|-------------|
+| `clean` (default) | One host, one Harness route. Cursor users should see Cursor package skills only after cleanup. | Fewer duplicate skills/plugins; explicit host-specific invocation. |
+| `compatibility` | Cross-host skill import remains enabled. Harness warns about duplicates but does not force-disable host import settings. | More skills visible; Harness recommends namespaced or explicit invocation. |
+
+Harness must not delete user home configuration by default. Environment cleanup
+uses dry-run inventory first, then user-confirmed archive or disable actions.
+Compatibility import in Cursor Desktop can reintroduce duplicate skills even
+after clean distribution packages are installed; Harness documents that limit
+and detects duplicate origins before suggesting fixes.
 
 ## New Session Bootstrap Rule
 
@@ -499,8 +548,9 @@ V2 does not:
   be created in this repository or remain optional memory surfaces.
 - Whether Codex direct plugin installation becomes the default Codex path or
   stays secondary to `scripts/setup-codex.sh --user`.
-- Which current host docs and smoke tests are sufficient to promote Cursor,
-  GitHub Copilot CLI, or Antigravity CLI from `candidate` /
+- Which CI-gated Desktop workflow smoke is sufficient to promote Cursor from
+  `internal-compatible` to `supported`, and which host docs and smoke tests are
+  sufficient to promote GitHub Copilot CLI or Antigravity CLI from `candidate` /
   `future/unsupported`.
 
 ## Links

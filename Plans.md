@@ -381,3 +381,31 @@ New Session Start: Phase 81.1 から開始。Cursor は smoke 完了まで `cand
 | 81.4 | `[Breezing]` Cursor mapping と multitask 境界を core から分離する。 | (a) `skills/breezing/SKILL.md`, `skills/harness-work/SKILL.md`, `docs/team-composition.md` 更新、(b) parallel worker / serial review 契約維持 | 81.3 | cc:完了 |
 | 81.5 | `[Model Routing]` Cursor host を model router に追加し override 優先順位を固定する。 | (a) `scripts/model-routing.sh --host cursor`, (b) `docs/model-routing-policy.md`, (c) `agents/advisor.md` Opus 4.7 整合、(d) `bash tests/test-model-routing.sh` PASS | 81.3 | cc:完了 |
 | 81.6 | `[Validation]` smoke / support wording / release-preflight gate を追加する。 | (a) `tests/test-cursor-adapter-candidate.sh`, (b) `scripts/release-preflight.sh` adapter gate, (c) `bash tests/test-support-claim-wording.sh`, (d) `CHANGELOG.md` [Unreleased], (e) validation commands PASS | 81.4, 81.5 | cc:完了 |
+
+---
+
+## Phase 82: Harness Duplication Cleanup [P1]
+
+Purpose: Cursor / Codex / Claude Code で Harness が重複表示される問題を、個人環境の Clean/Compatibility 診断と host-specific 配布 package 分離の2層で解消する。Desktop の Claude/Codex 互換読み込み ON 時は重複再発し得るため、Harness は dry-run 診断とユーザー確認後の archive/disable のみ行う。
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 82.1 | `[Contract]` spec / Plans / distribution scope に host distribution と Clean/Compatibility profile を固定する。 | (a) `spec.md` Host Distribution + Clean/Compatibility 節、(b) Phase 82 行、(c) `docs/distribution-scope.md` 更新 | 81.6 | cc:完了 |
+| 82.2 | `[Local Env]` dry-run 診断 docs + helper を追加する。 | (a) `docs/local-harness-environment-cleanup.md`, (b) `scripts/diagnose-harness-skill-duplication.sh` default dry-run, (c) `--apply` なし or confirmation gate | 82.1 | cc:完了 |
+| 82.3 | `[Archive Gate]` Claude archive から `.cursor-plugin/` 混入を防ぐ。 | (a) `.gitattributes`, (b) `tests/test-distribution-archive.sh`, (c) distribution-scope 同期 | 82.1 | cc:完了 |
+| 82.4 | `[Dist Builder]` host-specific dist 生成 script を追加する。 | (a) `scripts/build-host-plugin-dist.sh`, (b) manifest path 正規化, (c) host 別 displayName | 82.3 | cc:完了 |
+| 82.5 | `[Dist Tests]` 混入防止 test + adapter smoke を generated package ベースへ拡張する。 | (a) `tests/test-host-plugin-dist.sh`, (b) codex/cursor adapter test 更新 | 82.4 | cc:完了 |
+| 82.6 | `[Validation]` mirror / validate / release-preflight dry-run を PASS する。 | (a) listed validation commands PASS, (b) `CHANGELOG.md` [Unreleased] | 82.2, 82.3, 82.4, 82.5 | cc:完了 |
+
+---
+
+## Phase 83: Cursor Internal-Compatible Promotion [P1]
+
+Purpose: Cursor adapter を `candidate` から `internal-compatible` へ昇格する。`setup-cursor.sh` インストール経路、host-specific dist 正規化、観測済み Desktop skill-loading 証拠、tier 表記・テスト・preflight gate を Codex CLI / OpenCode と同水準で整える。`supported` 公開 claim は CI-gated workflow smoke まで行わない。
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 83.1 | `[tdd:required]` RED: setup-cursor + tier assertion を先に fail させる。 | (a) `test-cursor-adapter-candidate.sh` setup assert 追加で script 未実装 RED、(b) `test-tool-capability-matrix.sh` Cursor=`internal-compatible` で doc 未更新 RED | 82.6 | cc:完了 |
+| 83.2 | `[tdd:required]` GREEN: `scripts/setup-cursor.sh` 実装。 | (a) `--check` dry-run + real copy install、(b) symlink 不可 + `user-invocable` 正規化 dist、(c) `test-cursor-adapter-candidate.sh` PASS | 83.1 | cc:完了 |
+| 83.3 | `[tdd:skip:docs-only]` GREEN: tier doc + runtime 証拠。 | (a) `spec.md` Cursor=`internal-compatible`、(b) `docs/tool-capability-matrix.md` 更新、(c) `cursor-adapter-candidate.md` 2026-05-29 証拠、(d) `test-tool-capability-matrix.sh` PASS | 83.1 | cc:完了 |
+| 83.4 | `[tdd:skip:config-wiring]` Gate / CHANGELOG。 | (a) `release-preflight.sh` setup-cursor gate、(b) `CHANGELOG.md` [Unreleased]、(c) validation commands PASS | 83.2, 83.3 | cc:完了 |

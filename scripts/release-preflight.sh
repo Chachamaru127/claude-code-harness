@@ -449,8 +449,12 @@ adapter_gate_paths=(
   "docs/hokage-spin-off-readiness.md"
   "docs/research/cursor-adapter-candidate.md"
   "docs/CURSOR_INTEGRATION.md"
+  "docs/local-harness-environment-cleanup.md"
   "docs/skill-orchestration-design-contract.md"
   "scripts/build-opencode.js"
+  "scripts/build-host-plugin-dist.sh"
+  "scripts/diagnose-harness-skill-duplication.sh"
+  "scripts/setup-cursor.sh"
   "scripts/generate-skill-manifest.sh"
   "scripts/model-routing.sh"
   "scripts/sync-skill-mirrors.sh"
@@ -458,6 +462,7 @@ adapter_gate_paths=(
   "tests/test-codex-package.sh"
   "tests/test-codex-plugin-adapter.sh"
   "tests/test-cursor-adapter-candidate.sh"
+  "tests/test-host-plugin-dist.sh"
   "tests/test-opencode-bootstrap-plugin.sh"
   "tests/test-bootstrap-skill-trigger-acceptance.sh"
   "tests/test-distribution-archive.sh"
@@ -665,6 +670,30 @@ check_release_mirror_drift() {
   else
     fail "cursor adapter candidate smoke"
     printf '  missing: tests/test-cursor-adapter-candidate.sh\n'
+  fi
+
+  if [ -f tests/test-host-plugin-dist.sh ]; then
+    if bash tests/test-host-plugin-dist.sh >"$output_file" 2>&1; then
+      pass "host plugin dist gate"
+    else
+      fail "host plugin dist gate"
+      sed 's/^/  /' "$output_file"
+    fi
+  else
+    fail "host plugin dist gate"
+    printf '  missing: tests/test-host-plugin-dist.sh\n'
+  fi
+
+  if [ -f scripts/setup-cursor.sh ]; then
+    if bash scripts/setup-cursor.sh --check >"$output_file" 2>&1; then
+      pass "cursor setup check gate"
+    else
+      fail "cursor setup check gate"
+      sed 's/^/  /' "$output_file"
+    fi
+  else
+    fail "cursor setup check gate"
+    printf '  missing: scripts/setup-cursor.sh\n'
   fi
 
   if [ -f tests/test-distribution-archive.sh ]; then

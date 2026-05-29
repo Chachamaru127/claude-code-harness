@@ -6,6 +6,29 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Changed
+
+| Before | After |
+| --- | --- |
+| Claude archive could include Cursor adapter metadata. | `.cursor-plugin/` is excluded from Claude distribution archive. |
+| Codex/Cursor adapter manifests used sibling `..` paths in source repo only. | `scripts/build-host-plugin-dist.sh` generates host packages with in-package `./skills/` paths. |
+| Duplicate Harness skill origins had no dry-run diagnostic. | `scripts/diagnose-harness-skill-duplication.sh` and Clean/Compatibility profiles document safe cleanup. |
+| Cursor dropped Harness workflow skills (`user-invocable: true`) so `/breezing`, `/harness-plan` never appeared. | Cursor package normalizes those skills to `user-invocable: false`; Claude package keeps the slash contract. |
+| Cursor local plugin registered via symlink was rejected (target outside `~/.cursor/plugins/local`). | Documented real-directory copy install; symlink route no longer recommended. |
+| Cursor adapter tier remained `candidate` despite observed Desktop skill loading. | Cursor promoted to `internal-compatible` with `scripts/setup-cursor.sh`, runtime evidence doc, and tier gates; public `supported` claim still blocked. |
+
+- **Phase 82 Harness Duplication Cleanup**: Added host-specific dist builder
+  (`scripts/build-host-plugin-dist.sh`), duplication dry-run diagnostic
+  (`scripts/diagnose-harness-skill-duplication.sh`), local cleanup guide
+  (`docs/local-harness-environment-cleanup.md`), archive contamination fix for
+  `.cursor-plugin/`, and `tests/test-host-plugin-dist.sh` with generated-package
+  adapter smoke updates.
+
+- **Phase 83 Cursor Internal-Compatible Promotion**: Added `scripts/setup-cursor.sh`
+  (real-directory install + `--check`), promoted Cursor tier to
+  `internal-compatible` in `spec.md` and capability matrix, recorded 2026-05-29
+  Desktop skill-loading evidence, and extended adapter/preflight gates.
+
 ## [4.12.11] - 2026-05-28
 
 ### Changed
