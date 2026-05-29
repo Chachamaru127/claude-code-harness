@@ -902,3 +902,47 @@ func BenchmarkCollectDrift_200Lines(b *testing.B) {
 func BenchmarkCollectDrift_10000Lines(b *testing.B) {
 	benchCollectDrift(b, 10000)
 }
+
+// TestMonitorHandler_RegisterNotConfigured is the Phase 81.1.3 regression
+// test for the active-watching-test-policy tri-state contract: the
+// session-register state lives at .claude/sessions/active.json, but
+// session-monitor must not warn when that file is missing. Coordination
+// is opt-in; absence == silence. This pins the invariant so a future
+// monitor refactor that starts reading active.json still cannot emit
+// a "register not-configured" warning into the SessionStart output.
+func TestMonitorHandler_RegisterNotConfigured(t *testing.T) {
+	dir := t.TempDir()
+	stateDir := filepath.Join(dir, ".claude", "state")
+	if err := os.MkdirAll(stateDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// No active.json, no .claude/sessions directory — the "register not
+	// configured" arm of the tri-state.
+
+	h := &MonitorHandler{
+		StateDir:  stateDir,
+		PlansFile: filepath.Join(dir, "Plans.md"),
+		MemHealthCommand: func(_ context.Context) (bool, string, error) {
+			return true, "", nil
+		},
+		now: func() time.Time { return time.Date(2026, 5, 29, 12, 0, 0, 0, time.UTC) },
+	}
+
+	in := strings.NewReader(`{"session_id":"sess-monitor","cwd":"` + dir + `"}`)
+	var out bytes.Buffer
+	if err := h.Handle(in, &out); err != nil {
+		t.Fatalf("monitor handler should not fail when register is absent: %v", err)
+	}
+
+	got := out.String()
+	for _, forbidden := range []string{
+		"register",
+		"active.json",
+		"⚠️ register",
+		"not-configured",
+	} {
+		if strings.Contains(got, forbidden) {
+			t.Errorf("monitor output must not warn about absent register; saw %q in: %s", forbidden, got)
+		}
+	}
+}

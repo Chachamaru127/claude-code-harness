@@ -260,6 +260,14 @@ func runHook(hookType string) {
 		if err := hookhandler.HandleInboxCheck(os.Stdin, os.Stdout); err != nil {
 			fmt.Fprintf(os.Stderr, "inbox-check handler error: %v\n", err)
 		}
+	case "session-register":
+		if err := hookhandler.HandleSessionRegister(os.Stdin, os.Stdout); err != nil {
+			fmt.Fprintf(os.Stderr, "session-register handler error: %v\n", err)
+		}
+	case "session-unregister":
+		if err := hookhandler.HandleSessionUnregister(os.Stdin, os.Stdout); err != nil {
+			fmt.Fprintf(os.Stderr, "session-unregister handler error: %v\n", err)
+		}
 	case "browser-guide":
 		if err := hookhandler.HandleBrowserGuide(os.Stdin, os.Stdout); err != nil {
 			fmt.Fprintf(os.Stderr, "browser-guide handler error: %v\n", err)
