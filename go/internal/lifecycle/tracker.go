@@ -14,7 +14,7 @@ import (
 type TrackedAgent struct {
 	// AgentID はエージェントの識別子（CC が付与する agent_id）。
 	AgentID string
-	// AgentType はエージェントの種別（worker / reviewer / scaffolder 等）。
+	// AgentType はエージェントの種別（worker / reviewer / advisor 等）。
 	AgentType string
 	// SessionID はエージェントが属するセッションの識別子。
 	SessionID string

@@ -18,6 +18,7 @@ Harness はこれを **Lead (operator) が複数の Worker / Reviewer / Scaffold
 
 ## 動作前提 (2.1.139-2.1.142)
 
+- `claude agents --json` で live session 一覧を JSON 出力できる (2.1.145)。tmux-resurrect、status bar、session picker 等の **diagnostic / scripting** 用途に限定する。Harness teammate spawn の代替にしない。
 - agent view は session ごとに **running / blocked on you / done** を表示する。
 - `claude agents --cwd <path>` で session list を directory scope できる (2.1.141)。
 - `claude agents` 起動時に `--add-dir`, `--settings`, `--mcp-config`, `--plugin-dir`,
@@ -92,7 +93,9 @@ Harness はこれを **Lead (operator) が複数の Worker / Reviewer / Scaffold
 - `agents/worker.md` — Worker 契約
 - `.claude/rules/opus-4-7-prompt-audit.md` — agent 契約 audit ルール (Lead 限定 spawn を明記)
 - `docs/upstream-update-snapshot-2026-05-15.md` — Phase 69 snapshot
+- `docs/upstream-update-snapshot-2026-05-27.md` — Phase 80 snapshot
 - `.claude/rules/hooks-2.1.139-plus.md` — hook 周辺の 2.1.133+ rules
+- `.claude/rules/hooks-2.1.152-plus.md` — MessageDisplay / reloadSkills / sessionTitle (2.1.152+)
 
 ## 見直し条件
 

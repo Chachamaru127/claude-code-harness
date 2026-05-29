@@ -75,6 +75,8 @@ jobs:
         uses: ./.github/actions/setup-go-harness
 
       - name: Run release preflight
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash ./scripts/release-preflight.sh --check-adapters
 
       - name: Build Go binaries

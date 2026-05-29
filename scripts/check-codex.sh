@@ -60,7 +60,7 @@ codex update
 \`\`\`
 
 `codex update` が使えない古いインストールだけ、package manager の
-`npm update -g @openai/codex` などにフォールバックしてください。
+versioned / pinned update flow にフォールバックしてください。
 
 EOF
     fi

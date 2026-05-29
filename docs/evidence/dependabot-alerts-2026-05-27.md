@@ -162,6 +162,34 @@ because it requires the actual model/sandbox runtime path. The `smoke --dry`
 and full-config dry runs are the intended dependency/runtime-start gates for
 this phase.
 
+## GitHub Closeout
+
+Pull request:
+
+- PR #159: https://github.com/Chachamaru127/claude-code-harness/pull/159
+- Merge commit: `942fa996899179619b1ddeae7745eeedc70a4281`
+
+Review and branch CI:
+
+- `bash scripts/codex-companion.sh review --base origin/main`: APPROVE/no blocking finding
+- `validate-plugin` branch run `26490923383`: success
+- `smoke-install` branch run `26490923384`: success
+- CodeRabbit: success (`Review skipped`)
+
+Main closeout:
+
+- `validate-plugin` main run `26491162442`: success
+- `scorecard` main run `26491162444`: success
+- `Dependabot Updates` runs `26491164580`, `26491164453`,
+  `26491164490`, and `26491164507`: success
+- `gh api .../dependabot/alerts -f state=open --jq 'length'`: `0`
+- target manifest query for
+  `benchmarks/breezing-bench/agent-eval/package-lock.json`: no open alerts
+
+Release/tag action was intentionally skipped because this change remediates
+benchmark tooling lockfile alerts and adds CI/Dependabot coverage, but does not
+change shipped plugin runtime behavior or user-facing distribution metadata.
+
 ## External References
 
 - GitHub REST API: Dependabot alerts for a repository: https://docs.github.com/en/rest/dependabot/alerts

@@ -22,6 +22,21 @@ The agent drafts the spec delta from repo evidence, memory, tests, and the user
 request. Do not make the workflow look like the user must hand-write a spec
 from scratch before planning can start.
 
+For non-trivial planning, the draft must be team-validated before it becomes
+implementation work. Non-trivial means the request spans multiple tasks, files,
+or sessions, or changes product behavior, API, data model, permissions,
+billing, external integrations, distribution, or security posture.
+Use TeamAgent or sub-agent perspectives when available. If they are not
+available, write `サブエージェント未使用` and run the same checks manually in
+separate sections.
+Also write `team_validation_mode`: `not_required_lightweight`, `native`,
+`subagent`, `manual-pass`, or `unavailable`.
+Lightweight work may use `not_required_lightweight`.
+Non-trivial work must use `native`, `subagent`, or `manual-pass`; `unavailable`
+cannot become Required.
+Product, Architecture, Security, QA, and Skeptic are validation perspectives,
+not required runtime `agent_type` names.
+
 ## Default Location
 
 Use the root `spec.md` first.
@@ -79,6 +94,20 @@ not_observed != absent
 
 If the task is docs-only or mechanical, still preserve `Spec skip reason` in
 task context or sprint contract so later workers know the skip was intentional.
+
+Non-trivial output must also preserve these planning gates:
+
+- `spec.md` / sub-spec / `Plans.md` alignment,
+- project-scoped harness-mem / harness-recall / repo-memory wheel check,
+- product fit against the primary workflow,
+- security fit for permissions, secrets, external sends, supply chain, branch
+  protection, and release gates,
+- works-in-practice proof through test, smoke, CI, review, and release or
+  closeout evidence.
+
+Security fit must not require reading secrets. If `.env`, tokens, private keys,
+or customer data would need to be inspected, stop at a Risk Gate and use
+non-secret evidence surfaces instead.
 
 ## When To Create Or Update It
 

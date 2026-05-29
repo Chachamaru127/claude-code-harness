@@ -14,6 +14,7 @@ VERSION_FILE="VERSION"
 PACKAGE_JSON="package.json"
 PLUGIN_JSON=".claude-plugin/plugin.json"
 CODEX_PLUGIN_JSON=".codex-plugin/plugin.json"
+CURSOR_PLUGIN_JSON=".cursor-plugin/plugin.json"
 MARKETPLACE_JSON=".claude-plugin/marketplace.json"
 HARNESS_TOML="harness.toml"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -160,6 +161,7 @@ sync_version() {
     sync_top_level_json_version "$PACKAGE_JSON" "package.json" "$version"
     sync_top_level_json_version "$PLUGIN_JSON" "plugin.json" "$version"
     sync_top_level_json_version "$CODEX_PLUGIN_JSON" "codex plugin.json" "$version"
+    sync_top_level_json_version "$CURSOR_PLUGIN_JSON" "cursor plugin.json" "$version"
     sync_marketplace_version "$MARKETPLACE_JSON" "$version"
 
     # harness.toml の同期

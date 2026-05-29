@@ -59,6 +59,53 @@ Harness の統合実行スキル。
 2. **`--codex` は明示時のみ発動**。Codex CLI が未インストールの環境があるため、自動選択しない
 3. `--codex` は他モードと組み合わせ可能: `--codex --breezing` → Codex + Breezing
 
+## Execution Backend Selection（実装バックエンド選択）
+
+バックエンド（どのランタイムが**実装するか**）は、トポロジー（実行モード: solo / parallel / breezing）と直交する。
+トポロジーが「何ワーカーで・どう分割して回すか」を決めるのに対し、バックエンドは「実装の手を誰が動かすか」を決める。
+この契約は host-neutral であり（spec.md「Execution Backend Contract」）、Codex host から harness を駆動しても Claude Code から駆動しても同じに振る舞う。
+
+| backend | 実装の担い手 | 委託コマンド |
+|---------|------------|------------|
+| `claude`（既定） | Codex native subagent（`spawn_agent({message, fork_context})`） | spawn_agent で worker を spawn |
+| `codex` | Codex CLI | `bash "${HARNESS_PLUGIN_ROOT}/scripts/codex-companion.sh" task --write "<prompt>"` |
+| `cursor` | cursor-agent（model `composer-2.5-fast`） | `bash "${HARNESS_PLUGIN_ROOT}/scripts/cursor-companion.sh" task --write --workspace <worktree> "<prompt>"` |
+
+### 解決手順
+
+run 開始時に 1 回だけ解決する:
+
+```bash
+bash "${HARNESS_PLUGIN_ROOT}/scripts/resolve-impl-backend.sh"
+```
+
+precedence（高い順）: `--backend <v>` / `--cursor` / `--codex` フラグ > `HARNESS_IMPL_BACKEND` 環境変数 > プロジェクト `env.local` の同名行 > ユーザー `~/.config/claude-harness/impl-backend.env` の同名行 > 既定値 `claude`。
+明示フラグ（`--backend` / `--cursor` / `--codex`）は env / file / default を常に上書きする。プロジェクト設定はユーザースコープを上書きする。
+
+> モデル名の正本は `model-routing.sh`。本ドキュメント中の `composer-2.5-fast` は参照値であり、実解決は `bash "${HARNESS_PLUGIN_ROOT}/scripts/model-routing.sh" --host cursor --role worker --field model` に従う（drift 防止）。
+
+### role-scoped 制約
+
+バックエンドは **role-scoped**。解決済みバックエンドを使うのは実装（worker）ロールだけ。
+Reviewer と Advisor の両ロールは常に brain（`--host claude`、Opus）に固定する。
+Reviewer を cursor / codex バックエンドに routing しない（実装したバックエンドが自分の出力をレビューしてはならない）。
+
+### 非 `claude` バックエンドの self_review ゲート
+
+backend が `codex` または `cursor` の場合、`worker-report.v1` も `self_review` 配列も生成されない。
+そのため Lead は self_review ゲートを**スキップ**し、Lead の diff レビューを唯一の品質ゲートとする（既存の codex path と同じ扱い）。
+
+### cursor バックエンドの banner（委託前に必須）
+
+backend が `cursor` のとき、Lead は委託前に次の 1 行 banner を必ず出力する:
+
+```
+⚠️ cursor backend: model=composer-2.5-fast / R01-R13 ガードレールは cursor-agent 内部に適用されない / 出力は Lead レビューまで untrusted
+```
+
+cursor の write 委託は専用 `.git` を持つ worktree 内で実行し、Lead が main へ cherry-pick する（cherry-pick 経路で R01-R13 が適用される）。
+ガバナンス詳細は `.claude/rules/cursor-cli-only.md` を参照。
+
 ## オプション
 
 | オプション | 説明 | デフォルト |

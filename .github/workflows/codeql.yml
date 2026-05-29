@@ -7,14 +7,8 @@ name: codeql
 on:
   push:
     branches: [main]
-    paths:
-      - 'go/**'
-      - '.github/workflows/codeql.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'go/**'
-      - '.github/workflows/codeql.yml'
   schedule:
     - cron: '17 6 * * 1'  # Mondays 06:17 UTC
 

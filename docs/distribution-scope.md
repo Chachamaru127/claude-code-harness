@@ -12,7 +12,7 @@
 | `.claude-plugin/` | Distribution-included | Claude Code plugin manifest / hooks / settings | `claude plugin validate`, `test-distribution-archive.sh` |
 | `bin/harness*` | Distribution-included | Go-native guardrail / lifecycle runtime | `validate-plugin`, `go test`, archive required entries |
 | `skills/` | Distribution-included | Claude Code 用 primary skill surface | `validate-plugin`, mirror sync checks |
-| `agents/` | Distribution-included | worker / reviewer / scaffolder / advisor | `validate-plugin`, agent frontmatter tests |
+| `agents/` | Distribution-included | worker / reviewer / advisor | `validate-plugin`, agent frontmatter tests |
 | `hooks/`, `monitors/` | Distribution-included | 実行時 hook / monitor definitions | `hooks/hooks.json`, `validate-plugin` |
 | `output-styles/` | Distribution-included | Claude Code output style | `plugin.json`, archive required entries |
 | `templates/`, `workflows/` | Distribution-included | project init / rules / workflow templates | `check-consistency.sh`, template registry checks |

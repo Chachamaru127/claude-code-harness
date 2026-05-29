@@ -45,7 +45,8 @@ allowed-tools: ["Read", "Write", "Edit", "Bash", ...]
 | `name` | Yes | Skill identifier (matches directory name) |
 | `description` | Yes | English description for auto-loading (include trigger phrases). Token-efficient. |
 | `description-ja` | Recommended | Japanese description for i18n. Use `scripts/set-locale.sh ja` to swap into `description`. |
-| `allowed-tools` | No | Tools the skill can use |
+| `allowed-tools` | No | Tools the skill can use (allowlist — not a restriction list) |
+| `disallowed-tools` | No | CC 2.1.152+: tools to remove from the model while the skill is active |
 | `argument-hint` | No | Usage hint (e.g., `"[option1|option2]"`) |
 | `disable-model-invocation` | No | Set `true` for dangerous operations |
 | `user-invocable` | No | Set `false` for internal-only skills |

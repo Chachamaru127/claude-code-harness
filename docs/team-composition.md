@@ -29,7 +29,6 @@ Lead
 | Worker | `claude-code-harness:worker` | 1..3 | Read, Write, Edit, Bash, Grep, Glob | 実装結果または `advisor-request.v1` |
 | Advisor | `claude-code-harness:advisor` | 0..1 | Read, Grep, Glob | `advisor-response.v1` |
 | Reviewer | `claude-code-harness:reviewer` | 1 | Read, Grep, Glob | `review-result.v1` |
-| Scaffolder | `claude-code-harness:scaffolder` | 0..1 | Read, Write, Edit, Bash, Grep, Glob | analyze/scaffold/update-state の結果 JSON |
 
 ## worker 数の決め方
 
@@ -159,6 +158,33 @@ Lead が `claude agents --add-dir / --settings / --mcp-config / --plugin-dir /
 dispatched background session を起動する場合は、`docs/agent-view-policy.md` の
 flag 利用条件を参照する。teammate spawn workflow (breezing skill / Agent tool) との
 分離が前提。
+
+## Cursor adapter mapping (candidate)
+
+Cursor host maps core roles to adapter surfaces without changing the core
+Breezing contract:
+
+| Core role | Cursor adapter surface | Parallelism |
+|---|---|---|
+| Lead | Parent agent session | Orchestrates only |
+| Worker | Task tool / `.cursor/agents/worker.md` | Parallel when file groups do not overlap |
+| Advisor | `.cursor/agents/advisor.md` on `advisor-request.v1` | On demand; max 3 per task |
+| Reviewer | `.cursor/agents/reviewer.md` (`readonly: true`) | Serial per worker result |
+| Scaffolder | Optional Task/subagent | On demand |
+
+Multitask / background agents may fan out Workers but **must not** parallelize
+Reviewer verdict or main-branch cherry-pick. That boundary is core-owned.
+
+Model resolution:
+
+```bash
+bash scripts/model-routing.sh --host cursor --role <role> --format json
+```
+
+Explicit subagent/Task `model` overrides routed defaults. Cursor multitask is a
+smoke target, not a public support or parity claim.
+
+Verification: `bash tests/test-cursor-adapter-candidate.sh`
 
 ## チームサイズ
 

@@ -6,6 +6,132 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Removed
+
+- **未配線の Scaffolder エージェントを削除 (#170)**: `agents/scaffolder.md` は `analyze` / `scaffolder` / `update-state` の 3 モードを定義していたが、どの skill / hook からも `subagent_type="claude-code-harness:scaffolder"` で spawn される経路が存在せず（worker / reviewer は spawn 経路あり）、登録だけされて使われない dead agent だった。足場生成は `harness-setup` が、状態同期は `harness-plan` が Lead inline で実行しており、setup/plan は対話的フローのため worktree 隔離はむしろ不向き。混乱を避けるためエージェント定義を削除し、hooks の SubagentStart/Stop matcher・docs（team-composition / agent-frontmatter-policy / distribution-scope）・関連テスト・skill mirror の参照を整理。worker / reviewer / advisor の 3 エージェント構成に変更なし。
+
+### Fixed
+
+- **`--no-verify` / `--no-gpg-sign` ガードレールのバイパス修正 (#171)**: R10 ガードレールの検出正規表現が `\s`（空白）のみを境界としていたため、`git commit --no-verify&&echo done` のようにシェルメタ文字（`&&` / `;` / `|` など）を空白なしで続けると検出をすり抜け、pre-commit フックや署名検証を迂回できてしまう問題を修正。境界判定にシェルのトークン区切り文字（`[\s;&|()<>]`）を含めるよう `go/internal/guardrail/helpers.go` を更新し、バイパス系・誤検出防止の回帰テストを追加。
+- **`harness.toml` のバージョン同期ずれを修正 (#178)**: v4.13.1 リリースで `VERSION` と `.claude-plugin/plugin.json` は `4.13.1` に bump されたが `harness.toml` が `4.13.0` のまま残っていた。`harness sync`（`scripts/sync-plugin-cache.sh`）は `harness.toml` から `plugin.json` のバージョンを再生成するため、sync 実行のたびに `plugin.json` が `4.13.0` へ巻き戻り、CI の `validate` ジョブ（`check-consistency.sh` のバージョン一致ゲート）が失敗していた。`harness.toml` を `4.13.1` に揃え、3 点（VERSION / plugin.json / harness.toml）同期を回復。
+
+## [4.13.1] - 2026-05-29
+
+### Documentation
+
+- **非 claude backend のトポロジー SSOT 化**: `HARNESS_IMPL_BACKEND=cursor` / `=codex` のとき、Lead は Worker agent (`claude-code-harness:worker`) を spawn せず、`scripts/cursor-companion.sh` / `scripts/codex-companion.sh` を直接呼ぶ運用を skill 正本と shareable rule に明記。Worker 層介在は backend=`claude` のときだけ（agent 契約 `worker-report.v1` / `self_review` が非 claude では生成されないため）。
+- **Lead の cherry-pick 前ゲートに contract-grep 必須を明記**: 非 claude backend の出力を main に取り込む前に、目視 diff だけでなく `test-support-claim-wording.sh` / `check-consistency.sh` / `validate-plugin.sh` の固定文字列契約チェックを必ず通す運用を `skills/harness-work/SKILL.md` に追記。composer の表面的 dedup 傾向と docs/locale/matrix の固定句契約 (`5動詞ワークフロー` 等) の衝突を防ぐ。
+
+## [4.13.0] - 2026-05-29
+
+### Added
+
+- **実装バックエンド選択（Cursor candidate / 脳 Opus・体 composer）**: 実装の手を `claude`(既定) / `codex` / `cursor`(composer-2.5-fast) から選べる実行バックエンドを追加。`scripts/set-impl-backend.sh [--user] <claude|codex|cursor>` で一度設定すれば、`/breezing`・`/harness-work` の worker（実装）ロールが選択バックエンドに委譲し、review/advisor は Opus 固定（自作レビュー防止）。precedence は flag > `HARNESS_IMPL_BACKEND` env > project `env.local` > user `~/.config/claude-harness/impl-backend.env` > `claude`。
+  - 安全境界は専用 `.git` worktree + Lead の diff レビュー + cherry-pick（R01-R13）。Cursor の allowlist は公式に best-effort のため依存せず、cursor 出力は untrusted 扱い。読取委譲は `--mode ask`、`--force`/Run Everything は不使用。
+  - Cursor は `candidate` のまま（consumer 配布・公開 support claim なし、ローカル opt-in）。
+  - 新規: `scripts/resolve-impl-backend.sh`, `scripts/cursor-companion.sh`, `.claude/rules/cursor-cli-only.md`、spec.md「Execution Backend Contract」。`harness-work`/`breezing`/`worker.md` に 3-way backend スイッチを配線。
+- **`cursor-companion.sh --debug` 観測経路（デバッグ用）**: `--debug` フラグ または `HARNESS_CURSOR_DEBUG=1` 環境変数で、(a) `model-routing.sh` の stderr、(b) 実行直前の cmd 配列（`--api-key` / `--auth-token` / `Authorization:` 値を `[REDACTED]` にマスク）、(c) cursor-agent の stderr を `[cursor-companion DEBUG]` prefix で stderr に出す。既定挙動（DEBUG=0）は不変・後方互換。
+
+### Changed
+
+- **`scripts/resolve-impl-backend.sh` / `scripts/set-impl-backend.sh`**: shellcheck SC2295 / SC2005 を解消（内部 hygiene、挙動不変）。
+
+### Documentation
+
+- **Cursor ACP（Agent Client Protocol）= 不採用**を `docs/research/cursor-adapter-candidate.md` に判断と再評価条件付きで記録。ACP は双方向 streaming プロトコルで harness の whole-task 委譲には過剰。streaming UX / 非 Cursor IDE への埋込 / per-action permission gating のいずれかが要件化したら再評価。Cursor は `candidate` のまま。
+
+## [4.12.11] - 2026-05-28
+
+### Changed
+
+| Before | After |
+| --- | --- |
+| Cursor had no adapter candidate route. | Cursor has a `candidate` adapter skeleton, evidence doc, and static smoke. |
+| Cursor support claims were intentionally absent. | Cursor remains `candidate`; public support claims still wait for workflow smoke. |
+| Bootstrap and capability contracts did not describe Cursor. | `spec.md`, capability matrix, and bootstrap routing contract define Cursor boundaries. |
+| Breezing and model routing had no Cursor mapping. | Breezing docs and `scripts/model-routing.sh --host cursor` define candidate routing. |
+
+- **Phase 81 Cursor CCH Adapter (candidate)**: Added Cursor adapter evidence
+  (`docs/research/cursor-adapter-candidate.md`), contract updates in
+  `spec.md`, capability matrix, and bootstrap routing contract, adapter skeleton
+  (`.cursor-plugin/`, `.cursor/AGENTS.md`, agents, hooks, MCP config shape),
+  Breezing Cursor mapping docs, `scripts/model-routing.sh --host cursor`, advisor
+  model alignment to Opus 4.7, and `tests/test-cursor-adapter-candidate.sh`.
+  Cursor remains `candidate`; no public supported Cursor adapter claim until
+  workflow smoke passes.
+
+## [4.12.10] - 2026-05-28
+
+### Fixed
+
+- Updated `harness-release` so a release is only complete after the release work is merged to the default branch and tags/GitHub Release are created from that branch-reachable commit.
+
+## [4.12.9] - 2026-05-28
+
+### Changed
+
+- **Phase 80 upstream refresh (Claude Code 2.1.143-2.1.152 + Codex 0.131-0.134)**: Added dated snapshot and adoption plan, Claude `disallowed-tools` / `/reload-skills` / `MessageDisplay` policies, Codex `--profile` primary guidance, and integration tests. Upstream Auto mode consent removal does not change Harness `--auto-mode` or `autoMode.hard_deny` defaults.
+
+## [4.12.8] - 2026-05-27
+
+### Changed
+
+- Strengthened `harness-plan` so non-trivial planning requires team/sub-agent
+  validation, spec/Plans alignment, memory reuse checks, and product, security,
+  and works-in-practice gates before tasks are marked implementation-ready.
+  Lightweight planning remains allowed through an explicit lightweight mode, and
+  secret values must not be read as part of planning validation.
+- Updated the English and Japanese READMEs to describe the new non-trivial
+  `harness-plan` validation gate and lightweight fast path.
+
+## [4.12.7] - 2026-05-27
+
+### Fixed
+
+- Added a CCH branch-protection release preflight guard so repository review
+  settings cannot silently drift from the intended CCH review gate.
+
+## [4.12.6] - 2026-05-27
+
+### Changed
+
+- Expanded CodeQL to run on every `main` push and every `main` pull request so
+  Scorecard can detect SAST coverage across release/documentation commits.
+
+### Fixed
+
+- Added a Go fuzz seed for `harness.toml` parsing so parser robustness is
+  exercised and detected by Scorecard's fuzzing check.
+- Required all shipped platform hook binaries in the distribution archive check,
+  documenting why Scorecard binary-artifact findings are handled as intentional
+  plugin payload rather than deleted files.
+
+### Security
+
+- Removed mutable global npm install/update fallbacks from quick install and
+  Codex update guidance; optional development tools now use Homebrew or manual
+  versioned package-manager installation.
+- Added Scorecard maintainer annotations for intentionally shipped plugin
+  binaries and the decision not to pursue the external CII badge for this
+  release line.
+- Recorded the Scorecard alert disposition and branch-protection state in
+  `docs/evidence/scorecard-alerts-2026-05-27.md`.
+
+## [4.12.5] - 2026-05-27
+
+### Fixed
+
+- Closed the remaining Dependabot alerts in the Breezing benchmark `agent-eval`
+  lockfile by updating `@vercel/agent-eval`, applying scoped npm overrides for
+  patched `undici`, `minimatch`, and `uuid` ranges, and aligning benchmark dry
+  run task references with the tracked eval fixtures.
+
+### Security
+
+- Added a scoped Dependabot npm update entry and CI audit gate for
+  `benchmarks/breezing-bench/agent-eval` so benchmark-tooling lockfile
+  advisories are checked before future releases.
+
 ## [4.12.4] - 2026-05-27
 
 ### Added
@@ -4530,7 +4656,16 @@ Purpose: 自己修正ループ失敗時に「止まるだけ」から「次の�
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.4...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.13.1...HEAD
+[4.13.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.13.0...v4.13.1
+[4.13.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.11...v4.13.0
+[4.12.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.10...v4.12.11
+[4.12.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.9...v4.12.10
+[4.12.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.8...v4.12.9
+[4.12.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.7...v4.12.8
+[4.12.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.6...v4.12.7
+[4.12.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.5...v4.12.6
+[4.12.5]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.4...v4.12.5
 [4.12.4]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.3...v4.12.4
 [4.12.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.2...v4.12.3
 [4.12.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.1...v4.12.2

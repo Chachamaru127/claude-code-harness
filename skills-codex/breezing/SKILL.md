@@ -56,6 +56,14 @@ breezing --no-discuss all       # 計画議論スキップで全タスク完走
 2. **チーム実行モードを強制** — Lead → Worker spawn → 必要時 Advisor → companion review Reviewer の四者分離
 3. **Lead は delegate 専念** — コードを直接書かない
 
+### Execution Backend (persistent)
+
+バックエンド選択（worker を `claude` / `codex` / `cursor` のどれで実装するか）の正本は
+`harness-work` の「Execution Backend Selection（実装バックエンド選択）」を参照する。
+そこに precedence、role-scope（review / advisor は Opus 固定）、self_review スキップ、cursor banner が定義されている。
+`HARNESS_IMPL_BACKEND`（`bash "${HARNESS_PLUGIN_ROOT}/scripts/set-impl-backend.sh" cursor` で設定）が
+per-run フラグなしの永続的な既定バックエンドを決める。
+
 既定の worker 数は **max**。
 ここでの max は「対象スコープ内で Depends が満たされ、今すぐ実行できる ready task の最大数」を意味する。
 無制限に Worker を spawn する意味ではない。

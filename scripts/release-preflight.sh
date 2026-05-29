@@ -189,6 +189,33 @@ check_release_version_sync() {
   rm -f "$output_file"
 }
 
+check_cch_branch_protection_policy() {
+  if [ -n "${HARNESS_RELEASE_BRANCH_PROTECTION_CMD:-}" ]; then
+    run_optional_command "CCH branch protection policy" "$HARNESS_RELEASE_BRANCH_PROTECTION_CMD"
+    return
+  fi
+
+  if [ ! -x scripts/check-cch-branch-protection-policy.sh ]; then
+    warn "CCH branch protection policy skipped"
+    return
+  fi
+
+  local output_file
+  output_file="$(mktemp)"
+  if bash scripts/check-cch-branch-protection-policy.sh >"$output_file" 2>&1; then
+    pass "CCH branch protection policy"
+  else
+    if grep -Fq "Resource not accessible by integration" "$output_file"; then
+      warn "CCH branch protection policy unavailable to GitHub Actions token"
+      sed 's/^/  /' "$output_file"
+    else
+      fail "CCH branch protection policy"
+      sed 's/^/  /' "$output_file"
+    fi
+  fi
+  rm -f "$output_file"
+}
+
 check_env_and_healthcheck() {
   local env_ok=1
 
@@ -407,6 +434,11 @@ NODE
 adapter_gate_paths=(
   "adapters/"
   ".codex-plugin/"
+  ".cursor-plugin/"
+  ".cursor/AGENTS.md"
+  ".cursor/agents/"
+  ".cursor/hooks.json"
+  ".cursor/mcp.json"
   "codex/"
   "skills-codex/"
   "opencode/"
@@ -415,13 +447,17 @@ adapter_gate_paths=(
   "docs/distribution-scope.md"
   "docs/hardening-parity.md"
   "docs/hokage-spin-off-readiness.md"
+  "docs/research/cursor-adapter-candidate.md"
+  "docs/CURSOR_INTEGRATION.md"
   "docs/skill-orchestration-design-contract.md"
   "scripts/build-opencode.js"
   "scripts/generate-skill-manifest.sh"
+  "scripts/model-routing.sh"
   "scripts/sync-skill-mirrors.sh"
   "scripts/validate-opencode.js"
   "tests/test-codex-package.sh"
   "tests/test-codex-plugin-adapter.sh"
+  "tests/test-cursor-adapter-candidate.sh"
   "tests/test-opencode-bootstrap-plugin.sh"
   "tests/test-bootstrap-skill-trigger-acceptance.sh"
   "tests/test-distribution-archive.sh"
@@ -482,7 +518,7 @@ release_claims_adapter_support() {
     in_unreleased { print }
   ' CHANGELOG.md)"
 
-  printf '%s\n' "$unreleased" | grep -Eiq 'OpenCode|Codex|adapter|mirror|multi-harness|Hokage Core|capability matrix'
+  printf '%s\n' "$unreleased" | grep -Eiq 'OpenCode|Codex|Cursor|adapter|mirror|multi-harness|Hokage Core|capability matrix'
 }
 
 should_run_adapter_gates() {
@@ -619,6 +655,18 @@ check_release_mirror_drift() {
     printf '  missing: tests/test-opencode-bootstrap-plugin.sh\n'
   fi
 
+  if [ -f tests/test-cursor-adapter-candidate.sh ]; then
+    if bash tests/test-cursor-adapter-candidate.sh >"$output_file" 2>&1; then
+      pass "cursor adapter candidate smoke"
+    else
+      fail "cursor adapter candidate smoke"
+      sed 's/^/  /' "$output_file"
+    fi
+  else
+    fail "cursor adapter candidate smoke"
+    printf '  missing: tests/test-cursor-adapter-candidate.sh\n'
+  fi
+
   if [ -f tests/test-distribution-archive.sh ]; then
     if bash tests/test-distribution-archive.sh >"$output_file" 2>&1; then
       pass "distribution archive gate"
@@ -730,6 +778,7 @@ echo "----------------------------------------"
 check_git_clean
 check_changelog
 check_release_version_sync
+check_cch_branch_protection_policy
 check_env_and_healthcheck
 check_runtime_residuals
 check_sprint_contract_schema

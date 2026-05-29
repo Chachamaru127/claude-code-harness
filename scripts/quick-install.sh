@@ -103,11 +103,12 @@ if [ "$WITH_DEV_TOOLS" = true ]; then
 
   # AST-Grep
   if ! command -v sg &> /dev/null; then
-    echo "  Installing AST-Grep..."
+    echo "  AST-Grep not found."
     if command -v brew &> /dev/null; then
-      brew install ast-grep 2>/dev/null || npm install -g @ast-grep/cli
+      echo "  Installing AST-Grep with Homebrew..."
+      brew install ast-grep 2>/dev/null || echo "  Please install ast-grep manually: https://ast-grep.github.io/guide/quick-start.html"
     else
-      npm install -g @ast-grep/cli 2>/dev/null || echo "  Please install ast-grep manually"
+      echo "  Please install ast-grep manually: https://ast-grep.github.io/guide/quick-start.html"
     fi
   else
     echo -e "  ${GREEN}✓${NC} AST-Grep already installed"
@@ -116,8 +117,8 @@ if [ "$WITH_DEV_TOOLS" = true ]; then
   # TypeScript Language Server (if package.json exists)
   if [ -f "package.json" ]; then
     if ! command -v typescript-language-server &> /dev/null; then
-      echo "  Installing TypeScript Language Server..."
-      npm install -g typescript-language-server typescript 2>/dev/null || echo "  Please install typescript-language-server manually"
+      echo "  TypeScript Language Server not found."
+      echo "  Please install it with your project's versioned package-manager workflow."
     else
       echo -e "  ${GREEN}✓${NC} TypeScript Language Server already installed"
     fi

@@ -1,8 +1,8 @@
 ---
 name: harness-plan
-description: "HAR: Research-backed task planning, Plans.md management, progress sync. Trigger: create a plan, add tasks, update Plans.md, mark complete, check progress. Do NOT load for: implementation, review, release."
-description-en: "HAR: Research-backed task planning, Plans.md management, progress sync. Trigger: create a plan, add tasks, update Plans.md, mark complete, check progress. Do NOT load for: implementation, review, release."
-description-ja: "HAR:調査・採点・記憶確認つきのタスク計画、Plans.md管理、進捗同期を担当。計画作って、タスク追加、Plans.md更新、完了マーク、進捗確認で起動。実装・レビュー・リリースには使わない。"
+description: "HAR: Research-backed, team-validated task planning, Plans.md management, progress sync. Trigger: create a plan, add tasks, update Plans.md, mark complete, check progress. Do NOT load for: implementation, review, release."
+description-en: "HAR: Research-backed, team-validated task planning, Plans.md management, progress sync. Trigger: create a plan, add tasks, update Plans.md, mark complete, check progress. Do NOT load for: implementation, review, release."
+description-ja: "HAR:調査・採点・記憶確認・TeamAgent/サブエージェント検証つきのタスク計画、Plans.md管理、進捗同期を担当。計画作って、タスク追加、Plans.md更新、完了マーク、進捗確認で起動。実装・レビュー・リリースには使わない。"
 kind: workflow
 purpose: "Maintain co-required planning output for the spec.md product contract and Plans.md task contract"
 trigger: "create a plan, add tasks, update Plans.md, check progress"
@@ -54,11 +54,36 @@ See [references/planning-quality.md](${CLAUDE_SKILL_DIR}/references/planning-qua
 precedence は `spec.md > sub-spec > Plans.md` のまま維持する。
 Plans.md は task ledger、root `spec.md` は product contract であり、上下関係は崩さない。
 渡された情報をそのまま Plans.md に落とさない。
-計画作成や大きな task 追加では、最新情報・既存仕様・記憶・複数視点の議論を確認し、
+計画作成や大きな task 追加では、最新情報・既存仕様・記憶・TeamAgent / サブエージェントによる複数視点の議論を確認し、
 このプロダクトに取り入れるべき要素だけを task contract に変換する。
 `/harness-plan create` は `Spec delta` または `Spec skip reason` と `Plans.md` task 生成をセットで返す。
 出力には必ず `Spec delta` または `Spec skip reason` を含める。
 `Spec delta` / `Spec skip reason` は Harness が生成し、consumer は承認・修正だけ行う。
+
+**Non-trivial planning gate**:
+
+単発・軽微タスクでない planning は、TeamAgent またはサブエージェント前提で扱う。
+ここでの non-trivial は、複数 task / 複数 file / 複数 session / product behavior / API / data model / 権限 / 課金 / 外部連携 / 配布面 / セキュリティに影響する依頼を指す。
+Task tool が使える場合は Product / Architecture / Security / QA / Skeptic の独立視点を走らせる。
+使えない場合は `サブエージェント未使用` と明示し、同じ観点を単独で分けて評価する。
+
+non-trivial planning の出力には、次の検証を必ず含める。
+
+- `team_validation_mode`: `not_required_lightweight` / `native` / `subagent` / `manual-pass` / `unavailable`
+- `spec.md` / sub-spec / `Plans.md` の整合性
+- harness-mem / harness-recall / repo memory による車輪の再発明防止確認
+- プロダクト目的から外れていないか
+- セキュリティ、権限、秘密情報、サプライチェーンに問題がないか
+- lint / formatter baseline があるか。source code changes を含む plan で未設定なら、実装 task の前に setup task を置く
+- ちゃんと動く計画か。つまり test / smoke / CI / review / release gate が task DoD に落ちているか
+
+軽量 task は `team_validation_mode: not_required_lightweight` でよい。
+non-trivial planning は `native` / `subagent` / `manual-pass` のいずれかを使う。
+`unavailable` のまま Required にしてはいけない。
+Product / Architecture / Security / QA / Skeptic は検証 perspective であり、agent_type 名ではない。
+利用可能な TeamAgent / Task サブエージェントに perspective として依頼し、任意 agent spawn を要求しない。
+Security gate は秘密情報の実読取を要求しない。
+`.env` や secret の read が必要になる場合は Risk Gate として止め、許可された既存 guard / evidence で確認する。
 
 **適用する場面**:
 
@@ -79,10 +104,11 @@ Plans.md は task ledger、root `spec.md` は product contract であり、上�
 2. 最新情報を取得する。外部事実は WebSearch / 公式ドキュメント / 一次情報を優先し、重要点は複数ソースでクロスチェックする
 3. 既存仕様・root `spec.md`・Plans.md・README・docs・CLAUDE.md・関連 skill を確認する
 4. harness-mem / harness-recall / `.claude/agent-memory/` / `.claude/state/` など、利用可能な記憶面を project-scoped で確認する
-5. Task サブエージェントを使い、Product / Architecture / QA / Skeptic など異なる視点で独立レビューする
-6. 中立的な採点レビューを出し、Required / Recommended / Optional / Reject に分類する
-7. `$easy` 形式で、提案内容・理由・どうなるのかを報告する
-8. 採用する案だけを root `spec.md` / Plans.md / test task へ落とし込む
+5. non-trivial planning では TeamAgent / Task サブエージェントを使い、Product / Architecture / Security / QA / Skeptic など異なる視点で独立レビューする
+6. source code changes を含む plan では lint / formatter baseline を確認し、未設定なら setup task を先行させる
+7. 中立的な採点レビューを出し、Required / Recommended / Optional / Reject に分類する
+8. `$easy` 形式で、提案内容・理由・どうなるのかを報告する
+9. 採用する案だけを root `spec.md` / Plans.md / test task へ落とし込む
 
 ### create — 計画作成
 
@@ -93,7 +119,7 @@ See [references/create.md](${CLAUDE_SKILL_DIR}/references/create.md)
 **フロー**:
 1. 会話コンテキスト確認（直前の議論から抽出 or 新規ヒアリング）
 2. 何を作るか聞く（max 3問）
-3. **計画品質チェック**（最新情報、既存仕様、記憶、複数視点レビュー、採点）
+3. **計画品質チェック**（最新情報、既存仕様、記憶、TeamAgent / サブエージェント複数視点レビュー、採点）
 4. 技術調査（WebSearch）
 5. 機能リスト抽出
 6. **spec.md / Plans.md 二正本チェック**（Spec delta または Spec skip reason + Plans.md task）
@@ -314,7 +340,7 @@ Plans.md の task には、TDD 判定を明示するタグを内容または DoD
 
 1. Plans.md tag: `[tdd:required]` / `[tdd:skip:<reason>]`
 2. files: `src/`, `app/`, `cmd/`, `lib/`, `pkg/`, `internal/`, `go/` など source 実装を含むなら required
-3. scaffolder 推論: docs-only や test framework なしなら skip reason を付けて not required
+3. TDD 推論: docs-only や test framework なしなら skip reason を付けて not required
 
 ### optional briefs / manifest
 

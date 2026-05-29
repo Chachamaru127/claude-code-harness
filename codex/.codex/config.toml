@@ -1,4 +1,4 @@
-# Codex Team Config template (Codex CLI 0.110.0+, policy aligned through 0.130.0 stable)
+# Codex Team Config template (Codex CLI 0.110.0+, policy aligned through 0.130.0 stable, extended through 0.134.0)
 # Copy to ${CODEX_HOME:-~/.codex}/config.toml (user) or .codex/config.toml (project).
 
 [features]
@@ -38,6 +38,12 @@ multi_agent = true
 #
 # Leave model unset to inherit Codex bundled model metadata, including the
 # current gpt-5.4 default. Pin model only for reproducible or managed setups.
+#
+# Codex 0.134.0 makes `--profile` the primary profile selector across CLI,
+# TUI permissions, and sandbox flows. Legacy profile v1 configs are rejected
+# with migration guidance. Harness docs/companion prefer `--profile` and do
+# not recommend legacy selectors in new setup. See
+# docs/codex-permission-profiles-policy.md.
 
 [agents]
 max_threads = 8

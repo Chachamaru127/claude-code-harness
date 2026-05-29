@@ -7,6 +7,12 @@
 # Usage:
 #   ./scripts/setup-codex.sh [--user|--project]
 #
+# Codex CLI install (official, 0.134.0+):
+#   curl -fsSL https://github.com/openai/codex/releases/latest/download/install.sh | sh
+#   PowerShell: see install.ps1 on the same GitHub release assets page.
+# Harness setup assumes Codex is already installed; this script copies skills/config only.
+# Permission profiles: Codex 0.134.0 makes --profile the primary selector (see
+# docs/codex-permission-profiles-policy.md).
 
 set -euo pipefail
 IFS=$'\n\t'

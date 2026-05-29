@@ -4,7 +4,7 @@
 #
 # If you need to update the binaries, run:
 #   cd go && bash scripts/build-all.sh
-# and commit the resulting bin/harness-{darwin-arm64,darwin-amd64,linux-amd64}.
+# and commit the resulting bin/harness-{darwin-arm64,darwin-amd64,linux-amd64,windows-amd64.exe}.
 #
 # Only the following build artifacts remain ignored:
 harness.exe

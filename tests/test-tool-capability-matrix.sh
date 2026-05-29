@@ -73,5 +73,7 @@ assert_contains "Candidate"
 assert_contains "do not inherit the safety or"
 assert_contains "bootstrap claims of supported hosts."
 assert_contains "Antigravity CLI is \`future/unsupported\` for public claim."
+assert_contains "tests/test-cursor-adapter-candidate.sh"
+assert_contains "Cursor Breezing multitask mapping is a smoke target"
 
 echo "test-tool-capability-matrix: ok"

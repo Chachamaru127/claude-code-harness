@@ -1,0 +1,9 @@
+annotations:
+  - checks:
+      - binary-artifacts
+    reasons:
+      - reason: remediated # Harness must ship platform hook binaries in the plugin payload; release builds and binary metadata are verified separately.
+  - checks:
+      - cii-best-practices
+    reasons:
+      - reason: not-applicable # The project uses repository-level security gates instead of pursuing the external CII badge process for this plugin release line.
