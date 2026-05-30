@@ -11,8 +11,10 @@ import (
 	"time"
 )
 
-// autoBroadcastPatterns は自動ブロードキャスト対象のパターン一覧。
-// session-auto-broadcast.sh の AUTO_BROADCAST_PATTERNS に対応。
+// autoBroadcastPatterns は自動ブロードキャスト対象のパス substring パターン一覧。
+// session-auto-broadcast.sh の AUTO_BROADCAST_PATTERNS に対応。strings.Contains
+// で評価される。API / schema 系の path-token を想定した命名で、web-API repo
+// での「interfaces を触ったら教えてほしい」要求に応える。
 var autoBroadcastPatterns = []string{
 	"src/api/",
 	"src/types/",
@@ -24,6 +26,17 @@ var autoBroadcastPatterns = []string{
 	"swagger",
 	".graphql",
 }
+
+// autoBroadcastExtensions は file extension で fire させる対象。Phase 85.1.6
+// で復活させた条件で、Harness 自身のような web-API ではない repo (typically
+// Go コードと markdown を書く repo) でも broadcast が機能するようにする。
+// substring ではなく filepath.Ext で評価することで "foo.gotcha" のような
+// 紛らわしいパス名が ".go" を誤検出することを防ぐ。
+//
+// 2026-02 broadcast 死骸の根本原因はここに含まれていなかったこと: 当時の
+// autoBroadcastPatterns は API/schema 系の path-token しか持たず、
+// claude-code-harness の通常編集 (.go / .md / .sh) は一切マッチしなかった。
+var autoBroadcastExtensions = []string{".go", ".md", ".sh"}
 
 // autoBroadcastInput は session-auto-broadcast.sh に渡される stdin JSON。
 type autoBroadcastInput struct {
@@ -136,6 +149,26 @@ func HandleSessionAutoBroadcast(in io.Reader, out io.Writer) error {
 			if pattern != "" && strings.Contains(filePath, pattern) {
 				matchedPattern = pattern
 				break
+			}
+		}
+	}
+
+	// Extension match (Phase 85.1.6 revival): if no substring pattern hit,
+	// try the extension allowlist so .go / .md / .sh edits also fire. Done
+	// via filepath.Ext to avoid the "foo.gotcha contains '.go'" false
+	// positive that strings.Contains would produce.
+	if matchedPattern == "" {
+		ext := filepath.Ext(filePath)
+		if ext != "" {
+			for _, allowedExt := range autoBroadcastExtensions {
+				if ext == allowedExt {
+					// Use a "*<ext>" label so it is obviously the
+					// extension-rule rather than the substring rule
+					// that fired; this shows up in the broadcast.md
+					// entry and helps debugging.
+					matchedPattern = "*" + allowedExt
+					break
+				}
 			}
 		}
 	}

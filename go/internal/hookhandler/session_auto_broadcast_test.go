@@ -77,7 +77,12 @@ func TestHandleSessionAutoBroadcast_StaleCWDNoBroadcast(t *testing.T) {
 }
 
 func TestHandleSessionAutoBroadcast_NoPatternMatch(t *testing.T) {
-	input := `{"tool_input":{"file_path":"src/utils/helper.go"}}`
+	// Use .txt so neither the API/schema substring patterns nor the
+	// Phase 85.1.6 extension rule (.go/.md/.sh) fire. Previously the
+	// test used "helper.go" which became a match once the extension
+	// rule was added; the rename keeps the original no-match intent
+	// without weakening either rule's coverage.
+	input := `{"tool_input":{"file_path":"src/utils/helper.txt"}}`
 	var out bytes.Buffer
 	err := HandleSessionAutoBroadcast(strings.NewReader(input), &out)
 	if err != nil {
@@ -340,5 +345,163 @@ func TestHandleSessionAutoBroadcast_CustomPattern(t *testing.T) {
 	if !strings.Contains(result.HookSpecificOutput.AdditionalContext, "order.ts") {
 		t.Errorf("expected 'order.ts' in additionalContext (custom pattern), got %q",
 			result.HookSpecificOutput.AdditionalContext)
+	}
+}
+
+// TestAutoBroadcast_FiresOnNormalEdit covers the Phase 85.1.6 revival: a
+// plain Go-file edit (no src/api/, no schema.prisma) must produce a
+// broadcast entry. Before the extension rule was added this test would
+// fail because the file path matched none of the API/schema substring
+// patterns and the handler silently no-op'd, which is why broadcast.md
+// had been dead since 2026-02 on repos like claude-code-harness itself.
+func TestAutoBroadcast_FiresOnNormalEdit(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+	t.Setenv("HARNESS_PROJECT_ROOT", dir)
+
+	input := `{"session_id":"sess-revival","cwd":"` + dir + `","tool_input":{"file_path":"go/internal/foo.go"}}`
+	var out bytes.Buffer
+	if err := HandleSessionAutoBroadcast(strings.NewReader(input), &out); err != nil {
+		t.Fatalf("handler: %v", err)
+	}
+
+	var result postToolOutput
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("invalid JSON: %v, raw: %s", err, out.String())
+	}
+	if !strings.Contains(result.HookSpecificOutput.AdditionalContext, "foo.go") {
+		t.Errorf("expected foo.go in additionalContext, got %q",
+			result.HookSpecificOutput.AdditionalContext)
+	}
+	if !strings.Contains(result.HookSpecificOutput.AdditionalContext, "自動ブロードキャスト") {
+		t.Errorf("expected broadcast notice, got %q",
+			result.HookSpecificOutput.AdditionalContext)
+	}
+
+	broadcastFile := filepath.Join(dir, ".claude", "sessions", "broadcast.md")
+	data, err := os.ReadFile(broadcastFile)
+	if err != nil {
+		t.Fatalf("broadcast.md not created: %v", err)
+	}
+	if !strings.Contains(string(data), "go/internal/foo.go") {
+		t.Errorf("broadcast.md missing file path; got: %s", data)
+	}
+	// The "*<ext>" label proves the extension rule fired (not a substring
+	// match). Without this the test would also pass under the old code
+	// when called with a substring-matching path.
+	if !strings.Contains(string(data), "*.go") {
+		t.Errorf("expected '*.go' label (extension rule), got: %s", data)
+	}
+}
+
+// TestAutoBroadcast_FiresOnMarkdownAndShell verifies the extension list
+// covers .md and .sh too, not just .go. These are the other common edit
+// targets in Harness work (Plans.md, CLAUDE.md, scripts/*.sh).
+func TestAutoBroadcast_FiresOnMarkdownAndShell(t *testing.T) {
+	cases := []struct {
+		name     string
+		filePath string
+		wantBase string
+	}{
+		{"markdown", "Plans.md", "Plans.md"},
+		{"shell", "scripts/release.sh", "release.sh"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			t.Chdir(dir)
+			t.Setenv("HARNESS_PROJECT_ROOT", dir)
+
+			input := `{"session_id":"sess-` + tc.name + `","cwd":"` + dir + `","tool_input":{"file_path":"` + tc.filePath + `"}}`
+			var out bytes.Buffer
+			if err := HandleSessionAutoBroadcast(strings.NewReader(input), &out); err != nil {
+				t.Fatalf("handler: %v", err)
+			}
+			var result postToolOutput
+			if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+				t.Fatalf("invalid JSON: %v", err)
+			}
+			if !strings.Contains(result.HookSpecificOutput.AdditionalContext, tc.wantBase) {
+				t.Errorf("expected %q in additionalContext, got %q",
+					tc.wantBase, result.HookSpecificOutput.AdditionalContext)
+			}
+		})
+	}
+}
+
+// TestAutoBroadcast_ExtensionRuleAvoidsFalsePositive guards the
+// filepath.Ext-vs-strings.Contains choice. A path like "go-tooling.txt"
+// contains "go" but its extension is ".txt" — it must NOT broadcast.
+// Without this check, a substring-based extension rule would silently
+// match anything containing ".go" as a path token.
+func TestAutoBroadcast_ExtensionRuleAvoidsFalsePositive(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+	t.Setenv("HARNESS_PROJECT_ROOT", dir)
+
+	input := `{"session_id":"sess-fp","cwd":"` + dir + `","tool_input":{"file_path":"docs/go-tooling.txt"}}`
+	var out bytes.Buffer
+	if err := HandleSessionAutoBroadcast(strings.NewReader(input), &out); err != nil {
+		t.Fatalf("handler: %v", err)
+	}
+	var result postToolOutput
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("invalid JSON: %v", err)
+	}
+	if result.HookSpecificOutput.AdditionalContext != "" {
+		t.Errorf("expected NO broadcast for .txt file, got %q",
+			result.HookSpecificOutput.AdditionalContext)
+	}
+	if _, err := os.Stat(filepath.Join(dir, ".claude", "sessions", "broadcast.md")); err == nil {
+		t.Errorf("broadcast.md should not exist for .txt file")
+	}
+}
+
+// TestInboxCheck_InjectsAfterRevival is the Phase 85.1.6 chain test:
+// after the extension rule fires for peer A's .go edit, peer B's
+// PreToolUse inbox-check must surface that broadcast as additionalContext.
+// Before the revival this chain was dead because no .go edit ever produced
+// a broadcast for inbox-check to read.
+func TestInboxCheck_InjectsAfterRevival(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+	t.Setenv("HARNESS_PROJECT_ROOT", dir)
+
+	// Step 1: peer A's broadcast for a .go edit.
+	bPayload := `{"session_id":"peer-A","cwd":"` + dir + `","tool_input":{"file_path":"go/internal/lease.go"}}`
+	var bOut bytes.Buffer
+	if err := HandleSessionAutoBroadcast(strings.NewReader(bPayload), &bOut); err != nil {
+		t.Fatalf("broadcast: %v", err)
+	}
+	broadcastFile := filepath.Join(dir, ".claude", "sessions", "broadcast.md")
+	if _, err := os.Stat(broadcastFile); err != nil {
+		t.Fatalf("broadcast.md not created — revival broken before step 2: %v", err)
+	}
+
+	// Step 2: peer B's inbox-check.
+	iPayload := `{"session_id":"peer-B","cwd":"` + dir + `"}`
+	var iOut bytes.Buffer
+	if err := HandleInboxCheck(strings.NewReader(iPayload), &iOut); err != nil {
+		t.Fatalf("inbox-check: %v", err)
+	}
+	body := iOut.String()
+	if body == "" {
+		t.Fatal("inbox-check produced no output — chain still dead")
+	}
+	if !strings.Contains(body, "additionalContext") {
+		t.Fatalf("inbox-check missing additionalContext: %s", body)
+	}
+	// The Phase 85.1.2 injection-safe context wraps the disclaimer and
+	// uses only structured fields. The sanitized path must show up; the
+	// peer's session_id prefix (peer-A) must show up; the free-text
+	// broadcast line (pattern '*.go' explanation) must NOT.
+	if !strings.Contains(body, "lease.go") {
+		t.Fatalf("inbox-check did not surface peer A's file: %s", body)
+	}
+	if !strings.Contains(body, "peer-A") {
+		t.Fatalf("inbox-check did not surface peer A's session prefix: %s", body)
+	}
+	if strings.Contains(body, "*.go") {
+		t.Fatalf("inbox-check leaked raw broadcast pattern label into model context (injection risk): %s", body)
 	}
 }
