@@ -25,8 +25,8 @@ claude_advisor_effort="$(bash "${ROUTER}" --host claude --role advisor --field e
 }
 
 claude_advisor_model="$(bash "${ROUTER}" --host claude --role advisor --field model)"
-[ "${claude_advisor_model}" = "claude-opus-4-7" ] || {
-  echo "claude advisor must route to claude-opus-4-7"
+[ "${claude_advisor_model}" = "claude-opus-4-8" ] || {
+  echo "claude advisor must route to claude-opus-4-8"
   exit 1
 }
 
@@ -37,8 +37,8 @@ cursor_worker_model="$(bash "${ROUTER}" --host cursor --role worker --field mode
 }
 
 cursor_advisor_model="$(bash "${ROUTER}" --host cursor --role advisor --field model)"
-[ "${cursor_advisor_model}" = "claude-opus-4-7-thinking-xhigh" ] || {
-  echo "cursor advisor must route to claude-opus-4-7-thinking-xhigh"
+[ "${cursor_advisor_model}" = "claude-opus-4-8-thinking-xhigh" ] || {
+  echo "cursor advisor must route to claude-opus-4-8-thinking-xhigh"
   exit 1
 }
 

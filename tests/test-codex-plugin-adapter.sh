@@ -56,16 +56,40 @@ assert_contains "$APP_PROOF" "does not prove Codex app behavior"
 assert_contains "$APP_PROOF" "not_observed != absent"
 assert_contains "$APP_PROOF" "not inferred from Codex CLI help output"
 
+BUILD_SCRIPT="${ROOT_DIR}/scripts/build-host-plugin-dist.sh"
+[ -f "$BUILD_SCRIPT" ] || fail "missing $BUILD_SCRIPT"
+chmod +x "$BUILD_SCRIPT" 2>/dev/null || true
+
+DIST_TMP="$(mktemp -d)"
+trap 'rm -rf "$DIST_TMP"' EXIT
+bash "$BUILD_SCRIPT" --host codex --out "$DIST_TMP/codex-dist"
+
+node - "$DIST_TMP/codex-dist/.codex-plugin/plugin.json" <<'NODE'
+const fs = require("fs");
+const manifest = JSON.parse(fs.readFileSync(process.argv[2], "utf8"));
+function assert(cond, msg) {
+  if (!cond) {
+    console.error(msg);
+    process.exit(1);
+  }
+}
+assert(manifest.skills === "./skills/", "generated codex dist must use ./skills/");
+assert(manifest.interface.displayName === "Claude Code Harness for Codex", "generated codex displayName mismatch");
+assert(JSON.stringify(manifest).includes("../") === false, "generated codex manifest must not contain ..");
+NODE
+
+[ -f "$DIST_TMP/codex-dist/skills/harness-plan/SKILL.md" ] \
+  || fail "generated codex dist missing harness-plan skill"
+
 if command -v codex >/dev/null 2>&1; then
   TMP_HOME="$(mktemp -d)"
   TMP_CODEX_HOME="$(mktemp -d)"
   TMP_MARKETPLACE="$(mktemp -d)"
-  trap 'rm -rf "$TMP_HOME" "$TMP_CODEX_HOME" "$TMP_MARKETPLACE"' EXIT
+  trap 'rm -rf "$TMP_HOME" "$TMP_CODEX_HOME" "$TMP_MARKETPLACE" "$DIST_TMP"' EXIT
 
-  mkdir -p "$TMP_MARKETPLACE/.claude-plugin" "$TMP_MARKETPLACE/claude-code-harness/codex/.codex"
-  cp -R "$ROOT_DIR/.codex-plugin" "$TMP_MARKETPLACE/claude-code-harness/.codex-plugin"
-  cp -R "$ROOT_DIR/codex/.codex/skills" "$TMP_MARKETPLACE/claude-code-harness/codex/.codex/skills"
-  node - "$MANIFEST" "$TMP_MARKETPLACE/.claude-plugin/marketplace.json" <<'NODE'
+  mkdir -p "$TMP_MARKETPLACE/.claude-plugin"
+  cp -R "$DIST_TMP/codex-dist" "$TMP_MARKETPLACE/claude-code-harness"
+  node - "$DIST_TMP/codex-dist/.codex-plugin/plugin.json" "$TMP_MARKETPLACE/.claude-plugin/marketplace.json" <<'NODE'
 const fs = require("fs");
 const [manifestPath, outPath] = process.argv.slice(2);
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
@@ -99,7 +123,7 @@ NODE
 
   CACHE_ROOT="$TMP_CODEX_HOME/plugins/cache/claude-code-harness-marketplace/claude-code-harness/$MANIFEST_VERSION"
   [ -f "$CACHE_ROOT/.codex-plugin/plugin.json" ] || fail "Codex plugin manifest was not cached"
-  [ -f "$CACHE_ROOT/codex/.codex/skills/harness-plan/SKILL.md" ] || fail "Codex harness-plan skill was not cached"
+  [ -f "$CACHE_ROOT/skills/harness-plan/SKILL.md" ] || fail "Codex harness-plan skill was not cached in generated dist layout"
   rm -f /tmp/codex-plugin-smoke.$$ /tmp/codex-plugin-list.$$ /tmp/codex-plugin-add.$$
 else
   if [ "$SMOKE_REQUIRED" = "1" ]; then

@@ -16,12 +16,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKER="${ROOT_DIR}/agents/worker.md"
 REVIEWER="${ROOT_DIR}/agents/reviewer.md"
-SCAFFOLDER="${ROOT_DIR}/agents/scaffolder.md"
 ADVISOR="${ROOT_DIR}/agents/advisor.md"
 TEAM_DOC="${ROOT_DIR}/docs/team-composition.md"
 
-# (1) 4 agent の frontmatter には permissionMode が **存在しない**
-for agent in "${WORKER}" "${REVIEWER}" "${SCAFFOLDER}" "${ADVISOR}"; do
+# (1) 3 agent の frontmatter には permissionMode が **存在しない**
+for agent in "${WORKER}" "${REVIEWER}" "${ADVISOR}"; do
   if [ -f "${agent}" ]; then
     if grep -E '^permissionMode:' "${agent}" >/dev/null 2>&1; then
       echo "FAIL (1): ${agent} contains permissionMode in frontmatter (Phase 59.2.3 violation)"

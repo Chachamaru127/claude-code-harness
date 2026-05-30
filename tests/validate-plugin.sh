@@ -724,6 +724,30 @@ else
     fail_test "Claude/Codex model routing の契約テストに失敗 — 'bash tests/test-model-routing.sh' で詳細確認"
 fi
 
+if bash "$PLUGIN_ROOT/tests/test-impl-backend.sh" > /dev/null 2>&1; then
+    pass_test "実装バックエンド選択 (set/resolve-impl-backend) の precedence・スコープ契約が維持されています (test-impl-backend.sh)"
+else
+    fail_test "実装バックエンド選択の契約テストに失敗 — 'bash tests/test-impl-backend.sh' で詳細確認"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-cursor-companion.sh" > /dev/null 2>&1; then
+    pass_test "cursor-companion ラッパーの exit-code/読取既定/worktree guard 契約が維持されています (test-cursor-companion.sh)"
+else
+    fail_test "cursor-companion ラッパーの契約テストに失敗 — 'bash tests/test-cursor-companion.sh' で詳細確認"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-cursor-backend-codex-wiring.sh" > /dev/null 2>&1; then
+    pass_test "Codex-native skills に execution-backend switch が配線されています (test-cursor-backend-codex-wiring.sh)"
+else
+    fail_test "Codex-host backend 配線の契約テストに失敗 — 'bash tests/test-cursor-backend-codex-wiring.sh' で詳細確認"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-cursor-backend-onboarding.sh" > /dev/null 2>&1; then
+    pass_test "harness-setup に cursor backend 導入動線が記載されています (test-cursor-backend-onboarding.sh)"
+else
+    fail_test "cursor backend 導入動線の契約テストに失敗 — 'bash tests/test-cursor-backend-onboarding.sh' で詳細確認"
+fi
+
 if bash "$PLUGIN_ROOT/tests/test-windows-worktree-support.sh" > /dev/null 2>&1; then
     pass_test "Windows Breezing worktree support の配布・hook 契約が維持されています (test-windows-worktree-support.sh)"
 else

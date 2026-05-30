@@ -1,7 +1,7 @@
 # Model Routing Policy
 
 Status: adopted
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 
 This document defines the default model and reasoning-effort routing for
 Claude Code, Codex, and Cursor in Harness workflows.
@@ -42,7 +42,7 @@ frontmatter model, then main conversation model. Therefore Harness must not set
 `CLAUDE_CODE_SUBAGENT_MODEL` by default because it would flatten per-agent
 routing. Official docs: https://code.claude.com/docs/en/sub-agents
 
-Anthropic's current model table positions Claude Opus 4.7 as the most capable
+Anthropic's current model table positions Claude Opus 4.8 as the most capable
 model for complex reasoning and agentic coding, Sonnet 4.6 as the best speed /
 intelligence balance, and Haiku 4.5 as the fastest model. Official docs:
 https://platform.claude.com/docs/en/about-claude/models/overview
@@ -84,9 +84,9 @@ guaranteed for every Harness user.
 | --- | --- | --- | --- |
 | `lite` | `claude-haiku-4-5` or `haiku` | `low` or `medium` | read-only search, docs cleanup, simple summaries, cheap side research |
 | `standard` | `claude-sonnet-4-6` | `medium` by default, `high` for code-risk tasks | normal worker implementation, setup, tests, scoped refactors |
-| `deep` | `claude-opus-4-7` | `xhigh` | architecture, security, migration, cross-repo decisions, repeated failures |
-| `review` | default reviewer: `claude-sonnet-4-6`; adversarial/final reviewer: `claude-opus-4-7` | `xhigh` | normal review stays cost-aware; high-risk gates use Opus |
-| `advisor` | `claude-opus-4-7` | `xhigh` | PLAN / CORRECTION / STOP decisions after blocked execution |
+| `deep` | `claude-opus-4-8` | `xhigh` | architecture, security, migration, cross-repo decisions, repeated failures |
+| `review` | default reviewer: `claude-sonnet-4-6`; adversarial/final reviewer: `claude-opus-4-8` | `xhigh` | normal review stays cost-aware; high-risk gates use Opus |
+| `advisor` | `claude-opus-4-8` | `xhigh` | PLAN / CORRECTION / STOP decisions after blocked execution |
 | `release` | `claude-sonnet-4-6` | `high` | release preflight, changelog, version/tag/GitHub Release checks |
 | `long-context` | `sonnet[1m]` | `high` | large repo reading, long sessions, context-heavy comparison |
 
@@ -97,14 +97,14 @@ Recommended Claude session default:
   "model": "opusplan",
   "availableModels": [
     "opusplan",
-    "claude-opus-4-7",
+    "claude-opus-4-8",
     "claude-sonnet-4-6",
     "claude-haiku-4-5",
     "sonnet[1m]"
   ],
   "effortLevel": "high",
   "env": {
-    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-7",
+    "ANTHROPIC_DEFAULT_OPUS_MODEL": "claude-opus-4-8",
     "ANTHROPIC_DEFAULT_SONNET_MODEL": "claude-sonnet-4-6",
     "ANTHROPIC_DEFAULT_HAIKU_MODEL": "claude-haiku-4-5"
   }
@@ -119,8 +119,10 @@ Notes:
   emergency override, because it outranks per-agent model settings.
 - Do not set `max` in shared settings. `max` is session-only and should be used
   only for explicit one-off experiments.
-- `ultrathink` is allowed for one-off deep reasoning, but it must not become the
-  durable routing mechanism.
+- `ultrathink` is a legacy free-text marker. Do not use it for durable routing.
+  On Claude Opus 4.8, control reasoning depth with `effort` (`high`/`xhigh`), not
+  prompt markers. If reasoning looks shallow on a hard task, raise effort rather
+  than prompting around it.
 
 ## Codex Routing
 
@@ -198,9 +200,9 @@ Notes:
 | --- | --- | --- | --- |
 | `lite` | `composer-2-fast` | `low` | read-only exploration, cheap fan-out |
 | `standard` | `composer-2.5-fast` | `medium` | normal worker implementation |
-| `deep` | `claude-opus-4-7-thinking-xhigh` | `xhigh` | architecture, security, recovery |
+| `deep` | `claude-opus-4-8-thinking-xhigh` | `xhigh` | architecture, security, recovery |
 | `review` | `composer-2.5-fast` | `xhigh` | harness-review / reviewer subagent |
-| `advisor` | `claude-opus-4-7-thinking-xhigh` | `xhigh` | advisor-request decisions |
+| `advisor` | `claude-opus-4-8-thinking-xhigh` | `xhigh` | advisor-request decisions |
 | `release` | `composer-2.5-fast` | `high` | release preflight wording checks |
 | `long-context` | `gemini-3.1-pro` | `high` | large repo reads when available |
 
@@ -226,11 +228,11 @@ Notes:
 | Harness surface | Claude default | Codex default | Cursor default | Why |
 | --- | --- | --- | --- | --- |
 | Interactive operator session | `opusplan`, `high` | `gpt-5.5`, `high` | `composer-2.5-fast`, `medium` | strong default without forcing max spend |
-| `/harness-plan` | `opusplan` or Opus for non-trivial planning | `gpt-5.5`, `high` | `claude-opus-4-7-thinking-xhigh`, `xhigh` | planning quality affects all downstream work |
+| `/harness-plan` | `opusplan` or Opus for non-trivial planning | `gpt-5.5`, `high` | `claude-opus-4-8-thinking-xhigh`, `xhigh` | planning quality affects all downstream work |
 | `worker` | Sonnet 4.6, `medium` to `high` | `gpt-5.5`, `medium` | `composer-2.5-fast`, `medium` | implementation benefits from iteration and tests |
 | `explorer` / read-only fan-out | Haiku 4.5, `low` | `gpt-5.4-mini`, `low` | `composer-2-fast`, `low` | cheap context isolation |
-| `reviewer` | Sonnet 4.6 `xhigh`; Opus 4.7 `xhigh` for high-risk | `gpt-5.5`, `xhigh` | `composer-2.5-fast`, `xhigh` | review is where deeper reasoning pays |
-| `advisor` | Opus 4.7, `xhigh` | `gpt-5.5`, `xhigh` | `claude-opus-4-7-thinking-xhigh`, `xhigh` | blocked-loop decisions need high confidence |
+| `reviewer` | Sonnet 4.6 `xhigh`; Opus 4.8 `xhigh` for high-risk | `gpt-5.5`, `xhigh` | `composer-2.5-fast`, `xhigh` | review is where deeper reasoning pays |
+| `advisor` | Opus 4.8, `xhigh` | `gpt-5.5`, `xhigh` | `claude-opus-4-8-thinking-xhigh`, `xhigh` | blocked-loop decisions need high confidence |
 | `release` | Sonnet 4.6, `high` | `gpt-5.5`, `high` | `composer-2.5-fast`, `high` | procedural but public-facing |
 
 ## Non-Goals

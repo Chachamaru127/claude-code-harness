@@ -4,7 +4,7 @@
 #
 # .claude/rules/tdd-paths.yaml の言語定義に従い、project root を走査して
 # 検出された framework / コマンド / 言語 / test pattern を JSON で stdout に
-# 出力する。scaffolder (sprint-contract emission) と R14 guardrail rule
+# 出力する。harness-setup (sprint-contract emission) と R14 guardrail rule
 # (Phase B 実装) が共通参照する SSOT 経路。
 #
 # Usage:

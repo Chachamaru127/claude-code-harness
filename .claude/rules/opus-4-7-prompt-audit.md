@@ -4,8 +4,7 @@ globs:
   - "agents/worker.md"
   - "agents/reviewer.md"
   - "agents/advisor.md"
-  - "agents/scaffolder.md"
-  - "agents/team-composition.md"
+  - "docs/team-composition.md"
 ---
 
 # Opus 4.7 Prompt Audit Rule
@@ -80,13 +79,15 @@ Phase 44 / 2.1.111 で agent prompt と team composition を更新する時の�
 - [ ] reviewer の verdict 条件が `critical | major | minor` と整合している
 - [ ] advisor の `STOP` 条件に `stop_reason` がある
 - [ ] team composition の spawn 権限が Lead に限定されている
+- [ ] 広く適用すべき指示に scope（全件 / 各ファイル等）が明示されている
+- [ ] 深い推論の要求が effort tier で書かれ、free-text marker（`ultrathink` 等）を使っていない
 
 ## 推奨確認コマンド
 
 ```bash
 rg -n "必要に応じて|適宜|適切に|十分に|柔軟に|しっかり|可能なら|場合によって" \
-  agents/worker.md agents/reviewer.md agents/advisor.md agents/scaffolder.md agents/team-composition.md
+  agents/worker.md agents/reviewer.md agents/advisor.md docs/team-composition.md
 
 rg -n "codex exec|ultrathink|xhigh|/ultrareview|auto-mode|advisor-request.v1|advisor-response.v1|review-result.v1|worker-report.v1|REQUEST_CHANGES|PLAN|CORRECTION|STOP" \
-  .claude/rules/opus-4-7-prompt-audit.md agents/worker.md agents/reviewer.md agents/advisor.md agents/team-composition.md
+  .claude/rules/opus-4-7-prompt-audit.md agents/worker.md agents/reviewer.md agents/advisor.md docs/team-composition.md
 ```

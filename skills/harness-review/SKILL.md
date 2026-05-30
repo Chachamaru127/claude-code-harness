@@ -56,6 +56,7 @@ commit / push / release は既定では行わない。
 | `/harness-review --quick` | `quick` | 小さな dirty change を軽く closeout |
 | `/harness-review --codex-closeout` | `codex-closeout` | Codex 助言 + focused tests で closeout |
 | `/harness-review --dual` | `dual` | Claude + Codex second opinion |
+| `/harness-review --cursor` | `cursor-second-opinion` | cursor (composer-2.5-fast) を second-opinion として並走 (read = lean、Opus reviewer 必須併走) |
 | `/harness-review --team-debate` | `team-debate` | TeamAgent Debate を強制 |
 | `/harness-review --security` | `security` | security 専用 review |
 | `/harness-review plan` | `plan` | `Plans.md` の計画 review |
@@ -71,6 +72,7 @@ commit / push / release は既定では行わない。
 | `--quick` | `quick` | `references/codex-closeout.md`, `references/code-review.md` |
 | `--codex-closeout` | `codex-closeout` | `references/codex-closeout.md` |
 | `--dual` | `dual` | `references/dual-review.md`, `references/team-debate.md` |
+| `--cursor` | `cursor-second-opinion` | `references/cursor-review.md`, `references/dual-review.md` |
 | `--team-debate` | `team-debate` | `references/team-debate.md`, `references/governance.md` |
 | `--security` | `security` | `references/security-profile.md`, `references/governance.md` |
 | `--ui-rubric` | `ui-rubric` | `references/ui-rubric.md` |
@@ -201,6 +203,7 @@ Codex 環境で native TeamAgent が使えない場合でも、この gate を�
 `AI Residuals` は `scripts/review-ai-residuals.sh` と `scripts/review-weak-supervision-report.sh` を優先して使う。
 untracked も見る場合は `--include-untracked` を使う。
 `mockData`, `dummy`, `fake`, `localhost`, `TODO`, `FIXME`, `it.skip`, `test.skip`, `expect(true).toBe(true)` などは候補であり、diff 文脈で severity を決める。
+finding 段階は網羅優先。minor と判定した指摘も `observations[]` / `recommendations[]` に残し、gate は verdict 段階だけで行う（Opus 4.8 は low-severity の報告を絞る癖がある。`references/code-review.md` の Finding coverage 参照）。
 
 ### TDD compliance check
 

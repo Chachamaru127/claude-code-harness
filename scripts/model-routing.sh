@@ -86,7 +86,7 @@ elif [ "$HOST" = "cursor" ]; then
   case "$TIER" in
     lite) MODEL="composer-2-fast"; EFFORT="low" ;;
     standard) MODEL="composer-2.5-fast"; EFFORT="medium" ;;
-    deep|advisor) MODEL="claude-opus-4-7-thinking-xhigh"; EFFORT="xhigh" ;;
+    deep|advisor) MODEL="claude-opus-4-8-thinking-xhigh"; EFFORT="xhigh" ;;
     review) MODEL="composer-2.5-fast"; EFFORT="xhigh" ;;
     release) MODEL="composer-2.5-fast"; EFFORT="high" ;;
     long-context) MODEL="gemini-3.1-pro"; EFFORT="high" ;;
@@ -97,7 +97,7 @@ else
   case "$TIER" in
     lite) MODEL="claude-haiku-4-5"; EFFORT="low" ;;
     standard) MODEL="claude-sonnet-4-6"; EFFORT="medium" ;;
-    deep|advisor) MODEL="claude-opus-4-7"; EFFORT="xhigh" ;;
+    deep|advisor) MODEL="claude-opus-4-8"; EFFORT="xhigh" ;;
     review) MODEL="claude-sonnet-4-6"; EFFORT="xhigh" ;;
     release) MODEL="claude-sonnet-4-6"; EFFORT="high" ;;
     long-context) MODEL="sonnet[1m]"; EFFORT="high" ;;

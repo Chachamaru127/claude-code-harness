@@ -176,7 +176,7 @@ fi
 echo ""
 echo "🤖 [4/7] エージェントチェック..."
 
-V3_AGENTS=(worker reviewer scaffolder advisor)
+V3_AGENTS=(worker reviewer advisor)
 
 for agent in "${V3_AGENTS[@]}"; do
   agent_file="$PLUGIN_ROOT/agents/$agent.md"

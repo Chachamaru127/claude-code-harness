@@ -31,7 +31,6 @@ UPSTREAM_SKILL_NAMES=(
 AGENT_FILES=(
   "${ROOT_DIR}/agents/worker.md"
   "${ROOT_DIR}/agents/reviewer.md"
-  "${ROOT_DIR}/agents/scaffolder.md"
 )
 
 jq -e '.env.CLAUDE_CODE_SUBPROCESS_ENV_SCRUB == "1"' "${SETTINGS_FILE}" >/dev/null || {

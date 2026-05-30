@@ -340,7 +340,7 @@ Plans.md の task には、TDD 判定を明示するタグを内容または DoD
 
 1. Plans.md tag: `[tdd:required]` / `[tdd:skip:<reason>]`
 2. files: `src/`, `app/`, `cmd/`, `lib/`, `pkg/`, `internal/`, `go/` など source 実装を含むなら required
-3. scaffolder 推論: docs-only や test framework なしなら skip reason を付けて not required
+3. TDD 推論: docs-only や test framework なしなら skip reason を付けて not required
 
 ### optional briefs / manifest
 

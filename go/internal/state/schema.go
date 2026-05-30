@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS assumptions (
 // createAgentStates はエージェントのライフサイクル状態を永続化するテーブルの DDL。
 // SubagentStart/Stop フックで記録され、harness status で表示される。
 // agent_id: CC が発行するエージェント識別子（PK）
-// agent_type: worker | reviewer | scaffolder 等
+// agent_type: worker | reviewer | advisor 等
 // session_id: 親セッション識別子
 // state: SPAWNING | RUNNING | REVIEWING | APPROVED | COMMITTED | FAILED |
 //
