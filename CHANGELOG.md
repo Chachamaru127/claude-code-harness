@@ -6,6 +6,68 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### テーマ: セッション協調 (file lease + register + broadcast 復活)
+
+**同一 PC 上の複数 Claude Code セッションが、同じ repo の同じファイルを黙って上書きし合う事故を、ファイル単位 lease と continueOnBlock feedback で防ぐ。harness-mem に依存せずローカル完結。**
+
+---
+
+#### 1. ファイル単位 lease
+
+**今まで**: 複数セッションが同じファイルを同時編集すると、片方が他方の変更を黙って上書きしていました。発生しても気づくのは後日、git log を読み返したときでした。
+
+**今後**: `git rev-parse --git-common-dir` 配下に sha256 hex で命名した lock file を作り、`os.Link` の create-only セマンティクスでアトミックに取得します。worktree からも同じ lease store を共有するため、breezing で worktree を切っているセッション同士でも整合します。
+
+stale 判定は「TTL 60 分超過」AND「`active.json` 上で session_id が見つからない」の AND 条件。`active.json` が空のときは TTL-only fallback で「生きている扱い」に倒し、healthy peer の lock を誤って奪わないようにしています。
+
+#### 2. SessionStart/Stop での auto-register
+
+**今まで**: `active.json` の運用は手動で、停止したセッションの entry が古いまま残り続け、stale 判定が機能しませんでした。
+
+**今後**: SessionStart hook で session_id + pid + last_seen を `.claude/sessions/active.json` に記名、Stop hook で解除します。24h 超過した entry は同じ書き込みで自動 prune。tri-state (not-configured / unreachable / corrupted / healthy) で Monitor が「mem を opt-in していないユーザー」を誤警告しません。
+
+#### 3. PreToolUse/PostToolUse 衝突 feedback
+
+**今まで**: 他セッションがあるファイルを編集中でも、Claude は知らずに上書きしていました。
+
+**今後**: PreToolUse(Write|Edit) で現セッション向けに silent acquire、PostToolUse(Write|Edit) で他セッション保有を検出すると以下を返します:
+
+```json
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PostToolUse",
+    "permissionDecision": "deny",
+    "permissionDecisionReason": "session 9f5a3d3a が `go/internal/foo.go` を編集中。完了を待つか別ファイルへ"
+  },
+  "continueOnBlock": true
+}
+```
+
+`continueOnBlock:true` は diagnostic feedback (guard rail でない) として CC 2.1.139+ `hooks-2.1.139-plus.md` §3 と整合させています。lease 機構不達時は fail-open (allow、警告なし) なので、git 管理外の作業領域では普段どおり動きます。
+
+#### 4. broadcast 復活 (.go / .md / .sh)
+
+**今まで**: auto-broadcast の発火条件が `src/api/`, `schema.prisma`, `openapi`, `swagger` 等の API/schema パターン substring 限定でした。claude-code-harness 自身のような Go + Markdown 中心の repo では 2026-02 以降ずっと沈黙し、broadcast.md が更新されないので inbox-check も連鎖死状態でした。
+
+**今後**: `.go` / `.md` / `.sh` の extension match を追加します。filepath.Ext 評価なので `docs/go-tooling.txt` のような substring 偽陽性は出ません。普段の `.go` / Plans.md / scripts/*.sh 編集でも broadcast.md が更新され、peer session の inbox-check が Phase 89.1.2 サニタイザ経由で structured fields を additionalContext に注入します。
+
+```
+## 2026-05-30T08:00:00Z [peer-A12345]
+📁 `go/internal/lease.go` が変更されました: パターン '*.go' にマッチ
+```
+
+#### 5. inbox-check の prompt injection 対策
+
+**今まで**: 他セッションの broadcast.md 本文を verbatim で additionalContext に注入していました。攻撃者は prompt injection / ANSI escape / NUL flood で peer のモデルを操作できる構造でした。
+
+**今後**: structured fields (sanitized path + 8-12 char sender prefix + age-seconds) のみを注入し、本文は捨てます。disclaimer wrap + 制御文字除去 + 4096B cap。`TestInboxInject_NeutralizesUntrustedContent` で ANSI escape / NUL / prompt injection / flood 文字列がモデルに命令として通らないことを検証しています。
+
+#### 制約と残るリスク
+
+- **同一 PC 限定**: harness-mem に依存しないため、別 clone 間や別 PC 間では非共有です
+- **coordination hint であり hard lock ではない**: PreToolUse 失敗時の fail-open のため、極小確率で peer の overwrite は残ります。`continueOnBlock` の informational feedback で「次は別ファイルへ」と nudge します
+- **broadcast.md は append-only**: 1 セッションで `.go` を大量編集すると broadcast.md が肥大化します。size 制限と rate limit は Phase 89 範囲外、Phase 89.2 候補
+
 ## [4.13.2] - 2026-05-30
 
 ### テーマ: Cursor (Composer) 委譲経路の整備 + breezing UX 軽量化
