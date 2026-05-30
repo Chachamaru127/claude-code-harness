@@ -126,7 +126,7 @@ The 5 verb skills keep that surface small: plan, work, review, sync, release.
 | Codex CLI | `internal-compatible` | `scripts/setup-codex.sh --user`; direct plugin smoke is tracked separately. |
 | Codex app | `candidate` | Candidate smoke only; do not reuse Codex CLI proof. |
 | OpenCode | `internal-compatible` | `scripts/setup-opencode.sh`; runtime parity is not claimed. |
-| Cursor | `candidate` | PM handoff or adapter research only. |
+| Cursor | `internal-compatible` | `scripts/setup-cursor.sh` real-directory local install; top support tier still gated on workflow smoke. |
 | GitHub Copilot CLI | `candidate` | Manual profile research only. |
 | Antigravity CLI | `future/unsupported` | No end-user install route in this phase. |
 
@@ -175,7 +175,7 @@ Use these after the basic trigger path is visible.
 | [Skill trigger gate](docs/onboarding/skill-trigger-acceptance.md) | How install success is verified. |
 | [Capability matrix](docs/tool-capability-matrix.md) | Supported, internal-compatible, candidate, and unsupported host claims. |
 | [Claude Code Compatibility](docs/CLAUDE_CODE_COMPATIBILITY.md) | Current Claude Code requirements and compatibility notes. |
-| [Cursor Integration](docs/CURSOR_INTEGRATION.md) | Cursor handoff boundary and candidate-route notes. |
+| [Cursor Integration](docs/CURSOR_INTEGRATION.md) | Cursor handoff boundary and internal-compatible adapter notes. |
 | [Distribution Scope](docs/distribution-scope.md) | Included vs compatibility vs development-only paths. |
 | [Hardening parity](docs/hardening-parity.md) | Runtime safety differences between Claude hooks and Codex gates. |
 | [Work All Evidence Pack](docs/evidence/work-all.md) | Success/failure verification contract for full-plan execution. |

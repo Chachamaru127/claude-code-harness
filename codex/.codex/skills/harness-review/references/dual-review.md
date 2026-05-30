@@ -1,13 +1,16 @@
-# Dual Review (--dual)
+# Dual Review (--dual) / Triple Review (--cursor opt-in)
 
 Claude Reviewer と Codex Reviewer を並行実行し、異なるモデル視点でレビュー品質を向上させる。
 `--dual` は単なる二重チェックではなく、必要時に TeamAgent Debate を組み合わせて、
 仕様正本・Plans.md・デグレの合格ラインを複数視点で潰し込む。
 
+`--cursor` flag を併用する (or `--dual --cursor` で triple) と、cursor (composer-2.5-fast) を **second-opinion only** として並走できる。詳細は `references/cursor-review.md`。
+
 ## 前提条件
 
 - Codex CLI がインストール済み（`scripts/codex-companion.sh setup --json` で確認）
 - Codex が利用不可の場合、Claude 単独レビューにフォールバック
+- `--cursor` 併用時は cursor-agent がインストール済み (`setup-cursor.sh --check`)。利用不可なら `cursor_verdict: unavailable` で degrade
 
 ## 実行フロー
 

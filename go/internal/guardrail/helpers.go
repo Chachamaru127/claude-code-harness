@@ -343,9 +343,18 @@ func hasSudo(command string) bool {
 // --no-verify / --no-gpg-sign detection
 // ---------------------------------------------------------------------------
 
+// shellTokenBoundary matches the characters that terminate a flag token on a
+// shell command line. Besides whitespace, bash treats the metacharacters
+// `;`, `&`, `|`, `(`, `)`, `<` and `>` as token separators, so a flag such as
+// `--no-verify` is still effective when written as `--no-verify&&echo` or
+// `--no-verify;cmd`. Anchoring on this class (instead of `\s` alone) prevents
+// the detection from being bypassed by appending a metacharacter without a
+// surrounding space.
+const shellTokenBoundary = `[\s;&|()<>]`
+
 var (
-	noVerifyPattern  = regexp.MustCompile(`(?:^|\s)--no-verify(?:\s|$)`)
-	noGpgSignPattern = regexp.MustCompile(`(?:^|\s)--no-gpg-sign(?:\s|$)`)
+	noVerifyPattern  = regexp.MustCompile(`(?:^|` + shellTokenBoundary + `)--no-verify(?:` + shellTokenBoundary + `|$)`)
+	noGpgSignPattern = regexp.MustCompile(`(?:^|` + shellTokenBoundary + `)--no-gpg-sign(?:` + shellTokenBoundary + `|$)`)
 )
 
 func hasDangerousGitBypassFlag(command string) bool {

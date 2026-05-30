@@ -25,6 +25,7 @@ benchmarks/             export-ignore
 go/                     export-ignore
 
 # Other-IDE skill mirrors (CC users don't need these)
+.cursor-plugin/         export-ignore
 .codex-plugin/          export-ignore
 codex/                  export-ignore
 opencode/               export-ignore

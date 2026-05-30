@@ -214,7 +214,7 @@ fi
 Agent tool 経由で `claude-code-harness:worker` を spawn する:
 
 > **重要**: `subagent_type` には `"harness-work"` ではなく `"claude-code-harness:worker"` を指定すること。
-> `harness-work` はスキルであり agent ではない。実在する agent は `worker` / `reviewer` / `scaffolder`。
+> `harness-work` はスキルであり agent ではない。実在する agent は `worker` / `reviewer`。
 > `"harness-work"` を指定すると Agent spawn が失敗し、ループが初回 Worker 起動で停止する。
 
 ```python

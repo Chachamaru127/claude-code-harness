@@ -716,6 +716,46 @@ func TestR10_NormalCommit(t *testing.T) {
 	}
 }
 
+// TestR10_ShellMetacharBypass guards against issue #171: the flag is still
+// effective when followed by a shell metacharacter with no intervening space
+// (e.g. `--no-verify&&cmd`), so the guardrail must still deny those forms.
+func TestR10_ShellMetacharBypass(t *testing.T) {
+	denyCases := []string{
+		`git commit -m "msg" --no-verify&&echo done`,
+		`git commit -m "msg" --no-verify;echo ok`,
+		`git commit -m "msg" --no-verify|tee /dev/null`,
+		`git commit -m "msg" --no-verify&background`,
+		`git commit -m "msg" --no-gpg-sign&&echo done`,
+		`git commit -m "msg" --no-gpg-sign;echo ok`,
+		`(git commit --no-verify -m x)`,
+		`git commit -m "msg";--no-verify`,
+	}
+	for _, cmd := range denyCases {
+		ctx := makeCtx("Bash", map[string]interface{}{"command": cmd})
+		result := EvaluateRules(ctx)
+		if result.Decision != hookproto.DecisionDeny {
+			t.Errorf("expected deny for %q, got %s", cmd, result.Decision)
+		}
+	}
+}
+
+// TestR10_NoFalsePositive ensures the broadened boundary does not flag commands
+// that merely contain the flag name as a substring of a larger token.
+func TestR10_NoFalsePositive(t *testing.T) {
+	approveCases := []string{
+		`git commit -m "add --no-verify-mode docs"`,
+		`echo --no-verifyx`,
+		`git commit -m "msg --no-gpg-signature note"`,
+	}
+	for _, cmd := range approveCases {
+		ctx := makeCtx("Bash", map[string]interface{}{"command": cmd})
+		result := EvaluateRules(ctx)
+		if result.Decision == hookproto.DecisionDeny {
+			t.Errorf("expected non-deny for %q, got deny", cmd)
+		}
+	}
+}
+
 // ---------------------------------------------------------------------------
 // R11: protected branch reset --hard
 // ---------------------------------------------------------------------------

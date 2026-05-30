@@ -1,6 +1,6 @@
 # Bootstrap Routing Contract
 
-Last updated: 2026-05-22
+Last updated: 2026-05-29
 
 ## Purpose
 
@@ -33,7 +33,7 @@ current artifact set; it does not mean the capability is absent.
 | Codex CLI | `internal-compatible` | `codex/AGENTS.md`, Codex skills, setup scripts, and companion checks are internal compatibility evidence until direct plugin install and runtime smoke pass together. |
 | Codex app | `candidate` | App behavior must be verified separately from Codex CLI; no app support claim before app-specific smoke evidence exists. |
 | OpenCode | `internal-compatible` | `opencode/AGENTS.md` and mirror/package checks are compatibility evidence until runtime bootstrap smoke passes. |
-| Cursor | `candidate` | Cursor rule/plugin ideas are adapter candidates only; existing handoff docs are not Cursor adapter support. |
+| Cursor | `internal-compatible` | `.cursor/AGENTS.md`, `.cursor-plugin/plugin.json`, `scripts/setup-cursor.sh`, rules/skills/agents, optional hooks/MCP config shape; static smoke via `tests/test-cursor-adapter-candidate.sh` and `scripts/setup-cursor.sh --check`; observed Desktop skill loading; PM handoff docs are not adapter support; no public supported claim. |
 | GitHub Copilot CLI | `candidate` | Manual instruction or CLI profile research is allowed; no Harness support claim without Harness-specific bootstrap evidence. |
 | Antigravity CLI | `future/unsupported` | No setup docs, bootstrap route, or support claim until an official or verified adapter route is observed. |
 
@@ -77,11 +77,48 @@ Expected properties:
 - OpenCode remains below Claude/Codex enforcement strength until adapter
   contract tests prove otherwise.
 
+### Cursor AGENTS.md and Plugin Route
+
+Cursor uses `.cursor/AGENTS.md`, `.cursor/rules/`, `.cursor-plugin/plugin.json`,
+core `skills/` via the plugin manifest, `.cursor/agents/` subagents, and optional
+`.cursor/hooks.json` / `.cursor/mcp.json` as its current bootstrap surface.
+
+Expected properties:
+
+- Routing guidance maps plan/work/review/sync/setup intents to Harness skills.
+- Subagent frontmatter `model` and Task tool explicit `model` are adapter
+  surfaces; they must follow `docs/model-routing-policy.md` priority (explicit
+  override first, routed default second).
+- Breezing parallel execution maps to Cursor subagents / background agents /
+  multitask only as a smoke target. Core keeps review and cherry-pick serial.
+- Bootstrap evidence is AGENTS.md + plugin manifest + setup-cursor install +
+  static smoke + observed Desktop skill loading, not Claude SessionStart hook
+  parity.
+- Cursor is `internal-compatible`; public `supported` claim waits for CI-gated
+  workflow smoke.
+
+Required smoke (static minimum):
+
+```bash
+bash tests/test-cursor-adapter-candidate.sh
+bash scripts/setup-cursor.sh --check
+```
+
+Optional runtime evidence when Cursor CLI/Desktop is available:
+
+```bash
+HARNESS_CURSOR_ADAPTER_SMOKE_REQUIRED=1 bash tests/test-cursor-adapter-candidate.sh
+```
+
+Cloud Agent API smoke is optional paid/auth evidence and must not be conflated
+with local Desktop/CLI adapter proof.
+
 ### Candidate Host Routes
 
-Codex app, Cursor, and GitHub Copilot CLI are candidate hosts in Phase 73. Their
-routes may be researched, documented, and smoke-tested, but they are not golden
-prompt success routes until host-specific bootstrap evidence exists.
+Codex app and GitHub Copilot CLI are candidate hosts in Phase 73. Cursor is
+`internal-compatible` (Phase 87, renumbered from Phase 83). Their routes may be researched, documented,
+and smoke-tested, but candidate hosts are not golden prompt success routes until
+host-specific bootstrap evidence exists.
 
 Expected properties:
 
@@ -126,9 +163,10 @@ that docs name the expected workflow for common user intent.
 
 ## Candidate And Unsupported Hosts
 
-Codex app, Cursor, and GitHub Copilot CLI are candidate hosts. Antigravity CLI
-is future/unsupported. They are not part of the golden prompt fixture and must
-not be counted as successful runtime routing until their own evidence exists.
+Codex app and GitHub Copilot CLI are candidate hosts. Cursor is
+`internal-compatible`. Antigravity CLI is future/unsupported. They are not part
+of the golden prompt fixture and must not be counted as successful runtime
+routing until their own evidence exists.
 
 ## Validation Requirements
 
@@ -143,7 +181,11 @@ The routing contract is valid only when all of the following stay true:
 - Future/unsupported hosts must produce `future/unsupported`, `not observed`, or
   `manual` evidence instead of being counted as successful runtime routing.
 - Each core workflow listed above has at least one prompt fixture.
-- Codex app, Cursor, and GitHub Copilot CLI remain candidate until
-  host-specific bootstrap evidence exists.
+- Codex app and GitHub Copilot CLI remain candidate until host-specific bootstrap
+  evidence exists.
+- Cursor remains `internal-compatible` until CI-gated workflow smoke supports a
+  public `supported` claim.
 - Antigravity CLI remains future/unsupported until an official or verified
   adapter route exists.
+- Cursor static adapter smoke must stay green when `.cursor-plugin/` or
+  `.cursor/AGENTS.md` changes.

@@ -7,13 +7,39 @@ description: "Team execution mode — backward-compatible alias for harness-work
 
 > **後方互換エイリアス**: `harness-work` をチーム実行モードで動かします。
 
+## Narration Rules (UX Hard Contract)
+
+このスキルは「起動 → 委譲開始」を 3 秒以内に進めるため、中間ナレーションを禁ずる。違反した skill は UX 不合格として扱う。
+
+- **過去経緯の振り返り禁止**: 「先ほど止まった」「以前 Worker は完了済み」を語らない。Plans.md / git 状態から直読する
+- **事前宣言禁止**: 「使い方を確認します」「次は X を確認します」を出さない。tool call 自体が宣言なので不要
+- **同じ事実の 2 回言い換え禁止**: cursor-companion.sh の確認結果を後段で再度説明しない
+- **中間ステータスラベル禁止**: 「実行中」「実行済み」「次は…」を出さない。tool call で自明
+- **★ Insight ブロック禁止 (起動シーケンス中)**: Explanatory style を一時停止する。Insight は最終 report で 1 回のみ可
+- **最初の text は 1 行のみ**: `🚀 <backend> / <model> / <branch> / <task>` 形式で first text として 1 秒以内に出す
+
+違反例:
+```
+× "composer 2.5 使うモード" = cursor backend で Composer に委託、ですね
+× 「前回 Reviewer が止まったので別系統に逃がすのは理にかなっています」
+× 「使い方を確認します」 → bash → 「呼べます」
+× ★ Insight ──── 役割分担を明確にします: ...
+```
+
+正常例:
+```
+🚀 cursor / composer-2.5-fast / feat/hah-11-golden-rule-lint / Reviewer
+```
+
 ## Quick Reference
 
 ```bash
-/breezing                       # スコープを聞いてから実行
-/breezing all                   # Plans.md 全タスクを完走
+/breezing                       # スコープを聞く（claude backend）
+/breezing all                   # 全タスク完走（claude backend）
 /breezing 3-6                   # タスク3〜6を完走
-/breezing --codex all           # Codex CLI で全タスク完走
+/breezing --codex all           # Codex CLI で全タスク委託
+/breezing --cursor              # cursor backend lean path (--no-discuss all 既定)
+/breezing --cursor --reviewer-only  # Reviewer のみ cursor に委譲（Worker は別系統で既完了）
 /breezing --parallel 2 all      # 2並列で全タスク完走
 /breezing --no-discuss all      # 計画議論スキップで全タスク完走
 /breezing --auto-mode all       # 互換な親セッションで Auto Mode rollout を試す
@@ -26,9 +52,11 @@ description: "Team execution mode — backward-compatible alias for harness-work
 | `all` | 全未完了タスクを対象 | - |
 | `N` or `N-M` | タスク番号/範囲指定 | - |
 | `--codex` | Codex CLI で実装委託 | false |
+| `--cursor` | cursor backend lean path (`HARNESS_IMPL_BACKEND=cursor` 相当)。Worker 介在 / self_review / sprint-contract 3 段チェーン / Phase 0 を skip し、起動 → 委譲を 3 秒以内に開始する | false |
+| `--reviewer-only` | Reviewer のみ独立系統に委譲（Worker 実装は既完了前提）。`--cursor` と併用で Composer に逃がす | false |
 | `--parallel N` | Implementer 並列数 | auto |
 | `--no-commit` | 自動コミット抑制 | false |
-| `--no-discuss` | 計画議論スキップ | false |
+| `--no-discuss` | 計画議論スキップ | `--cursor` で true 既定 |
 | `--auto-mode` | Harness 側の Auto Mode rollout を明示。CC 2.1.111 で不要になった `--enable-auto-mode` とは別物 | false |
 
 > **CC 2.1.111 note**:
@@ -89,6 +117,73 @@ CODEX_PROMPT=$(mktemp /tmp/codex-prompt-XXXXXX.md)
 # タスク内容を書き出し
 cat "$CODEX_PROMPT" | bash "${HARNESS_PLUGIN_ROOT}/scripts/codex-companion.sh" task --write
 rm -f "$CODEX_PROMPT"
+```
+
+### Execution Backend (persistent)
+
+`HARNESS_IMPL_BACKEND=cursor`（`bash "${HARNESS_PLUGIN_ROOT}/scripts/set-impl-backend.sh" cursor` で設定）にすると、
+per-run フラグなしで cursor が既定の worker バックエンドになる。review / advisor ロールは Opus に固定したまま。
+バックエンド選択の正本（precedence、role-scope、self_review スキップ、cursor banner）は
+`harness-work` の「Execution Backend Selection（実装バックエンド選択）」を参照する。
+
+下の Cursor Backend Fast Path は per-run フラグ (`--cursor`) で同等の lean path を有効化する別軸であり、本節と併読する。
+
+### Cursor Backend Fast Path (`--cursor` / lean mode)
+
+`--cursor` 指定時、または env `HARNESS_IMPL_BACKEND=cursor` の時に有効。Worker 層を介在させず Lead が直接 `cursor-companion.sh` を呼ぶ（Phase 85 SSOT、`.claude/rules/cursor-cli-only.md` Topology 節）。
+
+#### 削除される step（claude backend と比べて節約）
+
+| Step | 削除理由 | 節約秒数 |
+|---|---|---|
+| `claude-code-harness:worker` agent spawn | cursor backend は Worker 介在なし | 5-30s |
+| self_review 5 件ゲート | `worker-report.v1` が cursor では生成されないため不要 | 10-60s × retry |
+| sprint-contract 3 段チェーン (generate→enrich→ensure) | Worker 契約不要なら contract 不要 | 2-5s × N |
+| Phase 0 Q1-Q3 interactive | `--no-discuss all` 既定 (Plans/Depends は Lead が直読み) | 15-30s |
+| Effort スコアリング | cursor backend では ultrathink 注入不要 | 0.5-1s × N |
+| Plans.md re-parse (per task) | session 内 cache (mtime+hash で短絡) | 3-8s |
+
+合計 baseline `15-35s` → target `3-7s` で 1 タスク目の cursor 委譲開始までを短縮。
+
+#### 既定 flow（cursor backend）
+
+1. **first text 1 行 echo** (`🚀 cursor / <model> / <branch> / <task>`、1 秒以内)
+2. **1 bash で並列 pre-check**: `git branch --show-current` + `cat VERSION` + `Plans.md tail` + `cursor-agent --version`
+3. **1 bash で resolve**: `scripts/resolve-impl-backend.sh` + `bash scripts/model-routing.sh --host cursor --role worker --field model`
+4. **即 委譲**: `bash scripts/cursor-companion.sh task --write --workspace <wt> "<task>"`
+5. cursor 出力を Lead が diff レビュー → cherry-pick → Plans.md `cc:done [hash]` 更新
+
+#### Reviewer-only mode (`--cursor --reviewer-only`) — read = lean
+
+Worker 実装は既完了（別系統 = claude / Codex で済んだ）、Reviewer のみ独立系統 (Composer) で回したい時の lean path。read-only 委譲なので **worktree 不要・cherry-pick 不要・Lead diff review 不要**:
+
+1. 1 行 echo: `🚀 cursor / composer-2.5-fast / review`
+2. `bash scripts/cursor-companion.sh task "diff レビュー: <base_ref>..HEAD"` — **`--write` も `--workspace` も付けない**
+   - companion は `--write` 未指定で default `--mode ask` (hard read-only stop) になる (cursor-companion.sh の workspace guard は `--write` 時のみ発火)
+   - cursor 側はファイル書込・コマンド実行が disabled、worktree 隔離不要
+3. cursor 出力 (REQUEST_CHANGES / APPROVE 相当) を Lead が解釈し、`dual_review.cursor_verdict` に advisory として格納
+4. **primary verdict は Opus reviewer から取る**。cursor 単独では APPROVE を確定しない (harness-work/SKILL.md「実装したバックエンドが自分の出力をレビューしてはならない」不変ルールと整合)
+5. APPROVE なら Plans.md `cc:done [hash]` を Lead が更新
+
+read mode で省略できるもの: 専用 `.git` worktree / Lead diff review / cherry-pick / `worker-report.v1` / self_review 5 件。
+read mode でも保持必要: `.cursorignore` / egress allowlist (`*.cursor.sh`) / permissions.json (best-effort)。詳細は `.claude/rules/cursor-cli-only.md` 「Read mode delegation (lean path)」節を参照。
+
+**用途**:
+- Anthropic 側 server rate limit で Reviewer が止まった時の逃げ道
+- Worker 完了済みで Reviewer だけ別系統に分散
+- Codex review が auth 失敗した時の manual fallback
+
+#### Cursor adapter support claim
+
+Cursor は依然 `internal-compatible` tier（Phase 87 / PR #174 で promotion）。`supported` public claim は CI-gated workflow smoke 充足まで継続 gate。`--cursor` lean path は support tier を昇格させない。
+
+Bootstrap route: `.cursor/AGENTS.md` + `.cursor-plugin/plugin.json`。
+
+Verification:
+
+```bash
+bash tests/test-cursor-adapter-candidate.sh
+bash tests/test-support-claim-wording.sh
 ```
 
 ## Flow Summary

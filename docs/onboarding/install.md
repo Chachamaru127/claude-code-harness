@@ -220,33 +220,62 @@ test -f opencode.json
 Success look: OpenCode can see Harness skill files and project guidance. Runtime
 bootstrap parity is still unproven, so the tier stays `internal-compatible`.
 
-### Cursor (`candidate`)
+### Cursor (`internal-compatible`)
 
-Unsupported reason: the current Cursor material is PM handoff integration and
-adapter research. It is not a verified Cursor adapter install/update/uninstall
-route.
+Install:
+
+```bash
+git clone https://github.com/Chachamaru127/claude-code-harness.git
+cd claude-code-harness
+./scripts/setup-cursor.sh
+```
+
+Then reload Cursor (Developer: Reload Window) so the local plugin and skills
+register. Do not register the repo via symlink under `~/.cursor/plugins/local`;
+Cursor rejects symlink targets outside that directory.
+
+Update:
+
+```bash
+cd /path/to/claude-code-harness
+git pull --ff-only
+./scripts/setup-cursor.sh
+```
+
+Uninstall:
+
+```bash
+mkdir -p ~/.cursor/backups/manual-cursor-uninstall
+[ -d ~/.cursor/plugins/local/claude-code-harness ] \
+  && mv ~/.cursor/plugins/local/claude-code-harness ~/.cursor/backups/manual-cursor-uninstall/
+```
+
+This uninstall path removes only the copied Harness local plugin. It does not
+delete Cursor settings, project files, or harness-mem state.
 
 First prompt:
 
 ```text
-Read docs/onboarding/index.md and produce a PM handoff plan without claiming adapter support.
+Plan a small change with acceptance criteria.
 ```
 
 First command:
 
 ```text
-No adapter command in Phase 73.1.3; candidate or PM handoff only.
+/harness-plan
 ```
 
 Verification command:
 
 ```bash
-rg -n "Cursor.*candidate|handoff integration" docs/tool-capability-matrix.md docs/bootstrap-routing-contract.md docs/onboarding
+bash scripts/setup-cursor.sh --check
+test -f ~/.cursor/plugins/local/claude-code-harness/skills/breezing/SKILL.md
 ```
 
-Success look: Cursor evidence stays labeled `candidate`, `manual`, or
-`not observed`, and existing 2-agent handoff docs are not described as adapter
-support.
+Success look: Cursor lists Harness skills (for example `/breezing`,
+`/harness-plan`) after reload. Workflow smoke and hook parity are not proven,
+so the tier stays `internal-compatible` and PM handoff docs remain separate
+from adapter install claims.
 
 ### GitHub Copilot CLI (`candidate`)
 

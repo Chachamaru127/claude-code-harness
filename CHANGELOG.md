@@ -6,6 +6,126 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+## [4.13.2] - 2026-05-30
+
+### テーマ: Cursor (Composer) 委譲経路の整備 + breezing UX 軽量化
+
+**Cursor backend に 3 つの軽量経路 (`/cursor:ask` / `/cursor:do` / `--cursor` second-opinion) を追加し、`/breezing` 起動から委譲開始までの体感を baseline 15-35s → target 3-7s に短縮。read = lean / write = full の対称分割を product contract として `.claude/rules/cursor-cli-only.md` に固定。Cursor support tier は `internal-compatible` のまま不変、正式機能としてはまだ実験段階のため patch bump。**
+
+### Added
+
+- **`/cursor:ask` — Cursor (Composer) への読み取り専用デリゲート**: 質問・調査・設計相談・敵対的レビューを cursor-agent (composer-2.5-fast) に read-only で投げる軽量スキル。`cursor-companion.sh task` は引数なしで default `--mode ask` (hard read-only stop) になるため、`--write` 未指定で **worktree 隔離・cherry-pick・Lead diff review がすべて不要**。3 秒以内に応答開始、結果を host (Claude) が 3-5 行で要約。用途: 「この設計の弱点は？」「セカンドオピニオンが欲しい」「敵対的視点で見て」等。`.cursorignore` で secret 遮断、`*.cursor.sh` egress allowlist + `~/.cursor` filesystem allowlist が前提条件。
+- **`/cursor:do` — 1 件の write タスクを Cursor Composer に委譲**: 専用 worktree (`.claude/worktrees/cursor-do-<id>`) を切って `cursor-companion.sh task --write --workspace <wt>` で実装委譲し、Lead が diff レビュー → SHA 直接 cherry-pick → Plans.md `cc:done [hash]` 自動更新まで 8 ステップで完走。breezing の team フローを起こさず 1 タスク 1 cherry-pick の最短経路。Worker agent 介在なし (`cursor-cli-only.md` Topology 節準拠)。封じ込めは Cursor 側にはなく、専用 `.git` worktree + Lead diff review + cherry-pick (R01-R13) の 3 点が実効的境界。
+
+### Changed
+
+- **`/harness-review --cursor` — Cursor second-opinion レーン追加**: cursor (composer-2.5-fast) を harness-review の **second-opinion only** として並走させる lean モード。primary verdict は Opus reviewer が必ず取り、cursor 出力は `dual_review.cursor_verdict` に **advisory** として格納 (optional field、既存 consumer 互換)。cursor を primary reviewer に昇格させない不変ルール (`harness-work`「実装したバックエンドが自分の出力をレビューしてはならない」と整合)。新規 `references/cursor-review.md` で 4 点 trust boundary (.cursorignore + permissions.json best-effort + egress `*.cursor.sh` + filesystem `~/.cursor`) と verdict 統合ルール (Opus REQUEST_CHANGES は即 REQUEST、Opus APPROVE + cursor REQUEST_CHANGES は divergence_notes に記録) を文書化。`--dual --cursor` で triple review (Claude + Codex + Cursor)。
+- **`/breezing --cursor --reviewer-only` — read = lean に最適化**: Reviewer のみ Composer に逃がす既存 lean path から `--workspace <wt>` 引数を削除 (read mode では companion guard が `--write` 時のみ発火するため optional)。`bash scripts/cursor-companion.sh task "<review prompt>"` だけで worktree 不要・cherry-pick 不要・Lead diff review 不要の最短 path に。primary verdict は Opus reviewer 必須併走、cursor は advisory として `dual_review.cursor_verdict` に格納。
+- **`.claude/rules/cursor-cli-only.md` に Read mode delegation (lean path) section 追加**: cursor-companion 引数なしで default `--mode ask` (hard read-only stop) になる仕様、read mode で省略できる重い containment 5 種 (worktree / Lead diff review / cherry-pick / worker-report.v1 / --workspace) と、read mode でも保持必須の 4 点軽い trust boundary (`.cursorignore` / egress allowlist / filesystem allowlist / permissions.json best-effort)、適切ケース / 不適切ケース表、Topology 図を 35 行で明示。`cursor-ask` / `cursor-do` / `harness-review --cursor` の 3 経路を cross-ref。
+
+- **`/breezing` UX 軽量化 (Narration Rules + Cursor Backend Fast Path)**: 起動 → 委譲開始の体感を改善。`skills/breezing/SKILL.md` に「Narration Rules (UX Hard Contract)」セクションを追加し、過去経緯の振り返り / 事前宣言 / 同じ事実の 2 回言い換え / 中間ステータスラベル / 起動シーケンス中の ★ Insight ブロックを禁止する hard contract を明示。最初の text は `🚀 <backend> / <model> / <branch> / <task>` の 1 行 echo に固定（first text として 1 秒以内）。さらに `--cursor` lean path セクションで、Worker agent spawn (5-30s) / self_review 5 件ゲート (10-60s × retry) / sprint-contract 3 段チェーン (2-5s × N) / Phase 0 Q1-Q3 interactive (15-30s) / Effort スコアリング / Plans.md re-parse の削除根拠と節約秒数を表で固定し、合計 baseline 15-35s → target 3-7s の短縮目標を product contract に組み込んだ。`--cursor --reviewer-only` で Worker 完了済み・Reviewer のみ Composer に逃がす lean path も追加（Anthropic rate limit や Codex review 認証失敗時の fallback 用途）。mirror (codex/.codex/skills/, opencode/skills/) 同期済み。Cursor support tier は `internal-compatible` のまま不変。
+
+- **Opus 4.8 向けプロンプトチューニング**: Claude Code が Opus 4.8 で harness を動かす際の挙動ずれを、Anthropic の prompting best practices に沿って解消。worker/reviewer/scaffolder は Sonnet 4.6 のまま（tiered routing 維持）、VERSION は据え置き。
+  - **effort スコアリングを「ultrathink 注入」から「effort tier 選択」に統一**（`harness-work`）。
+    - 今まで: 複雑度スコア ≥3 で Worker spawn prompt 冒頭に `ultrathink` 文字列を注入していた。Opus 4.8 は free-text marker でなく `effort` で推論深度を制御する設計で、harness 内の `model-routing-policy.md` / `opus-4-7-prompt-audit.md` とも矛盾していた。
+    - 今後: スコアから effort tier（≥3 で `high`、code-risk を含む ≥3 で `xhigh`）を選び、`/effort` / frontmatter override で適用する。marker 文字列は注入しない。
+  - **code review を coverage 優先に明示**（`harness-review`）。Opus 4.8 は「low-severity は報告するな」を忠実に守り recall を落とすため、finding 段階は全件を severity + 確信度つきで記録し、gate は verdict 段階だけで行うことを明記。
+  - **subagent spawn を明示トリガー化**（`team-composition`）。Opus 4.8 は subagent を少なく spawn する傾向のため、worker 数条件（独立書込グループ数）を明示的な spawn トリガーとして扱うことを追記。
+  - **Opus model 参照を 4.8 へ更新**。`advisor.md`（`claude-opus-4-6` → `claude-opus-4-8`。4.7 化されず drift していたものを是正）、`model-routing-policy.md` の deep/review/advisor tier、`effort-level-policy.md` の thinking 概念（既定 off + adaptive thinking、`budget_tokens` deprecated）。
+  - **`opus-4-7-prompt-audit.md` に Opus 4.8 追補**。literal instruction following 向けに scope 明示条項と effort tier 指定条項を追加。
+
+### Removed
+
+- **未配線の Scaffolder エージェントを削除 (#170)**: `agents/scaffolder.md` は `analyze` / `scaffolder` / `update-state` の 3 モードを定義していたが、どの skill / hook からも `subagent_type="claude-code-harness:scaffolder"` で spawn される経路が存在せず（worker / reviewer は spawn 経路あり）、登録だけされて使われない dead agent だった。足場生成は `harness-setup` が、状態同期は `harness-plan` が Lead inline で実行しており、setup/plan は対話的フローのため worktree 隔離はむしろ不向き。混乱を避けるためエージェント定義を削除し、hooks の SubagentStart/Stop matcher・docs（team-composition / agent-frontmatter-policy / distribution-scope）・関連テスト・skill mirror の参照を整理。worker / reviewer / advisor の 3 エージェント構成に変更なし。
+
+### Fixed
+
+- **`--no-verify` / `--no-gpg-sign` ガードレールのバイパス修正 (#171)**: R10 ガードレールの検出正規表現が `\s`（空白）のみを境界としていたため、`git commit --no-verify&&echo done` のようにシェルメタ文字（`&&` / `;` / `|` など）を空白なしで続けると検出をすり抜け、pre-commit フックや署名検証を迂回できてしまう問題を修正。境界判定にシェルのトークン区切り文字（`[\s;&|()<>]`）を含めるよう `go/internal/guardrail/helpers.go` を更新し、バイパス系・誤検出防止の回帰テストを追加。
+- **`harness.toml` のバージョン同期ずれを修正 (#178)**: v4.13.1 リリースで `VERSION` と `.claude-plugin/plugin.json` は `4.13.1` に bump されたが `harness.toml` が `4.13.0` のまま残っていた。`harness sync`（`scripts/sync-plugin-cache.sh`）は `harness.toml` から `plugin.json` のバージョンを再生成するため、sync 実行のたびに `plugin.json` が `4.13.0` へ巻き戻り、CI の `validate` ジョブ（`check-consistency.sh` のバージョン一致ゲート）が失敗していた。`harness.toml` を `4.13.1` に揃え、3 点（VERSION / plugin.json / harness.toml）同期を回復。
+
+### Changed
+
+| Before | After |
+| --- | --- |
+| Claude archive could include Cursor adapter metadata. | `.cursor-plugin/` is excluded from Claude distribution archive. |
+| Codex/Cursor adapter manifests used sibling `..` paths in source repo only. | `scripts/build-host-plugin-dist.sh` generates host packages with in-package `./skills/` paths. |
+| Duplicate Harness skill origins had no dry-run diagnostic. | `scripts/diagnose-harness-skill-duplication.sh` and Clean/Compatibility profiles document safe cleanup. |
+| Cursor dropped Harness workflow skills (`user-invocable: true`) so `/breezing`, `/harness-plan` never appeared. | Cursor package normalizes those skills to `user-invocable: false`; Claude package keeps the slash contract. |
+| Cursor local plugin registered via symlink was rejected (target outside `~/.cursor/plugins/local`). | Documented real-directory copy install; symlink route no longer recommended. |
+| Cursor adapter tier remained `candidate` despite observed Desktop skill loading. | Cursor promoted to `internal-compatible` with `scripts/setup-cursor.sh`, runtime evidence doc, and tier gates; public `supported` claim still blocked. |
+
+- **Phase 86 Harness Duplication Cleanup**: Added host-specific dist builder
+  (`scripts/build-host-plugin-dist.sh`), duplication dry-run diagnostic
+  (`scripts/diagnose-harness-skill-duplication.sh`), local cleanup guide
+  (`docs/local-harness-environment-cleanup.md`), archive contamination fix for
+  `.cursor-plugin/`, and `tests/test-host-plugin-dist.sh` with generated-package
+  adapter smoke updates. (Renumbered from Phase 82 to avoid collision with the
+  archived Phase 80-84 numbering space; see Plans.md.)
+
+- **Phase 87 Cursor Internal-Compatible Promotion**: Added `scripts/setup-cursor.sh`
+  (real-directory install + `--check`), promoted Cursor tier to
+  `internal-compatible` in `spec.md` and capability matrix, recorded 2026-05-29
+  Desktop skill-loading evidence, and extended adapter/preflight gates.
+  (Renumbered from Phase 83 to avoid collision with the archived Phase 80-84
+  numbering space; see Plans.md.)
+
+## [4.13.1] - 2026-05-29
+
+### Documentation
+
+- **非 claude backend のトポロジー SSOT 化**: `HARNESS_IMPL_BACKEND=cursor` / `=codex` のとき、Lead は Worker agent (`claude-code-harness:worker`) を spawn せず、`scripts/cursor-companion.sh` / `scripts/codex-companion.sh` を直接呼ぶ運用を skill 正本と shareable rule に明記。Worker 層介在は backend=`claude` のときだけ（agent 契約 `worker-report.v1` / `self_review` が非 claude では生成されないため）。
+- **Lead の cherry-pick 前ゲートに contract-grep 必須を明記**: 非 claude backend の出力を main に取り込む前に、目視 diff だけでなく `test-support-claim-wording.sh` / `check-consistency.sh` / `validate-plugin.sh` の固定文字列契約チェックを必ず通す運用を `skills/harness-work/SKILL.md` に追記。composer の表面的 dedup 傾向と docs/locale/matrix の固定句契約 (`5動詞ワークフロー` 等) の衝突を防ぐ。
+
+## [4.13.0] - 2026-05-29
+
+### Added
+
+- **実装バックエンド選択（Cursor candidate / 脳 Opus・体 composer）**: 実装の手を `claude`(既定) / `codex` / `cursor`(composer-2.5-fast) から選べる実行バックエンドを追加。`scripts/set-impl-backend.sh [--user] <claude|codex|cursor>` で一度設定すれば、`/breezing`・`/harness-work` の worker（実装）ロールが選択バックエンドに委譲し、review/advisor は Opus 固定（自作レビュー防止）。precedence は flag > `HARNESS_IMPL_BACKEND` env > project `env.local` > user `~/.config/claude-harness/impl-backend.env` > `claude`。
+  - 安全境界は専用 `.git` worktree + Lead の diff レビュー + cherry-pick（R01-R13）。Cursor の allowlist は公式に best-effort のため依存せず、cursor 出力は untrusted 扱い。読取委譲は `--mode ask`、`--force`/Run Everything は不使用。
+  - Cursor は `candidate` のまま（consumer 配布・公開 support claim なし、ローカル opt-in）。
+  - 新規: `scripts/resolve-impl-backend.sh`, `scripts/cursor-companion.sh`, `.claude/rules/cursor-cli-only.md`、spec.md「Execution Backend Contract」。`harness-work`/`breezing`/`worker.md` に 3-way backend スイッチを配線。
+- **`cursor-companion.sh --debug` 観測経路（デバッグ用）**: `--debug` フラグ または `HARNESS_CURSOR_DEBUG=1` 環境変数で、(a) `model-routing.sh` の stderr、(b) 実行直前の cmd 配列（`--api-key` / `--auth-token` / `Authorization:` 値を `[REDACTED]` にマスク）、(c) cursor-agent の stderr を `[cursor-companion DEBUG]` prefix で stderr に出す。既定挙動（DEBUG=0）は不変・後方互換。
+
+### Changed
+
+- **`scripts/resolve-impl-backend.sh` / `scripts/set-impl-backend.sh`**: shellcheck SC2295 / SC2005 を解消（内部 hygiene、挙動不変）。
+
+### Documentation
+
+- **Cursor ACP（Agent Client Protocol）= 不採用**を `docs/research/cursor-adapter-candidate.md` に判断と再評価条件付きで記録。ACP は双方向 streaming プロトコルで harness の whole-task 委譲には過剰。streaming UX / 非 Cursor IDE への埋込 / per-action permission gating のいずれかが要件化したら再評価。Cursor は `candidate` のまま。
+
+## [4.12.11] - 2026-05-28
+
+### Changed
+
+| Before | After |
+| --- | --- |
+| Cursor had no adapter candidate route. | Cursor has a `candidate` adapter skeleton, evidence doc, and static smoke. |
+| Cursor support claims were intentionally absent. | Cursor remains `candidate`; public support claims still wait for workflow smoke. |
+| Bootstrap and capability contracts did not describe Cursor. | `spec.md`, capability matrix, and bootstrap routing contract define Cursor boundaries. |
+| Breezing and model routing had no Cursor mapping. | Breezing docs and `scripts/model-routing.sh --host cursor` define candidate routing. |
+
+- **Phase 81 Cursor CCH Adapter (candidate)**: Added Cursor adapter evidence
+  (`docs/research/cursor-adapter-candidate.md`), contract updates in
+  `spec.md`, capability matrix, and bootstrap routing contract, adapter skeleton
+  (`.cursor-plugin/`, `.cursor/AGENTS.md`, agents, hooks, MCP config shape),
+  Breezing Cursor mapping docs, `scripts/model-routing.sh --host cursor`, advisor
+  model alignment to Opus 4.7, and `tests/test-cursor-adapter-candidate.sh`.
+  Cursor remains `candidate`; no public supported Cursor adapter claim until
+  workflow smoke passes.
+
+## [4.12.10] - 2026-05-28
+
+### Fixed
+
+- Updated `harness-release` so a release is only complete after the release work is merged to the default branch and tags/GitHub Release are created from that branch-reachable commit.
+
+## [4.12.9] - 2026-05-28
+
+### Changed
+
+- **Phase 80 upstream refresh (Claude Code 2.1.143-2.1.152 + Codex 0.131-0.134)**: Added dated snapshot and adoption plan, Claude `disallowed-tools` / `/reload-skills` / `MessageDisplay` policies, Codex `--profile` primary guidance, and integration tests. Upstream Auto mode consent removal does not change Harness `--auto-mode` or `autoMode.hard_deny` defaults.
+
 ## [4.12.8] - 2026-05-27
 
 ### Changed
@@ -4590,7 +4710,13 @@ Purpose: 自己修正ループ失敗時に「止まるだけ」から「次の�
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.8...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.13.2...HEAD
+[4.13.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.13.1...v4.13.2
+[4.13.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.13.0...v4.13.1
+[4.13.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.11...v4.13.0
+[4.12.11]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.10...v4.12.11
+[4.12.10]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.9...v4.12.10
+[4.12.9]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.8...v4.12.9
 [4.12.8]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.7...v4.12.8
 [4.12.7]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.6...v4.12.7
 [4.12.6]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.5...v4.12.6

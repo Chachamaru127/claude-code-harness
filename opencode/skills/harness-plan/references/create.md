@@ -45,6 +45,7 @@
 - 既存仕様: Plans.md、README、docs、CLAUDE.md、関連 skill、tests を確認する
 - 記憶: harness-mem / harness-recall / `.claude/agent-memory/` / `.claude/state/` が使える場合は project-scoped で確認し、車輪の再発明を避ける
 - 議論: Product / Architecture / Security / QA / Skeptic の視点で採用価値とリスクを分ける
+- 品質土台: source code changes を含む plan では `formatter_baseline` を確認し、lint / formatter が未設定なら setup task を先行させる
 - 実装プラン検証: product fit、security fit、works in practice を確認し、test / smoke / CI / review / release gate を DoD に落とす
 - 採点: Product Fit、Evidence Strength、User Value、Implementation Feasibility、Regression Safety、Strategic Leverage、Security Safety、Works In Practice を 5 点満点で見る
 
@@ -116,6 +117,37 @@ docs/spec/00-project-spec.md
 最初の spec は短くてよい。最低限、Purpose、Users And Workflows、Core Rules、Data And Contracts、Non-Goals、Open Decisions、Links を置く。
 
 詳細: `docs/plans/spec-ssot.md`
+
+## Step 4.6: lint / formatter baseline チェック
+
+source code changes を含む plan では、実装 task を作る前に lint / formatter baseline を確認する。
+これは「綺麗にする作業」ではなく、実装後に Yes/No で品質確認できる土台を先に作るための gate である。
+
+確認するもの:
+
+- JavaScript / TypeScript: `package.json` の `lint` / `format` scripts、ESLint / Prettier / Biome / Oxlint / dprint の config または dependency
+- Python: `pyproject.toml` の Ruff / Black / isort / mypy などの config
+- Go: `gofmt` / `go test` / `go vet` / lint 相当の CI command
+- Rust: `cargo fmt` / `cargo clippy` / `cargo test`
+- 既存 CI: `.github/workflows`、`scripts/ci/*`、`Makefile` などの品質 command
+
+出力には `formatter_baseline` を残す:
+
+```text
+formatter_baseline: configured | missing | not_applicable | unknown
+formatter_baseline_evidence: [見た file / command]
+formatter_baseline_action: none | add_setup_task | skip_with_reason | spike
+```
+
+未設定かつ source code changes を含む場合は、Plans.md の実装 task より前に setup task を追加する。
+setup task の DoD は「config / script / validation command が揃い、広範囲の一括 reformat は明示 scope 外にする」こと。
+planning では package install しない。導入作業は harness-work が setup task として実行する。
+
+スキップしてよい条件:
+
+- docs-only / markdown-only / changelog-only
+- 既存 lint / formatter / CI command があり、今回の変更で触る言語を十分に覆っている
+- consumer repo の制約で導入不可の場合。ただし `formatter_baseline_action: spike` または skip reason を残す
 
 ## Step 5: 機能リスト抽出
 

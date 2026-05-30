@@ -29,7 +29,6 @@ Lead
 | Worker | `claude-code-harness:worker` | 1..3 | Read, Write, Edit, Bash, Grep, Glob | 実装結果または `advisor-request.v1` |
 | Advisor | `claude-code-harness:advisor` | 0..1 | Read, Grep, Glob | `advisor-response.v1` |
 | Reviewer | `claude-code-harness:reviewer` | 1 | Read, Grep, Glob | `review-result.v1` |
-| Scaffolder | `claude-code-harness:scaffolder` | 0..1 | Read, Write, Edit, Bash, Grep, Glob | analyze/scaffold/update-state の結果 JSON |
 
 ## worker 数の決め方
 
@@ -41,6 +40,14 @@ Lead
 
 ここでいう「グループ」は、同じ commit にまとめても競合しない書き込み集合を指す。
 同じファイルを 2 worker に書かせる分割は禁止。
+
+### Opus 4.8 での spawn 明示
+
+Opus 4.8（host = Lead）はデフォルトで subagent を少なく spawn する傾向がある。
+そのため上の worker 数条件は **明示的な spawn トリガー**として扱う。
+
+- 独立した書き込みグループが 2 つあるのに「直接やった方が速い」で 1 worker に畳むのは、このケースでは誤り。グループ数 2 なら 2 worker、3 以上なら 3 worker を spawn する。
+- 逆に、1 ファイルで完結する作業や直列依存タスクは、subagent を増やさず Lead が直接進める。
 
 ## Worker stall 時の re-spawn (CC 2.1.113+)
 
@@ -159,6 +166,33 @@ Lead が `claude agents --add-dir / --settings / --mcp-config / --plugin-dir /
 dispatched background session を起動する場合は、`docs/agent-view-policy.md` の
 flag 利用条件を参照する。teammate spawn workflow (breezing skill / Agent tool) との
 分離が前提。
+
+## Cursor adapter mapping (candidate)
+
+Cursor host maps core roles to adapter surfaces without changing the core
+Breezing contract:
+
+| Core role | Cursor adapter surface | Parallelism |
+|---|---|---|
+| Lead | Parent agent session | Orchestrates only |
+| Worker | Task tool / `.cursor/agents/worker.md` | Parallel when file groups do not overlap |
+| Advisor | `.cursor/agents/advisor.md` on `advisor-request.v1` | On demand; max 3 per task |
+| Reviewer | `.cursor/agents/reviewer.md` (`readonly: true`) | Serial per worker result |
+| Scaffolder | Optional Task/subagent | On demand |
+
+Multitask / background agents may fan out Workers but **must not** parallelize
+Reviewer verdict or main-branch cherry-pick. That boundary is core-owned.
+
+Model resolution:
+
+```bash
+bash scripts/model-routing.sh --host cursor --role <role> --format json
+```
+
+Explicit subagent/Task `model` overrides routed defaults. Cursor multitask is a
+smoke target, not a public support or parity claim.
+
+Verification: `bash tests/test-cursor-adapter-candidate.sh`
 
 ## チームサイズ
 

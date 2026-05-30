@@ -41,7 +41,8 @@ bash scripts/review-weak-supervision-report.sh
 - `expect(true).toBe(true)`
 
 候補が見つかっただけで major にしない。
-diff 文脈で「出荷事故や誤設定に直結するか」を判定する。
+diff 文脈で「出荷事故や誤設定に直結するか」で severity を判定する。
+ただし minor と判定したものも黙って捨てず観察として記録する（下の Finding coverage 参照）。
 
 ## Step 3: eight review lenses
 
@@ -60,6 +61,17 @@ diff 文脈で「出荷事故や誤設定に直結するか」を判定する。
 
 TDD が要求されている task では、失敗するテストを先に確認した証跡を見る。
 ただし docs-only や refactor-only のように TDD が過剰な場合は、skip 理由を記録すればよい。
+
+## Finding coverage（Opus 4.8）
+
+finding 段階と verdict 段階を分ける。
+
+- finding 段階は **網羅優先**。確信が低い指摘や minor も含め、見つけた issue は全て severity と確信度つきで記録する（`review-result.v1` の `observations[]` / `recommendations[]` に残す）。
+- gate するのは verdict 段階だけ（critical / major で `REQUEST_CHANGES`、minor のみ `APPROVE`）。
+- 「出荷事故や誤設定に直結するか」は **severity の判定**であって、**記録するかの判定ではない**。minor と判断しても黙って捨てない。
+
+Opus 4.8 は「low-severity は報告するな」を忠実に守り、調査はしても報告を絞って recall を落とす癖がある。
+finding を絞るのは verdict 段階の責務であり、調査段階で findings を捨てない。
 
 ## Verdict
 

@@ -44,12 +44,15 @@ skills:
   "context": "プロジェクトコンテキスト",
   "files": ["変更してよいファイル"],
   "mode": "solo | codex | breezing",
+  "backend": "claude | codex | cursor",
   "contract_path": ".claude/state/contracts/<task>.sprint-contract.json",
   "spec_path": "docs/spec/00-project-spec.md|null",
   "spec_skip_reason": "docs-only|mechanical-change|existing-spec-sufficient|null",
   "validation_commands": ["npm test", "npm run build"]
 }
 ```
+
+`backend=claude` の場合はこの agent（worker.md）が直接実装する。`backend=codex` / `backend=cursor` の場合は Lead が companion script（`scripts/codex-companion.sh` / `scripts/cursor-companion.sh`）経由で委託し、この agent を spawn しない。そのため非 `claude` バックエンドでは self_review ゲートは N/A で、Lead の diff レビューが唯一の判定になる。
 
 ## 開始直後の確認
 
@@ -323,7 +326,7 @@ git switch -c harness-work/<task-id>
 | `no-existing-test-regression` | 既存テストが全て PASS、validate-plugin.sh が PASS | `bash tests/validate-plugin.sh` の最終行 |
 | `tdd-red-evidence-attached` | `tdd.enforce.enabled=true` の時だけ有効。TDD 必須タスクで、実装前に失敗テストを確認した証跡がある | `.claude/state/tdd-red-log/<task-id>.jsonl` の FAIL 記録、または literal failing test output |
 
-project ごとの追加 rule は `harness.toml` の `[worker.self_review]` で override する（scaffolder が雛形を生成）。
+project ごとの追加 rule は `harness.toml` の `[worker.self_review]` で override する（`harness-setup init` が雛形を生成）。
 
 ### Advisor 相談時
 

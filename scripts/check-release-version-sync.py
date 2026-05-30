@@ -16,6 +16,7 @@ CANONICAL_PRIORITY = [
     "package.json",
     ".claude-plugin/plugin.json",
     ".codex-plugin/plugin.json",
+    ".cursor-plugin/plugin.json",
 ]
 
 
@@ -182,6 +183,14 @@ def collect_surfaces(root: Path) -> list[Surface]:
         "/version",
         required_when_file_exists=True,
     )
+    add_json_version_surface(
+        surfaces,
+        root,
+        ".cursor-plugin/plugin.json",
+        ".cursor-plugin/plugin.json",
+        "/version",
+        required_when_file_exists=True,
+    )
 
     marketplace_path = root / ".claude-plugin/marketplace.json"
     if not marketplace_path.exists():
@@ -338,7 +347,7 @@ def build_report(root: Path) -> dict[str, Any]:
             {
                 "surface": "canonical",
                 "status": "missing",
-                "detail": "No canonical version found. Expected VERSION, package.json, .claude-plugin/plugin.json, or .codex-plugin/plugin.json.",
+                "detail": f"No canonical version found. Expected {', '.join(CANONICAL_PRIORITY)}.",
             }
         )
     else:

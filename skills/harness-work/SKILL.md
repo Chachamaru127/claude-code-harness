@@ -37,6 +37,7 @@ Harness の統合実行スキル。
 | `/harness-work 3` | solo | タスク3だけ即実行 |
 | `/harness-work --parallel 5` | parallel | 5ワーカーで並列実行（強制） |
 | `/harness-work --codex` | codex | Codex CLI に委託（明示時のみ） |
+| Cursor host (adapter candidate) | cursor | Task/subagent routing via `.cursor/AGENTS.md`; not auto-selected |
 | `/harness-work --breezing` | breezing | チーム実行を強制 |
 | `/harness-work 3 --plan roadmap` | solo | named Plans の `roadmap` からタスク3を実行 |
 
@@ -60,6 +61,91 @@ Harness の統合実行スキル。
 2. **`--codex` は明示時のみ発動**。Codex CLI が未インストールの環境があるため、自動選択しない
 3. `--codex` は他モードと組み合わせ可能: `--codex --breezing` → Codex + Breezing
 
+## Execution Backend Selection（実装バックエンド選択）
+
+バックエンド（どのランタイムが**実装するか**）は、実行モード（トポロジー: solo / parallel / breezing）と直交する。
+実行モードが「何ワーカーで・どう分割して回すか」を決めるのに対し、バックエンドは「実装の手を誰が動かすか」を決める。
+
+| backend | 実装の担い手 | 委託コマンド |
+|---------|------------|------------|
+| `claude`（既定） | Task subagent（`agents/worker.md`） | Agent tool で worker を spawn |
+| `codex` | Codex CLI | `bash "${HARNESS_PLUGIN_ROOT}/scripts/codex-companion.sh" task --write "<prompt>"` |
+| `cursor` | cursor-agent（model `composer-2.5-fast`） | `bash "${HARNESS_PLUGIN_ROOT}/scripts/cursor-companion.sh" task --write --workspace <worktree> "<prompt>"` |
+
+### 解決手順
+
+run 開始時に 1 回だけ解決する:
+
+```bash
+bash "${HARNESS_PLUGIN_ROOT}/scripts/resolve-impl-backend.sh"
+```
+
+precedence（高い順）: `--backend <v>` / `--cursor` / `--codex` フラグ > `HARNESS_IMPL_BACKEND` 環境変数 > プロジェクト `env.local` の同名行 > ユーザー `~/.config/claude-harness/impl-backend.env` の同名行 > 既定値 `claude`。プロジェクト設定はユーザースコープを上書きする。
+明示フラグ（`--backend` / `--cursor` / `--codex`）は env / file / default を常に上書きする。
+
+### role-scoped 制約
+
+バックエンドは **role-scoped**。解決済みバックエンドを使うのは実装（worker）ロールだけ。
+Reviewer と Advisor の両ロールは常に brain（`--host claude`、Opus）に固定する。
+Reviewer を cursor / codex バックエンドに routing しない（実装したバックエンドが自分の出力をレビューしてはならない）。
+
+```bash
+# 実装ロールだけ解決済み backend に従う（例: backend=cursor なら composer-2.5-fast を解決）
+bash "${HARNESS_PLUGIN_ROOT}/scripts/model-routing.sh" --host cursor --role worker --field model
+# review / advisor は常に claude（Opus）固定
+bash "${HARNESS_PLUGIN_ROOT}/scripts/model-routing.sh" --host claude --role reviewer --field model
+bash "${HARNESS_PLUGIN_ROOT}/scripts/model-routing.sh" --host claude --role advisor --field model
+```
+
+> モデル名の正本は `model-routing.sh` 側。本ドキュメント中の `composer-2.5-fast` は参照値であり、実際の解決は上記コマンドに従う（drift 防止）。
+
+### 非 `claude` バックエンドのトポロジー（Worker 介在なし）
+
+backend が `codex` または `cursor` の場合、**Lead は Worker agent (`claude-code-harness:worker`) を spawn しない**。
+代わりに Lead 自身が `cursor-companion.sh` / `codex-companion.sh` を直接呼ぶ。
+Worker 層の介在は backend=`claude` のときだけ。
+
+配線:
+
+| backend | 経路 |
+|---------|------|
+| `claude`（既定） | Lead → Worker (`claude-code-harness:worker` agent) → … → Lead review → cherry-pick |
+| `codex` | Lead → `codex-companion.sh task --write` → Lead review → cherry-pick |
+| `cursor` | Lead → `cursor-companion.sh task --write --workspace <isolated-wt>` → Lead review → cherry-pick |
+
+非 claude backend で Worker を間に挟むと、Lead → Worker → companion → composer/codex と二段委譲になり、Worker の存在意義（agent 契約による self_review 5 件のゲート）が空回りする（非 claude では `worker-report.v1` も `self_review` も生成されないため）。Lead は Worker をスキップして companion を直接呼ぶ。
+
+### 非 `claude` バックエンドの self_review ゲート
+
+backend が `codex` または `cursor` の場合、`worker-report.v1` も `self_review` 配列も生成されない。
+そのため Lead は self_review ゲートを**スキップ**し、Lead の diff レビューを唯一の品質ゲートとする（既存の codex path と同じ扱い）。
+
+### cursor バックエンドの banner（委託前に必須）
+
+backend が `cursor` のとき、Lead は委託前に次の 1 行 banner を必ず出力する:
+
+```
+⚠️ cursor backend: model=composer-2.5-fast / R01-R13 ガードレールは cursor-agent 内部に適用されない / 出力は Lead レビューまで untrusted
+```
+
+cursor の write 委託は専用 `.git` を持つ worktree 内で実行し、Lead が main へ cherry-pick する（cherry-pick 経路で R01-R13 が適用される）。
+ガバナンス詳細は `.claude/rules/cursor-cli-only.md` を参照。
+
+### Lead の cherry-pick 前ゲート（contract grep を必須）
+
+非 claude backend (cursor / codex) の出力を main にとり込む前に、Lead は **目視 diff + contract grep の二段ゲート**を必ず通す。目視 diff だけで APPROVE しない。
+
+| ゲート | コマンド | 検知できるもの |
+|--------|----------|----------------|
+| diff 目視 | `git show <sha>` | 変更が意図どおりか・他ファイル touch なしか・support tier 表記不変か |
+| contract grep | `bash tests/test-support-claim-wording.sh` | 公開 support 表記の破壊 |
+| contract grep | `bash scripts/ci/check-consistency.sh` | i18n / locale / mirror / capability matrix の固定文字列契約破壊 |
+| contract grep | `bash tests/validate-plugin.sh` | plugin 配布契約・hook 配線 |
+
+**全 PASS のときだけ cherry-pick**。1 件でも fail なら revert または composer に再委託（同一文字列契約を保つよう明示）。
+
+理由: docs / README / locale / capability-matrix / spec.md には grep で監視される **固定文字列契約**がある (例: `README_ja.md` の `5動詞ワークフロー`)。composer は表面的な言語的重複を機械的に削減する傾向があり、目視 diff では「綺麗な dedup」に見えても固定句を破壊しうる。
+
 ## オプション
 
 | オプション | 説明 | デフォルト |
@@ -69,6 +155,8 @@ Harness の統合実行スキル。
 | `--parallel N` | 並列ワーカー数 | auto |
 | `--sequential` | 直列実行強制 | - |
 | `--codex` | Codex CLI で実装委託（明示時のみ、自動選択しない） | false |
+| `--backend <claude\|codex\|cursor>` | 明示バックエンド選択（worker ロールのみ適用、precedence 最上位） | claude |
+| `--cursor` | cursor backend（`--codex` と同様、明示時のみ。cursor-agent 未インストール環境があるため自動選択しない） | false |
 | `--plan NAME` | `plans/manifest.json` の named plan を使う | active/default |
 | `--no-commit` | 自動コミット抑制 | false |
 | `--resume <id\|latest>` | 前回セッション再開。長く空いた後は `/recap` 併用を推奨 | - |
@@ -122,18 +210,21 @@ Harness の統合実行スキル。
 - `/harness-work all` → 全タスク、自動モード選択
 - `/harness-work 3-6` → 4件なので Breezing 自動選択
 
-## Effort レベル制御（v2.1.68+, v2.1.72, v2.1.111）
+## Effort レベル制御（Opus 4.8 / v2.1.111+）
 
-Claude Code v2.1.68 で Opus 4.6 は **medium effort** (`◐`) がデフォルト。
-v2.1.72 で `max` レベルが廃止され、3段階 `low(○)/medium(◐)/high(●)` に簡素化。
-`/effort auto` でデフォルトにリセット可能。
-複雑なタスクには `ultrathink` キーワードで high effort (`●`) を有効化する。
-CC 2.1.111 では Opus 4.7 向けに `xhigh` が追加された。
-必要なら literal に `/effort xhigh` を上乗せしてよい。
+effort はモデルの推論強度を選ぶ正式なノブ。`low(○)/medium(◐)/high(●)/xhigh` の 4 段階で、
+`/effort auto` でデフォルトにリセットできる（`max` は v2.1.72 で廃止、`xhigh` が後継）。
+
+Opus 4.8 では thinking は既定 off で、effort が推論深度の主レバー（過去のどの Opus より effort の影響が大きい）。
+「浅い推論」を観測したら prompt で回避せず effort を上げる。
+そのため複雑タスクの強化は **free-text marker（旧 `ultrathink`）を spawn prompt に注入する方式を廃止**し、
+複雑度スコアから **Worker spawn の effort tier を選ぶ**方式に統一する。
+これは `docs/model-routing-policy.md`（effort を free-text から推測しない）と
+`.claude/rules/opus-4-7-prompt-audit.md` 合格条件 5（`xhigh` は呼び出し側が選ぶ）と整合する。
 
 ### 多要素スコアリング
 
-タスク着手時に以下のスコアを合算し、**閾値 3 以上**で ultrathink を注入:
+タスク着手時に以下のスコアを合算する。
 
 | 要素 | 条件 | スコア |
 |------|------|--------|
@@ -141,12 +232,24 @@ CC 2.1.111 では Opus 4.7 向けに `xhigh` が追加された。
 | ディレクトリ | core/, guardrails/, security/ を含む | +1 |
 | キーワード | architecture, security, design, migration を含む | +1 |
 | 失敗履歴 | agent memory に同タスクの失敗記録あり | +2 |
-| 明示指定 | PM テンプレートに ultrathink 記載あり | +3（自動採用） |
+| 明示指定 | PM テンプレートに `effort: high` / `effort: xhigh`（旧 `ultrathink` も互換受理）記載あり | +3（自動採用） |
 
-### 注入方法
+### effort tier の決め方（注入しない）
 
-スコア ≥ 3 の場合、Worker spawn prompt の冒頭に `ultrathink` を追加。
-breezing モードでも同じロジックが適用される（harness-work が一本化して管理）。
+スコアから effort tier を **escalation signal** として決める（`ultrathink` 等の marker 文字列を spawn prompt に **書かない**）。
+適用 lever は次の 2 つだけ:
+
+- **session `/effort`**: 複雑タスクのバッチに入る前に host が `/effort high` / `/effort xhigh` を設定する（session 単位で効く確実な lever）。
+- **worker frontmatter**: `agents/worker.md` の `effort`（既定 `medium`）が floor。CC の Agent / Task spawn API は per-spawn の effort 指定を公開しないため、worker 1 体ごとに effort を上げる機構はない。スコアは `worker-report.v1` の `task_complexity_note` に記録し、Lead が session effort 引き上げの判断材料にする。
+
+| スコア | code-risk（core/guardrails/security/architecture/migration を含む） | effort tier |
+|--------|-----------------------------------|-------------|
+| 0-2 | 不問 | `medium`（Worker frontmatter 既定のまま） |
+| ≥ 3 | なし | `high` |
+| ≥ 3 | あり | `xhigh` |
+
+breezing モードでも同じロジックを適用する（harness-work が一本化して管理）。
+Worker は Sonnet 4.6 のため `xhigh` は実効 `high` にダウングレードされるが、tier 引き上げ自体は有効（`docs/effort-level-policy.md`）。
 
 ## 実行モード詳細
 
@@ -244,12 +347,39 @@ companion は App Server Protocol 経由で Codex と通信し、
 Job 管理・thread resume・構造化出力を提供する。
 結果を検証し、品質基準を満たさない場合は自力で修正。
 
+### Cursor モード（adapter candidate、自動選択しない）
+
+Cursor host では `.cursor/AGENTS.md` と `.cursor-plugin/plugin.json` が
+bootstrap route。Cursor は `candidate` のまま — supported claim は禁止。
+
+- **Solo / Parallel**: Task tool または `.cursor/agents/worker.md` subagent
+- **Breezing**: Worker 並列は non-overlapping file groups のみ;
+  Reviewer / cherry-pick / Advisor は core どおり直列
+- **Multitask / background agents**: smoke target のみ。Claude Agent Teams parity
+  を主張しない
+
+Model routing:
+
+```bash
+bash scripts/model-routing.sh --host cursor --role worker --format json
+```
+
+Explicit Task/subagent `model` が routed default より優先。
+
+検証:
+
+```bash
+bash tests/test-cursor-adapter-candidate.sh
+```
+
 ### Breezing モード（4 件以上で自動選択 / `--breezing` で強制）
 
 Lead / Worker / Advisor / Reviewer の役割分離でチーム実行する。
 Codex では `spawn_agent`, `wait`, `send_input`, `resume_agent`, `close_agent`
 を使った native subagent orchestration を前提にし、
 古い TeamCreate / TaskCreate ベースの説明を採らない。
+Cursor では Task/subagent/background agents へ mapping するが、
+review/cherry-pick の直列責務は core 側に残す（adapter smoke target）。
 
 **権限ポリシー**:
 - 現行の shipped default は `bypassPermissions`
@@ -269,7 +399,7 @@ Lead (this agent)
 **Phase A: Pre-delegate（準備）**:
 1. Plans.md を読み込み、対象タスクを特定
 2. 依存グラフを解析し、実行順序を決定（Depends カラム）
-3. 各タスクの effort スコアリング（ultrathink 注入判定）
+3. 各タスクの effort スコアリング（effort tier 判定 — high/xhigh）
 4. `node "${HARNESS_PLUGIN_ROOT}/scripts/generate-sprint-contract.js"` で `sprint-contract.json` を生成
 5. `bash "${HARNESS_PLUGIN_ROOT}/scripts/enrich-sprint-contract.sh"` で Reviewer 観点を加え、`bash "${HARNESS_PLUGIN_ROOT}/scripts/ensure-sprint-contract-ready.sh"` で未承認なら停止
 

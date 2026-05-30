@@ -75,7 +75,7 @@ Cognitive-load 3 surface 詳細: [docs/cognitive-load-surfaces.md](docs/cognitiv
 
 ## Development Flow
 
-0. **When editing skills/hooks**: run `/reload-plugins` to refresh runtime cache immediately
+0. **When editing skills/hooks**: run `/reload-skills` after skill-only changes, or `/reload-plugins` after plugin manifest/hook changes, to refresh runtime cache immediately
 1. **Plan**: Use `/plan-with-agent` to add tasks to Plans.md
 2. **Implement**: `/work` (Claude implements) or `/breezing` (team full-run). Both support `--codex`
 3. **Review**: Runs automatically (manual: `/harness-review`)
@@ -122,6 +122,8 @@ Details: [docs/CLAUDE-commands.md](docs/CLAUDE-commands.md)
 | `mcp__codex__*` | deny | Codex MCP 直接使用の防止 |
 
 変更が必要な場合はユーザーに手動操作を依頼すること。
+
+- Cursor 実装バックエンド利用時のルール: [.claude/rules/cursor-cli-only.md](.claude/rules/cursor-cli-only.md)
 
 外部 API への sandbox allowlist 設定 (Firecrawl / web スクレイプ等): [docs/sandbox-allowlist-recipe.md](docs/sandbox-allowlist-recipe.md) — `~/.claude/settings.json` への patch 手順を SSOT 化。`templates/sandbox-settings.json.template` と数値・項目を同期。
 

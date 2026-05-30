@@ -10,9 +10,11 @@
 | Path | Status | Why it exists | Enforcement signal |
 |------|--------|---------------|--------------------|
 | `.claude-plugin/` | Distribution-included | Claude Code plugin manifest / hooks / settings | `claude plugin validate`, `test-distribution-archive.sh` |
+| `.cursor-plugin/` | Source-repo adapter only | Cursor adapter candidate manifest; not Claude plugin archive payload | `.gitattributes export-ignore`, `test-distribution-archive.sh` |
+| `.codex-plugin/` | Source-repo adapter only | Codex adapter manifest; not Claude plugin archive payload | `.gitattributes export-ignore`, `test-distribution-archive.sh` |
 | `bin/harness*` | Distribution-included | Go-native guardrail / lifecycle runtime | `validate-plugin`, `go test`, archive required entries |
 | `skills/` | Distribution-included | Claude Code 用 primary skill surface | `validate-plugin`, mirror sync checks |
-| `agents/` | Distribution-included | worker / reviewer / scaffolder / advisor | `validate-plugin`, agent frontmatter tests |
+| `agents/` | Distribution-included | worker / reviewer / advisor | `validate-plugin`, agent frontmatter tests |
 | `hooks/`, `monitors/` | Distribution-included | 実行時 hook / monitor definitions | `hooks/hooks.json`, `validate-plugin` |
 | `output-styles/` | Distribution-included | Claude Code output style | `plugin.json`, archive required entries |
 | `templates/`, `workflows/` | Distribution-included | project init / rules / workflow templates | `check-consistency.sh`, template registry checks |
@@ -32,6 +34,7 @@
 
 - `commands/` は削除済み扱いにしない。現在は **Compatibility-retained**。
 - `codex/` / `opencode/` は repo 上の mirror として検証対象だが、Claude Code plugin archive からは除外する。
+- `.codex-plugin/` / `.cursor-plugin/` は adapter metadata であり、Claude Code plugin archive payload ではない。host-specific install package は `scripts/build-host-plugin-dist.sh` で生成する。
 - `.claude/` / `.cursor/` / `CLAUDE.md` / `AGENTS.md` / `Plans.md` は repo-local context であり、plugin payload ではない。
 - private/dev-only skills は `skills/` 配下に置かない。`.gitignore` されていても `claude --plugin-dir .` の local inventory には露出するため、`.private/skills/` など public plugin surface の外へ退避する。
 - `mcp-server/` は削除済み扱いにしない。現在は **Development-only and distribution-excluded**。

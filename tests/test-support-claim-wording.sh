@@ -11,6 +11,7 @@ PUBLIC_FILES=(
   "${ROOT_DIR}/docs/onboarding/skill-trigger-acceptance.md"
   "${ROOT_DIR}/docs/CURSOR_INTEGRATION.md"
   "${ROOT_DIR}/docs/research/cursor-adapter-candidate.md"
+  "${ROOT_DIR}/.cursor-plugin/plugin.json"
   "${ROOT_DIR}/docs/research/github-copilot-cli-adapter.md"
   "${ROOT_DIR}/docs/research/antigravity-cli-adapter.md"
 )

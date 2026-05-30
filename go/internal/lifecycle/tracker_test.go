@@ -293,7 +293,7 @@ func TestHandleStart_AgentTypeStoredCorrectly(t *testing.T) {
 	}{
 		{"t-worker", "worker"},
 		{"t-reviewer", "reviewer"},
-		{"t-scaffolder", "scaffolder"},
+		{"t-advisor", "advisor"},
 	} {
 		input := makeInput(tc.id, tc.agentTyp, "sess-type")
 		if err := tracker.HandleStart(input); err != nil {

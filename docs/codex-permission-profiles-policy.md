@@ -1,9 +1,10 @@
 # Codex Permission Profiles Policy
 
-Last updated: 2026-05-03
+Last updated: 2026-05-27
 
 This document records how Harness treats Codex `0.125.0` and `0.128.0`
-permission-profile changes in the Codex package.
+permission-profile changes through `0.134.0`, with `--profile` as the primary
+selector as of 0.134.0.
 
 ## In One Sentence
 
@@ -20,8 +21,7 @@ unlabeled master key.
 
 ## Official References
 
-- OpenAI Codex `rust-v0.125.0` release: <https://github.com/openai/codex/releases/tag/rust-v0.125.0>
-- OpenAI Codex `rust-v0.128.0` release: <https://github.com/openai/codex/releases/tag/rust-v0.128.0>
+- OpenAI Codex `rust-v0.134.0` release: <https://github.com/openai/codex/releases/tag/rust-v0.134.0>
 - Codex config reference: <https://developers.openai.com/codex/config-reference>
 
 ## Scope
@@ -37,14 +37,16 @@ This policy covers these upstream items:
 | Rollout tracing | Keep Codex rollout trace separate from Harness AgentTrace until a mapper prevents double counting. |
 | `codex update` | Prefer the built-in update command when present; keep package-manager update only as fallback. |
 | `--full-auto` deprecation | Do not make it the default in new docs or new wrappers. Existing legacy wrapper usage needs a separate behavior migration test before changing runtime flags. |
+| `--profile` primary (0.134.0) | Treat `--profile` as the primary selector in setup/companion/docs. Legacy profile v1 selectors are not recommended in new Harness docs. |
+| `on-failure` approval mode | Do not recommend `on-failure` in new Harness docs or shipped config. Prefer explicit `--ask-for-approval on-request` or profile-driven approval unless operator docs require otherwise. |
 
 ## Verified Local CLI Surface
 
-On 2026-05-03 this workspace had `codex-cli 0.128.0`.
+On 2026-05-27 this workspace had `codex-cli 0.134.0`.
 Local help confirmed:
 
 - `codex update`
-- `codex --profile <CONFIG_PROFILE>`
+- `codex --profile <CONFIG_PROFILE>` (primary selector as of 0.134.0)
 - `codex exec --profile <CONFIG_PROFILE>`
 - `codex --sandbox read-only|workspace-write|danger-full-access`
 - `codex exec --sandbox read-only|workspace-write|danger-full-access`

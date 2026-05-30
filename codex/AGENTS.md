@@ -16,6 +16,8 @@
 - Codex は `${CODEX_HOME:-~/.codex}/skills/<skill-name>/SKILL.md`（ユーザーベース）と `.codex/skills/...`（プロジェクト上書き）を読み込み、`$skill-name` で明示呼び出しする
 - Codex は `AGENTS.override.md` を優先し、次に `AGENTS.md`、必要なら設定された fallback 名を参照する
 - Hooks は未対応のため、暫定ガードは `.codex/rules/*.rules` の `prefix_rule()` で行う
+- **Install (0.134.0+)**: 公式 installer は GitHub release の `install.sh` (curl) と `install.ps1` (PowerShell)。Harness `setup-codex.sh` は skill/config コピーのみで CLI 本体はインストールしない
+- **Profiles (0.134.0+)**: `--profile` が primary selector。legacy profile v1 config は拒否される。詳細: `docs/codex-permission-profiles-policy.md`
 
 ## Language
 

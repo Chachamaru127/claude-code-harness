@@ -24,7 +24,37 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PRIMARY_ENV_GUARD="${SCRIPT_DIR}/codex-primary-environment-guard.sh"
+MODEL_ROUTER="${SCRIPT_DIR}/model-routing.sh"
 EXECUTION_ROOT="${HARNESS_CODEX_EXECUTION_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null || pwd)}"
+
+is_valid_codex_effort() {
+  case "${1:-}" in
+    none|minimal|low|medium|high|xhigh) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+resolve_codex_model_for_task() {
+  if [ "${HARNESS_DISABLE_MODEL_ROUTING:-0}" = "1" ]; then
+    return 0
+  fi
+  if [ ! -x "${MODEL_ROUTER}" ]; then
+    return 0
+  fi
+  local tier
+  tier="${CODEX_MODEL_TIER:-${HARNESS_MODEL_TIER:-standard}}"
+  bash "${MODEL_ROUTER}" --host codex --tier "${tier}" --field model 2>/dev/null || true
+}
+
+args_have_codex_model() {
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --model|-m|--model=*) return 0 ;;
+    esac
+    shift || true
+  done
+  return 1
+}
 
 extract_target_cwd() {
   shift || true
@@ -97,6 +127,7 @@ run_structured_task_exec() {
   local passthrough=()
   local saw_write=0
   local saw_sandbox=0
+  local saw_model=0
   local current=""
 
   # Codex 0.123.0+ inherits root-level shared flags for `codex exec`.
@@ -129,16 +160,25 @@ run_structured_task_exec() {
         ;;
       --effort)
         # codex exec does not accept the companion-only --effort flag.
-        # Structured task mode goes through codex exec directly, so drop it
-        # here while preserving support for the Node companion path below.
+        # Structured task mode goes through codex exec directly, so translate
+        # it into the official config override instead of silently dropping it.
+        if is_valid_codex_effort "${2:-}"; then
+          passthrough+=(-c "model_reasoning_effort=\"${2}\"")
+        fi
         shift
         shift || true
         ;;
       --effort=*)
-        # See --effort above.
+        local effort_value="${current#*=}"
+        if is_valid_codex_effort "${effort_value}"; then
+          passthrough+=(-c "model_reasoning_effort=\"${effort_value}\"")
+        fi
         shift
         ;;
       *)
+        case "$current" in
+          --model|-m|--model=*) saw_model=1 ;;
+        esac
         passthrough+=("${current}")
         shift
         if [ "${current}" = "--model" ] || [ "${current}" = "-m" ] || \
@@ -160,7 +200,26 @@ run_structured_task_exec() {
     passthrough+=(--sandbox read-only)
   fi
 
+  if [ "${saw_model}" -eq 0 ]; then
+    local routed_model
+    routed_model="$(resolve_codex_model_for_task)"
+    if [ -n "${routed_model}" ]; then
+      passthrough+=(--model "${routed_model}")
+    fi
+  fi
+
   exec codex exec "${passthrough[@]}"
+}
+
+build_codex_task_model_args() {
+  if args_have_codex_model "$@"; then
+    return 0
+  fi
+  local routed_model
+  routed_model="$(resolve_codex_model_for_task)"
+  if [ -n "${routed_model}" ]; then
+    printf '%s\n' "--model" "${routed_model}"
+  fi
 }
 
 # 公式プラグインの companion を検索
@@ -259,11 +318,18 @@ if [ "$SUBCOMMAND" = "task" ]; then
         STDIN_CONTENT=$(cat)
         if [ -n "$STDIN_CONTENT" ]; then
           COMPUTED_EFFORT=$(echo "$STDIN_CONTENT" | bash "$EFFORT_SCRIPT" 2>/dev/null || true)
+          if ! is_valid_codex_effort "${COMPUTED_EFFORT:-}"; then
+            COMPUTED_EFFORT="medium"
+          fi
+          MODEL_ARGS=()
+          while IFS= read -r arg; do
+            MODEL_ARGS+=("$arg")
+          done < <(build_codex_task_model_args "$@")
           # stdin を再セットアップ（here-string 経由で companion に渡す）
           if [ "${STRUCTURED_TASK_EXEC}" -eq 1 ]; then
-            run_structured_task_exec "$@" --effort "${COMPUTED_EFFORT:-medium}" <<< "$STDIN_CONTENT"
+            run_structured_task_exec "$@" "${MODEL_ARGS[@]}" --effort "${COMPUTED_EFFORT}" <<< "$STDIN_CONTENT"
           else
-            exec node "$COMPANION" "$@" --effort "${COMPUTED_EFFORT:-medium}" <<< "$STDIN_CONTENT"
+            exec node "$COMPANION" "$@" "${MODEL_ARGS[@]}" --effort "${COMPUTED_EFFORT}" <<< "$STDIN_CONTENT"
           fi
         fi
         # stdin が空の場合（</dev/null 等）はフォールスルーして通常フローへ
@@ -275,22 +341,33 @@ if [ "$SUBCOMMAND" = "task" ]; then
       COMPUTED_EFFORT="${CODEX_EFFORT:-medium}"
     fi
 
-    # companion がサポートする effort レベルのみ渡す
-    case "$COMPUTED_EFFORT" in
-      none|minimal|low|medium|high|xhigh) ;;
-      *) COMPUTED_EFFORT="medium" ;;
-    esac
+    if ! is_valid_codex_effort "$COMPUTED_EFFORT"; then
+      COMPUTED_EFFORT="medium"
+    fi
+
+    MODEL_ARGS=()
+    while IFS= read -r arg; do
+      MODEL_ARGS+=("$arg")
+    done < <(build_codex_task_model_args "$@")
 
     if [ "${STRUCTURED_TASK_EXEC}" -eq 1 ]; then
-      run_structured_task_exec "$@" --effort "$COMPUTED_EFFORT"
+      run_structured_task_exec "$@" "${MODEL_ARGS[@]}" --effort "$COMPUTED_EFFORT"
     else
-      exec node "$COMPANION" "$@" --effort "$COMPUTED_EFFORT"
+      exec node "$COMPANION" "$@" "${MODEL_ARGS[@]}" --effort "$COMPUTED_EFFORT"
     fi
   fi
 fi
 
 if [ "${STRUCTURED_TASK_EXEC}" -eq 1 ]; then
   run_structured_task_exec "$@"
+fi
+
+if [ "$SUBCOMMAND" = "task" ]; then
+  MODEL_ARGS=()
+  while IFS= read -r arg; do
+    MODEL_ARGS+=("$arg")
+  done < <(build_codex_task_model_args "$@")
+  exec node "$COMPANION" "$@" "${MODEL_ARGS[@]}"
 fi
 
 exec node "$COMPANION" "$@"
