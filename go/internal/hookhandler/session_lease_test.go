@@ -424,6 +424,134 @@ func TestLease_Worktree(t *testing.T) {
 	}
 }
 
+// TestLeaseReclaim_ConcurrentSlowPath is the Phase 85.1.4 adversarial-review
+// regression for the slow-path race the Workflow surfaced. Sixteen goroutines
+// all see the SAME stale lock and all pass the isStale AND condition. The
+// pre-fix reclaimLock used "tmp + rename" and would let two callers both
+// succeed — the test pins the new "unlink + O_CREAT|O_EXCL" guarantee that
+// exactly ONE wins the reclaim and N-1 receive StatusHeldByOther.
+func TestLeaseReclaim_ConcurrentSlowPath(t *testing.T) {
+	const N = 16
+	commonDir, repoRoot := fakeGitCommonDir(t)
+	store := filepath.Join(repoRoot, ".claude", "sessions", "leases")
+	if err := os.MkdirAll(store, leaseDirMode); err != nil {
+		t.Fatal(err)
+	}
+	path := "go/contested-reclaim.go"
+	lockPath := filepath.Join(store, leaseKey(path)+".lock")
+
+	// Seed the slow path: a stale lock from a session that is NOT in any
+	// caller's LiveSessions set. Every goroutine will pass the AND
+	// condition and attempt reclaim simultaneously.
+	deadHolder := LeaseHolder{
+		SessionID:        "sess-dead",
+		HolderPID:        99999,
+		AcquiredAt:       time.Now().Add(-2 * defaultLeaseTTL).Unix(),
+		RepoRelativePath: path,
+	}
+	raw, _ := json.MarshalIndent(deadHolder, "", "  ")
+	if err := os.WriteFile(lockPath, raw, lockFileMode); err != nil {
+		t.Fatal(err)
+	}
+
+	var acquired int64
+	var heldByOther int64
+	var wg sync.WaitGroup
+	start := make(chan struct{})
+	for i := 0; i < N; i++ {
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			cfg := LeaseConfig{
+				RepoRoot:     repoRoot,
+				GitCommonDir: commonDir,
+				SessionID:    fmt.Sprintf("sess-recl-%d", idx),
+				LiveSessions: map[string]struct{}{},
+			}
+			for j := 0; j < N; j++ {
+				cfg.LiveSessions[fmt.Sprintf("sess-recl-%d", j)] = struct{}{}
+			}
+			// sess-dead intentionally absent — every caller sees the
+			// AND condition (TTL expired AND holder not alive) as true.
+			<-start
+			res, err := AcquireLease(path, cfg)
+			if err != nil {
+				t.Errorf("goroutine %d: unexpected error: %v", idx, err)
+				return
+			}
+			switch res.Status {
+			case StatusAcquired:
+				atomic.AddInt64(&acquired, 1)
+			case StatusHeldByOther:
+				atomic.AddInt64(&heldByOther, 1)
+			}
+		}(i)
+	}
+	close(start)
+	wg.Wait()
+
+	if got := atomic.LoadInt64(&acquired); got != 1 {
+		t.Errorf("slow-path reclaim must yield exactly 1 Acquired, got %d (heldByOther=%d)",
+			got, atomic.LoadInt64(&heldByOther))
+	}
+	if got := atomic.LoadInt64(&heldByOther); got != N-1 {
+		t.Errorf("slow-path reclaim must yield N-1 HeldByOther, got %d", got)
+	}
+}
+
+// TestLeaseStaleness_EmptyActiveJsonFallsBack pins the adversarial-review
+// finding that an empty `{}` active.json must NOT collapse every session
+// id into the "dead" half of the AND condition. The fixed
+// LoadLiveSessionsFromActiveJSON returns nil for empty input, which makes
+// isStale fall back to TTL-only — the safer half of the AND.
+func TestLeaseStaleness_EmptyActiveJsonFallsBack(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HARNESS_PROJECT_ROOT", dir)
+
+	sessionsDir := filepath.Join(dir, ".claude", "sessions")
+	if err := os.MkdirAll(sessionsDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(sessionsDir, "active.json"), []byte("{}"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	live := LoadLiveSessionsFromActiveJSON(dir)
+	if live != nil {
+		t.Errorf("empty active.json must return nil to disable the liveness half of the AND, got %v", live)
+	}
+}
+
+// TestLeaseLock_FileMode pins the Phase 85.1.4 Security floor: lock files
+// and the leases directory must be owner-only (0o600 / 0o700) so peer unix
+// users cannot enumerate who-edits-what on a shared host. A future refactor
+// that re-introduces 0o644/0o755 will fail this test.
+func TestLeaseLock_FileMode(t *testing.T) {
+	cfg, repoRoot := newLeaseCfg(t, "sess-mode")
+	if _, err := AcquireLease("api/perm.go", cfg); err != nil {
+		t.Fatalf("acquire: %v", err)
+	}
+	store := filepath.Join(repoRoot, ".claude", "sessions", "leases")
+	storeInfo, err := os.Stat(store)
+	if err != nil {
+		t.Fatalf("stat store: %v", err)
+	}
+	if mode := storeInfo.Mode().Perm(); mode != leaseDirMode {
+		t.Errorf("leases/ dir mode = %o, want %o", mode, leaseDirMode)
+	}
+	entries, _ := os.ReadDir(store)
+	if len(entries) != 1 {
+		t.Fatalf("expected 1 lock entry, got %d", len(entries))
+	}
+	lockInfo, err := os.Stat(filepath.Join(store, entries[0].Name()))
+	if err != nil {
+		t.Fatalf("stat lock: %v", err)
+	}
+	if mode := lockInfo.Mode().Perm(); mode != lockFileMode {
+		t.Errorf("lock file mode = %o, want %o", mode, lockFileMode)
+	}
+}
+
 // TestLoadLiveSessionsFromActiveJSON is the integration glue: it confirms
 // that the helper that bridges register and lease actually returns the
 // session ids written by HandleSessionRegister, so a future change to the

@@ -14,16 +14,35 @@ import (
 )
 
 // defaultLeaseTTL is the maximum age a lease entry may have before the
-// staleness logic considers reclaim. A 30-minute default is long enough to
-// cover the heaviest Worker edit cycle while short enough that a crashed
-// session never blocks a sibling forever (combined with the session-id
-// liveness check, the practical worst case is 30 min after the session id
-// drops out of active.json).
-const defaultLeaseTTL = 30 * time.Minute
+// staleness logic considers reclaim. 60 minutes is the floor where a heavy
+// breezing Worker edit-test cycle on large files still completes inside the
+// window. Reclaim still requires the AND with the liveness check, so a
+// genuinely live session 60 min into an edit will not be evicted — the
+// staleness window only fires when active.json also confirms the holder is
+// gone.
+const defaultLeaseTTL = 60 * time.Minute
+
+// lockFileMode is the unix mode bits of a per-file lock. 0o600 keeps the
+// lock contents (which include the holder PID and the repo-relative path of
+// the file being edited) readable only by the owning user. The Phase 85
+// Security review surfaced that 0o644 would leak who-edits-what to other
+// users on a shared host, so 0o600 is the security floor.
+const lockFileMode os.FileMode = 0o600
+
+// leaseDirMode is the unix mode bits of the leases/ directory itself. 0o700
+// matches the lock-file mode so a peer user cannot enumerate the directory
+// even if they cannot read individual locks.
+const leaseDirMode os.FileMode = 0o700
 
 // LeaseHolder is the JSON shape persisted in <key>.lock. We persist the
 // repo-relative path even though it's hashed in the filename so a human
-// reading the lock store can identify which file is held.
+// reading the lock store can identify which file is held. HolderPID is
+// recorded for debugging only (admin can `cat <lock>` to see which
+// process held it); the acquire logic intentionally does NOT compare PIDs
+// because re-entrant acquires by the same SessionID — including
+// crash-restart cases where the new process has a different PID — are
+// treated as legitimate refresh. The session id is the single identity
+// authority.
 type LeaseHolder struct {
 	SessionID        string `json:"session_id"`
 	HolderPID        int    `json:"holder_pid"`
@@ -99,7 +118,7 @@ func AcquireLease(repoRelativePath string, cfg LeaseConfig) (LeaseResult, error)
 		return LeaseResult{Status: StatusUnavailable, Reason: reason}, nil
 	}
 
-	if err := os.MkdirAll(storeDir, 0o755); err != nil {
+	if err := os.MkdirAll(storeDir, leaseDirMode); err != nil {
 		return LeaseResult{Status: StatusUnavailable, Reason: "mkdir-failed"}, nil
 	}
 
@@ -124,27 +143,99 @@ func AcquireLease(repoRelativePath string, cfg LeaseConfig) (LeaseResult, error)
 	// Slow path: lock already exists. Read it, decide stale-or-live.
 	existing, readErr := readLock(lockPath)
 	if readErr != nil {
-		// Corrupted lock — reclaim is the recovery per
-		// active-watching-test-policy.md. One attempt only.
-		if err := reclaimLock(lockPath, holder); err == nil {
+		// Corrupted (or transiently absent during a peer's rename window)
+		// lock — reclaim is the recovery per active-watching-test-policy.
+		// Run inside the reclaim mutex so two corruption-recoverers
+		// cannot both win, and re-check the lock state inside the mutex
+		// because a peer may have completed a valid write in the window
+		// between our outer readLock and our mutex acquire.
+		var acquired bool
+		var peerLock LeaseHolder
+		_ = withReclaimMutex(storeDir, func() error {
+			if current, err := readLock(lockPath); err == nil {
+				// Peer wrote a valid lock — we were not racing
+				// corruption, just timing. Surface peer's identity so
+				// the caller can return HeldByOther instead of the
+				// less-specific Unavailable.
+				peerLock = current
+				return os.ErrExist
+			}
+			if err := reclaimLock(lockPath, holder); err != nil {
+				return err
+			}
+			acquired = true
+			return nil
+		})
+		if acquired {
 			return LeaseResult{Status: StatusAcquired}, nil
+		}
+		if peerLock.SessionID != "" {
+			return LeaseResult{Status: StatusHeldByOther, Holder: &peerLock}, nil
 		}
 		return LeaseResult{Status: StatusUnavailable, Reason: "corrupted"}, nil
 	}
 
 	if existing.SessionID == cfg.SessionID {
 		// Re-entrant acquire — refresh the timestamp and treat as success.
-		if err := reclaimLock(lockPath, holder); err == nil {
+		// The mutex is held briefly only here because the re-entrant path
+		// is also subject to peer-reclaim races: a peer could observe our
+		// own old lock as stale while we refresh.
+		var acquired bool
+		mutexErr := withReclaimMutex(storeDir, func() error {
+			// Re-verify still our lock inside the mutex.
+			current, err := readLock(lockPath)
+			if err != nil {
+				return err
+			}
+			if current.SessionID != cfg.SessionID {
+				existing = current
+				return os.ErrExist
+			}
+			if err := reclaimLock(lockPath, holder); err != nil {
+				return err
+			}
+			acquired = true
+			return nil
+		})
+		if acquired {
 			return LeaseResult{Status: StatusAcquired}, nil
+		}
+		if errors.Is(mutexErr, os.ErrExist) {
+			return LeaseResult{Status: StatusHeldByOther, Holder: &existing}, nil
 		}
 		return LeaseResult{Status: StatusUnavailable, Reason: "refresh-failed"}, nil
 	}
 
 	if isStale(existing, cfg, now) {
-		if err := reclaimLock(lockPath, holder); err == nil {
+		// Slow path: enter the per-store reclaim mutex, re-validate
+		// inside (a peer may have already reclaimed), and swap.
+		var acquired bool
+		mutexErr := withReclaimMutex(storeDir, func() error {
+			current, err := readLock(lockPath)
+			if err != nil {
+				// Lock vanished — fall through to a fresh create.
+				if err := writeLockAtomic(lockPath, holder); err != nil {
+					return err
+				}
+				acquired = true
+				return nil
+			}
+			// Has another reclaimer already replaced it with a fresh
+			// lock? If so, surface as HeldByOther.
+			if !isStale(current, cfg, nowFunc(cfg.Now)()) {
+				existing = current
+				return os.ErrExist
+			}
+			if err := reclaimLock(lockPath, holder); err != nil {
+				return err
+			}
+			acquired = true
+			return nil
+		})
+		if acquired {
 			return LeaseResult{Status: StatusAcquired}, nil
 		}
-		// Reclaim raced with another acquirer — treat as held by other.
+		_ = mutexErr
 		return LeaseResult{Status: StatusHeldByOther, Holder: &existing}, nil
 	}
 
@@ -258,48 +349,138 @@ func leaseStore(cfg LeaseConfig) (string, string) {
 	return filepath.Join(repoRoot, ".claude", "sessions", "leases"), ""
 }
 
-// writeLockAtomic creates the lock file with O_CREAT|O_EXCL so two
-// concurrent acquirers cannot both succeed. The fsync via Sync ensures the
-// lock contents are durable before the function returns — without this a
-// crash between Write and Close could leave a zero-byte lock that the next
-// caller sees as "corrupted" rather than "absent".
+// writeLockAtomic creates the lock file so that the visible target path is
+// ONLY observable with complete, valid JSON contents. We use POSIX link(2)
+// for the atomicity: write the full holder data into a uniquely-named tmp
+// file in the same directory, then os.Link the tmp onto the target. link(2)
+// returns EEXIST atomically if the target already exists, which is the
+// same "create-only" semantic that O_CREAT|O_EXCL provided — but unlike the
+// O_CREAT|O_EXCL+Write sequence, link(2) only makes the path visible AFTER
+// the data is on disk. A peer reading the path mid-create never sees an
+// empty or partial lock.
+//
+// The Phase 85 adversarial review's reclaim race fix exposed why this
+// matters: under O_CREAT|O_EXCL+Write, a peer that observed EEXIST and
+// then read an empty file (because the writer had not Write()d yet) would
+// see "corrupted" and trigger the reclaim recovery path, which under
+// reclaim's Rename-based atomicity would move the half-finished lock to a
+// dead-suffix and let the peer win — resulting in two callers both
+// returning StatusAcquired. Switching the create to link(2) closes that
+// window entirely because the visible path is never half-written.
 func writeLockAtomic(path string, holder LeaseHolder) error {
 	data, err := json.MarshalIndent(holder, "", "  ")
 	if err != nil {
 		return err
 	}
 	data = append(data, '\n')
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+
+	dir := filepath.Dir(path)
+	tmp, err := os.CreateTemp(dir, filepath.Base(path)+".tmp-*")
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-	if _, err := f.Write(data); err != nil {
-		_ = os.Remove(path)
+	tmpPath := tmp.Name()
+	// Best-effort cleanup of the tmp file regardless of which path we take
+	// out. If Link succeeded the tmp link count drops to 1 and Remove just
+	// unlinks our local handle, not the visible path.
+	defer os.Remove(tmpPath)
+
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
 		return err
 	}
-	if err := f.Sync(); err != nil {
+	if err := tmp.Sync(); err != nil {
 		// Best-effort durability; the rest of the contract still holds.
 		_ = err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	// CreateTemp gives the file a 0o600 mode on most platforms, but be
+	// explicit to defend against umask quirks. The owner-only mode is the
+	// Phase 85 Security floor (lockFileMode).
+	if err := os.Chmod(tmpPath, lockFileMode); err != nil {
+		return err
+	}
+
+	// POSIX link(2) atomic create: if `path` already exists, returns
+	// EEXIST without modifying anything. If it does not exist, the link
+	// is created with the tmp's inode (complete data).
+	if err := os.Link(tmpPath, path); err != nil {
+		if os.IsExist(err) {
+			return os.ErrExist
+		}
+		return err
 	}
 	return nil
 }
 
-// reclaimLock is the recovery path for stale or corrupted leases: write to a
-// temp file under the same directory and rename over the existing lock. The
-// rename is the atomicity guarantee — a sibling that opens the lock at any
-// moment sees either the old contents or the new, never a partial mix.
+// reclaimMutexRetryDelay is the wait between mkdir-mutex acquire attempts in
+// the slow path. Microsecond granularity keeps the worst-case wait short
+// (~100ms even at 1000 retries) while avoiding a busy spin that would burn
+// CPU on contended hosts.
+const reclaimMutexRetryDelay = 100 * time.Microsecond
+const reclaimMutexMaxRetries = 1000
+
+// withReclaimMutex serializes the slow path of AcquireLease on a per-
+// lease-store basis. The mutex is a directory created via os.Mkdir's POSIX
+// atomic primitive (mkdir(2) is the canonical CAS in POSIX filesystems);
+// fast-path acquires never enter this mutex, so the perf cost is paid only
+// on the rare reclaim path.
+//
+// Why a coarse mutex instead of a smarter per-path lock: the slow path's
+// hazard is a TOCTOU between "read existing", "decide it's stale", and
+// "rename away". Two concurrent reclaimers cannot agree on which inode is
+// "the stale one" because POSIX rename(2) takes whatever is currently at
+// the path. The mutex closes this by serializing the entire decide+swap
+// sequence, so a second reclaimer always re-reads inside the mutex and
+// observes the fresh lock the first reclaimer just wrote. No coarse mutex
+// would be needed if POSIX had renameat2(RENAME_EXCHANGE), but that is
+// Linux-only, and the Phase 85 contract is cross-platform.
+func withReclaimMutex(storeDir string, fn func() error) error {
+	mutexPath := filepath.Join(storeDir, ".reclaim.mu")
+	for i := 0; i < reclaimMutexMaxRetries; i++ {
+		err := os.Mkdir(mutexPath, leaseDirMode)
+		if err == nil {
+			defer os.Remove(mutexPath)
+			return fn()
+		}
+		if !os.IsExist(err) {
+			return err
+		}
+		time.Sleep(reclaimMutexRetryDelay)
+	}
+	return errors.New("withReclaimMutex: could not acquire reclaim mutex")
+}
+
+// reclaimLock is the recovery path for stale or corrupted leases. It MUST
+// be called while holding the per-store reclaim mutex (withReclaimMutex).
+// Without the mutex, two concurrent reclaimers can both pass an earlier
+// isStale check, each invoke Rename(path, dead.<X>) on whatever happens to
+// be at the path at the moment, and end up both succeeding — the second
+// silently renames the first reclaimer's freshly-acquired lock away and
+// creates its own. The Phase 85 adversarial review surfaced this exact
+// scenario, and TestLeaseReclaim_ConcurrentSlowPath proves it.
+//
+// Inside the mutex, the sequence is:
+//   1. Rename the existing lock to a unique dead-suffix path. With the
+//      mutex held, this rename only ever runs while no other reclaimer is
+//      operating on the same store.
+//   2. Create the new lock via writeLockAtomic (POSIX link(2) atomic).
+//   3. Best-effort cleanup of the dead-named file.
+//
+// Callers MUST re-validate staleness inside the mutex if they want to
+// avoid acting on stale knowledge — see AcquireLease's slow path.
 func reclaimLock(path string, holder LeaseHolder) error {
-	data, err := json.MarshalIndent(holder, "", "  ")
-	if err != nil {
+	deadPath := fmt.Sprintf("%s.dead.%d.%s", path, time.Now().UnixNano(), holder.SessionID)
+	if err := os.Rename(path, deadPath); err != nil {
 		return err
 	}
-	data = append(data, '\n')
-	tmp := path + ".tmp." + fmt.Sprintf("%d", time.Now().UnixNano())
-	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+	if err := writeLockAtomic(path, holder); err != nil {
 		return err
 	}
-	return os.Rename(tmp, path)
+	_ = os.Remove(deadPath)
+	return nil
 }
 
 // readLock returns the lease holder recorded at path, or an error wrapping
@@ -358,16 +539,26 @@ func nowFunc(injected func() time.Time) func() time.Time {
 
 // LoadLiveSessionsFromActiveJSON reads active.json and returns a set of
 // currently-registered session ids. Callers wire this into LeaseConfig so
-// the staleness check can apply the liveness half of the AND. Missing,
-// unreadable, or unparseable active.json files return an empty set — that
-// downgrades the contract to TTL-only, which is the documented "no liveness
-// signal" fallback.
+// the staleness check can apply the liveness half of the AND.
+//
+// Missing, unreadable, unparseable, OR EMPTY active.json files return nil.
+// The Phase 85 adversarial review surfaced a subtle hole: returning an
+// empty non-nil map would make every session id appear "dead" in the AND
+// condition, which combined with TTL expiry would silently reclaim a
+// healthy peer's lock whenever active.json was momentarily empty (e.g.
+// during register-write atomicity, after corruption, or before the first
+// SessionStart of the day). Returning nil makes isStale fall back to its
+// documented TTL-only semantics, which never reclaims faster than the TTL
+// window. The nil sentinel is the safer half of the AND.
 func LoadLiveSessionsFromActiveJSON(repoRoot string) map[string]struct{} {
 	if repoRoot == "" {
 		repoRoot = resolveProjectRoot()
 	}
 	path := filepath.Join(repoRoot, ".claude", "sessions", "active.json")
 	sessions := readActiveJSON(path)
+	if len(sessions) == 0 {
+		return nil
+	}
 	set := make(map[string]struct{}, len(sessions))
 	for id := range sessions {
 		set[id] = struct{}{}
