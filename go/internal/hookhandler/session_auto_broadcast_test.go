@@ -505,3 +505,197 @@ func TestInboxCheck_InjectsAfterRevival(t *testing.T) {
 		t.Fatalf("inbox-check leaked raw broadcast pattern label into model context (injection risk): %s", body)
 	}
 }
+
+// TestAutoBroadcast_FileMode0600 covers Phase 85.1.7 fix S1: broadcast.md
+// must be owner-only (0o600) so "who edited what + when" does not leak to
+// other local users on shared hosts. The Phase 85 lease lock files use the
+// same floor (session_lease.go:25-30), and broadcast.md actually carries
+// more detail than a lock file.
+func TestAutoBroadcast_FileMode0600(t *testing.T) {
+	dir := t.TempDir()
+	t.Chdir(dir)
+	t.Setenv("HARNESS_PROJECT_ROOT", dir)
+
+	input := `{"session_id":"sess-mode","cwd":"` + dir + `","tool_input":{"file_path":"go/foo.go"}}`
+	var out bytes.Buffer
+	if err := HandleSessionAutoBroadcast(strings.NewReader(input), &out); err != nil {
+		t.Fatalf("handler: %v", err)
+	}
+
+	sessionsDir := filepath.Join(dir, ".claude", "sessions")
+	dirInfo, err := os.Stat(sessionsDir)
+	if err != nil {
+		t.Fatalf("sessions dir not created: %v", err)
+	}
+	if got := dirInfo.Mode().Perm(); got != 0o700 {
+		t.Errorf("sessions dir mode = %o, want 0o700", got)
+	}
+
+	bcastInfo, err := os.Stat(filepath.Join(sessionsDir, "broadcast.md"))
+	if err != nil {
+		t.Fatalf("broadcast.md not created: %v", err)
+	}
+	if got := bcastInfo.Mode().Perm(); got != 0o600 {
+		t.Errorf("broadcast.md mode = %o, want 0o600", got)
+	}
+}
+
+// TestAutoBroadcast_SkipSensitivePaths covers Phase 85.1.7 fix S2: paths
+// that obviously carry secrets, per-developer SSOT, or client-identifying
+// names must not cross sessions through broadcast.md. The check is
+// conservative (only the obvious leaks) — full coverage is the Phase 65.3
+// redaction contract's job.
+func TestAutoBroadcast_SkipSensitivePaths(t *testing.T) {
+	cases := []struct {
+		name     string
+		filePath string
+	}{
+		{"env_dotfile", ".env"},
+		{"env_with_suffix", ".env.local"},
+		{"key_extension", "deploy/server.key"},
+		{"pem_extension", "certs/intermediate.pem"},
+		{"secrets_segment", "config/secrets/db_password.txt"},
+		{"claude_memory_segment", ".claude/memory/decisions.md"},
+		{"ssh_segment", "home/.ssh/id_ed25519"},
+		{"clients_segment", "engagements/clients/acme/proposal.md"},
+		{"credentials_segment", "ops/credentials/aws.json"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			t.Chdir(dir)
+			t.Setenv("HARNESS_PROJECT_ROOT", dir)
+
+			input := `{"session_id":"sess-` + tc.name + `","cwd":"` + dir + `","tool_input":{"file_path":"` + tc.filePath + `"}}`
+			var out bytes.Buffer
+			if err := HandleSessionAutoBroadcast(strings.NewReader(input), &out); err != nil {
+				t.Fatalf("handler: %v", err)
+			}
+			var result postToolOutput
+			if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+				t.Fatalf("invalid JSON: %v", err)
+			}
+			if result.HookSpecificOutput.AdditionalContext != "" {
+				t.Errorf("expected silent skip for %s, got %q",
+					tc.filePath, result.HookSpecificOutput.AdditionalContext)
+			}
+			// broadcast.md must NOT exist for sensitive paths
+			if _, err := os.Stat(filepath.Join(dir, ".claude", "sessions", "broadcast.md")); err == nil {
+				t.Errorf("broadcast.md should not exist for sensitive path %s", tc.filePath)
+			}
+		})
+	}
+}
+
+// TestAutoBroadcast_SubdirectoryStillReachesPeer covers Phase 85.1.7 fix
+// S3: when the hook fires from a subdirectory (e.g. cwd is /repo/go/ but
+// editing go/foo.go), the broadcast must still land at the project root
+// .claude/sessions/broadcast.md so inbox-check (which uses git toplevel)
+// can read it. Before the fix this was a silent producer/consumer
+// mismatch that broke cross-session coordination from any subdir.
+func TestAutoBroadcast_SubdirectoryStillReachesPeer(t *testing.T) {
+	root := t.TempDir()
+	subdir := filepath.Join(root, "go", "internal")
+	if err := os.MkdirAll(subdir, 0o700); err != nil {
+		t.Fatalf("setup mkdir: %v", err)
+	}
+	// Set HARNESS_PROJECT_ROOT explicitly so resolveProjectRoot anchors
+	// on root regardless of whether $TMPDIR happens to be inside a git
+	// tree.
+	t.Setenv("HARNESS_PROJECT_ROOT", root)
+	t.Chdir(subdir) // hook fires from subdir
+
+	input := `{"session_id":"sess-subdir","cwd":"` + subdir + `","tool_input":{"file_path":"foo.go"}}`
+	var out bytes.Buffer
+	if err := HandleSessionAutoBroadcast(strings.NewReader(input), &out); err != nil {
+		t.Fatalf("handler: %v", err)
+	}
+
+	rootBroadcast := filepath.Join(root, ".claude", "sessions", "broadcast.md")
+	if _, err := os.Stat(rootBroadcast); err != nil {
+		t.Fatalf("broadcast.md should land at project root, missing: %v", err)
+	}
+
+	subdirBroadcast := filepath.Join(subdir, ".claude", "sessions", "broadcast.md")
+	if _, err := os.Stat(subdirBroadcast); err == nil {
+		t.Errorf("broadcast.md unexpectedly written under subdir at %s", subdirBroadcast)
+	}
+}
+
+// TestRotateBroadcastMD covers Phase 85.1.7 fix C1: when broadcast.md
+// exceeds maxEntries headers, rotation truncates to the trailing
+// keepEntries entries, atomically, preserving the most recent entries
+// so inbox-check still surfaces fresh peer activity.
+func TestRotateBroadcastMD(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "broadcast.md")
+
+	// Build a synthetic file with 10 entries, then rotate to keep 4.
+	var content bytes.Buffer
+	for i := 0; i < 10; i++ {
+		content.WriteString("\n## 2026-05-30T00:00:0")
+		content.WriteString(string(rune('0' + i%10)))
+		content.WriteString("Z [peer-")
+		content.WriteString(string(rune('A' + i)))
+		content.WriteString("]\n📁 `go/file")
+		content.WriteString(string(rune('0' + i%10)))
+		content.WriteString(".go` matched\n")
+	}
+	if err := os.WriteFile(path, content.Bytes(), 0o600); err != nil {
+		t.Fatalf("setup write: %v", err)
+	}
+
+	if err := rotateBroadcastMD(path, 8, 4); err != nil {
+		t.Fatalf("rotate: %v", err)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read after rotate: %v", err)
+	}
+	body := string(data)
+
+	// Verify only the last 4 entries survived (peer-G/H/I/J for i=6..9).
+	for _, want := range []string{"peer-G", "peer-H", "peer-I", "peer-J"} {
+		if !strings.Contains(body, want) {
+			t.Errorf("rotation lost trailing entry %s; body: %s", want, body)
+		}
+	}
+	// Older entries must have been dropped.
+	for _, gone := range []string{"peer-A", "peer-B", "peer-C", "peer-D", "peer-E", "peer-F"} {
+		if strings.Contains(body, gone) {
+			t.Errorf("rotation kept old entry %s; body: %s", gone, body)
+		}
+	}
+
+	// Verify the file mode is 0o600 (rotation must preserve the Phase 85
+	// security floor, not regress to default 0644 on rewrite).
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatalf("stat after rotate: %v", err)
+	}
+	if got := info.Mode().Perm(); got != 0o600 {
+		t.Errorf("rotated broadcast.md mode = %o, want 0o600", got)
+	}
+}
+
+// TestRotateBroadcastMD_NoOpUnderThreshold proves rotation is a no-op
+// when the entry count fits within maxEntries — important because the
+// rotation runs after every successful append and the common case is
+// "well under the cap, do not rewrite".
+func TestRotateBroadcastMD_NoOpUnderThreshold(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "broadcast.md")
+	original := "\n## 2026-05-30T00:00:00Z [peer-X]\n📁 `go/foo.go` matched\n"
+	if err := os.WriteFile(path, []byte(original), 0o600); err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	if err := rotateBroadcastMD(path, 8, 4); err != nil {
+		t.Fatalf("rotate: %v", err)
+	}
+	data, _ := os.ReadFile(path)
+	if string(data) != original {
+		t.Errorf("rotation modified file under threshold; got:\n%s\nwant:\n%s",
+			string(data), original)
+	}
+}
