@@ -576,4 +576,3 @@ func TestLoadLiveSessionsFromActiveJSON(t *testing.T) {
 		t.Errorf("alive-2 should be in the live set; got %v", set)
 	}
 }
-
