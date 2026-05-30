@@ -268,6 +268,14 @@ func runHook(hookType string) {
 		if err := hookhandler.HandleSessionUnregister(os.Stdin, os.Stdout); err != nil {
 			fmt.Fprintf(os.Stderr, "session-unregister handler error: %v\n", err)
 		}
+	case "pre-tool-use-file-lease":
+		if err := hookhandler.HandlePreToolUseFileLease(os.Stdin, os.Stdout); err != nil {
+			fmt.Fprintf(os.Stderr, "pre-tool-use-file-lease handler error: %v\n", err)
+		}
+	case "post-tool-use-file-lease":
+		if err := hookhandler.HandlePostToolUseFileLease(os.Stdin, os.Stdout); err != nil {
+			fmt.Fprintf(os.Stderr, "post-tool-use-file-lease handler error: %v\n", err)
+		}
 	case "browser-guide":
 		if err := hookhandler.HandleBrowserGuide(os.Stdin, os.Stdout); err != nil {
 			fmt.Fprintf(os.Stderr, "browser-guide handler error: %v\n", err)
