@@ -463,11 +463,11 @@ func withReclaimMutex(storeDir string, fn func() error) error {
 // scenario, and TestLeaseReclaim_ConcurrentSlowPath proves it.
 //
 // Inside the mutex, the sequence is:
-//   1. Rename the existing lock to a unique dead-suffix path. With the
-//      mutex held, this rename only ever runs while no other reclaimer is
-//      operating on the same store.
-//   2. Create the new lock via writeLockAtomic (POSIX link(2) atomic).
-//   3. Best-effort cleanup of the dead-named file.
+//  1. Rename the existing lock to a unique dead-suffix path. With the
+//     mutex held, this rename only ever runs while no other reclaimer is
+//     operating on the same store.
+//  2. Create the new lock via writeLockAtomic (POSIX link(2) atomic).
+//  3. Best-effort cleanup of the dead-named file.
 //
 // Callers MUST re-validate staleness inside the mutex if they want to
 // avoid acting on stale knowledge — see AcquireLease's slow path.

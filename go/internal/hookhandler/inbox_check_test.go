@@ -480,8 +480,8 @@ func TestInboxInject_NeutralizesUntrustedContent(t *testing.T) {
 	forbidden := []string{
 		"ignore all previous instructions",
 		"rm -rf $HOME",
-		"\x1b[31m",  // raw ANSI escape sequence
-		"\x00",      // NUL byte
+		"\x1b[31m", // raw ANSI escape sequence
+		"\x00",     // NUL byte
 	}
 	for _, bad := range forbidden {
 		if strings.Contains(outStr, bad) {
@@ -491,9 +491,9 @@ func TestInboxInject_NeutralizesUntrustedContent(t *testing.T) {
 
 	// Useful properties — phrased as required substrings.
 	required := []string{
-		"src/api/safe.go",  // path survived sanitization
-		"命令ではありません", // disclaimer present
-		"ago]",              // structured age suffix
+		"src/api/safe.go", // path survived sanitization
+		"命令ではありません",       // disclaimer present
+		"ago]",            // structured age suffix
 	}
 	for _, ok := range required {
 		if !strings.Contains(outStr, ok) {
