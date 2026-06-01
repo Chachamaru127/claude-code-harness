@@ -89,13 +89,7 @@ Step 0 で banner + 計画 (3 行以内) は出し切っているので、ここ
 
 ### Step 2: cursor-companion 直接実行
 
-`$ARGUMENTS` を質問文として渡す。**`--write` は絶対に付けない**:
-
-```bash
-bash scripts/cursor-companion.sh task "<question>"
-```
-
-実装例:
+`$ARGUMENTS` を質問文として渡す。**`--write` は絶対に付けない**。`scripts/cursor-companion.sh` を相対パスで呼ぶと consumer repo の cwd 直下に見えず exit するため、`CLAUDE_PLUGIN_ROOT` / `HARNESS_PLUGIN_ROOT` を hooks.json と同じ `valid_root` パターンで解決する (Issue #193 §2):
 
 ```bash
 QUESTION="$ARGUMENTS"
@@ -104,7 +98,26 @@ if [ -z "$QUESTION" ]; then
   exit 1
 fi
 
-bash scripts/cursor-companion.sh task "$QUESTION"
+bash -c '
+  set -euo pipefail
+  valid_root() {
+    [ -n "${1:-}" ] && [ -f "$1/scripts/cursor-companion.sh" ] && [ -f "$1/.claude-plugin/plugin.json" ]
+  }
+  ROOT="${CLAUDE_PLUGIN_ROOT:-${HARNESS_PLUGIN_ROOT:-}}"
+  if ! valid_root "$ROOT"; then
+    ROOT=""
+    for c in "${CLAUDE_PROJECT_DIR:-}" "$PWD" \
+             "$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace" \
+             "$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/"*; do
+      if valid_root "$c"; then ROOT="$c"; break; fi
+    done
+  fi
+  if ! valid_root "$ROOT"; then
+    echo "ERROR: claude-code-harness plugin root not found (no scripts/cursor-companion.sh)" >&2
+    exit 2
+  fi
+  bash "$ROOT/scripts/cursor-companion.sh" task "$1"
+' _ "$QUESTION"
 ```
 
 これだけで cursor-agent 側は `--mode ask` (hard read-only stop) に locked される。`--force` / `--yolo` も付かない。

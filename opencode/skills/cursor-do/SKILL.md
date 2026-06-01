@@ -85,33 +85,56 @@ bash -c '
 - `CURSOR_AGENT=NOT_INSTALLED` → `ERROR: cursor-agent not found (exit 3 expected from companion). Install via setup-cursor.sh.` を出し終了。
 - `BRANCH` が `main` / `master` → `WARN: on protected branch — cherry-pick target is HEAD of this branch. Confirm intent or switch.` を出し継続。
 
-## Step 3 — backend + model resolve (1 bash)
+## Step 3 — plugin root + backend + model resolve (1 bash)
+
+`HARNESS_PLUGIN_ROOT` / `CLAUDE_PLUGIN_ROOT` が未設定だと `:-.` fallback が consumer repo の cwd に解決し、`scripts/cursor-companion.sh` が見えず起動不能になる (Issue #193 §2)。hooks.json と同じ `valid_root` パターンで堅牢に解決する。
 
 ```bash
 bash -c '
-  BACKEND=$(bash "${HARNESS_PLUGIN_ROOT:-.}/scripts/resolve-impl-backend.sh" --backend cursor --role worker)
-  MODEL=$(bash "${HARNESS_PLUGIN_ROOT:-.}/scripts/model-routing.sh" --host cursor --role worker --field model)
+  set -euo pipefail
+  valid_root() {
+    [ -n "${1:-}" ] && [ -f "$1/scripts/cursor-companion.sh" ] && [ -f "$1/.claude-plugin/plugin.json" ]
+  }
+  ROOT="${CLAUDE_PLUGIN_ROOT:-${HARNESS_PLUGIN_ROOT:-}}"
+  if ! valid_root "$ROOT"; then
+    ROOT=""
+    for c in "${CLAUDE_PROJECT_DIR:-}" "$PWD" \
+             "$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace" \
+             "$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/"*; do
+      if valid_root "$c"; then ROOT="$c"; break; fi
+    done
+  fi
+  if ! valid_root "$ROOT"; then
+    echo "ERROR: claude-code-harness plugin root not found (no scripts/cursor-companion.sh)" >&2
+    exit 2
+  fi
+  BACKEND=$(bash "$ROOT/scripts/resolve-impl-backend.sh" --backend cursor --role worker)
+  MODEL=$(bash "$ROOT/scripts/model-routing.sh" --host cursor --role worker --field model)
+  echo "PLUGIN_ROOT=$ROOT"
   echo "BACKEND=$BACKEND"
   echo "MODEL=$MODEL"
 '
 ```
 
-`BACKEND` は必ず `cursor`、`MODEL` は通常 `composer-2.5-fast`。どちらかが空なら `ERROR: backend/model resolution failed` を 1 行で出して終了。
+返却値: `PLUGIN_ROOT` (Step 5 で使う) / `BACKEND` (必ず `cursor`) / `MODEL` (通常 `composer-2.5-fast`)。`BACKEND` または `MODEL` が空なら `ERROR: backend/model resolution failed` を 1 行で出して終了。`PLUGIN_ROOT` 解決失敗は上記スクリプトが exit 2 で報告する。
 
 ## Step 4 — 専用 worktree 作成
 
-衝突しない id を作って worktree を切る。**main tree や `$HOME` を指してはならない** (companion 側 guard で exit 2 になる)。
+衝突しない id を作って worktree を切る。**main tree や `$HOME` を指してはならない** (companion 側 guard で exit 2 になる)。`WT_DIR` は絶対パスで作る (Step 5 の `--workspace` は companion の `is not a directory` ガードで相対パスを exit 2 にすることがあるため、Issue #193 §4)。
 
 ```bash
 bash -c '
   set -euo pipefail
+  REPO_ROOT="$(git rev-parse --show-toplevel)"
+  cd "$REPO_ROOT"
   ID="$(date +%Y%m%d-%H%M%S)-$$"
-  WT_DIR=".claude/worktrees/cursor-do-${ID}"
+  WT_DIR="$REPO_ROOT/.claude/worktrees/cursor-do-${ID}"
   BASE_REF="$(git rev-parse HEAD)"
   BASE_BRANCH="$(git branch --show-current)"
   WT_BRANCH="cursor-do/${ID}"
-  mkdir -p .claude/worktrees
+  mkdir -p "$REPO_ROOT/.claude/worktrees"
   git worktree add -b "${WT_BRANCH}" "${WT_DIR}" "${BASE_REF}"
+  echo "REPO_ROOT=${REPO_ROOT}"
   echo "WT_DIR=${WT_DIR}"
   echo "WT_BRANCH=${WT_BRANCH}"
   echo "BASE_REF=${BASE_REF}"
@@ -135,7 +158,7 @@ Constraints:
 - Keep existing tests green. Add tests when the task is verifiable.
 - Match existing code style and naming.
 - Do not touch .claude-plugin/settings*, .claude/settings*, .eslintrc*, biome.json, tsconfig*.json."
-  bash "${HARNESS_PLUGIN_ROOT:-.}/scripts/cursor-companion.sh" task \
+  bash "${PLUGIN_ROOT}/scripts/cursor-companion.sh" task \
     --write \
     --workspace "${WT_DIR}" \
     "${PROMPT}"
@@ -150,12 +173,22 @@ Constraints:
 
 ## Step 6 — Lead diff review
 
-worktree 内で Composer が作成した commit を読み、目視レビュー + contract grep の二段ゲートを通す (`harness-work` 「Lead の cherry-pick 前ゲート」と同じ契約)。
+worktree 内で Composer が作成した変更を読み、目視レビュー + contract grep の二段ゲートを通す (`harness-work` 「Lead の cherry-pick 前ゲート」と同じ契約)。
+
+**注意 (Issue #193 §1)**: Cursor Composer は `--write` でファイル編集を行うが **commit は作らない**。worktree が dirty なまま放置すると Step 7 の cherry-pick が対象 0 で no-op になり、ユーザー視点で「完了したのに main に何も入らない」状態になる。本 Step 冒頭で dirty なら Lead 側で 1 commit にまとめる。
 
 ```bash
 bash -c '
   set -euo pipefail
   cd "${WT_DIR}"
+  # Composer は commit しないため、未コミットの編集を 1 commit にまとめる
+  if [ -n "$(git status --porcelain)" ]; then
+    git add -A
+    git -c user.name="cursor-composer" -c user.email="cursor-composer@local" \
+      commit --no-verify -m "cursor: ${TASK_SUMMARY:-cursor-do delegated change}"
+    echo "==AUTO_COMMITTED=="
+    git log -1 --oneline
+  fi
   echo "==LOG=="
   git log --oneline "${BASE_REF}..HEAD"
   echo "==STAT=="
@@ -164,6 +197,8 @@ bash -c '
   git diff "${BASE_REF}..HEAD"
 '
 ```
+
+`TASK_SUMMARY` は引数 task の先頭 60 文字以内に圧縮した文字列を Lead が事前に export しておく (例: `TASK_SUMMARY="Add login form validation"`)。未設定なら fallback メッセージ `cursor-do delegated change` を使う。`--no-verify` を付けるのは worktree 内の編集を「Lead レビュー前の中間 commit」として扱うため (cherry-pick 後の main commit で R01-R13 と pre-commit hook を通す)。
 
 Lead は diff 全文を Read し、以下を確認する:
 

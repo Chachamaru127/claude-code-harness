@@ -736,6 +736,24 @@ else
     fail_test "cursor-companion ラッパーの契約テストに失敗 — 'bash tests/test-cursor-companion.sh' で詳細確認"
 fi
 
+# Issue #193 §3: cursor 系 scripts が release tarball に同梱される前提を git-tracked + export-ignore 不在で保証する
+cursor_release_scripts_ok=1
+for s in scripts/cursor-companion.sh scripts/resolve-impl-backend.sh scripts/model-routing.sh scripts/setup-cursor.sh; do
+    if ! git -C "$PLUGIN_ROOT" ls-files --error-unmatch "$s" > /dev/null 2>&1; then
+        cursor_release_scripts_ok=0
+        break
+    fi
+    if git -C "$PLUGIN_ROOT" check-attr export-ignore -- "$s" 2>/dev/null | grep -q "export-ignore: set"; then
+        cursor_release_scripts_ok=0
+        break
+    fi
+done
+if [ "$cursor_release_scripts_ok" -eq 1 ]; then
+    pass_test "cursor 系 scripts が git-tracked かつ export-ignore 不在で release tarball に同梱されます (Issue #193 §3)"
+else
+    fail_test "cursor 系 scripts のいずれかが untracked または export-ignore 指定済 — release tarball から欠落します"
+fi
+
 if bash "$PLUGIN_ROOT/tests/test-cursor-backend-codex-wiring.sh" > /dev/null 2>&1; then
     pass_test "Codex-native skills に execution-backend switch が配線されています (test-cursor-backend-codex-wiring.sh)"
 else

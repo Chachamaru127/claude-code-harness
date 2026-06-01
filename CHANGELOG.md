@@ -6,6 +6,28 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`/cursor:ask` / `/cursor:do` 初回利用の摩擦 4 点 (Issue #193)**: `cursor-do` を初めて実タスクに通したときに観測された 4 つの落とし穴を埋める。
+
+  #### 1. Composer 無 commit による Step 7 空振り
+
+  **今まで**: `cursor-companion.sh task --write` は exit 0 + 結果 text を返すが、worktree には commit が無く未コミット変更だけが残り、Step 6 の `git log BASE_REF..HEAD` が空、Step 7 の cherry-pick が対象 0 で no-op になり、ユーザーから見て「完了したのに main に何も入らない」状態になりました。
+
+  **今後**: Step 6 冒頭で worktree が dirty なら Lead 側で `git add -A && git commit --no-verify` を 1 commit にまとめます。Lead が `TASK_SUMMARY` を事前に export しておけば commit message に反映、未設定なら fallback `cursor: cursor-do delegated change`。cherry-pick 後の main 側 commit で R01-R13 と pre-commit hook を正規通過します。
+
+  #### 2. `HARNESS_PLUGIN_ROOT` 未設定時の scripts 見失い
+
+  **今まで**: `bash "${HARNESS_PLUGIN_ROOT:-.}/scripts/cursor-companion.sh"` の `:-.` フォールバックが consumer repo の cwd に解決し、`scripts/cursor-companion.sh` が見えず exit していました。
+
+  **今後**: `cursor-do` Step 3 と `cursor-ask` Step 2 で、`.claude-plugin/hooks.json` と同じ `valid_root` パターンを inline 化します。`CLAUDE_PLUGIN_ROOT` → `HARNESS_PLUGIN_ROOT` → `CLAUDE_PROJECT_DIR` → `$PWD` → `~/.claude/plugins/marketplaces/...` → `~/.claude/plugins/cache/...` の順に scripts/cursor-companion.sh が見える dir を探索し、解決できなければ exit 2 で早期失敗します。
+
+  #### 3. worktree 相対パス + companion 絶対パス要求の衝突
+
+  **今まで**: Step 4 が `WT_DIR=".claude/worktrees/cursor-do-${ID}"` (相対) で worktree を切り、agent shell の cwd が repo root でないと別階層にネスト生成され、Step 5 の `--workspace` が companion の `is not a directory` ガードで exit 2 になることがありました。
+
+  **今後**: Step 4 冒頭で `REPO_ROOT="$(git rev-parse --show-toplevel)"` → `cd "$REPO_ROOT"` してから `WT_DIR="$REPO_ROOT/.claude/worktrees/cursor-do-${ID}"` を絶対パスで組みます。
+
 ### Changed
 
 - **`/breezing` / `/cursor:ask` / `/cursor:do` の起動ナレーションを「計画明示型」に緩和**: v4.13.2 で導入した Narration Rules が「最初の text は 1 行のみ・中間ナレーション一切禁止」と振り切れすぎ、起動後に何も表示されず「今から何をするのか分からない」状態だった。3 skill の Narration Rules を「**起動時に banner + 実行計画 (2-4 step、合計 5 行以内) を明示してから実行開始**」に書き換え、見やすい進捗報告 (各ステップの 1 行ステータス・判断に必要な中間結果・1 行の経緯) を明示的に許可。禁止対象は **冗長さ** (同じ事実の 2 回言い換え / 中身のない前置き / 3 行以上の経緯振り返り / 起動シーケンス中の ★ Insight ブロック) のみに限定。
