@@ -748,6 +748,12 @@ else
     fail_test "cursor backend 導入動線の契約テストに失敗 — 'bash tests/test-cursor-backend-onboarding.sh' で詳細確認"
 fi
 
+if bash "$PLUGIN_ROOT/tests/test-composer-backend-trigger.sh" > /dev/null 2>&1; then
+    pass_test "composer / コンポーザー自然語 trigger が cursor backend にマッピングされています (test-composer-backend-trigger.sh)"
+else
+    fail_test "composer 自然語 backend trigger の契約テストに失敗 — 'bash tests/test-composer-backend-trigger.sh' で詳細確認"
+fi
+
 if bash "$PLUGIN_ROOT/tests/test-windows-worktree-support.sh" > /dev/null 2>&1; then
     pass_test "Windows Breezing worktree support の配布・hook 契約が維持されています (test-windows-worktree-support.sh)"
 else

@@ -1,6 +1,6 @@
 ---
 name: breezing
-description: "Team execution mode — backward-compatible alias for harness-work with team orchestration."
+description: "Team execution mode — backward-compatible alias for harness-work with team orchestration. Composer/composer 2.5 maps to the cursor backend."
 ---
 
 # Breezing — Team Execution Mode
@@ -40,6 +40,7 @@ description: "Team execution mode — backward-compatible alias for harness-work
 /breezing --codex all           # Codex CLI で全タスク委託
 /breezing --cursor              # cursor backend lean path (--no-discuss all 既定)
 /breezing --cursor --reviewer-only  # Reviewer のみ cursor に委譲（Worker は別系統で既完了）
+/breezing composer 2.5 all      # 自然言語 trigger: cursor backend として扱う
 /breezing --parallel 2 all      # 2並列で全タスク完走
 /breezing --no-discuss all      # 計画議論スキップで全タスク完走
 /breezing --auto-mode all       # 互換な親セッションで Auto Mode rollout を試す
@@ -58,6 +59,20 @@ description: "Team execution mode — backward-compatible alias for harness-work
 | `--no-commit` | 自動コミット抑制 | false |
 | `--no-discuss` | 計画議論スキップ | `--cursor` で true 既定 |
 | `--auto-mode` | Harness 側の Auto Mode rollout を明示。CC 2.1.111 で不要になった `--enable-auto-mode` とは別物 | false |
+
+## Natural Language Backend Triggers
+
+`composer` / `コンポーザー` / `Composer で` / `composer 2.5` / `composer モード` は、正式に `cursor backend` の trigger として扱う。
+これは `--cursor` 相当の intent であり、Lead は `resolve-impl-backend.sh` を経由して backend を確定する。
+
+| 入力例 | 解釈 | 実行経路 |
+|---|---|---|
+| `composer 2.5 で` | `cursor backend` | Lead → `cursor-companion.sh task --write --workspace <wt>` |
+| `コンポーザーで全部` | `cursor backend` | Lead → `cursor-companion.sh task --write --workspace <wt>` |
+| `composer モード` | `cursor backend` | Lead → `cursor-companion.sh task --write --workspace <wt>` |
+
+`composer` は Claude Worker の内側に spawn する追加 agent ではない。
+非 `claude` backend のトポロジーに従い、Lead が Worker agent を挟まずに `cursor-companion.sh` を直接呼ぶ。
 
 > **CC 2.1.111 note**:
 > Opus 4.7 では literal に `/effort xhigh` が使える。

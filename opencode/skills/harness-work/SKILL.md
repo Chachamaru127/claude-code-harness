@@ -1,6 +1,6 @@
 ---
 name: harness-work
-description: "HAR: Execute Plans.md tasks from single task to full parallel team run. Trigger: implement, execute, do everything, breezing, team run, parallel. Do NOT load for: planning, review, release, setup."
+description: "HAR: Execute Plans.md tasks from single task to full parallel team run. Trigger: implement, execute, do everything, breezing, team run, parallel, composer, composer 2.5. Do NOT load for: planning, review, release, setup."
 ---
 
 # Harness Work
@@ -68,6 +68,12 @@ bash "${HARNESS_PLUGIN_ROOT}/scripts/resolve-impl-backend.sh"
 
 precedence（高い順）: `--backend <v>` / `--cursor` / `--codex` フラグ > `HARNESS_IMPL_BACKEND` 環境変数 > プロジェクト `env.local` の同名行 > ユーザー `~/.config/claude-harness/impl-backend.env` の同名行 > 既定値 `claude`。プロジェクト設定はユーザースコープを上書きする。
 明示フラグ（`--backend` / `--cursor` / `--codex`）は env / file / default を常に上書きする。
+
+### 自然言語 backend trigger
+
+ユーザーが `composer` / `コンポーザー` / `Composer で` / `composer 2.5` / `composer モード` と言った場合は、`cursor backend` 指定として扱う。
+これは `--cursor` と同じ intent だが、backend の確定値は必ず `resolve-impl-backend.sh` で解決する。
+Lead は `composer` を Claude Worker 内の追加 agent と解釈せず、非 `claude` backend の規約どおり Worker agent を挟まずに `cursor-companion.sh` を直接呼ぶ。
 
 ### role-scoped 制約
 

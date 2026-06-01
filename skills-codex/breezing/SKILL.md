@@ -1,11 +1,11 @@
 ---
 name: breezing
-description: "Team execution mode (Codex native) — backward-compatible alias for harness-work with team orchestration using Codex native subagent API."
-description-en: "Team execution mode (Codex native) — backward-compatible alias for harness-work with team orchestration using Codex native subagent API."
-description-ja: "チーム実行モード（Codex ネイティブ版）— harness-work のチーム協調エイリアス。breezing, チーム実行, 全部やって でトリガー。"
+description: "Team execution mode (Codex native) — backward-compatible alias for harness-work with team orchestration using Codex native subagent API. Composer/composer 2.5 maps to the cursor backend."
+description-en: "Team execution mode (Codex native) — backward-compatible alias for harness-work with team orchestration using Codex native subagent API. Composer/composer 2.5 maps to the cursor backend."
+description-ja: "チーム実行モード（Codex ネイティブ版）— harness-work のチーム協調エイリアス。breezing, チーム実行, 全部やって, composer, コンポーザー, composer 2.5 でトリガー。"
 kind: workflow
 purpose: "Wrap harness-work with Codex-native team execution orchestration"
-trigger: "breezing, team execution, do everything"
+trigger: "breezing, team execution, do everything, composer, composer 2.5, composer mode, コンポーザー"
 shape: wrap
 role: orchestrator
 base: harness-work
@@ -33,6 +33,7 @@ effort: high
 breezing                        # スコープを聞いてから実行
 breezing all                    # ready task を既定 max worker で完走
 breezing 3-6                    # タスク3〜6を既定 max worker で完走
+breezing composer 2.5 all       # 自然言語 trigger: cursor backend として扱う
 breezing --max-workers 2 all     # ready task の同時 spawn 上限を2に
 breezing --max-workers 1 all     # 旧来の直列挙動に戻す
 breezing --no-discuss all       # 計画議論スキップで全タスク完走
@@ -63,6 +64,10 @@ breezing --no-discuss all       # 計画議論スキップで全タスク完走
 そこに precedence、role-scope（review / advisor は Opus 固定）、self_review スキップ、cursor banner が定義されている。
 `HARNESS_IMPL_BACKEND`（`bash "${HARNESS_PLUGIN_ROOT}/scripts/set-impl-backend.sh" cursor` で設定）が
 per-run フラグなしの永続的な既定バックエンドを決める。
+
+`composer` / `コンポーザー` / `Composer で` / `composer 2.5` / `composer モード` は、正式に `cursor backend` の trigger として扱う。
+これは `--cursor` 相当の intent であり、Lead は `resolve-impl-backend.sh` を経由して backend を確定する。
+`composer` は Codex native Worker の内側に spawn する追加 agent ではなく、非 `claude` backend の規約どおり Lead が `cursor-companion.sh` を直接呼ぶ。
 
 既定の worker 数は **max**。
 ここでの max は「対象スコープ内で Depends が満たされ、今すぐ実行できる ready task の最大数」を意味する。
