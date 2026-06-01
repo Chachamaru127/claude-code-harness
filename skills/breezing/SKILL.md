@@ -78,6 +78,7 @@ user-invocable: true
 
 `composer` / `コンポーザー` / `Composer で` / `composer 2.5` / `composer モード` は、正式に `cursor backend` の trigger として扱う。
 これは `--cursor` 相当の intent であり、Lead は `resolve-impl-backend.sh` を経由して backend を確定する。
+解決時は明示 override として `--backend cursor` を渡し、env / project / user file / default より優先させる。
 
 | 入力例 | 解釈 | 実行経路 |
 |---|---|---|

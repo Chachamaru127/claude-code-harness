@@ -87,6 +87,7 @@ precedence（高い順）: `--backend <v>` / `--cursor` / `--codex` フラグ > 
 
 ユーザーが `composer` / `コンポーザー` / `Composer で` / `composer 2.5` / `composer モード` と言った場合は、`cursor backend` 指定として扱う。
 これは `--cursor` と同じ intent だが、backend の確定値は必ず `resolve-impl-backend.sh` で解決する。
+解決時は明示 override として `--backend cursor` を渡し、env / project / user file / default より優先させる。
 Lead は `composer` を Claude Worker 内の追加 agent と解釈せず、非 `claude` backend の規約どおり Worker agent を挟まずに `cursor-companion.sh` を直接呼ぶ。
 
 ### role-scoped 制約

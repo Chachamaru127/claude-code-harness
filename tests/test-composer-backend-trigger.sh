@@ -14,7 +14,7 @@ fail() {
 assert_contains() {
   local file="$1"
   local needle="$2"
-  grep -Fq "$needle" "$file" || fail "missing '${needle}' in ${file}"
+  grep -Fq -- "$needle" "$file" || fail "missing '${needle}' in ${file}"
 }
 
 assert_regex() {
@@ -36,6 +36,7 @@ for rel in "${FILES[@]}"; do
   assert_contains "$file" "composer 2.5"
   assert_contains "$file" "コンポーザー"
   assert_regex "$file" "composer.*cursor backend|cursor backend.*composer"
+  assert_contains "$file" "--backend cursor"
 done
 
 assert_contains "${ROOT}/skills/harness-work/SKILL.md" "自然言語 backend trigger"
