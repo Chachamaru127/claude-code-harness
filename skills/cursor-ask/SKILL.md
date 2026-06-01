@@ -31,54 +31,65 @@ cursor-agent (Composer) に **read-only** で質問・調査・設計相談・�
 | 設計相談 | "この abstraction、3 年後に保守できる？" |
 | 敵対的視点 | "この PR の最大の弱点を 1 つだけ挙げて" |
 
-## Narration Rules (UX Hard Contract)
+## Narration Rules (UX Contract)
 
-このスキルは「起動 → 委譲開始」を 3 秒以内に進めるため、中間ナレーションを禁ずる。違反した skill は UX 不合格として扱う。
+敵は **冗長さ** であって進捗報告ではない。**起動時に何を聞くか・どう進めるかを簡潔に明示してから実行する**。冗長な繰り返し・中身のない前置きだけを禁ずる。
 
-- **過去経緯の振り返り禁止**: 「先ほど止まった」「以前 X した」を語らない
-- **事前宣言禁止**: 「使い方を確認します」「次は X を確認します」を出さない。tool call 自体が宣言
-- **同じ事実の 2 回言い換え禁止**: cursor-companion の確認結果を後段で再度説明しない
-- **中間ステータスラベル禁止**: 「実行中」「実行済み」「次は…」を出さない
-- **★ Insight ブロック禁止 (起動シーケンス中)**: Explanatory style を一時停止する。Insight は最終 report で 1 回のみ可
-- **最初の text は 1 行のみ**: `🚀 cursor / composer-2.5-fast / ask` 形式で first text として 1 秒以内に出す
+### 起動時に必ず出すもの (banner + plan、3 行以内)
 
-違反例:
 ```
-× 「cursor に質問を投げる準備をします」→ bash → 「投げます」
-× 「ask モードは読み取り専用なので安全です」と再説明
+🚀 cursor / composer-2.5-fast / ask
+これから: <質問の要点> を composer に投げて、結果を 3-5 行で要約
+```
+
+banner 1 行 + 計画 1-2 行。1 秒以内に出し、即 Step 2 へ。
+
+### 進捗報告は出してよい
+
+- 委譲開始の 1 行 (`→ composer に問い合わせ中`)
+- 判断に必要な経緯を 1 行で
+
+### 禁止 (= 冗長さ)
+
+- **同じ事実の 2 回言い換え**: cursor-companion の結果を後段で再説明しない
+- **中身のない前置き**: 「使い方を確認します」だけの行など tool call で自明な宣言
+- **3 行以上の経緯振り返り**: 必要なら 1 行に圧縮
+- **起動シーケンス中の ★ Insight ブロック**: Insight は最終要約で 1 回のみ
+
+違反例 (冗長):
+```
+× 「cursor に質問を投げる準備をします」→ bash → 「投げます」（中身のない前置き + 言い換え）
+× 「ask モードは読み取り専用なので安全です」と再説明（既知事実の繰り返し）
 × ★ Insight ──── まず cursor の状態を確認します: ...
 ```
 
-正常例:
+正常例 (簡潔 + 計画明示):
 ```
 🚀 cursor / composer-2.5-fast / ask
+これから: 設計の弱点を composer に問い、結果を 3-5 行で要約
 ```
 
 ## Execution Flow
 
-### Step 0: Narration check
+### Step 0: 起動時 banner + plan
 
-上記 Narration Rules を厳守する。3 秒以内に Step 1 へ。
+上記 Narration Rules に従い、banner + 計画 (3 行以内) を出してから Step 1 へ。
 
-### Step 1: 1-line banner
+### Step 1: banner 確認
 
-最初の text として **1 行だけ** 出す:
+Step 0 で banner + 計画 (3 行以内) は出し切っているので、ここでは banner 行が出ていることを確認する。banner は:
 
 ```
 🚀 cursor / composer-2.5-fast / ask
 ```
+
+以降は委譲開始の 1 行ステータス等で進捗を見せてよい。冗長な繰り返しのみ避ける。
 
 `composer-2.5-fast` は `scripts/model-routing.sh --host cursor --role worker --field model` で解決される値の代表表記。実際の resolved model は cursor-companion 側のログに出る。
 
 ### Step 2: cursor-companion 直接実行
 
-`$ARGUMENTS` を質問文として渡す。**`--write` は絶対に付けない**:
-
-```bash
-bash scripts/cursor-companion.sh task "<question>"
-```
-
-実装例:
+`$ARGUMENTS` を質問文として渡す。**`--write` は絶対に付けない**。`scripts/cursor-companion.sh` を相対パスで呼ぶと consumer repo の cwd 直下に見えず exit するため、`CLAUDE_PLUGIN_ROOT` / `HARNESS_PLUGIN_ROOT` を hooks.json と同じ `valid_root` パターンで解決する (Issue #193 §2):
 
 ```bash
 QUESTION="$ARGUMENTS"
@@ -87,7 +98,26 @@ if [ -z "$QUESTION" ]; then
   exit 1
 fi
 
-bash scripts/cursor-companion.sh task "$QUESTION"
+bash -c '
+  set -euo pipefail
+  valid_root() {
+    [ -n "${1:-}" ] && [ -f "$1/scripts/cursor-companion.sh" ] && [ -f "$1/.claude-plugin/plugin.json" ]
+  }
+  ROOT="${CLAUDE_PLUGIN_ROOT:-${HARNESS_PLUGIN_ROOT:-}}"
+  if ! valid_root "$ROOT"; then
+    ROOT=""
+    for c in "${CLAUDE_PROJECT_DIR:-}" "$PWD" \
+             "$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace" \
+             "$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/"*; do
+      if valid_root "$c"; then ROOT="$c"; break; fi
+    done
+  fi
+  if ! valid_root "$ROOT"; then
+    echo "ERROR: claude-code-harness plugin root not found (no scripts/cursor-companion.sh)" >&2
+    exit 2
+  fi
+  bash "$ROOT/scripts/cursor-companion.sh" task "$1"
+' _ "$QUESTION"
 ```
 
 これだけで cursor-agent 側は `--mode ask` (hard read-only stop) に locked される。`--force` / `--yolo` も付かない。

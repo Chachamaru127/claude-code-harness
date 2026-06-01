@@ -6,6 +6,43 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+## [4.13.3] - 2026-06-01
+
+### テーマ: Cursor 初回利用の摩擦解消 + breezing 起動ナレーション緩和 + セッション協調復活
+
+**`/cursor:do` 初回実タスクで観測された 4 つの落とし穴 (Composer 無 commit / scripts 見失い / worktree パス衝突) を埋め、v4.13.2 で振り切れすぎた起動ナレーション禁止を「計画明示型」に緩和。同 PC 上の複数セッションが同じファイルを黙って上書きする事故を file lease + continueOnBlock feedback で防ぐ。**
+
+### Fixed
+
+- **`/cursor:ask` / `/cursor:do` 初回利用の摩擦 4 点 (Issue #193)**: `cursor-do` を初めて実タスクに通したときに観測された 4 つの落とし穴を埋める。
+
+  #### 1. Composer 無 commit による Step 7 空振り
+
+  **今まで**: `cursor-companion.sh task --write` は exit 0 + 結果 text を返すが、worktree には commit が無く未コミット変更だけが残り、Step 6 の `git log BASE_REF..HEAD` が空、Step 7 の cherry-pick が対象 0 で no-op になり、ユーザーから見て「完了したのに main に何も入らない」状態になりました。
+
+  **今後**: Step 6 冒頭で worktree が dirty なら Lead 側で `git add -A && git commit --no-verify` を 1 commit にまとめます。Lead が `TASK_SUMMARY` を事前に export しておけば commit message に反映、未設定なら fallback `cursor: cursor-do delegated change`。cherry-pick 後の main 側 commit で R01-R13 と pre-commit hook を正規通過します。
+
+  #### 2. `HARNESS_PLUGIN_ROOT` 未設定時の scripts 見失い
+
+  **今まで**: `bash "${HARNESS_PLUGIN_ROOT:-.}/scripts/cursor-companion.sh"` の `:-.` フォールバックが consumer repo の cwd に解決し、`scripts/cursor-companion.sh` が見えず exit していました。
+
+  **今後**: `cursor-do` Step 3 と `cursor-ask` Step 2 で、`.claude-plugin/hooks.json` と同じ `valid_root` パターンを inline 化します。`CLAUDE_PLUGIN_ROOT` → `HARNESS_PLUGIN_ROOT` → `CLAUDE_PROJECT_DIR` → `$PWD` → `~/.claude/plugins/marketplaces/...` → `~/.claude/plugins/cache/...` の順に scripts/cursor-companion.sh が見える dir を探索し、解決できなければ exit 2 で早期失敗します。
+
+  #### 3. worktree 相対パス + companion 絶対パス要求の衝突
+
+  **今まで**: Step 4 が `WT_DIR=".claude/worktrees/cursor-do-${ID}"` (相対) で worktree を切り、agent shell の cwd が repo root でないと別階層にネスト生成され、Step 5 の `--workspace` が companion の `is not a directory` ガードで exit 2 になることがありました。
+
+  **今後**: Step 4 冒頭で `REPO_ROOT="$(git rev-parse --show-toplevel)"` → `cd "$REPO_ROOT"` してから `WT_DIR="$REPO_ROOT/.claude/worktrees/cursor-do-${ID}"` を絶対パスで組みます。
+
+### Changed
+
+- **`/breezing` / `/cursor:ask` / `/cursor:do` の起動ナレーションを「計画明示型」に緩和**: v4.13.2 で導入した Narration Rules が「最初の text は 1 行のみ・中間ナレーション一切禁止」と振り切れすぎ、起動後に何も表示されず「今から何をするのか分からない」状態だった。3 skill の Narration Rules を「**起動時に banner + 実行計画 (2-4 step、合計 5 行以内) を明示してから実行開始**」に書き換え、見やすい進捗報告 (各ステップの 1 行ステータス・判断に必要な中間結果・1 行の経緯) を明示的に許可。禁止対象は **冗長さ** (同じ事実の 2 回言い換え / 中身のない前置き / 3 行以上の経緯振り返り / 起動シーケンス中の ★ Insight ブロック) のみに限定。
+
+  - 今まで: `🚀 cursor / composer-2.5-fast / ask` の 1 行だけ出して即委譲。ユーザーは進行中の処理が見えず不安。
+  - 今後: banner の直後に「これから: backend resolve → composer に diff レビュー委譲 → verdict 要約」のような実行計画を添え、各ステップ完了を 1 行で報告する。冗長な繰り返しだけを避ける。
+
+---
+
 ### テーマ: セッション協調 (file lease + register + broadcast 復活)
 
 **同一 PC 上の複数 Claude Code セッションが、同じ repo の同じファイルを黙って上書きし合う事故を、ファイル単位 lease と continueOnBlock feedback で防ぐ。harness-mem に依存せずローカル完結。**
@@ -4772,7 +4809,8 @@ Purpose: 自己修正ループ失敗時に「止まるだけ」から「次の�
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.13.2...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.13.3...HEAD
+[4.13.3]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.13.2...v4.13.3
 [4.13.2]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.13.1...v4.13.2
 [4.13.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.13.0...v4.13.1
 [4.13.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v4.12.11...v4.13.0

@@ -14,30 +14,49 @@ user-invocable: true
 
 封じ込めは Cursor 側にはない (`.claude/rules/cursor-cli-only.md`)。**専用 `.git` を持つ worktree + Lead diff review + cherry-pick (R01-R13 経路)** の 3 点だけが実効的な境界。cursor の出力は Lead レビューまで untrusted として扱う。
 
-## Step 0 — NARRATION RULES (UX Hard Contract)
+## Step 0 — NARRATION RULES (UX Contract)
 
-このスキルは「起動 → 委譲開始」を 3 秒以内に進めるため、中間ナレーションを禁ずる。breezing と同じ契約。違反は UX 不合格として扱う。
+敵は **冗長さ** であって進捗報告ではない。breezing と同じ契約。**起動時に banner + 実行計画を簡潔に明示してから実行する**。見やすい進捗報告は歓迎、冗長な繰り返しのみ禁止。
 
-- **過去経緯の振り返り禁止**: 「先ほど止まった」「前回 Worker は…」を語らない。Plans.md / git から直読する
-- **事前宣言禁止**: 「使い方を確認します」「次は X を確認します」を出さない。tool call 自体が宣言
-- **同じ事実の 2 回言い換え禁止**: pre-check 結果を後段で再説明しない
-- **中間ステータスラベル禁止**: 「実行中」「実行済み」「次は…」を出さない
-- **★ Insight ブロック禁止 (起動シーケンス中)**: Insight は最終 report で 1 回のみ可
-- **最初の text は 1 行のみ**: Step 1 の `🚀 cursor / composer-2.5-fast / <branch> / <task>` を first text として 1 秒以内に出す
+### 起動時に必ず出すもの (banner + plan、合計 5 行以内)
 
-違反例:
 ```
-× 「composer 2.5 で実装する流れですね、まず確認します」
-× 「Cursor を呼ぶ前に branch を見ます」 → bash → 「branch を確認しました」
+🚀 cursor / composer-2.5-fast / feat/foo-bar / Add login form validation
+これから:
+1. pre-check (branch / cursor-agent) → 専用 worktree 作成
+2. composer に実装委譲 (--write)
+3. diff レビュー → cherry-pick → Plans.md 更新
+```
+
+banner 1 行 (`🚀 cursor / composer-2.5-fast / <branch> / <task>`) + 計画 2-4 行。1 秒以内に出し、即 Step 1 へ。
+
+### 進捗報告は出してよい (見やすい範囲で)
+
+- 各ステップの開始・完了を 1 行ステータスで (`✓ worktree 作成: .claude/worktrees/cursor-do-...`)
+- pre-check / resolve の要点、cherry-pick した SHA
+- なぜこの分岐を取るかの理由を 1 行で
+
+### 禁止 (= 冗長さ)
+
+- **同じ事実の 2 回言い換え**: pre-check 結果を後段で再説明しない
+- **中身のない前置き**: tool call で自明な宣言だけの行
+- **3 行以上の経緯振り返り**: 必要なら 1 行に圧縮
+- **起動シーケンス中の ★ Insight ブロック**: Insight は最終 report で 1 回のみ
+
+違反例 (冗長):
+```
+× 「composer 2.5 で実装する流れですね、まず確認します」（中身のない前置き）
+× 「Cursor を呼ぶ前に branch を見ます」 → bash → 「branch を確認しました」（言い換え）
 × ★ Insight ──── Cursor の強みは…
 ```
 
-正常例:
+正常例 (簡潔 + 計画明示):
 ```
 🚀 cursor / composer-2.5-fast / feat/foo-bar / Add login form validation
+これから: worktree 作成 → composer に実装委譲 → diff レビュー → cherry-pick
 ```
 
-## Step 1 — first text echo (1 行、1 秒以内)
+## Step 1 — banner + plan を出し切る (1 秒以内)
 
 引数 `$ARGUMENTS` をタスク説明として受ける。引数が空なら以下のマーカーを出力してユーザーに 1 行タスクを要求し、入力後に Step 2 へ進む:
 
@@ -51,7 +70,7 @@ CURSOR_DO_AWAITING_TASK: provide a one-line task description as $ARGUMENTS
 🚀 cursor / composer-2.5-fast / <current-branch> / <task-first-60-chars>
 ```
 
-`<current-branch>` は Step 2 で取得する値だが、Step 1 では未取得のため `…` でも可。Step 2 直後に確定値を 1 行で再出力する。**この echo 以外の text を Step 2 まで一切出さない。**
+`<current-branch>` は Step 2 で取得する値だが、Step 1 では未取得のため `…` でも可。Step 2 直後に確定値を 1 行で再出力する。Step 0 の banner + 実行計画 (5 行以内) はここで出し切り、以降は各ステップの 1 行ステータスで進捗を見せる。冗長な繰り返しのみ避ける。
 
 ## Step 2 — 並列 pre-check (1 bash)
 
@@ -71,33 +90,56 @@ bash -c '
 - `CURSOR_AGENT=NOT_INSTALLED` → `ERROR: cursor-agent not found (exit 3 expected from companion). Install via setup-cursor.sh.` を出し終了。
 - `BRANCH` が `main` / `master` → `WARN: on protected branch — cherry-pick target is HEAD of this branch. Confirm intent or switch.` を出し継続。
 
-## Step 3 — backend + model resolve (1 bash)
+## Step 3 — plugin root + backend + model resolve (1 bash)
+
+`HARNESS_PLUGIN_ROOT` / `CLAUDE_PLUGIN_ROOT` が未設定だと `:-.` fallback が consumer repo の cwd に解決し、`scripts/cursor-companion.sh` が見えず起動不能になる (Issue #193 §2)。hooks.json と同じ `valid_root` パターンで堅牢に解決する。
 
 ```bash
 bash -c '
-  BACKEND=$(bash "${HARNESS_PLUGIN_ROOT:-.}/scripts/resolve-impl-backend.sh" --backend cursor --role worker)
-  MODEL=$(bash "${HARNESS_PLUGIN_ROOT:-.}/scripts/model-routing.sh" --host cursor --role worker --field model)
+  set -euo pipefail
+  valid_root() {
+    [ -n "${1:-}" ] && [ -f "$1/scripts/cursor-companion.sh" ] && [ -f "$1/.claude-plugin/plugin.json" ]
+  }
+  ROOT="${CLAUDE_PLUGIN_ROOT:-${HARNESS_PLUGIN_ROOT:-}}"
+  if ! valid_root "$ROOT"; then
+    ROOT=""
+    for c in "${CLAUDE_PROJECT_DIR:-}" "$PWD" \
+             "$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace" \
+             "$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/"*; do
+      if valid_root "$c"; then ROOT="$c"; break; fi
+    done
+  fi
+  if ! valid_root "$ROOT"; then
+    echo "ERROR: claude-code-harness plugin root not found (no scripts/cursor-companion.sh)" >&2
+    exit 2
+  fi
+  BACKEND=$(bash "$ROOT/scripts/resolve-impl-backend.sh" --backend cursor --role worker)
+  MODEL=$(bash "$ROOT/scripts/model-routing.sh" --host cursor --role worker --field model)
+  echo "PLUGIN_ROOT=$ROOT"
   echo "BACKEND=$BACKEND"
   echo "MODEL=$MODEL"
 '
 ```
 
-`BACKEND` は必ず `cursor`、`MODEL` は通常 `composer-2.5-fast`。どちらかが空なら `ERROR: backend/model resolution failed` を 1 行で出して終了。
+返却値: `PLUGIN_ROOT` (Step 5 で使う) / `BACKEND` (必ず `cursor`) / `MODEL` (通常 `composer-2.5-fast`)。`BACKEND` または `MODEL` が空なら `ERROR: backend/model resolution failed` を 1 行で出して終了。`PLUGIN_ROOT` 解決失敗は上記スクリプトが exit 2 で報告する。
 
 ## Step 4 — 専用 worktree 作成
 
-衝突しない id を作って worktree を切る。**main tree や `$HOME` を指してはならない** (companion 側 guard で exit 2 になる)。
+衝突しない id を作って worktree を切る。**main tree や `$HOME` を指してはならない** (companion 側 guard で exit 2 になる)。`WT_DIR` は絶対パスで作る (Step 5 の `--workspace` は companion の `is not a directory` ガードで相対パスを exit 2 にすることがあるため、Issue #193 §4)。
 
 ```bash
 bash -c '
   set -euo pipefail
+  REPO_ROOT="$(git rev-parse --show-toplevel)"
+  cd "$REPO_ROOT"
   ID="$(date +%Y%m%d-%H%M%S)-$$"
-  WT_DIR=".claude/worktrees/cursor-do-${ID}"
+  WT_DIR="$REPO_ROOT/.claude/worktrees/cursor-do-${ID}"
   BASE_REF="$(git rev-parse HEAD)"
   BASE_BRANCH="$(git branch --show-current)"
   WT_BRANCH="cursor-do/${ID}"
-  mkdir -p .claude/worktrees
+  mkdir -p "$REPO_ROOT/.claude/worktrees"
   git worktree add -b "${WT_BRANCH}" "${WT_DIR}" "${BASE_REF}"
+  echo "REPO_ROOT=${REPO_ROOT}"
   echo "WT_DIR=${WT_DIR}"
   echo "WT_BRANCH=${WT_BRANCH}"
   echo "BASE_REF=${BASE_REF}"
@@ -121,7 +163,7 @@ Constraints:
 - Keep existing tests green. Add tests when the task is verifiable.
 - Match existing code style and naming.
 - Do not touch .claude-plugin/settings*, .claude/settings*, .eslintrc*, biome.json, tsconfig*.json."
-  bash "${HARNESS_PLUGIN_ROOT:-.}/scripts/cursor-companion.sh" task \
+  bash "${PLUGIN_ROOT}/scripts/cursor-companion.sh" task \
     --write \
     --workspace "${WT_DIR}" \
     "${PROMPT}"
@@ -136,12 +178,22 @@ Constraints:
 
 ## Step 6 — Lead diff review
 
-worktree 内で Composer が作成した commit を読み、目視レビュー + contract grep の二段ゲートを通す (`harness-work` 「Lead の cherry-pick 前ゲート」と同じ契約)。
+worktree 内で Composer が作成した変更を読み、目視レビュー + contract grep の二段ゲートを通す (`harness-work` 「Lead の cherry-pick 前ゲート」と同じ契約)。
+
+**注意 (Issue #193 §1)**: Cursor Composer は `--write` でファイル編集を行うが **commit は作らない**。worktree が dirty なまま放置すると Step 7 の cherry-pick が対象 0 で no-op になり、ユーザー視点で「完了したのに main に何も入らない」状態になる。本 Step 冒頭で dirty なら Lead 側で 1 commit にまとめる。
 
 ```bash
 bash -c '
   set -euo pipefail
   cd "${WT_DIR}"
+  # Composer は commit しないため、未コミットの編集を 1 commit にまとめる
+  if [ -n "$(git status --porcelain)" ]; then
+    git add -A
+    git -c user.name="cursor-composer" -c user.email="cursor-composer@local" \
+      commit --no-verify -m "cursor: ${TASK_SUMMARY:-cursor-do delegated change}"
+    echo "==AUTO_COMMITTED=="
+    git log -1 --oneline
+  fi
   echo "==LOG=="
   git log --oneline "${BASE_REF}..HEAD"
   echo "==STAT=="
@@ -150,6 +202,8 @@ bash -c '
   git diff "${BASE_REF}..HEAD"
 '
 ```
+
+`TASK_SUMMARY` は引数 task の先頭 60 文字以内に圧縮した文字列を Lead が事前に export しておく (例: `TASK_SUMMARY="Add login form validation"`)。未設定なら fallback メッセージ `cursor-do delegated change` を使う。`--no-verify` を付けるのは worktree 内の編集を「Lead レビュー前の中間 commit」として扱うため (cherry-pick 後の main commit で R01-R13 と pre-commit hook を通す)。
 
 Lead は diff 全文を Read し、以下を確認する:
 

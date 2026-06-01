@@ -21,28 +21,48 @@ user-invocable: true
 
 > **後方互換エイリアス**: `harness-work` をチーム実行モードで動かします。
 
-## Narration Rules (UX Hard Contract)
+## Narration Rules (UX Contract)
 
-このスキルは「起動 → 委譲開始」を 3 秒以内に進めるため、中間ナレーションを禁ずる。違反した skill は UX 不合格として扱う。
+敵は **冗長さ** であって進捗報告ではない。**起動時に実行計画を簡潔に明示してから実行を開始する**。見やすい進捗報告は歓迎する。冗長な繰り返し・中身のない前置きだけを禁ずる。
 
-- **過去経緯の振り返り禁止**: 「先ほど止まった」「以前 Worker は完了済み」を語らない。Plans.md / git 状態から直読する
-- **事前宣言禁止**: 「使い方を確認します」「次は X を確認します」を出さない。tool call 自体が宣言なので不要
-- **同じ事実の 2 回言い換え禁止**: cursor-companion.sh の確認結果を後段で再度説明しない
-- **中間ステータスラベル禁止**: 「実行中」「実行済み」「次は…」を出さない。tool call で自明
-- **★ Insight ブロック禁止 (起動シーケンス中)**: Explanatory style を一時停止する。Insight は最終 report で 1 回のみ可
-- **最初の text は 1 行のみ**: `🚀 <backend> / <model> / <branch> / <task>` 形式で first text として 1 秒以内に出す
+### 起動時に必ず出すもの (banner + plan、合計 5 行以内)
 
-違反例:
-```
-× "composer 2.5 使うモード" = cursor backend で Composer に委託、ですね
-× 「前回 Reviewer が止まったので別系統に逃がすのは理にかなっています」
-× 「使い方を確認します」 → bash → 「呼べます」
-× ★ Insight ──── 役割分担を明確にします: ...
-```
+最初の応答で、何を・どの順で進めるかを示してから tool 実行に入る:
 
-正常例:
 ```
 🚀 cursor / composer-2.5-fast / feat/hah-11-golden-rule-lint / Reviewer
+これから:
+1. backend/model を resolve
+2. composer に diff レビューを委譲 (read-only)
+3. verdict を 3-5 行で要約 → Plans.md 更新
+```
+
+banner 1 行 (`🚀 <backend> / <model> / <branch> / <task>`) + 計画 2-4 行。1 秒以内に出し、即 Step 1 へ。
+
+### 進捗報告は出してよい (見やすい範囲で)
+
+- 各ステップの開始・完了を 1 行ステータスで (`✓ backend=cursor / model=composer-2.5-fast`)
+- 判断に必要な中間結果 (pre-check の要点、resolved model、検出した branch 等)
+- なぜこの分岐を取るかの理由を 1 行で (例: 「Reviewer のみ委譲: Worker は別系統で完了済み」)
+
+### 禁止 (= 冗長さ)
+
+- **同じ事実の 2 回言い換え**: 一度言ったことを後段で再説明しない
+- **中身のない前置き**: 「使い方を確認します」だけの行など、tool call で自明な宣言
+- **3 行以上の経緯振り返り**: 結論を引き伸ばす長い前置き。経緯が必要なら 1 行に圧縮
+- **起動シーケンス中の ★ Insight ブロック**: Insight は最終 report で 1 回のみ
+
+違反例 (冗長):
+```
+× 「composer 2.5 使うモード」= cursor backend で Composer に委託、ですね（と解釈の言い換え）
+× 「前回 Reviewer が止まったので別系統に逃がすのは理にかなっています」（3 行以上の振り返り）
+× 「使い方を確認します」 → bash → 「呼べます」（中身のない前置き + 同じ事実の 2 回言い換え）
+```
+
+正常例 (簡潔 + 計画明示):
+```
+🚀 cursor / composer-2.5-fast / feat/hah-11-golden-rule-lint / Reviewer
+これから: backend resolve → composer に diff レビュー委譲 (read-only) → verdict 要約
 ```
 
 ## Quick Reference
@@ -177,7 +197,7 @@ per-run フラグなしで cursor が既定の worker バックエンドにな�
 
 #### 既定 flow（cursor backend）
 
-1. **first text 1 行 echo** (`🚀 cursor / <model> / <branch> / <task>`、1 秒以内)
+1. **banner + 実行計画** (`🚀 cursor / <model> / <branch> / <task>` + これから進める 2-4 step、合計 5 行以内、1 秒以内)
 2. **1 bash で並列 pre-check**: `git branch --show-current` + `cat VERSION` + `Plans.md tail` + `cursor-agent --version`
 3. **1 bash で resolve**: `scripts/resolve-impl-backend.sh` + `bash scripts/model-routing.sh --host cursor --role worker --field model`
 4. **即 委譲**: `bash scripts/cursor-companion.sh task --write --workspace <wt> "<task>"`
@@ -187,7 +207,7 @@ per-run フラグなしで cursor が既定の worker バックエンドにな�
 
 Worker 実装は既完了（別系統 = claude / Codex で済んだ）、Reviewer のみ独立系統 (Composer) で回したい時の lean path。read-only 委譲なので **worktree 不要・cherry-pick 不要・Lead diff review 不要**:
 
-1. 1 行 echo: `🚀 cursor / composer-2.5-fast / review`
+1. banner + 計画: `🚀 cursor / composer-2.5-fast / review` + 「これから: diff レビューを composer に委譲 → verdict 要約」
 2. `bash scripts/cursor-companion.sh task "diff レビュー: <base_ref>..HEAD"` — **`--write` も `--workspace` も付けない**
    - companion は `--write` 未指定で default `--mode ask` (hard read-only stop) になる (cursor-companion.sh の workspace guard は `--write` 時のみ発火)
    - cursor 側はファイル書込・コマンド実行が disabled、worktree 隔離不要

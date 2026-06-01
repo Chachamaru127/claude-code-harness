@@ -1,6 +1,6 @@
 {
   "name": "claude-code-harness",
-  "version": "4.13.2",
+  "version": "4.13.3",
   "description": "Plan, work, review, and release workflows for Codex CLI users of Claude Code Harness.",
   "author": {
     "name": "Chachamaru",
