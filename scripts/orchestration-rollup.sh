@@ -10,12 +10,19 @@
 #
 # Invoked from the live Go hook handlers at full-session completion
 # (task_completed.go) and again at session end (cleanup.go) as a safety net.
-# Because it is idempotent per session_id, running it from both points — or more
-# than once — never double-counts.
+# Each rollup reconciles the session's contribution to the lifetime totals by the
+# DELTA between its current ledger count and the amount already folded in (tracked
+# per session in session_counts). So running it from both points — or repeatedly,
+# even mid-session — adds each delegation exactly once: a re-run with no new
+# delegations is a no-op, and a re-run after more delegations adds only the tail.
 #
 # Contract:
 #   - record-only: prints nothing to stdout (it is not a display surface).
-#   - idempotent: a session_id already in rolled_up_sessions is a no-op.
+#   - delta-reconciled: re-rollup adds (current − previously-counted) per backend;
+#     no new delegations => no-op (no double-count); a grown ledger => tail added.
+#   - migration-safe: a pre-reconciliation totals file lacks session_counts; a
+#     session already in rolled_up_sessions is then treated as fully counted
+#     (delta 0) so an old file is never double-counted on its next rollup.
 #   - fail-open: any error exits 0 without touching the caller's flow.
 #   - missing/empty ledger: skip (exit 0).
 
@@ -70,7 +77,7 @@ main() {
   # Existing totals or default skeleton.
   local existing
   existing="$(cat "${totals}" 2>/dev/null || true)"
-  [ -n "${existing}" ] || existing='{"version":1,"totals":{},"rolled_up_sessions":[],"first_seen":null,"last_seen":null}'
+  [ -n "${existing}" ] || existing='{"version":1,"totals":{},"rolled_up_sessions":[],"session_counts":{},"first_seen":null,"last_seen":null}'
 
   local dir
   dir="$(dirname "${totals}")"
@@ -80,18 +87,29 @@ main() {
   tmp="$(mktemp "${dir}/.orch-totals.XXXXXX" 2>/dev/null || true)"
   [ -n "${tmp}" ] || return 0
 
+  # Delta reconciliation: fold only (current ledger count − amount already counted)
+  # for this session into the per-backend totals, then snapshot the new count in
+  # session_counts. $prev is the previously-counted split:
+  #   - session_counts[$sid] when present (the normal path);
+  #   - else, for a pre-reconciliation file where the session is already in
+  #     rolled_up_sessions, $sc itself (treat it as fully counted => delta 0, so an
+  #     old file is migration-safe and never double-counted);
+  #   - else {} (a brand-new session => delta is its full current count).
   merged="$(printf '%s' "${existing}" | jq \
     --arg sid "${session_id}" \
     --arg now "${now}" \
     --argjson sc "${session_counts}" \
-    'if (.rolled_up_sessions | index($sid)) then .
-     else
-       .version = (.version // 1)
-       | .totals = (reduce ($sc | to_entries[]) as $e (.totals // {}; .[$e.key] = (((.[$e.key]) // 0) + $e.value)))
-       | .rolled_up_sessions = ((.rolled_up_sessions // []) + [$sid])
-       | .first_seen = (.first_seen // $now)
-       | .last_seen = $now
-     end' 2>/dev/null || true)"
+    '. as $root
+     | ($root.session_counts[$sid]
+        // (if ($root.rolled_up_sessions | index($sid)) then $sc else {} end)) as $prev
+     | .version = (.version // 1)
+     | .totals = (reduce (($sc + $prev) | keys_unsorted[]) as $k (.totals // {};
+         .[$k] = (((.[$k]) // 0) + (($sc[$k]) // 0) - (($prev[$k]) // 0))))
+     | .session_counts = ((.session_counts // {}) | .[$sid] = $sc)
+     | .rolled_up_sessions = (if (.rolled_up_sessions | index($sid)) then (.rolled_up_sessions // [])
+                              else ((.rolled_up_sessions // []) + [$sid]) end)
+     | .first_seen = (.first_seen // $now)
+     | .last_seen = $now' 2>/dev/null || true)"
 
   if [ -z "${merged}" ]; then
     rm -f "${tmp}" 2>/dev/null || true

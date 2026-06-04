@@ -105,6 +105,60 @@ HARNESS_ORCHESTRATION_LEDGER="${LEDGER}" HARNESS_ORCHESTRATION_TOTALS="${BLOCK}/
 frc=$?
 [ "${frc}" -eq 0 ] && ok "fail-open: unwritable totals exit 0" || ng "fail-open rc=${frc}"
 
+# 5b. delta reconciliation: a re-rollup after MORE same-session delegations adds
+#     only the new ones (the mid-session rollup gap). Hermetic: own ledger/totals.
+DLEDGER="${TMP}/delta-ledger.jsonl"
+DTOTALS="${TMP}/delta-totals.json"
+cat >"${DLEDGER}" <<'EOF'
+{"ts":"2026-06-03T02:00:00Z","backend":"cursor","subcommand":"task","write":true,"exit_code":0,"duration_ms":50,"session_id":"sess-D","counts":true}
+{"ts":"2026-06-03T02:00:01Z","backend":"cursor","subcommand":"review","write":false,"exit_code":0,"duration_ms":40,"session_id":"sess-D","counts":true}
+EOF
+run_delta() {
+  HARNESS_ORCHESTRATION_LEDGER="${DLEDGER}" HARNESS_ORCHESTRATION_TOTALS="${DTOTALS}" \
+    bash "${ROLLUP}" sess-D >/dev/null 2>&1
+}
+# first rollup captures the session at count 2
+run_delta
+[ "$(jq -r '.totals.cursor' "${DTOTALS}")" = "2" ] && ok "delta: initial cursor=2" || ng "delta initial ($(jq -r '.totals.cursor' "${DTOTALS}"))"
+# one more counted same-session delegation appears AFTER the first rollup
+cat >>"${DLEDGER}" <<'EOF'
+{"ts":"2026-06-03T02:00:02Z","backend":"cursor","subcommand":"task","write":true,"exit_code":0,"duration_ms":60,"session_id":"sess-D","counts":true}
+EOF
+# re-rollup must add only the tail (2 -> 3): NOT skipped (stay 2), NOT re-added whole (5)
+run_delta
+[ "$(jq -r '.totals.cursor' "${DTOTALS}")" = "3" ] && ok "delta: re-rollup adds tail cursor 2->3" || ng "delta re-rollup ($(jq -r '.totals.cursor' "${DTOTALS}"))"
+[ "$(jq -r '.rolled_up_sessions | length' "${DTOTALS}")" = "1" ] && ok "delta: session still listed once" || ng "delta session count ($(jq -r '.rolled_up_sessions | length' "${DTOTALS}"))"
+# the per-session snapshot now reflects the current ledger count
+[ "$(jq -r '.session_counts["sess-D"].cursor' "${DTOTALS}")" = "3" ] && ok "delta: session_counts snapshot updated to 3" || ng "delta snapshot ($(jq -r '.session_counts["sess-D"].cursor' "${DTOTALS}"))"
+# re-rollup again with no new delegations -> stays 3 (no-double-count preserved)
+run_delta
+[ "$(jq -r '.totals.cursor' "${DTOTALS}")" = "3" ] && ok "delta: no new delegations stays 3 (no-double-count)" || ng "delta no-op ($(jq -r '.totals.cursor' "${DTOTALS}"))"
+
+# 5c. migration-safe: an old totals file lacking session_counts is read without
+#     error, and a session already in rolled_up_sessions is NOT double-counted.
+MLEDGER="${TMP}/mig-ledger.jsonl"
+MTOTALS="${TMP}/mig-totals.json"
+cat >"${MLEDGER}" <<'EOF'
+{"ts":"2026-06-03T03:00:00Z","backend":"codex","subcommand":"task","write":true,"exit_code":null,"duration_ms":null,"session_id":"sess-M","counts":true}
+{"ts":"2026-06-03T03:00:01Z","backend":"codex","subcommand":"task","write":true,"exit_code":null,"duration_ms":null,"session_id":"sess-M","counts":true}
+EOF
+# pre-fix totals file: sess-M already folded codex=2 into totals, no session_counts field
+cat >"${MTOTALS}" <<'EOF'
+{"version":1,"totals":{"codex":2},"rolled_up_sessions":["sess-M"],"first_seen":"2026-06-03T03:00:00Z","last_seen":"2026-06-03T03:00:00Z"}
+EOF
+HARNESS_ORCHESTRATION_LEDGER="${MLEDGER}" HARNESS_ORCHESTRATION_TOTALS="${MTOTALS}" \
+  bash "${ROLLUP}" sess-M >/dev/null 2>&1
+migrc=$?
+[ "${migrc}" -eq 0 ] && ok "migration: old totals read without error (exit 0)" || ng "migration rc=${migrc}"
+[ "$(jq -r '.totals.codex' "${MTOTALS}")" = "2" ] && ok "migration: already-counted session not double-counted (stays 2)" || ng "migration double-count ($(jq -r '.totals.codex' "${MTOTALS}"))"
+# after migration the snapshot is seeded, so a further delegation is captured as a delta
+cat >>"${MLEDGER}" <<'EOF'
+{"ts":"2026-06-03T03:00:02Z","backend":"codex","subcommand":"task","write":true,"exit_code":null,"duration_ms":null,"session_id":"sess-M","counts":true}
+EOF
+HARNESS_ORCHESTRATION_LEDGER="${MLEDGER}" HARNESS_ORCHESTRATION_TOTALS="${MTOTALS}" \
+  bash "${ROLLUP}" sess-M >/dev/null 2>&1
+[ "$(jq -r '.totals.codex' "${MTOTALS}")" = "3" ] && ok "migration: post-seed tail captured (codex 2->3)" || ng "migration post-seed ($(jq -r '.totals.codex' "${MTOTALS}"))"
+
 # 6. live Go handlers invoke the rollup (via the orchestration package)
 if [ -f "${TASK_GO}" ] && grep -q 'orchestration\.Run' "${TASK_GO}"; then
   ok "task_completed.go invokes orchestration.Run (all-done)"
