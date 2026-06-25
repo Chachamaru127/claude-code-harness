@@ -47,6 +47,18 @@ allow = [
   "Bash(yarn run test:*)",
   "Bash(yarn run lint:*)",
   "Bash(yarn run build:*)",
+  # Java / JVM build commands — non-destructive sub-commands only (test, compile, verify).
+  # install, deploy, publish remain behind the ask prompt.
+  "Bash(mvn test:*)",
+  "Bash(mvn compile:*)",
+  "Bash(mvn verify:*)",
+  "Bash(./mvnw test:*)",
+  "Bash(./mvnw compile:*)",
+  "Bash(./mvnw verify:*)",
+  "Bash(gradle test:*)",
+  "Bash(gradle compileJava:*)",
+  "Bash(./gradlew test:*)",
+  "Bash(./gradlew compileJava:*)",
 ]
 deny = [
   "Bash(sudo:*)",
