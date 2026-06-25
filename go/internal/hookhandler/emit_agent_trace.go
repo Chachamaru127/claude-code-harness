@@ -691,6 +691,14 @@ func eatDetectProjectType(repoRoot string) string {
 		{"requirements.txt", "python"},
 		{"Gemfile", "ruby"},
 		{"composer.json", "php"},
+		// Java/JVM — checked before package.json to avoid false-positive
+		// "node" on hybrid Java+frontend projects that also carry a
+		// package.json (e.g. a Spring Boot app with a React frontend).
+		{"build.gradle.kts", "java"}, // Gradle Kotlin DSL (preferred: modern)
+		{"build.gradle", "java"},     // Gradle Groovy DSL
+		{"pom.xml", "java"},          // Maven
+		{"mvnw", "java"},             // Maven Wrapper
+		{"gradlew", "java"},          // Gradle Wrapper
 		{"package.json", "node"},
 	}
 	for _, check := range checks {

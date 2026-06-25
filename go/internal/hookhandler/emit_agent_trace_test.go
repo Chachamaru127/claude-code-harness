@@ -616,3 +616,83 @@ func TestEmitAgentTrace_MultiEditTool_ModifyAction(t *testing.T) {
 		t.Errorf("expected action=modify for MultiEdit tool, got: %s", rec.Files[0].Action)
 	}
 }
+
+// TestEatDetectProjectType_Java は Java/JVM プロジェクトの検出をテストする。
+func TestEatDetectProjectType_Java(t *testing.T) {
+	tests := []struct {
+		name     string
+		files    []string
+		expected string
+	}{
+		{
+			name:     "pom.xml (Maven)",
+			files:    []string{"pom.xml"},
+			expected: "java",
+		},
+		{
+			name:     "build.gradle.kts (Gradle Kotlin DSL)",
+			files:    []string{"build.gradle.kts"},
+			expected: "java",
+		},
+		{
+			name:     "build.gradle (Gradle Groovy DSL)",
+			files:    []string{"build.gradle"},
+			expected: "java",
+		},
+		{
+			name:     "mvnw (Maven Wrapper)",
+			files:    []string{"mvnw"},
+			expected: "java",
+		},
+		{
+			name:     "gradlew (Gradle Wrapper)",
+			files:    []string{"gradlew"},
+			expected: "java",
+		},
+		{
+			name:     "pom.xml + package.json (Java takes priority over Node)",
+			files:    []string{"pom.xml", "package.json"},
+			expected: "java",
+		},
+		{
+			name:     "build.gradle + package.json (Gradle takes priority over Node)",
+			files:    []string{"build.gradle", "package.json"},
+			expected: "java",
+		},
+		{
+			name:     "empty directory returns unknown",
+			files:    nil,
+			expected: "unknown",
+		},
+		{
+			name:     "only package.json still returns node",
+			files:    []string{"package.json"},
+			expected: "node",
+		},
+		{
+			name:     "go.mod still returns go",
+			files:    []string{"go.mod"},
+			expected: "go",
+		},
+		{
+			name:     "Cargo.toml still returns rust",
+			files:    []string{"Cargo.toml"},
+			expected: "rust",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			for _, f := range tt.files {
+				if err := os.WriteFile(filepath.Join(dir, f), []byte{}, 0644); err != nil {
+					t.Fatalf("failed to create test file %s: %v", f, err)
+				}
+			}
+			got := eatDetectProjectType(dir)
+			if got != tt.expected {
+				t.Errorf("eatDetectProjectType() = %q, want %q", got, tt.expected)
+			}
+		})
+	}
+}
