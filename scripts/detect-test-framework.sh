@@ -160,6 +160,24 @@ detect_in_dir() {
     return 0
   fi
 
+  # --- Java (Maven) ---
+  if [ -f "${root}/pom.xml" ]; then
+    local mvn_cmd="mvn"
+    [ -f "${root}/mvnw" ] && mvn_cmd="./mvnw"
+    emit_json "junit" "${mvn_cmd} test" "java" "**/*Test.java" "pom.xml"
+    return 0
+  fi
+
+  # --- Java (Gradle) ---
+  if [ -f "${root}/build.gradle.kts" ] || [ -f "${root}/build.gradle" ]; then
+    local gradle_cmd="gradle"
+    [ -f "${root}/gradlew" ] && gradle_cmd="./gradlew"
+    local detect_via="build.gradle"
+    [ -f "${root}/build.gradle.kts" ] && detect_via="build.gradle.kts"
+    emit_json "gradle" "${gradle_cmd} test" "java" "**/*Test.java" "${detect_via}"
+    return 0
+  fi
+
   return 1
 }
 
