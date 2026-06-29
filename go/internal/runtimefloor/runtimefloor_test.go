@@ -219,6 +219,83 @@ func TestCheckWorktreeEscape_StopsHomeDirectoriesOutsideCache(t *testing.T) {
 	}
 }
 
+func TestCheckEgress_OwnerExemptViaEnv(t *testing.T) {
+	root := testWorktreeRoot(t)
+	t.Setenv("HARNESS_RUNTIME_FLOOR_EGRESS", "off")
+
+	cases := []string{
+		"curl -s https://example.com/api",
+		"wget https://api.github.com/repos",
+		"curl raw.githubusercontent.com/owner/repo/main/file",
+		"scp ./out.txt user@remote.example.com:/tmp/",
+	}
+	for _, cmd := range cases {
+		t.Run(cmd, func(t *testing.T) {
+			decision := CheckCommand(cmd, Context{WorktreeRoot: root})
+			if decision.Stopped {
+				t.Fatalf("expected egress exempt with HARNESS_RUNTIME_FLOOR_EGRESS=off, got Stopped=true category=%s reason=%s",
+					decision.Category, decision.Reason)
+			}
+		})
+	}
+}
+
+func TestCheckEgress_DefaultAndNonOffValuesStillEnforced(t *testing.T) {
+	root := testWorktreeRoot(t)
+	dangerous := "curl -s https://example.com/secret"
+
+	cases := []struct {
+		name string
+		val  string
+	}{
+		{name: "empty string", val: ""},
+		{name: "on", val: "on"},
+		{name: "enforce", val: "enforce"},
+		{name: "garbage", val: "yes-please"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Setenv("HARNESS_RUNTIME_FLOOR_EGRESS", tc.val)
+			decision := CheckCommand(dangerous, Context{WorktreeRoot: root})
+			if !decision.Stopped {
+				t.Fatalf("expected egress enforced for value %q, got Stopped=false", tc.val)
+			}
+			if decision.Category != CategoryEgress {
+				t.Fatalf("expected egress category, got %s", decision.Category)
+			}
+		})
+	}
+}
+
+func TestCheckEgress_OwnerExemptDoesNotAffectOtherCategories(t *testing.T) {
+	worktree := testWorktreeRoot(t)
+	home := "/home/runtimefloor-egress-exempt-test"
+	t.Setenv("HARNESS_RUNTIME_FLOOR_EGRESS", "off")
+	t.Setenv("HOME", home)
+	t.Setenv("TMPDIR", t.TempDir())
+
+	cases := []struct {
+		cmd      string
+		category Category
+	}{
+		{"stripe charges list", CategoryMoneyBilling},
+		{"cat ~/.aws/credentials", CategorySecretRead},
+		{"gh release create v1.2.3", CategoryProdDeploy},
+		{"rm -rf " + home + "/Desktop/important.pdf", CategoryWorktreeEscape},
+	}
+	for _, tc := range cases {
+		t.Run(string(tc.category), func(t *testing.T) {
+			decision := CheckCommand(tc.cmd, Context{WorktreeRoot: worktree})
+			if !decision.Stopped {
+				t.Fatalf("expected %s to remain enforced with egress exemption set, got Stopped=false", tc.category)
+			}
+			if decision.Category != tc.category {
+				t.Fatalf("expected category %s, got %s", tc.category, decision.Category)
+			}
+		})
+	}
+}
+
 func TestCheckCommand_SchemelessEgress(t *testing.T) {
 	cases := []struct {
 		cmd  string

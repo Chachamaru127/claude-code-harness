@@ -113,6 +113,19 @@ func checkEgress(cmd string, _ Context) Decision {
 		return Decision{}
 	}
 
+	// Owner-level scope control: HARNESS_RUNTIME_FLOOR_EGRESS=off lets the human
+	// who launches the session opt the egress category out of the hard floor —
+	// e.g. for user-driven research / dynamic-workflow runs that legitimately
+	// fetch many external URLs and where the human is the approval. This is NOT a
+	// worker-level override: the PreToolUse hook subprocess inherits Claude Code's
+	// process environment, so a sandboxed or prompt-injected worker cannot set
+	// this variable for the hook — only a shell export or ~/.claude/settings.json
+	// "env" by the owner can. The other four categories (money-billing,
+	// secret-read, prod-deploy, worktree-escape) stay non-overridable.
+	if egressFloorExempted() {
+		return Decision{}
+	}
+
 	lower := strings.ToLower(cmd)
 
 	for _, match := range urlPattern.FindAllStringSubmatch(cmd, -1) {
@@ -155,6 +168,14 @@ func checkEgress(cmd string, _ Context) Decision {
 	}
 
 	return Decision{}
+}
+
+// egressFloorExempted reports whether the owner has explicitly scoped the egress
+// hard floor out of the current session via HARNESS_RUNTIME_FLOOR_EGRESS=off.
+// Only the literal value "off" (case-insensitive) exempts; any other value, or an
+// unset variable, keeps the egress floor enforced (fail-safe default).
+func egressFloorExempted() bool {
+	return strings.EqualFold(strings.TrimSpace(os.Getenv("HARNESS_RUNTIME_FLOOR_EGRESS")), "off")
 }
 
 func checkCurlWgetSchemelessHosts(cmd string) Decision {
