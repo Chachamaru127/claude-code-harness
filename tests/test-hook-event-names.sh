@@ -8,6 +8,9 @@
 
 set -euo pipefail
 
+# UTF-8 ロケールの sed/grep は絵文字を含む行をバイナリ誤判定する（msys で再現）
+export LC_ALL=C
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 

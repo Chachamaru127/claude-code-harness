@@ -6,6 +6,31 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Changed
+
+#### フック実行のオーバーヘッド削減（Windows で特に効果大）
+
+**今まで**: すべてのフックが `bash -c 'valid_root(){...}'` ラッパー経由で起動し、
+1 フックあたり bash + grep + dispatcher の多段プロセス起動が発生していました。
+プロセス生成が遅い Windows では、Write/Edit 1 回ごとに十数プロセスが直列に走り、
+編集のたびに数秒〜数十秒の純オーバーヘッドが発生していました。さらに
+PreToolUse / PostToolUse / PreCompact / Stop に計 4 件の Haiku agent フックがあり、
+ツール呼び出しごとに LLM 往復（各 2〜10 秒）がブロッキングで走っていました。
+
+**今後**: `CLAUDE_PLUGIN_ROOT` が有効な通常ケースでは、全フックがプラットフォーム
+バイナリを直接 `exec` する 1 ホップ起動になります（Windows は
+`bin/harness-windows-amd64.exe` を直接実行、追加プロセスなし）。root フォールバック解決
+（`CLAUDE_PROJECT_DIR` → `$PWD` → marketplace/cache + plugin.json name 検証）は
+`CLAUDE_PLUGIN_ROOT` が不在・無効な場合にのみ実行されます。Haiku agent フック 4 件は
+既定配線から削除し、決定的なガードは従来どおり Go エンジン（R01-R13）が担当します。
+決定・コンテキスト注入を行わない純トラッカー系フック 15 件は `async: true` 化し、
+ツール実行をブロックしなくなります。`relay-poll` は既定配線から外れ、
+必要なユーザーが settings.json の hooks で opt-in する方式になります。
+
+### Fixed
+
+- `tests/test-hook-event-names.sh` を `LC_ALL=C` に固定（UTF-8 ロケールの msys sed/grep が絵文字を含む行をバイナリ誤判定して失敗する問題）
+
 ## [4.16.4] - 2026-06-28
 
 ### Changed

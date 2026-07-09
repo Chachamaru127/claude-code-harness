@@ -7,17 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook pre-tool",
-            "timeout": 10
-          }
-        ]
-      },
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook relay-poll",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook pre-tool",
             "timeout": 10
           }
         ]
@@ -27,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook ask-user-question-normalize",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook ask-user-question-normalize",
             "timeout": 5
           }
         ]
@@ -37,19 +27,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook inbox-check",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook inbox-check",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook pre-tool-use-file-lease",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook pre-tool-use-file-lease",
             "timeout": 5
-          },
-          {
-            "type": "agent",
-            "prompt": "Review the following code change for quality issues. Check if the change: (1) introduces hardcoded secrets or credentials, (2) leaves TODO/FIXME stubs without implementation, (3) has obvious security vulnerabilities (SQL injection, XSS, command injection). If any issue is found, return JSON with permissionDecision: 'deny' and permissionDecisionReason explaining the issue. If the change looks acceptable, return nothing (exit 0). Input: $ARGUMENTS",
-            "model": "haiku",
-            "timeout": 30
           }
         ]
       },
@@ -58,7 +42,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook browser-guide",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook browser-guide",
             "timeout": 10
           }
         ]
@@ -70,7 +54,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook permission",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook permission",
             "timeout": 10
           }
         ]
@@ -81,7 +65,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook permission",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook permission",
             "timeout": 10
           }
         ]
@@ -93,7 +77,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook setup-init",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook setup-init",
             "timeout": 60,
             "once": true
           }
@@ -104,7 +88,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook setup-init",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook setup-init",
             "timeout": 60,
             "once": true
           }
@@ -115,7 +99,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook setup-maintenance",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook setup-maintenance",
             "timeout": 60,
             "once": true
           }
@@ -128,31 +112,31 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook session-start",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook session-start",
             "timeout": 15,
             "once": true
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook memory-bridge",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook memory-bridge",
             "timeout": 30,
             "once": true
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -f \"$r/scripts/hook-handlers/memory-session-start.sh\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec /bin/bash \"$root/scripts/hook-handlers/memory-session-start.sh\" \"$@\"' _",
+            "command": "[ -f \"${CLAUDE_PLUGIN_ROOT:-}/scripts/hook-handlers/memory-session-start.sh\" ] || exit 0; exec /bin/bash \"$CLAUDE_PLUGIN_ROOT/scripts/hook-handlers/memory-session-start.sh\"",
             "timeout": 30,
             "once": true
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook session-register",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook session-register",
             "timeout": 10,
             "once": true
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook session-relay-start",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook session-relay-start",
             "timeout": 15,
             "once": true
           }
@@ -165,7 +149,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook subagent-start",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook subagent-start",
             "timeout": 10
           }
         ]
@@ -176,7 +160,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook instructions-loaded",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook instructions-loaded",
             "timeout": 10
           }
         ]
@@ -188,12 +172,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook subagent-stop",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook subagent-stop",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -f \"$r/scripts/hook-handlers/subagentstop-reviewer-persist.sh\" ] && [ -f \"$r/scripts/write-review-result.sh\" ]; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then exit 0; fi; exec bash \"$root/scripts/hook-handlers/subagentstop-reviewer-persist.sh\"' _",
+            "command": "[ -f \"${CLAUDE_PLUGIN_ROOT:-}/scripts/hook-handlers/subagentstop-reviewer-persist.sh\" ] || exit 0; exec /bin/bash \"$CLAUDE_PLUGIN_ROOT/scripts/hook-handlers/subagentstop-reviewer-persist.sh\"",
             "timeout": 15
           }
         ]
@@ -204,7 +188,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook post-tool-failure",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook post-tool-failure",
             "timeout": 5
           }
         ]
@@ -215,7 +199,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook teammate-idle",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook teammate-idle",
             "timeout": 10
           }
         ]
@@ -226,7 +210,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook task-completed-ext",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook task-completed-ext",
             "timeout": 10
           }
         ]
@@ -237,7 +221,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook runtime-reactive",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook runtime-reactive",
             "timeout": 10
           }
         ]
@@ -248,7 +232,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook worktree-create",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook worktree-create",
             "timeout": 10
           }
         ]
@@ -259,7 +243,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook worktree-remove",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook worktree-remove",
             "timeout": 10
           }
         ]
@@ -270,18 +254,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ pre-compact",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" pre-compact",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook pre-compact-save",
-            "timeout": 30
-          },
-          {
-            "type": "agent",
-            "prompt": "IMPORTANT: Parse the hook input JSON from $ARGUMENTS and extract the session_id field. Then check if '.claude/state/locks/loop-session.lock.d' exists as a DIRECTORY (test -d). If the lock directory EXISTS, read its session_id field (jq -r '.session_id' .claude/state/locks/loop-session.lock.d/meta.json) and compare with the current hook's session_id from $ARGUMENTS. If the session_ids MATCH, harness-loop owns this session — return nothing immediately (suppress all WIP warnings). If they DO NOT match (a different session owns the lock), proceed normally to check Plans.md. If the lock directory does NOT exist, also proceed normally. In either 'proceed normally' case: check Plans.md for tasks with status 'cc:WIP'. If any WIP tasks exist, include a warning in systemMessage: 'Warning: Compacting context with WIP tasks in progress: [list task IDs and titles]. Key context about these tasks may be lost after compaction. Consider completing or checkpointing them first.' If no WIP tasks, return nothing. Input: $ARGUMENTS",
-            "model": "haiku",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook pre-compact-save",
             "timeout": 30
           }
         ]
@@ -293,7 +271,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook post-compact",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook post-compact",
             "timeout": 10
           }
         ]
@@ -305,7 +283,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook elicitation",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook elicitation",
             "timeout": 10
           }
         ]
@@ -317,7 +295,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook elicitation-result",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook elicitation-result",
             "timeout": 5
           }
         ]
@@ -328,7 +306,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook session-cleanup",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook session-cleanup",
             "timeout": 10
           }
         ]
@@ -340,27 +318,28 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook memory-bridge",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook memory-bridge",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -f \"$r/scripts/userprompt-inject-policy.sh\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec /bin/bash \"$root/scripts/userprompt-inject-policy.sh\" \"$@\"' _",
+            "command": "[ -f \"${CLAUDE_PLUGIN_ROOT:-}/scripts/userprompt-inject-policy.sh\" ] || exit 0; exec /bin/bash \"$CLAUDE_PLUGIN_ROOT/scripts/userprompt-inject-policy.sh\"",
             "timeout": 15
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook track-command",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook track-command",
+            "timeout": 10,
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook fix-proposal",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook fix-proposal",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook breezing-signal",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook breezing-signal",
             "timeout": 10
           }
         ]
@@ -372,7 +351,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook post-tool",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook post-tool",
             "timeout": 10
           }
         ]
@@ -382,14 +361,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook post-tool-use-file-lease",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook post-tool-use-file-lease",
             "timeout": 5
-          },
-          {
-            "type": "agent",
-            "prompt": "Perform a lightweight code review on the file that was just written/edited. Check for: (1) hardcoded secrets or API keys, (2) TODO/FIXME stubs left without implementation, (3) obvious security issues. This is a non-blocking advisory check. If issues found, include them in systemMessage. Input: $ARGUMENTS",
-            "model": "haiku",
-            "timeout": 30
           }
         ]
       },
@@ -398,13 +371,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook memory-bridge",
-            "timeout": 10
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook memory-bridge",
+            "timeout": 10,
+            "async": true
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook log-toolname",
-            "timeout": 30
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook log-toolname",
+            "timeout": 30,
+            "async": true
           }
         ]
       },
@@ -413,12 +388,13 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook commit-cleanup",
-            "timeout": 10
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook commit-cleanup",
+            "timeout": 10,
+            "async": true
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook ci-status",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook ci-status",
             "timeout": 30,
             "async": true
           }
@@ -429,8 +405,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook usage-tracker",
-            "timeout": 30
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook usage-tracker",
+            "timeout": 30,
+            "async": true
           }
         ]
       },
@@ -439,8 +416,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook clear-pending",
-            "timeout": 5
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook clear-pending",
+            "timeout": 5,
+            "async": true
           }
         ]
       },
@@ -449,7 +427,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook todo-sync",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook todo-sync",
             "timeout": 30
           }
         ]
@@ -459,8 +437,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -f \"$r/scripts/hook-handlers/posttool-progress-regen.sh\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec /bin/bash \"$root/scripts/hook-handlers/posttool-progress-regen.sh\"' _",
-            "timeout": 5
+            "command": "[ -f \"${CLAUDE_PLUGIN_ROOT:-}/scripts/hook-handlers/posttool-progress-regen.sh\" ] || exit 0; exec /bin/bash \"$CLAUDE_PLUGIN_ROOT/scripts/hook-handlers/posttool-progress-regen.sh\"",
+            "timeout": 5,
+            "async": true
           }
         ]
       },
@@ -469,44 +448,48 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook emit-trace",
-            "timeout": 5
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook emit-trace",
+            "timeout": 5,
+            "async": true
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook auto-cleanup",
-            "timeout": 60
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook auto-cleanup",
+            "timeout": 60,
+            "async": true
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook track-changes",
-            "timeout": 30
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook track-changes",
+            "timeout": 30,
+            "async": true
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook auto-test",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook auto-test",
             "timeout": 120,
             "async": true
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook quality-pack",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook quality-pack",
             "timeout": 60
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook plans-watcher",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook plans-watcher",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook tdd-check",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook tdd-check",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook auto-broadcast",
-            "timeout": 10
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook auto-broadcast",
+            "timeout": 10,
+            "async": true
           }
         ]
       }
@@ -516,7 +499,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook notification",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook notification",
             "timeout": 5
           }
         ]
@@ -527,7 +510,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook config-change",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook config-change",
             "timeout": 10
           }
         ]
@@ -538,7 +521,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook runtime-reactive",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook runtime-reactive",
             "timeout": 10
           }
         ]
@@ -549,7 +532,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook runtime-reactive",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook runtime-reactive",
             "timeout": 10
           }
         ]
@@ -560,28 +543,24 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook session-summary",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook session-summary",
+            "timeout": 30,
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook memory-bridge",
+            "timeout": 30,
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook stop-evaluator",
             "timeout": 30
           },
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook memory-bridge",
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook stop-evaluator",
-            "timeout": 30
-          },
-          {
-            "type": "agent",
-            "prompt": "Check if there are incomplete tasks before allowing session to stop. Read the Plans.md file and look for tasks with status 'cc:WIP'. If any WIP tasks exist, return JSON: {\"decision\": \"block\", \"reason\": \"WIP tasks remain: [list task numbers]. Consider completing them or marking as blocked before stopping.\"}. If no WIP tasks, return nothing (allow stop). Input: $ARGUMENTS",
-            "model": "haiku",
-            "timeout": 30
-          },
-          {
-            "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook session-unregister",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook session-unregister",
             "timeout": 10
           }
         ]
@@ -592,7 +571,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook permission-denied",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook permission-denied",
             "timeout": 5
           }
         ]
@@ -603,7 +582,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook stop-failure",
+            "command": "r=\"\"; if [ -n \"${CLAUDE_PLUGIN_ROOT:-}\" ] && [ -e \"${CLAUDE_PLUGIN_ROOT}/bin/harness\" ]; then r=\"$CLAUDE_PLUGIN_ROOT\"; else for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do [ -n \"$c\" ] && [ -e \"$c/bin/harness\" ] && grep -q '\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"' \"$c/.claude-plugin/plugin.json\" 2>/dev/null && { r=\"$c\"; break; }; done; fi; [ -n \"$r\" ] || exit 0; h=\"$r/bin/harness\"; case \"$OSTYPE\" in msys*|cygwin*) h=\"$h-windows-amd64.exe\";; esac; [ -x \"$h\" ] || exit 0; exec \"$h\" hook stop-failure",
             "timeout": 10
           }
         ]
