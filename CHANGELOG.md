@@ -16,6 +16,13 @@ Change history for claude-code-harness.
     directory prefix と glob の両対応、宣言はプロジェクト境界内のみ・緩和はしない）。
   - `git.protected_branches` — 組込みの `main` / `master` に加えて宣言した branch を
     R11（`git reset --hard`）/ R12（direct push）の対象に追加。
+  - `destructive_commands.allow_rm_rf` — `true`（opt-in、既定 false）で R05 の
+    `rm -rf` 確認を抑止。worktree 外への削除を止める runtimefloor の
+    worktree-escape ハード floor には影響しない。
+  - `runtimefloor.secretAllow` — 相対宣言（例 `.env`）が読み取りコマンド側の
+    相対トークンにも一致するよう解決を修正。これまで `cat /abs/.env` のような
+    絶対パス読み取りしか許可されず、宣言済みでも `cat .env` は deny されていた。
+    project 外の絶対 path の `.env` は引き続き deny。
   - ファイル名の不整合を修正: 実ファイルは正準の
     `.claude-code-harness.config.json`（ドット付き）だが、schema/example のベース名に
     合わせた `claude-code-harness.config.json`（ドット無し）も解決するようにし、

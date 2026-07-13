@@ -1187,3 +1187,34 @@ func TestR15_QuotedGlobalFlagBypass(t *testing.T) {
 		t.Fatalf("must not deny quoted-flag add of a normal file, got %s", r.Decision)
 	}
 }
+
+// ---------------------------------------------------------------------------
+// R05: destructive rm -rf confirmation + allow_rm_rf opt-out
+// ---------------------------------------------------------------------------
+
+func TestR05_RmRfAsksByDefault(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "rm -rf build/"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionAsk {
+		t.Fatalf("expected ask, got %s", result.Decision)
+	}
+}
+
+func TestR05_AllowRmRfSuppressesAsk(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "rm -rf build/"})
+	ctx.AllowRmRf = true
+	result := EvaluateRules(ctx)
+	if result.Decision == hookproto.DecisionAsk {
+		t.Fatalf("expected allow_rm_rf to suppress the ask, got ask (%s)", result.Reason)
+	}
+}
+
+func TestR05_AllowRmRfDoesNotAffectOtherRules(t *testing.T) {
+	// allow_rm_rf only relaxes the R05 confirmation; sudo (R01) still denies.
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "sudo rm -rf /var/log"})
+	ctx.AllowRmRf = true
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionDeny {
+		t.Fatalf("expected sudo deny to still fire, got %s", result.Decision)
+	}
+}

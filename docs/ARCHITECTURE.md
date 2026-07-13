@@ -63,10 +63,11 @@ claude-code-harness/
 強制される（enforced）セクション:
 - `paths.protected` — 宣言したパスへの Write/Edit/MultiEdit を deny（R16）
 - `git.protected_branches` — protected branch 判定（R11 reset --hard / R12 direct push）に branch 名を追加
-- `runtimefloor.secretAllow` — secret-read hard floor の許可宣言
+- `runtimefloor.secretAllow` — secret-read hard floor の許可宣言（相対宣言は worktree root 配下として解決され、`cat .env` のような素の相対読み取りにも一致）
+- `destructive_commands.allow_rm_rf` — `true` で R05 の `rm -rf` 確認を抑止（既定 false、opt-in）。worktree 外の削除は runtimefloor のハード floor で引き続き停止
 
 参照・共有される（advisory、markdown skill 側で解釈）セクション:
-- `safety` / `git.allow_*` / `ci` / `scaffolding` / `destructive_commands` / `work` / `session` / `orchestration` / `constitution` / `i18n`
+- `safety` / `git.allow_*` / `ci` / `scaffolding` / `destructive_commands`（`allow_rm_rf` 以外）/ `work` / `session` / `orchestration` / `constitution` / `i18n`
 
 > 注: `i18n.language` の正準ソースは YAML の `.claude-code-harness.config.yaml` です。`safety.mode: "dry-run"` はハード block ではなく skill 側のヒントです。
 

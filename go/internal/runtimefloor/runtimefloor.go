@@ -240,14 +240,44 @@ func checkSecretRead(cmd string, ctx Context) Decision {
 	allow := secretAllowPatterns(ctx)
 	for _, item := range indicators {
 		for _, loc := range item.re.FindAllStringIndex(scannable, -1) {
-			token := enclosingToken(scannable, loc[0])
-			if !isAllowlistedSecretPath(token, allow) {
-				return stop(CategorySecretRead, item.pattern,
-					"credential or secret read requires human approval")
+			// The indicator regex may consume a leading whitespace delimiter
+			// (e.g. `cat .env` matches " .env"), so loc[0] can point at the
+			// space *before* the secret path. Advancing past leading whitespace
+			// anchors enclosingToken on the path token itself instead of the
+			// preceding command word; a leading "/" is kept so absolute paths
+			// still resolve to their full form.
+			start := loc[0]
+			for start < loc[1] && (scannable[start] == ' ' || scannable[start] == '\t' || scannable[start] == '\n') {
+				start++
 			}
+			token := enclosingToken(scannable, start)
+			if secretTokenAllowlisted(token, allow, ctx.WorktreeRoot) {
+				continue
+			}
+			return stop(CategorySecretRead, item.pattern,
+				"credential or secret read requires human approval")
 		}
 	}
 	return Decision{}
+}
+
+// secretTokenAllowlisted reports whether a matched secret-read token is covered
+// by the allowlist. It first compares the token as written, then—because a
+// project config resolves relative declarations (secretAllow:[".env"]) to a
+// project-root-absolute path—retries with the token resolved against the
+// worktree root so a bare relative read like `cat .env` matches. The retry is
+// additive: it can only grant, never deny a token the base match already
+// allowed.
+func secretTokenAllowlisted(token string, allow []string, worktreeRoot string) bool {
+	if isAllowlistedSecretPath(token, allow) {
+		return true
+	}
+	root := strings.TrimSpace(worktreeRoot)
+	if root == "" || token == "" || filepath.IsAbs(token) || strings.HasPrefix(token, "~") {
+		return false
+	}
+	abs := filepath.Clean(filepath.Join(root, token))
+	return isAllowlistedSecretPath(abs, allow)
 }
 
 // secretAllowPatterns returns the operator-declared secret-read allowlist from

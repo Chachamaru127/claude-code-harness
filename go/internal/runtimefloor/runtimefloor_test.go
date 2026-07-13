@@ -476,3 +476,42 @@ func writeRuntimeFloorConfig(t *testing.T, root, body string) {
 func quoteJSON(s string) string {
 	return `"` + strings.ReplaceAll(s, `\`, `\\`) + `"`
 }
+
+func TestCheckSecretRead_ConfigAllowsBareRelativeEnvRead(t *testing.T) {
+	// Regression: a project-relative secretAllow declaration (".env") is
+	// resolved to a project-root-absolute path, but a bare `cat .env` produces
+	// a relative token. The floor must resolve the token against the worktree
+	// root so the two forms compare equal instead of denying the declared read.
+	root := testWorktreeRoot(t)
+	writeRuntimeFloorConfig(t, root, `{"runtimefloor":{"secretAllow":[".env"]}}`)
+
+	for _, cmd := range []string{"cat .env", "grep TOKEN .env", "cat ./.env"} {
+		d := CheckCommand(cmd, Context{WorktreeRoot: root})
+		if d.Stopped {
+			t.Fatalf("declared .env read %q should pass, got category %s reason %q", cmd, d.Category, d.Reason)
+		}
+	}
+}
+
+func TestCheckSecretRead_BareRelativeEnvDeniesWithoutAllowlist(t *testing.T) {
+	// The token fix must not weaken deny-by-default: a bare `cat .env` with no
+	// allowlist still requires approval.
+	root := testWorktreeRoot(t)
+	d := CheckCommand("cat .env", Context{WorktreeRoot: root})
+	if !d.Stopped || d.Category != CategorySecretRead {
+		t.Fatalf("bare .env read must deny without allowlist, got Stopped=%v Category=%s", d.Stopped, d.Category)
+	}
+}
+
+func TestCheckSecretRead_RelativeAllowlistStaysScopedToProject(t *testing.T) {
+	// A relative declaration allows the project's own .env but not a .env read
+	// under an unrelated absolute path.
+	root := testWorktreeRoot(t)
+	other := t.TempDir()
+	writeRuntimeFloorConfig(t, root, `{"runtimefloor":{"secretAllow":[".env"]}}`)
+
+	d := CheckCommand("cat "+filepath.Join(other, ".env"), Context{WorktreeRoot: root})
+	if !d.Stopped || d.Category != CategorySecretRead {
+		t.Fatalf("out-of-project .env must still deny, got Stopped=%v Category=%s", d.Stopped, d.Category)
+	}
+}

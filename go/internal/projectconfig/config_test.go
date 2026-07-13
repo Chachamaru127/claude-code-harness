@@ -164,3 +164,32 @@ func equalStrings(a, b []string) bool {
 	}
 	return true
 }
+
+func TestAllowRmRf(t *testing.T) {
+	dir := t.TempDir()
+	cases := []struct {
+		name string
+		body string
+		want bool
+	}{
+		{"explicit true", `{"destructive_commands":{"allow_rm_rf":true}}`, true},
+		{"explicit false", `{"destructive_commands":{"allow_rm_rf":false}}`, false},
+		{"missing field", `{"destructive_commands":{}}`, false},
+		{"missing section", `{"version":"1.0"}`, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			writeConfig(t, dir, ".claude-code-harness.config.json", tc.body)
+			if got := Load(dir).AllowRmRf(); got != tc.want {
+				t.Fatalf("AllowRmRf()=%v, want %v", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestAllowRmRfNilResult(t *testing.T) {
+	// A missing config yields no Config; the accessor must be safe and false.
+	if (LoadResult{}).AllowRmRf() {
+		t.Fatal("AllowRmRf on empty result should be false")
+	}
+}

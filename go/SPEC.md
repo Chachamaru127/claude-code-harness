@@ -337,7 +337,7 @@ RECOVERING → ABORTED     (リカバリ失敗、人間介入必要)
 | R02 | Write/Edit/MultiEdit | 保護パス (.env, .git/, *.pem, *.key, id_rsa 等) | deny | なし |
 | R03 | Bash | redirection / `tee` による `> .env`, `tee .git/` 等 | deny（TOML ask-list の `.env` / `.env.*` exact match + reason のみ ask） | `[[safety.guardrail.protectedPathAskList]]` |
 | R04 | Write/Edit/MultiEdit | プロジェクトルート外への絶対パス | ask | workMode |
-| R05 | Bash | `rm -rf` / `rm --recursive` | ask | workMode |
+| R05 | Bash | `rm -rf` / `rm --recursive` | ask | workMode / `destructive_commands.allow_rm_rf` |
 | R06 | Bash | `git push --force` / `-f` | deny | なし |
 | R07 | Write/Edit/MultiEdit | codexMode 中の直接書き込み | deny | なし |
 | R08 | Write/Edit/MultiEdit/Bash | breezing reviewer の書き込み/変更コマンド | deny | なし |
@@ -349,6 +349,10 @@ RECOVERING → ABORTED     (リカバリ失敗、人間介入必要)
 | R16 | Write/Edit/MultiEdit | `.claude-code-harness.config.json` の `paths.protected` で宣言したパスへの書き込み | deny | なし（宣言がなければ no-op） |
 
 R11 / R12 の protected branch 判定は組込みの `main` / `master` に加え、`.claude-code-harness.config.json` の `git.protected_branches` で宣言した branch 名も対象にする（宣言は組込みセットへの追加のみ、緩和はしない）。
+
+R05 の `rm -rf` 確認は `destructive_commands.allow_rm_rf: true`（既定 false, opt-in）で抑止できる。これは R05 の ask のみを対象とし、worktree 外への削除を止める runtimefloor の worktree-escape ハード floor には影響しない。
+
+runtimefloor secret-read の許可宣言（`runtimefloor.secretAllow` / 環境変数 `HARNESS_RUNTIME_FLOOR_SECRET_ALLOW`）で相対 path を宣言した場合、読み取りコマンド側の相対トークンも worktree root 配下として解決して突き合わせる。これにより `cat .env` のような素の相対読み取りも宣言に一致する一方、project 外の絶対 path の `.env` は引き続き deny される。
 
 R03 の target extraction は redirection / `tee` ベース。`sed -i` 等の in-place 書き込み検出は v1 範囲外。
 

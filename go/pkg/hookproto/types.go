@@ -144,6 +144,10 @@ type RuleContext struct {
 	// .claude-code-harness.config.json. When non-empty it augments the built-in
 	// main/master set used by R11/R12.
 	ProtectedBranches       []string
+	// AllowRmRf mirrors destructive_commands.allow_rm_rf. When true, the R05
+	// destructive-delete confirmation is suppressed (opt-in, default false). The
+	// runtimefloor worktree-escape hard floor is unaffected.
+	AllowRmRf               bool
 	TddEnforceLevel         string // off, central, or max
 	TddHookEnabled          bool
 	TddBypass               bool

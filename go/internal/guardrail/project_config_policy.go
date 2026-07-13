@@ -33,3 +33,10 @@ func resolveProtectedPathDenyList(res projectconfig.LoadResult) []string {
 func resolveProtectedBranches(res projectconfig.LoadResult) []string {
 	return res.ProtectedBranches()
 }
+
+// resolveAllowRmRf reports whether the project opted into suppressing the
+// destructive-delete confirmation via destructive_commands.allow_rm_rf. A
+// missing or unparseable config returns false, keeping the confirmation on.
+func resolveAllowRmRf(res projectconfig.LoadResult) bool {
+	return res.AllowRmRf()
+}

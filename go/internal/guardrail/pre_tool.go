@@ -132,6 +132,7 @@ func BuildContext(input hookproto.HookInput) hookproto.RuleContext {
 	projectCfg := resolveProjectConfig(input, projectRoot)
 	protectedPathDenyList := resolveProtectedPathDenyList(projectCfg)
 	protectedBranches := resolveProtectedBranches(projectCfg)
+	allowRmRf := resolveAllowRmRf(projectCfg)
 
 	// SQLite から work_states を補完する（セッション ID がある場合のみ）
 	// フック高速パスの制約（SPEC.md §12）に従い、I/O エラーは無視する。
@@ -157,6 +158,7 @@ func BuildContext(input hookproto.HookInput) hookproto.RuleContext {
 		ProtectedPathAskList:      resolveProtectedPathAskList(input, projectRoot),
 		ProtectedPathDenyList:     protectedPathDenyList,
 		ProtectedBranches:         protectedBranches,
+		AllowRmRf:                 allowRmRf,
 		TddEnforceLevel:           tddRuntime.Level,
 		TddHookEnabled:            tddRuntime.HookEnabled,
 		TddBypass:                 tddBypass,

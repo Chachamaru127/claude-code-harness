@@ -257,6 +257,17 @@ func (r LoadResult) ProtectedBranches() []string {
 	return out
 }
 
+// AllowRmRf reports whether destructive_commands.allow_rm_rf is explicitly set
+// to true. A missing config, missing section, or missing/false field all return
+// false so the confirmation guardrail stays on by default.
+func (r LoadResult) AllowRmRf() bool {
+	if r.Config == nil {
+		return false
+	}
+	v := r.Config.DestructiveCommands.AllowRmRf
+	return v != nil && *v
+}
+
 // sanitizeRelPath normalizes a declared path to a clean, forward-slash,
 // project-relative form. It returns "" for empty, absolute, or escaping paths.
 func sanitizeRelPath(raw string) string {

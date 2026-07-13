@@ -253,6 +253,13 @@ var Rules = []GuardRule{
 			if ctx.WorkMode {
 				return nil
 			}
+			// Opt-in via destructive_commands.allow_rm_rf: the project has
+			// pre-authorized rm -rf, so skip the confirmation. The runtimefloor
+			// worktree-escape hard floor still guards deletions outside the
+			// task worktree.
+			if ctx.AllowRmRf {
+				return nil
+			}
 			return &hookproto.HookResult{
 				Decision: hookproto.DecisionAsk,
 				Reason:   fmt.Sprintf("Detected a destructive delete command:\n%s\nRun it?", command),

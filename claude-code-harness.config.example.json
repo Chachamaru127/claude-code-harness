@@ -82,6 +82,7 @@
     "allow_rm_rf": false,
     "allow_npm_install": true,
     "require_size_check": true,
-    "max_files_to_modify": 20
+    "max_files_to_modify": 20,
+    "comment": "allow_rm_rf: true にすると R05 の rm -rf 確認を抑止（既定 false）。worktree 外の削除は runtimefloor のハード floor で引き続き停止。allow_npm_install / require_size_check / max_files_to_modify は skill 側のヒント。"
   }
 }
