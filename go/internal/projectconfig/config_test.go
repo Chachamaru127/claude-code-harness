@@ -91,6 +91,47 @@ func TestLoadMalformedSetsParseErr(t *testing.T) {
 	}
 }
 
+func TestLoadUnknownKeyFailsClosed(t *testing.T) {
+	dir := t.TempDir()
+	// A typo in a key (protectedd) must surface as a parse error so the intended
+	// protection is not silently dropped.
+	writeConfig(t, dir, ".claude-code-harness.config.json",
+		`{"paths": {"protectedd": ["infra/"]}}`)
+	res := Load(dir)
+	if !res.Found {
+		t.Fatal("expected Found=true")
+	}
+	if res.ParseErr == nil {
+		t.Fatal("expected ParseErr for unknown key")
+	}
+	if res.Config != nil {
+		t.Error("expected nil Config on unknown-key error (fail closed)")
+	}
+}
+
+func TestLoadInvalidGlobFailsClosed(t *testing.T) {
+	dir := t.TempDir()
+	writeConfig(t, dir, ".claude-code-harness.config.json",
+		`{"paths": {"protected": ["["]}}`)
+	res := Load(dir)
+	if res.ParseErr == nil {
+		t.Fatal("expected ParseErr for invalid glob pattern")
+	}
+	if res.Config != nil {
+		t.Error("expected nil Config on invalid glob (fail closed)")
+	}
+}
+
+func TestLoadTrailingContentFailsClosed(t *testing.T) {
+	dir := t.TempDir()
+	writeConfig(t, dir, ".claude-code-harness.config.json",
+		`{"version":"1.0"}{"version":"2.0"}`)
+	res := Load(dir)
+	if res.ParseErr == nil {
+		t.Fatal("expected ParseErr for trailing content after JSON object")
+	}
+}
+
 func TestLoadFullConfig(t *testing.T) {
 	dir := t.TempDir()
 	body := `{

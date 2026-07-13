@@ -40,3 +40,14 @@ func resolveProtectedBranches(res projectconfig.LoadResult) []string {
 func resolveAllowRmRf(res projectconfig.LoadResult) bool {
 	return res.AllowRmRf()
 }
+
+// resolveConfigParseError returns a human-readable message when a project config
+// file was found but could not be parsed (malformed JSON, unknown keys, or an
+// invalid glob pattern). R16 fails closed on this so a typo cannot silently drop
+// the declared protections. An empty string means the config is absent or valid.
+func resolveConfigParseError(res projectconfig.LoadResult) string {
+	if res.Found && res.ParseErr != nil {
+		return res.ParseErr.Error()
+	}
+	return ""
+}

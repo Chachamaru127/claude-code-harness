@@ -1204,8 +1204,37 @@ func TestR05_AllowRmRfSuppressesAsk(t *testing.T) {
 	ctx := makeCtx("Bash", map[string]interface{}{"command": "rm -rf build/"})
 	ctx.AllowRmRf = true
 	result := EvaluateRules(ctx)
-	if result.Decision == hookproto.DecisionAsk {
-		t.Fatalf("expected allow_rm_rf to suppress the ask, got ask (%s)", result.Reason)
+	if result.Decision != hookproto.DecisionApprove {
+		t.Fatalf("expected allow_rm_rf to approve plain rm -rf, got %s (%s)", result.Decision, result.Reason)
+	}
+}
+
+func TestR05_AllowRmRfStillAsksFindDelete(t *testing.T) {
+	// allow_rm_rf is scoped to `rm -rf`; find-based mass deletion keeps asking.
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "find . -name '*.log' -delete"})
+	ctx.AllowRmRf = true
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionAsk {
+		t.Fatalf("expected find -delete to still ask despite allow_rm_rf, got %s", result.Decision)
+	}
+}
+
+func TestR05_AllowRmRfStillAsksFindExecRm(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "find . -type f -exec rm -rf {} +"})
+	ctx.AllowRmRf = true
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionAsk {
+		t.Fatalf("expected find -exec rm to still ask despite allow_rm_rf, got %s", result.Decision)
+	}
+}
+
+func TestR05_AllowRmRfStillAsksMacOSSystemPath(t *testing.T) {
+	// Removing sensitive system paths must never be silently pre-authorized.
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "rm -rf /System/Library/Foo"})
+	ctx.AllowRmRf = true
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionAsk {
+		t.Fatalf("expected macOS system-path removal to still ask despite allow_rm_rf, got %s", result.Decision)
 	}
 }
 

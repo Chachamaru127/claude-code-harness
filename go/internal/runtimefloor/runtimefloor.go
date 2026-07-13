@@ -68,7 +68,11 @@ var (
 	// schemelessHostAuthority matches curl/wget args like example.com/path without a URL scheme.
 	schemelessHostAuthority = regexp.MustCompile(`(?i)^(?:[\w.-]+@)?([a-z0-9][\w.-]*\.[a-z]{2,})(?::\d+)?$`)
 
-	rmRecursivePattern = regexp.MustCompile(`(?i)\brm\s+(?:-[a-z]*r[a-z]*\s+|-[a-z]*f[a-z]*r[a-z]*\s+|-[a-z]*r[a-z]*f[a-z]*\s+)`)
+	// rmRecursivePattern gates the worktree-escape floor. It matches short-flag
+	// recursive removals (-r, -rf, -fr, …) and the long-form `rm --recursive`,
+	// so a destructive delete outside the task worktree is stopped regardless of
+	// which flag spelling is used.
+	rmRecursivePattern = regexp.MustCompile(`(?i)\brm\s+(?:-[a-z]*r[a-z]*\s+|-[a-z]*f[a-z]*r[a-z]*\s+|-[a-z]*r[a-z]*f[a-z]*\s+|--recursive(?:\s|=|$))`)
 )
 
 func CheckCommand(cmd string, ctx Context) Decision {
@@ -356,7 +360,14 @@ func configSecretAllowPatterns(ctx Context) ([]string, bool, bool) {
 			out = append(out, abs)
 			continue
 		}
-		out = append(out, filepath.Join(rootAbs, filepath.Clean(p)))
+		// Relative entries resolve against the project root. Boundary-check them
+		// the same way as absolute entries so a traversal like "../.ssh/id_rsa"
+		// cannot allowlist a secret outside the task worktree.
+		abs := filepath.Clean(filepath.Join(rootAbs, filepath.Clean(p)))
+		if !pathUnderWorktree(abs, rootAbs) {
+			continue
+		}
+		out = append(out, abs)
 	}
 	return out, true, true
 }

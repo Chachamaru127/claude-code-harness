@@ -21,7 +21,10 @@
 package projectconfig
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -195,6 +198,12 @@ func Resolve(startDir string) (projectRoot string, path string, found bool) {
 
 // Load resolves and parses the project config starting from startDir.
 // It never returns an error value; inspect the LoadResult fields instead.
+//
+// Parsing is strict and fails closed: unknown JSON keys (e.g. a typo such as
+// "protectedd") and trailing garbage produce a ParseErr with a nil Config, so a
+// mis-declared protection can never be silently dropped. Invalid glob patterns
+// in paths.protected are likewise rejected. Security-sensitive callers must
+// treat Found=true with ParseErr!=nil as "fail closed".
 func Load(startDir string) LoadResult {
 	projectRoot, path, found := Resolve(startDir)
 	if !found {
@@ -205,10 +214,41 @@ func Load(startDir string) LoadResult {
 		return LoadResult{ProjectRoot: projectRoot, Path: path, Found: true, ParseErr: err}
 	}
 	var cfg Config
-	if err := json.Unmarshal(data, &cfg); err != nil {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&cfg); err != nil {
+		return LoadResult{ProjectRoot: projectRoot, Path: path, Found: true, ParseErr: err}
+	}
+	// Reject trailing content after the first JSON value (e.g. two objects).
+	if err := dec.Decode(new(json.RawMessage)); err != io.EOF {
+		if err == nil {
+			err = fmt.Errorf("unexpected trailing content after JSON object")
+		}
+		return LoadResult{ProjectRoot: projectRoot, Path: path, Found: true, ParseErr: err}
+	}
+	// Validate glob patterns up front so a malformed entry (e.g. "[") fails
+	// closed at load time instead of silently matching nothing at runtime.
+	if err := validateProtectedGlobs(cfg.Paths.Protected); err != nil {
 		return LoadResult{ProjectRoot: projectRoot, Path: path, Found: true, ParseErr: err}
 	}
 	return LoadResult{Config: &cfg, ProjectRoot: projectRoot, Path: path, Found: true}
+}
+
+// validateProtectedGlobs returns an error if any paths.protected entry is a
+// malformed glob pattern. filepath.Match reports ErrBadPattern for patterns such
+// as "[" or "a[b"; treating those as a load error keeps protections from being
+// silently disabled by a typo.
+func validateProtectedGlobs(entries []string) error {
+	for _, raw := range entries {
+		p := strings.TrimSpace(strings.Trim(strings.TrimSpace(raw), `"'`))
+		if p == "" {
+			continue
+		}
+		if _, err := filepath.Match(p, ""); err != nil {
+			return fmt.Errorf("invalid glob pattern in paths.protected %q: %w", raw, err)
+		}
+	}
+	return nil
 }
 
 // ProtectedPaths returns the normalized, project-relative protected path

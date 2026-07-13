@@ -140,6 +140,17 @@ type RuleContext struct {
 	// paths.protected of .claude-code-harness.config.json. Writes under any of
 	// these are denied by the guardrail (R16).
 	ProtectedPathDenyList []string
+	// ProtectedPathRoot is the directory that contains the resolved
+	// .claude-code-harness.config.json. paths.protected declarations are
+	// relative to this root, NOT to the (possibly nested) cwd/ProjectRoot, so
+	// R16 matching must canonicalize targets against it. Empty when no config
+	// was found, in which case ProtectedPathDenyList is also empty.
+	ProtectedPathRoot string
+	// ConfigParseError is set when a .claude-code-harness.config.json file was
+	// found but could not be parsed (malformed JSON, unknown keys, invalid glob
+	// pattern). R16 fails closed on this: writes are denied until the config is
+	// fixed, so a typo can never silently drop the declared protections.
+	ConfigParseError string
 	// ProtectedBranches holds branch names declared in git.protected_branches of
 	// .claude-code-harness.config.json. When non-empty it augments the built-in
 	// main/master set used by R11/R12.

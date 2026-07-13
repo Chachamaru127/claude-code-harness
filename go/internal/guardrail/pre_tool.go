@@ -131,6 +131,8 @@ func BuildContext(input hookproto.HookInput) hookproto.RuleContext {
 	// reused for both the protected-path deny list and the protected-branch set.
 	projectCfg := resolveProjectConfig(input, projectRoot)
 	protectedPathDenyList := resolveProtectedPathDenyList(projectCfg)
+	protectedPathRoot := projectCfg.ProjectRoot
+	configParseError := resolveConfigParseError(projectCfg)
 	protectedBranches := resolveProtectedBranches(projectCfg)
 	allowRmRf := resolveAllowRmRf(projectCfg)
 
@@ -157,6 +159,8 @@ func BuildContext(input hookproto.HookInput) hookproto.RuleContext {
 		ProtectedBranchPushPolicy: resolveProtectedBranchPushPolicy(input, projectRoot),
 		ProtectedPathAskList:      resolveProtectedPathAskList(input, projectRoot),
 		ProtectedPathDenyList:     protectedPathDenyList,
+		ProtectedPathRoot:         protectedPathRoot,
+		ConfigParseError:          configParseError,
 		ProtectedBranches:         protectedBranches,
 		AllowRmRf:                 allowRmRf,
 		TddEnforceLevel:           tddRuntime.Level,

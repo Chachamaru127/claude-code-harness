@@ -380,6 +380,10 @@ func normalizeGitToken(token string) string {
 // The precompiled default pattern is used for the common (no-extra) case so the
 // hook fast-path avoids recompiling a regex on every call.
 func matchesProtectedBranchRef(token string, extra []string) bool {
+	// Strip a leading "+" force-refspec modifier (e.g. `git push origin
+	// +production` or `+main:main`) so a shorthand force push cannot bypass the
+	// protected-branch check.
+	token = strings.TrimPrefix(token, "+")
 	if protectedBranchRefPattern.MatchString(token) {
 		return true
 	}

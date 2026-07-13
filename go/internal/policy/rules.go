@@ -254,10 +254,16 @@ var Rules = []GuardRule{
 				return nil
 			}
 			// Opt-in via destructive_commands.allow_rm_rf: the project has
-			// pre-authorized rm -rf, so skip the confirmation. The runtimefloor
-			// worktree-escape hard floor still guards deletions outside the
-			// task worktree.
-			if ctx.AllowRmRf {
+			// pre-authorized plain `rm -rf`, so skip the confirmation for that
+			// specific form only. The exemption is deliberately narrow — it does
+			// NOT cover find-based mass deletion (`find … -delete`/`-exec rm`) or
+			// removals targeting sensitive system paths, which keep asking. The
+			// runtimefloor worktree-escape hard floor (non-exemptable) still
+			// stops any of these forms when they target paths outside the task
+			// worktree, so allow_rm_rf can never approve an out-of-tree delete.
+			if ctx.AllowRmRf &&
+				!hasDangerousFindDelete(command) &&
+				!hasDangerousMacOSRemovalPath(command) {
 				return nil
 			}
 			return &hookproto.HookResult{

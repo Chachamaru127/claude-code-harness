@@ -17,17 +17,27 @@ Change history for claude-code-harness.
   - `git.protected_branches` — 組込みの `main` / `master` に加えて宣言した branch を
     R11（`git reset --hard`）/ R12（direct push）の対象に追加。
   - `destructive_commands.allow_rm_rf` — `true`（opt-in、既定 false）で R05 の
-    `rm -rf` 確認を抑止。worktree 外への削除を止める runtimefloor の
-    worktree-escape ハード floor には影響しない。
+    `rm -rf` 確認を抑止。ただし免除は素の `rm -rf` 系に限定し、`find … -delete` /
+    `-exec rm` や `/System`・`~/Library` 等のシステムパス削除には適用しない
+    （これらは引き続き確認）。worktree 外への削除を止める runtimefloor の
+    worktree-escape ハード floor は免除対象外で、`rm --recursive`（長形式）にも
+    対応するよう拡張したため、opt-in 時でも worktree 外の破壊的削除は必ず停止する。
+  - `paths.protected` の照合は設定ファイルのあるディレクトリ（config root）を基準に
+    解決。ネストした cwd から hook を起動しても宣言済み保護パスを回避できない。
+  - `git.protected_branches` は force refspec の短縮形（例 `git push origin +production`）も
+    対象。先頭の `+` を剥がしてから branch 名を照合する。
   - `runtimefloor.secretAllow` — 相対宣言（例 `.env`）が読み取りコマンド側の
     相対トークンにも一致するよう解決を修正。これまで `cat /abs/.env` のような
     絶対パス読み取りしか許可されず、宣言済みでも `cat .env` は deny されていた。
-    project 外の絶対 path の `.env` は引き続き deny。
+    相対宣言も worktree 境界チェックを行い、`../.ssh/id_rsa` のような traversal は
+    許可リストに載せない。project 外の絶対 path の `.env` は引き続き deny。
   - ファイル名の不整合を修正: 実ファイルは正準の
     `.claude-code-harness.config.json`（ドット付き）だが、schema/example のベース名に
     合わせた `claude-code-harness.config.json`（ドット無し）も解決するようにし、
     `runtimefloor.secretAllow` を含む全読み取りで両名が有効になりました。
-  - 設定不正時は fail-safe（追加の deny を生成しない）。`safety` / `ci` /
+  - 設定の parse は strict かつ fail-closed: 未知キー（例 `protectedd` の typo）・
+    不正 JSON・`paths.protected` の不正 glob（例 `[`）を検出した場合、保護を黙って
+    無効化する代わりに Write/Edit/MultiEdit を deny し、設定修正を促す。`safety` / `ci` /
     `scaffolding` / `work` / `session` 等の behavioral セクションは新しい共通ローダーで
     parse・参照可能になりましたが、強制対象は上記のセキュリティ関連のみです。
   - New Go package `go/internal/projectconfig`。Tests:
