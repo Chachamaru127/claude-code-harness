@@ -58,7 +58,17 @@ claude-code-harness/
 
 ### 4.2. Rules
 
-`claude-code-harness.config.schema.json` で厳密に定義された設定ファイルにより、安全性（`dry-run`モード）やパス制限（`protected`パス）を強制します。
+`claude-code-harness.config.schema.json` で定義されるプロジェクト設定ファイル `.claude-code-harness.config.json`（schema/example はドット無し、実ファイルはドット付きが正準。両名を解決する）により、一部の設定は PreToolUse ガードレールで**実際に強制**されます。
+
+強制される（enforced）セクション:
+- `paths.protected` — 宣言したパスへの Write/Edit/MultiEdit を deny（R16）
+- `git.protected_branches` — protected branch 判定（R11 reset --hard / R12 direct push）に branch 名を追加
+- `runtimefloor.secretAllow` — secret-read hard floor の許可宣言
+
+参照・共有される（advisory、markdown skill 側で解釈）セクション:
+- `safety` / `git.allow_*` / `ci` / `scaffolding` / `destructive_commands` / `work` / `session` / `orchestration` / `constitution` / `i18n`
+
+> 注: `i18n.language` の正準ソースは YAML の `.claude-code-harness.config.yaml` です。`safety.mode: "dry-run"` はハード block ではなく skill 側のヒントです。
 
 ### 4.3. Hooks
 

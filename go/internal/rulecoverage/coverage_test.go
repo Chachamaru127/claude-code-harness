@@ -37,17 +37,17 @@ func TestCoverage_MatrixCountsMatchExpected(t *testing.T) {
 	c := Summarize(m)
 
 	// Lock the numbers so future drift is caught (the U3 "4/14 gated" finding).
-	if c.Total != 15 {
-		t.Fatalf("expected 15 defined rules, got %d", c.Total)
+	if c.Total != 16 {
+		t.Fatalf("expected 16 defined rules, got %d", c.Total)
 	}
 	if c.ShellGate != 4 {
 		t.Fatalf("expected 4 shell-gated rules (R10-R13), got %d", c.ShellGate)
 	}
-	if c.SelfauditPin != 10 {
-		t.Fatalf("expected 10 selfaudit-pinned rules, got %d", c.SelfauditPin)
+	if c.SelfauditPin != 11 {
+		t.Fatalf("expected 11 selfaudit-pinned rules, got %d", c.SelfauditPin)
 	}
-	if c.BehavioralTest != 15 {
-		t.Fatalf("expected 15 behaviorally-tested rules, got %d", c.BehavioralTest)
+	if c.BehavioralTest != 16 {
+		t.Fatalf("expected 16 behaviorally-tested rules, got %d", c.BehavioralTest)
 	}
 }
 

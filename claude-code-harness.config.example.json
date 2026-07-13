@@ -36,7 +36,8 @@
     "allow_auto_commit": false,
     "allow_auto_push": false,
     "protected_branches": ["main", "master", "production"],
-    "commit_prefix": "fix:"
+    "commit_prefix": "fix:",
+    "comment": "protected_branches は R11/R12 ガードレールで強制（組込みの main/master に追加）。allow_auto_* と commit_prefix は skill 側のヒント。"
   },
 
   "paths": {
@@ -62,7 +63,8 @@
       "secrets/"
     ],
     "plans_file": "Plans.md",
-    "agents_file": "AGENTS.md"
+    "agents_file": "AGENTS.md",
+    "comment": "protected は R16 ガードレールで Write/Edit/MultiEdit を deny（宣言したパスのみ・緩和はしない）。このファイルを実際に読ませるには .claude-code-harness.config.json として保存する。"
   },
 
   "ci": {

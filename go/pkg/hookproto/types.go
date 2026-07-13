@@ -136,11 +136,19 @@ type RuleContext struct {
 	BreezingRole              string // "" means not in breezing mode
 	ProtectedBranchPushPolicy string // ask, deny, or allow
 	ProtectedPathAskList      []ProtectedPathAskEntry
-	TddEnforceLevel           string // off, central, or max
-	TddHookEnabled            bool
-	TddBypass                 bool
-	TddBypassReason           string
-	TddBypassReasonRequired   bool
+	// ProtectedPathDenyList holds project-relative path prefixes declared in
+	// paths.protected of .claude-code-harness.config.json. Writes under any of
+	// these are denied by the guardrail (R16).
+	ProtectedPathDenyList []string
+	// ProtectedBranches holds branch names declared in git.protected_branches of
+	// .claude-code-harness.config.json. When non-empty it augments the built-in
+	// main/master set used by R11/R12.
+	ProtectedBranches       []string
+	TddEnforceLevel         string // off, central, or max
+	TddHookEnabled          bool
+	TddBypass               bool
+	TddBypassReason         string
+	TddBypassReasonRequired bool
 }
 
 // ProtectedPathAskEntry is a narrow R03 break-glass policy entry loaded from

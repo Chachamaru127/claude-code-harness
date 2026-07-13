@@ -374,7 +374,44 @@ func normalizeGitToken(token string) string {
 	return strings.Trim(token, "'\"")
 }
 
-func hasProtectedBranchResetHard(command string) bool {
+// matchesProtectedBranchRef reports whether a git ref token refers to a
+// protected branch. The built-in set (main/master) always applies; extra branch
+// names come from git.protected_branches in .claude-code-harness.config.json.
+// The precompiled default pattern is used for the common (no-extra) case so the
+// hook fast-path avoids recompiling a regex on every call.
+func matchesProtectedBranchRef(token string, extra []string) bool {
+	if protectedBranchRefPattern.MatchString(token) {
+		return true
+	}
+	if len(extra) == 0 {
+		return false
+	}
+	return protectedBranchRefRegexp(extra).MatchString(token)
+}
+
+// protectedBranchRefRegexp builds a ref matcher for the built-in branches plus
+// the supplied extra branch names. Names are regexp-escaped and deduplicated.
+func protectedBranchRefRegexp(extra []string) *regexp.Regexp {
+	names := []string{"main", "master"}
+	seen := map[string]bool{"main": true, "master": true}
+	for _, b := range extra {
+		b = strings.TrimSpace(strings.Trim(strings.TrimSpace(b), `"'`))
+		if b == "" || seen[b] {
+			continue
+		}
+		seen[b] = true
+		names = append(names, b)
+	}
+	quoted := make([]string, 0, len(names))
+	for _, n := range names {
+		quoted = append(quoted, regexp.QuoteMeta(n))
+	}
+	return regexp.MustCompile(
+		`^(?:origin/|upstream/)?(?:refs/heads/)?(?:` + strings.Join(quoted, "|") + `)(?:[~^]\d+)?$`,
+	)
+}
+
+func hasProtectedBranchResetHard(command string, extraBranches []string) bool {
 	command = normalizeCommand(command)
 	tokens := strings.Fields(command)
 	resetIndex := -1
@@ -396,7 +433,7 @@ func hasProtectedBranchResetHard(command string) bool {
 		if strings.HasPrefix(normalized, "-") {
 			continue
 		}
-		if protectedBranchRefPattern.MatchString(normalized) {
+		if matchesProtectedBranchRef(normalized, extraBranches) {
 			return true
 		}
 	}
@@ -409,7 +446,7 @@ func hasProtectedBranchResetHard(command string) bool {
 
 var gitPushPattern = regexp.MustCompile(`\bgit\s+push\b`)
 
-func hasDirectPushToProtectedBranch(command string) bool {
+func hasDirectPushToProtectedBranch(command string, extraBranches []string) bool {
 	command = normalizeCommand(command)
 	if !gitPushPattern.MatchString(command) {
 		return false
@@ -439,13 +476,13 @@ func hasDirectPushToProtectedBranch(command string) bool {
 
 	for _, arg := range args {
 		normalized := normalizeGitToken(arg)
-		if protectedBranchRefPattern.MatchString(normalized) {
+		if matchesProtectedBranchRef(normalized, extraBranches) {
 			return true
 		}
 		// Check refspec (src:dst)
 		parts := strings.SplitN(arg, ":", 2)
 		if len(parts) == 2 {
-			if protectedBranchRefPattern.MatchString(normalizeGitToken(parts[1])) {
+			if matchesProtectedBranchRef(normalizeGitToken(parts[1]), extraBranches) {
 				return true
 			}
 		}

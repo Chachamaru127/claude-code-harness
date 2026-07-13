@@ -127,6 +127,12 @@ func BuildContext(input hookproto.HookInput) hookproto.RuleContext {
 	tddBypass := isTruthy(os.Getenv("HARNESS_TDD_BYPASS"))
 	tddBypassReason := strings.TrimSpace(os.Getenv("HARNESS_TDD_BYPASS_REASON"))
 
+	// Per-project .claude-code-harness.config.json declarations. Loaded once and
+	// reused for both the protected-path deny list and the protected-branch set.
+	projectCfg := resolveProjectConfig(input, projectRoot)
+	protectedPathDenyList := resolveProtectedPathDenyList(projectCfg)
+	protectedBranches := resolveProtectedBranches(projectCfg)
+
 	// SQLite から work_states を補完する（セッション ID がある場合のみ）
 	// フック高速パスの制約（SPEC.md §12）に従い、I/O エラーは無視する。
 	if input.SessionID != "" && !workMode && !codexMode {
@@ -149,6 +155,8 @@ func BuildContext(input hookproto.HookInput) hookproto.RuleContext {
 		BreezingRole:              breezingRole,
 		ProtectedBranchPushPolicy: resolveProtectedBranchPushPolicy(input, projectRoot),
 		ProtectedPathAskList:      resolveProtectedPathAskList(input, projectRoot),
+		ProtectedPathDenyList:     protectedPathDenyList,
+		ProtectedBranches:         protectedBranches,
 		TddEnforceLevel:           tddRuntime.Level,
 		TddHookEnabled:            tddRuntime.HookEnabled,
 		TddBypass:                 tddBypass,

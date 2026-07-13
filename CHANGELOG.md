@@ -8,6 +8,26 @@ Change history for claude-code-harness.
 
 ### Added
 
+- **プロジェクト設定 `.claude-code-harness.config.json` の実効化**: これまで
+  schema/example で定義されていながら `runtimefloor.secretAllow` 以外は
+  どのコードにも読まれていなかった per-project 設定を、PreToolUse ガードレールで
+  実際に強制するようにしました。
+  - `paths.protected` — 宣言したパスへの Write/Edit/MultiEdit を deny（新ルール R16、
+    directory prefix と glob の両対応、宣言はプロジェクト境界内のみ・緩和はしない）。
+  - `git.protected_branches` — 組込みの `main` / `master` に加えて宣言した branch を
+    R11（`git reset --hard`）/ R12（direct push）の対象に追加。
+  - ファイル名の不整合を修正: 実ファイルは正準の
+    `.claude-code-harness.config.json`（ドット付き）だが、schema/example のベース名に
+    合わせた `claude-code-harness.config.json`（ドット無し）も解決するようにし、
+    `runtimefloor.secretAllow` を含む全読み取りで両名が有効になりました。
+  - 設定不正時は fail-safe（追加の deny を生成しない）。`safety` / `ci` /
+    `scaffolding` / `work` / `session` 等の behavioral セクションは新しい共通ローダーで
+    parse・参照可能になりましたが、強制対象は上記のセキュリティ関連のみです。
+  - New Go package `go/internal/projectconfig`。Tests:
+    `go/internal/projectconfig/*_test.go`,
+    `go/internal/guardrail/project_config_policy_test.go`,
+    `go/internal/policy/configured_protected_path_test.go`。
+
 - **Grok host adapter (candidate)**: `.grok-plugin/plugin.json`, `.grok/AGENTS.md`,
   `scripts/setup-grok.sh` (`--check` + isolated HOME install),
   `scripts/build-host-plugin-dist.sh --host grok` (package-local `./skills/` paths),

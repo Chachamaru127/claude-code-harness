@@ -150,7 +150,7 @@ func TestDenySurface_CoversExpectedRules(t *testing.T) {
 	}
 
 	wantDeny := []string{
-		"R01", "R02", "R03", "R06", "R07", "R08", "R10", "R11", "R12",
+		"R01", "R02", "R03", "R06", "R07", "R08", "R10", "R11", "R12", "R16",
 	}
 	for _, id := range wantDeny {
 		if !present[id] {

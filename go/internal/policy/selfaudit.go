@@ -91,6 +91,11 @@ func denyRuleSignatures() []denyRuleSignature {
 		{ruleID: "R10:no-git-bypass-flags", matchers: regexpSources(noVerifyPattern, noGpgSignPattern)},
 		{ruleID: "R11:no-reset-hard-protected-branch", matchers: regexpSources(protectedBranchRefPattern)},
 		{ruleID: "R12:confirm-direct-push-protected-branch", matchers: append(regexpSources(gitPushPattern, protectedBranchRefPattern), "policy=deny")},
+		// R16 denies writes to project-declared protected paths. Its deny is
+		// gated by the configured paths.protected list rather than a static
+		// pattern, so the descriptor pins the runtime field and the matching
+		// helper: removing either would silently disable the deny.
+		{ruleID: "R16:no-write-config-protected-paths", matchers: []string{"ctx.ProtectedPathDenyList", "matchConfiguredProtectedPath"}},
 		{ruleID: "R15:no-stage-secret-file", matchers: append(regexpSources(r15SecretStagingPatterns...), "git-add-stage-commit-pathspec", "quote-aware-shell-lexer")},
 	}
 }
@@ -176,6 +181,7 @@ var baselineDenySurface = []string{
 	"R11:no-reset-hard-protected-branch:7b0ffd50649b06d0fc4630cdbbf134e4278f3dbe707df381521b87c0a7a61bfd",
 	"R12:confirm-direct-push-protected-branch:1f47124d7cec9dd1ec43abc991b8ab054c756cd56d0d5bbc407ea4137b50de6b",
 	"R15:no-stage-secret-file:366c9bab920e49263dd7c93df5143712750a1f7c4ec03849651c024d81acec6a",
+	"R16:no-write-config-protected-paths:5dea8a1ad581b36dd2f1d3c821e282610cc1649eb0623b6b8d30e84c0ffa893f",
 }
 
 // compareDenySurfaces reports whether current is WEAKENED relative to baseline.

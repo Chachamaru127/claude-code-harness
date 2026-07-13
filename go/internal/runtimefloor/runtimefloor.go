@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/Chachamaru127/claude-code-harness/go/internal/projectconfig"
 )
 
 type Category string
@@ -330,33 +332,11 @@ func configSecretAllowPatterns(ctx Context) ([]string, bool, bool) {
 }
 
 func resolveProjectRoot(ctx Context) (string, string, bool) {
-	start := strings.TrimSpace(ctx.WorktreeRoot)
-	if start == "" {
-		var err error
-		start, err = os.Getwd()
-		if err != nil {
-			return "", "", false
-		}
-	}
-	abs, err := filepath.Abs(start)
-	if err != nil {
-		abs = filepath.Clean(start)
-	}
-	info, err := os.Stat(abs)
-	if err == nil && !info.IsDir() {
-		abs = filepath.Dir(abs)
-	}
-	for {
-		candidate := filepath.Join(abs, ".claude-code-harness.config.json")
-		if _, err := os.Stat(candidate); err == nil {
-			return abs, candidate, true
-		}
-		parent := filepath.Dir(abs)
-		if parent == abs {
-			return "", "", false
-		}
-		abs = parent
-	}
+	// Delegate to the shared project-config resolver so that both the canonical
+	// ".claude-code-harness.config.json" and the non-dotted
+	// "claude-code-harness.config.json" (the shipped example's base name) are
+	// honored consistently across the guardrail and the runtime floor.
+	return projectconfig.Resolve(strings.TrimSpace(ctx.WorktreeRoot))
 }
 
 // isAllowlistedSecretPath reports whether a secret path token is covered by an

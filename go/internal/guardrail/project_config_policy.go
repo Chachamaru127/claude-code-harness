@@ -1,0 +1,35 @@
+package guardrail
+
+import (
+	"github.com/Chachamaru127/claude-code-harness/go/internal/projectconfig"
+	"github.com/Chachamaru127/claude-code-harness/go/pkg/hookproto"
+)
+
+// resolveProjectConfig loads the per-project .claude-code-harness.config.json
+// starting from projectRoot, falling back to the plugin root. Loading is
+// best-effort: a missing or unparseable file yields an empty result so the hook
+// fast-path never fails on configuration problems.
+func resolveProjectConfig(input hookproto.HookInput, projectRoot string) projectconfig.LoadResult {
+	if res := projectconfig.Load(projectRoot); res.Found {
+		return res
+	}
+	if input.PluginRoot != "" && input.PluginRoot != projectRoot {
+		if res := projectconfig.Load(input.PluginRoot); res.Found {
+			return res
+		}
+	}
+	return projectconfig.LoadResult{}
+}
+
+// resolveProtectedPathDenyList returns the project-relative protected path
+// prefixes declared in paths.protected. If the config is present but
+// unparseable, the declarations are ignored (best-effort, no extra denies).
+func resolveProtectedPathDenyList(res projectconfig.LoadResult) []string {
+	return res.ProtectedPaths()
+}
+
+// resolveProtectedBranches returns the configured protected branch names from
+// git.protected_branches.
+func resolveProtectedBranches(res projectconfig.LoadResult) []string {
+	return res.ProtectedBranches()
+}

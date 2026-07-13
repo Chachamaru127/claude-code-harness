@@ -450,6 +450,22 @@ func TestCheckSecretRead_InvalidConfigFailsSafeDeny(t *testing.T) {
 	}
 }
 
+func TestCheckSecretRead_NonDottedConfigFilenameHonored(t *testing.T) {
+	root := testWorktreeRoot(t)
+	// The shipped example/schema use the non-dotted base name; a user copying it
+	// to "claude-code-harness.config.json" must still have secretAllow honored.
+	if err := os.WriteFile(
+		filepath.Join(root, "claude-code-harness.config.json"),
+		[]byte(`{"runtimefloor":{"secretAllow":[".env"]}}`), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	d := CheckCommand("cat "+filepath.Join(root, ".env"), Context{WorktreeRoot: root})
+	if d.Stopped {
+		t.Fatalf("non-dotted config secret path should pass, got category %s reason %q", d.Category, d.Reason)
+	}
+}
+
 func writeRuntimeFloorConfig(t *testing.T, root, body string) {
 	t.Helper()
 	if err := os.WriteFile(filepath.Join(root, ".claude-code-harness.config.json"), []byte(body), 0o600); err != nil {

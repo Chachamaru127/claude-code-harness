@@ -346,6 +346,9 @@ RECOVERING → ABORTED     (リカバリ失敗、人間介入必要)
 | R11 | Bash | protected branch への `git reset --hard` | deny | なし |
 | R12 | Bash | main/master への直接 push | ask（設定で deny / allow 可） | `protected_branch_push` |
 | R13 | Write/Edit/MultiEdit | package.json, Dockerfile, workflow 等 | approve + warn | なし |
+| R16 | Write/Edit/MultiEdit | `.claude-code-harness.config.json` の `paths.protected` で宣言したパスへの書き込み | deny | なし（宣言がなければ no-op） |
+
+R11 / R12 の protected branch 判定は組込みの `main` / `master` に加え、`.claude-code-harness.config.json` の `git.protected_branches` で宣言した branch 名も対象にする（宣言は組込みセットへの追加のみ、緩和はしない）。
 
 R03 の target extraction は redirection / `tee` ベース。`sed -i` 等の in-place 書き込み検出は v1 範囲外。
 

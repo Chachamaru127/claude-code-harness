@@ -181,6 +181,20 @@ var Rules = []GuardRule{
 		Evaluate:    r14TddRequiredLocalTrialResult,
 	},
 
+	// R16: deny writes to project-declared protected paths
+	// (paths.protected in .claude-code-harness.config.json)
+	{
+		ID:          "R16:no-write-config-protected-paths",
+		ToolPattern: regexp.MustCompile(`^(?:Write|Edit|MultiEdit)$`),
+		Evaluate: func(ctx hookproto.RuleContext) *hookproto.HookResult {
+			filePath, ok := ctx.Input.ToolInput["file_path"].(string)
+			if !ok {
+				return nil
+			}
+			return configuredProtectedPathResult(ctx, filePath)
+		},
+	},
+
 	// R15: block staging or committing secret files
 	{
 		ID:          "R15:no-stage-secret-file",
@@ -361,7 +375,7 @@ var Rules = []GuardRule{
 			if !ok {
 				return nil
 			}
-			if !hasProtectedBranchResetHard(command) {
+			if !hasProtectedBranchResetHard(command, ctx.ProtectedBranches) {
 				return nil
 			}
 			return &hookproto.HookResult{
@@ -380,7 +394,7 @@ var Rules = []GuardRule{
 			if !ok {
 				return nil
 			}
-			if !hasDirectPushToProtectedBranch(command) {
+			if !hasDirectPushToProtectedBranch(command, ctx.ProtectedBranches) {
 				return nil
 			}
 
