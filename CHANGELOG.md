@@ -8,6 +8,13 @@ Change history for claude-code-harness.
 
 ### Added
 
+- **Per-turn output-language enforcement**: the `UserPromptSubmit` hook
+  (`scripts/userprompt-inject-policy.sh`) now injects a response-language
+  directive on every turn, resolved from `i18n.language` in
+  `.claude-code-harness.config.yaml` (falling back to `CLAUDE_CODE_HARNESS_LANG`,
+  then `en`). This keeps responses in the configured language instead of drifting
+  to Japanese. Regression coverage added in
+  `tests/test-i18n-locale-resolver.sh`.
 - **Grok host adapter (candidate)**: `.grok-plugin/plugin.json`, `.grok/AGENTS.md`,
   `scripts/setup-grok.sh` (`--check` + isolated HOME install),
   `scripts/build-host-plugin-dist.sh --host grok` (package-local `./skills/` paths),
@@ -18,6 +25,13 @@ Change history for claude-code-harness.
   `docs/research/grok-adapter-candidate.md`. Tests:
   `tests/test-grok-adapter-candidate.sh` plus host-dist / model-routing /
   bootstrap / capability-matrix gates.
+
+### Fixed
+
+- **Language config discoverability**: added an explicit `i18n.language` block to
+  `.claude-code-harness.config.yaml`, and corrected `docs/i18n.md` to point at the
+  config file the runtime actually reads (`.claude-code-harness.config.yaml`)
+  instead of `harness.toml`.
 
 ## [5.0.0] - 2026-07-08
 
