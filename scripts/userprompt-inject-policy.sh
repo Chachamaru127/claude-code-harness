@@ -367,7 +367,7 @@ if [ -f "$WORK_FILE" ] && [ ! -f "$WORK_WARNED_FLAG" ] && command -v jq >/dev/nu
   REVIEW_STATUS=$(jq -r '.review_status // "pending"' "$WORK_FILE" 2>/dev/null)
 
   if [ "$REVIEW_STATUS" != "passed" ]; then
-    INJECTION="${INJECTION}$(policy_msg work_warning "$REVIEW_STATUS")"
+    INJECTION="${INJECTION}"$'\n\n'"$(policy_msg work_warning "$REVIEW_STATUS")"
     # 一度だけ警告するためのフラグを作成
     touch "$WORK_WARNED_FLAG" 2>/dev/null || true
   fi

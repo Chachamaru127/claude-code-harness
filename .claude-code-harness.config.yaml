@@ -4,7 +4,9 @@
 # Language settings.
 # This is the output language the harness enforces for every response.
 # en: English (default) | ja: Japanese / 日本語
-# Precedence: this file > CLAUDE_CODE_HARNESS_LANG env var > en default.
+# Resolution precedence: this file (i18n.language) takes priority over the
+# CLAUDE_CODE_HARNESS_LANG env var, which is only used as a fallback when this
+# file does not set a language; if neither is set the default is en.
 i18n:
   language: en
 
