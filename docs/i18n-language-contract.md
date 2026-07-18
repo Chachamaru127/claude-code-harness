@@ -142,6 +142,27 @@ phrases for implementation, review, and planning must be preserved in
 - `レビューして`
 - `計画作って`
 
+## Skill Body And Completion Report Contract
+
+Skill instructions that define user-facing output must apply the same locale
+resolution contract as runtime scripts. They must not rely on the language of
+the surrounding instruction prose or translate an output template ad hoc.
+
+For `harness-work` Solo, forced single-task Parallel, and Breezing completion
+reports:
+
+1. Resolve locale through the shared `get_harness_locale` function. An explicit
+   session or user language is passed as its optional argument; otherwise the
+   resolver keeps the project config, environment, then `en` default priority.
+2. Unset, invalid, and resolved `en` use the English template.
+3. Only resolved `ja` uses the Japanese template.
+   Japanese input alone does not select a Japanese completion template.
+4. English and Japanese templates must carry the same semantic fields. Status
+   markers, review verdicts, commit hashes, paths, and commands remain
+   machine-readable values.
+5. Claude, Codex, and OpenCode copies must be regenerated and checked whenever
+   this output contract or either template changes.
+
 ## Japanese UX Regression Boundary
 
 English default means the first distributed discovery surface is English. It

@@ -31,3 +31,17 @@ transport  = "stdin-json"
 model      = "default"
 delivery_strategy = "turn"
 delivery_event_turn = "stop"
+
+# Grok: the runtime codec/floor adapter exists, but native lifecycle-hook
+# generation remains deferred until its project hook schema passes a live
+# admission test. Do not infer a public native-hook claim from this descriptor.
+[grok]
+hook_generation = "deferred"
+hook_event = "PreToolUse"
+hook_path  = ".grok/hooks/harness-pretool.json"
+matcher    = "*"
+deny       = "permissionDecision"
+transport  = "stdin-json"
+model      = "grok-4.5"
+delivery_strategy = "turn"
+delivery_event_turn = "Stop"

@@ -220,6 +220,96 @@ test_hook_command_resolves_without_plugin_root() {
 }
 
 # ==================================================
+# Test 8: identity 不一致の plugin root を実行しないか
+# ==================================================
+test_untrusted_plugin_root_is_rejected() {
+  local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
+  local command
+  local tmp_dir
+  local fake_root
+  local output
+
+  command="$(jq -r '.hooks.PreToolUse[] | select(.matcher=="Write|Edit|MultiEdit|Bash|Read") | .hooks[] | select(.type=="command") | .command' "$hooks_file" | head -n 1)"
+  if [ -z "$command" ] || [ "$command" = "null" ]; then
+    echo "    Error: could not extract PreToolUse command"
+    return 1
+  fi
+
+  tmp_dir="$(mktemp -d)"
+  fake_root="$tmp_dir/untrusted"
+  mkdir -p "$fake_root/bin" "$fake_root/.claude-plugin" "$tmp_dir/cwd" "$tmp_dir/home"
+  printf '%s\n' '#!/bin/sh' 'echo UNTRUSTED_ROOT_EXECUTED' > "$fake_root/bin/harness"
+  chmod +x "$fake_root/bin/harness"
+  printf '%s\n' '{"name":"not-claude-code-harness"}' > "$fake_root/.claude-plugin/plugin.json"
+
+  output="$(
+    cd "$tmp_dir/cwd" && \
+      HOME="$tmp_dir/home" CLAUDE_PLUGIN_ROOT="$fake_root" CLAUDE_PROJECT_DIR="$fake_root" \
+      /bin/sh -c "$command" </dev/null 2>/dev/null || true
+  )"
+  rm -rf "$tmp_dir"
+
+  if [ -n "$output" ]; then
+    echo "    Error: untrusted plugin root produced output: $output"
+    return 1
+  fi
+
+  return 0
+}
+
+# ==================================================
+# Test 9: decision/safety hooks を async 化していないか
+# ==================================================
+test_safety_hooks_remain_synchronous() {
+  local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
+  local hook_name
+  local missing=""
+  local async_hooks=""
+  local safety_hooks=(
+    pre-tool
+    pre-tool-use-file-lease
+    permission
+    post-tool
+    quality-pack
+    plans-watcher
+    tdd-check
+    stop-evaluator
+  )
+
+  for hook_name in "${safety_hooks[@]}"; do
+    if ! jq -e --arg hook_name "$hook_name" '
+      .. | objects
+      | select(.command? | strings | test("hook " + $hook_name + "($|[[:space:]])"))
+    ' "$hooks_file" >/dev/null 2>&1; then
+      missing="${missing}${hook_name}, "
+      continue
+    fi
+    if jq -e --arg hook_name "$hook_name" '
+      .. | objects
+      | select(.command? | strings | test("hook " + $hook_name + "($|[[:space:]])"))
+      | select(.async == true)
+    ' "$hooks_file" >/dev/null 2>&1; then
+      async_hooks="${async_hooks}${hook_name}, "
+    fi
+  done
+
+  if jq -e '.. | objects | select(.type? == "agent" and .async == true)' "$hooks_file" >/dev/null 2>&1; then
+    async_hooks="${async_hooks}agent hook, "
+  fi
+
+  if [ -n "$missing" ]; then
+    echo "    Error: missing safety hooks: ${missing%, }"
+    return 1
+  fi
+  if [ -n "$async_hooks" ]; then
+    echo "    Error: safety hooks must be synchronous: ${async_hooks%, }"
+    return 1
+  fi
+
+  return 0
+}
+
+# ==================================================
 # メイン実行
 # ==================================================
 echo ""
@@ -241,6 +331,8 @@ run_test "必須フックイベントが存在" test_required_hook_events
 run_test "禁止された prompt 使用がない" test_no_forbidden_prompt_usage
 run_test "CLAUDE_PLUGIN_ROOT 空時に /bin/harness へ落ちない" test_no_raw_plugin_root_harness_paths
 run_test "CLAUDE_PLUGIN_ROOT 未設定でも hook command が root 解決できる" test_hook_command_resolves_without_plugin_root
+run_test "identity 不一致の plugin root を拒否する" test_untrusted_plugin_root_is_rejected
+run_test "decision/safety hooks が同期実行される" test_safety_hooks_remain_synchronous
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

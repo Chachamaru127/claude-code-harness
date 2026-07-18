@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "description": "SSOT for multi-host adapter metadata (tier, setup, dist, routing, floor, smoke). Hook generation still uses hosts.toml. Schema: docs/onboarding/host-admission.md",
+  "hosts": [
+    {
+      "id": "claude",
+      "display_name": "Claude Code",
+      "tier": "supported",
+      "setup_script": null,
+      "dist_host": "claude",
+      "routing_host": "claude",
+      "safety_model": "pre_use",
+      "floor_member": true,
+      "manifest_source": ".claude-plugin/plugin.json",
+      "bootstrap_route": "Claude SessionStart",
+      "blocked_public_phrases": [],
+      "smoke": {
+        "static": [
+          "tests/validate-plugin.sh"
+        ],
+        "setup_check": null,
+        "adapter": null
+      },
+      "evidence_doc": null
+    },
+    {
+      "id": "codex",
+      "display_name": "Codex CLI",
+      "tier": "internal-compatible",
+      "setup_script": "scripts/setup-codex.sh",
+      "dist_host": "codex",
+      "routing_host": "codex",
+      "safety_model": "pre_use_bash_plus_post_gate",
+      "floor_member": true,
+      "manifest_source": ".codex-plugin/plugin.json",
+      "bootstrap_route": "Codex AGENTS.md",
+      "blocked_public_phrases": [
+        "supported Codex adapter",
+        "\u6b63\u5f0f\u5bfe\u5fdc.*Codex"
+      ],
+      "smoke": {
+        "static": [
+          "tests/test-codex-package.sh",
+          "tests/test-codex-plugin-adapter.sh"
+        ],
+        "setup_check": null,
+        "adapter": "tests/test-codex-plugin-adapter.sh"
+      },
+      "evidence_doc": null
+    },
+    {
+      "id": "cursor",
+      "display_name": "Cursor",
+      "tier": "internal-compatible",
+      "setup_script": "scripts/setup-cursor.sh",
+      "dist_host": "cursor",
+      "routing_host": "cursor",
+      "safety_model": "pre_use_partial_no_fs_jail",
+      "floor_member": true,
+      "manifest_source": ".cursor-plugin/plugin.json",
+      "bootstrap_route": "Cursor AGENTS.md and Plugin Route",
+      "blocked_public_phrases": [
+        "supported Cursor adapter",
+        "\u6b63\u5f0f\u5bfe\u5fdc.*Cursor"
+      ],
+      "smoke": {
+        "static": [
+          "tests/test-cursor-adapter-candidate.sh"
+        ],
+        "setup_check": "scripts/setup-cursor.sh --check",
+        "adapter": "tests/test-cursor-adapter-candidate.sh"
+      },
+      "evidence_doc": "docs/research/cursor-adapter-candidate.md"
+    },
+    {
+      "id": "grok",
+      "display_name": "Grok",
+      "tier": "internal-compatible",
+      "setup_script": "scripts/setup-grok.sh",
+      "dist_host": "grok",
+      "routing_host": "grok",
+      "safety_model": "pre_use_claude_envelope",
+      "floor_member": true,
+      "manifest_source": ".grok-plugin/plugin.json",
+      "bootstrap_route": "Grok AGENTS.md and Plugin Route",
+      "blocked_public_phrases": [
+        "supported Grok adapter",
+        "\u6b63\u5f0f\u5bfe\u5fdc.*Grok"
+      ],
+      "smoke": {
+        "static": [
+          "tests/test-grok-adapter-candidate.sh"
+        ],
+        "setup_check": "scripts/setup-grok.sh --check",
+        "adapter": "tests/test-grok-adapter-candidate.sh"
+      },
+      "evidence_doc": "docs/research/grok-adapter-candidate.md"
+    }
+  ]
+}

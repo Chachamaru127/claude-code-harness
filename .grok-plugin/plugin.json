@@ -1,7 +1,7 @@
 {
   "name": "claude-code-harness",
-  "version": "5.0.0",
-  "description": "Candidate Grok adapter for Claude Code Harness Plan, Work, Review, and Release workflows.",
+  "version": "5.2.0",
+  "description": "Internal-compatible Grok adapter for Claude Code Harness Plan, Work, Review, and Release workflows.",
   "author": {
     "name": "Chachamaru",
     "url": "https://github.com/Chachamaru127"
@@ -19,8 +19,8 @@
   "skills": "../skills/",
   "interface": {
     "displayName": "Claude Code Harness",
-    "shortDescription": "Candidate Harness workflow adapter for Grok",
-    "longDescription": "Use Claude Code Harness skills in Grok for evidence-backed planning, implementation, review, release, setup, sync, and team execution workflows. This is a Grok adapter candidate route; Grok remains candidate until workflow smoke and release preflight pass.",
+    "shortDescription": "Internal-compatible Harness workflow adapter for Grok",
+    "longDescription": "Use Claude Code Harness skills in Grok for evidence-backed planning, implementation, review, release, setup, sync, and team execution workflows. This is an internal-compatible adapter route; live H1-H8 workflow smoke is required before any public top-tier claim.",
     "developerName": "Chachamaru",
     "category": "Coding",
     "capabilities": [

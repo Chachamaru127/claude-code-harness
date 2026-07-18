@@ -95,6 +95,12 @@ Codex `0.130.0` では plugin details に bundled hooks が表示されるため
 
 Plugin に hooks を同梱する場合、既定で project の挙動を強く変えない。
 
+CCH の Codex manifest は inline の空 hook object を明示する。これは
+Codex が plugin root の Claude 向け `hooks/hooks.json` へ fallback し、未対応の
+agent / async handler を警告することを防ぐためである。Codex の project hook は
+`harness gen hooks` が `.codex/hooks.json` へ別途生成し、vendor schema に含まれない
+監査 metadata はその JSON に埋め込まない。
+
 方針:
 
 - hook は opt-in にする

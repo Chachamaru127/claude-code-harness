@@ -20,6 +20,14 @@ LDFLAGS="-s -w -X main.version=${VERSION}"
 OUTDIR="${HARNESS_BUILD_OUTDIR:-${REPO_ROOT}/bin}"
 mkdir -p "${OUTDIR}"
 
+# Reproducibility: match scripts/ci/check-binary-source-drift.sh exactly —
+# pin the toolchain to go.mod's go directive and drop VCS stamping, or the
+# drift gate rejects the committed binaries.
+GO_DIRECTIVE="$(sed -n 's/^go //p' "${GO_DIR}/go.mod" | head -1 | tr -d '[:space:]')"
+if [ -n "${GO_DIRECTIVE}" ]; then
+  export GOTOOLCHAIN="go${GO_DIRECTIVE}"
+fi
+
 platforms=(
   "darwin/arm64"
   "darwin/amd64"
@@ -36,7 +44,7 @@ for platform in "${platforms[@]}"; do
     output="${output}.exe"
   fi
   echo "  Building ${output}..."
-  (cd "${GO_DIR}" && CGO_ENABLED=0 GOOS="${GOOS}" GOARCH="${GOARCH}" go build -trimpath -ldflags="${LDFLAGS}" -o "${output}" ./cmd/harness/)
+  (cd "${GO_DIR}" && CGO_ENABLED=0 GOOS="${GOOS}" GOARCH="${GOARCH}" go build -trimpath -buildvcs=false -ldflags="${LDFLAGS}" -o "${output}" ./cmd/harness/)
 done
 
 echo ""

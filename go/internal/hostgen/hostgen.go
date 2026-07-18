@@ -20,11 +20,16 @@ package hostgen
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 
 	"github.com/BurntSushi/toml"
 )
+
+// ErrHookGenerationDeferred marks a registered host whose runtime adapter is
+// present but whose native lifecycle-hook schema has not passed live admission.
+var ErrHookGenerationDeferred = errors.New("native hook generation deferred")
 
 // preToolCommand is the argv tail every generated host hook appends after the
 // harness binary: all three hosts converge on this single policy entrypoint.
@@ -62,6 +67,7 @@ type Host struct {
 	DeliveryStrategy     string `toml:"delivery_strategy"`
 	DeliveryEventTurn    string `toml:"delivery_event_turn"`
 	DeliveryEventMonitor string `toml:"delivery_event_monitor"`
+	HookGeneration       string `toml:"hook_generation"`
 }
 
 // Load parses hosts.toml and returns a map keyed by host name (claude, codex,
@@ -95,7 +101,9 @@ func Load(path string) (map[string]Host, error) {
 // A deny is expressed by the policy engine at runtime (exit 2 + hookSpecific
 // output), not by this static config, so the generated file only declares the
 // wiring; the deny mechanism column in hosts.toml documents how each host reads
-// that engine result.
+// that engine result. Host-neutral audit metadata such as FloorPolicyFragment
+// must stay outside vendor hook documents because strict parsers reject unknown
+// top-level keys.
 // GenerateDeliveryHooksJSON emits per-host delivery-notice hook wiring for
 // livemsg inbox check (turn boundary) and, for Claude only, inbox monitor
 // (SessionStart blocking stream). Returns (nil, false, nil) when delivery
@@ -158,6 +166,9 @@ func deliveryTurnGroups(h Host, entry commandEntry) interface{} {
 }
 
 func GenerateHooksJSON(h Host) ([]byte, error) {
+	if h.HookGeneration == "deferred" {
+		return nil, fmt.Errorf("hostgen: %s for host %q: %w", h.HookGeneration, h.Name, ErrHookGenerationDeferred)
+	}
 	var doc map[string]interface{}
 	switch h.Name {
 	case "cursor":
@@ -169,7 +180,6 @@ func GenerateHooksJSON(h Host) ([]byte, error) {
 	default:
 		return nil, fmt.Errorf("hostgen: unknown host %q (expected claude, codex, or cursor)", h.Name)
 	}
-	doc["floor_policy"] = FloorPolicyFragment()
 	return marshalStable(doc)
 }
 

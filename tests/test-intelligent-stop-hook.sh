@@ -69,6 +69,35 @@ test_no_prompt_stop_hook() {
 }
 
 # ==================================================
+# Test 3: WIP 判定を LLM agent に依存しないか
+# ==================================================
+test_no_agent_stop_hook() {
+  local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
+
+  if jq -e '.hooks.Stop[] | .hooks[]? | select(.type == "agent")' "$hooks_file" >/dev/null 2>&1; then
+    echo "    Error: Stop blocking must be deterministic; agent-type Stop hook remains"
+    return 1
+  fi
+
+  return 0
+}
+
+test_stop_evaluator_is_synchronous() {
+  local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
+
+  if ! jq -e '.hooks.Stop[] | .hooks[]? | select((.command // "") | contains("hook stop-evaluator"))' "$hooks_file" >/dev/null 2>&1; then
+    echo "    Error: stop-evaluator hook command not found"
+    return 1
+  fi
+  if jq -e '.hooks.Stop[] | .hooks[]? | select((.command // "") | contains("hook stop-evaluator")) | select(.async == true)' "$hooks_file" >/dev/null 2>&1; then
+    echo "    Error: stop-evaluator must remain synchronous"
+    return 1
+  fi
+
+  return 0
+}
+
+# ==================================================
 # Test 3: stop-session-evaluator command が設定されているか
 # ==================================================
 test_stop_evaluator_hook_exists() {
@@ -199,6 +228,8 @@ echo ""
 
 run_test "command 型 Stop フックが存在する" test_stop_hook_has_command
 run_test "prompt 型 Stop フックが残っていない" test_no_prompt_stop_hook
+run_test "Stop 判定が agent hook に依存しない" test_no_agent_stop_hook
+run_test "stop-session-evaluator が同期実行される" test_stop_evaluator_is_synchronous
 run_test "stop-session-evaluator hook が設定済み" test_stop_evaluator_hook_exists
 run_test "stop-session-evaluator timeout が適切 (>= 30s)" test_stop_evaluator_timeout
 run_test "stop-session-evaluator スクリプトが存在する" test_stop_evaluator_script_exists

@@ -153,7 +153,7 @@ var Rules = []GuardRule{
 			if !ok {
 				return nil
 			}
-			match := classifyProtectedPath(filePath)
+			match := classifyProtectedPathAtRoot(filePath, ctx.ProjectRoot)
 			if match.Level == protectedPathNone {
 				return nil
 			}
@@ -190,7 +190,7 @@ var Rules = []GuardRule{
 			if !ok {
 				return nil
 			}
-			path, ok := secretFileStaging(command)
+			path, ok := secretFileStaging(command, ctx.ProjectRoot)
 			if !ok {
 				return nil
 			}

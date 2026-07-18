@@ -107,6 +107,17 @@ jobs:
         run: |
           bash ./tests/test-codex-plugin-adapter.sh
 
+      - name: Host registry + structural workflow smoke
+        run: |
+          bash ./tests/test-host-registry.sh
+          bash ./tests/test-host-smoke-lib.sh
+          bash ./tests/test-support-claim-wording.sh
+          for h in claude codex cursor grok; do
+            bash ./tests/test-host-workflow-smoke.sh --host "$h"
+          done
+        # Live model invocations remain opt-in (see docs/research/host-workflow-smoke-policy.md).
+        # REQUIRED=1 is reserved for nightly/release when CLI secrets/images are stable.
+
   test-go:
     runs-on: ubuntu-latest
     timeout-minutes: 10

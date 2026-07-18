@@ -5,7 +5,7 @@
 # Usage: ./tests/validate-plugin.sh [--quick]
 #   --quick  harness-loop wake-up 用の軽量 state 整合性チェックのみ実行（数秒で完了）
 #            検証内容: .claude/state/ 存在確認 / Plans.md 存在+v2フォーマット / sprint-contract 形式
-#            フル検証（39項目）は走らせない
+#            フル検証（全セクション）は走らせない
 
 set -u
 set -o pipefail
@@ -463,6 +463,30 @@ if bash "$PLUGIN_ROOT/tests/test-plan-preapproval.sh" >/dev/null 2>&1; then
     pass_test "plan-preapproval.v1 schema と secret-read runtimefloor bridge が動作します (test-plan-preapproval.sh)"
 else
     fail_test "plan-preapproval の契約テストに失敗 — 'bash tests/test-plan-preapproval.sh' で詳細確認"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-release-version-sync.sh" >/dev/null 2>&1; then
+    pass_test "release version sync checker の contract fixture が通ります (test-release-version-sync.sh)"
+else
+    fail_test "release version sync checker の contract に問題 — 'bash tests/test-release-version-sync.sh' で詳細確認"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-hermes-agent-candidate.sh" >/dev/null 2>&1; then
+    pass_test "Hermes Agent candidate host path の static contract が維持されています (test-hermes-agent-candidate.sh)"
+else
+    fail_test "Hermes Agent candidate contract に問題があります — 'bash tests/test-hermes-agent-candidate.sh' で詳細確認"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-lsp-workflow-wiring.sh" >/dev/null 2>&1; then
+    pass_test "LSP/AST workflow wiring literal が 5 skill ファイルに維持されています (test-lsp-workflow-wiring.sh)"
+else
+    fail_test "LSP/AST workflow wiring literal が欠落 — 'bash tests/test-lsp-workflow-wiring.sh' で詳細確認"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-test-wiring-auditor.sh" >/dev/null 2>&1; then
+    pass_test "独立 test-wiring auditor の contract が維持されています (test-test-wiring-auditor.sh)"
+else
+    fail_test "test-wiring auditor contract に問題があります — 'bash tests/test-test-wiring-auditor.sh' で詳細確認"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-claude-upstream-integration.sh" >/dev/null 2>&1; then
@@ -1032,6 +1056,7 @@ TDD_DETECT_SCRIPT="$PLUGIN_ROOT/scripts/detect-test-framework.sh"
 TDD_LOG_SCRIPT="$PLUGIN_ROOT/scripts/log-tdd-red.sh"
 SPRINT_CONTRACT_GO="$PLUGIN_ROOT/go/internal/hookhandler/sprint_contract.go"
 TDD_LOCAL_TRIAL_TEST="$PLUGIN_ROOT/tests/test-tdd-enforcement-l1l2l4.sh"
+JAVA_KOTLIN_DETECTION_TEST="$PLUGIN_ROOT/tests/test-java-kotlin-detection.sh"
 CODEX_HARNESS_WORK_SKILL="$PLUGIN_ROOT/skills-codex/harness-work/SKILL.md"
 CODEX_HARNESS_WORK_MIRROR="$PLUGIN_ROOT/codex/.codex/skills/harness-work/SKILL.md"
 
@@ -1057,6 +1082,12 @@ if [ -x "$TDD_DETECT_SCRIPT" ]; then
     fi
 else
     fail_test "scripts/detect-test-framework.sh is missing or not executable"
+fi
+
+if bash "$JAVA_KOTLIN_DETECTION_TEST" > /dev/null 2>&1; then
+    pass_test "Java/Kotlin Maven/Gradle detection and generated settings parity PASS"
+else
+    fail_test "Java/Kotlin detection regression failed — 'bash tests/test-java-kotlin-detection.sh'"
 fi
 
 if [ -x "$TDD_LOG_SCRIPT" ]; then
@@ -1170,6 +1201,12 @@ if bash "$PLUGIN_ROOT/tests/test-harness-release-governance.sh" > /dev/null 2>&1
     pass_test "harness-release は bare invocation / 未レビュー AskUserQuestion / review→commit→release gate / mirror sync を満たします"
 else
     fail_test "harness-release governance contract failed — 'bash tests/test-harness-release-governance.sh' で詳細確認"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-release-tag-version.sh" > /dev/null 2>&1; then
+    pass_test "release tag は VERSION と一致しない限り公開されません"
+else
+    fail_test "release tag/version contract failed — 'bash tests/test-release-tag-version.sh' で詳細確認"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-cch-branch-protection-policy.sh" > /dev/null 2>&1; then

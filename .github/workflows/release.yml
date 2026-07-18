@@ -33,6 +33,9 @@ jobs:
       - name: Install command-line dependencies
         run: sudo apt-get update && sudo apt-get install -y jq ripgrep
 
+      - name: Verify release tag matches VERSION
+        run: bash ./scripts/verify-release-tag.sh
+
       - name: Check if release already exists
         id: check
         env:

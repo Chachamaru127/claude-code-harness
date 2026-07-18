@@ -1,6 +1,6 @@
 {
   "name": "claude-code-harness",
-  "version": "5.0.0",
+  "version": "5.2.0",
   "description": "Plan, work, review, and release workflows for Codex CLI users of Claude Code Harness.",
   "author": {
     "name": "Chachamaru",
@@ -17,6 +17,10 @@
     "harness"
   ],
   "skills": "../codex/.codex/skills/",
+  "hooks": {
+    "description": "Codex project hooks are generated separately; do not inherit Claude-only bundled hooks.",
+    "hooks": {}
+  },
   "interface": {
     "displayName": "Claude Code Harness",
     "shortDescription": "Harness workflow skills for Codex CLI",

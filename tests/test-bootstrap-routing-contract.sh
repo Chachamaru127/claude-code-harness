@@ -78,7 +78,7 @@ assert_contains "scripts/setup-cursor.sh --check"
 assert_contains "tests/test-grok-adapter-candidate.sh"
 assert_contains "scripts/setup-grok.sh --check"
 assert_contains "Cursor | \`internal-compatible\`"
-assert_contains "Grok | \`candidate\`"
+assert_contains "Grok | \`internal-compatible\`"
 assert_contains "GitHub Copilot CLI | \`candidate\`"
 assert_contains "Antigravity CLI | \`future/unsupported\`"
 assert_contains 'candidate`, `not observed`'

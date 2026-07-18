@@ -95,6 +95,176 @@ func TestPostTool_CIConfigTampering(t *testing.T) {
 	}
 }
 
+func TestPostTool_CoverageShrink_InvocationRemoved(t *testing.T) {
+	oldStr := "# run tests\nbash \"$PLUGIN_ROOT/tests/test-foo.sh\"\necho done\n"
+	newStr := "# run tests\necho done\n"
+	input := hookproto.HookInput{
+		ToolName: "Edit",
+		ToolInput: map[string]interface{}{
+			"file_path":  "tests/validate-plugin.sh",
+			"old_string": oldStr,
+			"new_string": newStr,
+		},
+	}
+	result := EvaluatePostTool(input)
+	if result.Decision != hookproto.DecisionApprove {
+		t.Errorf("expected approve (warn-only), got %s", result.Decision)
+	}
+	if !strings.Contains(result.SystemMessage, "Coverage-shrink") {
+		t.Fatalf("expected coverage-shrink warning, got: %s", result.SystemMessage)
+	}
+	if !strings.Contains(result.SystemMessage, "invocation") {
+		t.Errorf("expected invocation removal mention, got: %s", result.SystemMessage)
+	}
+}
+
+func TestPostTool_CoverageShrink_OrTrueAdded(t *testing.T) {
+	oldStr := "run_test \"foo\"\n"
+	newStr := "run_test \"foo\" || true\n"
+	input := hookproto.HookInput{
+		ToolName: "Edit",
+		ToolInput: map[string]interface{}{
+			"file_path":  "tests/test-foo.sh",
+			"old_string": oldStr,
+			"new_string": newStr,
+		},
+	}
+	result := EvaluatePostTool(input)
+	if result.Decision != hookproto.DecisionApprove {
+		t.Errorf("expected approve (warn-only), got %s", result.Decision)
+	}
+	if !strings.Contains(result.SystemMessage, "Coverage-shrink") {
+		t.Fatalf("expected coverage-shrink warning, got: %s", result.SystemMessage)
+	}
+	if !strings.Contains(result.SystemMessage, "|| true") {
+		t.Errorf("expected || true mention, got: %s", result.SystemMessage)
+	}
+}
+
+func TestPostTool_CoverageShrink_SetPlusEAdded(t *testing.T) {
+	oldStr := "set -e\nrun_test \"foo\"\n"
+	newStr := "set +e\nrun_test \"foo\"\n"
+	input := hookproto.HookInput{
+		ToolName: "Edit",
+		ToolInput: map[string]interface{}{
+			"file_path":  "tests/test-foo.sh",
+			"old_string": oldStr,
+			"new_string": newStr,
+		},
+	}
+	result := EvaluatePostTool(input)
+	if result.Decision != hookproto.DecisionApprove {
+		t.Errorf("expected approve (warn-only), got %s", result.Decision)
+	}
+	if !strings.Contains(result.SystemMessage, "Coverage-shrink") {
+		t.Fatalf("expected coverage-shrink warning, got: %s", result.SystemMessage)
+	}
+	if !strings.Contains(result.SystemMessage, "set +e") {
+		t.Errorf("expected set +e mention, got: %s", result.SystemMessage)
+	}
+}
+
+func TestPostTool_CoverageShrink_AssertionCountReduced(t *testing.T) {
+	oldStr := "assert_contains \"$out\" \"a\"\nassert_contains \"$out\" \"b\"\nassert_contains \"$out\" \"c\"\n"
+	newStr := "assert_contains \"$out\" \"a\"\n"
+	input := hookproto.HookInput{
+		ToolName: "Edit",
+		ToolInput: map[string]interface{}{
+			"file_path":  "tests/test-foo.sh",
+			"old_string": oldStr,
+			"new_string": newStr,
+		},
+	}
+	result := EvaluatePostTool(input)
+	if result.Decision != hookproto.DecisionApprove {
+		t.Errorf("expected approve (warn-only), got %s", result.Decision)
+	}
+	if !strings.Contains(result.SystemMessage, "Coverage-shrink") {
+		t.Fatalf("expected coverage-shrink warning, got: %s", result.SystemMessage)
+	}
+	if !strings.Contains(result.SystemMessage, "assertion") {
+		t.Errorf("expected assertion reduction mention, got: %s", result.SystemMessage)
+	}
+}
+
+func TestPostTool_CoverageShrink_LegitimateAddition(t *testing.T) {
+	oldStr := "echo setup\n"
+	newStr := "echo setup\nbash \"$PLUGIN_ROOT/tests/test-bar.sh\"\nassert_contains \"$out\" \"ok\"\n"
+	input := hookproto.HookInput{
+		ToolName: "Edit",
+		ToolInput: map[string]interface{}{
+			"file_path":  "tests/validate-plugin.sh",
+			"old_string": oldStr,
+			"new_string": newStr,
+		},
+	}
+	result := EvaluatePostTool(input)
+	if result.Decision != hookproto.DecisionApprove {
+		t.Errorf("expected approve, got %s", result.Decision)
+	}
+	if strings.Contains(result.SystemMessage, "Coverage-shrink") {
+		t.Errorf("expected no coverage-shrink warning for legitimate addition, got: %s", result.SystemMessage)
+	}
+}
+
+func TestPostTool_CoverageShrink_NonTestFileUntouched(t *testing.T) {
+	oldStr := "run_test \"foo\" || true\n"
+	newStr := "run_test \"foo\"\n"
+	input := hookproto.HookInput{
+		ToolName: "Edit",
+		ToolInput: map[string]interface{}{
+			"file_path":  "scripts/foo.sh",
+			"old_string": oldStr,
+			"new_string": newStr,
+		},
+	}
+	result := EvaluatePostTool(input)
+	if result.Decision != hookproto.DecisionApprove {
+		t.Errorf("expected approve, got %s", result.Decision)
+	}
+	if strings.Contains(result.SystemMessage, "Coverage-shrink") {
+		t.Errorf("expected no coverage-shrink warning for non-target file, got: %s", result.SystemMessage)
+	}
+}
+
+func TestPostTool_CoverageShrink_WriteAdditiveOnly(t *testing.T) {
+	input := hookproto.HookInput{
+		ToolName: "Write",
+		ToolInput: map[string]interface{}{
+			"file_path": "tests/test-foo.sh",
+			"content":   "#!/bin/bash\nset +e\nrun_test \"foo\"\n",
+		},
+	}
+	result := EvaluatePostTool(input)
+	if result.Decision != hookproto.DecisionApprove {
+		t.Errorf("expected approve (warn-only), got %s", result.Decision)
+	}
+	if !strings.Contains(result.SystemMessage, "Coverage-shrink") {
+		t.Fatalf("expected coverage-shrink warning for Write with set +e, got: %s", result.SystemMessage)
+	}
+}
+
+func TestPostTool_CoverageShrink_PreexistingSetPlusENoWarn(t *testing.T) {
+	helper := "assert_helper() {\n  set +e\n  local rc=$?\n  set -e\n}\n"
+	oldStr := helper + "run_test \"foo\"\n"
+	newStr := helper + "run_test \"foo\"\nrun_test \"bar\"\n"
+	input := hookproto.HookInput{
+		ToolName: "Edit",
+		ToolInput: map[string]interface{}{
+			"file_path":  "tests/test-judgment-card-v1-schema.sh",
+			"old_string": oldStr,
+			"new_string": newStr,
+		},
+	}
+	result := EvaluatePostTool(input)
+	if result.Decision != hookproto.DecisionApprove {
+		t.Errorf("expected approve, got %s", result.Decision)
+	}
+	if strings.Contains(result.SystemMessage, "Coverage-shrink") {
+		t.Errorf("expected no coverage-shrink warning when set +e pre-exists unchanged, got: %s", result.SystemMessage)
+	}
+}
+
 func TestPostToolOutput_JSONUsesAdditionalContext(t *testing.T) {
 	out := hookproto.PostToolOutput{
 		HookSpecificOutput: hookproto.PostToolHookSpecific{

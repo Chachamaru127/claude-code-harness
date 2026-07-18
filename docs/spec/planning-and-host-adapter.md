@@ -95,6 +95,23 @@ user-facing triggers, inputs/outputs, required evidence, acceptance criteria,
 review/completion rules, and the R01-R13 adjudication surface. Host-specific
 mechanics are derived from it, never hand-maintained alongside it.
 
+R02/R03 distinguish secret-bearing environment files from public templates.
+Exact basenames `.env.example`, `.env.template`, `.env.sample`, and `.env.dist`
+are writable templates; `.env`, `.env.local`, `.env.production`, additional
+suffix variants, and environment files under an independently protected path
+remain denied. A template-named symlink that resolves to a protected target is
+also denied. The exemption is part of the deny-surface self-audit descriptor,
+and the legacy shell guard must match the Go kernel behavior.
+
+When R15 evaluates a staged path from `git add` or `git commit`, it must use
+Git's effective working context rather than assuming the Harness process
+directory. Literal `git -C` and `--work-tree` options are resolved before the
+public-template exemption is applied, including nested or repeated `-C` forms.
+If the effective working directory or work tree is supplied by dynamic shell
+input and cannot be resolved deterministically, classification
+fails closed. A public template name under an independently protected directory
+therefore remains denied regardless of the Git invocation form.
+
 A single descriptor, `hosts.toml`, holds every host difference: per host, the
 native pre-action hook event name, the hook config path, the matcher, the deny
 mechanism, the transport, and the model/effort. `harness gen` reads that one
@@ -150,37 +167,69 @@ Codex/Cursor hooks, extending Mode 2 delivery to those hosts.
 ## Support Tiers And Host Claims
 
 Public support wording must use support tiers.
+Japanese marketing copy maps **正式対応** only to public EN `supported`.
+`internal-compatible` may be described as 互換利用可 / 制限付き対応, never 正式対応.
 
 | Tier | Meaning | Claim Allowed |
 |------|---------|---------------|
-| `supported` | Install/update path, bootstrap proof, skill loading, one workflow smoke, compatibility checks, and release/preflight gate all pass. | Public support claim for the verified host and version range. |
+| `supported` | **H1–H8** (below) all pass on the **same claim path**. Install-only or skill-discovery-only is not enough. | Public support claim (JP: 正式対応) for the verified host and version range. |
 | `internal-compatible` | Repo mirror, setup docs, static validation, or local tooling exists, but runtime proof is incomplete. | Internal compatibility or experimental wording only. |
 | `candidate` | Current official docs and local evidence suggest a viable adapter path, but no complete smoke proof exists. | Research or spike wording only. |
 | `future/unsupported` | No verified adapter path or no current proof. | No setup docs, README support claim, or release support claim. |
 
-Current default stance:
+### Multi-host `supported` bar (H1–H8)
+
+This bar is **capability-relative**, not a Claude clone. Hosts need not share
+SessionStart, PreToolUse shape, or Agent Teams. They must meet every row with
+**host-native** mechanisms and honest strength labels.
+
+| ID | Requirement | Notes |
+|----|-------------|-------|
+| H1 | Host dist + setup is deterministic (package-local paths, no `..`) | Install unit may differ per host |
+| H2 | skill_loading is reproducible (CI or required-mode CLI) | Skill visible ≠ workflow complete |
+| H3 | Host-native bootstrap route is named in the bootstrap contract | SessionStart **or** AGENTS/rules |
+| H4 | Workflow smoke: at least plan (or work/review) produces a fixed artifact | Static golden prompts alone are not enough |
+| H5 | Declared safety model is proven: (a) live pre_use deny via `harness hook pre-tool --host <h>`, **or** (b) documented post-gate / floor limits | Undeclared "guard exists" is forbidden |
+| H6 | review_artifact path or brain-primary review handoff is contractual | Independent reviewer parity not required |
+| H7 | release-preflight (or equivalent CI) consumes host gates fail-closed | Manual-only proof caps at `internal-compatible` |
+| H8 | README / matrix / onboarding / claim-wording tests pin the **same** tier | Marketing cannot outrun evidence |
+
+**False parity bans (non-exhaustive):** same capability name ≠ same enforcement;
+skill menu visibility ≠ `supported`; Codex CLI ≠ Codex app; PM handoff ≠ Cursor
+adapter support; post-gate ≠ pre-stop; `not_observed != absent`.
+
+Claude-clone requirements (SessionStart parity, full event-coverage PreToolUse,
+Breezing multitask, memory_bridge) are **not** required for multi-host
+`supported`.
+
+### Current default stance
 
 | Host | Default Tier | Reason |
 |------|--------------|--------|
-| Claude Code | `supported` for Claude-first Harness | Primary product surface and distribution payload. |
-| Codex CLI | `internal-compatible` until direct plugin install and companion smoke are verified together | Existing Codex mirror and setup path exist; direct plugin path must be proven separately. |
+| Claude Code | `supported` for Claude-first Harness | Primary product surface; H1–H8 reference host. |
+| Codex CLI | `internal-compatible` until H4–H8 complete on one claim path | Plugin install smoke + 3cli Bash PreToolUse floor exist; workflow smoke and public wording still gated (Phase 111). |
 | Codex app | `candidate` under the Codex adapter | App behavior must be verified separately from CLI help output. |
 | OpenCode | `internal-compatible` until runtime bootstrap smoke passes | Existing mirror/setup validation exists; runtime parity is not yet proven. |
-| Cursor | `internal-compatible` | Host-specific dist build, `scripts/setup-cursor.sh` real-directory install, CI-gated package smoke, and observed Desktop skill loading (`/breezing` etc.) justify internal compatibility; CI-gated workflow smoke and runtime guard/hook parity are not proven; no public supported claim |
+| Cursor | `internal-compatible` | Dist + `setup-cursor` + static smoke + observed Desktop skill loading; CI workflow smoke and full containment disclosure still gate public `supported`. |
+| Grok | `internal-compatible` | Dist + `setup-grok` + install/inspect + structural workflow smoke + hookcodec HostGrok floor; public `supported` still needs live H4 + H8. |
 | GitHub Copilot CLI | `candidate` | Current CLI docs must be verified and Harness-specific bootstrap proof is missing. |
 | Antigravity CLI | `future/unsupported` until an official/verified adapter route exists | No local Harness or Superpowers adapter evidence has been observed. |
 
-Phase 73.1.2 freezes this stance from
-`docs/research/superpowers-cherrypick.md`. These tiers are authoritative until
-the relevant host-specific setup route, bootstrap proof, workflow smoke, and
-release/preflight gate all pass in the same claim path.
+Phase 73.1.2 freezes the ladder from
+`docs/research/superpowers-cherrypick.md`. Phase 111 refines the `supported`
+bar as H1–H8. Tiers stay authoritative until host-specific setup, bootstrap,
+workflow smoke, safety model, and release/preflight gates pass on the **same**
+claim path.
 
-README, onboarding, and release wording must not imply that `candidate` or
-`future/unsupported` hosts are supported. Candidate hosts may appear only as
-research, spike, or adapter-candidate work. `future/unsupported` hosts may
-appear only as future scope, unsupported scope, or unknown/unobserved research.
+README, onboarding, and release wording must not imply that `candidate`,
+`internal-compatible`, or `future/unsupported` hosts are public `supported`
+(正式対応). Candidate hosts may appear only as research, spike, or
+adapter-candidate work. `future/unsupported` hosts may appear only as future
+scope, unsupported scope, or unknown/unobserved research.
+
+Having an install route for four hosts is **not** the same as four hosts being
+正式対応. Each host promotes independently when H1–H8 are green.
 
 If a host is not observed in the current runtime, Harness must say `unknown` or
 `not observed`, not `unsupported`, unless the relevant source of truth was
 checked.
-

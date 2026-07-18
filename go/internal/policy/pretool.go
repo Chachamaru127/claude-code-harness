@@ -1,6 +1,8 @@
 package policy
 
 import (
+	"strings"
+
 	"github.com/Chachamaru127/claude-code-harness/go/pkg/hookproto"
 )
 
@@ -81,5 +83,76 @@ func getChangedContent(input map[string]interface{}) string {
 	if newStr, ok := getStringField(input, "new_string"); ok {
 		return newStr
 	}
+	if pairs := getContentPairs("MultiEdit", input); len(pairs) > 0 {
+		var b strings.Builder
+		for i, p := range pairs {
+			if i > 0 {
+				b.WriteByte('\n')
+			}
+			b.WriteString(p.new)
+		}
+		return b.String()
+	}
 	return ""
+}
+
+// contentPair holds old/new fragments for delta-based PostToolUse checks.
+type contentPair struct {
+	old string
+	new string
+}
+
+// getOldContent extracts prior content from Edit (old_string) or MultiEdit edits.
+// Write has no old content in the payload (file already overwritten at PostToolUse time).
+func getOldContent(toolName string, input map[string]interface{}) string {
+	pairs := getContentPairs(toolName, input)
+	if len(pairs) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	for i, p := range pairs {
+		if i > 0 {
+			b.WriteByte('\n')
+		}
+		b.WriteString(p.old)
+	}
+	return b.String()
+}
+
+// getContentPairs returns per-edit old/new pairs for Edit and MultiEdit, or a single
+// new-only pair for Write. MultiEdit pairs each edit's old_string with its new_string.
+func getContentPairs(toolName string, input map[string]interface{}) []contentPair {
+	switch toolName {
+	case "Write":
+		if content, ok := getStringField(input, "content"); ok {
+			return []contentPair{{new: content}}
+		}
+	case "Edit":
+		oldStr, _ := getStringField(input, "old_string")
+		newStr, _ := getStringField(input, "new_string")
+		if oldStr != "" || newStr != "" {
+			return []contentPair{{old: oldStr, new: newStr}}
+		}
+	case "MultiEdit":
+		editsRaw, ok := input["edits"]
+		if !ok {
+			return nil
+		}
+		edits, ok := editsRaw.([]interface{})
+		if !ok {
+			return nil
+		}
+		var pairs []contentPair
+		for _, e := range edits {
+			editMap, ok := e.(map[string]interface{})
+			if !ok {
+				continue
+			}
+			oldStr, _ := getStringField(editMap, "old_string")
+			newStr, _ := getStringField(editMap, "new_string")
+			pairs = append(pairs, contentPair{old: oldStr, new: newStr})
+		}
+		return pairs
+	}
+	return nil
 }

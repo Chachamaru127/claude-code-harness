@@ -18,6 +18,7 @@ import (
 	"github.com/Chachamaru127/claude-code-harness/go/internal/channelswake"
 	"github.com/Chachamaru127/claude-code-harness/go/internal/gitport"
 	"github.com/Chachamaru127/claude-code-harness/go/internal/nightwatch"
+	"github.com/Chachamaru127/claude-code-harness/go/internal/releasetrain"
 )
 
 // driftTailWindow は collectDrift が参照する末尾行数。
@@ -44,6 +45,9 @@ type MonitorHandler struct {
 	// NightWatchCommand は Night Watch ヘルスチェック関数（テスト注入用）。
 	// nil の場合は nightwatch.Check() を使う。
 	NightWatchCommand func(ctx context.Context) (healthy bool, reason string, err error)
+	// ReleaseCheckCommand は Release Train 提案チェック関数（テスト注入用）。
+	// nil の場合は releasetrain.Check(root, now) を使う。
+	ReleaseCheckCommand func(ctx context.Context) (releasetrain.Result, error)
 }
 
 // monitorInput は SessionStart フックの stdin JSON。
@@ -54,26 +58,27 @@ type monitorInput struct {
 
 // sessionStateJSON は session.json の完全なスキーマ。
 type sessionStateJSON struct {
-	SessionID          string            `json:"session_id"`
-	ParentID           interface{}       `json:"parent_session_id"`
-	State              string            `json:"state"`
-	StateVersion       int               `json:"state_version"`
-	StartedAt          string            `json:"started_at"`
-	UpdatedAt          string            `json:"updated_at"`
-	ResumeToken        string            `json:"resume_token"`
-	EventSeq           int               `json:"event_seq"`
-	LastEventID        string            `json:"last_event_id"`
-	ForkCount          int               `json:"fork_count"`
-	Orchestration      orchestrationJSON `json:"orchestration"`
-	CWD                string            `json:"cwd"`
-	ProjectName        string            `json:"project_name"`
-	PromptSeq          int               `json:"prompt_seq"`
-	Git                gitStateJSON      `json:"git"`
-	Plans              plansStateJSON    `json:"plans"`
-	HarnessMem         harnessMemJSON    `json:"harness_mem"`
-	ChannelsWake       channelsWakeJSON  `json:"channels_wake"`
-	NightWatch         nightWatchJSON    `json:"night_watch"`
-	ChangesThisSession []interface{}     `json:"changes_this_session"`
+	SessionID          string               `json:"session_id"`
+	ParentID           interface{}          `json:"parent_session_id"`
+	State              string               `json:"state"`
+	StateVersion       int                  `json:"state_version"`
+	StartedAt          string               `json:"started_at"`
+	UpdatedAt          string               `json:"updated_at"`
+	ResumeToken        string               `json:"resume_token"`
+	EventSeq           int                  `json:"event_seq"`
+	LastEventID        string               `json:"last_event_id"`
+	ForkCount          int                  `json:"fork_count"`
+	Orchestration      orchestrationJSON    `json:"orchestration"`
+	CWD                string               `json:"cwd"`
+	ProjectName        string               `json:"project_name"`
+	PromptSeq          int                  `json:"prompt_seq"`
+	Git                gitStateJSON         `json:"git"`
+	Plans              plansStateJSON       `json:"plans"`
+	HarnessMem         harnessMemJSON       `json:"harness_mem"`
+	ChannelsWake       channelsWakeJSON     `json:"channels_wake"`
+	NightWatch         nightWatchJSON       `json:"night_watch"`
+	ReleaseCandidate   releaseCandidateJSON `json:"release_candidate"`
+	ChangesThisSession []interface{}        `json:"changes_this_session"`
 }
 
 // channelsWakeJSON は session.json の channels_wake フィールドのスキーマ。
@@ -95,6 +100,16 @@ type harnessMemJSON struct {
 	Healthy     bool   `json:"healthy"`
 	LastChecked string `json:"last_checked"`
 	LastError   string `json:"last_error"`
+}
+
+// releaseCandidateJSON は session.json の release_candidate フィールドのスキーマ。
+type releaseCandidateJSON struct {
+	State         string `json:"state"`
+	Bump          string `json:"bump"`
+	Tag           string `json:"tag"`
+	AgeDays       int    `json:"age_days"`
+	ThresholdDays int    `json:"threshold_days"`
+	LastChecked   string `json:"last_checked"`
 }
 
 type orchestrationJSON struct {
@@ -230,9 +245,13 @@ func (h *MonitorHandler) Handle(r io.Reader, w io.Writer) error {
 		nwState.LastError = ""
 	}
 
+	// Phase 92.4.2: release train candidate check (passive tri-state display)
+	rcResult := h.checkReleaseCandidate(projectRoot)
+	rcState := releaseCandidateFromResult(rcResult, nowStr)
+
 	// session.json を生成（resume/新規を判定）
 	sessionFile := filepath.Join(stateDir, "session.json")
-	h.generateSessionFile(sessionFile, projectRoot, projectName, nowStr, gitState, plansState, memState, cwState, nwState)
+	h.generateSessionFile(sessionFile, projectRoot, projectName, nowStr, gitState, plansState, memState, cwState, nwState, rcState)
 
 	// tooling-policy.json を生成
 	policyFile := filepath.Join(stateDir, "tooling-policy.json")
@@ -277,6 +296,13 @@ func (h *MonitorHandler) Handle(r io.Reader, w io.Writer) error {
 	// 48.1.3: Plans.md 閾値判定
 	if warning := h.checkPlansDrift(plansState, projectRoot); warning != "" {
 		fmt.Fprintln(w, warning)
+	}
+
+	// Phase 92.4.2: candidate のみ 1 行表示（none / not-applicable は完全沈黙）
+	if rcResult.State == releasetrain.StateCandidate {
+		if line := rcResult.FormatLine(); line != "" {
+			fmt.Fprintf(w, "📦 %s\n", line)
+		}
 	}
 
 	return nil
@@ -367,6 +393,7 @@ func (h *MonitorHandler) generateSessionFile(
 	mem harnessMemJSON,
 	cw channelsWakeJSON,
 	nw nightWatchJSON,
+	rc releaseCandidateJSON,
 ) {
 	if isSymlink(sessionFile) {
 		return
@@ -403,6 +430,7 @@ func (h *MonitorHandler) generateSessionFile(
 		existing.HarnessMem = mem
 		existing.ChannelsWake = cw
 		existing.NightWatch = nw
+		existing.ReleaseCandidate = rc
 		existing.StateVersion = 1
 		sess = existing
 	} else {
@@ -437,6 +465,7 @@ func (h *MonitorHandler) generateSessionFile(
 			HarnessMem:         mem,
 			ChannelsWake:       cw,
 			NightWatch:         nw,
+			ReleaseCandidate:   rc,
 			ChangesThisSession: []interface{}{},
 		}
 	}
@@ -638,6 +667,38 @@ func (h *MonitorHandler) checkNightWatchHealth(_ string) (healthy bool, reason s
 	}
 	result := nightwatch.Check()
 	return result.Healthy, result.Reason, nil
+}
+
+// checkReleaseCandidate は Release Train 提案を検査する。
+// h.ReleaseCheckCommand が設定されている場合はそれを使う（テスト注入用）。
+// nil の場合は releasetrain.Check(root, now) を使う。
+// エラー時は fail-open で not-applicable に降格し、セッション開始を止めない。
+func (h *MonitorHandler) checkReleaseCandidate(projectRoot string) releasetrain.Result {
+	if h.ReleaseCheckCommand != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		result, err := h.ReleaseCheckCommand(ctx)
+		if err != nil {
+			return releasetrain.Result{State: releasetrain.StateNotApplicable}
+		}
+		return result
+	}
+	result, err := releasetrain.Check(projectRoot, h.currentTime())
+	if err != nil {
+		return releasetrain.Result{State: releasetrain.StateNotApplicable}
+	}
+	return result
+}
+
+func releaseCandidateFromResult(r releasetrain.Result, nowStr string) releaseCandidateJSON {
+	return releaseCandidateJSON{
+		State:         r.State,
+		Bump:          r.Bump,
+		Tag:           r.TagName,
+		AgeDays:       r.TagAgeDays,
+		ThresholdDays: r.ThresholdDays,
+		LastChecked:   nowStr,
+	}
 }
 
 // ---------------------------------------------------------------------------

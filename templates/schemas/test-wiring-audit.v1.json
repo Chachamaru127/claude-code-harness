@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://claude-code-harness.local/schemas/test-wiring-audit.v1.json",
+  "title": "test-wiring-audit.v1",
+  "description": "Independent test-wiring auditor verdict artifact.",
+  "type": "object",
+  "required": ["schema_version", "verdict", "appeal_round", "required_tests"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "test-wiring-audit.v1"
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["PASS", "ADD_REQUIRED", "APPEAL_REJECTED"]
+    },
+    "appeal_round": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "required_tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "reason", "covers"],
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "covers": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "notes": {
+      "type": "string"
+    }
+  }
+}

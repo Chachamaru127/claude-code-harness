@@ -258,13 +258,13 @@ by Codex's hook surface; the gap is structurally complemented by Phase 92.2.2
 fingerprint containment, which detects worktree-external writes regardless of
 the originating tool.
 
-The canonical floor policy fragment exported by `harness gen hooks`
-(`go/internal/hostgen` `FloorPolicyFragment`) must be **byte-equal** across
-the three hosts' generated hooks config — the `floor_policy` block is the
-single source of truth, replicated unchanged into Claude / Codex / Cursor host
-hook documents. Drift in this block is a contract violation; the host-specific
-hook wrapper around the canonical fragment remains the only legitimate
-per-host variation.
+The canonical floor policy fragment (`go/internal/hostgen`
+`FloorPolicyFragment`) is host-neutral audit metadata derived from the same
+runtime categories. It must remain deterministic and byte-stable, but it is
+not embedded as an unknown top-level key in vendor hook documents. Claude,
+Codex and Cursor hook JSON must contain only keys accepted by each vendor;
+runtime parity is enforced by the shared policy engine and the 15-case
+`tests/test-3cli-hook-floor.sh` gate.
 
 ### auto-approve scope
 

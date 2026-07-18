@@ -16,6 +16,7 @@
 #         test_patterns: [glob...],
 #         framework_detect_files: [path...],
 #         framework_command_default: "...",
+#         framework_command_overrides: {<marker>: "..."}, # optional
 #         src_to_test_map: [{from: "...", to: ["..."]}]
 #       }
 #     },
@@ -23,16 +24,17 @@
 #   }
 #
 # Default:
-#   node / go / python / rust の 4 言語を基本マッピングで提供。
+#   node / go / python / rust / java / kotlin の 6 言語を基本マッピングで提供。
 #   未登録言語の write は test 要求を発火させない (誤検知防止)。
 #
 # Update Rules:
-#   1. languages key は言語識別子で unique (node / go / python / rust / ...)
+#   1. languages key は言語識別子で unique (node / go / python / rust / java / kotlin / ...)
 #   2. src_patterns は glob (bash extglob / Go filepath.Match 互換)
 #   3. test_patterns は src と排他にする (test ファイル自体は R14 対象外)
 #   4. src_to_test_map[].from は placeholder {name} / {dir} を含む pattern
 #   5. src_to_test_map[].to は 1 つ以上の候補 (最初に存在したものを採用)
-#   6. framework_detect_files の最初の hit が framework_command_default を採用
+#   6. framework_detect_files の最初の hit に override があればその command、
+#      なければ framework_command_default を採用
 #   7. 不正な schema は scripts/detect-test-framework.sh が exit 1
 #   8. 詳細仕様: docs/TDD_ENFORCEMENT.md (Phase B.3 で作成予定)
 #
@@ -144,6 +146,54 @@ languages:
         to:
           - "tests/{name}_test.rs"
           - "src/{name}_test.rs"
+
+  java:
+    src_patterns:
+      - "src/main/java/**/*.java"
+    test_patterns:
+      - "src/test/java/**/*Test.java"
+      - "src/test/java/**/*Tests.java"
+    framework_detect_files:
+      - "mvnw"
+      - "pom.xml"
+      - "gradlew"
+      - "build.gradle.kts"
+      - "build.gradle"
+    framework_command_default: "mvn test"
+    framework_command_overrides:
+      mvnw: "./mvnw test"
+      gradlew: "./gradlew test"
+      build.gradle.kts: "gradle test"
+      build.gradle: "gradle test"
+    src_to_test_map:
+      - from: "src/main/java/{dir}/{name}.java"
+        to:
+          - "src/test/java/{dir}/{name}Test.java"
+          - "src/test/java/{dir}/{name}Tests.java"
+
+  kotlin:
+    src_patterns:
+      - "src/main/kotlin/**/*.kt"
+    test_patterns:
+      - "src/test/kotlin/**/*Test.kt"
+      - "src/test/kotlin/**/*Tests.kt"
+    framework_detect_files:
+      - "mvnw"
+      - "pom.xml"
+      - "gradlew"
+      - "build.gradle.kts"
+      - "build.gradle"
+    framework_command_default: "mvn test"
+    framework_command_overrides:
+      mvnw: "./mvnw test"
+      gradlew: "./gradlew test"
+      build.gradle.kts: "gradle test"
+      build.gradle: "gradle test"
+    src_to_test_map:
+      - from: "src/main/kotlin/{dir}/{name}.kt"
+        to:
+          - "src/test/kotlin/{dir}/{name}Test.kt"
+          - "src/test/kotlin/{dir}/{name}Tests.kt"
 
 # ---- per-glob framework override (将来拡張用、現状空配列) ----
 #

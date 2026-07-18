@@ -34,6 +34,20 @@ type protectedPathRule struct {
 	pattern *regexp.Regexp
 }
 
+var (
+	publicEnvTemplateBasenames = []string{".env.example", ".env.template", ".env.sample", ".env.dist"}
+	envFileDenyPattern         = regexp.MustCompile(`(?:^|/)\.env(?:$|\.)`)
+	publicEnvTemplatePattern   = regexp.MustCompile(`(?:^|/)(?:` + strings.Join(quotedPublicEnvTemplateBasenames(), "|") + `)$`)
+)
+
+func quotedPublicEnvTemplateBasenames() []string {
+	quoted := make([]string, 0, len(publicEnvTemplateBasenames))
+	for _, name := range publicEnvTemplateBasenames {
+		quoted = append(quoted, regexp.QuoteMeta(name))
+	}
+	return quoted
+}
+
 // Claude Code 2.1.121/2.1.126 protected path taxonomy:
 //   - deny: .git/, secrets, shell rc/profile files, destructive hook entrypoints.
 //   - ask: .claude/skills/, .claude/agents/, .claude/commands/, .vscode/.
@@ -44,7 +58,7 @@ type protectedPathRule struct {
 var protectedPathRules = []protectedPathRule{
 	// deny: repository internals, secrets, hook entrypoints, and shell startup files
 	{protectedPathDeny, "Git internal metadata", regexp.MustCompile(`(?:^|/)\.git(?:/|$)`)},
-	{protectedPathDeny, "secret or credential file", regexp.MustCompile(`(?:^|/)\.env(?:$|\.)`)},
+	{protectedPathDeny, "secret or credential file", envFileDenyPattern},
 	{protectedPathDeny, "secret or credential file", regexp.MustCompile(`(?:^|/)\.envrc$`)},
 	{protectedPathDeny, "secret or credential file", regexp.MustCompile(`(?:^|/)secrets?(?:/|$)`)},
 	{protectedPathDeny, "secret or credential file", regexp.MustCompile(`(?:^|/)(?:id_rsa|id_ed25519|id_ecdsa|id_dsa)$`)},
@@ -81,6 +95,11 @@ func classifyProtectedPathPattern(filePath string) protectedPathMatch {
 	normalized := normalizePathForGuardrail(filePath)
 	best := protectedPathMatch{Level: protectedPathNone, Path: normalized}
 	for _, rule := range protectedPathRules {
+		// Exact public templates are exempt only from the generic .env rule.
+		// Independent protections (for example secrets/.env.example) still apply.
+		if rule.pattern == envFileDenyPattern && isPublicEnvTemplatePath(normalized) {
+			continue
+		}
 		if rule.pattern.MatchString(normalized) && rule.level > best.Level {
 			best = protectedPathMatch{
 				Level:  rule.level,
@@ -90,6 +109,10 @@ func classifyProtectedPathPattern(filePath string) protectedPathMatch {
 		}
 	}
 	return best
+}
+
+func isPublicEnvTemplatePath(filePath string) bool {
+	return publicEnvTemplatePattern.MatchString(normalizePathForGuardrail(filePath))
 }
 
 func strongerProtectedPathMatch(a, b protectedPathMatch) protectedPathMatch {
@@ -119,6 +142,49 @@ func classifyProtectedPath(filePath string) protectedPathMatch {
 	}
 
 	return strongerProtectedPathMatch(match, classifyProtectedPathPattern(realPath))
+}
+
+// classifyProtectedPathAtRoot resolves relative paths from the hook project
+// root, including symlinked parents whose final child does not exist yet.
+func classifyProtectedPathAtRoot(filePath, projectRoot string) protectedPathMatch {
+	match := classifyProtectedPathPattern(filePath)
+	physicalPath := filePath
+	if !filepath.IsAbs(physicalPath) && projectRoot != "" {
+		physicalPath = filepath.Join(projectRoot, physicalPath)
+	}
+
+	resolved, err := evalSymlinksAllowMissing(physicalPath)
+	if err != nil {
+		return protectedPathMatch{
+			Level:  protectedPathDeny,
+			Reason: "unresolvable protected path",
+			Path:   normalizePathForGuardrail(filePath),
+		}
+	}
+	return strongerProtectedPathMatch(match, classifyProtectedPathPattern(resolved))
+}
+
+func evalSymlinksAllowMissing(filePath string) (string, error) {
+	current := filepath.Clean(filePath)
+	var suffix []string
+	for {
+		resolved, err := filepath.EvalSymlinks(current)
+		if err == nil {
+			for i := len(suffix) - 1; i >= 0; i-- {
+				resolved = filepath.Join(resolved, suffix[i])
+			}
+			return resolved, nil
+		}
+		if !os.IsNotExist(err) {
+			return "", err
+		}
+		parent := filepath.Dir(current)
+		if parent == current {
+			return current, nil
+		}
+		suffix = append(suffix, filepath.Base(current))
+		current = parent
+	}
 }
 
 // isProtectedPath checks whether filePath matches any protected taxonomy level.
@@ -173,10 +239,10 @@ func extractBashWriteTargets(command string) []string {
 	return targets
 }
 
-func classifyBashProtectedWrite(command string) protectedPathMatch {
+func classifyBashProtectedWrite(command, projectRoot string) protectedPathMatch {
 	best := protectedPathMatch{Level: protectedPathNone}
 	for _, target := range extractBashWriteTargets(command) {
-		best = strongerProtectedPathMatch(best, classifyProtectedPathPattern(target))
+		best = strongerProtectedPathMatch(best, classifyProtectedPathAtRoot(target, projectRoot))
 	}
 	return best
 }
@@ -186,7 +252,7 @@ func bashProtectedWriteHookResult(ctx hookproto.RuleContext, command string) *ho
 	var warnResult *hookproto.HookResult
 
 	for _, target := range extractBashWriteTargets(command) {
-		match := classifyProtectedPathPattern(target)
+		match := classifyProtectedPathAtRoot(target, ctx.ProjectRoot)
 		switch match.Level {
 		case protectedPathDeny:
 			if result := r03ProtectedPathAskResult(ctx, match.Path); result != nil {
@@ -492,8 +558,10 @@ var gitGlobalValueOpts = map[string]bool{
 
 // r15SecretStagingPatterns targets credential-bearing pathspecs that must not
 // be staged by name. Bulk adds remain governed by .gitignore plus R02/R03.
+var r15EnvFileStagingPattern = regexp.MustCompile(`(?:^|/)\.env(?:\.[^/]+)?$`)
+
 var r15SecretStagingPatterns = []*regexp.Regexp{
-	regexp.MustCompile(`(?:^|/)\.env(?:\.[^/]+)?$`),
+	r15EnvFileStagingPattern,
 	regexp.MustCompile(`(?:^|/)id_rsa(?:\.[^/]+)?$`),
 	regexp.MustCompile(`(?:^|/)id_ed25519(?:\.[^/]+)?$`),
 	regexp.MustCompile(`\.pem$`),
@@ -579,7 +647,7 @@ func shellLex(command string) []shellToken {
 			curHas = true
 		case ' ', '\t', '\n', '\r':
 			emit()
-		case ';', ')', '`':
+		case ';', '(', ')', '`':
 			emitOp()
 		case '|', '&':
 			if i+1 < len(command) && command[i+1] == c {
@@ -605,7 +673,7 @@ func shellLex(command string) []shellToken {
 
 func indexOfGitSubcommand(tokens []shellToken) int {
 	for i := 0; i < len(tokens); i++ {
-		if tokens[i].quoted || tokens[i].value != "git" {
+		if filepath.Base(tokens[i].value) != "git" {
 			continue
 		}
 		for j := i + 1; j < len(tokens); j++ {
@@ -657,8 +725,111 @@ func gitCommitPathspecs(args []shellToken) []string {
 	return out
 }
 
-func extractGitStagedPaths(command string) []string {
-	var paths []string
+type gitStagedPath struct {
+	displayPath   string
+	effectivePath string
+}
+
+func gitInvocationRoot(tokens []shellToken, subcommandIndex int, projectRoot string) string {
+	gitCWD := projectRoot
+	if gitCWD == "" {
+		gitCWD = "."
+	}
+	workTree := ""
+
+	gitIndex := -1
+	for i := 0; i < subcommandIndex; i++ {
+		if filepath.Base(tokens[i].value) == "git" {
+			gitIndex = i
+			break
+		}
+	}
+	if gitIndex < 0 {
+		return filepath.Clean(gitCWD)
+	}
+
+	for i := gitIndex + 1; i < subcommandIndex; i++ {
+		option := tokens[i].value
+		switch {
+		case option == "-C" && i+1 < subcommandIndex:
+			dir := tokens[i+1].value
+			if filepath.IsAbs(dir) {
+				gitCWD = filepath.Clean(dir)
+			} else {
+				gitCWD = filepath.Join(gitCWD, dir)
+			}
+			i++
+		case option == "--work-tree" && i+1 < subcommandIndex:
+			workTree = effectiveGitPath(tokens[i+1].value, gitCWD)
+			i++
+		case strings.HasPrefix(option, "--work-tree="):
+			workTree = effectiveGitPath(strings.TrimPrefix(option, "--work-tree="), gitCWD)
+		}
+	}
+	if workTree != "" {
+		return filepath.Clean(workTree)
+	}
+	return filepath.Clean(gitCWD)
+}
+
+func effectiveGitPath(path, gitRoot string) string {
+	if filepath.IsAbs(path) {
+		return filepath.Clean(path)
+	}
+	return filepath.Clean(filepath.Join(gitRoot, path))
+}
+
+func hasUnresolvedGitWorkingDirectoryOverride(command string) bool {
+	envPrefix := false
+	tokens := shellLex(command)
+	for i, token := range tokens {
+		if token.op {
+			envPrefix = false
+			continue
+		}
+
+		value := token.value
+		switch value {
+		case "cd", "pushd", "popd":
+			return true
+		}
+		if strings.HasPrefix(value, "GIT_WORK_TREE=") {
+			return true
+		}
+		if (value == "-C" || value == "--work-tree") && i+1 < len(tokens) {
+			if !isStaticGitDirectoryArgument(tokens[i+1].value) {
+				return true
+			}
+		}
+		if strings.HasPrefix(value, "--work-tree=") && !isStaticGitDirectoryArgument(strings.TrimPrefix(value, "--work-tree=")) {
+			return true
+		}
+
+		if filepath.Base(value) == "env" {
+			envPrefix = true
+			continue
+		}
+		if envPrefix {
+			if value == "-C" || value == "--chdir" || strings.HasPrefix(value, "--chdir=") {
+				return true
+			}
+			if filepath.Base(value) == "git" {
+				envPrefix = false
+			}
+		}
+	}
+	return false
+}
+
+func isStaticGitDirectoryArgument(value string) bool {
+	if value == "" || strings.HasPrefix(value, "~") {
+		return false
+	}
+	return !strings.ContainsAny(value, "$`*?[]{}%")
+}
+
+func extractGitStagedPaths(command, projectRoot string) []gitStagedPath {
+	var paths []gitStagedPath
 	var segment []shellToken
 
 	flush := func() {
@@ -666,11 +837,19 @@ func extractGitStagedPaths(command string) []string {
 			return
 		}
 		if idx := indexOfGitSubcommand(segment); idx >= 0 {
+			gitRoot := gitInvocationRoot(segment, idx, projectRoot)
+			var pathspecs []string
 			switch segment[idx].value {
 			case "add", "stage":
-				paths = append(paths, gitAddPathspecs(segment[idx+1:])...)
+				pathspecs = gitAddPathspecs(segment[idx+1:])
 			case "commit":
-				paths = append(paths, gitCommitPathspecs(segment[idx+1:])...)
+				pathspecs = gitCommitPathspecs(segment[idx+1:])
+			}
+			for _, path := range pathspecs {
+				paths = append(paths, gitStagedPath{
+					displayPath:   path,
+					effectivePath: effectiveGitPath(path, gitRoot),
+				})
 			}
 		}
 		segment = nil
@@ -687,11 +866,23 @@ func extractGitStagedPaths(command string) []string {
 	return paths
 }
 
-func secretFileStaging(command string) (string, bool) {
-	for _, path := range extractGitStagedPaths(command) {
+func secretFileStaging(command, projectRoot string) (string, bool) {
+	unresolvedWorkingDirectory := hasUnresolvedGitWorkingDirectoryOverride(command)
+	for _, stagedPath := range extractGitStagedPaths(command, projectRoot) {
+		path := stagedPath.effectivePath
+		isPublicTemplate := isPublicEnvTemplatePath(path)
+		if isPublicTemplate && unresolvedWorkingDirectory {
+			return stagedPath.displayPath, true
+		}
+		if isPublicTemplate && classifyProtectedPathAtRoot(path, projectRoot).Level == protectedPathDeny {
+			return stagedPath.displayPath, true
+		}
 		for _, p := range r15SecretStagingPatterns {
+			if p == r15EnvFileStagingPattern && isPublicTemplate {
+				continue
+			}
 			if p.MatchString(path) {
-				return path, true
+				return stagedPath.displayPath, true
 			}
 		}
 	}

@@ -465,6 +465,9 @@ adapter_gate_paths=(
   "tests/test-codex-plugin-adapter.sh"
   "tests/test-cursor-adapter-candidate.sh"
   "tests/test-grok-adapter-candidate.sh"
+  "tests/test-host-registry.sh"
+  "hosts/registry.json"
+  "scripts/lib/host-registry.sh"
   "tests/test-host-plugin-dist.sh"
   "tests/test-opencode-bootstrap-plugin.sh"
   "tests/test-bootstrap-skill-trigger-acceptance.sh"
@@ -663,16 +666,82 @@ check_release_mirror_drift() {
     printf '  missing: tests/test-opencode-bootstrap-plugin.sh\n'
   fi
 
-  if [ -f tests/test-cursor-adapter-candidate.sh ]; then
-    if bash tests/test-cursor-adapter-candidate.sh >"$output_file" 2>&1; then
-      pass "cursor adapter candidate smoke"
+  # Adapter + setup gates from hosts/registry.json (N+1: add smoke fields only).
+  if [ -f scripts/lib/host-registry.sh ] && [ -f hosts/registry.json ]; then
+    # shellcheck source=lib/host-registry.sh
+    source scripts/lib/host-registry.sh
+    HOST_REGISTRY_PATH="$(pwd)/hosts/registry.json"
+    while IFS=$'\t' read -r host_id kind cmd; do
+      [ -n "$host_id" ] || continue
+      label="${host_id} ${kind}"
+      if [ "$kind" = "adapter" ]; then
+        if [ -f "$cmd" ]; then
+          if bash "$cmd" >"$output_file" 2>&1; then
+            pass "${label} smoke"
+          else
+            fail "${label} smoke"
+            sed 's/^/  /' "$output_file"
+          fi
+        else
+          fail "${label} smoke"
+          printf '  missing: %s\n' "$cmd"
+        fi
+      elif [ "$kind" = "setup_check" ]; then
+        # cmd is like: scripts/setup-cursor.sh --check
+        # shellcheck disable=SC2086
+        if eval "$cmd" >"$output_file" 2>&1; then
+          pass "${label} gate"
+        else
+          fail "${label} gate"
+          sed 's/^/  /' "$output_file"
+        fi
+      fi
+    done < <(host_registry_adapter_smokes)
+  else
+    warn "host registry missing; falling back to hardcoded cursor/grok adapter gates"
+    if [ -f tests/test-cursor-adapter-candidate.sh ]; then
+      if bash tests/test-cursor-adapter-candidate.sh >"$output_file" 2>&1; then
+        pass "cursor adapter candidate smoke"
+      else
+        fail "cursor adapter candidate smoke"
+        sed 's/^/  /' "$output_file"
+      fi
+    fi
+    if [ -f scripts/setup-cursor.sh ]; then
+      if bash scripts/setup-cursor.sh --check >"$output_file" 2>&1; then
+        pass "cursor setup check gate"
+      else
+        fail "cursor setup check gate"
+        sed 's/^/  /' "$output_file"
+      fi
+    fi
+    if [ -f tests/test-grok-adapter-candidate.sh ]; then
+      if bash tests/test-grok-adapter-candidate.sh >"$output_file" 2>&1; then
+        pass "grok adapter candidate smoke"
+      else
+        fail "grok adapter candidate smoke"
+        sed 's/^/  /' "$output_file"
+      fi
+    fi
+    if [ -f scripts/setup-grok.sh ]; then
+      if bash scripts/setup-grok.sh --check >"$output_file" 2>&1; then
+        pass "grok setup check gate"
+      else
+        fail "grok setup check gate"
+        sed 's/^/  /' "$output_file"
+      fi
+    fi
+  fi
+
+  if [ -f tests/test-host-registry.sh ]; then
+    if bash tests/test-host-registry.sh >"$output_file" 2>&1; then
+      pass "host registry gate"
     else
-      fail "cursor adapter candidate smoke"
+      fail "host registry gate"
       sed 's/^/  /' "$output_file"
     fi
   else
-    fail "cursor adapter candidate smoke"
-    printf '  missing: tests/test-cursor-adapter-candidate.sh\n'
+    warn "host registry gate skipped"
   fi
 
   if [ -f tests/test-host-plugin-dist.sh ]; then
@@ -685,42 +754,6 @@ check_release_mirror_drift() {
   else
     fail "host plugin dist gate"
     printf '  missing: tests/test-host-plugin-dist.sh\n'
-  fi
-
-  if [ -f scripts/setup-cursor.sh ]; then
-    if bash scripts/setup-cursor.sh --check >"$output_file" 2>&1; then
-      pass "cursor setup check gate"
-    else
-      fail "cursor setup check gate"
-      sed 's/^/  /' "$output_file"
-    fi
-  else
-    fail "cursor setup check gate"
-    printf '  missing: scripts/setup-cursor.sh\n'
-  fi
-
-  if [ -f tests/test-grok-adapter-candidate.sh ]; then
-    if bash tests/test-grok-adapter-candidate.sh >"$output_file" 2>&1; then
-      pass "grok adapter candidate smoke"
-    else
-      fail "grok adapter candidate smoke"
-      sed 's/^/  /' "$output_file"
-    fi
-  else
-    fail "grok adapter candidate smoke"
-    printf '  missing: tests/test-grok-adapter-candidate.sh\n'
-  fi
-
-  if [ -f scripts/setup-grok.sh ]; then
-    if bash scripts/setup-grok.sh --check >"$output_file" 2>&1; then
-      pass "grok setup check gate"
-    else
-      fail "grok setup check gate"
-      sed 's/^/  /' "$output_file"
-    fi
-  else
-    fail "grok setup check gate"
-    printf '  missing: scripts/setup-grok.sh\n'
   fi
 
   if [ -f tests/test-distribution-archive.sh ]; then

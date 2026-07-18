@@ -91,7 +91,7 @@ func denyRuleSignatures() []denyRuleSignature {
 		{ruleID: "R10:no-git-bypass-flags", matchers: regexpSources(noVerifyPattern, noGpgSignPattern)},
 		{ruleID: "R11:no-reset-hard-protected-branch", matchers: regexpSources(protectedBranchRefPattern)},
 		{ruleID: "R12:confirm-direct-push-protected-branch", matchers: append(regexpSources(gitPushPattern, protectedBranchRefPattern), "policy=deny")},
-		{ruleID: "R15:no-stage-secret-file", matchers: append(regexpSources(r15SecretStagingPatterns...), "git-add-stage-commit-pathspec", "quote-aware-shell-lexer")},
+		{ruleID: "R15:no-stage-secret-file", matchers: append(regexpSources(r15SecretStagingPatterns...), "except="+publicEnvTemplatePattern.String(), "git-add-stage-commit-pathspec", "quote-aware-shell-lexer")},
 	}
 }
 
@@ -113,7 +113,11 @@ func protectedPathDenyPatternSources() []string {
 	var out []string
 	for _, rule := range protectedPathRules {
 		if rule.level == protectedPathDeny {
-			out = append(out, rule.pattern.String())
+			descriptor := rule.pattern.String()
+			if rule.pattern == envFileDenyPattern {
+				descriptor += " except=" + publicEnvTemplatePattern.String()
+			}
+			out = append(out, descriptor)
 		}
 	}
 	sort.Strings(out)
@@ -167,15 +171,15 @@ func DenySurface() []string {
 // and paste the printed slice here.
 var baselineDenySurface = []string{
 	"R01:no-sudo:3d90ab7cf0b192d7fd9b6267693d75b8015a379ba75da09022850322c695e6f0",
-	"R02:no-write-protected-paths:908ca29485da8ce432ae89587976beb581baedf46b7172ee964d1879ff4b59b7",
-	"R03:no-bash-write-protected-paths:7754296664e29b0ee041b409dda4989c11b336f226779049091db6b409ec5013",
+	"R02:no-write-protected-paths:29429e94fe28594af8edb8c546b87b9726043aecf7623c0df0dcf9a93f2e36f7",
+	"R03:no-bash-write-protected-paths:5b31f8cea6641053e56feae079f52f67b96b6b9220066a77319497526ad6bd71",
 	"R06:no-force-push:7320e66b09a8fd7c4cf6b24a800b7b78b8b82181720ca722bb6ab4002fc574a2",
 	"R07:codex-mode-no-write:9d6770d2cb308bf2a3eb48c420b44658f2befaa642d652eeb348f54b3529213d",
 	"R08:breezing-reviewer-no-write:24fc5cdcd6523b736e87ce797afa85493d8364109133fd68a119222531c2860d",
 	"R10:no-git-bypass-flags:4a9a63d2d3a4f496d16fb4f2e135b060d741b95006278c249c526ae683c732c5",
 	"R11:no-reset-hard-protected-branch:7b0ffd50649b06d0fc4630cdbbf134e4278f3dbe707df381521b87c0a7a61bfd",
 	"R12:confirm-direct-push-protected-branch:1f47124d7cec9dd1ec43abc991b8ab054c756cd56d0d5bbc407ea4137b50de6b",
-	"R15:no-stage-secret-file:366c9bab920e49263dd7c93df5143712750a1f7c4ec03849651c024d81acec6a",
+	"R15:no-stage-secret-file:d1953619a0859c4b5337766f90c981bd88611d9847aacce95b2a40fbbe578cc4",
 }
 
 // compareDenySurfaces reports whether current is WEAKENED relative to baseline.

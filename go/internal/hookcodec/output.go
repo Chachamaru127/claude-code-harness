@@ -36,13 +36,16 @@ type cursorDenyOutput struct {
 //   - codex  → {"hookSpecificOutput":{"hookEventName":"PreToolUse",
 //     "permissionDecision":"deny","permissionDecisionReason":reason}}
 //   - cursor → {"permission":"deny","agent_message":reason}
+//   - grok   → Claude-compatible PreToolUse permissionDecision deny (Grok
+//     PreToolUse can block; envelope matches Claude JSON for shared floor)
 //
 // An unknown host name is an error so the caller can fail open deliberately
 // rather than silently emitting the wrong shape.
 func DenyOutput(host, reason string) ([]byte, error) {
 	switch host {
-	case HostClaude, "":
+	case HostClaude, HostGrok, "":
 		// Claude default: byte-identical to the existing pre-tool deny path.
+		// Grok shares this envelope (Phase 111.5 floor membership).
 		out := hookproto.PreToolOutput{
 			HookSpecificOutput: hookproto.PreToolHookSpecific{
 				HookEventName:            "PreToolUse",
@@ -67,6 +70,6 @@ func DenyOutput(host, reason string) ([]byte, error) {
 		}
 		return json.Marshal(out)
 	default:
-		return nil, fmt.Errorf("hookcodec: unknown host %q (expected claude, codex, or cursor)", host)
+		return nil, fmt.Errorf("hookcodec: unknown host %q (expected claude, codex, cursor, or grok)", host)
 	}
 }

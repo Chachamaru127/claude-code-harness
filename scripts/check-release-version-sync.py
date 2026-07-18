@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -191,6 +192,42 @@ def collect_surfaces(root: Path) -> list[Surface]:
         "/version",
         required_when_file_exists=True,
     )
+    add_json_version_surface(
+        surfaces,
+        root,
+        ".grok-plugin/plugin.json",
+        ".grok-plugin/plugin.json",
+        "/version",
+        required_when_file_exists=True,
+    )
+
+    harness_toml_path = root / "harness.toml"
+    if harness_toml_path.exists():
+        toml_match = re.search(
+            r'^version\s*=\s*"([^"]+)"',
+            harness_toml_path.read_text(encoding="utf-8"),
+            re.MULTILINE,
+        )
+        if toml_match:
+            surfaces.append(
+                Surface(
+                    name="harness.toml",
+                    path="harness.toml",
+                    pointer="version",
+                    status="present",
+                    version=toml_match.group(1),
+                )
+            )
+        else:
+            surfaces.append(
+                Surface(
+                    name="harness.toml",
+                    path="harness.toml",
+                    pointer="version",
+                    status="invalid",
+                    detail="harness.toml exists but has no version = \"...\" line",
+                )
+            )
 
     marketplace_path = root / ".claude-plugin/marketplace.json"
     if not marketplace_path.exists():

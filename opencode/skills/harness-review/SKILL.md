@@ -165,6 +165,9 @@ REVIEW_AUTOSTART: target={resolved_target}, base_ref={resolved_base_ref}, type={
 - TDD evidence（`[tdd:required]` は `tdd_red_log` / failing output / `skip_tdd_reason`）
 - unknown data contract（`not_observed != absent` — 証拠なしの「問題なし」「データなし」を APPROVE しない）
 - regression safety（既存挙動・テスト・UX・CLI・設定・docs・mirror にデグレなし）
+  - If you grep the same symbol twice in the same session, switch to harness_ast_search.
+  - For a bugfix where homologous implementations appear across multiple modules, run harness_ast_search to find all implementations before editing.
+  - Only when changed files include .ts or .tsx, the DoD requires zero new harness_lsp_diagnostics errors; if the harness MCP is not connected or the changed file types are not eligible, treat diagnostics as not-configured and non-blocking.
 - evidence pack（accepted / rejected findings、focused tests、release-preflight warnings 処理）
 - TeamAgent Debate 未解消 disagreement なし
 

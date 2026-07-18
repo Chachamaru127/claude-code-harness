@@ -56,29 +56,29 @@ function assert(cond, msg) {
 assert(manifest.name === "claude-code-harness", "manifest name mismatch");
 assert(manifest.version === version, "manifest version mismatch");
 assert(manifest.skills === "../skills/", "manifest skills path must target core skills relative to .grok-plugin");
-assert(String(manifest.description || "").includes("Candidate"), "manifest description must keep candidate boundary");
-assert(String(manifest.interface.shortDescription || "").includes("Candidate"), "manifest shortDescription must keep candidate boundary");
-assert(String(manifest.interface.longDescription || "").toLowerCase().includes("candidate"), "manifest must not imply supported Grok adapter");
-assert(JSON.stringify(manifest).toLowerCase().includes("supported grok") === false, "manifest must not claim supported Grok");
+assert(/Candidate|Internal-compatible|internal-compatible/i.test(String(manifest.description || "")), "manifest description must keep non-supported boundary");
+assert(/Candidate|Internal-compatible|internal-compatible/i.test(String(manifest.interface.shortDescription || "")), "manifest shortDescription must keep non-supported boundary");
+assert(!/supported Grok adapter/i.test(JSON.stringify(manifest)), "manifest must not claim supported Grok adapter");
+assert(!/Grok is `supported`/i.test(JSON.stringify(manifest)), "manifest must not claim Grok is supported");
 NODE
 
 assert_contains "$AGENTS" "harness-plan"
 assert_contains "$AGENTS" "harness-work"
 assert_contains "$AGENTS" "harness-review"
 assert_contains "$AGENTS" "breezing"
-assert_contains "$AGENTS" "candidate"
+assert_contains "$AGENTS" "internal-compatible"
 assert_contains "$AGENTS" "scripts/model-routing.sh --host grok"
 assert_contains "$AGENTS" "scripts/setup-grok.sh"
 assert_not_contains "$AGENTS" "public support claim that Grok is supported"
 
-assert_contains "$EVIDENCE" "candidate"
+assert_contains "$EVIDENCE" "internal-compatible"
 assert_contains "$EVIDENCE" "not_observed != absent"
 assert_contains "$EVIDENCE" "tests/test-grok-adapter-candidate.sh"
 assert_contains "$EVIDENCE" "scripts/setup-grok.sh"
 assert_contains "$EVIDENCE" "Observed Runtime Evidence"
 assert_contains "$EVIDENCE" "Do not claim public \`supported\`"
-assert_contains "$EVIDENCE" "supported Grok adapter" # blocked-wording column only
-# Honest tier: status lines must stay candidate, not claim supported.
+assert_contains "$EVIDENCE" "public top-tier product claim for this host" # blocked-wording column
+# Honest tier: status lines must stay non-public-supported, not claim supported.
 if grep -Eqi 'Grok is `supported`|Grok is \*\*supported\*\*|Status: supported' "$EVIDENCE"; then
   fail "evidence doc must not claim supported Grok adapter as status"
 fi
@@ -86,13 +86,13 @@ if grep -Eq '^Grok is a \*\*supported\*\*' "$EVIDENCE"; then
   fail "evidence doc must not promote Grok to supported"
 fi
 
-assert_contains "${ROOT_DIR}/README.md" "| Grok | \`candidate\` |"
-assert_contains "${ROOT_DIR}/README_ja.md" "| Grok | \`candidate\` |"
-assert_contains "${ROOT_DIR}/docs/onboarding/index.md" "| Grok | \`candidate\` |"
-assert_contains "${ROOT_DIR}/docs/onboarding/install.md" "### Grok (\`candidate\`)"
+assert_contains "${ROOT_DIR}/README.md" "| Grok | \`internal-compatible\` |"
+assert_contains "${ROOT_DIR}/README_ja.md" "| Grok | \`internal-compatible\` |"
+assert_contains "${ROOT_DIR}/docs/onboarding/index.md" "| Grok | \`internal-compatible\` |"
+assert_contains "${ROOT_DIR}/docs/onboarding/install.md" "### Grok (\`internal-compatible\`)"
 assert_contains "${ROOT_DIR}/docs/onboarding/install.md" "scripts/setup-grok.sh"
-assert_contains "${ROOT_DIR}/docs/bootstrap-routing-contract.md" "Grok | \`candidate\`"
-assert_contains "${ROOT_DIR}/docs/tool-capability-matrix.md" "| Grok | \`candidate\` |"
+assert_contains "${ROOT_DIR}/docs/bootstrap-routing-contract.md" "Grok | \`internal-compatible\`"
+assert_contains "${ROOT_DIR}/docs/tool-capability-matrix.md" "| Grok | \`internal-compatible\` |"
 
 # Model routing contract
 grok_worker="$(bash "$ROUTER" --host grok --role worker --field model)"
@@ -147,7 +147,7 @@ function assert(cond, msg) {
 assert(manifest.skills === "./skills/", "generated grok dist must use ./skills/");
 assert(manifest.interface.displayName === "Claude Code Harness for Grok", "generated grok displayName mismatch");
 assert(JSON.stringify(manifest).includes("../") === false, "generated grok manifest must not contain ..");
-assert(String(manifest.description || "").includes("Candidate"), "generated grok description must keep candidate boundary");
+assert(/Candidate|Internal-compatible|internal-compatible/i.test(String(manifest.description || "")), "generated grok description must keep non-supported boundary");
 NODE
 
 for skill in harness-plan harness-work harness-review breezing; do
