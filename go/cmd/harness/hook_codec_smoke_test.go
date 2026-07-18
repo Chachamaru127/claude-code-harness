@@ -79,6 +79,19 @@ func TestHookCodecSmoke_ForcePushDeniedAcrossHosts(t *testing.T) {
 				"workspace_roots":["/proj"]
 			}`,
 		},
+		{
+			// Phase 111.5: Grok PreToolUse shares Claude-compatible envelope.
+			name:     "grok",
+			hostHint: hookcodec.HostGrok,
+			wantHost: hookcodec.HostGrok,
+			stdin: `{
+				"session_id":"sess-grok",
+				"hook_event_name":"PreToolUse",
+				"tool_name":"Bash",
+				"tool_input":{"command":"git push --force origin main"},
+				"cwd":"/repo"
+			}`,
+		},
 	}
 
 	for _, tc := range cases {
@@ -165,7 +178,7 @@ func TestHookCodecSmoke_ClaudeDenyByteParity(t *testing.T) {
 func assertDenyShape(t *testing.T, host string, denyJSON []byte, reason string) {
 	t.Helper()
 	switch host {
-	case hookcodec.HostClaude, hookcodec.HostCodex:
+	case hookcodec.HostClaude, hookcodec.HostCodex, hookcodec.HostGrok:
 		var got struct {
 			HookSpecificOutput struct {
 				HookEventName            string `json:"hookEventName"`

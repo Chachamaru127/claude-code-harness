@@ -31,6 +31,9 @@ const (
 	HostClaude = "claude"
 	HostCodex  = "codex"
 	HostCursor = "cursor"
+	// HostGrok uses the Claude-compatible PreToolUse deny envelope (Grok
+	// documents PreToolUse hooks with permissionDecision-style blocking).
+	HostGrok = "grok"
 )
 
 // rawPayload is a permissive view over a host's pre-tool stdin JSON. Every host
@@ -166,7 +169,7 @@ func resolveToolInput(p rawPayload) map[string]interface{} {
 //  3. Otherwise ⇒ "claude" (session_id + tool_input, the canonical shape).
 func inferHost(hint string, p rawPayload) string {
 	switch hint {
-	case HostClaude, HostCodex, HostCursor:
+	case HostClaude, HostCodex, HostCursor, HostGrok:
 		return hint
 	}
 

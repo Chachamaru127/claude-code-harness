@@ -41,6 +41,9 @@ func TestGeneratedHooks_ContainsCodexAndCursor(t *testing.T) {
 			t.Errorf("generatedHooks missing output for %s", name)
 		}
 	}
+	if _, generated := gen["grok"]; generated {
+		t.Error("Grok native hook config must remain deferred until live schema admission")
+	}
 	for _, name := range []string{"codex", "cursor"} {
 		if !strings.Contains(string(gen[name]), "hook pre-tool") {
 			t.Errorf("%s generated hooks.json does not invoke 'hook pre-tool':\n%s", name, gen[name])
@@ -54,6 +57,29 @@ func TestGeneratedHooks_ContainsCodexAndCursor(t *testing.T) {
 	}
 	if !strings.Contains(string(gen["cursor"]), "\"stop\"") {
 		t.Errorf("cursor generated hooks.json missing stop delivery event:\n%s", gen["cursor"])
+	}
+}
+
+func TestRunGenWrite_SkipsDeferredHosts(t *testing.T) {
+	root := t.TempDir()
+	hosts, err := os.ReadFile(filepath.Join(repoRootForTest(t), hostsDescriptorName))
+	if err != nil {
+		t.Fatalf("read %s: %v", hostsDescriptorName, err)
+	}
+	if err := os.WriteFile(filepath.Join(root, hostsDescriptorName), hosts, 0o644); err != nil {
+		t.Fatalf("write %s: %v", hostsDescriptorName, err)
+	}
+
+	if err := runGenWrite(root); err != nil {
+		t.Fatalf("runGenWrite must skip hosts with deferred hook generation: %v", err)
+	}
+	for _, path := range []string{".codex/hooks.json", ".cursor/hooks.json"} {
+		if _, err := os.Stat(filepath.Join(root, path)); err != nil {
+			t.Errorf("generated hook file %s: %v", path, err)
+		}
+	}
+	if _, err := os.Stat(filepath.Join(root, ".grok/hooks.json")); !os.IsNotExist(err) {
+		t.Errorf("deferred Grok hook file must not be generated, stat error = %v", err)
 	}
 }
 

@@ -678,6 +678,16 @@ func eatGetProjectName(repoRoot string) string {
 
 // eatDetectProjectType はプロジェクトタイプを検出する。
 func eatDetectProjectType(repoRoot string) string {
+	// JVM markers precede Node-family markers so a backend with frontend
+	// tooling is not reduced to package.json. Language metadata comes from the
+	// standard source layout; the Gradle DSL extension alone is not enough to
+	// classify application sources as Kotlin.
+	for _, marker := range []string{"pom.xml", "mvnw", "build.gradle.kts", "build.gradle", "gradlew"} {
+		if _, err := os.Stat(filepath.Join(repoRoot, marker)); err == nil {
+			return eatDetectJVMLanguage(repoRoot)
+		}
+	}
+
 	checks := [][2]string{
 		{"next.config.js", "nextjs"},
 		{"next.config.ts", "nextjs"},
@@ -700,6 +710,24 @@ func eatDetectProjectType(repoRoot string) string {
 		}
 	}
 	return "unknown"
+}
+
+func eatDetectJVMLanguage(repoRoot string) string {
+	hasJava := eatHasProjectDir(repoRoot, "src/main/java") || eatHasProjectDir(repoRoot, "src/test/java")
+	hasKotlin := eatHasProjectDir(repoRoot, "src/main/kotlin") || eatHasProjectDir(repoRoot, "src/test/kotlin")
+	switch {
+	case hasJava && hasKotlin:
+		return "java-kotlin"
+	case hasKotlin:
+		return "kotlin"
+	default:
+		return "java"
+	}
+}
+
+func eatHasProjectDir(repoRoot, relativePath string) bool {
+	info, err := os.Stat(filepath.Join(repoRoot, relativePath))
+	return err == nil && info.IsDir()
 }
 
 // eatNormalizeAgentRole はエージェント名を harness ロールに正規化する。

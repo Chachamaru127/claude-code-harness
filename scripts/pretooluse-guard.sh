@@ -835,9 +835,12 @@ is_protected_path() {
   local p="$1"
   case "$p" in
     .git/*|*/.git/*) return 0 ;;
-    .env|.env.*|*/.env|*/.env.*) return 0 ;;
-    secrets/*|*/secrets/*) return 0 ;;
+    secret/*|*/secret/*|secrets/*|*/secrets/*) return 0 ;;
     *.pem|*.key|*id_rsa*|*id_ed25519*|*/.ssh/*) return 0 ;;
+  esac
+  case "$p" in
+    .env.example|.env.template|.env.sample|.env.dist|*/.env.example|*/.env.template|*/.env.sample|*/.env.dist) return 1 ;;
+    .env|.env.*|*/.env|*/.env.*) return 0 ;;
   esac
   return 1
 }

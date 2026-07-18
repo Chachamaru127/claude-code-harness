@@ -277,7 +277,10 @@ Success look: Cursor lists Harness skills (for example `/breezing`,
 so the tier stays `internal-compatible` and PM handoff docs remain separate
 from adapter install claims.
 
-### Grok (`candidate`)
+Containment limits (no traditional FS jail, allowlist best-effort) are documented in
+[known-limitations.md](../known-limitations.md).
+
+### Grok (`internal-compatible`)
 
 Install:
 
@@ -338,8 +341,38 @@ test -f ~/.local/share/claude-code-harness/grok/skills/breezing/SKILL.md \
 Success look: Grok lists Harness skills (for example `/breezing`,
 `/harness-plan`) after install, including when started from a non-CCH project.
 Workflow smoke and Claude SessionStart/PreToolUse parity are not proven, so the
-tier stays `candidate`. Evidence boundary:
+tier stays `internal-compatible`. Evidence boundary:
 `docs/research/grok-adapter-candidate.md`.
+
+### Hermes Agent (`candidate`)
+
+Unsupported reason: Hermes Agent has local operator evidence for manual skill
+symlink exposure and dynamic slash command discovery, but this repository has no
+Hermes setup script, packaged host distribution, routing model, runtime floor
+parity, or CI-gated workflow smoke.
+
+First prompt:
+
+```text
+Use the Harness onboarding doc to identify the next safe planning step.
+```
+
+First command:
+
+```text
+No Harness install command in this phase; candidate symlink research only.
+```
+
+Verification command:
+
+```bash
+bash tests/test-hermes-agent-candidate.sh
+```
+
+Success look: the result is recorded as `candidate`, `manual`, or
+`not observed`. Local dynamic slash discovery for `/harness-*` and `/breezing`
+is not counted as public support, runtime floor parity, or Claude hook parity.
+Evidence boundary: `docs/research/hermes-agent-candidate.md`.
 
 ### GitHub Copilot CLI (`candidate`)
 

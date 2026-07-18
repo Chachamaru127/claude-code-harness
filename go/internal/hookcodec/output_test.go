@@ -102,7 +102,7 @@ func TestDenyOutput_UnknownHost(t *testing.T) {
 // TestDenyOutput_AllHostsValidJSON is a quick guard that every supported host's
 // deny output round-trips through encoding/json.
 func TestDenyOutput_AllHostsValidJSON(t *testing.T) {
-	for _, host := range []string{HostClaude, HostCodex, HostCursor, ""} {
+	for _, host := range []string{HostClaude, HostCodex, HostCursor, HostGrok, ""} {
 		b, err := DenyOutput(host, denyReason)
 		if err != nil {
 			t.Fatalf("DenyOutput(%q): %v", host, err)

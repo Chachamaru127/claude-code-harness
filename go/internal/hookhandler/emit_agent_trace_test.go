@@ -616,3 +616,40 @@ func TestEmitAgentTrace_MultiEditTool_ModifyAction(t *testing.T) {
 		t.Errorf("expected action=modify for MultiEdit tool, got: %s", rec.Files[0].Action)
 	}
 }
+
+func TestEatDetectProjectTypeJVM(t *testing.T) {
+	tests := []struct {
+		name  string
+		files []string
+		want  string
+	}{
+		{name: "Maven descriptor", files: []string{"pom.xml"}, want: "java"},
+		{name: "Maven wrapper", files: []string{"mvnw"}, want: "java"},
+		{name: "Gradle Groovy descriptor", files: []string{"build.gradle"}, want: "java"},
+		{name: "Gradle Kotlin descriptor", files: []string{"build.gradle.kts"}, want: "java"},
+		{name: "Gradle wrapper", files: []string{"gradlew"}, want: "java"},
+		{name: "Kotlin sources identify a Gradle project", files: []string{"build.gradle.kts", "src/main/kotlin/App.kt"}, want: "kotlin"},
+		{name: "Mixed Java and Kotlin sources stay explicit", files: []string{"pom.xml", "src/main/java/App.java", "src/main/kotlin/App.kt"}, want: "java-kotlin"},
+		{name: "Maven takes precedence over Node", files: []string{"pom.xml", "package.json"}, want: "java"},
+		{name: "Gradle takes precedence over Node", files: []string{"build.gradle.kts", "package.json"}, want: "java"},
+		{name: "Node remains Node without JVM markers", files: []string{"package.json"}, want: "node"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			for _, name := range tt.files {
+				path := filepath.Join(dir, name)
+				if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+					t.Fatalf("create marker parent %s: %v", name, err)
+				}
+				if err := os.WriteFile(path, nil, 0o644); err != nil {
+					t.Fatalf("write marker %s: %v", name, err)
+				}
+			}
+			if got := eatDetectProjectType(dir); got != tt.want {
+				t.Fatalf("eatDetectProjectType() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

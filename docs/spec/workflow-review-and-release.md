@@ -49,6 +49,8 @@ Every non-trivial V2 plan follows this path:
    - For `[tdd:required]`, create or update a failing test first and keep red
      evidence via red-log or literal failing output.
    - Use `[tdd:skip:<reason>]` only when the reason is explicit and reviewable.
+   - If you grep the same symbol twice in the same session, switch to harness_ast_search; for homologous bugfixes across modules, run harness_ast_search to find all implementations before editing.
+   - Only when changed files include .ts or .tsx, the DoD requires zero new harness_lsp_diagnostics errors; not-connected harness MCP and non-eligible file types are not-configured and non-blocking.
 4. Review
    - `harness-review` stays read-only by default.
    - `APPROVE` means the quality gate passed. It does not mean commit, push,
@@ -195,4 +197,3 @@ state notifications should follow the same locale resolver as other Harness
 messages for prose. Status marker writes are the exception: new/update writer
 paths use the English marker family while legacy Japanese markers remain
 read-compatible.
-

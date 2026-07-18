@@ -220,6 +220,14 @@ docs/research/*
 !docs/research/phase-75-readme-closeout.md
 !docs/research/applescript-decision-2026-06.md
 !docs/research/official-feature-inventory-2026-06.md
+!docs/research/hermes-agent-candidate.md
+!docs/research/3cli-hook-floor-contract-2026-06.md
+!docs/research/grok-adapter-candidate.md
+!docs/research/host-workflow-smoke-policy.md
+!docs/research/phase-77-issue-closeout.md
+!docs/research/phase-77-review-closeout.md
+!docs/research/public-claims-audit-2026-07-10.md
+!docs/research/repo-health-ci-cd-gaps.md
 docs/private/
 
 # 一時的な画像ファイル

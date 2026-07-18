@@ -3,6 +3,11 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/host-registry.sh
+source "${SCRIPT_DIR}/lib/host-registry.sh"
+HOST_REGISTRY_PATH="$(cd "${SCRIPT_DIR}/.." && pwd)/hosts/registry.json"
+
 HOST="codex"
 TIER=""
 ROLE=""
@@ -10,13 +15,17 @@ FIELD=""
 FORMAT="json"
 
 usage() {
-  cat <<'EOF'
+  local hosts
+  hosts="$(host_registry_routing_hosts 2>/dev/null | tr '\n' '|' | sed 's/|$//')"
+  [ -n "$hosts" ] || hosts="codex|claude|cursor|grok"
+  cat <<EOF
 Usage:
-  scripts/model-routing.sh --host codex|claude|cursor|grok --tier TIER [--format json|args|env] [--field model|effort]
-  scripts/model-routing.sh --host codex|claude|cursor|grok --role ROLE [--format json|args|env] [--field model|effort]
+  scripts/model-routing.sh --host ${hosts} --tier TIER [--format json|args|env] [--field model|effort]
+  scripts/model-routing.sh --host ${hosts} --role ROLE [--format json|args|env] [--field model|effort]
 
 Tiers: lite, standard, deep, review, advisor, release, long-context, spark
 Roles: explorer, worker, reviewer, advisor, plan, release, operator, long-context
+Allowed --host values come from hosts/registry.json (routing_host).
 EOF
 }
 
@@ -64,10 +73,10 @@ if [ -z "$TIER" ]; then
   fi
 fi
 
-case "$HOST" in
-  codex|claude|cursor|grok) ;;
-  *) echo "ERROR: unsupported host: $HOST" >&2; exit 2 ;;
-esac
+if ! host_registry_is_routing_host "$HOST"; then
+  echo "ERROR: unsupported host: $HOST (not in hosts/registry.json routing_host list)" >&2
+  exit 2
+fi
 
 # Brain opt-in: HARNESS_BRAIN_MODEL switches the claude-host brain tiers
 # (deep/advisor) only. codex/cursor/grok catalogs are host-side and stay untouched.

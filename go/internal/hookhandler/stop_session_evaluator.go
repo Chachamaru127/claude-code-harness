@@ -1,13 +1,14 @@
 package hookhandler
 
 import (
-	"bufio"
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+
+	"github.com/Chachamaru127/claude-code-harness/go/internal/plans"
 )
 
 // stopSessionInput は Stop フックの stdin JSON ペイロード。
@@ -20,7 +21,8 @@ type stopSessionInput struct {
 
 // stopSessionResponse は Stop フックのレスポンス。
 type stopSessionResponse struct {
-	OK            bool   `json:"ok"`
+	OK            bool   `json:"ok,omitempty"`
+	Decision      string `json:"decision,omitempty"`
 	Reason        string `json:"reason,omitempty"`
 	SystemMessage string `json:"systemMessage,omitempty"`
 }
@@ -29,8 +31,8 @@ type stopSessionResponse struct {
 //
 // Stop イベントでセッション状態を評価する。
 //   - last_assistant_message を長さ・ハッシュ（SHA-256 先頭 16 文字）にして session.json に記録
-//   - WIP タスクがある場合は systemMessage で警告（ブロックはしない）
-//   - 停止は常に許可（ok: true）
+//   - Plans.md の status 列に WIP タスクがある場合は decision:block を返す
+//   - WIP がない場合だけ停止を許可する（ok: true）
 type StopSessionEvaluatorHandler struct {
 	// ProjectRoot はプロジェクトルートのパス。空の場合は環境変数/CWD から解決。
 	ProjectRoot string
@@ -51,8 +53,8 @@ func (h *StopSessionEvaluatorHandler) Handle(in io.Reader, out io.Writer) error 
 	payload, _ = io.ReadAll(limited)
 
 	// last_assistant_message のメタデータを session.json に記録
+	var input stopSessionInput
 	if len(payload) > 0 {
-		var input stopSessionInput
 		if jsonErr := json.Unmarshal(payload, &input); jsonErr == nil {
 			if input.LastAssistantMessage != "" {
 				h.recordLastMessage(stateFile, input.LastAssistantMessage)
@@ -60,39 +62,34 @@ func (h *StopSessionEvaluatorHandler) Handle(in io.Reader, out io.Writer) error 
 		}
 	}
 
-	// session.json が存在しない場合はデフォルト ok
-	if _, err := os.Stat(stateFile); os.IsNotExist(err) {
-		return writeJSON(out, stopSessionResponse{OK: true})
-	}
-
-	// セッション状態を読み取り
-	sessionData, err := os.ReadFile(stateFile)
-	if err != nil {
-		return writeJSON(out, stopSessionResponse{OK: true})
-	}
-
-	var sessionMap map[string]interface{}
-	if jsonErr := json.Unmarshal(sessionData, &sessionMap); jsonErr != nil {
-		return writeJSON(out, stopSessionResponse{OK: true})
-	}
-
-	// 既に stopped 状態なら即 ok
-	if state, ok := sessionMap["state"].(string); ok && state == "stopped" {
-		return writeJSON(out, stopSessionResponse{OK: true})
-	}
-
-	// WIP タスクチェック: Plans.md を探して cc:WIP を数える
+	// WIP タスクチェック: Plans.md を探して canonical WIP status を数える。
+	// session.json の state は bookkeeping なので、stopped / 欠損 / 壊れた状態の
+	// いずれも WIP gate を bypass できない。
+	//
+	// Plans.md の status が Stop 再入時の進捗シグナルであり、stop_hook_active は
+	// bypass フラグではない。再入のたびに Plans.md を再読込し、実 WIP が残る間だけ
+	// block を継続する。ホスト側の block cap が runaway loop の最終ガードになる。
 	wipCount := h.countWIPTasks(projectRoot)
 	if wipCount > 0 {
-		msg := fmt.Sprintf(
-			localizedHarnessMessage("ja",
-				"[StopSession] %d WIP tasks remain. Check Plans.md.",
-				"[StopSession] %d WIP タスクが残っています。Plans.md を確認してください。"),
-			wipCount,
-		)
+		var msg string
+		if input.StopHookActive {
+			msg = fmt.Sprintf(
+				localizedHarnessMessage("ja",
+					"[StopSession] %d WIP tasks remain after Stop re-entry. Transition each task to cc:done or blocked before stopping.",
+					"[StopSession] Stop 再入後も %d 件の WIP タスクが残っています。停止前に各タスクを cc:done または blocked へ遷移してください。"),
+				wipCount,
+			)
+		} else {
+			msg = fmt.Sprintf(
+				localizedHarnessMessage("ja",
+					"[StopSession] %d WIP tasks remain. Check Plans.md.",
+					"[StopSession] %d WIP タスクが残っています。Plans.md を確認してください。"),
+				wipCount,
+			)
+		}
 		return writeJSON(out, stopSessionResponse{
-			OK:            true,
-			SystemMessage: msg,
+			Decision: "block",
+			Reason:   msg,
 		})
 	}
 
@@ -145,23 +142,46 @@ func (h *StopSessionEvaluatorHandler) recordLastMessage(stateFile, msg string) {
 	_ = os.Rename(tmpPath, stateFile)
 }
 
-// countWIPTasks は projectRoot 配下の Plans.md を探し、cc:WIP マーカーの数を返す。
+// countWIPTasks は projectRoot 配下の Plans.md を探し、table と heading task の
+// canonical WIP status 数を返す。
 func (h *StopSessionEvaluatorHandler) countWIPTasks(projectRoot string) int {
-	for _, name := range plansFileNames {
-		path := projectRoot + "/" + name
-		f, err := os.Open(path)
-		if err != nil {
+	path := resolvePlansPath(projectRoot)
+	if path == "" {
+		return 0
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return 0
+	}
+	content := string(data)
+	count := 0
+	for _, task := range plans.ParseMarkdown(content) {
+		if task.Tags.Wip {
+			count++
+		}
+	}
+	return count + countHeadingWIPTasks(content)
+}
+
+// countHeadingWIPTasks counts only valid task headings whose terminal status
+// marker is WIP. Prose and marker mentions inside task titles do not qualify.
+func countHeadingWIPTasks(content string) int {
+	count := 0
+	for _, line := range strings.Split(content, "\n") {
+		if match := headingTaskRe.FindStringSubmatch(line); len(match) < 4 {
 			continue
 		}
-		count := 0
-		scanner := bufio.NewScanner(f)
-		for scanner.Scan() {
-			if strings.Contains(scanner.Text(), "cc:WIP") {
-				count++
-			}
+		matches := headingStatusRe.FindAllStringIndex(line, -1)
+		if len(matches) == 0 {
+			continue
 		}
-		f.Close()
-		return count
+		last := matches[len(matches)-1]
+		if suffix := strings.TrimSpace(line[last[1]:]); strings.Trim(suffix, "`") != "" {
+			continue
+		}
+		if plans.IsWIPStatus(line[last[0]:last[1]]) {
+			count++
+		}
 	}
-	return 0
+	return count
 }

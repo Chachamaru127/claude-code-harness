@@ -297,15 +297,6 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
-# ---- model 確定 -----------------------------------------------------------
-if [ -z "${MODEL}" ]; then
-  MODEL="$(resolve_cursor_model)"
-fi
-if [ -z "${MODEL}" ]; then
-  echo "ERROR: could not resolve a Cursor model (model-routing.sh unavailable)" >&2
-  exit 2
-fi
-
 # ---- WRITE 時の PRE-LAUNCH WORKSPACE GUARD --------------------------------
 # codex-primary-environment-guard と同趣旨: --write を誤って main tree や
 # $HOME に向けることを防ぐ。runtime escape までは防げない点に注意
@@ -349,6 +340,17 @@ if [ -z "${CURSOR_AGENT}" ]; then
   echo "ERROR: cursor-agent not found (not-configured)" >&2
   echo "       Install Cursor CLI or place the binary at \$HOME/.local/bin/cursor-agent" >&2
   exit 3
+fi
+
+# ---- model 確定 -----------------------------------------------------------
+# Binary availability is checked first so an unconfigured Cursor installation
+# deterministically reports exit 3 even when bundled model routing is absent.
+if [ -z "${MODEL}" ]; then
+  MODEL="$(resolve_cursor_model)"
+fi
+if [ -z "${MODEL}" ]; then
+  echo "ERROR: could not resolve a Cursor model (model-routing.sh unavailable)" >&2
+  exit 2
 fi
 
 # ---- コマンド構築 ---------------------------------------------------------

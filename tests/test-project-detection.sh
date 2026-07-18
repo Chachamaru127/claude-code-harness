@@ -54,7 +54,7 @@ detect_project_type() {
 
   # コードファイル数のカウント（node_modules, .venv, dist 除外）
   local code_count
-  code_count=$(find . -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.py" -o -name "*.rs" -o -name "*.go" \) \
+  code_count=$(find . -type f \( -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" -o -name "*.py" -o -name "*.rs" -o -name "*.go" -o -name "*.java" -o -name "*.kt" \) \
     ! -path "*/node_modules/*" ! -path "*/.venv/*" ! -path "*/dist/*" ! -path "*/.next/*" ! -path "*/__pycache__/*" 2>/dev/null | wc -l | tr -d ' ')
 
   # 全ファイル数（隠しファイル除く）
@@ -71,7 +71,11 @@ detect_project_type() {
 
   # パッケージマネージャファイルの存在確認
   local has_package_file=false
-  [ -f "package.json" ] || [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || [ -f "Cargo.toml" ] || [ -f "go.mod" ] && has_package_file=true
+  if [ -f "package.json" ] || [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || \
+    [ -f "Cargo.toml" ] || [ -f "go.mod" ] || [ -f "pom.xml" ] || [ -f "mvnw" ] || \
+    [ -f "build.gradle" ] || [ -f "build.gradle.kts" ] || [ -f "gradlew" ]; then
+    has_package_file=true
+  fi
 
   # 判定ロジック
 
@@ -231,6 +235,60 @@ if [ "$RESULT" = "existing" ]; then
   log_pass "package.json + コード 4 → existing"
 else
   log_fail "package.json + コード 4" "existing" "$RESULT"
+fi
+
+# テスト 8: Maven descriptor のみ → template_only
+echo "--- Test 8: Maven テンプレのみ ---"
+TEST8_DIR="$TEST_DIR/test8_maven_template"
+mkdir -p "$TEST8_DIR"
+touch "$TEST8_DIR/pom.xml"
+RESULT=$(detect_project_type "$TEST8_DIR")
+if [ "$RESULT" = "ambiguous:template_only" ]; then
+  log_pass "pom.xml + コード 0 → ambiguous:template_only"
+else
+  log_fail "pom.xml + コード 0" "ambiguous:template_only" "$RESULT"
+fi
+
+# テスト 9: Gradle descriptor のみ → template_only
+echo "--- Test 9: Gradle テンプレのみ ---"
+TEST9_DIR="$TEST_DIR/test9_gradle_template"
+mkdir -p "$TEST9_DIR"
+touch "$TEST9_DIR/build.gradle.kts"
+RESULT=$(detect_project_type "$TEST9_DIR")
+if [ "$RESULT" = "ambiguous:template_only" ]; then
+  log_pass "build.gradle.kts + コード 0 → ambiguous:template_only"
+else
+  log_fail "build.gradle.kts + コード 0" "ambiguous:template_only" "$RESULT"
+fi
+
+# テスト 10: Maven + Java sources → existing
+echo "--- Test 10: Maven Java プロジェクト ---"
+TEST10_DIR="$TEST_DIR/test10_maven_java"
+mkdir -p "$TEST10_DIR/src/main/java"
+touch "$TEST10_DIR/pom.xml"
+for i in $(seq 1 4); do
+  touch "$TEST10_DIR/src/main/java/File$i.java"
+done
+RESULT=$(detect_project_type "$TEST10_DIR")
+if [ "$RESULT" = "existing" ]; then
+  log_pass "pom.xml + Java コード 4 → existing"
+else
+  log_fail "pom.xml + Java コード 4" "existing" "$RESULT"
+fi
+
+# テスト 11: Gradle + Kotlin sources → existing
+echo "--- Test 11: Gradle Kotlin プロジェクト ---"
+TEST11_DIR="$TEST_DIR/test11_gradle_kotlin"
+mkdir -p "$TEST11_DIR/src/main/kotlin"
+touch "$TEST11_DIR/build.gradle"
+for i in $(seq 1 4); do
+  touch "$TEST11_DIR/src/main/kotlin/File$i.kt"
+done
+RESULT=$(detect_project_type "$TEST11_DIR")
+if [ "$RESULT" = "existing" ]; then
+  log_pass "build.gradle + Kotlin コード 4 → existing"
+else
+  log_fail "build.gradle + Kotlin コード 4" "existing" "$RESULT"
 fi
 
 # ================================

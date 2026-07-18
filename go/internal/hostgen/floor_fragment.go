@@ -3,7 +3,8 @@ package hostgen
 import "github.com/Chachamaru127/claude-code-harness/go/internal/runtimefloor"
 
 // floor.policy.v1 fragment は 5 カテゴリ enum + 各カテゴリの human-readable
-// 名前を持つ canonical floor policy。3 host hook JSON に同一 fragment として埋め込む。
+// 名前を持つ canonical floor policy。vendor hook JSON へ未知の top-level key
+// として埋め込まず、host-neutral な監査・parity 検証で利用する。
 type FloorFragment struct {
 	Version    string             `json:"version"`
 	Categories []FloorCategoryRow `json:"categories"`

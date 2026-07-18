@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,6 +12,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/Chachamaru127/claude-code-harness/go/internal/releasetrain"
 )
 
 func TestMonitorHandler_GeneratesSessionFile(t *testing.T) {
@@ -562,6 +565,163 @@ func TestMonitorHandler_NightWatchNotConfigured(t *testing.T) {
 	}
 	if sess.NightWatch.LastError != "" {
 		t.Errorf("expected night_watch.last_error=\"\" when healthy, got %q", sess.NightWatch.LastError)
+	}
+}
+
+func TestMonitorHandler_ReleaseCandidate_Candidate(t *testing.T) {
+	dir := t.TempDir()
+	stateDir := filepath.Join(dir, "state")
+
+	h := &MonitorHandler{
+		StateDir:  stateDir,
+		PlansFile: filepath.Join(dir, "Plans.md"),
+		ReleaseCheckCommand: func(_ context.Context) (releasetrain.Result, error) {
+			return releasetrain.Result{
+				State:         releasetrain.StateCandidate,
+				Bump:          "minor",
+				TagName:       "v5.1.0",
+				TagAgeDays:    8,
+				ThresholdDays: 7,
+				Reasons:       []string{"tag_age"},
+			}, nil
+		},
+	}
+
+	var out bytes.Buffer
+	if err := h.Handle(strings.NewReader(`{"cwd":"`+dir+`"}`), &out); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	s := out.String()
+	if !strings.Contains(s, "RELEASE_CANDIDATE") {
+		t.Errorf("expected RELEASE_CANDIDATE in stdout, got:\n%s", s)
+	}
+	if !strings.Contains(s, "bump=minor") {
+		t.Errorf("expected bump=minor in stdout, got:\n%s", s)
+	}
+
+	sessionFile := filepath.Join(stateDir, "session.json")
+	data, err := os.ReadFile(sessionFile)
+	if err != nil {
+		t.Fatalf("session.json not created: %v", err)
+	}
+	var sess sessionStateJSON
+	if err := json.Unmarshal(data, &sess); err != nil {
+		t.Fatalf("invalid session.json: %v", err)
+	}
+	if sess.ReleaseCandidate.State != "candidate" {
+		t.Errorf("expected release_candidate.state=candidate, got %q", sess.ReleaseCandidate.State)
+	}
+}
+
+func TestMonitorHandler_ReleaseCandidate_None(t *testing.T) {
+	dir := t.TempDir()
+	stateDir := filepath.Join(dir, "state")
+
+	h := &MonitorHandler{
+		StateDir:  stateDir,
+		PlansFile: filepath.Join(dir, "Plans.md"),
+		ReleaseCheckCommand: func(_ context.Context) (releasetrain.Result, error) {
+			return releasetrain.Result{State: releasetrain.StateNone}, nil
+		},
+	}
+
+	var out bytes.Buffer
+	if err := h.Handle(strings.NewReader(`{"cwd":"`+dir+`"}`), &out); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	s := out.String()
+	if strings.Contains(s, "RELEASE_CANDIDATE") {
+		t.Errorf("none state must NOT emit RELEASE_CANDIDATE, got:\n%s", s)
+	}
+
+	sessionFile := filepath.Join(stateDir, "session.json")
+	data, err := os.ReadFile(sessionFile)
+	if err != nil {
+		t.Fatalf("session.json not created: %v", err)
+	}
+	var sess sessionStateJSON
+	if err := json.Unmarshal(data, &sess); err != nil {
+		t.Fatalf("invalid session.json: %v", err)
+	}
+	if sess.ReleaseCandidate.State != "none" {
+		t.Errorf("expected release_candidate.state=none, got %q", sess.ReleaseCandidate.State)
+	}
+}
+
+func TestMonitorHandler_ReleaseCandidate_NotApplicable(t *testing.T) {
+	dir := t.TempDir()
+	stateDir := filepath.Join(dir, "state")
+
+	h := &MonitorHandler{
+		StateDir:  stateDir,
+		PlansFile: filepath.Join(dir, "Plans.md"),
+		ReleaseCheckCommand: func(_ context.Context) (releasetrain.Result, error) {
+			return releasetrain.Result{State: releasetrain.StateNotApplicable}, nil
+		},
+	}
+
+	var out bytes.Buffer
+	if err := h.Handle(strings.NewReader(`{"cwd":"`+dir+`"}`), &out); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	s := out.String()
+	if strings.Contains(s, "RELEASE_CANDIDATE") {
+		t.Errorf("not-applicable must NOT emit RELEASE_CANDIDATE, got:\n%s", s)
+	}
+	if strings.Contains(s, "release") && strings.Contains(s, "⚠️") {
+		t.Errorf("not-applicable must NOT emit any warning line, got:\n%s", s)
+	}
+
+	sessionFile := filepath.Join(stateDir, "session.json")
+	data, err := os.ReadFile(sessionFile)
+	if err != nil {
+		t.Fatalf("session.json not created: %v", err)
+	}
+	var sess sessionStateJSON
+	if err := json.Unmarshal(data, &sess); err != nil {
+		t.Fatalf("invalid session.json: %v", err)
+	}
+	if sess.ReleaseCandidate.State != "not-applicable" {
+		t.Errorf("expected release_candidate.state=not-applicable, got %q", sess.ReleaseCandidate.State)
+	}
+}
+
+func TestMonitorHandler_ReleaseCandidate_CheckErrorSilent(t *testing.T) {
+	dir := t.TempDir()
+	stateDir := filepath.Join(dir, "state")
+
+	h := &MonitorHandler{
+		StateDir:  stateDir,
+		PlansFile: filepath.Join(dir, "Plans.md"),
+		ReleaseCheckCommand: func(_ context.Context) (releasetrain.Result, error) {
+			return releasetrain.Result{}, errors.New("git unavailable")
+		},
+	}
+
+	var out bytes.Buffer
+	if err := h.Handle(strings.NewReader(`{"cwd":"`+dir+`"}`), &out); err != nil {
+		t.Fatalf("session start must succeed on check error, got: %v", err)
+	}
+
+	s := out.String()
+	if strings.Contains(s, "RELEASE_CANDIDATE") {
+		t.Errorf("check error must NOT emit RELEASE_CANDIDATE, got:\n%s", s)
+	}
+
+	sessionFile := filepath.Join(stateDir, "session.json")
+	data, err := os.ReadFile(sessionFile)
+	if err != nil {
+		t.Fatalf("session.json not created: %v", err)
+	}
+	var sess sessionStateJSON
+	if err := json.Unmarshal(data, &sess); err != nil {
+		t.Fatalf("invalid session.json: %v", err)
+	}
+	if sess.ReleaseCandidate.State != "not-applicable" {
+		t.Errorf("expected release_candidate.state=not-applicable on error, got %q", sess.ReleaseCandidate.State)
 	}
 }
 

@@ -5,16 +5,23 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=lib/host-registry.sh
+source "${SCRIPT_DIR}/lib/host-registry.sh"
+HOST_REGISTRY_PATH="${ROOT_DIR}/hosts/registry.json"
 
 HOST=""
 OUT_DIR=""
 
 usage() {
-  cat <<'EOF'
-Usage: build-host-plugin-dist.sh --host claude|codex|cursor|grok --out <directory>
+  local hosts
+  hosts="$(host_registry_dist_hosts 2>/dev/null | tr '\n' '|' | sed 's/|$//')"
+  [ -n "$hosts" ] || hosts="claude|codex|cursor|grok"
+  cat <<EOF
+Usage: build-host-plugin-dist.sh --host ${hosts} --out <directory>
 
 Generates a host-specific distribution package. Output directory is created or
 replaced. Generated packages must not reference sibling paths with '..'.
+Allowed --host values come from hosts/registry.json (dist_host).
 EOF
 }
 
@@ -45,13 +52,11 @@ if [ -z "$HOST" ] || [ -z "$OUT_DIR" ]; then
   exit 2
 fi
 
-case "$HOST" in
-  claude|codex|cursor|grok) ;;
-  *)
-    echo "invalid --host: $HOST" >&2
-    exit 2
-    ;;
-esac
+if ! host_registry_is_dist_host "$HOST"; then
+  echo "invalid --host: $HOST (not in hosts/registry.json dist_host list)" >&2
+  usage
+  exit 2
+fi
 
 if [ -e "$OUT_DIR" ]; then
   rm -rf "$OUT_DIR"
@@ -67,7 +72,7 @@ copy_tree() {
 
 copy_runtime_helpers() {
   local dst_root="$1"
-  mkdir -p "${dst_root}/scripts"
+  mkdir -p "${dst_root}/scripts/lib" "${dst_root}/hosts"
   for script in \
     build-host-plugin-dist.sh \
     calculate-effort.sh \
@@ -84,6 +89,12 @@ copy_runtime_helpers() {
       chmod +x "${dst_root}/scripts/${script}" 2>/dev/null || true
     fi
   done
+  if [ -f "${ROOT_DIR}/scripts/lib/host-registry.sh" ]; then
+    cp "${ROOT_DIR}/scripts/lib/host-registry.sh" "${dst_root}/scripts/lib/host-registry.sh"
+  fi
+  if [ -f "${ROOT_DIR}/hosts/registry.json" ]; then
+    cp "${ROOT_DIR}/hosts/registry.json" "${dst_root}/hosts/registry.json"
+  fi
 }
 
 copy_hook_script_closure() {
@@ -258,7 +269,7 @@ const [dstPath, version] = process.argv.slice(2);
 const manifest = {
   name: "claude-code-harness",
   version,
-  description: "Candidate Grok adapter for Claude Code Harness Plan, Work, Review, and Release workflows.",
+  description: "Internal-compatible Grok adapter for Claude Code Harness Plan, Work, Review, and Release workflows.",
   author: {
     name: "Chachamaru",
     url: "https://github.com/Chachamaru127"
@@ -270,8 +281,8 @@ const manifest = {
   skills: "./skills/",
   interface: {
     displayName: "Claude Code Harness for Grok",
-    shortDescription: "Candidate Harness workflow adapter for Grok",
-    longDescription: "Use Claude Code Harness skills in Grok for evidence-backed planning, implementation, review, release, setup, sync, and team execution workflows.",
+    shortDescription: "Internal-compatible Harness workflow adapter for Grok",
+    longDescription: "Use Claude Code Harness skills in Grok for evidence-backed planning, implementation, review, release, setup, sync, and team execution workflows. This is an internal-compatible adapter route; live H1-H8 workflow smoke is required before any public top-tier claim.",
     developerName: "Chachamaru",
     category: "Coding",
     capabilities: ["Read", "Write", "Interactive"],

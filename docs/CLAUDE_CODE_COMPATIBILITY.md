@@ -1,69 +1,91 @@
 # Claude Code Compatibility
 
-Last updated: 2026-03-12
+Last updated: 2026-07-10
 
 ## Supported Baseline
 
 - Claude Code: `v2.1+`
-- Node.js: `18+`
-- Plugin version: `3.10.2`
+- Plugin version: `5.2.0`
+- Guardrail runtime: bundled Go-native `harness` binary
+
+Node.js is not required for the Go-native guardrail engine. Optional skills and
+repository maintenance scripts can still declare their own tool requirements;
+that does not change the runtime baseline above.
 
 ## Latest Verified Snapshot
 
-The most recent local verification snapshot for this repository was:
+The 2026-07-10 local audit verified these version surfaces:
 
-- Claude Code `2.1.74`
-- Node.js `v24.10.0`
-- `./tests/test-task-completed-finalize.sh`
-- `./tests/test-fix-proposal-flow.sh`
-- `./tests/validate-plugin.sh`
-- `./tests/validate-plugin-v3.sh`
-- `./scripts/ci/check-consistency.sh`
-- `cd core && npm test`
+- `VERSION`: `5.0.0`
+- `.claude-plugin/plugin.json`: `5.0.0`
+- `harness.toml`: `5.0.0`
+- `./bin/harness-darwin-arm64 version`: `5.0.0 (Hokage)`
 
-This snapshot is a verification reference, not a hard upper bound. If you upgrade Claude Code or Node.js, rerun the commands above before trusting the environment.
+The binary observation is for the shipped macOS arm64 artifact only. Other
+platform binaries remain subject to the repository's binary/source drift and
+release checks; this snapshot does not claim that they were executed locally.
+
+Host support tiers are not maintained in this document. They are derived from
+[`hosts/registry.json`](../hosts/registry.json) and checked against public docs
+by `tests/test-host-registry.sh` and `tests/test-support-claim-wording.sh`.
 
 ## Maintenance Policy
 
-To keep this document maintainable, we intentionally track compatibility in two layers:
+Compatibility has two layers:
 
-- **Supported baseline**: the minimum supported Claude Code / Node.js versions
-- **Latest verified snapshot**: the newest environment we actually reran locally
+- **Supported baseline**: the minimum supported Claude Code version and the
+  current plugin/runtime architecture.
+- **Dated verification**: the version surfaces and commands actually observed
+  on a stated date.
 
-We do **not** maintain a full version-by-version support matrix in the README. That tends to drift quickly and costs more to maintain than it returns. If we need deeper notes about feature adoption, we keep them in dedicated docs instead of the landing page.
+Do not infer a full version matrix from a dated snapshot. After upgrading
+Claude Code or the plugin, rerun the checks below before publishing a stronger
+compatibility claim.
 
 ## What This Compatibility Promise Covers
 
-- `/harness-setup`, `/harness-plan`, `/harness-work`, `/harness-review`, `/harness-release`
-- TypeScript guardrail engine in [`core/`](../core)
-- Hook shims in [`hooks/`](../hooks)
-- Packaging and mirror checks enforced by CI
+- `/harness-setup`, `/harness-plan`, `/harness-work`, `/harness-review`, and
+  `/harness-release`
+- the Go-native policy and hook runtime under [`go/`](../go)
+- hook shims under [`hooks/`](../hooks)
+- packaging, host-tier, and mirror checks enforced by CI
 
 ## Windows Checkout Note
 
-On Windows, Git often defaults to `core.symlinks=false`. Public `harness-*` command skills are therefore shipped as real directories in `skills/`, `codex/.codex/skills/`, and `opencode/skills/` so they still appear in command lists after checkout. Session start repair still handles broken extension links inside `skills/extensions/`.
+On Windows, Git often defaults to `core.symlinks=false`. Public `harness-*`
+command skills are shipped as real directories in `skills/`,
+`codex/.codex/skills/`, and `opencode/skills/`, so they remain discoverable
+after checkout. Session-start repair still handles broken extension links under
+`skills/extensions/`.
 
-Native Windows Git Bash/MSYS/Cygwin sessions resolve `bin/harness-windows-amd64.exe` through the `bin/harness` shim. WSL2 sessions keep using the Linux binary. Breezing worktree isolation should therefore have a real hook binary on Windows amd64 instead of silently falling back because no platform binary was found.
+Native Windows Git Bash/MSYS/Cygwin sessions resolve
+`bin/harness-windows-amd64.exe` through the `bin/harness` shim. WSL2 sessions
+use the Linux binary. Windows hook behavior and binary/source parity remain
+release-gated checks, not assumptions made by this document.
 
 ## What Requires Extra Validation
 
-These flows are supported, but they depend on extra tools or environment setup and should be verified in your own environment:
+These paths depend on host tools or local environment setup and must be checked
+in the environment where they will run:
 
 - Breezing / agent teams
 - Codex CLI integration
-- Cursor 2-agent workflow
-- Video or slide generation
-- Memory / daemon integrations
+- Cursor workflows (`internal-compatible`, not public `supported`)
+- video or slide generation
+- memory / daemon integrations
 
 ## Recommended Upgrade Check
 
-Run this set after updating Claude Code, Node.js, or the plugin itself:
+All commands below exist in the current repository:
 
 ```bash
 ./tests/validate-plugin.sh
-./tests/validate-plugin-v3.sh
 ./scripts/ci/check-consistency.sh
-cd core && npm test
+bash tests/test-host-registry.sh
+bash tests/test-support-claim-wording.sh
+cd go && go test ./...
+bash scripts/release-preflight.sh --dry-run
 ```
 
-If you also rely on `/harness-work all`, run the success/failure fixture contract in [Work All Evidence Pack](evidence/work-all.md).
+If you rely on `/harness-work all`, also run the success/failure fixture
+contract in [Work All Evidence Pack](evidence/work-all.md).

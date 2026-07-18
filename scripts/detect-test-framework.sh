@@ -17,9 +17,9 @@
 #
 # Output (JSON, single line):
 #   {
-#     "framework": "vitest|jest|npm|pytest|go|cargo|none",
+#     "framework": "vitest|jest|npm|pytest|go|cargo|maven|gradle|none",
 #     "command":   "npm test",
-#     "language":  "node|go|python|rust|unknown",
+#     "language":  "node|go|python|rust|java|kotlin|unknown",
 #     "test_pattern": "**/*.test.ts",
 #     "detected_via": "vitest.config.ts"
 #   }
@@ -101,9 +101,57 @@ emit_json() {
   fi
 }
 
+jvm_language() {
+  local root="$1"
+  # A mixed standard-layout project uses Kotlin test naming deterministically.
+  # Trace metadata reports the mixed language separately as java-kotlin.
+  if [ -d "${root}/src/main/kotlin" ] || [ -d "${root}/src/test/kotlin" ]; then
+    printf 'kotlin\n'
+  else
+    printf 'java\n'
+  fi
+}
+
+jvm_test_pattern() {
+  local language="$1"
+  if [ "$language" = "kotlin" ]; then
+    printf '**/*{Test,Tests}.kt\n'
+  else
+    printf '**/*{Test,Tests}.java\n'
+  fi
+}
+
 # === 単一ディレクトリでの検出 ===
 detect_in_dir() {
   local root="$1"
+
+  # --- JVM (Maven before Gradle; both before Node) ---
+  # Hybrid JVM/frontend repositories commonly carry package.json and Node test
+  # config at the root. The JVM build descriptor remains the project-level test
+  # command source, while source layout selects Java vs Kotlin naming.
+  if [ -f "${root}/pom.xml" ] || [ -f "${root}/mvnw" ]; then
+    local mvn_cmd="mvn" language test_pattern detected_via="mvnw"
+    [ -f "${root}/mvnw" ] && mvn_cmd="./mvnw"
+    [ -f "${root}/pom.xml" ] && detected_via="pom.xml"
+    language="$(jvm_language "$root")"
+    test_pattern="$(jvm_test_pattern "$language")"
+    emit_json "maven" "${mvn_cmd} test" "$language" "$test_pattern" "$detected_via"
+    return 0
+  fi
+
+  if [ -f "${root}/build.gradle.kts" ] || [ -f "${root}/build.gradle" ] || [ -f "${root}/gradlew" ]; then
+    local gradle_cmd="gradle" language test_pattern detected_via="gradlew"
+    [ -f "${root}/gradlew" ] && gradle_cmd="./gradlew"
+    if [ -f "${root}/build.gradle.kts" ]; then
+      detected_via="build.gradle.kts"
+    elif [ -f "${root}/build.gradle" ]; then
+      detected_via="build.gradle"
+    fi
+    language="$(jvm_language "$root")"
+    test_pattern="$(jvm_test_pattern "$language")"
+    emit_json "gradle" "${gradle_cmd} test" "$language" "$test_pattern" "$detected_via"
+    return 0
+  fi
 
   # --- Node (vitest > jest > package.json scripts.test) ---
   if [ -f "${root}/vitest.config.ts" ] || [ -f "${root}/vitest.config.js" ] || [ -f "${root}/vitest.config.mjs" ]; then

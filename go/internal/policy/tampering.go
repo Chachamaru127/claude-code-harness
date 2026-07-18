@@ -1,7 +1,9 @@
 package policy
 
 import (
+	"fmt"
 	"regexp"
+	"strings"
 )
 
 // ---------------------------------------------------------------------------
@@ -111,5 +113,118 @@ func detectTampering(text string, isTest bool) []tamperingWarning {
 			})
 		}
 	}
+	return warnings
+}
+
+// ---------------------------------------------------------------------------
+// Coverage-shrink guard (PostToolUse, warn-only — never deny)
+//
+// Scoped to tests/validate-plugin.sh and tests/test-*.sh only.
+// Hook parity: fires on Claude via .claude-plugin/hooks.json PostToolUse →
+// harness hook post-tool; Codex/Cursor use PreToolUse-only gen (hostgen) and
+// have no PostToolUse concept, so no hostgen/hooks.json changes are needed.
+//
+// Write limitation: old file content is unavailable in the PostToolUse payload
+// (file already overwritten), so invocation-removal and assertion-count checks
+// are skipped for Write; only || true / set +e presence checks apply.
+// ---------------------------------------------------------------------------
+
+var coverageShrinkTargetPattern = regexp.MustCompile(`(?:^|/)tests/(validate-plugin\.sh|test-[^/]+\.sh)$`)
+
+var testInvocationLinePattern = regexp.MustCompile(`(?m)^[^\n#]*\bbash\b[^\n]*(?:tests/)?test-[^\s/]+\.sh`)
+var orTruePattern = regexp.MustCompile(`\|\|\s*true\b`)
+var setPlusEPattern = regexp.MustCompile(`set\s+\+e\b`)
+var assertionLinePattern = regexp.MustCompile(`(?m)^[^\n#]*(?:\bassert(?:_\w+|\()|\bfail_test\b|\bpass_test\b|\bjq\s+-e\b|\bgrep\s+-Fq\b|\bgrep\s+-q\b)`)
+
+type coverageShrinkWarning struct {
+	PatternID   string
+	Description string
+	Detail      string
+}
+
+func isCoverageShrinkTarget(filePath string) bool {
+	return coverageShrinkTargetPattern.MatchString(filePath)
+}
+
+func countAssertionLines(text string) int {
+	return len(assertionLinePattern.FindAllString(text, -1))
+}
+
+func detectCoverageShrink(pairs []contentPair, isWrite bool) []coverageShrinkWarning {
+	if len(pairs) == 0 {
+		return nil
+	}
+
+	var warnings []coverageShrinkWarning
+	seen := make(map[string]bool)
+
+	addWarning := func(w coverageShrinkWarning) {
+		key := w.PatternID + "\x00" + w.Detail
+		if seen[key] {
+			return
+		}
+		seen[key] = true
+		warnings = append(warnings, w)
+	}
+
+	if isWrite {
+		// Write: old content unavailable — patterns 2 & 3 only (presence in new).
+		newContent := pairs[0].new
+		if orTruePattern.MatchString(newContent) {
+			addWarning(coverageShrinkWarning{
+				PatternID:   "T14:or-true",
+				Description: "|| true addition — failure may be silently ignored",
+				Detail:      strings.TrimSpace(orTruePattern.FindString(newContent)),
+			})
+		}
+		if setPlusEPattern.MatchString(newContent) {
+			addWarning(coverageShrinkWarning{
+				PatternID:   "T15:set-plus-e",
+				Description: "set +e addition — errexit disabled",
+				Detail:      strings.TrimSpace(setPlusEPattern.FindString(newContent)),
+			})
+		}
+		return warnings
+	}
+
+	for _, pair := range pairs {
+		for _, inv := range testInvocationLinePattern.FindAllString(pair.old, -1) {
+			trimmed := strings.TrimSpace(inv)
+			if !strings.Contains(pair.new, trimmed) {
+				addWarning(coverageShrinkWarning{
+					PatternID:   "T13:invocation-removed",
+					Description: "test invocation removal — bash test-*.sh line disappeared",
+					Detail:      trimmed,
+				})
+			}
+		}
+
+		if !orTruePattern.MatchString(pair.old) && orTruePattern.MatchString(pair.new) {
+			addWarning(coverageShrinkWarning{
+				PatternID:   "T14:or-true",
+				Description: "|| true addition — failure may be silently ignored",
+				Detail:      strings.TrimSpace(orTruePattern.FindString(pair.new)),
+			})
+		}
+
+		if !setPlusEPattern.MatchString(pair.old) && setPlusEPattern.MatchString(pair.new) {
+			addWarning(coverageShrinkWarning{
+				PatternID:   "T15:set-plus-e",
+				Description: "set +e addition — errexit disabled",
+				Detail:      strings.TrimSpace(setPlusEPattern.FindString(pair.new)),
+			})
+		}
+
+		oldCount := countAssertionLines(pair.old)
+		newCount := countAssertionLines(pair.new)
+		if newCount < oldCount {
+			addWarning(coverageShrinkWarning{
+				PatternID:   "T16:assertion-reduced",
+				Description: "assertion count reduction — fewer assert/fail_test/pass_test/jq -e/grep -q lines",
+				Detail:      fmt.Sprintf("%d → %d", oldCount, newCount),
+			})
+		}
+	}
+
 	return warnings
 }

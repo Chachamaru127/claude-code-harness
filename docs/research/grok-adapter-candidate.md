@@ -1,12 +1,12 @@
-# Grok Adapter Candidate
+# Grok Adapter Evidence Boundary
 
-Status: candidate evidence boundary
+Status: internal-compatible evidence boundary
 Checked at: 2026-07-09 JST
 Phase: Grok host completion (goal plan)
 
 ## Conclusion
 
-Grok is a **candidate** Harness host.
+Grok is an **internal-compatible** Harness host.
 
 Harness has a Grok adapter surface (`.grok-plugin/`, `.grok/AGENTS.md`,
 `scripts/setup-grok.sh`, host dist build, model routing, static smoke tests).
@@ -19,7 +19,7 @@ or Claude SessionStart / PreToolUse hook parity. Do not claim public `supported`
 `not_observed != absent`: missing Grok workflow smoke is not proof that Grok
 cannot support Harness. It is proof that Harness must not overclaim support.
 
-Do not promote Grok beyond the `candidate` tier until:
+Do not promote Grok to public `supported` until:
 
 - host-specific bootstrap smoke stays green in release preflight,
 - CI-gated workflow smoke proves Plan/Work/Review from Grok alone (or an
@@ -83,7 +83,7 @@ grok plugin validate /tmp/cch-grok-dist
 
 | Allowed | Blocked |
 |---|---|
-| candidate Grok adapter | supported Grok adapter |
+| internal-compatible Grok adapter | public top-tier product claim for this host |
 | setup-grok install / package smoke | Claude SessionStart parity |
 | skill discovery via inspect | PreToolUse deny parity |
 | model-routing host `grok` | Breezing multitask public support claim |

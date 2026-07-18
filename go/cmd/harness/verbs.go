@@ -55,12 +55,18 @@ func runPlan(args []string) {
 	runContextVerb("plan")
 }
 
-// runRelease handles `harness release [args]`: emit the release contract plus a
-// context header. No task is required.
+// runRelease handles `harness release [--check] [args]`: emit the release
+// contract plus a context header, or run the read-only Release Train check.
 func runRelease(args []string) {
 	if isHelpFlag(args) {
-		fmt.Println("Usage: harness release  — emit the release prompt for the host to execute")
+		fmt.Println("Usage: harness release [--check]  — emit the release prompt for the host to execute")
 		os.Exit(0)
+	}
+	for _, arg := range args {
+		if arg == "--check" {
+			runReleaseCheck(args)
+			return
+		}
 	}
 	runContextVerb("release")
 }

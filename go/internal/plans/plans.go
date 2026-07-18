@@ -60,6 +60,13 @@ func classifyStatus(status string) Tags {
 	}
 }
 
+// IsWIPStatus reports whether a status value uses a canonical WIP marker.
+// Callers outside this package should use this helper instead of maintaining
+// another marker spelling/casing parser.
+func IsWIPStatus(status string) bool {
+	return classifyStatus(status).Wip
+}
+
 // ParseMarkdown parses every task row from Plans.md content (no status filter).
 //
 // Parsing rules (preserved verbatim from the proven getPlanRows logic):

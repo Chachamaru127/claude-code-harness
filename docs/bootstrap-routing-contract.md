@@ -13,6 +13,12 @@ runtime auto-routing proof. Passing this contract means the repository declares
 the expected routing surface; it does not prove that a model invocation will
 always auto-fire the matching skill at runtime.
 
+## Host admission (N+1)
+
+To add another host without false parity, follow
+`docs/onboarding/host-admission.md` and register the host in
+`hosts/registry.json` (machine SSOT for tier, setup, dist, routing, floor, smoke).
+
 ## False Parity Rule
 
 False parity is forbidden.
@@ -34,7 +40,7 @@ current artifact set; it does not mean the capability is absent.
 | Codex app | `candidate` | App behavior must be verified separately from Codex CLI; no app support claim before app-specific smoke evidence exists. |
 | OpenCode | `internal-compatible` | `opencode/AGENTS.md` and mirror/package checks are compatibility evidence until runtime bootstrap smoke passes. |
 | Cursor | `internal-compatible` | `.cursor/AGENTS.md`, `.cursor-plugin/plugin.json`, `scripts/setup-cursor.sh`, rules/skills/agents, optional hooks/MCP config shape; static smoke via `tests/test-cursor-adapter-candidate.sh` and `scripts/setup-cursor.sh --check`; observed Desktop skill loading; PM handoff docs are not adapter support; no public supported claim. |
-| Grok | `candidate` | `.grok/AGENTS.md`, `.grok-plugin/plugin.json`, `scripts/setup-grok.sh`, host dist build, `scripts/model-routing.sh --host grok`; static smoke via `tests/test-grok-adapter-candidate.sh` and `scripts/setup-grok.sh --check`; observed `grok plugin install` + `grok inspect` skill discovery; no Claude SessionStart / PreToolUse parity; no public supported claim. |
+| Grok | `internal-compatible` | `.grok/AGENTS.md`, `.grok-plugin/plugin.json`, `scripts/setup-grok.sh`, host dist build, `scripts/model-routing.sh --host grok`; static smoke via `tests/test-grok-adapter-candidate.sh` and `scripts/setup-grok.sh --check`; observed `grok plugin install` + `grok inspect` skill discovery; no Claude SessionStart / PreToolUse parity; no public supported claim. |
 | GitHub Copilot CLI | `candidate` | Manual instruction or CLI profile research is allowed; no Harness support claim without Harness-specific bootstrap evidence. |
 | Antigravity CLI | `future/unsupported` | No setup docs, bootstrap route, or support claim until an official or verified adapter route is observed. |
 
@@ -130,7 +136,7 @@ Expected properties:
 - Bootstrap evidence is AGENTS.md + plugin manifest + setup-grok install +
   static smoke + optional CLI install/inspect, not Claude SessionStart hook
   parity.
-- Grok is `candidate`; public `supported` claim waits for CI-gated workflow smoke.
+- Grok is `internal-compatible`; public `supported` claim waits for CI-gated live workflow smoke (H1–H8).
 
 Required smoke (static minimum):
 
@@ -147,8 +153,7 @@ HARNESS_GROK_ADAPTER_SMOKE_REQUIRED=1 bash tests/test-grok-adapter-candidate.sh
 
 ### Candidate Host Routes
 
-Codex app, Grok, and GitHub Copilot CLI are candidate hosts. Cursor is
-`internal-compatible` (Phase 87, renumbered from Phase 83). Their routes may be researched, documented,
+Codex app and GitHub Copilot CLI are candidate hosts. Grok and Cursor are `internal-compatible`. Cursor was Phase 87; Grok Phase 111. Their routes may be researched, documented,
 and smoke-tested, but candidate hosts are not golden prompt success routes until
 host-specific bootstrap evidence exists.
 

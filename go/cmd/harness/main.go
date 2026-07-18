@@ -184,7 +184,7 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "  work <taskID>           Emit the work prompt + task context (host executes; no LLM call)")
 	fmt.Fprintln(os.Stderr, "  plan                    Emit the plan prompt for the host to execute")
 	fmt.Fprintln(os.Stderr, "  review <taskID>         Emit the review prompt + task context for the host to execute")
-	fmt.Fprintln(os.Stderr, "  release                 Emit the release prompt for the host to execute")
+	fmt.Fprintln(os.Stderr, "  release [--check]       Emit the release prompt for the host to execute")
 	fmt.Fprintln(os.Stderr, "  version                 Print version")
 }
 

@@ -69,10 +69,15 @@ func TestFloorPolicyFragment_IDsAreCanonical(t *testing.T) {
 	}
 }
 
-func TestGenerateHooksJSON_IncludesFloorPolicy_AllThreeHosts(t *testing.T) {
+func TestGenerateHooksJSON_UsesOnlyVendorSchemaTopLevelKeys(t *testing.T) {
 	hosts, err := Load(writeSampleHosts(t))
 	if err != nil {
 		t.Fatal(err)
+	}
+	allowed := map[string]map[string]bool{
+		"claude": {"hooks": true},
+		"codex":  {"hooks": true},
+		"cursor": {"version": true, "hooks": true},
 	}
 	for _, name := range []string{"claude", "codex", "cursor"} {
 		out, err := GenerateHooksJSON(hosts[name])
@@ -83,38 +88,15 @@ func TestGenerateHooksJSON_IncludesFloorPolicy_AllThreeHosts(t *testing.T) {
 		if err := json.Unmarshal(out, &doc); err != nil {
 			t.Fatalf("%s: invalid JSON: %v", name, err)
 		}
-		if _, ok := doc["floor_policy"]; !ok {
-			t.Errorf("%s generated hooks.json missing floor_policy key", name)
+		for key := range doc {
+			if !allowed[name][key] {
+				t.Errorf("%s generated hooks.json contains vendor-unsupported top-level key %q", name, key)
+			}
 		}
 	}
 }
 
-func TestGenerateHooksJSON_FloorPolicyIdenticalBytesAcrossHosts(t *testing.T) {
-	hosts, err := Load(writeSampleHosts(t))
-	if err != nil {
-		t.Fatal(err)
-	}
-	var refs [][]byte
-	for _, name := range []string{"claude", "codex", "cursor"} {
-		out, err := GenerateHooksJSON(hosts[name])
-		if err != nil {
-			t.Fatalf("GenerateHooksJSON(%s): %v", name, err)
-		}
-		fp, err := extractFloorPolicyBytes(out)
-		if err != nil {
-			t.Fatalf("%s: %v", name, err)
-		}
-		refs = append(refs, fp)
-	}
-	for i := 1; i < len(refs); i++ {
-		if !bytes.Equal(refs[0], refs[i]) {
-			t.Errorf("floor_policy bytes differ between claude and host index %d\nclaude:\n%s\nother:\n%s",
-				i, refs[0], refs[i])
-		}
-	}
-}
-
-func TestGenerateHooksJSON_ExistingHooksBlockUnchanged(t *testing.T) {
+func TestGenerateHooksJSON_HooksBlockMatchesHostSchema(t *testing.T) {
 	hosts, err := Load(writeSampleHosts(t))
 	if err != nil {
 		t.Fatal(err)
@@ -134,7 +116,7 @@ func TestGenerateHooksJSON_ExistingHooksBlockUnchanged(t *testing.T) {
 			t.Fatalf("%s extract hooks: %v", name, err)
 		}
 		if !bytes.Equal(want, got) {
-			t.Errorf("%s hooks block changed after floor_policy addition\nwant:\n%s\ngot:\n%s", name, want, got)
+			t.Errorf("%s hooks block does not match host schema\nwant:\n%s\ngot:\n%s", name, want, got)
 		}
 	}
 }
@@ -169,21 +151,4 @@ func extractHooksRaw(doc []byte) (json.RawMessage, error) {
 		return nil, fmt.Errorf("missing hooks key")
 	}
 	return parsed.Hooks, nil
-}
-
-func extractFloorPolicyBytes(doc []byte) ([]byte, error) {
-	var parsed struct {
-		FloorPolicy json.RawMessage `json:"floor_policy"`
-	}
-	if err := json.Unmarshal(doc, &parsed); err != nil {
-		return nil, fmt.Errorf("parse doc: %w", err)
-	}
-	if parsed.FloorPolicy == nil {
-		return nil, fmt.Errorf("missing floor_policy key")
-	}
-	var frag interface{}
-	if err := json.Unmarshal(parsed.FloorPolicy, &frag); err != nil {
-		return nil, fmt.Errorf("parse floor_policy: %w", err)
-	}
-	return marshalStable(frag)
 }

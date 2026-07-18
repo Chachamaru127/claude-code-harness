@@ -140,6 +140,28 @@ CHANGELOG は各機能を「今まで → 今後」形式で具体的に記述�
 
 -> Doesn't communicate user value
 
+## マージ方式（merge commit 固定 / squash 不採用）
+
+release PR および main へ取り込む PR は **merge commit** (`gh pr merge --merge` /
+`git merge --no-ff`) を使う。squash / rebase は不採用（Phase 114 preamble 裁定 2026-07-14）。
+
+**なぜ**: Plans.md は task の Status 列に commit hash を台帳として埋めている
+（例: 113.1 `cc:done [fa2b9c37]`）。squash はこれらの hash を main の ancestry から
+外し、台帳と履歴の突合（`scripts/ci/check-branch-alignment-ledger.sh`、AR-16）を
+破壊する。squash は技術的には可能（3 方式許可 + binary は `-buildvcs=false` で
+SHA 非依存）だが、hash 台帳が Plans.md に存在する限り採用しない。
+
+- 機械 gate: merge 前に `bash scripts/ci/check-branch-alignment-ledger.sh` exit 0 を確認する
+- 先例: v5.0.0 の #235 / #236 も merge commit
+- 見直し条件: Plans.md が hash 台帳方式をやめた時のみ再検討する
+
+## Release evidence の保存（v5.1.0 監査指摘の codify）
+
+upgrade smoke（旧 version → 新 version の実測）や release gate の実行ログは、
+宣言だけでなく **artifact として `.claude/state/release-evidence/<version>/` に保存**する。
+Plans.md の cc:done マーカーが「実測した」と主張する項目には、対応するログファイルか
+コマンド出力の記録が存在しなければならない（SA-13 completeness 監査 2026-07-16 の指摘）。
+
 ## Release Creation Command
 
 ```bash

@@ -90,6 +90,22 @@ func EvaluatePostTool(input hookproto.HookInput) hookproto.HookResult {
 		}
 	}
 
+	// Coverage-shrink guard (warn-only, scoped to harness shell test scripts)
+	if filePath != "" && isCoverageShrinkTarget(filePath) {
+		pairs := getContentPairs(input.ToolName, input.ToolInput)
+		isWrite := input.ToolName == "Write"
+		csWarnings := detectCoverageShrink(pairs, isWrite)
+		if len(csWarnings) > 0 {
+			var lines []string
+			for _, w := range csWarnings {
+				lines = append(lines, fmt.Sprintf("- [%s] %s\n  detail: %s", w.PatternID, w.Description, w.Detail))
+			}
+			msg := fmt.Sprintf("[v4] Coverage-shrink warning\n\nSuspicious patterns detected in `%s`:\n\n%s\n\n[Please review]\nConfirm this change does not reduce test coverage or mask failures.",
+				filePath, strings.Join(lines, "\n"))
+			systemMessages = append(systemMessages, msg)
+		}
+	}
+
 	// Security risk detection
 	content := getChangedContent(input.ToolInput)
 	if content != "" {

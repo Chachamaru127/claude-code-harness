@@ -378,9 +378,9 @@ Purpose: stage b 完成と直接関係しない release-train（CHANGELOG 監視
 
 | Task | 内容 | DoD | Depends | Status |
 |------|------|-----|---------|--------|
-| 92.4.1 | `[Phase D: batch リリース提案]` `[lane:fast]` `[tdd:required]` `harness-release --check`(read-only): `CHANGELOG [Unreleased]` を解析し v1 トリガー（最終 tag から **7 日経過** OR `### Breaking` 有; `### Security` 有なら **2 日**）で `RELEASE_CANDIDATE`(推定 bump 付) を emit。version ファイルは一切触らない。 | (a) fixture `[Unreleased]` で正しい `RELEASE_CANDIDATE` と bump 推定、(b) read-only（exit 0・ファイル書込 0）、(c) Security で T=2d 短縮、(d) 閾値未達で候補を出さない、(e) test PASS | - | cc:TODO |
-| 92.4.2 | `[lane:gate]` `[tdd:required]` `RELEASE_CANDIDATE` を Session Monitor / UserPromptSubmit に tri-state（Candidate/None/NotApplicable）で受動表示。`active-watching-test-policy.md` の 3 状態命名に従う。 | (a) 閾値到達で候補行表示、(b) 未達は silent（not-configured 流儀）、(c) `TestXxx_Candidate/_None/_NotApplicable` 3 test、(d) human は GO/無視 だけ、(e) `go test ./...` PASS | 92.4.1 | cc:TODO |
-| 92.4.3 | `[lane:fast]` `[tdd:skip:docs-only]` トリガー（7d / Breaking / Security-2d）と「提案であって gate でない」原則を `.claude/rules/versioning.md` の Release Train Proposal section に明文化。 | (a) versioning.md に Release Train Proposal section と数値・原則、(b) spec/doc と整合 | 92.4.1 | cc:TODO |
+| 92.4.1 | `[Phase D: batch リリース提案]` `[lane:fast]` `[tdd:required]` `harness-release --check`(read-only): `CHANGELOG [Unreleased]` を解析し v1 トリガー（最終 tag から **7 日経過** OR `### Breaking` 有; `### Security` 有なら **2 日**）で `RELEASE_CANDIDATE`(推定 bump 付) を emit。version ファイルは一切触らない。 | (a) fixture `[Unreleased]` で正しい `RELEASE_CANDIDATE` と bump 推定、(b) read-only（exit 0・ファイル書込 0）、(c) Security で T=2d 短縮、(d) 閾値未達で候補を出さない、(e) test PASS | - | cc:done [694d96e1] |
+| 92.4.2 | `[lane:gate]` `[tdd:required]` `RELEASE_CANDIDATE` を Session Monitor / UserPromptSubmit に tri-state（Candidate/None/NotApplicable）で受動表示。`active-watching-test-policy.md` の 3 状態命名に従う。 | (a) 閾値到達で候補行表示、(b) 未達は silent（not-configured 流儀）、(c) `TestXxx_Candidate/_None/_NotApplicable` 3 test、(d) human は GO/無視 だけ、(e) `go test ./...` PASS | 92.4.1 | cc:done [783942a1] |
+| 92.4.3 | `[lane:fast]` `[tdd:skip:docs-only]` トリガー（7d / Breaking / Security-2d）と「提案であって gate でない」原則を `.claude/rules/versioning.md` の Release Train Proposal section に明文化。 | (a) versioning.md に Release Train Proposal section と数値・原則、(b) spec/doc と整合 | 92.4.1 | cc:done [6c0c36b5] |
 
 ---
 
@@ -413,6 +413,14 @@ Purpose: Phase 92.2.1 の 5 カテゴリ runtime hard floor を 3 CLI hook へ *
 | 96.1.4 | `[Self-Audit Hardening]` `[lane:gate]` `[tdd:required]` `[Risk Gate]` deny-list self-audit baseline hash + 改ざん検知強化: `.claude-plugin/settings.json` の deny エントリ baseline を hash で固定し、減少時に起動拒否（Phase 91.6 の `policy/` baseline と統合）。`.claude/settings.local.json` の hook 注入を Read で検知（self-audit.md の項目を Go 実装に昇格）。CCH 生成 hook は allowlist で誤検知回避（92.6.4 契約延長）。 | (a) baseline hash で deny エントリ減少時に起動拒否 test、(b) settings.local.json hook 注入検知 test（既知 / 未知の 2 ケース）、(c) CCH 生成 hook が allowlist で誤検知ゼロ test、(d) **改ざん検知 3 ケース個別 test: (d1) deny エントリ削除で起動拒否、(d2) settings.local.json への未知 command 型 hook 追記で検知、(d3) 既存 hook の command 文字列改変で検知**、(e) `bash tests/validate-plugin.sh` PASS | 92.6.4 | cc:done [50835494] |
 | 96.1.5 | `[stage b 完成判定]` `[lane:release]` `[tdd:skip:integration-verification]` Phase 93 + Phase 95 + Phase 96.1.1-96.1.4 完了で **stage b 達成**。実 3 タスク `/breezing all --cursor --auto-approve`（93.3.6 MVP e2e と同じ launch contract に auto-approve を加えた拡張形）で完走確認 + (a) 5 カテゴリ floor が 3 CLI で同時発火、(b) Decision Card 本格版が運用される、(c) Bridge Daemon + delivery が動作、(d) auto-approve ON で worktree 外破壊試行が hard-stop、を evidence 付きで確認。**stage a (Phase 4-7) 移行 gate**: user 判断ポイント inventory（退役スキルエイリアス永続 / Night Watch Report / Client Mirror / Channels wake / Judgment Ledger / Failure Codifier の 6 領域の優先順 + Plan B 詳細 §7 Phase 4-7 タイムライン）を harness-mem に保存し、user の GO を待つ（stage a への移行は 96.1.5 完了後の独立判断 gate）。**Evidence (2026-06-13)**: (a) 3 CLI hook floor parity 15/15 PASS ✓ / (b) judgment-card-render 12 + floor-no-card 5 PASS ✓ / (c) bridge + bridgedelivery unit PASS ✓ / (d) autoapprove 6 test PASS（DefaultOff / OnButPrereqMissing / OnAndAllPrereqsDone / EnvValueStrictness 6-sub / NoEnvOverridesFloor）+ runtimefloor WorktreeEscape PASS ✓ / (e) stage a inventory `obs_00mqb4toyea80fa689397ca66e` mem 保存（推奨順: 退役 alias > Judgment Ledger > Night Watch > Client Mirror > Failure Codifier > Channels wake、user GO via `/harness-plan` for Phase 4-7 structuring） ✓ / (f) validate-plugin PASS ✓ / (g) check-consistency PASS ✓ / (h) README Advanced に「auto-approve (experimental)」行追加 ✓ | (a)-(d) evidence 本行 Status 追記、(e) stage a 移行用 inventory が mem に保存（mem_id 記録）、(f) `bash tests/validate-plugin.sh` PASS、(g) `bash scripts/ci/check-consistency.sh` PASS、(h) README に「auto-approve experimental（HARNESS_AUTO_APPROVE=on opt-in）」表記追加（公開 claim 更新） | 95.5.1, 96.1.3, 96.1.4 | cc:done [8ca7d40a] ※ 2026-07-05 レビュー裁定: auto-approve は ledger 記録のみで skip 分岐なし。主張を撤回し実装は HOTL Phase へ (104.3) |
 | 96.1.6 | `[Spec sync]` `[lane:fast]` `[tdd:skip:docs-only]` spec.md「Tri-Tool Parallel Collaboration Contract」に Risk Gate 3 CLI 配布契約（5 カテゴリ enum + 3 CLI 同時発火 + Codex Bash 制限と fingerprint 封じ込めの補完関係 + canonical floor policy fragment が host 間で byte-equal の境界）と auto-approve scope（worktree 内のみ、92.1+92.2+96.1.2 完了 gate、`HARNESS_AUTO_APPROVE` opt-in）を追記。`.claude/rules/versioning.md` に「stage b 完成 = minor リリース候補（Release Train v1 trigger は Phase 94 配下）」運用記載。**Evidence (2026-06-13)**: (a) spec.md「Risk Gate distribution contract (3-CLI parity)」+「auto-approve scope」節新設、5 カテゴリ enum 9 grep / 3 CLI parity 1 / HARNESS_AUTO_APPROVE 2 / byte-equal canonical fragment 2 ✓ / (b) versioning.md「Plan B Stage B Release Trigger」節追加、stage b 5 grep ✓ / (c) check-consistency PASS ✓ / (d) Phase 94 との関係 1 行明記 ✓ | (a) spec.md に 5 カテゴリ enum 名 + 3 CLI 同時発火契約 + auto-approve worktree-scope 明記 + canonical fragment 境界記述、(b) versioning rule に stage b 運用追加、(c) `bash scripts/ci/check-consistency.sh` PASS、(d) Phase 94 release train との関係を 1 行で記述 | 96.1.5 | cc:done [890c0554] |
+
+> **Phase 112.10 supersession (2026-07-12):** Phase 96.1.1 / 96.1.6 above
+> preserve the historical implementation and evidence at completion time. The
+> current contract no longer embeds CCH-specific `floor_policy` metadata into
+> vendor hook JSON. Vendor documents contain only recognized schema keys;
+> `FloorPolicyFragment` remains deterministic host-neutral audit evidence, while
+> executable parity is enforced by the shared runtime engine, generated command
+> hooks, and the 15-case `tests/test-3cli-hook-floor.sh` gate.
 
 ## Phase 97: Plan B stage a warm-up — Retired Alias Registry [P1]
 
@@ -719,3 +727,223 @@ Spec skip reason: ledger sync / git hygiene / docs judgment / dependency triage 
 | skill prune / progressive disclosure | drop（redesign skill 木が別物） |
 | f6cdb042 HOTL wiring | drop（origin に plan-brief/accept/progress 配線済み） |
 | dirty model-routing Sonnet5 | drop（origin 既に sonnet-5） |
+
+---
+
+## Phase 111: Multi-host Public `supported` + N+1 Host Registry [P0]
+
+Purpose: Claude Code / Codex CLI / Cursor / Grok を **false parity なし**で公開 `supported`（JP: 正式対応）に載せられる証拠契約を作り、将来 host 追加を registry 駆動にする。詳細: `docs/plans/phase-111-multi-host-supported.md`。
+
+**Product freeze (2026-07-09 plan)**:
+- 正式対応 = EN `supported` = **H1–H8** 達成（Claude-clone ではない capability 相対）。
+- 4 host を脚注なしで同じ「正式対応」に並べない。昇格は host 単位。
+- 昇格順: SSOT/registry → Codex CLI → Cursor → Grok（floor 参加 or 明示除外後）。
+- team_validation_mode: `subagent`（Architecture / Security+Skeptic / QA+Product）。
+
+### Spec delta
+
+| Path | Change |
+|------|--------|
+| `docs/spec/planning-and-host-adapter.md` | Support Tiers に H1–H8 参照。Grok 行追加。Codex/Cursor 理由を floor/workflow 前提に更新。 |
+| `docs/spec/execution-backends-and-distribution.md` | Floor membership 表（Claude/Codex/Cursor/Grok）。Grok codec 方針。containment 既知制限を contract に固定。 |
+| `docs/tool-capability-matrix.md` | Codex/Cursor `pre_use_guard` を 3cli + Phase 83.7 事実に同期。Grok は unsupported/parity 明示。 |
+| `docs/hardening-parity.md` | 「Codex に hook なし」を現行に更新。 |
+| `hosts.toml` or `hosts/registry.yaml` | host id / tier / setup / dist / smoke / safety_model / floor_member SSOT。 |
+
+### Phase 111.0 — SSOT + claim safety (gate)
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 111.0.1 | `[lane:gate]` `[tdd:required]` H1–H8 を `docs/spec/planning-and-host-adapter.md` に成文化。既存 4 段 ladder は維持。Claude-clone 条件を明示禁止 | (a) H1–H8 が spec に列挙、(b) `supported` 定義が install-only を拒否、(c) `bash scripts/ci/check-consistency.sh` 関連 PASS or 更新 | - | cc:完了 |
+| 111.0.2 | `[lane:gate]` `[tdd:required]` capability matrix の Codex/Cursor `pre_use_guard` と `docs/hardening-parity.md` を 3cli floor / Cursor deny 事実に同期。Grok pre_use は unsupported for parity のまま | (a) matrix が hook 事実と矛盾しない、(b) hardening 「hook なし」削除/更新、(c) `bash tests/test-tool-capability-matrix.sh` PASS | 111.0.1 | cc:完了 |
+| 111.0.3 | `[lane:gate]` `[tdd:required]` `tests/test-support-claim-wording.sh` に Grok + JP「正式対応/対応済み/サポート対象」× host 名 block を追加。false claim を構造的に塞ぐ | (a) Grok+supported / 正式対応+Grok が FAIL、(b) Cursor/Codex 既存 block 維持、(c) テスト PASS | - | cc:完了 |
+| 111.0.4 | `[lane:docs]` `[tdd:skip:docs-only]` README/onboarding に「4 host 入口あり ≠ 4 host 正式対応」1 段落 + tier↔JP 対応表 | (a) 誤読しにくい 1 段落、(b) Grok candidate / Cursor internal 併記 | 111.0.1 | cc:完了 |
+
+### Phase 111.1 — Host registry + N+1 skeleton
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 111.1.1 | `[lane:fast]` `[tdd:required]` `hosts/registry.yaml`（または hosts.toml 拡張）に claude/codex/cursor/grok を登録: tier, setup, dist, routing key, safety_model, floor_member, blocked_phrases, smoke scripts | (a) 4 host 行、(b) schema またはコメント契約、(c) Grok が floor_member=false 明示 | 111.0.1 | cc:完了 |
+| 111.1.2 | `[lane:fast]` `[tdd:required]` `tests/test-host-registry.sh`: registry ↔ README/matrix/onboarding tier 行の同期 assert | (a) drift で FAIL、(b) CI から実行可能 | 111.1.1 | cc:完了 |
+| 111.1.3 | `[lane:fast]` `[tdd:required]` `build-host-plugin-dist.sh` / `model-routing.sh` / release-preflight adapter gates を registry 駆動（または shared loop）。host 追加が case コピペ増にならないこと | (a) 4 host green 維持、(b) 新 host 手順が docs 1 ページ、(c) 既存 test-host-plugin-dist / model-routing PASS | 111.1.1 | cc:完了 |
+| 111.1.4 | `[lane:docs]` `[tdd:skip:docs-only]` `docs/onboarding/host-admission.md`: N+1 admission checklist（Architecture/Security 合意 12 項） | (a) checklist が実在、(b) bootstrap-routing からリンク | 111.1.1 | cc:完了 |
+
+### Phase 111.2 — Workflow smoke framework
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 111.2.1 | `[lane:gate]` `[tdd:required]` 共通 assert ライブラリ: skill visible / install layout / plan artifact / wording。`tests/lib/host-smoke-lib.sh` 等 | (a) 3 関数以上、(b) fixture で unit 化 | 111.1.1 | cc:完了 |
+| 111.2.2 | `[lane:gate]` `[tdd:required]` `tests/test-host-workflow-smoke.sh --host codex|cursor|grok|claude`。最低: plan skill → 固定 artifact。CLI 不在時 skip、`HARNESS_${HOST}_WORKFLOW_SMOKE_REQUIRED=1` で fail | (a) codex 実装が RED→GREEN、(b) cursor/grok stub or skip path、(c) ドキュメントに required 昇格条件 | 111.2.1 | cc:完了 |
+| 111.2.3 | `[lane:gate]` `[tdd:required]` CI: static+install を path filter で常時。workflow は nightly or release-required から開始し、安定後 PR required 化の判断を decisions に記録 | (a) workflow yaml 更新、(b) flake 方針記録 | 111.2.2 | cc:完了 |
+
+### Phase 111.3 — Codex CLI → `supported`
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 111.3.1 | `[lane:fast]` `[tdd:required]` Codex workflow smoke を REQUIRED 経路で green（isolated CODEX_HOME + plan artifact） | (a) CI or release gate 緑、(b) evidence log path 固定 | 111.2.2, 111.0.2 | cc:完了 |
+| 111.3.2 | `[lane:docs]` `[tdd:required]` Codex Bash-only + post containment を matrix/README known-limitations に必須開示。Codex app は candidate のまま | (a) app≠CLI 維持、(b) claim-wording PASS | 111.3.1 | cc:完了 |
+| 111.3.3 | `[lane:release]` `[tdd:required]` Codex CLI tier → `supported`。registry/README/matrix/onboarding/bootstrap 一斉更新 + preflight | (a) 全面一致、(b) validate-plugin PASS | 111.3.1, 111.3.2, 111.0.3 | blocked |
+
+### Phase 111.4 — Cursor → `supported`
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 111.4.1 | `[lane:gate]` `[tdd:required]` Cursor workflow smoke（cursor-agent or documented headless path）で plan artifact。Desktop-only は Recommended に落とす | (a) CI/nightly で再現、(b) research doc に dated evidence | 111.2.2 | cc:完了 |
+| 111.4.2 | `[lane:docs]` `[tdd:skip:docs-only]` FS 非拘束 / allowlist best-effort / fail-open を known-limitations + onboarding に必須 | (a) public 面から消えない、(b) support-claim と矛盾なし | - | cc:完了 |
+| 111.4.3 | `[lane:gate]` `[tdd:required]` Cursor pre_use deny smoke を optional→release gate に接続（既存 Phase 83.7 事実の CI 化） | (a) protected path deny assert、(b) 失敗で preflight fail | 111.4.1 | cc:完了 |
+| 111.4.4 | `[lane:release]` `[tdd:required]` Cursor tier → `supported`。全面同期 | (a) wording tests PASS、(b) validate-plugin PASS | 111.4.1, 111.4.2, 111.4.3 | blocked |
+
+### Phase 111.5 — Grok → floor then `supported`
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 111.5.1 | `[Spike — make-or-break]` `[tdd:skip:spike-verification]` Grok hooks が `harness hook pre-tool --host grok` で live deny 可能か実測。可否で 111.5.2 分岐 | (a) research note 追記、(b) go/no-go | - | cc:完了 |
+| 111.5.2a | `[lane:fast]` `[tdd:required]` **go**: hosts.toml + hookcodec + floor membership + gen で Grok を 3cli+1 に参加 | (a) deny smoke、(b) go test PASS | 111.5.1 | cc:完了 |
+| 111.5.2b | `[lane:docs]` `[tdd:skip:docs-only]` **no-go**: floor 対象外を matrix/README に固定。max tier を H5 非 hook モデルで定義（post-gate only） | (a) 「4 host 同一ガード」文言禁止、(b) claim tests | 111.5.1 | cc:完了 [superseded-by-111.5.2a] |
+| 111.5.3 | `[lane:gate]` `[tdd:required]` Grok workflow smoke REQUIRED + candidate→internal-compatible（Cursor 先例、H4 前でも可なら 111.5.3 で internal、supported は 111.5.4） | (a) tier 更新一致、(b) inspect+plan artifact | 111.2.2, 111.5.2a or 111.5.2b | cc:完了 |
+| 111.5.4 | `[lane:release]` `[tdd:required]` Grok H1–H8 満たしたら `supported`。未達なら internal で停止し理由を decisions に Why 付き | (a) 全面一致 or 明示停止、(b) validate-plugin PASS | 111.5.3 | blocked |
+
+### Phase 111.6 — Closeout + N+1 dry-run
+
+**111 breezing-all closeout (2026-07-09)**:
+- Implemented 111.2 structural workflow smoke + CI step; live LLM path remains opt-in.
+- Grok promoted to **`internal-compatible`** (install/inspect/structural smoke + hookcodec HostGrok).
+- Codex CLI / Cursor remain **`internal-compatible`** (not public `supported`).
+- **111.3.3 / 111.4.4 / 111.5.4 blocked**: public `supported` needs live H4 (host CLI plan session) + full H1–H8 on one claim path — structural smoke alone is insufficient (false-parity policy).
+- N+1 stub: `docs/onboarding/host-examplehost-stub.md`.
+
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 111.6.1 | `[lane:docs]` `[tdd:skip:docs-only]` 4 host の最終 tier 表 + 未達 cap 脚注を README 1 画面に固定。JP マーケ安全ワンライナー | (a) 正式対応は H1–H8 達成 host のみ、(b) wording tests PASS | 111.3.2, 111.4.3, 111.5.3 | cc:完了 |
+| 111.6.2 | `[lane:fast]` `[tdd:required]` N+1 dry-run: 架空 host `examplehost` を registry に追加する PR テンプレ（実装は stub）で追加手順が 1 PR に収まることを検証 | (a) checklist 完了記録、(b) 不要 case 文が無い | 111.1.3, 111.1.4 | cc:完了 |
+| 111.6.3 | `[Closeout]` `[lane:release]` `[tdd:skip:test-aggregation]` decisions.md に Why 付き closeout。CHANGELOG Unreleased | (a) decisions Why、(b) CHANGELOG、(c) no accidental supported overclaim | 111.6.1 | cc:完了 |
+
+### Phase 111.7 — Live CLI H4（operator-driven）
+
+Purpose: 各 CLI で live plan を回し、`LIVE: <host> PASS` で昇格ゲートを開ける。手順 SSOT: `docs/onboarding/host-live-cli-smoke.md`。
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 111.7.0 | `[lane:docs]` `[tdd:skip:docs-only]` live コピペ帳 + `scripts/print-live-cli-smoke.sh` + 返信キーワード表 | (a) `docs/onboarding/host-live-cli-smoke.md` 存在、(b) `bash scripts/print-live-cli-smoke.sh keywords` が 4 host を列挙 | 111.2.2 | cc:完了 |
+| 111.7.1 | `[lane:gate]` `[tdd:skip:operator-live]` **operator**: Claude live H4 | `LIVE: claude PASS` + `out/workflow-smoke/live/claude/plan-artifact.md` | 111.7.0 | cc:TODO |
+| 111.7.2 | `[lane:gate]` `[tdd:skip:operator-live]` **operator**: Codex live H4 | `LIVE: codex PASS` + artifact | 111.7.0 | cc:TODO |
+| 111.7.3 | `[lane:gate]` `[tdd:skip:operator-live]` **operator**: Cursor live H4 | `LIVE: cursor PASS` + artifact | 111.7.0 | cc:TODO |
+| 111.7.4 | `[lane:gate]` `[tdd:skip:operator-live]` **operator**: Grok live H4 | `LIVE: grok PASS` + artifact | 111.7.0 | cc:TODO |
+| 111.7.5 | `[lane:release]` `[tdd:required]` `LIVE: all PASS` 後、H1–H8 再判定して 111.3.3/111.4.4/111.5.4 の blocked を解除 or 理由更新 | (a) 昇格 or 残 blocked の Why、(b) claim-wording PASS | 111.7.1, 111.7.2, 111.7.3, 111.7.4 | cc:TODO |
+
+### Reject / Optional
+
+| Item | Class | Why |
+|------|-------|-----|
+| 4 host 同時 `supported` バッジ（脚注なし） | **Reject** | false parity / 信用事故 |
+| Breezing multitask を supported 条件に含める | **Reject** | smoke target のまま |
+| Codex app を CLI と同時昇格 | **Reject** | 別 host |
+| memory_bridge 全 host | **Optional** | 別 phase |
+| Official marketplace publish (xAI/Cursor) | **Optional** | 本 phase 非目標 |
+
+---
+
+## Phase 112: Reliability Closeout + Public Launch [P0]
+
+Purpose: Reconcile every currently open GitHub item without weakening safety contracts and make public claims evidence-bound. The plugin release stays isolated from the separately handed-off LP/domain lane: one private `claude-code-harness-site` repository owns the English-first site, Japanese `/ja/`, and gitignored non-public evidence assets; the authenticated Context Harness migration remains external to this repository. The five pre-existing local commits through `158307b8` are immutable prerequisites; the primary checkout and `.worktrees/` are out of scope. Version files remain unchanged until the operator approves the v5.1.0 release step.
+
+**External-lane update (operator decision, 2026-07-13):** the earlier two-repository public/private plan is superseded. LP source and non-public material use one private site repository, with non-public assets excluded by `.gitignore`; URL publication does not require the source repository to be public. The LP/domain handoff is complete in its separate session. No LP deploy, DNS/TLS change, or Context Harness route migration is authorized or performed by the plugin release lane. Existing approval to comment on and close superseded GitHub items still applies only after replacement validation and published evidence. Never read or print secret values.
+
+### Phase 112 release-plan reconciliation (2026-07-13)
+
+- **Spec delta:** `docs/spec/planning-and-host-adapter.md` now fixes the R15
+  effective-Git-context contract: literal `git -C` / `--work-tree` are resolved,
+  while dynamic cwd/work-tree inputs fail closed. The root `spec.md`
+  needs no delta because its human-only constitution, public-claim boundary,
+  and release boundary already govern this plan.
+- **team_validation_mode:** `subagent` — Product/Skeptic,
+  Architecture/Security, and QA/Release independently reviewed the release
+  branch and agreed on the protected-policy adoption gate, PR #239 separation,
+  unfinished live-H4 exclusion, and current-HEAD release review requirement.
+- **Required:** complete documentation/plan reconciliation; obtain operator
+  adoption of protected policy changes; explicitly triage the current GitHub
+  inventory; rerun current-HEAD review and release gates; obtain one release GO.
+- **Recommended:** refresh and rebroadcast ignored handoff/checkpoint files only
+  after the release-candidate state is frozen.
+- **Optional:** process compatible dependency updates after v5.1.0 in a separate
+  maintenance lane.
+- **Reject:** direct merge/cherry-pick of PR #239; unverified major dependency
+  updates; public support promotion without live H4; folding LP/domain work into
+  the plugin release.
+
+**Plan-time preapproval:** no secret read or destructive operation is required
+for reconciliation. GitHub comments/closes, branch push, release PR creation and
+merge, version bump, and tag publication are external writes. Existing approval
+covers evidence-based superseded-item closeout, but version bump/push/merge/tag
+remain blocked until the single v5.1.0 release confirmation. Protected policy
+adoption is always a separate operator-only judgment and cannot be inferred.
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 112.1 | `[Issue #231]` `[lane:gate]` `[tdd:required]` Completion and Breezing output use English by default and Japanese only for explicit `ja`; synchronize Claude/Codex/OpenCode mirrors. | (a) RED/GREEN tests cover unset/en/ja, (b) EN/JA templates are semantically equivalent, (c) mirror check passes, (d) focused i18n tests pass. | - | cc:done [ea501203; independent re-review APPROVED; focused i18n + mirror parity green] |
+| 112.2 | `[PR #228 replacement]` `[lane:gate]` `[tdd:required]` Port Java/Kotlin detection safely from current main: Java precedence, Maven/Gradle commands, Kotlin test naming, and generated-config synchronization. | (a) RED/GREEN fixtures cover Java, Kotlin, Maven and Gradle, (b) generated mirrors/config remain in sync, (c) focused detection and plugin validation pass, (d) superseded PR closes only after replacement is published. | - | cc:done [acbb9d1b; independent re-review APPROVED; 10/10 JVM detection; no JVM auto-allow] |
+| 112.3 | `[PR #237 replacement]` `[lane:gate]` `[tdd:required]` Rebuild the Windows latency change without weakening root validation or safety hooks: Stop during `cc:WIP` deterministically blocks; safety hooks stay synchronous; hook manifests keep parity. | (a) RED/GREEN Windows migration tests, (b) Stop block is deterministic, (c) root validation is unchanged or stronger, (d) safety hooks are not async, (e) hook parity and plugin validation pass, (f) superseded PR closes only after replacement is published. | - | cc:done [1251fa01; independent re-review APPROVED; canonical/legacy Stop + Windows/parity/binary gates green] |
+| 112.4 | `[PR #233]` `[lane:fast]` `[tdd:skip:dependency-triage]` Revalidate the benchmark-only `@vercel/agent-eval` 0.14.x policy and close the incompatible major update with a current evidence comment if no migration requirement exists. | (a) package usage and validation status are current, (b) no incompatible major merge, (c) reasoned GitHub comment and close, (d) no runtime dependency regression. | - | cc:done [PR #233 closed without merge 2026-07-10; 0.14.x audit green; 1.x removes tracked `--dry` workflow] |
+| 112.5 | `[lane:gate]` `[tdd:required]` Revalidate AlphaSignal-era concerns and public claims against current code; fix only reproduced defects, including the stale README host-rank expectation, and add a publication contract that requires current host/support and source verification. | (a) binary/version, TDD and docs concerns each have dated evidence, (b) stale rank test expects `internal-compatible`, (c) unverified testimonials/claims fail closed, (d) relevant README/spec/tests pass. | 112.1, 112.2, 112.3 | cc:done [9dfdcfd8; dated public claims audit + publication contract + fail-closed fixtures green] |
+| 112.6 | `[External LP handoff]` `[lane:external]` `[tdd:skip:handoff-only]` Transfer the English root/Japanese `/ja/` Astro LP, verified-only testimonial contract, and evidence-receipt design to one private `claude-code-harness-site` repository. Keep source material that must not ship under gitignored paths; do not create a separate marketing repository. | (a) the private-repository decision is explicit, (b) public URL and source visibility are treated independently, (c) non-public assets are excluded from version control and deploy output, (d) the handoff identifies build/accessibility/content gates. | 112.5 | cc:done [separate LP session accepted the handoff; implementation and deployment remain external to this plugin release] |
+| 112.7 | `[External domain handoff]` `[lane:external]` `[security-sensitive]` Keep the authenticated Context Harness migration to `context-harness.canai.jp` in the separate operations lane, including DNS/TLS, registrations, route verification, and rollback. | (a) no migration is claimed from this repository, (b) handoff preserves unauthenticated/authenticated/API/webhook checks, (c) secrets remain undisclosed, (d) the plugin release has no dependency on migration completion. | - | cc:done [handoff boundary recorded; operational migration remains unverified and external] |
+| 112.8 | `[External publish handoff]` `[lane:external]` `[tdd:skip:handoff-only]` Keep `www.claude-harness.com` publication, apex redirect, accessibility/metadata checks, and post-production repository-link updates in the private site lane. | (a) plugin release does not deploy the LP, (b) handoff retains verified-only claims and privacy gates, (c) deploy rollback remains an external requirement, (d) no LP implementation is mixed into the plugin distribution. | 112.6, 112.7 | cc:done [handoff complete; publication state is owned by the separate site session] |
+| 112.9 | `[External lane closeout handoff]` `[lane:external]` `[tdd:skip:handoff-only]` Preserve the site/production verification checklist in the separate private-repository handoff without making it a v5.1.0 plugin release gate. | (a) site build/Playwright/axe/link/metadata checks remain in the handoff, (b) no customer/auth data may enter public artifacts, (c) plugin release scope explicitly excludes these checks, (d) future resume uses the external checkpoint rather than this release branch. | 112.6, 112.7, 112.8 | cc:done [LP/domain handoff complete; no site or production completion claimed here] |
+| 112.10 | `[Codex hook compatibility]` `[lane:gate]` `[tdd:required]` Stop Codex / Orca from inheriting Claude-only agent hooks and make generated Codex project hooks vendor-schema valid without removing Claude's agent-hook safeguards. | (a) the Codex plugin manifest uses a non-array inline empty hook override and the generated Codex package preserves it, (b) Claude dual hook manifests remain byte-unchanged, (c) generated Codex hooks contain supported command handlers with vendor-valid top-level keys, (d) an isolated Codex app-server probe loads the project command hooks without agent/async/parse warnings, (e) CHANGELOG Before/After, focused/full validation and independent review pass without a version bump. | 112.3 | cc:done [e358ff2a] |
+| 112.11 | `[Issue #238]` `[lane:gate]` `[tdd:required]` Allow exact public environment templates (`.env.example`, `.env.template`, `.env.sample`, `.env.dist`) without weakening protection for real environment files, secret directories, or symlink targets; keep Go and legacy shell guards aligned. | (a) RED/GREEN tests cover Write/Edit and Bash for all four exact template names, (b) `.env`, `.env.local`, suffix variants, secret-directory nesting, and symlink-to-secret remain denied, (c) deny-surface self-audit includes the exemption contract, (d) Go/shell parity and focused guardrail tests pass, (e) spec and CHANGELOG record the boundary. | 112.10 | cc:done |
+| 112.12 | `[CCH v5.1.0 release]` `[lane:release]` `[tdd:skip:release-aggregation]` Integrate only the completed Phase 111 structural/`internal-compatible` surfaces plus 112.1–112.5, 112.10–112.11, and 112.13–112.22, then publish the plugin as v5.1.0 for Claude Code and Codex. Phase 111 live H4/support promotion, PR #239, PR #246, and dependency maintenance remain separate; tasks 112.6–112.9 record only the completed LP/domain handoff, while external implementation/publication is not claimed complete. Close superseded PRs #228/#237 and resolved Issues #231/#238 only after published replacement evidence exists. | (a) operator-only protected-policy adoption and single release GO are recorded, (b) current-HEAD independent release review APPROVE, (c) validate-plugin/check-consistency/mirror/plugin-tag/release-preflight gates pass, (d) VERSION/plugin/marketplace/harness metadata all equal 5.1.0, (e) release PR merges to main before tags, (f) Claude plugin tag and `v5.1.0` are published from main, (g) GitHub Release assets verify, (h) Claude and Codex install/update smoke use 5.1.0, (i) published-evidence closeout is complete. | 112.1, 112.2, 112.3, 112.4, 112.5, 112.10, 112.11, 112.13, 112.14, 112.15, 112.16, 112.17, 112.18, 112.19, 112.20, 112.21, 112.22 | cc:done [executed via 114.6 (supersession per Phase 114 preamble); HG-2 single release GO 2026-07-16; DoD (a)-(i) evidence recorded at 114.6 marker — release PR #248 → 68c5a3b5, tags ×2, Release 4 assets, Claude/Codex upgrade smoke 5.1.0, closeout #228/#237/#231/#238/#239] |
+| 112.13 | `[Grok hostgen release gate]` `[lane:gate]` `[tdd:required]` Make generated hook assets tolerate the Grok registry entry without inventing unsupported lifecycle hooks. | (a) `TestGeneratedHooks_ContainsCodexAndCursor` and golden fixtures pass, (b) Grok remains candidate/internal-compatible and does not gain a false native-hook claim, (c) Claude/Codex/Cursor hook output is unchanged except intentional regenerated fixtures. | 111.2.3 | cc:done |
+| 112.14 | `[Codex package Cursor helper release gate]` `[lane:gate]` `[tdd:required]` Restore the complete package-local helper closure used by advertised Cursor skills and preserve cursor-companion exit-code semantics. | (a) generated Codex package can run `setup-cursor --check`, (b) all required scripts plus `scripts/lib/host-registry.sh` are present, (c) missing `cursor-agent` exits 3 rather than being masked by a prerequisite failure, (d) `test-cursor-companion.sh` and `test-phase-72-mirror-closeout.sh` pass. | 112.10 | cc:done |
+| 112.15 | `[Retired alias test closure]` `[lane:gate]` `[tdd:required]` Keep the public-claims stale-wording assertion without making the test file itself a retired-alias residue. | (a) public claims test still rejects the old runtime wording, (b) retired-alias scan reports zero residue, (c) full `go test ./cmd/harness` passes. | 112.5 | cc:done |
+| 112.16 | `[Issue #238 git -C security closeout]` `[lane:gate]` `[tdd:required]` Preserve Git's effective working directory when R15 classifies staged paths so public template exemptions cannot bypass protected directories. | (a) RED/GREEN covers relative, absolute, nested and repeated `git -C` for add/commit, (b) `secrets/.env.example` remains denied through every form, (c) ordinary template staging remains allowed, (d) focused/full security gates and independent re-review pass. | 112.11 | cc:done |
+| 112.17 | `[Issue #238 effective Git context closeout]` `[lane:gate]` `[tdd:required]` Extend R15 effective-context handling beyond literal `git -C`: honor literal `--work-tree`, and fail closed on dynamic cwd/work-tree inputs that cannot be resolved deterministically. | (a) RED/GREEN covers work-tree overrides and dynamic shell substitutions, (b) protected template paths remain denied, (c) binaries match source, (d) focused/full Go tests and security re-review pass. | 112.16 | cc:done [31d50440, b054bb8b, 1b1d89ee, b4d7fc17; independent security review APPROVE] |
+| 112.18 | `[Release docs reconciliation]` `[lane:docs]` `[tdd:skip:docs-and-formatting]` Reconcile the implemented Phase 111/Grok tier, onboarding anchor, R15 detailed contract, CHANGELOG headings, and pre-existing Markdown trailing whitespace before release review. | (a) Grok is consistently `internal-compatible` without a false `supported` claim, (b) Phase 111 plan shows structural completion and live-H4 pending, (c) onboarding link resolves, (d) `git diff --check origin/main` passes, (e) claim-wording and consistency checks pass. | 112.5, 112.17 | cc:done [support-claim + capability-matrix + consistency green] |
+| 112.19 | `[Human-only protected policy adoption]` `[lane:gate]` `[tdd:skip:operator-judgment]` The operator reviews and explicitly adopts or manually reapplies the exact `rules.go`, `selfaudit.go`, and deny-baseline changes introduced by the environment-template/R15 fixes. AI-authored completion cannot satisfy this gate. | (a) operator attestation identifies the reviewed protected files/commit, (b) rejection routes back to a non-protected redesign or operator patch, (c) acceptance evidence is recorded without secret data. | 112.17 | cc:done [operator explicitly adopted 2026-07-13; protected files `go/internal/policy/rules.go` and `go/internal/policy/selfaudit.go` (embedded deny baseline) at release HEAD 27734ef9, introduced by eb24d834 and completed through b4d7fc17] |
+| 112.20 | `[Current GitHub inventory]` `[lane:fast]` `[tdd:skip:dependency-triage]` Reconcile the post-checkpoint open inventory without expanding the release: keep PR #239 on its repair/fresh-port lane; close recurring incompatible #242 with the 0.14.x evidence; defer #240/#241/#243–#245 to coordinated maintenance; independently review PR #246 and keep it outside v5.1.0 unless all safety and governance gates pass. | (a) #242 is closed without merge with current evidence, (b) #240/#241/#243–#246 have explicit dispositions and are not silently included, (c) split CodeQL action updates are handled only as a same-version set, (d) #228/#237/#231/#238 remain open until replacement publication. | 112.4 | cc:done [#242 closed without merge; #240 binary-drift fail; #241 major deferred; #243/#245 split-CodeQL fail; #244 coordinated-set defer; #246 CHANGES_REQUESTED/BLOCKED after independent security, regression, and spec review] |
+| 112.21 | `[Release candidate review + handoff]` `[lane:release]` `[tdd:skip:test-aggregation]` Preserve the PR #239 and PR #246 REQUEST_CHANGES results separately, generate a current-HEAD independent release review, rerun all release gates, and refresh/rebroadcast ignored handoff/checkpoint artifacts from the frozen candidate state. | (a) release HEAD has independent APPROVE, (b) Go/full plugin/consistency/mirror/support-rank/preflight checks pass, (c) warnings are classified, (d) handoff names the current branch/HEAD, PR #239 boundary, PR #240–#246 dispositions, deferred LP/live-H4 scope, and next confirmation gate. | 112.18, 112.19, 112.20, 112.22 | cc:done [independent security/spec/QA re-reviews APPROVE at 11bc0451; Go full, plugin 120/120, consistency, mirror, version-sync, support claims, and preflight 24/24 green; four pre-GO warnings classified; handoff/review artifacts refreshed] |
+| 112.22 | `[Official v5.0.0 local baseline]` `[lane:release]` `[tdd:skip:environment-alignment]` Back up the existing Marketplace/install state, then align the active Claude Code, Codex, and Orca CCH packages to the published v5.0.0 baseline before testing the v5.1.0 upgrade path. | (a) backup exists outside the repository without secret output, (b) Claude reports enabled v5.0.0 and `harness version` reports 5.0.0, (c) Codex reports installed/enabled v5.0.0, (d) Orca's isolated runtime package manifest is v5.0.0, (e) any retained older cache is inactive and is not reported as the selected package. | - | cc:done [backup: `~/Library/Application Support/CCH-backups/20260713-pre-5.0.0-align`; Claude/Codex installed+enabled 5.0.0; Orca isolated manifest 5.0.0; Codex/Orca package roots contain 5.0.0 only; inactive Claude 4.x caches are retained for rollback] |
+
+## Phase 113: Hermes Agent Candidate Host Path — PR #239 レビュー修正 [P1]
+
+Purpose: PR #239（Hermes Agent candidate host path docs、fa2b9c37）のレビュー修正 lane。release/v5.1.0 の Phase 112 reconciliation（2026-07-13）で PR #239 は 5.1.0 非対象と裁定済みのため、5.1.0 とは分離した branch（`fix/pr239-hermes-candidate-review`）で進める。番号は release 側 Phase 111/112 との衝突を避けて 113 を使用。
+
+Spec skip reason: docs / wording-gate tests のみ。product contract・tier・runtime の変更なし。
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 113.1 | `[lane:docs]` `[tdd:skip:docs-only]` Hermes Agent candidate host path の初版 docs/tests（PR #239 原本）。README / README_ja / onboarding / capability-matrix に `candidate` 行、`docs/research/hermes-agent-candidate.md` に evidence boundary、`tests/test-hermes-agent-candidate.sh` に static contract | (a) 5 surface に `| Hermes Agent | \`candidate\` |` 行、(b) `bash tests/test-hermes-agent-candidate.sh` PASS | - | cc:done [fa2b9c37] |
+| 113.2 | `[lane:gate]` `[tdd:required]` PR #239 レビュー修正: (i) `.agents/skills` の「public mirror」誤記を Client Mirror Contract（`.claude/rules/skill-editing.md`）準拠の optional read-only mirror へ訂正、(ii) `tests/test-support-claim-wording.sh` の行単位 allowlist（`not proven` / `blocked` / `support wording` 等のトークンが同一行にあるだけで素通り）を廃止し、support 語自体を含む否定フレーズのみ除去してから再スキャンする neutralize-then-scan 方式へ強化、(iii) `tests/test-support-claim-wording-selftest.sh` で overclaim 5 fixture（"supported, but ... not proven" 型を含む）の FAIL と denial 5 fixture の PASS を固定、(iv) CHANGELOG [Unreleased] / claims-audit へ反映 | (a) RED evidence: 旧 checker で selftest が `overclaim fixture was accepted: supported + not proven` で FAIL、(b) GREEN: selftest + support-claim-wording + hermes-agent-candidate + capability-matrix + tool-first-onboarding PASS、(c) `bash tests/validate-plugin.sh` + `bash scripts/ci/check-consistency.sh` + mirror check PASS、(d) Grok / Cursor の tier 行は不変（Grok `candidate` / Cursor `internal-compatible` のまま。5.1.0 側 tier への干渉なし） | 113.1 | cc:done |
+
+## Phase 114: v5.1.0 統合再開 — PR #239 取り込み + Hermes port + 再ゲート (operator 指示 2026-07-14) [P0]
+
+Purpose: operator (2026-07-14) が「再プッシュ済み PR #239 をマージし v5.1.0 に含める」ことを指示した。これは 112.12 / 112.20 / 112.21 の「PR #239 remains separate」条項を supersede する (既存行は書き換えず、本 preamble で記録)。包含経路は fresh-port branch `feat/hermes-candidate-port-v5.1.0` (dff6c585、merge-tree 実測で release HEAD と conflict 0) + main→release の 1 回の reconcile。前提 evidence: PR #239 は f6e7d79f で内部レビュー APPROVE、CI 全 green、origin/main 基準 MERGEABLE/CLEAN。実測済みリスク (2026-07-14): (i) #239 内容と Phase 111/release 内容は 7 ファイルで textual conflict (Plans.md, README.md, README_ja.md, docs/onboarding/index.md, docs/tool-capability-matrix.md, tests/test-support-claim-wording.sh, tests/test-tool-capability-matrix.sh) — release/port 側を正として解消する。(ii) CHANGELOG は auto-merge が `[Unreleased]` 内の `### Added` / `### Fixed` 見出しを無音で二重化する。(iii) local main の単独 push は本 Phase では禁止 — Go source 変更に対し binary 未リビルドで drift gate が red になる (Phase 111 は release PR 経由で main に到達する)。マージ方式の裁定: release PR と PR #239 はどちらも **merge commit** を使い squash しない — Plans.md は commit hash を台帳として埋めており (例: 113.1 `[fa2b9c37]`)、squash は hash を main ancestry から外す。v5.0.0 慣行 (#235/#236) も merge commit。squash は技術的には可能 (3 方式許可 + binary は `-buildvcs=false` で SHA 非依存 + ancestry 検査 gate なし) だが不採用。unknown_data: PR #246 は本 Phase 対象外 (CHANGES_REQUESTED/BLOCKED のまま据え置き)。実行層の正本: `docs/plans/v5.1.0-integration-runbook.md` (subagent fleet / AR-1〜AR-16 デグレ防止 matrix / rollback matrix / human gates。矛盾時は Plans.md 優先)。
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 114.1 | `[lane:gate]` `[tdd:skip:merge-only]` `feat/hermes-candidate-port-v5.1.0` (dff6c585) を release/v5.1.0 へ merge する。既知 RED `tests/test-tool-first-onboarding.sh` (stale `Cursor\|candidate` 期待) の修正が同梱される | (a) conflict 0 で merge 完了, (b) `bash tests/test-tool-first-onboarding.sh` PASS, (c) `bash tests/test-hermes-agent-candidate.sh` PASS, (d) `hosts/registry.json` に Hermes 行が無い (research-only candidate は registry 外の先例維持) | - | cc:done [1c32c612; port merge conflict 0; SA-1 5/5 PASS; AR-13 green] |
+| 114.2 | `[lane:gate]` `[tdd:skip:external-op]` PR #239 を origin/main へ **merge commit** で merge する (`gh pr merge 239 --merge`)。squash 不使用 (preamble の hash 台帳裁定)。本タスクで local main は push しない | (a) PR #239 state=MERGED (merge commit), (b) merge 後の origin/main CI green, (c) local main は未 push のまま | - | cc:done [origin/main 44893dbc; PR #239 MERGED (merge commit); post-merge main CI 4/4 success; local main 未 push] |
+| 114.3 | `[lane:gate]` `[tdd:skip:merge-only]` origin/main (#239 merge 後) を release/v5.1.0 へ merge し 0 behind にする。既知 7 ファイルの conflict は release/port 側を正として解消し、Plans.md は Phase 113 行を台帳順に統合、CHANGELOG `[Unreleased]` は単一見出し構造へ手動復元する | (a) `git rev-list --count HEAD..origin/main` = 0, (b) `[Unreleased]` セクション内の `### Added` / `### Fixed` が各 1 回 (awk でセクション抽出 + grep -c で機械判定), (c) Hermes/Grok/Cursor の tier 行が port 版と一致, (d) `bash scripts/plans-format-check.sh` PASS | 114.1, 114.2 | cc:done [c811ded5; rev-list 0 behind; 9-file conflict release/port 側解消; SA-2 CONFIRMED 6/6; SA-3 fresh-clone 3/3 PASS] |
+| 114.4 | `[lane:gate]` `[tdd:skip:regate-aggregation]` 統合済みツリー (LSP 配線 115.1–115.3 込み) で全 release gate を再実行し、114.1–114.3 + 115.1–115.3 の全 delta の fresh-context 再レビュー (security + regression + spec 視点) を取得する | (a) `cd go && go test ./... -count=1` PASS, (b) `tests/validate-plugin.sh` 0 failed, (c) `scripts/ci/check-consistency.sh` PASS (binary drift 含む), (d) `scripts/release-preflight.sh --check-adapters` 0 failed (warnings 再分類。flag 無しは約 12 check が無言 skip のため禁止), (e) review-result.v1 APPROVE (security/regression/spec 3 視点 + codex adversarial advisory、critical 0), (f) `bash tests/test-guardrails-r01-r13.sh` PASS, (g) `bash tests/test-claude-upstream-integration.sh` PASS, (h) runbook AR-1〜AR-16 全 green (fresh-clone gate AR-9 含む) | 114.3 | cc:done [c79848d7; AR-1..16 全 green; SA-4/SA-6 APPROVE + SA-5 major 解消 (loop 1/3) + SA-7 advisory 指摘 0 → brain verdict APPROVE (.claude/state/review-brain-verdict-114.4.json)] |
+| 114.5 | `[lane:docs]` `[tdd:skip:docs-only]` checkpoint/handoff artifact を新 HEAD で更新し、マージ方式裁定 (release PR = merge commit、Plans.md hash 台帳がある限り squash 不採用) を `.claude/rules/github-release.md` に codify し、`scripts/ci/check-consistency.sh` に CHANGELOG `[Unreleased]` 単一性チェック (`## [Unreleased]` 出現 1 回 + セクション内 `### Added`/`### Fixed` 各 1 以下) を追加する | (a) `handoff-artifact.json` の head が新 HEAD で status は `awaiting_operator_release_confirmation` を維持, (b) `cch-v5.1.0-release-handoff.md` の PR #239 boundary 行が更新済み, (c) github-release.md にマージ方式節が追加され `git diff --check` PASS, (d) check-consistency に Unreleased 単一性チェックが入り exit 0 | 114.4 | cc:done [564e5896; github-release.md マージ方式節 codify + check-consistency Check 4 (Unreleased 単一性) + handoff artifact 更新 (head=最新 HEAD, status=awaiting_operator_release_confirmation 維持)] |
+| 114.6 | `[lane:release]` `[tdd:skip:operator-judgment]` operator の明示 GO 後、112.12 の手順 (bump 5.1.0 → binary 再生成 → 再ゲート → branch push → release PR → CI → **merge commit** で main へ → tag → GitHub Release → v5.0.0→v5.1.0 upgrade 実測 → published-evidence closeout) を Phase 114 統合済み状態で実行する。112.12 の「PR #239 remains separate」条項は本 Phase preamble で superseded。version bump は `./scripts/sync-version.sh bump` のみで行う (対象 6 version 文字列 / 5 ファイル: VERSION, .claude-plugin/plugin.json, .codex-plugin/plugin.json, .cursor-plugin/plugin.json, .claude-plugin/marketplace.json×2, harness.toml。手動 sed/Edit での version 書換は禁止) | 112.12 DoD (a)–(i) に加えて (j) release PR が merge commit で merge されている, (k) PR #239 と LSP/AST workflow 配線 (Phase 115) が v5.1.0 に含まれる旨が release notes に記録されている, (l) plugin tag `claude-code-harness--v5.1.0` と semver tag `v5.1.0` の**両方**が merged main から作成・push されている (`claude plugin tag .claude-plugin --dry-run` で事前検証), (m) merge 前に `bash scripts/ci/check-branch-alignment-ledger.sh` exit 0 (AR-16) | 112.12, 114.5 | cc:done [68c5a3b5; HG-2 GO 2026-07-16; release PR #248 merge commit; tags claude-code-harness--v5.1.0 + v5.1.0 → 68c5a3b5; GitHub Release 4 assets; upgrade 実測 Claude 5.0.0→5.1.0 + Codex 5.0.0→5.1.0 + bin/harness 5.1.0; closeout #228/#237/#231/#238 closed + #239 annotated] |
+
+## Phase 115: LSP/AST workflow 配線 — 実測 0 使用の解消 (issue report 2026-07-12) [P1]
+
+Purpose: harness_lsp_* の実呼び出しが transcript 全期間 (tool_use 約 53,000 件) で 0 回。根因は SKILL.md (harness-work / harness-review / breezing) に使用条件・タイミングの記述が無いこと。加えて 2026-07-14 の調査で第 2 の根因を確認: `harness_lsp_references/definition/hover` は実 LSP を呼ばない instruction-text stub であり、`harness_lsp_diagnostics` の実診断は `.ts/.tsx` (tsc) のみ (harness-mem `mcp-server-go/internal/tools/codeintel.go:170-247`)。実働する code-intel は `harness_ast_search` のみ。よってトリガー規則は `harness_ast_search` を指し、diagnostics DoD gate は条件付き + fail-open とし、ツール実装ギャップは harness-mem へ cross-repo 起票 (経路 A) する。当初は v5.1.0 scope 外としたが、**operator 指示 (2026-07-15) により v5.1.0 同梱へ変更** — 114.3 完了後の release/v5.1.0 上で GO 前に実装する (「安定化限定」の当初裁定は本行で supersede、記録として残す)。115.4 の cross-repo 起票のみ release 非ブロック。Spec delta: `docs/spec/workflow-review-and-release.md` へ trigger/gate 契約を 1-2 行追記 (115.2 に含む)。PostToolUse hook 自動 diagnostics (report 提案 3) は不採用 — latency/noise 増のため、まず DoD 方式で使用率を計測してから再検討する。
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 115.1 | `[lane:gate]` `[tdd:required]` RED: `tests/test-lsp-workflow-wiring.sh` を新設し、5 ファイル (`skills/harness-work/SKILL.md`, `skills-codex/harness-work/SKILL.md`, `skills/harness-review/SKILL.md`, `skills/breezing/SKILL.md`, `skills-codex/breezing/SKILL.md`) にトリガー規則 + fail-open 文言の literal grep pin を書く (`tests/test-claude-upstream-integration.sh` 形式踏襲) | (a) 実装前に test が RED であることを evidence 付きで記録, (b) 5 ファイル全部が検査対象 | 114.3 | cc:done [64c58649; RED evidence in commit message; codex 委譲 (SA-10) + Lead commit 代行] |
+| 115.2 | `[lane:gate]` `[tdd:required]` GREEN: 5 ファイルへ追記 — (i) 同一シンボルを同一セッションで 2 回 grep したら `harness_ast_search` へ切替 (lsp_references は stub のため使わない), (ii) 同型実装が複数 module に並ぶ bugfix は修正前に `harness_ast_search` 全実装検索必須, (iii) DoD gate: 変更ファイルに `.ts/.tsx` を含む場合のみ `harness_lsp_diagnostics` 新規エラー 0、harness MCP 未接続または非対象ファイル型は not-configured として満了扱い (blocking しない、active-watching 3 状態準拠)。harness-work は Sprint Contract の runtime_validation 節、harness-review は合格ライン (regression safety) 節へ配置。`docs/spec/workflow-review-and-release.md` へ契約 1-2 行追記。実装は codex 委譲 (isolated worktree)、**codex worker は CHANGELOG.md / Plans.md に触れない** (shared-file-discipline Invariant 1 — CHANGELOG entry は Lead が統合時に追記)。追記 literal は英語で書く (配布既定言語) | (a) `bash tests/test-lsp-workflow-wiring.sh` PASS, (b) `tests/validate-plugin.sh` 0 failed, (c) sub-spec に追記行が存在, (d) CHANGELOG `[Unreleased]` に LSP 配線 entry が Lead により追記され AR-6 (単一見出し) 維持 | 115.1 | cc:done [0dc40b2e + e1976d28; pin test PASS; CHANGELOG entry Lead 追記 AR-6 維持] |
+| 115.3 | `[lane:gate]` `[tdd:skip:generated-sync]` mirror 同期と検証 | (a) `./scripts/sync-skill-mirrors.sh` 実行後 `bin/harness mirror verify --json` が healthy:true, (b) `scripts/ci/check-consistency.sh` PASS | 115.2 | cc:done [f0379629; mirror verify healthy:true; check-consistency exit 0] |
+| 115.4 | `[lane:gate]` `[tdd:skip:cross-repo-ticket]` cross-repo handoff (経路 A): harness-mem `Plans.md §NNN` に「lsp_references/definition/hover は instruction stub、diagnostics は .ts/.tsx のみ — Go/shell diagnostics 対応またはツール description の実態合わせ」を DoD + evidence (`codeintel.go:170-247`) 付きで起票し、XR-Registry に登録する。release 非ブロック — draft は GO 前に提示し、書込は operator 承認後 (GO 後でも可) | (a) harness-mem Plans.md に §NNN 追加, (b) XR-Registry.md に XR 行追加, (c) claude-code-harness 側では実装しない boundary を明記 | 115.2 | cc:done [harness-mem Plans.md §158 追記 (mem commit decd5a0) + XR-Registry XR-005 登録 (governance commit ab4089f); draft は operator 承認済み 2026-07-16; §番号は §157 衝突を検出し §158 へ調整] |
+
+## Phase 116: Workflow test wiring governance — 独立 auditor agent (operator 提案 2026-07-16) [P2]
+
+Purpose: `.github/workflows/` の AI 編集 deny の本質は報酬ハック防止であり、「テスト網のアップデート追随」まで operator 手作業に倒すのは過剰防御 (operator 裁定 2026-07-16)。方向の非対称ルール (テスト追加 = AI 可 / 削除・弱体化 = REQUEST_CHANGES / workflows 自体 = operator のみ) と配線正本の `tests/validate-plugin.sh` 化は `.claude/rules/workflow-test-wiring.md` で codify 済み (v5.1.0 follow-up batch)。本 Phase は残る自動化部分 = 独立 auditor agent の実装。
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 116.1 | `[lane:gate]` `[tdd:required]` 独立 test-wiring auditor agent の実装: (i) 固定プロンプトを `agents/` 配下に版管理 (呼び出し側の free-text 上書き禁止), (ii) fresh-context で「変更 delta にテスト網が追随しているか」を監査し、不足時はテスト追加のみを提案 (削除・弱体化は提案しない), (iii) 依頼側の再申立ては根拠付き 1 回まで、auditor は同一固定プロンプトで最終裁定, (iv) auditor 必須判定のテストが green になるまで対象 PR は merge しない運用を `.claude/rules/workflow-test-wiring.md` の契約と整合させる | (a) agent 定義 + 固定プロンプトが repo に存在し opus-4-7-prompt-audit.md の合格条件 (回数上限・schema・列挙値) を満たす — 同 rule の適用対象に auditor を追記する, (b) 出力 schema 名と列挙値を固定する (例: test-wiring-audit.v1 / verdict: PASS | ADD_REQUIRED | APPEAL_REJECTED), (c) 固定プロンプトの SHA を pin test で固定し無断書換を検知する (red-team シナリオ c 対策), (d) RED/GREEN: 「新規機能 + テスト欠落」fixture で auditor が追加を要求し、追加後に通す挙動を test で固定, (e) 再申立て 1 回上限が prompt に数字で明記, (f) validate-plugin / check-consistency PASS | - | cc:done [09d91f5b] |
+| 116.2 | `[lane:gate]` `[tdd:required]` edit-time coverage-shrink guard: `tests/validate-plugin.sh` と `tests/test-*.sh` への編集で「test 呼び出し削除・`|| true` 追加・`set +e` 化・アサーション行数減」を PostToolUse hook で warn する (deny ではなく warn — 正当なリファクタを塞がない。CI 側の決定論検知は check-consistency §24 の invocation pin が担当) | (a) 縮小 4 パターンの fixture で warn 発火を test で固定, (b) 正当な追加編集では warn しない, (c) hook parity (Claude/Codex/Cursor) は既存 gen 経路に従う | 116.1 | cc:done [beff6d01] |

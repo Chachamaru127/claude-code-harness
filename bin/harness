@@ -6,6 +6,25 @@
 # Never print JSON here — we don't know which hook/command is being
 # called and emitting the wrong schema breaks the hook protocol.
 
+# Git Bash/MSYS/Cygwin already tells us this is Windows. Hooks invoke this
+# shim by its plugin path, so prefer the shipped native binary before running
+# dirname/readlink/uname/tr. If the adjacent binary is unavailable (for
+# example when the shim is reached through a PATH symlink), keep the portable
+# resolver below as the compatibility path.
+WINDOWS_HINT="${OSTYPE:-}:${MSYSTEM:-}:${OS:-}"
+case "$WINDOWS_HINT" in
+  mingw*:*:*|msys*:*:*|cygwin*:*:*|*:MINGW*:*|*:MSYS*:*|*:CLANG*:*|*:*:Windows_NT)
+    case "$0" in
+      */*) FAST_SCRIPT_DIR=${0%/*} ;;
+      *) FAST_SCRIPT_DIR=. ;;
+    esac
+    FAST_WINDOWS_BINARY="${FAST_SCRIPT_DIR}/harness-windows-amd64.exe"
+    if [ ! -L "$0" ] && [ -x "$FAST_WINDOWS_BINARY" ]; then
+      exec "$FAST_WINDOWS_BINARY" "$@"
+    fi
+    ;;
+esac
+
 SCRIPT_PATH="$0"
 while [ -L "$SCRIPT_PATH" ]; do
   SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"

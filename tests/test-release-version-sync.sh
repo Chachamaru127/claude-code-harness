@@ -94,7 +94,7 @@ test_mismatch_blocks_release() {
     fail "version sync check should fail on marketplace mismatch"
   fi
 
-  assert_contains "$output" "[FAIL] release version sync: canonical 1.2.3 from VERSION (priority: VERSION > package.json > .claude-plugin/plugin.json > .codex-plugin/plugin.json)"
+  assert_contains "$output" "[FAIL] release version sync: canonical 1.2.3 from VERSION (priority: VERSION > package.json > .claude-plugin/plugin.json > .codex-plugin/plugin.json > .cursor-plugin/plugin.json)"
   assert_contains "$output" "MISMATCH .codex-plugin/plugin.json: 1.2.0 (expected 1.2.3)"
   assert_contains "$output" "MISMATCH .claude-plugin/marketplace.json metadata.version: 1.2.2 (expected 1.2.3)"
   assert_contains "$output" "MISMATCH .claude-plugin/marketplace.json plugins[0](fixture).version: 1.2.1 (expected 1.2.3)"
@@ -186,7 +186,7 @@ report = json.load(open(sys.argv[1], encoding="utf-8"))
 assert report["ok"] is True
 assert report["canonical"]["name"] == "VERSION"
 assert report["canonical"]["version"] == "3.4.5"
-assert report["canonical_priority"] == ["VERSION", "package.json", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json"]
+assert report["canonical_priority"] == ["VERSION", "package.json", ".claude-plugin/plugin.json", ".codex-plugin/plugin.json", ".cursor-plugin/plugin.json"]
 assert any(surface["name"] == ".codex-plugin/plugin.json" for surface in report["surfaces"])
 assert any(surface["name"] == ".claude-plugin/marketplace.json metadata.version" for surface in report["surfaces"])
 PY

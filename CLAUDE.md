@@ -24,7 +24,7 @@ Follow [Conventional Commits](https://www.conventionalcommits.org/): `feat:` / `
 
 ### Version Management
 
-Keep `VERSION`, `.claude-plugin/plugin.json`, and `harness.toml` in sync.
+Keep all version surfaces in sync via `./scripts/sync-version.sh` (the script is the SSOT for the target list — currently 7 strings across 6 files including `.grok-plugin/plugin.json`).
 Normal feature/docs PRs must leave both files unchanged and record changes under `CHANGELOG.md`'s `[Unreleased]` section.
 Use `./scripts/sync-version.sh bump` only when cutting a release.
 

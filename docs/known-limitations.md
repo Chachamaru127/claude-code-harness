@@ -6,6 +6,37 @@ the trigger condition under which the limitation can be revisited.
 
 ---
 
+## Multi-host safety is not uniform (Phase 111)
+
+### Symptom
+
+Operators may assume Claude Code, Codex CLI, Cursor, and Grok all stop dangerous
+actions the same way because each has an install route.
+
+### Root cause
+
+Hosts differ in hook coverage and containment:
+
+| Host | Pre-action stop | Containment notes |
+|------|-----------------|-------------------|
+| Claude Code | Strong multi-tool PreToolUse | Primary product floor |
+| Codex CLI | Bash-only PreToolUse floor + post quality/merge gates | non-Bash not hard-denied on hook path |
+| Cursor | preToolUse can deny (live-proven) | **No traditional FS jail**; allowlists are best-effort; fail-open on non-exit-2 |
+| Grok | hookcodec HostGrok uses Claude-compatible deny envelope | Floor membership is codec-level; project hooks need `.grok/hooks` wiring |
+
+### Mitigation Harness applies
+
+1. Public tier wording: 正式対応 only for EN `supported` (Claude today).
+2. Capability matrix + hardening-parity document strength differences.
+3. H1–H8 bar for any future public promotion (`docs/spec/planning-and-host-adapter.md`).
+
+### Revisit when
+
+Live CI workflow smoke (plan→artifact with host CLI) is green and host-specific
+containment limits are accepted in README for a promotion PR.
+
+---
+
 ## cyber-safeguard interruption during security review (#172)
 
 ### Symptom
