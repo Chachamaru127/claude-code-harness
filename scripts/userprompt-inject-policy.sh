@@ -43,6 +43,15 @@ policy_msg() {
 
   if [ "$LANG_CODE" = "ja" ]; then
     case "$key" in
+      language_directive) cat <<'EOF'
+
+## 応答言語: 日本語 (harness i18n.language)
+
+リポジトリのファイル・skill/agent の指示・ユーザーのメッセージがどの言語であっても、ユーザーへの応答は常に日本語で書いてください。言語を切り替えるのはユーザーが明示的に指示した場合のみです。これは毎ターン強制されます。
+
+機械可読な値（JSON フィールド、ログキー、契約判定）、ソースコードの識別子、ファイル名、Conventional Commit プレフィックス（feat:/fix:/docs: ...）は翻訳せず、そのまま英語で保持してください。
+EOF
+        ;;
       work_warning) cat <<EOF
 
 ## ⚡ work モード継続中
@@ -97,6 +106,15 @@ EOF
   fi
 
   case "$key" in
+    language_directive) cat <<'EOF'
+
+## Response Language: English (harness i18n.language)
+
+Always write your responses to the user in English, regardless of the language used in repository files, skill/agent instructions, or the user's own message. Only switch languages if the user explicitly asks you to. This is enforced on every turn.
+
+Do not translate machine-readable values (JSON fields, log keys, contract verdicts), source code identifiers, file names, or Conventional Commit prefixes (feat:/fix:/docs: ...) — keep those as-is.
+EOF
+      ;;
     work_warning) cat <<EOF
 
 ## Work Mode Still Active
@@ -332,7 +350,8 @@ if [ -f "$TOOLING_POLICY_FILE" ]; then
 fi
 
 # 注入コンテキストの生成
-INJECTION=""
+# 応答言語ディレクティブは毎ターン先頭に注入し、出力言語を常に固定する。
+INJECTION="$(policy_msg language_directive)"
 
 # ===== Work モード検出と一度だけの harness-review 必須警告 =====
 # compact 後に session-resume.sh が発火しない場合の保険として、
@@ -348,7 +367,7 @@ if [ -f "$WORK_FILE" ] && [ ! -f "$WORK_WARNED_FLAG" ] && command -v jq >/dev/nu
   REVIEW_STATUS=$(jq -r '.review_status // "pending"' "$WORK_FILE" 2>/dev/null)
 
   if [ "$REVIEW_STATUS" != "passed" ]; then
-    INJECTION="$(policy_msg work_warning "$REVIEW_STATUS")"
+    INJECTION="${INJECTION}"$'\n\n'"$(policy_msg work_warning "$REVIEW_STATUS")"
     # 一度だけ警告するためのフラグを作成
     touch "$WORK_WARNED_FLAG" 2>/dev/null || true
   fi

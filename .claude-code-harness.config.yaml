@@ -1,6 +1,15 @@
 # Claude Code Harness Configuration
 # https://github.com/Chachamaru127/claude-code-harness
 
+# Language settings.
+# This is the output language the harness enforces for every response.
+# en: English (default) | ja: Japanese / 日本語
+# Resolution precedence: this file (i18n.language) takes priority over the
+# CLAUDE_CODE_HARNESS_LANG env var, which is only used as a fallback when this
+# file does not set a language; if neither is set the default is en.
+i18n:
+  language: en
+
 # Safety settings
 safety:
   # main/master direct push policy: ask | deny | allow

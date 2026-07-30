@@ -6,7 +6,23 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Added
+
+- **Per-turn output-language enforcement**: the `UserPromptSubmit` hook
+  (`scripts/userprompt-inject-policy.sh`) now injects a response-language
+  directive on every turn, resolved from `i18n.language` in
+  `.claude-code-harness.config.yaml` (with `CLAUDE_CODE_HARNESS_LANG` as a
+  fallback, then `en`). This keeps responses in the configured language instead
+  of drifting to Japanese. Regression coverage added in
+  `tests/test-i18n-locale-resolver.sh`.
+
 ### Fixed
+
+- **Language config discoverability**: added an explicit `i18n.language` block to
+  `.claude-code-harness.config.yaml`, and corrected `docs/i18n.md` to point at the
+  config file the runtime actually reads (`.claude-code-harness.config.yaml`)
+  instead of `harness.toml`.
+
 
 #### オーナーの floor 免除設定が、それを検証するテストの結果を書き換えていた問題
 
