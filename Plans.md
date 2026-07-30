@@ -141,3 +141,45 @@ team_validation_mode: manual-pass (サブエージェント未使用 — 本セ�
   承認: approved (2026-07-30 operator、「両方Yes」+ 127.3 は「検証して解決して」)
 - secret-read: なし
 - destructive: なし (対照実験は `/tmp` 配下に fixture を置いて消すのみ。作業ツリー外への破壊操作は含まない)
+
+---
+
+## Phase 128: hard floor の実バイパス 2 件を塞ぐ (PR #246 レビューの副産物、operator 承認 2026-07-30) [P0]
+
+Purpose: 外部 PR #246 のセキュリティレビュー中に、**現在の main に実在するフロア回避経路 2 件**を発見し、いずれも実測で確認した。#246 の採否とは独立に、単独で修正すべき最優先事項として起票する。
+
+**回避経路 A — AI が自力で secret-read hard floor を外せる (P0)**。3 段の実測がすべて成立している。(1) `.claude-code-harness.config.json` は deny リストに無く AI が書ける (`.claude-plugin/settings.json` の deny 22 件を機械確認、`claude-code-harness.config` のヒット 0 件。hook 実測でも Write 判定は「判定なし = 通る」)。(2) `configSecretAllowPatterns` (`go/internal/runtimefloor/runtimefloor.go:340-361`) は**絶対パス宣言にだけ** `pathUnderWorktree` 境界チェックがあり、**相対パス宣言には無い** (`out = append(out, filepath.Join(rootAbs, filepath.Clean(p)))`)。(3) Go でパス計算を実測: `../outside/a` → `/Users/op/outside/a`、`../../../../etc/a` → `/etc/a` と作業ツリー外へ出る。したがって AI が `{"runtimefloor":{"secretAllow":["../../../../etc/shadow"]}}` を自分で書けば、spec.md が「いかなる設定・環境変数・permission mode でも上書きできない」と定める secret-read フロアを自力で無効化できる。
+
+**回避経路 B — main への強制 push が確認をすり抜ける (P1)**。`protectedBranchRefPattern` が force refspec の先頭 `+` を剥がさないため、トークン `+main` がパターンに一致しない。hook 実測: `git push origin main` → `ask`、`git push origin +main` → **判定なし (素通り)**、`git push origin +refs/heads/main` → **判定なし**。R06 の `--force` フラグ検出は別ロジックのためこの短縮形を拾わない。
+
+**A の修正は 2 層必要**。境界チェック (128.1) だけでは、宣言を作業ツリー内に丸めるだけで「AI が自分で `.env` を宣言して読む」経路が残る。設定ファイル自体を保護面に載せる (128.3) ことで、フロアを広げる操作に人間を戻す。128.3 は `go/internal/policy/helpers.go` の `protectedPathRules` を触るため Constitution 条項 (spec.md: `rules.go` は untouchable class / human-only) に該当し、Phase 112.19 / 126.6 と同じ operator explicit adoption ゲート (128.4) を置く。
+
+Spec delta: `spec.md` の runtime floor 節へ「project config 由来の secretAllow 宣言は絶対 / 相対を問わず worktree 境界内に制限される」を追記し、protected path 節へ `.claude-code-harness.config.json` を追加 (128.1 / 128.3 の DoD)。128.2 は文書化済み契約 (protected branch への直接 push は ask) の実装追随なので Spec skip reason: bugfix、product contract の追加なし。
+
+team_validation_mode: subagent (PR #246 のセキュリティレビューを独立 reviewer が実施し、その findings を Lead が全件実測で再検証。Security = 3 段の回避経路を hook 実測とパス計算で確認 / Architecture = 修正層を floor・policy・deny リストの 3 択から評価し 2 層構成を選択 / QA = 対照実験を DoD 化 / Skeptic = 「相対パス宣言は実害があるのか」に対し `/etc/a` への到達を実測して反証 / Product = 配布ユーザーへの影響は締める方向のみ)。unknown_data: `.claude-code-harness.config.json` を `deny` にするか `ask` にするかは実装時に両方を実測して決める (現時点では deny 推奨。理由は `.claude/settings*` と同格の扱いで、operator の手動編集は常に可能なため)。
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 128.1 | `[lane:gate]` `[tdd:required]` `[security]` **回避経路 A の核**: `configSecretAllowPatterns` の相対パス分岐に、絶対パス分岐と同じ `pathUnderWorktree` 境界チェックを追加する。`filepath.Join` 後の解決済みパスで判定し、作業ツリー外に出る宣言は `continue` で捨てる (fail-safe = 宣言を無視、全 deny は維持)。symlink 経由の迂回も塞ぐか実装時に評価する | (a) RED 実測: 相対宣言 `../<name>` が作業ツリー外の絶対パスとして許可リストに載ることを現行実装で確認し、解決後パスを引用, (b) 修正後は同じ宣言が捨てられ、当該パスの読取が deny に戻ることを hook 実測で確認, (c) 作業ツリー**内**の相対宣言 (`secrets/x`) は従来どおり許可される非退行 test, (d) 絶対パス宣言の既存挙動 (境界内は許可 / 外は無視) の非退行 test, (e) `cd go && go test ./internal/runtimefloor/...` PASS (floor 免除 env を export したまま。c856ecec で TestMain が自前 unset するため), (f) Spec delta: runtime floor 節へ境界制限を追記 | - | cc:TODO |
+| 128.2 | `[lane:gate]` `[tdd:required]` `[security]` **回避経路 B**: protected branch 判定でトークン先頭の force refspec `+` を剥がしてから照合する。`normalizeGitToken` を拡張するか照合前に `strings.TrimPrefix(t, "+")` を入れるかは実装時に選ぶ。R11 (`git reset --hard`) 側と R12 (直接 push) 側の両方に効かせる | (a) RED 実測: `git push origin +main` / `+refs/heads/main` が現行実装で「判定なし (素通り)」になることを hook 実測で確認, (b) 修正後は両者が `ask` になり、`git push origin main` の既存 `ask` も変わらない, (c) `+` を含むが保護対象でない refspec (`+feature/x`) は従来どおり素通りする非退行 test, (d) R11 側でも `git reset --hard +main` 相当の扱いを確認, (e) `cd go && go test ./internal/policy/...` PASS | - | cc:TODO |
+| 128.3 | `[lane:gate]` `[tdd:required]` `[security]` **回避経路 A の 2 層目**: `.claude-code-harness.config.json` (と `.yaml` 変種) を `protectedPathRules` に追加し、Write/Edit を人間の判断に戻す。この 1 ファイルが `runtimefloor.secretAllow` を通じて hard floor の適用範囲を決めるため、AI が自由に書ける状態は floor の非上書き契約と両立しない。`deny` と `ask` の両方を実測し、`.claude/settings*` と同格の `deny` を既定とする (operator の手動編集は常に可能。`releaseAuto` の切替が手動になる UX コストは受容する) | (a) RED 実測: 現行実装で当該ファイルへの Write が「判定なし = 通る」ことを hook 実測で確認 (deny 22 件に不在であることも引用), (b) 修正後は deny (または裁定した水準) になることを hook 実測で確認, (c) 同ディレクトリの無関係ファイルが巻き込まれない非退行 test, (d) `deny` / `ask` 両案の実測結果を比較して選択理由を 1 行残す, (e) `cd go && go test ./internal/policy/...` PASS, (f) Spec delta: protected path 節へ追記 | 128.1 | cc:TODO |
+| 128.4 | `[lane:gate]` `[tdd:skip:human-adoption-gate]` operator 明示採択 (Phase 112.19 / 126.6 型): 128.1-128.3 が変更した `go/internal/policy/helpers.go` / `go/internal/runtimefloor/runtimefloor.go` の diff を operator が review し明示 adopt する。Constitution 条項 (untouchable class は human-only) の充足。今回の変更はすべて**締める方向**のみで、deny/ask を緩める箇所はゼロであることを差分で提示する | (a) operator の採択記録 (日時 + 対象 commit SHA) を本 task の Status に記載, (b) 「緩める変更ゼロ」を `git diff` で機械的に示した根拠を併記 | 128.1, 128.2, 128.3 | cc:TODO |
+| 128.5 | `[lane:release]` `[tdd:skip:verification]` 検証 + 配布物 + closeout: `go/scripts/build-all.sh` で 4-platform binary 再生成 (`bin/harness` は shim のため `-o bin/harness` 禁止)、`scripts/ci/check-binary-source-drift.sh` ローカル green、新 test を `tests/validate-plugin.sh` へ配線、CHANGELOG `[Unreleased]` に Security 節として追記 (回避経路と塞ぎ方を before/after で) | (a) `bash tests/validate-plugin.sh` 0 failed (floor 免除 env を export したまま), (b) drift gate green, (c) `bash scripts/ci/check-consistency.sh` 全パス, (d) VERSION / `.claude-plugin/plugin.json` / `harness.toml` 非接触を `git diff --name-only` で確認, (e) PR closeout (事前承認済み: push + PR 作成 + CI green 確認 + merge。merge 前に 128.4 の採択を確認) | 128.4 | cc:TODO |
+| 128.6 | `[lane:fast]` `[tdd:skip:no-code-change]` PR #246 の closeout: レビュー結論 (critical 3 件で as-is マージ不可、ただし問題提起は正当で脆弱性 2 件の発見に繋がった) を作者向けに説明してクローズする。採用した部分 (本 Phase の 2 件) と、再実装に回した部分 (`paths.protected` / R16、`git.protected_branches` 加算)、見送った部分 (`allow_rm_rf`) を切り分けて伝える。rebase 依頼はしない (117 commit 差 + Phase 126 が R05/R12 のコア実装を書き換えており、こちらで再実装する方が速く安全) | (a) #246 に日本語でなく英語のコメント (作者は英語話者) で 3 分類を明示, (b) 本 Phase の 2 件が #246 由来であることを明記して credit する, (c) #246 が CLOSED になる | 128.5 | cc:TODO |
+
+事前確認 (plan-time pre-approval):
+- 事項: external-send — `git push origin <branch>` + `gh pr create` + CI green 確認 + `gh pr merge --squash`
+  理由: 128.5 DoD (e) の PR closeout に必要
+  scope: Phase 128 / Task 128.5
+  承認: approved (2026-07-30 operator、`/harness-plan したあと /breezing`)
+- 事項: external-send — `gh pr comment` + `gh pr close` (対象: PR #246)
+  理由: 128.6 DoD (a)(c) の closeout に必要
+  scope: Phase 128 / Task 128.6
+  承認: approved (同上)
+- secret-read: なし (回避経路の検証は fixture パスと hook 判定の観測のみで行い、実在する秘密ファイルは読まない)
+- destructive: なし
+
+対象外と裁定 (黙って落とさないための明示):
+- **dependabot PR 9 件** (#276 #275 #274 #273 #272 #271 #264 #260 #241): 依存バージョン更新のみで本 Phase のセキュリティ修正と無関係。混ぜるとレビュー面が膨らみ、脆弱性修正の出荷が遅れる。本 Phase 完了後に別スコープでまとめて処理する
+- **#246 の `paths.protected` / R16 再実装**: 設計は妥当だが、現行 main への載せ替えが必要で規模が大きい。先に脆弱性 2 件を出荷する方が価値が高い。Phase 129 以降で扱う
+- **#246 の `allow_rm_rf`**: Phase 126 の `shellscan.RemovalContextIndeterminate` を壊さない再設計が必要。保留
