@@ -171,8 +171,8 @@ func DenySurface() []string {
 // and paste the printed slice here.
 var baselineDenySurface = []string{
 	"R01:no-sudo:3d90ab7cf0b192d7fd9b6267693d75b8015a379ba75da09022850322c695e6f0",
-	"R02:no-write-protected-paths:29429e94fe28594af8edb8c546b87b9726043aecf7623c0df0dcf9a93f2e36f7",
-	"R03:no-bash-write-protected-paths:5b31f8cea6641053e56feae079f52f67b96b6b9220066a77319497526ad6bd71",
+	"R02:no-write-protected-paths:6c8daecc5e7745ead7fb671cd2867bb2b0e4b598526167ef3676de56a8fe4868",
+	"R03:no-bash-write-protected-paths:a54551decc10465f4a6fba38166382ed7900f9e4834eef1b6298c7a8daea2e5f",
 	"R06:no-force-push:7320e66b09a8fd7c4cf6b24a800b7b78b8b82181720ca722bb6ab4002fc574a2",
 	"R07:codex-mode-no-write:9d6770d2cb308bf2a3eb48c420b44658f2befaa642d652eeb348f54b3529213d",
 	"R08:breezing-reviewer-no-write:24fc5cdcd6523b736e87ce797afa85493d8364109133fd68a119222531c2860d",

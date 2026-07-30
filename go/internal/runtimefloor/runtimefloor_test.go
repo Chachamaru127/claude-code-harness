@@ -543,6 +543,132 @@ func TestCheckSecretRead_ConfigAbsolutePathOutsideProjectIsIgnored(t *testing.T)
 	}
 }
 
+func TestCheckSecretRead_ConfigRelativePathOutsideProjectIsIgnored(t *testing.T) {
+	// Phase 128.1 regression guard: a relative secretAllow declaration that
+	// escapes the worktree via ".." must be discarded, same as an absolute
+	// declaration outside the project (TestCheckSecretRead_ConfigAbsolutePathOutsideProjectIsIgnored).
+	root := testWorktreeRoot(t)
+	outside := filepath.Join(filepath.Dir(root), "outside-escape-target")
+	if err := os.MkdirAll(outside, 0o755); err != nil {
+		t.Fatalf("mkdir outside dir: %v", err)
+	}
+	// Filename must contain a secret indicator (".env") for checkSecretRead's
+	// indicator regexes to fire in the first place; the boundary bug under
+	// test is about the allowlist, not indicator matching.
+	outsideFile := filepath.Join(outside, ".env")
+	if err := os.WriteFile(outsideFile, []byte("secret"), 0o600); err != nil {
+		t.Fatalf("write outside file: %v", err)
+	}
+	rel, err := filepath.Rel(root, outsideFile)
+	if err != nil {
+		t.Fatalf("compute relative escape path: %v", err)
+	}
+	writeRuntimeFloorConfig(t, root, `{"runtimefloor":{"secretAllow":[`+quoteJSON(rel)+`]}}`)
+
+	d := CheckCommand("cat "+outsideFile, Context{WorktreeRoot: root})
+	if !d.Stopped || d.Category != CategorySecretRead {
+		t.Fatalf("relative escape declaration %q resolving to %q must deny, got Stopped=%v Category=%s", rel, outsideFile, d.Stopped, d.Category)
+	}
+}
+
+func TestCheckSecretRead_ConfigRelativePathInsideProjectPasses(t *testing.T) {
+	// Non-regression: an ordinary in-worktree relative declaration must
+	// still be allowed after the boundary check is added.
+	root := testWorktreeRoot(t)
+	writeRuntimeFloorConfig(t, root, `{"runtimefloor":{"secretAllow":["secrets/x"]}}`)
+
+	d := CheckCommand("cat "+filepath.Join(root, "secrets", "x"), Context{WorktreeRoot: root})
+	if d.Stopped {
+		t.Fatalf("in-worktree relative declaration should pass, got category %s reason %q", d.Category, d.Reason)
+	}
+}
+
+func TestCheckSecretRead_ConfigSymlinkEscapingWorktreeIsIgnored(t *testing.T) {
+	// Review follow-up (128.1 major-1/2): a declaration that is textually
+	// inside the worktree but is a symlink whose target resolves outside it
+	// must be discarded, same as a textual ".."/absolute escape.
+	//
+	// The symlink itself must be named ".env" (not e.g. "link.env"): the
+	// .env indicator regex only matches a path SEGMENT that is exactly
+	// ".env" (a dotfile), not an arbitrary "*.env" suffix, so the command
+	// token has to be the dotfile itself for checkSecretRead's indicator
+	// scan to fire in the first place.
+	root := testWorktreeRoot(t)
+	outside := t.TempDir()
+	outsideTarget := filepath.Join(outside, "credentials")
+	if err := os.WriteFile(outsideTarget, []byte("secret"), 0o600); err != nil {
+		t.Fatalf("write outside symlink target: %v", err)
+	}
+	linkPath := filepath.Join(root, ".env")
+	if err := os.Symlink(outsideTarget, linkPath); err != nil {
+		t.Fatalf("create escaping symlink: %v", err)
+	}
+	writeRuntimeFloorConfig(t, root, `{"runtimefloor":{"secretAllow":[".env"]}}`)
+
+	d := CheckCommand("cat "+linkPath, Context{WorktreeRoot: root})
+	if !d.Stopped || d.Category != CategorySecretRead {
+		t.Fatalf("symlink escape declaration %q (-> %q) must deny, got Stopped=%v Category=%s", linkPath, outsideTarget, d.Stopped, d.Category)
+	}
+}
+
+func TestCheckSecretRead_ConfigSymlinkInsideWorktreeAllowsDeclaredPath(t *testing.T) {
+	// Review follow-up (128.1 major-1): pins the fix for the regression the
+	// reviewer found — when the symlink target itself stays inside the
+	// worktree, the DECLARED path (the symlink, named ".env" here so the
+	// indicator regex fires — see comment in the sibling escape test) must
+	// still be readable. The allowlist must store the declaration, not the
+	// resolved realpath: if it stored the realpath instead, this exact case
+	// (operator declares the symlink they use) would wrongly deny.
+	//
+	// The realpath is named "credentials" (a different indicator, its own
+	// word-boundary match) so the second assertion below — reading the
+	// realpath directly, which was never declared — exercises the indicator
+	// scan too, instead of silently no-oping if the name didn't match
+	// anything.
+	root := testWorktreeRoot(t)
+	realTarget := filepath.Join(root, "credentials")
+	if err := os.WriteFile(realTarget, []byte("secret"), 0o600); err != nil {
+		t.Fatalf("write in-worktree symlink target: %v", err)
+	}
+	linkPath := filepath.Join(root, ".env")
+	if err := os.Symlink(realTarget, linkPath); err != nil {
+		t.Fatalf("create in-worktree symlink: %v", err)
+	}
+	writeRuntimeFloorConfig(t, root, `{"runtimefloor":{"secretAllow":[".env"]}}`)
+
+	// The declared path (the symlink itself) must be allowed.
+	d := CheckCommand("cat "+linkPath, Context{WorktreeRoot: root})
+	if d.Stopped {
+		t.Fatalf("declared in-worktree symlink path should pass, got category %s reason %q", d.Category, d.Reason)
+	}
+
+	// The realpath was never declared and must still deny (widening guard:
+	// storing the resolved realpath in the allowlist instead of the
+	// declaration would wrongly open this undeclared path).
+	dReal := CheckCommand("cat "+realTarget, Context{WorktreeRoot: root})
+	if !dReal.Stopped || dReal.Category != CategorySecretRead {
+		t.Fatalf("undeclared realpath %q must still deny even though the symlink pointing at it is declared, got Stopped=%v Category=%s", realTarget, dReal.Stopped, dReal.Category)
+	}
+}
+
+func TestCheckSecretRead_ConfigNonExistentDeclarationStaysInWorktree(t *testing.T) {
+	// Review follow-up (128.1 major-2): pins the fail-safe branch of
+	// secretAllowSymlinkStaysInWorktree — a declaration for a path that does
+	// not exist yet (EvalSymlinks fails with ENOENT) must still be treated as
+	// an ordinary in-worktree declaration, not silently dropped. Named
+	// ".env" so the indicator regex actually fires (see comment on the
+	// escape test above) rather than trivially passing because the check
+	// never ran.
+	root := testWorktreeRoot(t)
+	notYetCreated := filepath.Join(root, ".env")
+	writeRuntimeFloorConfig(t, root, `{"runtimefloor":{"secretAllow":[".env"]}}`)
+
+	d := CheckCommand("cat "+notYetCreated, Context{WorktreeRoot: root})
+	if d.Stopped {
+		t.Fatalf("declaration for a not-yet-created in-worktree path should still pass (fail-safe), got category %s reason %q", d.Category, d.Reason)
+	}
+}
+
 func TestCheckSecretRead_EnvAndConfigAllowlistsAreUnioned(t *testing.T) {
 	root := testWorktreeRoot(t)
 	envRoot := t.TempDir()
