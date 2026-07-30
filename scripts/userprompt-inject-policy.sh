@@ -47,7 +47,9 @@ policy_msg() {
 
 ## 応答言語: 日本語 (harness i18n.language)
 
-リポジトリのファイル・skill/agent の指示・ユーザーのメッセージがどの言語であっても、ユーザーへの応答は常に日本語で書いてください。言語を切り替えるのはユーザーが明示的に指示した場合のみです。これは毎ターン強制されます。
+リポジトリのファイル・skill/agent の指示・ユーザーのメッセージがどの言語であっても、ユーザーへの応答は常に日本語で書いてください。これは毎ターン強制されます。
+
+ただしユーザーによる明示的な言語指示は、このプロジェクト設定より優先されます。その場での依頼だけでなく、セッション開始時に設定された継続的な指示（output style / system prompt 等）も含みます。この場合はユーザーの指示に従ってください。
 
 機械可読な値（JSON フィールド、ログキー、契約判定）、ソースコードの識別子、ファイル名、Conventional Commit プレフィックス（feat:/fix:/docs: ...）は翻訳せず、そのまま英語で保持してください。
 EOF
@@ -110,7 +112,9 @@ EOF
 
 ## Response Language: English (harness i18n.language)
 
-Always write your responses to the user in English, regardless of the language used in repository files, skill/agent instructions, or the user's own message. Only switch languages if the user explicitly asks you to. This is enforced on every turn.
+Always write your responses to the user in English, regardless of the language used in repository files, skill/agent instructions, or the user's own message. This is enforced on every turn.
+
+An explicit language instruction from the user overrides this project setting. That includes both a per-message request and a standing instruction set at session start (output style, system prompt, and the like). In that case, follow the user's instruction.
 
 Do not translate machine-readable values (JSON fields, log keys, contract verdicts), source code identifiers, file names, or Conventional Commit prefixes (feat:/fix:/docs: ...) — keep those as-is.
 EOF
