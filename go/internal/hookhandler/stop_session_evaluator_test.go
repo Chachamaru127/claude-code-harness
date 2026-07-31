@@ -325,6 +325,44 @@ func TestStopSessionEvaluator_WIPMarkerFormats(t *testing.T) {
 	}
 }
 
+// TestStopSessionEvaluator_ReentryAllowsStopWithWarning pins Issue #269's fix:
+// a Stop re-entry (stop_hook_active: true) with WIP tasks remaining must not
+// block forever. It must allow the stop (ok: true) and surface a warning via
+// systemMessage instead of decision: "block".
+func TestStopSessionEvaluator_ReentryAllowsStopWithWarning(t *testing.T) {
+	dir := t.TempDir()
+	plansContent := `| 1 | impl foo | DoD | - | cc:WIP |
+| 2 | impl bar | DoD | - | cc:WIP |
+`
+	if err := os.WriteFile(filepath.Join(dir, "Plans.md"), []byte(plansContent), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	h := &StopSessionEvaluatorHandler{ProjectRoot: dir}
+	var out bytes.Buffer
+	if err := h.Handle(strings.NewReader(`{"stop_hook_active":true}`), &out); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var resp map[string]interface{}
+	if err := json.Unmarshal([]byte(strings.TrimSpace(out.String())), &resp); err != nil {
+		t.Fatalf("invalid JSON output: %v\noutput: %s", err, out.String())
+	}
+	if decision, _ := resp["decision"].(string); decision == "block" {
+		t.Fatalf("Stop re-entry with WIP must not block, got decision=%q\noutput: %s", decision, out.String())
+	}
+	if ok, _ := resp["ok"].(bool); !ok {
+		t.Fatalf("Stop re-entry with WIP must return ok:true, got ok=%v\noutput: %s", resp["ok"], out.String())
+	}
+	sysMsg, _ := resp["systemMessage"].(string)
+	if sysMsg == "" {
+		t.Fatalf("Stop re-entry with WIP must include a systemMessage warning\noutput: %s", out.String())
+	}
+	if !strings.Contains(sysMsg, "2") {
+		t.Errorf("systemMessage should mention the WIP count (2), got: %q", sysMsg)
+	}
+}
+
 func TestStopSessionEvaluator_StopHookActiveProgressPolicy(t *testing.T) {
 	dir := t.TempDir()
 	plansPath := filepath.Join(dir, "Plans.md")
@@ -347,7 +385,20 @@ func TestStopSessionEvaluator_StopHookActiveProgressPolicy(t *testing.T) {
 
 	writePlans("cc:wip")
 	assertStopBlocked(t, run(`{"stop_hook_active":false}`), "WIP", "1")
-	assertStopBlocked(t, run(`{"stop_hook_active":true}`), "cc:done", "blocked")
+	// Issue #269: 再入時は警告+許可へ仕様変更 (2026-07-26)。
+	// stop_hook_active:true の再入は無限 block ではなく ok:true + systemMessage 警告にする。
+	out := run(`{"stop_hook_active":true}`)
+	assertStopOK(t, out, true)
+	var resp stopSessionResponse
+	if err := json.Unmarshal([]byte(strings.TrimSpace(out)), &resp); err != nil {
+		t.Fatalf("invalid JSON: %v\noutput: %s", err, out)
+	}
+	if resp.SystemMessage == "" {
+		t.Fatalf("Stop re-entry with WIP must include a systemMessage warning\noutput: %s", out)
+	}
+	if !strings.Contains(resp.SystemMessage, "1") {
+		t.Errorf("systemMessage should mention the WIP count (1), got: %q", resp.SystemMessage)
+	}
 
 	writePlans("cc:done")
 	assertStopOK(t, run(`{"stop_hook_active":true}`), true)

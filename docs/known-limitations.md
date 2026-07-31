@@ -73,9 +73,10 @@ when written under these rules.
 
 When the safeguard fires anyway:
 
-- **Switch to Opus 4.8** for security-heavy PRs. The newer model has a different
-  safeguard calibration. Set `--model claude-opus-4-8` or pin the reviewer model
-  via your settings.
+- **Switch to Opus** for security-heavy PRs. The Opus line has a different
+  safeguard calibration than Fable. Set `--model claude-opus-5` or pin the
+  reviewer model via your settings (Opus 4.8 was retired from the Harness
+  catalog on 2026-07-25).
 - **Escalate security-only PRs to manual review**. Harness's automated reviewer
   is not the appropriate gate for changes whose entire purpose is exploit
   research or red-team tooling.

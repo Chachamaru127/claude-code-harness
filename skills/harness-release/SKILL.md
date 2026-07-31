@@ -170,54 +170,11 @@ owner / branch / release asset / CI metadata の自動取得は host ごとの�
 
 ## 単一ゲートフロー
 
-```
-[Bare release only: 作業 review/commit 前段]
-  ↓
-  0. Review Gate (未レビューなら AskUserQuestion → harness-review)
-  0.5 Work Commit Gate (review APPROVE 済み work を release bump と分けて commit)
-  ↓
-[Pre-Gate: 情報収集のみ、ファイル未変更]
-  ↓
-  1. Preflight (working tree clean / CHANGELOG / gh 等の確認)
-  2. Version file 自動検出
-  3. 現在バージョンの読み取り
-  4. Claude plugin tag preflight (plugin project の場合のみ)
-  5. [Unreleased] 内容の解析 → bump level 推定
-  6. 新バージョン算出
-  7. CHANGELOG 差分ドラフト作成 (メモリ上)
-  8. GitHub Release notes ドラフト作成 (メモリ上)
-
-★━━━━━━ 単一確認ゲート ━━━━━━★
-  ユーザーに全計画を 1 回だけ提示:
-    - 検出された version file
-    - 現バージョン → 新バージョン
-    - bump 判定理由 ("[Unreleased] に ### Added があるため minor" 等)
-    - CHANGELOG 変更プレビュー
-    - GitHub Release notes ドラフト
-    - コミット対象ファイル一覧
-    - 最終アクション (branch push + PR merge + tag + release publish)
-
-  ユーザー応答:
-    "yes"        → Post-Gate へ進む
-    "<修正指示>"  → 指示に応じて draft を再生成、再確認
-    "cancel/no"  → 何もせず終了
-★━━━━━━━━━━━━━━━━━━━━━━━★
-  ↓
-[Post-Gate: 承認後、中断なし]
-
-  9. Version file 書き換え
-  10. CHANGELOG.md 書き換え ([Unreleased] → [X.Y.Z] 昇格 + compare link)
-  11. git add + commit
-  12. release branch push
-  13. PR 作成/更新
-  14. default branch へ merge
-  15. default branch を fetch/checkout し、release commit が到達可能であることを確認
-  16. Claude plugin tag validation + tag (plugin project の場合のみ)
-  17. GitHub Release 用 semver tag (必要な project のみ)
-  18. git push origin <default-branch> --tags
-  19. tag push 後、`.github/workflows/release.yml` が release を公開し、`release-verify-publish.sh` で verify
-  20. 完了報告
-```
+Bare release（0. Review Gate → 0.5 Work Commit Gate）→
+Pre-Gate（1. Preflight → 2. Version file 検出 → 3. バージョン読み取り → 4. plugin tag preflight → 5. bump 推定 → 6. 新バージョン算出 → 7. CHANGELOG ドラフト → 8. Release notes ドラフト）→
+**単一確認ゲート**（下記「Confirmation Gate」参照、`yes` / `<修正指示>` / `cancel` の 3 択）→
+Post-Gate（9. Version file 書き換え → 10. CHANGELOG 昇格 → 11. commit → 12. branch push → 13. PR 作成/更新 → 14. default branch merge → 15. 到達可能性確認 → 16. plugin tag → 17. semver tag → 18. tag push → 19. workflow publish verify → 20. 完了報告）
+の 3 段階で進む。各段の詳細は「Pre-Gate 詳細」「Confirmation Gate」「Post-Gate 詳細」を参照。
 
 ## Pre-Gate 詳細
 
@@ -253,36 +210,8 @@ release preflight は host workflow smoke を `REQUIRED=1`（fail-closed）で�
 
 ### 2. Version File 自動検出
 
-以下を優先順で探索。最初に見つかったものを正本とする:
-
-```python
-# Python snippet to run inline
-import os, json, re
-import tomllib  # Python 3.11+
-
-def detect_version_file():
-    if os.path.exists("VERSION"):
-        with open("VERSION") as f:
-            return ("VERSION", f.read().strip(), None)
-    if os.path.exists("package.json"):
-        with open("package.json") as f:
-            data = json.load(f)
-        return ("package.json", data["version"], None)
-    if os.path.exists("pyproject.toml"):
-        with open("pyproject.toml", "rb") as f:
-            data = tomllib.load(f)
-        if "project" in data:
-            return ("pyproject.toml", data["project"]["version"], "[project]")
-        if "tool" in data and "poetry" in data["tool"]:
-            return ("pyproject.toml", data["tool"]["poetry"]["version"], "[tool.poetry]")
-    if os.path.exists("Cargo.toml"):
-        with open("Cargo.toml", "rb") as f:
-            data = tomllib.load(f)
-        return ("Cargo.toml", data["package"]["version"], "[package]")
-    raise RuntimeError("No supported version file found")
-```
-
-詳細: [version-files.md](${CLAUDE_SKILL_DIR}/references/version-files.md)
+`VERSION` → `package.json` → `pyproject.toml`（`[project]` / `[tool.poetry]`）→ `Cargo.toml` の優先順で探索し、最初に見つかったものを正本とする。
+検出スニペット・読み取りロジックの詳細: [version-files.md](${CLAUDE_SKILL_DIR}/references/version-files.md)
 
 ### 3. Claude Plugin Tag Preflight
 
@@ -330,50 +259,19 @@ python3 "${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py" --root . 
 
 ### 4. Bump 自動推定
 
-`[Unreleased]` 直下の見出しを解析して bump level を決定:
-
-| [Unreleased] 内の見出し | 推定 bump |
-|------------------------|-----------|
-| `### Breaking Changes` または `### Removed` を含む | **major** |
-| `### Added` を含む (Removed/Breaking なし) | **minor** |
-| `### Fixed` / `### Changed` / `### Security` のみ | **patch** |
-| 空セクション | **error: リリース対象なし** |
-
+`[Unreleased]` 直下の見出し（`### Breaking Changes`/`### Removed` → major、`### Added` → minor、`### Fixed`/`### Changed`/`### Security` のみ → patch、空セクション → error）を解析して bump level を決定する。
 ユーザーが `/release patch|minor|major` で明示指定した場合はそちらを優先。
 詳細: [bump-detection.md](${CLAUDE_SKILL_DIR}/references/bump-detection.md)
 
 ### 5. CHANGELOG ドラフト作成 (メモリ上)
 
-以下を計算、まだ書き込まない:
-
-1. `## [Unreleased]` の本文を切り出し
-2. `## [Unreleased]` と `## [<previous>]` の間に `## [<new>] - YYYY-MM-DD` を挿入した形を作成
-3. 末尾 compare link:
-   - `[Unreleased]: .../compare/v<prev>...HEAD` → `v<new>...HEAD`
-   - `[<new>]: .../compare/v<prev>...v<new>` を追加
-4. repo URL は既存の `[Unreleased]: ` 行から動的抽出
+`[Unreleased]` の内容を切り出し、`[<new>] - YYYY-MM-DD` セクションと compare link を組み立てる（まだ書き込まない）。
+詳細: [release-notes.md](${CLAUDE_SKILL_DIR}/references/release-notes.md#changelog-ドラフト作成メモリ上pre-gate-ステップ-7)
 
 ### 6. Release Notes ドラフト作成 (メモリ上)
 
-`## [<new>]` セクションの内容を元に、GitHub Release 用のマークダウンを生成:
-
-```markdown
-## What's Changed
-
-**<リリーステーマ(1行)>**
-
-### Before / After
-<テーブル>
-
-### Added / Changed / Fixed / Removed
-<該当セクションをコピー>
-
----
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-```
-
-詳細: [release-notes.md](${CLAUDE_SKILL_DIR}/references/release-notes.md)
+`## [<new>]` セクションの内容を元に、GitHub Release 用のマークダウン（What's Changed / Before-After / Added-Changed-Fixed / フッター）を生成する。
+必須要素・生成方法・検証チェックの詳細: [release-notes.md](${CLAUDE_SKILL_DIR}/references/release-notes.md)
 
 ## Confirmation Gate
 
@@ -424,58 +322,12 @@ Proceed? [yes / cancel / <修正指示>]
 | plugin tag validation 失敗 | `VERSION` / `.claude-plugin/plugin.json` / marketplace entry の不一致を修正し、tag 作成には進まない |
 | push 失敗 | リモート側の問題。ローカル commit/tag は残す |
 
-### PR / Main Merge Gate
+### PR / Main Merge Gate、plugin tag、Verify Publish
 
-Post-Gate の release commit 後は、tag を作る前に GitHub PR を default branch へ merge する。
-
-```bash
-release_branch="$(git branch --show-current)"
-default_branch="${HARNESS_RELEASE_DEFAULT_BRANCH:-main}"
-
-git push -u origin "$release_branch"
-gh pr create --base "$default_branch" --head "$release_branch" --title "chore: release v<new>" --body "<release summary>"
-gh pr merge --merge --delete-branch=false
-
-git fetch origin "$default_branch" --tags
-git checkout "$default_branch"
-git pull --ff-only origin "$default_branch"
-git merge-base --is-ancestor "<release-commit>" "origin/$default_branch"
-```
-
-既存 PR がある場合は新規作成せず、既存 PR の body を更新して merge する。repository policy が squash merge を要求する場合は、release commit hash ではなく release bump の内容（version files + CHANGELOG + source commits）が default branch に含まれることを確認する。
-
-tag はこの Gate 完了後、default branch の HEAD もしくは release commit 到達可能な commit に対して作る。release branch 上だけに存在する commit を指す tag で GitHub Release を作ってはいけない。
-
-### Claude plugin project の tag 作成
-
-`.claude-plugin/plugin.json` がある project では、PR/main merge 後に default branch 上でもう一度 version sync を確認してから plugin tag を作る:
-
-```bash
-HARNESS_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-.}"
-python3 "${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py" --root .
-
-claude plugin tag .claude-plugin --dry-run
-claude plugin tag .claude-plugin --push --remote origin
-```
-
-`claude plugin tag` が作る tag は `{plugin-name}--v{version}` 形式。既存の GitHub Release workflow が `vX.Y.Z` tag を前提にしている project では、plugin tag とは別に `git tag -a v<new>` を作る。plugin 配布の tag は `claude plugin tag` に任せ、GitHub Release 用 semver tag は release automation の互換 surface として扱う。
-
-### Verify Workflow Publish
-
-Tag push 後、`.github/workflows/release.yml` が release を自動公開する。skill は以下で結果を verify する:
-
-```bash
-OWNER="$(git remote get-url origin | sed 's|.*github.com[:/]\([^/]*/[^/]*\)\.git|\1|')"
-bash scripts/release-verify-publish.sh "v${NEW_VERSION}" "${OWNER}"
-```
-
-タイムアウト: 5 秒間隔 × 60 回 = 最大 5 分 polling。
-
-- exit 0: PASS — `draft=false` 且つ assets 4 platform 揃って公開済
-- exit 2: WARN — timeout (tag は push 済のため abort せず人間判断を促す)
-- exit 3: ERROR — API error (権限/認証問題、手動調査が必要)
-
-Verify は `gh api` 経由で行う。GitHub CLI の release subcommand prefix は CC runtime hard floor で deny されるため使わない。
+Post-Gate の release commit 後、tag を作る前に GitHub PR を default branch へ merge する（`gh pr create` → `gh pr merge --merge` → default branch fetch/checkout で release commit の到達可能性を確認）。release branch 上だけに存在する commit を指す tag で GitHub Release を作ってはいけない。
+`.claude-plugin/plugin.json` がある project では、merge 後に default branch 上で version sync を再確認してから `claude plugin tag .claude-plugin --push --remote origin` で plugin tag（`{plugin-name}--v{version}` 形式）を作る。
+tag push 後は `bash scripts/release-verify-publish.sh` で `.github/workflows/release.yml` の公開結果を verify する（5 秒間隔 × 60 回 polling、exit 0=PASS / 2=WARN(timeout) / 3=ERROR）。
+コマンド全文・失敗時の判断基準は [post-gate-detail.md](${CLAUDE_SKILL_DIR}/references/post-gate-detail.md) を参照。
 
 ## `--dry-run` モード
 
@@ -497,21 +349,13 @@ Claude plugin project の場合、dry-run でも `python3 "${HARNESS_PLUGIN_ROOT
 
 ## CHANGELOG 書き方ルール
 
-`[Unreleased]` セクションは必ず以下のいずれかのサブセクションを持つ:
+`[Unreleased]` セクションは KaCL 標準サブセクション（`### Added`=minor / `### Changed`・`### Fixed`・`### Security`=patch / `### Deprecated`=minor / `### Removed`・`### Breaking Changes`=major）のいずれかを持つ必要がある。
+このスキルはこれらの見出しを機械的に解析するため、表記揺れ（`### Fix` / `### Bug Fixes` 等）は認識できない。
 
-```markdown
-## [Unreleased]
-
-### Added       ← minor
-### Changed     ← patch
-### Deprecated  ← minor
-### Removed     ← major
-### Fixed       ← patch
-### Security    ← patch
-### Breaking Changes  ← major (Keep a Changelog 非標準だが一般的)
-```
-
-このスキルはこれらの見出しを機械的に解析するため、見出しの表記揺れ（`### Fix` / `### Bug Fixes` 等）は認識できません。KaCL 標準の見出しを使用してください。
+GitHub Release notes の必須フォーマット・CHANGELOG の「今まで/今後」記法・merge 方式（squash 不採用）の詳細は
+[github-release.md](${CLAUDE_SKILL_DIR}/references/github-release.md) を参照。
+SemVer 判定基準・バッチリリース方針・Release Train Proposal の詳細は
+[versioning.md](${CLAUDE_SKILL_DIR}/references/versioning.md) を参照。
 
 ## 出荷前の受け入れ判断（非エンジニア向け）
 

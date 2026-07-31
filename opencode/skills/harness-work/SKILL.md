@@ -40,17 +40,13 @@ Harness の統合実行スキル。
 
 ### ルール
 
-1. **明示フラグは常にオートモードを上書き**する
-   - `--parallel N` → Parallel モード（タスク数に関係なく）
-   - `--breezing` → Breezing モード（タスク数に関係なく）
-   - `--codex` → Codex モード（タスク数に関係なく）
+1. **明示フラグは常にオートモードを上書き**する（`--parallel N` / `--breezing` / `--codex` はタスク数に関係なく強制）
 2. **`--codex` は明示時のみ発動**。Codex CLI が未インストールの環境があるため、自動選択しない
 3. `--codex` は他モードと組み合わせ可能: `--codex --breezing` → Codex + Breezing
 
 ## Execution Backend Selection（実装バックエンド選択）
 
 バックエンド（どのランタイムが**実装するか**）は、実行モード（トポロジー: solo / parallel / breezing）と直交する。
-実行モードが「何ワーカーで・どう分割して回すか」を決めるのに対し、バックエンドは「実装の手を誰が動かすか」を決める。
 
 | backend | 実装の担い手 | 委託コマンド |
 |---------|------------|------------|
@@ -58,133 +54,34 @@ Harness の統合実行スキル。
 | `codex` | Codex CLI | `bash "${HARNESS_PLUGIN_ROOT}/scripts/codex-companion.sh" task --write "<prompt>"` |
 | `cursor` | cursor-agent（model `composer-2.5-fast`） | `bash "${HARNESS_PLUGIN_ROOT}/scripts/cursor-companion.sh" task --write --workspace <worktree> "<prompt>"` |
 
-### 解決手順
+Codex 呼び出しのガバナンス詳細（禁止事項・verdict マッピング等）は
+[references/codex-cli-only.md](${CLAUDE_SKILL_DIR}/references/codex-cli-only.md) を参照。
 
-run 開始時に 1 回だけ解決する。**resolver 経由が backend 選択の唯一の正規入口**。
-`HARNESS_IMPL_BACKEND` env を直接読んで backend を決めてはならない（skill 記述・実装とも禁止）:
+run 開始時に resolver で 1 回だけ解決する。`HARNESS_IMPL_BACKEND` env を直接読んで backend を決めてはならない:
 
 ```bash
 bash "${HARNESS_PLUGIN_ROOT}/scripts/resolve-impl-backend.sh"
 ```
 
-env / `--cursor` / `--codex` / `--backend <v>` per-run flag / project `env.local` / user file の precedence は resolver が一括解決する（高い順: 明示フラグ > env > project file > user file > 既定値 `claude`）。プロジェクト設定はユーザースコープを上書きする。
-明示フラグ（`--backend` / `--cursor` / `--codex`）は env / file / default を常に上書きする。
+precedence（高い順）: 明示フラグ（`--backend` / `--cursor` / `--codex`） > env > project file > user file > 既定 `claude`。プロジェクト設定はユーザースコープを上書きする。
 
-### Fallback 警告（backend = `claude` 確定時）
+### Backend 既定（`claude` は意図された既定、警告は不正値 fallback 時のみ）
 
-backend resolution 結果が `claude` のとき（resolver 出力が `claude`、または resolver 未経由で `claude` と確定）、host は起動 banner 直後に **1 行だけ**次を出す。フォーマットは `breezing` の Narration Rules「Fallback 警告」と同一（cross-ref: `skills/breezing/SKILL.md`）:
+既定 backend は `claude`（Native subagent）。resolver の未設定 fallback も `claude` であり、正常に `claude` へ解決された場合に警告は**出さない**（2026-07-24 operator 裁定。フォーマットは `breezing` の Narration Rules「Backend 既定と per-run のフラット判断」と同一、cross-ref: `skills/breezing/SKILL.md`）。
 
-```
-⚠️ backend=claude (via resolver / not via resolver) — composer/cursor を使う場合は `--cursor` or `bash "${HARNESS_PLUGIN_ROOT}/scripts/resolve-impl-backend.sh"` を確認
-```
+- ⚠️ 警告を出すのは resolver が **不正値 fallback** の stderr 警告を出した時だけ。banner 直後に 1 行、同一 run 内で繰り返さない
+- Lead は作業内容・量に応じて per-run で backend をフラットに選んでよい。選ぶ時は resolver への明示 override（`--backend <v>` / `--codex` / `--cursor`）を使う
+- `composer` / `コンポーザー` / `composer 2.5` 等の自然言語表現は `--cursor` と同じ intent として扱い、resolver に `--backend cursor` を明示 override で渡す（自然言語 backend trigger）
 
-- **`via resolver` / `not via resolver`**: resolver 実行有無で literal を選ぶ
-- **確認先**: `--cursor` と bundled `resolve-impl-backend.sh`（`bash "${HARNESS_PLUGIN_ROOT}/scripts/resolve-impl-backend.sh"`）
-- env unset / default fallback で `claude` に落ちる罠を 1 行で可視化。同一 run 内で繰り返さない（`breezing` の冗長さ禁止と整合）
-
-### 自然言語 backend trigger
-
-ユーザーが `composer` / `コンポーザー` / `Composer で` / `composer 2.5` / `composer モード` と言った場合は、`cursor backend` 指定として扱う。
-これは `--cursor` と同じ intent だが、backend の確定値は必ず `resolve-impl-backend.sh` で解決する。
-解決時は明示 override として `--backend cursor` を渡し、env / project / user file / default より優先させる。
-Lead は `composer` を Claude Worker 内の追加 agent と解釈せず、非 `claude` backend の規約どおり Worker agent を挟まずに `cursor-companion.sh` を直接呼ぶ。
-
-### role-scoped 制約
-
-バックエンドは **role-scoped**。解決済みバックエンドを使うのは実装（worker）ロールだけ。
-Reviewer と Advisor の両ロールは常に brain（`--host claude`）に固定する。
-Primary reviewer を cursor / codex バックエンドに routing しない（diff を生成した同一コンテキストが自分の出力をレビューしてはならない — spec.md Execution Backend Contract の self-review scope 契約）。
-例外は **fresh-context advisory pre-review** のみ: diff を生成した session と会話状態を共有しない cursor `review` tier（composer-2.5-fast、read-only）が brain 一次レビューの前段で advisory findings を出すことは許可。primary verdict（`APPROVE | REQUEST_CHANGES`）は brain のみが出す。
+バックエンドは **role-scoped**: 解決済みバックエンドに従うのは実装（worker）ロールのみ。Reviewer / Advisor は常に brain（`--host claude`）固定（primary reviewer を cursor/codex に routing しない）。例外は **fresh-context advisory pre-review** のみ: diff を生成した session と会話状態を共有しない cursor `review` tier が advisory findings を出すことは許可、primary verdict（`APPROVE | REQUEST_CHANGES`）は brain のみが出す。
 
 ```bash
-# 実装ロールだけ解決済み backend に従う（例: backend=cursor なら composer-2.5-fast を解決）
 bash "${HARNESS_PLUGIN_ROOT}/scripts/model-routing.sh" --host cursor --role worker --field model
-# primary review / advisor は常に claude host 固定（fresh-context advisory pre-review のみ cursor review tier 利用可）
 bash "${HARNESS_PLUGIN_ROOT}/scripts/model-routing.sh" --host claude --role reviewer --field model
-bash "${HARNESS_PLUGIN_ROOT}/scripts/model-routing.sh" --host claude --role advisor --field model
 ```
 
-> モデル名の正本は `model-routing.sh` 側。本ドキュメント中の `composer-2.5-fast` は参照値であり、実際の解決は上記コマンドに従う（drift 防止）。
-
-### 非 `claude` バックエンドのトポロジー（Worker 介在なし）
-
-backend が `codex` または `cursor` の場合、**Lead は Worker agent (`claude-code-harness:worker`) を spawn しない**。
-代わりに Lead 自身が `cursor-companion.sh` / `codex-companion.sh` を直接呼ぶ。
-Worker 層の介在は backend=`claude` のときだけ。
-
-配線:
-
-| backend | 経路 |
-|---------|------|
-| `claude`（既定） | Lead → Worker (`claude-code-harness:worker` agent) → … → Lead review → cherry-pick |
-| `codex` | Lead → `codex-companion.sh task --write` → Lead review → cherry-pick |
-| `cursor` | Lead → `cursor-companion.sh task --write --workspace <isolated-wt>` → Lead review → cherry-pick |
-
-非 claude backend で Worker を間に挟むと、Lead → Worker → companion → composer/codex と二段委譲になり、Worker の存在意義（agent 契約による self_review 5 件のゲート）が空回りする（非 claude では `worker-report.v1` も `self_review` も生成されないため）。Lead は Worker をスキップして companion を直接呼ぶ。
-
-非 claude backend の companion 呼び出しでも、Lead は先に専用 worktree を作り、companion stdout を `companion-result.v1` 相当の `{baseCommit, commit, worktreePath, branch, files_changed, summary}` に正規化してから既存の Lead review / cherry-pick 経路へ渡す。`REQUEST_CHANGES` 時は `SendMessage` を使わず、同じ worktree で `cursor-companion.sh` / `codex-companion.sh` を再実行し、`baseCommit..HEAD` を再レビューして range cherry-pick する。
-
-### 非 `claude` バックエンドの self_review ゲート
-
-backend が `codex` または `cursor` の場合、`worker-report.v1` も `self_review` 配列も生成されない。
-そのため Lead は self_review ゲートを**スキップ**し、Lead の diff レビューを唯一の品質ゲートとする（既存の codex path と同じ扱い）。
-
-### cursor バックエンドの banner（委託前に必須）
-
-backend が `cursor` のとき、Lead は委託前に次の 1 行 banner を必ず出力する:
-
-```
-⚠️ cursor backend: model=composer-2.5-fast / R01-R13 ガードレールは cursor-agent 内部に適用されない / 出力は Lead レビューまで untrusted
-```
-
-cursor の write 委託は専用 `.git` を持つ worktree 内で実行し、Lead が main へ cherry-pick する（cherry-pick 経路で R01-R13 が適用される）。
-ガバナンス詳細は `.claude/rules/cursor-cli-only.md` を参照。
-
-### Lead の cherry-pick 前ゲート（contract grep を必須）
-
-非 claude backend (cursor / codex) の出力を main にとり込む前に、Lead は **目視 diff + contract grep の二段ゲート**を必ず通す。目視 diff だけで APPROVE しない。
-
-| ゲート | コマンド | 検知できるもの |
-|--------|----------|----------------|
-| diff 目視 | `git show <sha>` | 変更が意図どおりか・他ファイル touch なしか・support tier 表記不変か |
-| contract grep | `bash tests/test-support-claim-wording.sh` | 公開 support 表記の破壊 |
-| contract grep | `bash scripts/ci/check-consistency.sh` | i18n / locale / mirror / capability matrix の固定文字列契約破壊 |
-| contract grep | `bash tests/validate-plugin.sh` | plugin 配布契約・hook 配線 |
-
-**全 PASS のときだけ cherry-pick**。1 件でも fail なら revert または composer に再委託（同一文字列契約を保つよう明示）。
-
-理由: docs / README / locale / capability-matrix / spec.md には grep で監視される **固定文字列契約**がある (例: `README_ja.md` の `5動詞ワークフロー`)。composer は表面的な言語的重複を機械的に削減する傾向があり、目視 diff では「綺麗な dedup」に見えても固定句を破壊しうる。
-
-### Mode 1 — Producer → Sub-Lead → Composer 階層
-
-`harness work --team`（Breezing の Go orchestrator 経路）で **Mode 1 producer hierarchy** を有効にする opt-in 配線。正本は `spec.md`「Mode 1 — orchestrated Producer hierarchy」節。実装: `go/internal/sublead/sublead.go`、`go/cmd/harness/work_team.go`。
-
-| 層 | 役割 | 備考 |
-|----|------|------|
-| **Producer（Lead）** | Claude Code 固定。lane 単位で Sub-Lead に委譲し、`companion-result.v1` を集約 | 人間が話す CLI = Lead |
-| **Sub-Lead** | lane 1 件を mini-plan に分解し、subtask を並列 fan-out | orchestrator-spawned **headless CLI**（Lead と同一 CLI backend） |
-| **Composer 2.5** | subtask の実装担当（cursor backend） | `productionCompanionWorker` → `cursor-companion.sh`；lane ごとに `companion-result.v1` で集約 |
-
-**hub-spoke のみ**: subWorker 同士は peer results や channel を受け取らない。Sub-Lead が inner `breezing.Orchestrator` で fan-out し、lane 結果を 1 つの `companion-result.v1` に畳む。
-
-**有効化**: `HARNESS_TEAM_HIERARCHY=sublead`（**default OFF**）。未設定時は flat companion worker（Lead が task ごとに companion を直接呼ぶ従来経路）。
-
-### review→iterate ループ
-
-cross-CLI の品質ゲートを worker 出力に wrap する opt-in 配線。実装: `go/internal/reviewiterate/run.go`、`go/cmd/harness/work_team_reviewiterate.go`。
-
-**有効化**: `HARNESS_REVIEW_ITERATE=on`（**default OFF**）。`teamWorkerFactory` が inner worker（flat companion または Sub-Lead 配下 subWorker）を `wrapWorkerWithReviewIterate` で包む。
-
-| 段階 | 動作 |
-|------|------|
-| 1. advisory fan-out | 複数 lens（例: correctness / security / scope）で **fresh-context** headless reviewer CLI を並列起動（producing session と会話状態を共有しない） |
-| 2. brain primary verdict | **primary verdict（`APPROVE` / `REQUEST_CHANGES`）は brain（claude host / Lead）のみ**が出す。advisory reviewer は findings のみ |
-| 3. refinement re-dispatch | brain が `REQUEST_CHANGES` なら、findings を精緻化プロンプトに畳み、**同 worktree** に inner `WorkerFunc` で再投入 |
-| 4. 反復上限 | `MaxIters` 到達で未収束 → `Outcome.Escalated=true` + `EscalationNote` を付けて human escalation |
-
-**反復上限 env**: `HARNESS_REVIEW_ITERATE_MAX`（未設定時 default `3`）。`reviewiterate.Config.MaxIters` に渡される。
-
-cross-CLI review は **OK まで反復**する（DoD 未達なら精緻化タスクを同 worktree に再投入、N 回未収束で human escalation）。
+backend が `codex` / `cursor` の場合、Lead は Worker agent を spawn せず companion を直接呼ぶ（Worker 介在なしトポロジー）。self_review ゲートはスキップし、Lead の diff レビューが唯一の品質ゲートになる。委託前に cursor backend banner を出力し、cherry-pick 前に contract grep 二段ゲート（`test-support-claim-wording.sh` / `check-consistency.sh` / `validate-plugin.sh`）を通す。Mode 1 の Producer → Sub-Lead → Composer 階層、review→iterate ループの詳細は
+[references/backend-selection.md](${CLAUDE_SKILL_DIR}/references/backend-selection.md) を参照。
 
 ## オプション
 
@@ -208,15 +105,17 @@ cross-CLI review は **OK まで反復**する（DoD 未達なら精緻化タス
 
 ## Progressive Disclosure
 
-まずこの本文で入口、自動選択、停止条件だけを確認する。
-詳細は必要になった時だけ読む。
+まずこの本文で入口、自動選択、停止条件だけを確認する。詳細は必要になった時だけ読む。
 
 | 詳細 | 参照 |
 |---|---|
-| Solo / Parallel / Codex / Breezing の具体手順 | `references/execution-modes.md` |
-| Codex review、Reviewer fallback、AI Residuals、修正ループ | `references/review-loop.md` |
+| Solo / Breezing の 1〜17 ステップ完全版、Phase A/B/C 完全版 | `references/execution-modes.md` |
+| Backend role-scoped 制約、非 claude トポロジー、Mode 1 階層、review→iterate | `references/backend-selection.md` |
+| Codex review、Reviewer fallback、verdict mapping、修正ループ | `references/review-loop.md` |
+| Sprint Contract フィールド一覧、PR Closeout | `references/sprint-contract.md` |
+| effort tier の多要素スコアリング詳細 | `references/effort-routing.md` |
 | Solo / Breezing 完了報告の生成 | `references/completion-report.md` |
-| テスト/CI 失敗時の再チケット化 | `references/failure-reticketing.md` |
+| テスト/CI 失敗時の再チケット化コマンド | `references/failure-reticketing.md` |
 | 仕様正本チェックの基準 | `docs/plans/spec-ssot.md` |
 
 ### 重要停止条件
@@ -230,8 +129,7 @@ cross-CLI review は **OK まで反復**する（DoD 未達なら精緻化タス
 - 複数 Plans.md がある場合は、1 run の中で plan を切り替えない。必要なら `--plan NAME` を明示して新しい run を開始する。
 
 > **Token Optimization (v2.1.69+)**: git 操作を伴わない軽量タスクでは
-> plugin settings の `includeGitInstructions: false` を有効にして
-> プロンプトトークンを削減できる。
+> plugin settings の `includeGitInstructions: false` を有効にしてプロンプトトークンを削減できる。
 
 > **Prompt Cache (CC 2.1.108+)**: 長めの実装や `--resume` を多用する作業では
 > `ENABLE_PROMPT_CACHING_1H=1` を優先する。
@@ -253,34 +151,8 @@ cross-CLI review は **OK まで反復**する（DoD 未達なら精緻化タス
 ## Effort レベル制御（Opus 4.8 / v2.1.111+）
 
 effort はモデルの推論強度を選ぶ正式なノブ。`low(○)/medium(◐)/high(●)/xhigh` の 4 段階で、
-`/effort auto` でデフォルトにリセットできる（`max` は v2.1.72 で廃止、`xhigh` が後継）。
-
-Opus 4.8 では thinking は既定 off で、effort が推論深度の主レバー（過去のどの Opus より effort の影響が大きい）。
-「浅い推論」を観測したら prompt で回避せず effort を上げる。
-そのため複雑タスクの強化は **free-text marker（旧 `ultrathink`）を spawn prompt に注入する方式を廃止**し、
-複雑度スコアから **Worker spawn の effort tier を選ぶ**方式に統一する。
-これは `docs/model-routing-policy.md`（effort を free-text から推測しない）と
-`.claude/rules/opus-4-7-prompt-audit.md` 合格条件 5（`xhigh` は呼び出し側が選ぶ）と整合する。
-
-### 多要素スコアリング
-
-タスク着手時に以下のスコアを合算する。
-
-| 要素 | 条件 | スコア |
-|------|------|--------|
-| ファイル数 | 変更対象 4 ファイル以上 | +1 |
-| ディレクトリ | core/, guardrails/, security/ を含む | +1 |
-| キーワード | architecture, security, design, migration を含む | +1 |
-| 失敗履歴 | agent memory に同タスクの失敗記録あり | +2 |
-| 明示指定 | PM テンプレートに `effort: high` / `effort: xhigh`（旧 `ultrathink` も互換受理）記載あり | +3（自動採用） |
-
-### effort tier の決め方（注入しない）
-
-スコアから effort tier を **escalation signal** として決める（`ultrathink` 等の marker 文字列を spawn prompt に **書かない**）。
-適用 lever は次の 2 つだけ:
-
-- **session `/effort`**: 複雑タスクのバッチに入る前に host が `/effort high` / `/effort xhigh` を設定する（session 単位で効く確実な lever）。
-- **worker frontmatter**: `agents/worker.md` の `effort`（既定 `medium`）が floor。CC の Agent / Task spawn API は per-spawn の effort 指定を公開しないため、worker 1 体ごとに effort を上げる機構はない。スコアは `worker-report.v1` の `task_complexity_note` に記録し、Lead が session effort 引き上げの判断材料にする。
+`/effort auto` でデフォルトにリセットできる。複雑度スコア（ファイル数・対象ディレクトリ・キーワード・失敗履歴・明示指定を合算）から
+tier を決め、free-text marker（旧 `ultrathink`）を spawn prompt に注入する方式は使わない。
 
 | スコア | code-risk（core/guardrails/security/architecture/migration を含む） | effort tier |
 |--------|-----------------------------------|-------------|
@@ -288,8 +160,8 @@ Opus 4.8 では thinking は既定 off で、effort が推論深度の主レバ�
 | ≥ 3 | なし | `high` |
 | ≥ 3 | あり | `xhigh` |
 
-breezing モードでも同じロジックを適用する（harness-work が一本化して管理）。
-Worker は Sonnet 4.6 のため `xhigh` は実効 `high` にダウングレードされるが、tier 引き上げ自体は有効（`docs/effort-level-policy.md`）。
+breezing モードでも同じロジックを適用する（harness-work が一本化して管理）。スコアリング内訳・lever の詳細は
+[references/effort-routing.md](${CLAUDE_SKILL_DIR}/references/effort-routing.md) を参照。
 
 ## 実行モード詳細
 
@@ -385,65 +257,10 @@ backend=`cursor` / `codex` の場合は native Worker spawn を使わず、task 
 
 ### Solo モード（1 件時の自動選択）
 
-1. Plans.md を読み込み、対象タスクを特定
-   - **Plans.md が存在しない場合**: `harness-plan create --ci` を自動呼び出し → Plans.md を生成して続行
-   - ヘッダーに DoD / Depends カラムがない場合: `Plans.md が旧フォーマットです。harness-plan create で再生成してください。` → **停止**
-   - **会話に未記載タスクがある場合**: 直前の会話コンテキストから要件を抽出し、Plans.md に `cc:TODO` で自動追記
-     - 抽出ロジック: ユーザー発言からアクション動詞（「〜を追加」「〜を修正」「〜を実装」）を検出
-     - 追記時は v2 フォーマット（Task / 内容 / DoD / Depends / Status）に準拠
-     - 追記後、ユーザーに「Plans.md に以下を追記しました」と表示（5 秒タイムアウト付きプロンプト、デフォルト: 続行）
-1.5. **タスク背景確認**（30 秒）:
-   - タスクの「内容」と「DoD」から **目的**（このタスクが解く課題）を 1 行で推論表示
-   - `git grep` / `Glob` で **影響範囲**（変更が及ぶファイル/モジュール）を推論表示
-   - 推論に自信がある場合: そのまま実装に進む（フロー遅延なし）
-   - 推論に自信がない場合: ユーザーに 1 問だけ確認（「この理解で合っていますか？」）
-1.6. **仕様正本 preflight**:
-   - 既存の project spec SSOT を探す（例: `docs/spec/00-project-spec.md`, `docs/ARCHITECTURE.md`, `docs/HANDOFF.md`, `docs/oem/PROJECT_COMPASS.md`, `docs/specs/`）
-   - task が product behavior / API / data model / permission / billing / integration / tenant boundary を変える場合、spec がなければ `docs/spec/00-project-spec.md` を作る
-   - spec が古い、または task と矛盾する場合は、実装前に spec を更新する
-   - typo / format / dependency bump / docs-only / 動作変更なし refactor は skip 理由を残して続行する
-   - Worker / Reviewer へ渡す context には `spec_path` または `spec_skip_reason` を含める
-1.7. **plan-time 事前確認の読み込み**:
-   - run 開始時に `.claude/state/plan-preapprovals.json` があれば読み、`templates/schemas/plan-preapproval.v1.json` で validate する（helper: `bash "${HARNESS_PLUGIN_ROOT}/scripts/plan-preapproval.sh" validate .claude/state/plan-preapprovals.json`）。
-   - 対象 task の `scope.phase` / `scope.task` に一致し、`decision: approved` の事項だけを今回の宣言済み事項として扱う。
-   - 宣言済みの `secret-read` は `bash "${HARNESS_PLUGIN_ROOT}/scripts/plan-preapproval.sh" apply-secret-allow "$PROJECT_ROOT"` で project config `.claude-code-harness.config.json` の `runtimefloor.secretAllow` に per-run 反映してから実装へ進む。これは 108.2 の project config 経由 runtime floor と接続する手順であり、広域常設 env allow ではない。
-   - 宣言済みの外部送信 / 破壊的操作は worker briefing と sprint-contract context に「plan 承認済み」として渡し、同一事項を理由に work 中の AskUserQuestion を出さない。
-   - 確認は plan 承認時 1 回のみ。work 中の宣言済み事項起因 `AskUserQuestion` はゼロにする。
-   - 記録に無い未計画の secret-read / 外部送信 / 破壊的操作は従来どおり runtime floor / ask で停止する。未宣言を黙って allowlist に追加しない。
-2. タスクを `cc:WIP` に更新
-3. **TDD フェーズ**（`[skip:tdd]` なし & テストFW存在時）:
-   a. テストファイルを先に作成（Red）
-   b. 失敗を確認
-   c. `bash "${HARNESS_PLUGIN_ROOT}/scripts/log-tdd-red.sh"` で `.claude/state/tdd-red-log/<task-id>.jsonl` に FAIL 証跡を残す。script が利用できない環境では、literal な failing test output を worker-report の `self_review` evidence に添付する
-   d. `--tdd-bypass` を使う場合は、`HARNESS_TDD_BYPASS=1` と `HARNESS_TDD_BYPASS_REASON="<理由>"` を明示し、TDD を省略した理由を sprint-contract / worker-report に残す
-4. `node "${HARNESS_PLUGIN_ROOT}/scripts/generate-sprint-contract.js" <task-id>` で `sprint-contract.json` を生成
-5. Reviewer 観点の追記を `bash "${HARNESS_PLUGIN_ROOT}/scripts/enrich-sprint-contract.sh"` で加え、`bash "${HARNESS_PLUGIN_ROOT}/scripts/ensure-sprint-contract-ready.sh"` で approved を確認
-6. **Advisor consult（必要時のみ）**:
-   - 高リスク task（`needs-spike` / `security-sensitive` / `state-migration`）は、初回実行前に 1 回だけ相談する
-   - 同じ原因の失敗が 2 回続いたら、3 回目に入る前に相談する
-   - plateau（行き詰まり検知）が `PIVOT_REQUIRED` を返した時は、ユーザーへ止めて投げる前に 1 回だけ相談する
-   - 相談結果は `advisor-response.v1` で受け取り、`PLAN` は進め方の組み替え、`CORRECTION` は局所修正、`STOP` は即エスカレーションとして扱う
-   - 同じ `trigger_hash` では 1 回しか相談しない。task ごとの相談回数は最大 3 回
-7. backend-resolved executor path でコードを実装（Green）
-   - backend=`claude`: local / native Read/Write/Edit/Bash path で実装
-   - backend=`cursor` / `codex`: 上記 companion worktree path で実装し、`companion-result.v1` を共通 review loop に渡す
-8. `/simplify` で Auto-Refinement（`--no-simplify` で省略可）
-9. **自動レビューステージ**（「レビューループ」参照）:
-   - Codex exec 優先でレビュー実行 → フォールバックで内部 Reviewer agent
-   - `sprint-contract.json` の `reviewer_profile` が `runtime` の場合は `bash "${HARNESS_PLUGIN_ROOT}/scripts/run-contract-review-checks.sh"` を実行
-   - REQUEST_CHANGES の場合: 指摘を元に修正→再レビュー（`MAX_REVIEWS = read_contract(contract_path, ".review.max_iterations") or 3`）
-   - APPROVE で次ステップへ。self-check だけでは完了を確定しない
-10. `bash "${HARNESS_PLUGIN_ROOT}/scripts/write-review-result.sh"` で review artifact を正規化して保存（browser profile は `--browser-result` を渡し、`browser_verdict == PENDING_BROWSER` の時は static verdict を採用）
-11. `git commit` で自動コミット（`--no-commit` で省略可）
-12. タスクを `cc:完了` に更新（commit hash 付与）
-   - `git log --oneline -1` で直近の commit hash（短縮形 7 文字）を取得
-   - Plans.md の Status を `cc:完了 [a1b2c3d]` 形式で更新
-   - commit がない場合（`--no-commit` 時）は hash なしで `cc:完了` のみ
-13. **リッチ完了報告**（`Completion Report Output Contract` と `references/completion-report.md` を参照）
-14. **失敗時の自動再計画**（テスト/CI 失敗時のみ）:
-    - テスト実行結果を確認
-    - 失敗した場合: 修正タスク案を state に保存し、承認コマンド経由で Plans.md に追加（「失敗タスクの自動再チケット化」参照）
-    - 成功した場合: 次タスクへ進む
+Plans.md 読み込みから `cc:完了 [hash]` までの 1〜17 ステップ完全版は
+[references/execution-modes.md#solo-detailed-steps](${CLAUDE_SKILL_DIR}/references/execution-modes.md) を参照。
+要点: **仕様正本 preflight** で spec SSOT の有無を確認し `spec_path` を Worker/Reviewer に渡す。plan-time 事前確認を適用し、
+work 中の宣言済み事項起因 `AskUserQuestion` はゼロにする。TDD Red → sprint-contract → 実装 → レビューループ → commit → `cc:完了` の順で進める。
 
 ### Parallel モード（2〜3 件時の自動選択 / `--parallel N` で強制）
 
@@ -495,36 +312,23 @@ bootstrap route。Cursor は `candidate` のまま — supported claim は禁止
 - **Multitask / background agents**: smoke target のみ。Claude Agent Teams parity
   を主張しない
 
-Model routing:
-
 ```bash
 bash scripts/model-routing.sh --host cursor --role worker --format json
+bash tests/test-cursor-adapter-candidate.sh
 ```
 
 Explicit Task/subagent `model` が routed default より優先。
-
-検証:
-
-```bash
-bash tests/test-cursor-adapter-candidate.sh
-```
 
 ### Breezing モード（4 件以上で自動選択 / `--breezing` で強制）
 
 Lead / Worker / Advisor / Reviewer の役割分離でチーム実行する。
 Codex では `spawn_agent`, `wait`, `send_input`, `resume_agent`, `close_agent`
-を使った native subagent orchestration を前提にし、
-古い TeamCreate / TaskCreate ベースの説明を採らない。
+を使った native subagent orchestration を前提にする。
 Cursor では Task/subagent/background agents へ mapping するが、
 review/cherry-pick の直列責務は core 側に残す（adapter smoke target）。
 
-**権限ポリシー**:
-- 現行の shipped default は `bypassPermissions`
-- `--auto-mode` は互換な親セッション向けの opt-in rollout フラグとして扱う
-- `permissions.defaultMode` や agent frontmatter の `permissionMode` には未文書化の `autoMode` 値を書かない
-
-> **CC v2.1.69+**: nested teammates はプラットフォーム側で禁止されるため、
-> Worker/Reviewer プロンプトには冗長な nested 防止文言を追加しない。
+**権限ポリシー**: 現行の shipped default は `bypassPermissions`。`--auto-mode` は互換な親セッション向けの opt-in rollout フラグ。
+`permissions.defaultMode` や agent frontmatter の `permissionMode` には未文書化の `autoMode` 値を書かない。
 
 ```
 Lead (this agent)
@@ -533,246 +337,49 @@ Lead (this agent)
 └── Reviewer (code-reviewer agent) — レビュー担当
 ```
 
-**Phase A: Pre-delegate（準備）**:
-1. Plans.md を読み込み、対象タスクを特定
-2. 依存グラフを解析し、実行順序を決定（Depends カラム）
-3. `.claude/state/plan-preapprovals.json` を読み、存在する場合は `bash "${HARNESS_PLUGIN_ROOT}/scripts/plan-preapproval.sh" validate .claude/state/plan-preapprovals.json` で validate する
-4. 実行対象 task の `decision: approved` 事項を worker briefing に渡す。`secret-read` は `bash "${HARNESS_PLUGIN_ROOT}/scripts/plan-preapproval.sh" apply-secret-allow "$PROJECT_ROOT"` で project config の `runtimefloor.secretAllow` へ per-run 反映する。宣言済み事項では途中停止せず、同一事項起因の `AskUserQuestion` は出さない
-5. 記録に無い未計画の secret-read / 外部送信 / 破壊的操作は従来どおり runtime floor / ask で停止する
-6. 各タスクの effort スコアリング（effort tier 判定 — high/xhigh）
-7. `node "${HARNESS_PLUGIN_ROOT}/scripts/generate-sprint-contract.js"` で `sprint-contract.json` を生成
-8. `bash "${HARNESS_PLUGIN_ROOT}/scripts/enrich-sprint-contract.sh"` で Reviewer 観点を加え、`bash "${HARNESS_PLUGIN_ROOT}/scripts/ensure-sprint-contract-ready.sh"` で未承認なら停止
+Phase A（準備: Plans.md 読み込み・依存解決・plan-preapproval 適用・effort スコアリング・sprint-contract 生成）→
+Phase B（各タスク: Worker spawn → 必要時 Advisor → self_review ゲート → レビューループ → APPROVE で trunk へ cherry-pick）→
+Phase C（統合: commit log 集計・リッチ完了報告・Plans.md 最終確認）の 3 段構成。
+完全版の pseudocode（B-1〜B-7 の逐次手順含む）は
+[references/execution-modes.md#breezing-phase-detail](${CLAUDE_SKILL_DIR}/references/execution-modes.md) を参照。
 
-**Phase B: Delegate（Worker spawn → 必要時 Advisor → レビュー → cherry-pick）**:
+### Active task scope
 
-各タスクについて以下を**逐次**実行する（依存順）:
+各タスクの preapproval preflight より前に、対象 worktree の
+`.claude/state/active-task.json` へ `{"phase":"<phase>","task":"<task>"}` を
+原子的に書く。Go guardrail はこのファイルを現在スコープの正本として読む。
+タスク終了時は成功、失敗、停止のどの経路でも削除する。環境変数
+`HARNESS_ACTIVE_PHASE` / `HARNESS_ACTIVE_TASK` は、state ファイルが存在しない
+host の fallback に限る。
 
-> **API 注記**: 以下は Claude Code の API 構文で記述。
-> Codex 環境では `Agent(...)` → `spawn_agent(...)`, `SendMessage(...)` → `send_input(...)` に読み替え。
-> 詳細は `team-composition.md` の API マッピング表を参照。
-
-```
-for task in execution_order:
-    # B-1. sprint-contract を生成
-    contract_path = bash("node \"${HARNESS_PLUGIN_ROOT}/scripts/generate-sprint-contract.js\" {task.number}")
-    contract_path = bash("bash \"${HARNESS_PLUGIN_ROOT}/scripts/enrich-sprint-contract.sh\" {contract_path} --check \"DoD を reviewer 観点で確認\" --approve")
-    bash("bash \"${HARNESS_PLUGIN_ROOT}/scripts/ensure-sprint-contract-ready.sh\" {contract_path}")
-
-    # B-2. Worker spawn（フォアグラウンド、worktree 分離）
-    # Agent tool の戻り値に agentId が含まれる — 修正ループで SendMessage に使用
-    Plans.md: task.status = "cc:WIP"  # 着手時に更新（未着手タスクは cc:TODO のまま）
-
-    # 逐次 /harness-work を連打している時も universal violations を伝播させる
-    # （初回実行時は universal_violations = [] で初期化済み想定）
-    briefing_header = ""
-    if universal_violations:
-        briefing_header = (
-            "🚨 同一セッションで既に検出された universal 違反（再発禁止）:\n"
-            + "\n".join(f"- {v}" for v in universal_violations)
-            + "\n\n"
-        )
-
-    worker_result = Agent(
-        subagent_type="claude-code-harness:worker",
-        prompt=briefing_header + "タスク: {task.内容}\nDoD: {task.DoD}\ncontract_path: {contract_path}\nmode: breezing",
-        isolation="worktree",
-        run_in_background=false  # フォアグラウンドで実行 → Worker 完了まで待機
-    )
-    worker_id = worker_result.agentId  # SendMessage 用に保持
-    # worker_result には {commit, worktreePath, files_changed, summary} が含まれる
-
-    # B-3. Worker が advice request を返した時だけ、Lead が Advisor を呼ぶ
-    if worker_result.type == "advisor-request.v1":
-        advisor_result = Advisor(
-            prompt=worker_result.request_json
-        )
-        worker_result = SendMessage(
-            to=worker_id,
-            message="advisor-response.v1: {advisor_result}"
-        )
-
-    # B-3.5. self_review ゲート（Reviewer spawn 前、Lead が機械的に検証）
-    # Worker の worker-report.v1 に active self_review rules がそろい、全 verified=true かつ evidence 非空であること
-    # tdd.enforce.enabled=true かつ tdd_required=true の時は `tdd-red-evidence-attached` も active rule として必須
-    # verified=false または evidence=="" が 1 件でもあれば Reviewer を spawn せず Worker に差し戻す
-    self_review_failures = 0
-    MAX_SELF_REVIEW_RETRIES = 2  # 3 回目 (retries=2) で Lead が escalate
-    while True:
-        unverified = [
-            r for r in worker_result.self_review
-            if (not r.get("verified")) or (not r.get("evidence"))
-        ]
-        if not unverified:
-            break  # 全 rule verified → B-4 (実レビュー) へ進む
-        self_review_failures += 1
-        if self_review_failures > MAX_SELF_REVIEW_RETRIES:
-            # 3 回目でも未確認項目あり → Lead に escalate
-            Plans.md: task.status = "cc:TODO"  # 着手前に戻す
-            raise EscalationError(f"self_review が 3 回の差し戻しでも未確認 (rules: {[u['rule'] for u in unverified]})")
-        # Worker に差し戻し (Reviewer spawn せず)
-        SendMessage(
-            to=worker_id,
-            message=f"self_review に未確認 rule があります: {[u['rule'] for u in unverified]}。各 rule の evidence を実コマンド出力または literal テスト結果で埋め、TDD 必須時は .claude/state/tdd-red-log/<task-id>.jsonl または literal failing test output を添えて verified=true にしてから amend してください"
-        )
-        worker_result = wait_for_response(worker_id)
-
-    # B-4. Lead がレビュー実行（Codex exec 優先）
-    diff_text = git("-C", worker_result.worktreePath, "show", worker_result.commit)
-    verdict = codex_exec_review(diff_text) or reviewer_agent_review(diff_text)
-    profile = jq(contract_path, ".review.reviewer_profile")
-    review_input = "review-output.json"
-    if profile == "runtime":
-        review_input = bash("cd {worker_result.worktreePath} && bash \"${HARNESS_PLUGIN_ROOT}/scripts/run-contract-review-checks.sh\" {contract_path}")
-        runtime_verdict = jq(review_input, ".verdict")
-        if runtime_verdict == "REQUEST_CHANGES":
-            verdict = "REQUEST_CHANGES"
-        elif runtime_verdict == "DOWNGRADE_TO_STATIC":
-            pass  # runtime 検証コマンドなし → static verdict をそのまま使う
-    browser_result = ""
-    if profile == "browser":
-        # browser artifact から route / browser_mode / execution_instructions を再利用して browser runner を起動する。
-        browser_artifact = bash("bash \"${HARNESS_PLUGIN_ROOT}/scripts/generate-browser-review-artifact.sh\" {contract_path}")
-        browser_result = bash("bash \"${HARNESS_PLUGIN_ROOT}/scripts/browser-review-runner.sh\" {browser_artifact}")
-        browser_verdict = jq(browser_result, ".browser_verdict")
-        if browser_verdict == "REQUEST_CHANGES":
-            verdict = "REQUEST_CHANGES"
-        elif browser_verdict == "APPROVE" and verdict != "REQUEST_CHANGES":
-            verdict = "APPROVE"
-        # browser_verdict == PENDING_BROWSER のときは static verdict を維持する
-    # review_input が DOWNGRADE_TO_STATIC の場合は static review 結果を使う
-    if review_input != "review-output.json" and jq(review_input, ".verdict") == "DOWNGRADE_TO_STATIC":
-        review_input = "review-output.json"  # static review の結果にフォールバック
-    bash("bash \"${HARNESS_PLUGIN_ROOT}/scripts/write-review-result.sh\" {review_input} {latest_commit} --browser-result {browser_result}")
-
-    # B-5. 修正ループ（REQUEST_CHANGES 時、contract の max_iterations まで）
-    # Worker はフォアグラウンドで完了済みだが、SendMessage で再開可能
-    # （CC: SendMessage(to: agentId) / Codex: resume_agent(agent_id) + send_input）
-    review_count = 0
-    # sprint-contract が存在するときのみ max_iterations を読む。存在しない場合は 3（後方互換）
-    MAX_REVIEWS = read_contract(contract_path, ".review.max_iterations") or 3
-    latest_commit = worker_result.commit
-    while verdict == "REQUEST_CHANGES" and review_count < MAX_REVIEWS:
-        SendMessage(to=worker_id, message="指摘内容: {issues}\n修正して amend してください")
-        # Worker が修正 → amend → 更新された commit hash を返す
-        updated_result = wait_for_response(worker_id)
-        latest_commit = updated_result.commit
-        diff_text = git("-C", worker_result.worktreePath, "show", latest_commit)
-        verdict = codex_exec_review(diff_text) or reviewer_agent_review(diff_text)
-        review_count++
-
-    # B-6. APPROVE → trunk に cherry-pick（feature ブランチ経由）
-    # Worker の Branch Guard により trunk HEAD は動かず、commit は feature ブランチ上にある想定
-    if verdict == "APPROVE":
-        TRUNK=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's|refs/remotes/origin/||' || echo "main")
-        git checkout "$TRUNK"  # safety: 既に trunk なら no-op
-        # feature ブランチの commit が既に trunk にある（Branch Guard 失敗時のフォールバック）か確認
-        if git("merge-base", "--is-ancestor", latest_commit, "HEAD"):
-            pass  # 既に trunk 上 — cherry-pick 不要（再入防止）
-        else:
-            git cherry-pick --no-commit {latest_commit}  # feature branch → trunk
-            git commit -m "{task.内容}"
-        # Worker の worktree を remove してから feature ブランチを削除
-        if worker_result.worktreePath:
-            git worktree remove {worker_result.worktreePath} --force
-        if worker_result.branch and worker_result.branch not in ["main", "master"] and worker_result.branch != TRUNK:
-            git branch -D {worker_result.branch}
-        Plans.md: task.status = "cc:完了 [{hash}]"
-        # auto-checkpoint 記録（冪等性ガード (c)）
-        # Plans.md 書き換え直後に呼ぶ。失敗しても fail-open（|| true）でループを止めない
-        HASH=$(git rev-parse --short HEAD)
-        REVIEW_RESULT_PATH=".claude/state/review-results/${task.number}.review-result.json"
-        bash "${HARNESS_PLUGIN_ROOT}/scripts/auto-checkpoint.sh" \
-            "${task.number}" "${HASH}" "${contract_path}" "${REVIEW_RESULT_PATH}" \
-            || true  # fail-open: harness-mem 未起動環境でも継続
-    else:
-        → ユーザーにエスカレーション
-
-    # B-7. Progress feed
-    print("📊 Progress: Task {completed}/{total} 完了 — {task.内容}")
-```
+Parallel / Breezing ではタスクごとの worktree に書く。同じ worktree の
+`active-task.json` を複数タスクで共有しない。
 
 ### Advisor Protocol（全モード共通）
 
-Advisor は「実装者」でも「レビュー担当」でもない。
-迷った時だけ、実行役が次の一歩を決めるための相談役として入る。
+Advisor は「実装者」でも「レビュー担当」でもない。迷った時だけ、実行役が次の一歩を決めるための相談役として入る。
 
 1. Worker は generic な subagent を増やさず、必要時だけ `advisor-request.v1` を返す
 2. Lead が advisor を 1 回だけ呼ぶ
 3. Advisor は `PLAN` / `CORRECTION` / `STOP` のどれかを返す
-4. Lead はその advice を同じ Worker に返して続行させる
+4. Lead はその advice（`advisor-response.v1`）を同じ Worker に返して続行させる
 5. Reviewer は最後の成果物だけを見る。advisor の返答に APPROVE / REQUEST_CHANGES を出さない
 
-### Solo モードでの Advisor
+solo 実行では親セッション自身が Lead を兼ねる（自分で実装し、自分で advisor に相談し、最後は独立レビューに回す）。
+相談条件・budget は breezing と同じで、task ごとの相談回数は最大 3 回。`STOP` はその場で止まり、ユーザー判断へ上げる。review artifact のゲートは飛ばさない。
 
-solo 実行では親セッション自身が Lead を兼ねる。
-つまり「自分で実装し、自分で advisor に相談し、最後は独立レビューに回す」形になる。
+### Sprint Contract と PR Closeout
 
-- 相談条件は loop / breezing と同じ
-- 相談 budget も task ごとに最大 3 回で同じ
-- `STOP` はその場で止まり、ユーザー判断へ上げる
-- review artifact の gate は飛ばさない
+`sprint-contract` は「このタスクを何で合格にするか」を機械可読にする契約ファイル（既定: `.claude/state/contracts/<task-id>.sprint-contract.json`、`generate-sprint-contract.js` で生成）。
+`runtime_validation` の LSP/AST ワークフロー方針:
 
-### Sprint Contract
+- If you grep the same symbol twice in the same session, switch to harness_ast_search.
+- For a bugfix where homologous implementations appear across multiple modules, run harness_ast_search to find all implementations before editing.
+- Only when changed files include .ts or .tsx, the DoD requires zero new harness_lsp_diagnostics errors; if the harness MCP is not connected or the changed file types are not eligible, treat diagnostics as not-configured and non-blocking.
 
-`sprint-contract` は「このタスクを何で合格にするか」を機械でも人でも同じ意味で読める形にする小さな契約ファイルです。
-既定の保存先は `.claude/state/contracts/<task-id>.sprint-contract.json` です。
-
-```bash
-node "${HARNESS_PLUGIN_ROOT}/scripts/generate-sprint-contract.js" 32.1.1
-```
-
-生成物には次を含めます。
-
-- `checks`: DoD を分解した確認項目
-- `non_goals`: 今回やらないこと
-- `runtime_validation`: test, lint, typecheck などの検証コマンド
-  - If you grep the same symbol twice in the same session, switch to harness_ast_search.
-  - For a bugfix where homologous implementations appear across multiple modules, run harness_ast_search to find all implementations before editing.
-  - Only when changed files include .ts or .tsx, the DoD requires zero new harness_lsp_diagnostics errors; if the harness MCP is not connected or the changed file types are not eligible, treat diagnostics as not-configured and non-blocking.
-- `browser_validation`: browser reviewer が残すべき UI フロー検証項目
-- `browser_mode`: `scripted` または `exploratory`
-- `route`: browser reviewer が `playwright` / `agent-browser` / `chrome-devtools` のどれを使うか
-- `risk_flags`: `needs-spike`, `security-sensitive`, `ux-regression` など
-- `reviewer_profile`: `static`, `runtime`, `browser`
-
-**必須メタデータ（lane / stage / evidence）** — Worker / Scaffolder / Reviewer へ渡す sprint contract input:
-
-| フィールド | 意味 | 例 |
-|-----------|------|-----|
-| `spec_path` | root `spec.md`（または最寄 sub-spec）のパス | `spec.md`, `docs/spec/00-project-spec.md` |
-| `lane` | タスクの lane taxonomy | `fast`, `gate`, `release` |
-| `stage` | 5-stage gate の現在段階 | `research`, `plan`, `impl`, `review`, `closeout` |
-| `research_evidence` | research 結果の link / commit / file | `docs/research/phase-72-evidence.md`, commit hash |
-| `tdd_red_log` | `[tdd:required]` タスクの RED 証跡（commit hash または log path） | `.claude/state/tdd-red-log/72.1.3.jsonl`, `abc1234` |
-| `review_artifact` | review verdict と findings | `{ verdict: "APPROVE", findings: [...] }` |
-| `pr_closeout` | closeout artifact（base/head refs + evidence pack） | `{ base_ref, head_ref, evidence_pack }` |
-
-`generate-sprint-contract.js` 実行時、Lead は `spec_path` / `lane` / `stage` を Plans metadata から contract に載せ、research 完了後は `research_evidence` を追記する。TDD Red 後は `tdd_red_log` を載せ、review 後は `review_artifact`、PR closeout 後は `pr_closeout` を載せる。
-
-**TDD 完了ゲート**: `[tdd:required]` タスクでは sprint contract に `tdd_red_log` または明示 `skip_tdd_reason` が無い限り完了扱いにしない（`cc:完了` 更新・cherry-pick・PR closeout すべて対象）。
-
-### PR Closeout（review APPROVE 後）
-
-review APPROVE 後の PR title/body は `bash "${HARNESS_PLUGIN_ROOT}/scripts/harness-pr-closeout.sh"` で evidence pack から組み立てる。**default は `dry-run` preview**（`git push` / `gh pr create` は `push` サブコマンド + 確認または `--yes` のみ）。
-
-```bash
-bash "${HARNESS_PLUGIN_ROOT}/scripts/harness-pr-closeout.sh" build \
-  --base origin/main --head "$(git branch --show-current)" \
-  --evidence .claude/state/evidence-pack.json \
-  --out .claude/state/pr-payload.json
-bash "${HARNESS_PLUGIN_ROOT}/scripts/harness-pr-closeout.sh" dry-run --payload .claude/state/pr-payload.json
-# 明示 push のみ（確認必須、--yes で skip 可）:
-bash "${HARNESS_PLUGIN_ROOT}/scripts/harness-pr-closeout.sh" push --payload .claude/state/pr-payload.json
-```
-
-`harness-review` 経路からの自動 push / PR / merge は禁止（read-only boundary）。detached HEAD では `push` 前に branch 作成が必要。
-
-**Fast lane の軽量化境界**: `lane: fast` は full review を省略できるが、`not_observed != absent` の unknown data contract と focused checks（`runtime_validation` / `checks` の DoD 分解）は省かない。
-
-**Phase C: Post-delegate（統合・報告）**:
-1. 全タスクの commit log を集計
-2. **リッチ完了報告**（`Completion Report Output Contract` と `references/completion-report.md` の Breezing テンプレート）を出力
-3. Plans.md の最終確認（全タスク cc:完了 になっているか）
+`spec_path` / `lane` / `stage` / `research_evidence` / `tdd_red_log` / `review_artifact` / `pr_closeout` のフィールド仕様と、
+review APPROVE 後の PR title/body 組み立て（`harness-pr-closeout.sh`、既定 `dry-run`）の詳細は
+[references/sprint-contract.md](${CLAUDE_SKILL_DIR}/references/sprint-contract.md) を参照。
 
 ## CI 失敗時の対応
 
@@ -785,133 +392,16 @@ CI が失敗した場合:
 
 ## 失敗タスクの自動再チケット化
 
-タスク完了後にテスト/CI が失敗した場合、修正タスク案を自動生成し、承認後に Plans.md へ反映する:
-
-### トリガー条件
-
-| 条件 | アクション |
-|------|----------|
-| `cc:完了` 後にテスト失敗 | 修正タスク案を state に保存し、承認を待つ |
-| CI 失敗（3回未満） | 修正を実施し、失敗カウントをインクリメント |
-| CI 失敗（3回目） | 修正タスク案を提示 + エスカレーション |
-
-### 修正タスクの自動生成
-
-1. 失敗原因を分類（syntax_error / import_error / type_error / assertion_error / timeout / runtime_error）
-2. `.claude/state/pending-fix-proposals.jsonl` に修正タスク案を保存:
-   - 番号: 元タスク番号 + `.fix` サフィックス（例: `26.1.fix`）
-   - 内容: `fix: [元タスク名] - [失敗原因カテゴリ]`
-   - DoD: テスト/CI が通ること
-   - Depends: 元タスク番号
-3. ユーザーが `approve fix <task_id>` を送ると Plans.md に `cc:TODO` で追加
-4. `reject fix <task_id>` で提案を破棄。pending が1件だけのときは `yes` / `no` でも応答可能
+タスク完了後にテスト/CI が失敗した場合、修正タスク案を自動生成し、承認後に Plans.md へ反映する。
+トリガー条件・生成フォーマット・承認コマンド（`approve fix <task_id>` / `reject fix <task_id>`）の詳細は
+[references/failure-reticketing.md](${CLAUDE_SKILL_DIR}/references/failure-reticketing.md) を参照。
 
 ## レビューループ
 
-実装完了後（ステップ 5 の後）に自動実行される品質検証ステージ。
-**全モード共通**（Solo / Parallel / Breezing）で統一的に適用される。
-Parallel モードでは各 Worker が step 10（外部レビュー受付）として同じループを実行する。
-
-### レビュー実行の優先順位
-
-```
-1. Codex exec（優先）
-   ↓ codex コマンドが存在しない or タイムアウト（120s）
-2. 内部 Reviewer agent（フォールバック）
-```
-
-### APPROVE / REQUEST_CHANGES の判定基準
-
-レビュアーには以下の閾値基準を渡し、**この基準のみ**で verdict を判定させる。
-基準外の改善提案は `recommendations` として返すが、verdict には影響しない。
-
-| 重要度 | 定義 | verdict への影響 |
-|--------|------|-----------------|
-| **critical** | セキュリティ脆弱性、データ損失リスク、本番障害の可能性 | 1 件でも → REQUEST_CHANGES |
-| **major** | 既存機能の破壊、仕様との明確な矛盾、テスト不通過 | 1 件でも → REQUEST_CHANGES |
-| **minor** | 命名改善、コメント不足、スタイル不統一 | verdict に影響しない |
-| **recommendation** | ベストプラクティス提案、将来の改善案 | verdict に影響しない |
-
-> **重要**: minor / recommendation のみの場合は **必ず APPROVE** を返すこと。
-> 「あったほうが良い改善」は REQUEST_CHANGES の理由にならない。
-
-### Codex exec レビュー（公式プラグイン経由）
-
-タスク開始時の HEAD を `BASE_REF` として保持し、その ref との差分をレビュー対象にする。
-公式プラグイン `codex-plugin-cc` の companion review を使用する。
-
-```bash
-# タスク開始時に base ref を記録（Step 2 の cc:WIP 更新前に実行）
-BASE_REF=$(git rev-parse HEAD)
-
-# ... 実装完了後 ...
-
-# 公式プラグインの構造化レビューを実行
-bash "${HARNESS_PLUGIN_ROOT}/scripts/codex-companion.sh" review --base "${BASE_REF}"
-REVIEW_EXIT=$?
-```
-
-**verdict マッピング**（公式プラグイン → Harness 形式）:
-
-公式プラグインは `review-output.schema.json` 準拠の構造化出力を返す。
-Harness の verdict 形式への変換ルール:
-
-| 公式 plugin | Harness | verdict 影響 |
-|---|---|---|
-| `approve` | `APPROVE` | - |
-| `needs-attention` | `REQUEST_CHANGES` | - |
-| `findings[].severity: critical` | `critical_issues[]` | 1件でも → REQUEST_CHANGES |
-| `findings[].severity: high` | `major_issues[]` | 1件でも → REQUEST_CHANGES |
-| `findings[].severity: medium/low` | `recommendations[]` | verdict に影響しない |
-
-AI Residuals スキャンは引き続き `bash "${HARNESS_PLUGIN_ROOT}/scripts/review-ai-residuals.sh"` で実行し、
-companion review の結果と合わせて最終 verdict を判定する。
-
-```bash
-# AI Residuals スキャン（companion review と並行実行可能）
-AI_RESIDUALS_JSON="$(bash "${HARNESS_PLUGIN_ROOT}/scripts/review-ai-residuals.sh" --base-ref "${BASE_REF}" --include-untracked 2>/dev/null || echo '{"tool":"review-ai-residuals","scan_mode":"diff","base_ref":null,"include_untracked":true,"files_scanned":[],"untracked_files_scanned":[],"summary":{"verdict":"APPROVE","major":0,"minor":0,"recommendation":0,"total":0},"observations":[]}')"
-```
-
-### 内部 Reviewer agent フォールバック
-
-Codex exec が使えない場合（`command -v codex` が失敗、または exit code ≠ 0）:
-
-```
-Agent tool: subagent_type="reviewer"
-prompt: "以下の変更をレビューしてください。判定基準: critical/major → REQUEST_CHANGES、minor/recommendation のみ → APPROVE。diff: {git diff ${BASE_REF}}"
-```
-
-Reviewer agent は Read-only（Write/Edit/Bash 無効）で安全にレビューを実行する。
-
-### 修正ループ（REQUEST_CHANGES 時）
-
-```
-review_count = 0
-# sprint-contract が存在するときのみ max_iterations を読む。存在しない場合は 3（後方互換）
-contract_path = get_sprint_contract_path()  # 例: .claude/state/contracts/<task-id>.sprint-contract.json
-MAX_REVIEWS = read_contract(contract_path, ".review.max_iterations") or 3
-
-while verdict == "REQUEST_CHANGES" and review_count < MAX_REVIEWS:
-    1. レビュー指摘を解析（critical / major のみ対象）
-    2. 各指摘に対して修正を実装
-    3. 再度レビューを実行（同じ判定基準・同じ優先順位）
-    review_count++
-
-if review_count >= MAX_REVIEWS and verdict != "APPROVE":
-    → ユーザーにエスカレーション
-    → 「MAX_REVIEWS 回修正しましたが以下の critical/major 指摘が残っています」+ 指摘一覧を表示
-    → ユーザー判断を待つ（続行 / 中断）
-```
-
-### Breezing モードでの適用
-
-Breezing モードでは **Lead** がレビューループを実行する（上記 Phase B 参照）:
-
-1. Worker が worktree 内で実装・commit → Lead に結果返却
-2. Lead が Codex exec でレビュー（優先）/ Reviewer agent（フォールバック）
-3. REQUEST_CHANGES → Lead が SendMessage で Worker に修正指示 → Worker が amend
-4. 修正後、再レビュー（`MAX_REVIEWS = read_contract(contract_path, ".review.max_iterations") or 3` 回まで）
-5. APPROVE → Lead が trunk（デフォルトブランチ）に cherry-pick → Plans.md を `cc:完了 [{hash}]` に更新
+実装完了後に自動実行される品質検証ステージ。**全モード共通**（Solo / Parallel / Breezing）で統一的に適用される。
+優先順位（Codex exec → 内部 Reviewer agent フォールバック）、APPROVE / REQUEST_CHANGES 判定基準（critical/major のみが verdict に影響）、
+verdict マッピング、修正ループ（`MAX_REVIEWS = read_contract(contract_path, ".review.max_iterations") or 3`）の完全版は
+[references/review-loop.md](${CLAUDE_SKILL_DIR}/references/review-loop.md) を参照。
 
 ## Completion Report Output Contract
 

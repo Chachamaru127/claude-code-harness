@@ -6,18 +6,7 @@ Phase 92.1.3 で導入。Worktree Root Discipline（`spec.md`）が「どこに 
 
 ## なぜこのルールが必要か
 
-Phase 92.1.1 の並列準備で、2 worker が同時に `CHANGELOG.md` を追記しようとすると
-cherry-pick 衝突が起きるリスクが顕在化した。Lead は両 worker に CHANGELOG 禁止を指示し、
-統合時に 2 エントリをまとめて追記する運用に切り替えた。
-
-同様に `Plans.md` / `spec.md` を複数 worker が同時編集すると、
-append-only でも cherry-pick 時に同一行付近の衝突が起きる。
-`VERSION` を worktree 内で bump すると trunk との 3 点同期（VERSION / plugin.json / harness.toml）が壊れる。
-`bin/harness` や mirror（`opencode/skills/` 等）を worktree ごとに再生成すると、
-バイナリ衝突と mirror drift の温床になる。
-
-この 3 つの不変条件（invariant）を Lead / Worker の sprint contract に明記し、
-並列実行のたびに再交渉しないようにする。
+背景 (why): [docs/rules/governance-rationale.md](../../docs/rules/governance-rationale.md#shared-file-disciplinemd)
 
 ## 3 つの invariant
 

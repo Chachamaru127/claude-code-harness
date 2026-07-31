@@ -2,6 +2,17 @@
 
 CHANGELOG の `## [X.Y.Z]` セクションを GitHub Release 用のノートに変換するルール。
 
+## CHANGELOG ドラフト作成（メモリ上、Pre-Gate ステップ 7）
+
+Confirmation Gate に提示する前に、以下をメモリ上で計算する（まだファイルには書き込まない）:
+
+1. `## [Unreleased]` の本文を切り出す。
+2. `## [Unreleased]` と `## [<previous>]` の間に `## [<new>] - YYYY-MM-DD` を挿入した形を作る。
+3. 末尾 compare link を更新する:
+   - `[Unreleased]: .../compare/v<prev>...HEAD` → `v<new>...HEAD`
+   - `[<new>]: .../compare/v<prev>...v<new>` を追加する。
+4. repo URL は既存の `[Unreleased]: ` 行から動的抽出する。
+
 ## 言語
 
 - **GitHub Release notes: 英語** (公開リポジトリ向けの標準)

@@ -66,27 +66,31 @@ func (h *StopSessionEvaluatorHandler) Handle(in io.Reader, out io.Writer) error 
 	// session.json の state は bookkeeping なので、stopped / 欠損 / 壊れた状態の
 	// いずれも WIP gate を bypass できない。
 	//
-	// Plans.md の status が Stop 再入時の進捗シグナルであり、stop_hook_active は
-	// bypass フラグではない。再入のたびに Plans.md を再読込し、実 WIP が残る間だけ
-	// block を継続する。ホスト側の block cap が runaway loop の最終ガードになる。
+	// Issue #269: stop_hook_active (再入) は「1 回 block 済み」のシグナルとして扱う。
+	// 初回 Stop で WIP が残っていれば block して marker 遷移を促す (nudge) が、
+	// 再入してもなお WIP が残る場合はもう block しない。block を繰り返すと調査のみの
+	// セッションが停止不能になる (実測 12 連続発火)。再入時は停止を許可し、
+	// systemMessage で警告するだけに留める。ホスト側の block cap には依存しない設計にする。
 	wipCount := h.countWIPTasks(projectRoot)
 	if wipCount > 0 {
-		var msg string
 		if input.StopHookActive {
-			msg = fmt.Sprintf(
+			msg := fmt.Sprintf(
 				localizedHarnessMessage("ja",
-					"[StopSession] %d WIP tasks remain after Stop re-entry. Transition each task to cc:done or blocked before stopping.",
-					"[StopSession] Stop 再入後も %d 件の WIP タスクが残っています。停止前に各タスクを cc:done または blocked へ遷移してください。"),
+					"[StopSession] Stopping with %d WIP tasks remaining. Check Plans.md markers in the next session.",
+					"[StopSession] %d 件の WIP タスクを残したまま停止します。次回セッションで Plans.md の marker を確認してください。"),
 				wipCount,
 			)
-		} else {
-			msg = fmt.Sprintf(
-				localizedHarnessMessage("ja",
-					"[StopSession] %d WIP tasks remain. Check Plans.md.",
-					"[StopSession] %d WIP タスクが残っています。Plans.md を確認してください。"),
-				wipCount,
-			)
+			return writeJSON(out, stopSessionResponse{
+				OK:            true,
+				SystemMessage: msg,
+			})
 		}
+		msg := fmt.Sprintf(
+			localizedHarnessMessage("ja",
+				"[StopSession] %d WIP tasks remain. Check Plans.md.",
+				"[StopSession] %d WIP タスクが残っています。Plans.md を確認してください。"),
+			wipCount,
+		)
 		return writeJSON(out, stopSessionResponse{
 			Decision: "block",
 			Reason:   msg,

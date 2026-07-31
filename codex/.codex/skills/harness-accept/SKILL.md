@@ -5,7 +5,7 @@ description-en: "Generate an Acceptance Demo HTML for non-engineer vibecoders ri
 description-ja: "実装完了直後の受け入れ判断 (ship / wait / reject) 前に Acceptance Demo HTML を生成する。harness-plan-brief が `personal-preference.v1` で書き込んだ acceptance_criteria を `user_request_hash` 経由で取得し、各基準ごとに verified / unverified を表示。`recommendation` を ship / wait / reject の 3 値で算出し、根拠を HTML 上で可視化する。Use when: 受け入れ判断, 受入レビュー, ship/wait/reject 判定, 検収レビュー。Do NOT load for: 実装作業, code review, release。"
 allowed-tools: ["Read", "Write", "Edit", "Bash"]
 argument-hint: "[task-description]"
-user-invocable: false
+user-invocable: true
 ---
 
 # harness-accept

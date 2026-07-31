@@ -67,7 +67,7 @@ Harness では次のように扱う。
 
 ### 3.1 rationale
 
-**ルール 5 との整合**: `.claude/rules/opus-4-7-prompt-audit.md` は
+**維持する規律との整合**: `.claude/rules/claude-5-prompt-standard.md` は
 「`/ultrareview` は呼び出し側の review entrypoint。agent 定義側では `review-result.v1` を契約にする」
 と定めている。Harness の Reviewer agent・harness-review skill は `review-result.v1` を出力契約とする。
 `/ultrareview` をその内部で呼ぶことは、`review-result.v1` の機械可読保証を失わせる。
@@ -103,7 +103,7 @@ Harness flow 内の自動レビューは `reviewer` agent（`review-result.v1`�
 - `/ultrareview` は CC built-in として成熟した段階で再評価する（次回評価 Phase: 45 以降）
 - Harness 内で `/ultrareview` を呼ぶ場合は、`review-result.v1` へのスキーマ変換レイヤーが
   `scripts/codex-companion.sh` に実装されてからとする（現時点では未実装）
-- 方針変更は `.claude/rules/opus-4-7-prompt-audit.md` ルール 5 の改訂と同時に行う
+- 方針変更は `.claude/rules/claude-5-prompt-standard.md`（維持する規律 5）の改訂と同時に行う
 
 ---
 

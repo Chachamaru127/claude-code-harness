@@ -54,7 +54,7 @@ Harness はこれを **Lead (operator) が複数の Worker / Reviewer / Scaffold
 
 - `claude agents` は **operator (人間 Lead) が複数 session を見るための UI**。
   Harness 内の teammate spawn (Worker / Reviewer / Scaffolder) は **Agent tool / breezing skill** が起動する。
-- Worker / Reviewer は `claude agents` から他 session を spawn しない。Lead 限定 (詳細: `.claude/rules/opus-4-7-prompt-audit.md` の権限と責務境界)。
+- Worker / Reviewer は `claude agents` から他 session を spawn しない。Lead 限定 (詳細: `.claude/rules/claude-5-prompt-standard.md` の権限と責務境界)。
 - breezing skill は `claude --teammate-mode in-process` / `tmux` を使う。`claude agents` には依存しない。
 
 ### D. Background permission mode 保持 (2.1.141)
@@ -82,7 +82,7 @@ Harness はこれを **Lead (operator) が複数の Worker / Reviewer / Scaffold
 ## CI / gate
 
 - `tests/validate-plugin.sh` は `claude agents` flag の存在を検証しない (CC 本体機能のため)。
-- 代わりに `.claude/rules/opus-4-7-prompt-audit.md` の権限境界と `.claude-plugin/settings.json` の
+- 代わりに `.claude/rules/claude-5-prompt-standard.md` の権限境界と `.claude-plugin/settings.json` の
   deny ルールが多層防御として機能する。
 - `claude agents` の利用を運用上 audit したい場合は env `CLAUDE_CODE_SESSION_ID` を webhook 経由で
   記録する (`scripts/hook-handlers/webhook-notify.sh`)。
@@ -91,7 +91,7 @@ Harness はこれを **Lead (operator) が複数の Worker / Reviewer / Scaffold
 
 - `docs/team-composition.md` — teammate spawn と並列度の SSOT
 - `agents/worker.md` — Worker 契約
-- `.claude/rules/opus-4-7-prompt-audit.md` — agent 契約 audit ルール (Lead 限定 spawn を明記)
+- `.claude/rules/claude-5-prompt-standard.md` — agent 契約 audit ルール (Lead 限定 spawn を明記)
 - `docs/upstream-update-snapshot-2026-05-15.md` — Phase 69 snapshot
 - `docs/upstream-update-snapshot-2026-05-27.md` — Phase 80 snapshot
 - `.claude/rules/hooks-2.1.139-plus.md` — hook 周辺の 2.1.133+ rules

@@ -39,6 +39,7 @@ flags = {
     "--reviewer-only",
     "--no-commit",
     "--no-discuss",
+    "--no-review-gate",
     "--auto-mode",
 }
 range_re = re.compile(r"^[0-9]+(-[0-9]+)?$")

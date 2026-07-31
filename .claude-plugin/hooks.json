@@ -550,6 +550,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ inbox check --team \"${HARNESS_LIVEMSG_TEAM:-default}\"",
+            "timeout": 30
+          },
+          {
+            "type": "command",
             "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook session-summary",
             "timeout": 30
           },

@@ -152,6 +152,7 @@ STRUCTURED_CASES=(
   "3-6"
   "--cursor all"
   "--parallel 2 all"
+  "--no-review-gate all"
 )
 
 for args in "${STRUCTURED_CASES[@]}"; do

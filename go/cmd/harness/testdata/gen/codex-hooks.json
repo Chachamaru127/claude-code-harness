@@ -16,7 +16,7 @@
       {
         "hooks": [
           {
-            "command": "bin/harness inbox check --team {{TEAM}} --agent {{AGENT}}",
+            "command": "bin/harness inbox check --from-env",
             "timeout": 30,
             "type": "command"
           }

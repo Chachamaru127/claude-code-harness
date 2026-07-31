@@ -5,11 +5,7 @@ operator 裁定 (2026-07-16): deny の本質は**報酬ハック防止**であ�
 
 ## なぜこのルールが必要か
 
-v5.1.0 で新設した 2 テスト（`test-hermes-agent-candidate.sh` / `test-lsp-workflow-wiring.sh`）が
-「workflows は AI 編集 deny → operator 手動 patch 待ち」のまま CI 未配線で残った（HG-3。
-本ルール制定と同じ batch で `tests/validate-plugin.sh` 配線により解消済み）。
-実装した本人（AI セッション）が自分の変更を検査するテストを弱められる状態が報酬ハックであり、
-テストを**追加する**方向まで人間の手作業に倒すのは過剰防御。方向で切り分ける。
+背景 (why): [docs/rules/governance-rationale.md](../../docs/rules/governance-rationale.md#workflow-test-wiringmd)
 
 ## 配線の正本は tests/validate-plugin.sh（workflows は薄い層に保つ）
 

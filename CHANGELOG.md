@@ -6,6 +6,271 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Security
+
+実行時フロア (runtime floor) を設定ファイルから無効化できる経路が 2 つ実在していました。いずれも外部からの Pull Request をレビューする過程で見つかり、実際に動かして確認しています。修正はすべて**制限を強める方向のみ**で、既存の拒否・確認ルールを緩めた箇所はありません。
+
+#### AI が自分で秘密ファイルの読み取り制限を外せた問題 (Phase 128.1 / 128.3)
+
+**今まで**: プロジェクト設定 `.claude-code-harness.config.json` の `runtimefloor.secretAllow` は、秘密ファイルの読み取りを例外的に許可するための宣言です。ここに絶対パスを書いた場合は作業ツリーの内側かどうかを検査していましたが、**相対パスを書いた場合は検査していませんでした**。`../../../../etc/shadow` のように書けば、作業ツリーの外側のファイルがそのまま許可され、「どの設定でも上書きできない」はずの秘密読み取りフロアを迂回できました。
+
+しかもこの設定ファイルはどの拒否リストにも入っておらず、**AI 自身が書き換えられる状態**でした。つまり AI が自分で許可を書き足してから読む、という経路が成立していました。
+
+なお仕様書は元から「相対パスはプロジェクトルート配下に解決される」と記述しており、実装がそれを守っていなかった状態です。新しい制約を足したのではなく、仕様どおりに直した修正です。
+
+**今後**: 相対・絶対のどちらの宣言も、解決後のパスで作業ツリーの境界を検査します。「文字列上は内側だが symlink で外を指す」宣言も落とします。symlink の解決は許可・拒否の判定にのみ使い、許可リストには宣言されたパスをそのまま保存します (実体パスを保存すると、宣言したパスが自分の宣言に一致しなくなる不具合と、宣言していないパスが許可される緩みが同時に起きます)。
+
+あわせて `.claude-code-harness.config.{json,yaml}` への書き込みを拒否対象に加えました。設定ファイル自体が守りの範囲を決める以上、AI が自由に書き換えられる状態はフロアの契約と両立しません。この変更により `releaseAuto` の切り替えは手動編集になります。
+
+#### `main` への強制 push が確認なしで通っていた問題 (Phase 128.2)
+
+**今まで**: 保護ブランチの判定が、git の強制 push 短縮形の先頭 `+` を取り除かずに照合していました。実測すると `git push origin main` は確認が出るのに、`git push origin +main` と `git push origin +refs/heads/main` は**何の判定も出ずに通過**しました。別系統の `--force` フラグ検出はこの短縮形を拾いません。
+
+**今後**: 照合前に `+` を取り除きます。強制 push も通常の push と同じく確認が出ます。`git reset --hard +main` も同時に拒否されるようになりました。保護対象でないブランチ (`+feature/x` など) は従来どおり通ります。
+
+実測 (再ビルドした実行ファイルで確認):
+
+| 操作 | 修正前 | 修正後 |
+|---|---|---|
+| `git push origin +main` | 素通り | 確認 |
+| `git push origin +refs/heads/main` | 素通り | 確認 |
+| `git push origin +feature/x` (保護対象外) | 素通り | 素通り |
+| 設定ファイル `.json` への書き込み | 通る | 拒否 |
+| 設定ファイル `.yaml` への書き込み | 通る | 拒否 |
+| 雛形 `claude-code-harness.config.example.json` | 通る | 通る |
+
+### Added
+
+- **Per-turn output-language enforcement**: the `UserPromptSubmit` hook
+  (`scripts/userprompt-inject-policy.sh`) now injects a response-language
+  directive on every turn, resolved from `i18n.language` in
+  `.claude-code-harness.config.yaml` (with `CLAUDE_CODE_HARNESS_LANG` as a
+  fallback, then `en`). This keeps responses in the configured language instead
+  of drifting to Japanese. Regression coverage added in
+  `tests/test-i18n-locale-resolver.sh`.
+
+### Fixed
+
+- **Language config discoverability**: added an explicit `i18n.language` block to
+  `.claude-code-harness.config.yaml`, and corrected `docs/i18n.md` to point at the
+  config file the runtime actually reads (`.claude-code-harness.config.yaml`)
+  instead of `harness.toml`.
+
+
+#### オーナーの floor 免除設定が、それを検証するテストの結果を書き換えていた問題
+
+**今まで**: `HARNESS_RUNTIME_FLOOR_EGRESS=off` と `HARNESS_RUNTIME_FLOOR_SECRET_ALLOW` は正規のオーナー設定ですが、これを export したシェルからテストを起動すると子プロセスに継承され、runtime floor の deny を検証する assertion が素通りしていました。影響は 2 面あります。落ちる側は shell 2 本と Go 12 subtest で、リリースのたびに誤った赤を出していました。**より重いのは通る側**で、e2e は egress で異常終了するため後続の prod-deploy / worktree-escape の 2 検査が実行されないまま OK 扱いになり、また allowlist 非宣言 path の deny 検証は、免除設定が対象を覆っていれば floor が一度も拒否しなくても pass します。
+
+**今後**: floor を検証する 4 つの surface (shell 2 本、`runtimefloor` パッケージの `TestMain`、`cmd/harness` の floor テスト) が自分で免除設定を無効化してから測ります。宣言済み path の検証は従来どおり per-command で明示的に設定します。`tests/validate-plugin.sh` に 4/4 surface の pin を追加したため、新しい floor テストが無効化を忘れると検知されます。
+
+#### macOS で進捗 HTML の自動再生成が、中断後に永久に止まっていた問題
+
+**今まで**: PostToolUse hook の背景処理が一時ファイルを `mktemp /tmp/progress-snap-XXXX.json` で作っていました。BSD (macOS) の `mktemp` は **X が末尾にある場合しか置換しない**ため、この形式は毎回まったく同じパスを返します。通常は処理末尾の `rm -f` で消えますが、一度でも中断して残骸が残ると以降は `File exists` で失敗し続け、hook は `regenerated:true` を返しながら**実際には HTML も state file も更新しない**状態になります。GNU (Linux/CI) は末尾以外の X も置換するため CI では再現しませんでした。
+
+**今後**: X を末尾に置く形式 (`"${TMPDIR:-/tmp}/progress-snap-XXXXXX"`) に変更し、BSD / GNU の双方で一意なパスを得ます。残骸がある状態でも再生成が通ることを確認済みです。
+
+#### 同じ書式が残っていた 9 箇所の一掃と、再発の機械検出 (Phase 127)
+
+**今まで**: 上記と同じ非一意テンプレートが検査スクリプト 9 箇所に残っていました。残骸が無い間は動くため気づけませんが、潜在障害が 2 つありました。中断で残骸を残す 2 ファイル (`test-accept-record.sh` / `test-harness-accept.sh`) は後始末が無く、一度中断すれば以降永久に失敗します。また literal path は一意でないため、並行実行時に同一パスを掴んで相互汚染します。`shellcheck` はこの書式を検出しないため、既存の lint では止められませんでした。
+
+**今後**: 9 箇所すべてを `"${TMPDIR:-/tmp}/<名前>.XXXXXX"` へ統一し、後始末が無かった 2 ファイルに後始末を追加しました。再発は `tests/test-mktemp-bsd-template-safety.sh` が検出し、`tests/validate-plugin.sh` から実行されます。検出は静的走査のため、テンプレートを変数経由で間接的に渡す形は対象外です (現時点で該当箇所はゼロ)。
+
+実測: 旧テンプレートの literal path を一時領域に置くと、修正前は `mktemp: mkstemp failed ...: File exists` で停止し、修正後は同じ地点を通過します。
+
+#### 発注者向け 3 画面が、文書どおりのコマンドで起動できなかった問題 (Phase 127.3)
+
+**今まで**: 非エンジニアの発注者向け 3 画面 (計画概要 / 進捗 / 受け入れ判断) は、ドキュメント上は `/harness-plan-brief`、`/harness-progress`、`/harness-accept` と入力して呼ぶものとして案内されていましたが、3 つとも設定が「ユーザーからは呼べない」状態でした。3 つとも入力補助のヒント (`argument-hint`) を持っており、設定だけが噛み合っていませんでした。これらの画面は発注者本人が見るためのものなので、本人が呼べないと存在価値が失われます。
+
+契約テストは当初から「ユーザーから呼べる」ことを要求していましたが、そのテストが検査一覧に組み込まれていなかったため、スキル本体とテストが同じコミットで生まれた時点の矛盾が約 2 ヶ月そのまま残っていました。
+
+**今後**: 3 つとも `/harness-<名前>` で起動できます。契約テスト 2 本を検査一覧に組み込み、進捗画面側にも同じ検査を追加したため、今後この乖離は検査で止まります。Cursor 向け配布は従来どおり自動で非表示側へ正規化されます (配布層の契約は変更なし)。
+
+## [5.5.0] - 2026-07-29
+
+### テーマ: 止まらないモード — 確認の削減と、その過程で見つかった防御の穴の封鎖 (Phase 126)
+
+### Fixed
+
+#### 自律実行中に作業ツリー外の破壊的削除が素通りしていた問題 (Phase 126.1)
+
+**今まで**: runtime floor の worktree-escape カテゴリは、危険な再帰削除の入口判定に短縮フラグ形式しか登録していませんでした。GNU 長形式の再帰削除や `find` の削除式は floor をすり抜け、policy 側の R05 (確認) だけが受け止めていました。R05 は WorkMode (work / breezing の自律実行中) では評価をスキップするため、**自律実行中は確認も拒否も出ない無防備な状態**でした。spec が floor カテゴリ 5 を "destruction OUTSIDE the task worktree" かつ "non-overridable in every config" と定義している契約に対する実効的な違反です。
+
+**今後**: 危険判定と削除対象の抽出を `go/pkg/shellscan` に集約し、runtime floor と policy が同一の実装を参照します。両者の判定一致を pin する同値性テストを追加したため、再び乖離すればテストが落ちます。
+
+実測 (作業ツリー外を対象とした場合):
+
+| コマンド形 | 修正前 (通常) | 修正前 (自律実行中) | 修正後 |
+|---|---|---|---|
+| 短縮フラグ形式 | deny | deny | deny |
+| GNU 長形式 | ask | **approve** | deny |
+| `find` の削除式 | ask | **approve** | deny |
+
+#### シェルに渡す heredoc の本文経由で秘密ファイル読取の floor を回避できた問題 (Phase 126.1)
+
+**今まで**: heredoc 本文を「文書テキスト」とみなして無条件に除去していました。しかし heredoc をインタプリタに渡す形 (`bash <<EOF` や `cat <<EOF | bash`) では本文が実行されます。このため本文に秘密ファイル読取を書くと、floor の走査対象から消えて **secret-read カテゴリを完全に回避**できました。
+
+**今後**: opener 行がインタプリタを起動する、またはパイプでインタプリタに渡す場合は本文を保持します。実測で修正前 approve → 修正後 deny を確認しています。
+
+#### 文書の本文に削除コマンドの字面があるだけで拒否されていた問題 (Phase 126.1)
+
+**今まで**: worktree-escape の走査が heredoc 本文と行コメントを除去しておらず、さらに削除対象の抽出がコマンド区切りを跨いで末尾まで走査していました。このため文書ファイルへの追記で、本文に削除コマンドの字面が散文として含まれるだけで拒否され、文中の `/` が削除対象と誤認されていました。
+
+**今後**: 除去処理の適用とコマンド区切りでの分割により解消しました。
+
+#### 事前承認の secret-read 反映が scope を検証していなかった問題 (Phase 126.5)
+
+**今まで**: `scripts/plan-preapproval.sh apply-secret-allow` は承認記録の `scope.phase` / `scope.task` を読まずにマージしていました。対象タスク外や将来の全 run にまで承認が効き続ける状態でした。
+
+**今後**: 現在の phase / task と一致する承認だけを反映します。
+
+### Added
+
+#### guardrail / floor の発火 audit ログ (Phase 126.2)
+
+**今まで**: どの規則や floor が実際に確認や拒否を発生させているかを事後に集計する手段がありませんでした。`.claude/state/audit/` は空で、`session-events.jsonl` はツール名しか持ちません。停止要因の特定は、hook を 1 件ずつ手で叩いて測るしかありませんでした。
+
+**今後**: 確認・拒否・警告が発生するたびに `.claude/state/audit/guardrail-fires.jsonl` へ 1 行記録します。規則 ID、カテゴリ、判定、host、ツール名を持つため「どの規則が何回止めたか」を集計できます。純粋に通過した操作は記録しないため、ログは止まった回数だけ増えます。
+
+秘密情報は残しません。コマンドや file_path の生文字列は書かず SHA-256 と長さのみを持ちます。floor の `secret-read` / `money-billing` カテゴリではハッシュと長さも省略し、規則 ID とカテゴリと判定だけを残します。
+
+#### OS 一時領域への書き込みで確認が出なくなった (Phase 126.3)
+
+**今まで**: R04 はプロジェクトルート外への書き込みに一律で確認を出していました。エージェントが作業中に作る中間ファイル (プロンプト、集計結果、下書き) は OS の一時領域に置かれるため、そのたびに実行が止まっていました。
+
+**今後**: `/tmp`、`/var/tmp`、`$TMPDIR`、`~/.cache`、`~/Library/Caches` とその実体パスへの書き込みは確認なしで通ります。判定前にシンボリックリンクを実体へ解決するため、一時領域内から外部を指すリンク経由の書き込みは従来どおり確認が出ます。プロジェクト外かつ一時領域でもない場所 (ホーム直下、デスクトップ等) も従来どおりです。
+
+一時領域の判定は runtime floor 側の worktree-escape と共有します。登録側と判定側の両方でシンボリックリンクを解決するため、macOS の既定 `$TMPDIR` (`/var/folders/...` が `/private/var/folders/...` の別名) のように表記が異なる同一ディレクトリも正しく一致します。
+
+#### 作業ツリー内の再帰削除で確認が出なくなった (Phase 126.4)
+
+**今まで**: R05 は危険な再帰削除を検出すると、対象がタスク作業ツリーの内側でも外側でも区別せず確認を出していました。ビルド生成物や一時ディレクトリの掃除は作業ツリー内で日常的に発生するため、そこで実行が止まっていました。
+
+**今後**: 抽出した対象が全て、シンボリックリンクを実体解決した上で作業ツリーの内側にある場合のみ確認を省きます。対象が実行時にしか決まらない書き方はすべて確認を維持します。具体的には、対象が 1 つも抽出できない、シェル展開やコマンド置換で対象が決まる、削除の前に別のコマンドがある、パイプラインやバックグラウンド実行、親ディレクトリ参照を含む、いずれの場合も確認が出ます。
+
+作業ツリー外への削除は 126.1 の floor が受け止めます。floor は WorkMode を参照せず規則群より先に評価されるため、自律実行中でも外れません。
+
+なお作業ツリー内の再帰削除は、git 管理外のファイル (未追跡の生成物、未コミットの作業中ファイル) を復旧不能にします。linked worktree の `.git` はファイルポインタで実体は main repo 側にあるため、コミット済みとステージ済みのデータは残ります。
+
+#### 計画時の事前承認が実行時の確認抑制に接続された (Phase 126.5)
+
+**今まで**: 事前承認のうち Go 側の判定に届いていたのは `secret-read` だけでした。`external-send` と `destructive` は skill の散文にしか存在せず、承認済みの push でも R12 が毎回確認を出していました。
+
+**今後**: `plan-preapproval.v2` を新設し (`expires_at` 必須、`max_uses` 既定 10、`uses`)、保護ブランチへの直接 push で R12 が確認を出す手前に抑制判定を入れました。有効期限内・スコープ一致・回数上限内・コマンド一致のすべてを満たす承認がある場合だけ抑制し、使用のたびに `uses` を加算します。
+
+「一度使ったら失効」ではなく回数上限にしています。PR closeout は CI 修正後に再 push することがあり、単発消費だと 2 回目で確認が復活して当初の目的を壊すためです。恒久緩和を防ぐ性質は、有効期限とスコープ一致と回数上限の 3 つで担保します。
+
+スコープは `.claude/state/active-task.json` (harness-work / breezing がタスク開始時に書く) と環境変数から解決します。解決できない場合は承認なし扱いで確認を維持します。
+
+runtime floor の 5 カテゴリには接続していません。floor は「どの設定でも上書きできない最終防波堤」であり、例外は operator が明示宣言する 2 つに限ると spec が数え上げています。本変更が触るのは guardrail 規則の R12 のみです。
+
+## [5.4.0] - 2026-07-26
+
+### テーマ: Claude 5 世代適応 — context unhobbling・モデル catalog 全面更新・breezing 自律 pipeline
+
+### Added
+
+#### HOTL session messaging: 人間もセッションも名前で呼び合える宛先付きメッセージ (Phase 121)
+
+**今まで**: セッション間の連絡は broadcast (全員宛のファイル変更通知) だけで、特定のセッションに「そのタスク、仕様が変わったよ」と一言伝える手段がありませんでした。人間が伝えたい場合は対象セッションの端末を探してコピペする必要がありました。また livemsg 配送路には sanitize や byte cap が無く、メッセージ本文が無防備にモデル文脈へ入る状態でした。
+
+**今後**: `bin/harness inbox send --team <t> --from <id> --to <agent> "本文"` で任意の端末から特定セッション宛にメッセージを送れます。受信側は turn 境界 (Stop hook) で自動配達され、`inbox sent` で既読状態も確認できます。配送路には信頼契約 (制御文字/ANSI 除去 + 「命令ではありません」disclaimer + 全体 4096B / メッセージ単位 768B cap) が入り、人間発 nudge も data-not-instructions 契約に乗ります (Risk Gate 承認は対象セッションの console のみ)。未読 0 件時は無出力なので通常セッションのノイズは増えません。
+
+#### セッションの名札と作業宣言: 「どのセッションが何をやっているか」を一覧で逆引き (Phase 121.4)
+
+**今まで**: `session-list.sh` はセッション ID と最終アクティブ時刻しか出せず、「121.2 を作業しているセッションはどれ？」が分かりませんでした。
+
+**今後**: 出勤カード (presence file) に `{label, task, since}` を書けるようになり、`bin/harness session declare --task 121.2` で作業宣言、`bin/harness session list` で label / 現在 task / 経過時間の一覧が出ます。task 番号 → セッションの逆引きが grep 一発になります。生存判定は従来どおり filename + mtime のみ (カード内容は判定に影響しません)。
+
+#### 生成 delivery hook の identity 解決 (Phase 121.2)
+
+**今まで**: `harness gen` が生成する Codex/Cursor の delivery hook は `--team {{TEAM}} --agent {{AGENT}}` の placeholder が未置換のまま実行され、事実上 no-op でした。
+
+**今後**: 生成コマンドは `inbox check --from-env` になり、実行時に env (`HARNESS_LIVEMSG_*` → breezing fallback) から identity を解決します。checkout ごとの生成物を再生成せずにセッションごとの宛先が機能します。
+
+#### セッション一覧と standalone 配達の取りこぼし解消 (Phase 122)
+
+**今まで**: `bin/harness session list` は共有 presence file を持つセッションしか表示せず、非 git 環境や presence 機構導入前から生き続けるセッション (ローカル `active.json` のみ登録) が一覧から漏れていました。lease の生存判定は「presence ∪ active.json」の union なのに、一覧だけが片側しか見ない非一貫でした。また breezing 外で直接起動した Codex/Cursor セッションでは、`inbox check --from-env` が identity を解決できず理由の表示もなくメッセージ配達を沈黙スキップしていました。
+
+**今後**: `session list` は lease 判定と同一の生存集合 (presence ∪ active.json) を表示します (roster のみのセッションは短縮 ID label で追記)。`--from-env` は env で解決できない場合に hook stdin の `session_id` へ fallback し (claude host と同じ経路)、それでも不明なら `livemsg: identity unresolved (...)` を stderr に 1 行出して従来どおり fail-open します。host 別の解決順は `docs/claude-livemsg-delivery.md` の fallback チェーン表が正本です。
+
+#### breezing Default Pipeline: plan → work → OK までレビュー → 報告を 1 コマンドで完走
+
+**今まで**: 「`/harness-plan` で計画 → `/breezing` → `/harness-review` を独立サブエージェント + Codex second opinion で OK が出るまで → easy で報告」という一連の流れを、operator が毎回 4 段の指示として打つ必要がありました。
+
+**今後**: `/breezing` 単体でこの pipeline 全体が既定動作になります。plan 未作成なら先に `harness-plan` を実行し (スコープ既定は「今進められる全作業」)、実装後は run 全体 diff への Integrated Review Gate (fresh-context 独立 reviewer + `codex-companion.sh review`) を APPROVE が出るまで最大 3 回反復し、最終報告は easy 作法で出します。
+
+#### harness-plan スコープ既定: 「今進められる全作業」
+
+**今まで**: 計画依頼の範囲解釈がセッション任せで、依頼者の意図 (着手可能な全作業) より狭い計画が作られることがありました。
+
+**今後**: 範囲の明示がない計画依頼は「現時点で着手可能なすべての作業」を既定スコープとして扱います。件数が多い場合も絞り込みではなく Required / Recommended / Optional / Reject の全量分類で提示し、除外は Reject 理由として明示します。
+
+#### `harness validate` が claude-opus-5 を受理 (Phase 123.4)
+
+**今まで**: agent/skill frontmatter に `model: claude-opus-5` を書くと validate が「認識できないモデル名」で reject していました (Opus 5 は 2026-07-24 リリース)。
+
+**今後**: validModelNames に claude-opus-5 を追加し、TDD (RED→GREEN) + 4 平台 binary rebuild + drift gate green で反映済みです。
+
+#### Claude 5 unhobbling: 毎セッション注入される context を 1/3 に削減 (Phase 124)
+
+**今まで**: セッション開始のたびに `.claude/rules/` の 19 ファイル 103.2KB が無条件で Claude の context に注入されていました。中には廃止済み v3 構成の歴史記録 (v3-architecture.md) や、冒頭で自ら DEPRECATED と宣言する文書 (command-editing.md) まで含まれ、Anthropic の Claude 5 指針 (過剰な常時ルールは判断を鈍らせる) に照らして逆効果の状態でした。SKILL.md も最大 958 行 (harness-work) まで肥大していました。
+
+**今後**: governance 契約 (報酬ハック防止・deny 面・Risk Gates) は常時ロードのまま維持し、状況限定ルールは pointer stub 化 (正本は skills references / docs/rules へ)、廃止文書は archive/削除しました。
+
+| 面 | Before | After |
+|---|---|---|
+| 常時注入 rules | 103.2KB (19 ファイル) | **29.2KB** (71.7% 削減) |
+| harness-work SKILL.md | 958 行 | 450 行 |
+| breezing / harness-release / harness-plan | 521 / 535 / 462 行 | 416 / 379 / 393 行 |
+
+agent prompt 監査基準も世代交代しました: opus-4-7-prompt-audit.md (曖昧語 blanket 禁止・例文必須) を退役し、契約条項 (schema 名・列挙値・回数上限・wrapper command・権限境界) だけ残す claude-5-prompt-standard.md に置換 (agents/*.md 編集時のみ paths frontmatter でロード)。
+
+### Changed
+
+#### 実装 backend の既定を Native subagent (claude) に、選択は作業内容でフラット判断
+
+**今まで**: breezing の backend は resolver 既定こそ `claude` でしたが、`backend=claude` になると「cursor を使うべきでは」という Fallback 警告が毎回出る設計で、実質 cursor 優先の運用でした。
+
+**今後**: `claude` (Native subagent、Worker/Reviewer は Sonnet 5 系 tier) が意図された既定になり、警告は resolver の不正値 fallback 時のみ出ます。Lead は作業内容・量に応じて per-run で `--backend codex|cursor` をフラットに選択できます (判断基準表を breezing SKILL に追加)。
+
+#### Codex 委譲モデルを gpt-5.6-sol / xhigh に更新
+
+**今まで**: `scripts/model-routing.sh` の codex catalog は standard=gpt-5.5/medium、deep=gpt-5.5/high で、委譲実装が 1 世代前のモデル・控えめな effort で走っていました。
+
+**今後**: standard / deep / review / advisor tier は `gpt-5.6-sol` の `xhigh` で委譲されます (release / long-context は `gpt-5.6-sol` の high、lite は gpt-5.4-mini のまま)。`codex-companion.sh` は呼び出し時に model-routing.sh を解決するため、追加設定なしで反映されます。
+
+#### Claude catalog を Claude 5 世代へ全面更新 (Opus 4.8 全廃)
+
+**今まで**: claude host の brain tier (deep / advisor) は claude-opus-4-8、review tier は claude-sonnet-5、cursor の brain 系 tier は claude-opus-4-8-thinking-xhigh でした。
+
+**今後**: Opus 5 リリース (2026-07-24) を受けた operator 裁定で、Opus 4.8 を catalog から全廃しました。brain = `claude-opus-5` / xhigh (既定。`HARNESS_BRAIN_MODEL=opus|opus5` も同値、`fable` で Fable 5 に切替)、review = `claude-fable-5` / xhigh、worker = `claude-sonnet-5`、cursor の brain 系 tier = `claude-fable-5` / xhigh。spec (execution-backends-and-distribution.md) と model-routing-policy.md も同期しています。
+
+#### PreCompact: Plans.md 未 commit でブロックせず自動 commit して続行 (Phase 121.6)
+
+**今まで**: `/compact` 時に Plans.md へ未 commit の編集があると PreCompact hook がブロックし、手動で commit してから再実行する必要がありました (どうせ commit してから compact するのに毎回止まる)。
+
+**今後**: Plans.md だけを pathspec 限定で自動 commit (`chore(plans): auto-checkpoint before compaction`) してから compaction が続行します。他の未 commit ファイルは巻き込みません。commit に失敗した場合と `.claude-code-harness.config.yaml` に `precompactAutoCommit: false` を書いた場合のみ従来どおりブロックします。
+
+### Fixed
+
+#### セッション協調: 別 worktree で作業中のセッションの lease が横取りされる問題 (Phase 120)
+
+**今まで**: ファイル編集の貸出札 (lease) は全 worktree 共有なのに、持ち主の生存確認は自分の worktree の名簿 (`active.json`) しか見ていませんでした。別 worktree で生存中のセッションが持つ札は、60 分の TTL が切れると「死んだセッションの札」と誤判定され、横取り可能になっていました (spec の「TTL 満了 AND 名簿不在」契約が実質 TTL-only に縮退)。
+
+**今後**: 各セッションが共有側 (`git --git-common-dir` 親) の `.claude/sessions/live-sessions/<session_id>` に presence ファイルを持ち、生存判定は「共有 presence ∪ ローカル名簿」の union になります。別 worktree の生存保持者の lease は TTL 後も保護されます。presence dir 不在時は従来挙動に fallback (not-configured, silent)。ローカル名簿・bash 版 script のスキーマは非接触です。
+
+#### Stop hook が調査のみのセッションを無限ブロックする問題 (Issue #269, Phase 125)
+
+**今まで**: Plans.md に `cc:WIP` タスクが残っていると、Stop hook が停止を無条件でブロックし続けました。調査・整理だけのセッションには WIP を減らす正当な手段がなく、実測で同一メッセージが 12 回連続発火してセッションを終了できませんでした。
+
+**今後**: 初回の Stop は従来どおりブロックして marker 遷移を促しますが、再入 (`stop_hook_active: true`) 時は WIP が残っていても警告 (systemMessage) を出して停止を許可します。状態ファイルの追加なしで無限ブロックを根絶しました。
+
+## [5.3.1] - 2026-07-20
+
+### テーマ: Plans.md marker 集計の正確化
+
+**session-start や進捗表示の「WIP N件」が、実際に着手中のタスクだけを数えるようになりました。**
+
 ### Fixed
 
 - **Plans.md marker 集計の use-mention 混同 + canonical family 取り残しを根治（Phase 119）**
@@ -5408,7 +5673,10 @@ Purpose: 自己修正ループ失敗時に「止まるだけ」から「次の�
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.3.0...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.5.0...HEAD
+[5.5.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.4.0...v5.5.0
+[5.4.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.3.1...v5.4.0
+[5.3.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.3.0...v5.3.1
 [5.3.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.2.0...v5.3.0
 [5.2.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.1.0...v5.2.0
 [5.1.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.0.0...v5.1.0

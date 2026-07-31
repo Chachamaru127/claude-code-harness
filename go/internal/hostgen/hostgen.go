@@ -37,9 +37,9 @@ const preToolCommand = "hook pre-tool"
 
 const deliveryMatcher = "*"
 
-const inboxCheckCommand = "bin/harness inbox check --team {{TEAM}} --agent {{AGENT}}"
+const inboxCheckCommand = "bin/harness inbox check --from-env"
 
-const inboxMonitorCommand = "bin/harness inbox monitor --team {{TEAM}} --agent {{AGENT}}"
+const inboxMonitorCommand = "bin/harness inbox monitor --from-env"
 
 // claudeBinary is the binary invocation Codex and Cursor use directly. Claude's
 // own hooks.json wraps the binary in a valid_root bootstrap (see

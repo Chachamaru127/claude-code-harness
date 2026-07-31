@@ -322,6 +322,21 @@ model: claude-fable-5
 	}
 }
 
+func TestValidateSkills_Opus5ModelAccepted(t *testing.T) {
+	dir := t.TempDir()
+	writeSkillFile(t, dir, "opus5-brain", `---
+name: opus5-brain
+description: "Skill opting the brain tier into Opus 5."
+model: claude-opus-5
+---
+`)
+
+	errs, _ := validateSkillsDir(filepath.Join(dir, "skills"))
+	if len(errs) != 0 {
+		t.Errorf("claude-opus-5 must be a recognized model, got: %v", errs)
+	}
+}
+
 // ---------------------------------------------------------------------------
 // validateSkillsDir: no frontmatter
 // ---------------------------------------------------------------------------

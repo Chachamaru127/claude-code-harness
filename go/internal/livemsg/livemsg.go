@@ -38,6 +38,13 @@ type Message struct {
 	CreatedAt time.Time
 }
 
+// SentMessage は送信者視点の projection（既読状態付き）。
+type SentMessage struct {
+	Message
+	Read   bool
+	ReadAt time.Time
+}
+
 var idSeq atomic.Uint64
 
 const schemaDDL = `
@@ -179,6 +186,26 @@ WHERE s.event_type = 'message_sent'
   AND s.to_agent = ?
 ORDER BY s.created_at ASC`
 
+const sentQuery = `
+SELECT s.message_id, s.team, s.from_agent, s.to_agent, s.subject, s.body, s.created_at,
+       EXISTS (
+         SELECT 1 FROM livemsg_events r
+         WHERE r.event_type = 'message_read'
+           AND r.team = s.team
+           AND r.message_id = s.message_id
+       ) AS is_read,
+       (
+         SELECT MAX(r.created_at) FROM livemsg_events r
+         WHERE r.event_type = 'message_read'
+           AND r.team = s.team
+           AND r.message_id = s.message_id
+       ) AS read_at
+FROM livemsg_events s
+WHERE s.event_type = 'message_sent'
+  AND s.team = ?
+  AND s.from_agent = ?
+ORDER BY s.created_at ASC`
+
 // Inbox は (team, agent) 宛 unread message を CreatedAt 昇順で返す。
 func (s *Store) Inbox(ctx context.Context, team, agent string) ([]Message, error) {
 	return s.queryMessages(ctx, inboxQuery, team, agent)
@@ -187,6 +214,60 @@ func (s *Store) Inbox(ctx context.Context, team, agent string) ([]Message, error
 // History は (team, agent) が受信した全 message（read 含む）を CreatedAt 昇順で返す。
 func (s *Store) History(ctx context.Context, team, agent string) ([]Message, error) {
 	return s.queryMessages(ctx, historyQuery, team, agent)
+}
+
+// Sent は (team, from) が送信した message と既読状態を CreatedAt 昇順で返す。
+func (s *Store) Sent(ctx context.Context, team, from string) ([]SentMessage, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+
+	rows, err := s.db.QueryContext(ctx, sentQuery, team, from)
+	if err != nil {
+		return nil, fmt.Errorf("livemsg: query sent: %w", err)
+	}
+	defer rows.Close()
+
+	var messages []SentMessage
+	for rows.Next() {
+		var (
+			messageID string
+			teamOut   string
+			fromAgent sql.NullString
+			toAgent   sql.NullString
+			subject   sql.NullString
+			body      sql.NullString
+			createdAt int64
+			isRead    bool
+			readAt    sql.NullInt64
+		)
+		if err := rows.Scan(&messageID, &teamOut, &fromAgent, &toAgent, &subject, &body, &createdAt, &isRead, &readAt); err != nil {
+			return nil, fmt.Errorf("livemsg: scan sent: %w", err)
+		}
+		sm := SentMessage{
+			Message: Message{
+				ID:        messageID,
+				Team:      teamOut,
+				FromAgent: fromAgent.String,
+				ToAgent:   toAgent.String,
+				Subject:   subject.String,
+				Body:      body.String,
+				CreatedAt: time.Unix(0, createdAt),
+			},
+			Read: isRead,
+		}
+		if readAt.Valid {
+			sm.ReadAt = time.Unix(0, readAt.Int64)
+		}
+		messages = append(messages, sm)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("livemsg: iterate sent: %w", err)
+	}
+	if messages == nil {
+		return []SentMessage{}, nil
+	}
+	return messages, nil
 }
 
 func (s *Store) queryMessages(ctx context.Context, query, team, agent string) ([]Message, error) {

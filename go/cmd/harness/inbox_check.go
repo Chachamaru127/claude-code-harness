@@ -1,14 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
+	"github.com/Chachamaru127/claude-code-harness/go/internal/deliveryidentity"
 	"github.com/Chachamaru127/claude-code-harness/go/internal/livemsg"
 )
 
@@ -32,10 +35,11 @@ func resolveInboxDBPath() string {
 }
 
 type inboxCheckOutput struct {
-	Team     string                   `json:"team"`
-	Agent    string                   `json:"agent"`
-	Unread   int                      `json:"unread"`
-	Messages []inboxCheckMessageEntry `json:"messages"`
+	Team          string                   `json:"team"`
+	Agent         string                   `json:"agent"`
+	Unread        int                      `json:"unread"`
+	Messages      []inboxCheckMessageEntry `json:"messages"`
+	InjectContext string                   `json:"inject_context,omitempty"`
 }
 
 type inboxCheckMessageEntry struct {
@@ -49,9 +53,14 @@ type inboxCheckMessageEntry struct {
 }
 
 type inboxCheckOpts struct {
-	Team  string
-	Agent string
-	DB    string
+	Team    string
+	Agent   string
+	DB      string
+	FromEnv bool
+}
+
+type inboxCheckStdinHint struct {
+	SessionID string `json:"session_id"`
 }
 
 func runInboxCheckCommand(args []string, stdout, stderr io.Writer) int {
@@ -60,10 +69,24 @@ func runInboxCheckCommand(args []string, stdout, stderr io.Writer) int {
 		fmt.Fprintf(stderr, "harness inbox check: %v\n", err)
 		return 0
 	}
+	if opts.Agent == "" {
+		opts.Agent = resolveInboxAgentFromStdin()
+	}
+	if opts.Agent == "" {
+		if opts.FromEnv {
+			fmt.Fprintf(stderr, "livemsg: identity unresolved (set HARNESS_LIVEMSG_TEAM/AGENT or run under breezing)\n")
+		}
+		// Fail-open: no identity → treat as no delivery (silent Stop hook).
+		return 0
+	}
 
 	out, err := executeInboxCheck(opts)
 	if err != nil {
 		fmt.Fprintf(stderr, "harness inbox check: %v\n", err)
+		return 0
+	}
+
+	if out.Unread == 0 {
 		return 0
 	}
 
@@ -78,8 +101,11 @@ func runInboxCheckCommand(args []string, stdout, stderr io.Writer) int {
 
 func parseInboxCheckArgs(args []string) (inboxCheckOpts, error) {
 	var opts inboxCheckOpts
+	fromEnv := false
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
+		case "--from-env":
+			fromEnv = true
 		case "--team":
 			if i+1 >= len(args) {
 				return opts, fmt.Errorf("--team requires a value")
@@ -102,11 +128,22 @@ func parseInboxCheckArgs(args []string) (inboxCheckOpts, error) {
 			return opts, fmt.Errorf("unknown flag %q", args[i])
 		}
 	}
+	if fromEnv {
+		opts.FromEnv = true
+		team, agent, err := deliveryidentity.Resolve()
+		if err == nil {
+			opts.Team = team
+			opts.Agent = agent
+		}
+	}
 	if opts.Team == "" {
-		return opts, fmt.Errorf("--team is required")
+		opts.Team = strings.TrimSpace(os.Getenv("HARNESS_LIVEMSG_TEAM"))
+	}
+	if opts.Team == "" {
+		opts.Team = "default"
 	}
 	if opts.Agent == "" {
-		return opts, fmt.Errorf("--agent is required")
+		opts.Agent = strings.TrimSpace(os.Getenv("HARNESS_LIVEMSG_AGENT"))
 	}
 	if opts.DB == "" {
 		// Generated Mode-2 delivery hooks (Phase 105.9) omit --db; resolve the
@@ -142,9 +179,10 @@ func executeInboxCheck(opts inboxCheckOpts) (inboxCheckOutput, error) {
 		return empty, nil
 	}
 
+	locale := resolveInboxLocale()
 	entries := make([]inboxCheckMessageEntry, 0, len(messages))
 	for _, msg := range messages {
-		entries = append(entries, inboxCheckMessageEntry{
+		entry := inboxCheckMessageEntry{
 			ID:        msg.ID,
 			Team:      msg.Team,
 			FromAgent: msg.FromAgent,
@@ -152,16 +190,34 @@ func executeInboxCheck(opts inboxCheckOpts) (inboxCheckOutput, error) {
 			Subject:   msg.Subject,
 			Body:      msg.Body,
 			CreatedAt: msg.CreatedAt.UTC().Format(time.RFC3339Nano),
-		})
+		}
+		entries = append(entries, sanitizeInboxCheckEntry(entry))
 		if err := store.MarkRead(ctx, opts.Team, msg.ID, opts.Agent); err != nil {
 			return empty, nil
 		}
 	}
 
 	return inboxCheckOutput{
-		Team:     opts.Team,
-		Agent:    opts.Agent,
-		Unread:   len(entries),
-		Messages: entries,
+		Team:          opts.Team,
+		Agent:         opts.Agent,
+		Unread:        len(entries),
+		Messages:      entries,
+		InjectContext: buildLivemsgInjectContext(entries, locale),
 	}, nil
+}
+
+func resolveInboxAgentFromStdin() string {
+	stat, err := os.Stdin.Stat()
+	if err != nil || (stat.Mode()&os.ModeCharDevice) != 0 {
+		return ""
+	}
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil || len(bytes.TrimSpace(data)) == 0 {
+		return ""
+	}
+	var hint inboxCheckStdinHint
+	if err := json.Unmarshal(data, &hint); err != nil {
+		return ""
+	}
+	return strings.TrimSpace(hint.SessionID)
 }

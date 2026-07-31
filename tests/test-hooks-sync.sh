@@ -310,6 +310,38 @@ test_safety_hooks_remain_synchronous() {
 }
 
 # ==================================================
+# Test 10: Stop turn boundary wires livemsg inbox check (Phase 121.3)
+# ==================================================
+test_stop_wires_livemsg_inbox_check() {
+  local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
+
+  if jq -e '
+    .hooks.Stop[]?.hooks[]?
+    | select(.type == "command")
+    | select(.command | strings | test("inbox check"))
+    | select(.command | strings | test("HARNESS_LIVEMSG_TEAM"))
+  ' "$hooks_file" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo "    Error: Stop hook must invoke inbox check with HARNESS_LIVEMSG_TEAM (livemsg turn delivery)"
+  return 1
+}
+
+test_stop_does_not_wire_inbox_monitor_by_default() {
+  local hooks_file="$PROJECT_ROOT/hooks/hooks.json"
+
+  if jq -e '
+    .. | objects
+    | select(.command? | strings | test("inbox monitor"))
+  ' "$hooks_file" >/dev/null 2>&1; then
+    echo "    Error: inbox monitor must remain opt-in (not in tracked hooks.json)"
+    return 1
+  fi
+  return 0
+}
+
+# ==================================================
 # メイン実行
 # ==================================================
 echo ""
@@ -333,6 +365,8 @@ run_test "CLAUDE_PLUGIN_ROOT 空時に /bin/harness へ落ちない" test_no_raw
 run_test "CLAUDE_PLUGIN_ROOT 未設定でも hook command が root 解決できる" test_hook_command_resolves_without_plugin_root
 run_test "identity 不一致の plugin root を拒否する" test_untrusted_plugin_root_is_rejected
 run_test "decision/safety hooks が同期実行される" test_safety_hooks_remain_synchronous
+run_test "Stop が livemsg inbox check を配線" test_stop_wires_livemsg_inbox_check
+run_test "inbox monitor は既定 OFF (hooks 未配線)" test_stop_does_not_wire_inbox_monitor_by_default
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

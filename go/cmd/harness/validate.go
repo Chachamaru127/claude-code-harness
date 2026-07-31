@@ -54,6 +54,7 @@ type agentFrontmatter struct {
 // validModelNames is the set of recognized Claude model identifiers.
 var validModelNames = map[string]bool{
 	"claude-fable-5":    true,
+	"claude-opus-5":     true,
 	"claude-opus-4-8":   true,
 	"claude-opus-4-7":   true,
 	"claude-opus-4-6":   true,

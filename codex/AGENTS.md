@@ -296,72 +296,89 @@ Coding Agent がテスト失敗時に「楽をする」傾向（テスト改ざ�
 
 | ルールファイル | 説明 |
 |--------------|------|
-| `cc-update-policy.md` | CC アプデ追従時の品質ポリシー |
-| `codex-cli-only.md` | Codex CLI Only Rule |
-| `command-editing.md` | Brief description |
-| `github-release.md` | GitHub Release Notes Rules |
+| `active-watching-test-policy.md` | Active Watching Test Policy (pointer) |
+| `autonomous-confirmation-scope.md` | Autonomous Confirmation Scope |
+| `cc-update-policy.md` | CC アップデート追従ポリシー (pointer) |
+| `claude-5-prompt-standard.md` | Claude 5 世代の agent prompt 監査基準（opus-4-7-prompt-audit.md の後継） |
+| `codex-cli-only.md` | Codex Plugin Policy (pointer) |
+| `commit-safety.md` | Commit Safety Rules |
+| `cross-repo-handoff.md` | Cross-Repo Handoff Workflow (pointer) |
+| `cursor-cli-only.md` | Cursor Execution Backend Policy (pointer) |
+| `github-release.md` | GitHub Release Notes Rules (pointer) |
 | `hooks-editing.md` | Rules for editing hook configuration (hooks.json) |
 | `implementation-quality.md` | 実装品質ルール - 形骸化実装を禁止し、本質的な実装を促す |
+| `migration-policy.md` | Migration Residue Policy (pointer) |
+| `retired-alias-policy.md` | Retired Alias Policy (pointer) |
+| `self-audit.md` | Self-Audit Rule |
+| `shared-file-discipline.md` | Shared File Discipline |
 | `shell-scripts.md` | Rules for editing shell scripts |
 | `skill-editing.md` | "English description for auto-loading. Include trigger phrases." |
 | `test-quality.md` | テスト品質保護ルール - テスト改ざんを禁止し、正しい実装を促す |
-| `v3-architecture.md` | v3 アーキテクチャ詳細 |
-| `versioning.md` | バージョニングルール |
+| `version-drift.md` | Version Drift Detection (pointer) |
+| `versioning.md` | バージョニングルール (pointer) |
+| `workflow-test-wiring.md` | Workflow Test Wiring Governance |
+
+### active-watching-test-policy
+
+
+<!-- 全文: .claude/rules/active-watching-test-policy.md -->
+
+### autonomous-confirmation-scope
+
+
+<!-- 全文: .claude/rules/autonomous-confirmation-scope.md -->
 
 ### cc-update-policy
 
 
-# CC アップデート追従ポリシー
-
-Claude Code の新バージョン対応時に Feature Table を更新する際の品質基準。
-
-## 基本原則
-
-Feature Table への追加は、**対応する実装変更**または**カテゴリ C（CC 自動継承）の明示的分類**を伴わなければならない。
-
-「Feature Table に行を足しただけ」の状態で PR をマージしてはならない。
-
-## 3 カテゴリ分類
-
-| カテゴリ | 定義 | PR マージ |
-|---------|------|----------|
-| **(A) 実装あり** | hooks / scripts / agents / skills / core に対応する実装変更がある | 可 |
-| **(B) 書いただけ** | Feature Table のみ変更。実装なし | **不可** -- 実装案の提示が必須 |
-| **(C) CC 自動継承** | CC 本体の修正で Harness 側の変更不要（パフォーマンス改善、バグ修正等） | 可（Feature Table に「CC 自動継承」と明記） |
-
-## ルール
-
-### 1. Feature Table 追加には実装または分類を伴うこと
-
-Feature Table に新行を追加する場合、以下のいずれかを満たすこと:
-
-- **(A)** 同じ PR 内に対応する実装ファイルの変更が含まれている
-- **(C)** Feature Table 内で「CC 自動継承」であることが明記されている
-
-いずれにも該当しない場合、その項目はカテゴリ B（書いただけ）と判定される。
-
-### 2. カテゴリ B 検出時は PR をブロックし実装案を要求
-
-カテゴリ B の項目が 1 件でも存在する場合:
-
-- PR のマージを**ブロック**する
-- 各カテゴリ B 項目について、以下を含む**実装案**の提示を要求する:
-  - Harness ならではの付加価値の説明
-  - 変更対象ファイルと具体的な変更内容
-  - ユーザー体験の改善（今まで / 今後）
-
-実装案が承認された後、実装を含む追加コミットまたは後続 PR を作成すること。
-
-### 3. 「付加価値」列の追加を推奨
-
-Feature Table に A / B / C の分類を可視化する「付加価値」列の追加を推奨する。
-
-```markdown
-| Feature | Skill | Purpose | 付加価値 |
-|---------|-------|---------|---------|
-| PostCompact フック | hooks | コンテキスト再注入 | A: 実装あり |
-
 <!-- 全文: .claude/rules/cc-update-policy.md -->
+
+### claude-5-prompt-standard
+
+
+# Claude 5 Prompt Standard
+
+operator 承認: 2026-07-26（breezing 起動時の一括承認）。`.claude/rules/opus-4-7-prompt-audit.md`（Phase 44 / Opus 4.7 世代）の後継。
+
+Claude 5 ガイダンス（2026-07）の要点は「例文の大量提示は探索空間を狭める」「ルールで縛るより判断に任せる」。旧基準の一部と衝突するため、契約（interface）条項だけ残し、書き方を縛る条項を撤廃した。
+
+## 維持する規律（契約 = interface）
+
+agent 間・agent-tool 間の**境界**を定義する条項は変えない。判断力の向上は「何を返すか」の契約を緩めない。
+
+1. **出力 schema 名と列挙値は固定**: `worker-report.v1` / `advisor-request.v1` / `advisor-response.v1` / `review-result.v1` / `PLAN | CORRECTION | STOP` / `APPROVE | REQUEST_CHANGES` / `self_review[].rule`（既定 6: `dry-violation-none | plans-cc-markers-untouched | all-declared-symbols-called | dod-items-verified-with-evidence | no-existing-test-regression | tdd-red-evidence-attached`）/ `memory_updates[].scope`（`universal | task-specific`）
+2. **回数上限は数字で書く**: 例「最大 3 回」「同じ原因の失敗が 2 回続いたら」。並列 worker 数の判定（1/2/3グループ）も同様
+3. **Codex / Cursor 連携は wrapper command 経由のみ**: `bash scripts/codex-companion.sh task --write "..."` / `bash scripts/cursor-companion.sh task --write "..."`。raw `codex exec` / raw `cursor-agent` を標準手段にしない
+4. **権限と責務境界は 1 行で判定できるようにする**: Lead だけが teammate を spawn する / Worker は `advisor-request.v1` を返し Advisor を直接 spawn しない / Reviewer は品質判定だけを行い実装しない
+5. **effort は tier 指定、free-text marker 禁止**: `xhigh` は呼び出し側が選ぶ推論強度で、agent prompt が `ultrathink` 等から推測しない。`/ultrareview` は呼び出し側の entrypoint、agent 側の契約は `review-result.v1` のまま。`--auto-mode` は opt-in、既定値にしない
+
+## 撤廃する規律(Claude 5 の判断に任せる)
+
+1. **曖昧語 blanket 禁止の撤廃**: 「必要に応じて」「適宜」等 8 語を使うたび直後に条件補足を義務化する運用をやめる。文脈から妥当な範囲を判断できる
+2. **行動指示ごとの逐語必須化の撤廃**: 「コマンド名 / パス / schema 名 / 数値閾値 / 真偽判定条件のいずれかを必ず含む」という全指示への一律適用をやめる。上記「維持する規律」に触れない判断は任せる
+3. **例文の大量提示義務の撤廃**: before/after 例を多数記録・列挙する運用をやめる。例示は最小限(1 例)に留め、探索空間を狭めない
+
+## 維持 / 撤廃 対比表
+
+| 旧基準の項目 | 扱い |
+|---|---|
+| 出力 schema 名 + 列挙値の固定 | 維持 |
+| 回数制御は数字で書く | 維持 |
+| Codex wrapper command の完全一致 | 維持(Cursor も同列) |
+| 2.1.111 運用ノブ(xhigh / `/ultrareview` / `--auto-mode`)分離 | 維持 |
+| 権限と責務境界の 1 行判定 | 維持 |
+| 並列 worker 数の数値条件 | 維持 |
+| 行動指示への逐語要素(コマンド名等)の一律必須化 | 撤廃 |
+| 曖昧語 8 語の使用時補足義務 | 撤廃 |
+| before/after 例の大量記録義務 | 撤廃 |
+| Phase 44 限定スコープ除外 | 撤廃(historical) |
+
+## 関連
+
+- `.claude/rules/workflow-test-wiring.md` — auditor 列挙値(`PASS | ADD_REQUIRED | APPEAL_REJECTED`)も「維持する規律 1」の対象
+- `docs/effort-level-policy.md` / `docs/agent-view-policy.md` / `docs/ultrareview-policy.md` — 各運用ノブの詳細
+
+<!-- 全文: .claude/rules/claude-5-prompt-standard.md -->
 
 ### codex-cli-only
 
@@ -369,113 +386,23 @@ Feature Table に A / B / C の分類を可視化する「付加価値」列の�
 
 <!-- 全文: .claude/rules/codex-cli-only.md -->
 
-### command-editing
-
-```
-
-**Prohibited**:
-- ❌ Adding `name:` field (automatically determined from filename)
-- ❌ Adding custom fields (only description and description-en allowed)
-- ❌ Omitting frontmatter
-
-**Exceptions**:
-- Only `harness-mem.md` has no frontmatter for historical reasons (planned for future unification)
-
-### 2. File Naming Conventions
-
-**Core Commands** (`commands/core/`):
-- `harness-` prefix recommended (e.g., `harness-init.md`, `harness-review.md`)
-- Naming that indicates plugin-specific functionality
-
-**Optional Commands** (`commands/optional/`):
-- **Harness integration**: `harness-` prefix (e.g., `harness-mem.md`, `harness-update.md`)
-- **Feature setup**: `{feature}-setup` pattern (e.g., `ci-setup.md`, `lsp-setup.md`)
-- **Operations**: `{action}-{target}` pattern (e.g., `sync-status.md`, `sync-ssot-from-memory.md`)
-
-### 3. Fully Qualified Name Generation
-
-The plugin system generates fully qualified names in the following format:
-
-```
-{plugin-name}:{category}:{command-name}
-```
-
-**Examples**:
-- `commands/core/harness-init.md` → `claude-code-harness:core:harness-init`
-- `commands/optional/cursor-mem.md` → `claude-code-harness:optional:cursor-mem`
-- `commands/optional/ci-setup.md` → `claude-code-harness:optional:ci-setup`
-
-## Command File Structure Template
-
-### Standard Template
-
-```markdown
----
-description: Japanese description (one line, concise)
-description-en: English description (one line, concise)
----
-
-# {Command Name}
-
-Overview description of the command.
-
-## Quick Reference (Optional)
+### commit-safety
 
 
-<!-- 全文: .claude/rules/command-editing.md -->
+<!-- 全文: .claude/rules/commit-safety.md -->
+
+### cross-repo-handoff
+
+
+<!-- 全文: .claude/rules/cross-repo-handoff.md -->
+
+### cursor-cli-only
+
+
+<!-- 全文: .claude/rules/cursor-cli-only.md -->
 
 ### github-release
 
-
-Generated with [Claude Code](https://claude.com/claude-code)
-```
-
-### Required Elements
-
-| Element | Required | Description |
-|---------|----------|-------------|
-| `## What's Changed` | Yes | Section heading |
-| **Bold summary** | Yes | One-line value description |
-| `Before / After` table | Yes | User-facing changes |
-| `Added/Changed/Fixed` | When applicable | Detailed changes |
-| Footer | Yes | `Generated with [Claude Code](...)` |
-
-### Language
-
-- **GitHub Release**: English required（公開リポジトリのため）
-- **CHANGELOG.md**: **日本語**で詳細な Before/After 形式（後述）
-- Keep descriptions user-focused
-
-## CHANGELOG フォーマット（日本語・詳細 Before/After）
-
-CHANGELOG は各機能を「今まで → 今後」形式で具体的に記述する:
-
-```markdown
-## [X.Y.Z] - YYYY-MM-DD
-
-### テーマ: [変更全体を一言で]
-
-**[ユーザーにとっての価値を1〜2文で]**
-
----
-
-#### 1. [機能名]
-
-**今まで**: [旧動作。ユーザーが体験していた不便を具体的に描写]
-
-**今後**: [新動作。何が解決するか + 具体例]
-
-```出力例やコマンド例```
-
-#### 2. [次の機能名]
-
-**今まで**: ...
-**今後**: ...
-```
-
-**書き方ルール**:
-- 各機能を `#### N. 機能名` で独立セクションにする
-- 「今まで」は**課題描写**（「〜する必要がありました」形式）
 
 <!-- 全文: .claude/rules/github-release.md -->
 
@@ -521,16 +448,16 @@ hooks/hooks.json           ← Source file (for development)
 >
 > **CC v2.1.78+**: `StopFailure` イベントが追加されました。API エラー（レート制限、認証失敗等）で
 > セッション停止が失敗した際に発火します。エラーログと復旧処理に使用します。
-
-### command Type (General Purpose)
-
-Available for all events:
-
-```json
-{
-  "type": "command",
-  "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/run-script.js\" script-name",
-  "timeout": 30
+>
+> **CC v2.1.89+**: `PermissionDenied` イベントが追加されました。auto mode classifier がコマンドを拒否した際に発火します。
+> `{retry: true}` を返すとモデルにリトライ可能であることを伝えられます。Breezing Worker の拒否追跡に使用。
+>
+> **CC v2.1.89+**: PreToolUse フックの `permissionDecision` に `"defer"` が追加されました。
+> ヘッドレスセッション（`-p` モード）でフックが `"defer"` を返すとセッションが一時停止し、
+> `claude -p --resume` で再開時にフックが再評価されます。Breezing Worker が判断困難な操作に遭遇した際の安全弁に活用できます。
+>
+> **CC v2.1.89+**: PreToolUse の `updatedInput` を `AskUserQuestion` と組み合わせると、
+> ヘッドレスセッションが質問を外部 UI で収集して `permissionDecision: "allow"` と一緒に回答を注入できます。
 
 <!-- 全文: .claude/rules/hooks-editing.md -->
 
@@ -599,6 +526,26 @@ async function fetchUser(id: string): Promise<User | null> {
 
 <!-- 全文: .claude/rules/implementation-quality.md -->
 
+### migration-policy
+
+
+<!-- 全文: .claude/rules/migration-policy.md -->
+
+### retired-alias-policy
+
+
+<!-- 全文: .claude/rules/retired-alias-policy.md -->
+
+### self-audit
+
+
+<!-- 全文: .claude/rules/self-audit.md -->
+
+### shared-file-discipline
+
+
+<!-- 全文: .claude/rules/shared-file-discipline.md -->
+
 ### shell-scripts
 
 
@@ -665,7 +612,8 @@ PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
 | `name` | Yes | Skill identifier (matches directory name) |
 | `description` | Yes | English description for auto-loading (include trigger phrases). Token-efficient. |
 | `description-ja` | Recommended | Japanese description for i18n. Use `scripts/set-locale.sh ja` to swap into `description`. |
-| `allowed-tools` | No | Tools the skill can use |
+| `allowed-tools` | No | Tools the skill can use (allowlist — not a restriction list) |
+| `disallowed-tools` | No | CC 2.1.152+: tools to remove from the model while the skill is active |
 | `argument-hint` | No | Usage hint (e.g., `"[option1|option2]"`) |
 | `disable-model-invocation` | No | Set `true` for dangerous operations |
 | `user-invocable` | No | Set `false` for internal-only skills |
@@ -697,15 +645,14 @@ The `description` field is critical for auto-loading. Include:
 description: "Manages CI/CD failures. Use when user mentions CI failures, build errors, or test failures. Do NOT load for: local builds or standard implementation."
 ```
 
-**Bad example**:
-```yaml
-description: "CI skill"
-```
+## Client Mirror Contract (Phase 99.2)
 
-## Skill File Structure Template
+`skills/` is the SSOT for shared skills; `skills-codex/` overrides Codex-only variants.
+Mirrors are read-only distribution copies — never edit mirror roots directly:
 
-### SKILL.md Template
-
+| Mirror root | Source |
+|-------------|--------|
+| `codex/.codex/skills/` | `skills-codex/` when present, else `skills/` |
 
 <!-- 全文: .claude/rules/skill-editing.md -->
 
@@ -746,15 +693,20 @@ biome.json          # lint ルールを無効化しない
 
 <!-- 全文: .claude/rules/test-quality.md -->
 
-### v3-architecture
+### version-drift
 
 
-<!-- 全文: .claude/rules/v3-architecture.md -->
+<!-- 全文: .claude/rules/version-drift.md -->
 
 ### versioning
 
 
 <!-- 全文: .claude/rules/versioning.md -->
+
+### workflow-test-wiring
+
+
+<!-- 全文: .claude/rules/workflow-test-wiring.md -->
 
 <!-- sync-rules-to-agents: end -->
 

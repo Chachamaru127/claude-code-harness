@@ -80,23 +80,27 @@ fi
 
 # Brain opt-in: HARNESS_BRAIN_MODEL switches the claude-host brain tiers
 # (deep/advisor) only. codex/cursor/grok catalogs are host-side and stay untouched.
-CLAUDE_BRAIN_MODEL="claude-opus-4-8"
+# 2026-07-25 operator decision: Opus 4.8 retired from the catalog entirely.
+# Lineup: brain = Opus 5, review = Fable 5, worker = Sonnet 5.
+CLAUDE_BRAIN_MODEL="claude-opus-5"
 case "${HARNESS_BRAIN_MODEL:-opus}" in
-  opus) ;;
+  opus|opus5) ;;
   fable) CLAUDE_BRAIN_MODEL="claude-fable-5" ;;
-  *) echo "ERROR: unknown HARNESS_BRAIN_MODEL: ${HARNESS_BRAIN_MODEL} (use opus|fable)" >&2; exit 2 ;;
+  *) echo "ERROR: unknown HARNESS_BRAIN_MODEL: ${HARNESS_BRAIN_MODEL} (use opus|opus5|fable)" >&2; exit 2 ;;
 esac
 
 MODEL=""
 EFFORT=""
 
 if [ "$HOST" = "codex" ]; then
+  # Codex catalog (2026-07-24): gpt-5.6-sol at xhigh for delegated work/review
+  # (operator 裁定: Codex 委譲は gpt-5.6 sol/terra を xhigh で使う。sol を採用)。
   case "$TIER" in
     lite) MODEL="gpt-5.4-mini"; EFFORT="low" ;;
-    standard) MODEL="gpt-5.5"; EFFORT="medium" ;;
-    deep) MODEL="gpt-5.5"; EFFORT="high" ;;
-    review|advisor) MODEL="gpt-5.5"; EFFORT="xhigh" ;;
-    release|long-context) MODEL="gpt-5.5"; EFFORT="high" ;;
+    standard) MODEL="gpt-5.6-sol"; EFFORT="xhigh" ;;
+    deep) MODEL="gpt-5.6-sol"; EFFORT="xhigh" ;;
+    review|advisor) MODEL="gpt-5.6-sol"; EFFORT="xhigh" ;;
+    release|long-context) MODEL="gpt-5.6-sol"; EFFORT="high" ;;
     spark) MODEL="gpt-5.3-codex-spark"; EFFORT="low" ;;
     *) echo "ERROR: unknown codex tier: $TIER" >&2; exit 2 ;;
   esac
@@ -104,7 +108,9 @@ elif [ "$HOST" = "cursor" ]; then
   case "$TIER" in
     lite) MODEL="composer-2-fast"; EFFORT="low" ;;
     standard) MODEL="composer-2.5-fast"; EFFORT="medium" ;;
-    deep|advisor) MODEL="claude-opus-4-8-thinking-xhigh"; EFFORT="xhigh" ;;
+    # claude-fable-5 verified in ~/.cursor/cli-config.json (2026-07-25);
+    # opus-4-8-thinking retired per the same operator decision as the claude catalog.
+    deep|advisor) MODEL="claude-fable-5"; EFFORT="xhigh" ;;
     review) MODEL="composer-2.5-fast"; EFFORT="xhigh" ;;
     release) MODEL="composer-2.5-fast"; EFFORT="high" ;;
     long-context) MODEL="gemini-3.1-pro"; EFFORT="high" ;;
@@ -129,7 +135,7 @@ else
     lite) MODEL="claude-haiku-4-5"; EFFORT="low" ;;
     standard) MODEL="claude-sonnet-5"; EFFORT="medium" ;;
     deep|advisor) MODEL="$CLAUDE_BRAIN_MODEL"; EFFORT="xhigh" ;;
-    review) MODEL="claude-sonnet-5"; EFFORT="xhigh" ;;
+    review) MODEL="claude-fable-5"; EFFORT="xhigh" ;;
     release) MODEL="claude-sonnet-5"; EFFORT="high" ;;
     long-context) MODEL="sonnet[1m]"; EFFORT="high" ;;
     spark) echo "ERROR: spark tier is codex-only" >&2; exit 2 ;;

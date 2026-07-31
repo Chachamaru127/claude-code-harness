@@ -33,7 +33,7 @@ Use `./scripts/sync-version.sh bump` only when cutting a release.
 
 ### CHANGELOG
 
-Details: [.claude/rules/github-release.md](.claude/rules/github-release.md) (Keep a Changelog format; include Before/After tables for major changes)
+Details: [skills/harness-release/references/github-release.md](skills/harness-release/references/github-release.md) (Keep a Changelog format; include Before/After tables for major changes)
 
 ### Language
 
@@ -125,7 +125,7 @@ Details: [docs/CLAUDE-commands.md](docs/CLAUDE-commands.md)
 
 変更が必要な場合はユーザーに手動操作を依頼すること。
 
-- Cursor 実装バックエンド利用時のルール: [.claude/rules/cursor-cli-only.md](.claude/rules/cursor-cli-only.md)
+- Cursor 実装バックエンド利用時のルール: [skills/cursor-do/references/cursor-cli-only.md](skills/cursor-do/references/cursor-cli-only.md)
 
 外部 API への sandbox allowlist 設定 (Firecrawl / web スクレイプ等): [docs/sandbox-allowlist-recipe.md](docs/sandbox-allowlist-recipe.md) — `~/.claude/settings.json` への patch 手順を SSOT 化。`templates/sandbox-settings.json.template` と数値・項目を同期。
 
@@ -153,9 +153,9 @@ Details & handoff: [docs/CLAUDE-commands.md](docs/CLAUDE-commands.md)
 
 Details: [.claude/rules/test-quality.md](.claude/rules/test-quality.md) / [.claude/rules/implementation-quality.md](.claude/rules/implementation-quality.md)
 
-- Migration policy: [.claude/rules/migration-policy.md](.claude/rules/migration-policy.md) - deleted-concepts.yaml の運用ルール (Phase 40 で導入)
-- Active watching test policy: [.claude/rules/active-watching-test-policy.md](.claude/rules/active-watching-test-policy.md) - 外部 daemon / opt-in ファイル監視機能の 3 状態テスト規約 (Phase 50 で導入、D40 / P29 運用ルール化)
-- Cross-repo handoff: [.claude/rules/cross-repo-handoff.md](.claude/rules/cross-repo-handoff.md) - claude-code-harness ↔ harness-mem 責任境界 + 2 経路 handoff workflow (Phase 65 で codify、D42 の shareable policy 部分)
+- Migration policy: [docs/rules/migration-policy.md](docs/rules/migration-policy.md) - deleted-concepts.yaml の運用ルール (Phase 40 で導入)
+- Active watching test policy: [docs/rules/active-watching-test-policy.md](docs/rules/active-watching-test-policy.md) - 外部 daemon / opt-in ファイル監視機能の 3 状態テスト規約 (Phase 50 で導入、D40 / P29 運用ルール化)
+- Cross-repo handoff: [docs/rules/cross-repo-handoff.md](docs/rules/cross-repo-handoff.md) - claude-code-harness ↔ harness-mem 責任境界 + 2 経路 handoff workflow (Phase 65 で codify、D42 の shareable policy 部分)
 
 ## North Star
 
@@ -171,7 +171,7 @@ Codex / Cursor の hook について繰り返し起きた誤解を固定する�
 
 - **FACT-1 (generated, not inline)**: Codex / Cursor は一級の hook ホスト。hook は config.toml に inline で書かれず、`harness gen` が生成する `.codex/hooks.json` / `.cursor/hooks.json` (gitignore された build artifact) に入る。すべて `bin/harness hook pre-tool --host <h>` を呼ぶ。
 - **FACT-2 (no inline != no hooks)**: 「config.toml に inline hooks が無い」は「config の中に書かない」の意味であって「hook が無い」ではない。この 2 つを混同しない。
-- **FACT-3 (enforcement wired / delivery undeployed)**: hook は 2 層。(a) enforcement (PreToolUse → R01-R13 policy engine) は 3 host 対称に配線済みで `harness gen` で生成される。(b) Mode 2 delivery (inbox-check / monitor 受信) は生成関数 `GenerateDeliveryHooksJSON` が実装・unit test 済みだが本番 caller がゼロ (harness gen 未接続)。よって生成 hook に inbox-check は入らず、Codex/Cursor の delivery hook は未 deploy。Claude の inbox-check のみ `.claude-plugin/hooks.json` に手書きで存在。配線すれば Codex/Cursor にも turn 境界 delivery が届く (live ではない)。
+- **FACT-3 (enforcement wired / delivery wired)**: hook は 2 層。(a) enforcement (PreToolUse → R01-R13 policy engine) は 3 host 対称に配線済みで `harness gen` が生成する。(b) Mode 2 delivery (inbox-check / monitor 受信) も生成配線済み — `GenerateDeliveryHooksJSON` は Phase 105.9 [b82143fe] で `harness gen` に接続され、生成される Codex/Cursor hooks.json に inbox-check (turn 境界 delivery) が入る。identity は Phase 121.2 で runtime env 解決 (`inbox check --from-env`、`{{TEAM}}`/`{{AGENT}}` placeholder は撤去)。Claude host の Stop 配線は Phase 121.3 で tracked `hooks/hooks.json` + `.claude-plugin/hooks.json` に追加 (env 展開 + stdin session_id fallback)。live monitor は opt-in で既定 OFF。
 - **FACT-4 (materialize して確認)**: あるホストが capability を欠くと結論する前に、必ず `harness gen` 出力を実際に materialize して中身を確認する。config コメントだけで「無い」と断定しない。not_observed != absent。
 
 <!-- harness-integrity: last-audit=2026-05-18 -->

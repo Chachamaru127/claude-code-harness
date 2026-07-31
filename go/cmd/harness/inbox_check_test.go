@@ -50,22 +50,8 @@ func TestInboxCheck_EmptyDB(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("expected exit 0 for missing DB (fail-open), got %d; stderr path ok", code)
 	}
-
-	var result inboxCheckOutput
-	if err := json.Unmarshal([]byte(out), &result); err != nil {
-		t.Fatalf("invalid JSON: %v\nraw: %s", err, out)
-	}
-	if result.Unread != 0 {
-		t.Errorf("unread = %d, want 0", result.Unread)
-	}
-	if result.Team != "team-a" {
-		t.Errorf("team = %q, want team-a", result.Team)
-	}
-	if result.Agent != "agent-1" {
-		t.Errorf("agent = %q, want agent-1", result.Agent)
-	}
-	if len(result.Messages) != 0 {
-		t.Errorf("messages len = %d, want 0", len(result.Messages))
+	if strings.TrimSpace(out) != "" {
+		t.Fatalf("zero unread must be silent on stdout, got: %q", out)
 	}
 }
 
@@ -77,21 +63,42 @@ func TestInboxCheck_EmptyDB(t *testing.T) {
 func TestInboxCheck_GeneratedDeliveryCommandForm(t *testing.T) {
 	// Point the default resolver at an empty temp project so no real db exists.
 	t.Setenv("CLAUDE_PLUGIN_DATA", t.TempDir())
+	t.Setenv("HARNESS_LIVEMSG_TEAM", "team-a")
+	t.Setenv("HARNESS_LIVEMSG_AGENT", "agent-1")
 
 	var stdout, stderr bytes.Buffer
-	code := runInboxCheckCommand([]string{"--team", "team-a", "--agent", "agent-1"}, &stdout, &stderr)
+	code := runInboxCheckCommand([]string{"--from-env"}, &stdout, &stderr)
 	if code != 0 {
 		t.Fatalf("generated command form should exit 0, got %d; stderr=%q", code, stderr.String())
 	}
 	if strings.Contains(stderr.String(), "--db is required") {
 		t.Fatalf("generated command form must not hit the --db-required error path; stderr=%q", stderr.String())
 	}
-	var result inboxCheckOutput
-	if err := json.Unmarshal(stdout.Bytes(), &result); err != nil {
-		t.Fatalf("generated command form must emit valid JSON, got err %v; raw=%q", err, stdout.String())
+	if strings.TrimSpace(stdout.String()) != "" {
+		t.Fatalf("generated delivery form with empty inbox must be silent, got: %q", stdout.String())
 	}
-	if result.Team != "team-a" || result.Agent != "agent-1" || result.Unread != 0 {
-		t.Errorf("unexpected result: %+v", result)
+}
+
+func TestInboxCheck_FromEnvReadsLivemsgInbox(t *testing.T) {
+	team := "team-smoke"
+	agent := "agent-smoke"
+	dbPath := seedInboxDB(t, team, "peer", agent, 1)
+	t.Setenv("HARNESS_LIVEMSG_TEAM", team)
+	t.Setenv("HARNESS_LIVEMSG_AGENT", agent)
+
+	out, code := runInboxCheckCapture([]string{"--from-env", "--db", dbPath})
+	if code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
+	}
+	var result inboxCheckOutput
+	if err := json.Unmarshal([]byte(out), &result); err != nil {
+		t.Fatalf("JSON: %v", err)
+	}
+	if result.Team != team || result.Agent != agent {
+		t.Fatalf("identity not resolved: %+v", result)
+	}
+	if result.Unread != 1 {
+		t.Fatalf("unread = %d, want 1", result.Unread)
 	}
 }
 
@@ -121,15 +128,8 @@ func TestInboxCheck_ReadsAndMarksRead(t *testing.T) {
 	if code2 != 0 {
 		t.Fatalf("second check exit = %d, want 0", code2)
 	}
-	var second inboxCheckOutput
-	if err := json.Unmarshal([]byte(out2), &second); err != nil {
-		t.Fatalf("second JSON: %v\nraw: %s", err, out2)
-	}
-	if second.Unread != 0 {
-		t.Fatalf("second unread = %d, want 0 after MarkRead", second.Unread)
-	}
-	if len(second.Messages) != 0 {
-		t.Fatalf("second messages len = %d, want 0", len(second.Messages))
+	if strings.TrimSpace(out2) != "" {
+		t.Fatalf("second check with zero unread must be silent, got: %q", out2)
 	}
 }
 

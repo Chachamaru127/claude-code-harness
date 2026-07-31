@@ -120,7 +120,7 @@ claude_worker="$(bash "$ROUTER" --host claude --role worker --field model)"
 cursor_worker="$(bash "$ROUTER" --host cursor --role worker --field model)"
 [ "$cursor_worker" = "composer-2.5-fast" ] || fail "cursor worker routing regressed"
 codex_worker="$(bash "$ROUTER" --host codex --role worker --field model)"
-[ "$codex_worker" = "gpt-5.5" ] || fail "codex worker routing regressed"
+[ "$codex_worker" = "gpt-5.6-sol" ] || fail "codex worker routing regressed"
 
 # Dist build: package-local paths, core skills present
 DIST_TMP="$(mktemp -d)"

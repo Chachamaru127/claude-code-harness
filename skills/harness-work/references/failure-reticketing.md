@@ -25,3 +25,15 @@ Each proposal should include:
 - dependency on the original task
 
 Only add the task to `Plans.md` after user approval.
+
+## Commands
+
+- `approve fix <task_id>` — add the proposal to `Plans.md` as `cc:TODO`.
+- `reject fix <task_id>` — discard the proposal.
+- Bare `yes` / `no` — accepted only when exactly one proposal is pending.
+
+## Failure Category Detection
+
+Classify the cause before writing the proposal: `syntax_error` / `import_error` /
+`type_error` / `assertion_error` / `timeout` / `runtime_error`. The category feeds
+the proposed fix task's title (`fix: [original task] - [category]`).

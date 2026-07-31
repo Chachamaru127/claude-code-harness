@@ -23,15 +23,7 @@ CLAUDE.md 末尾を **Read ツールで確認**し、以下をチェック:
 
 ## なぜこのルールが必要か
 
-settings.json の deny ルールは「エージェント自身を制約する鎖」。
-鎖の本数が減っていたら、意図しない緩和か改ざんの可能性がある。
-絶対数ではなく減少方向を検知することで、正当な追加は許容しつつ緩和を捕捉する。
-
-settings.local.json への hook 注入を別建てで監視するのは、deny
-（`Write/Edit(.claude/settings*)`）が **ツール経路を塞ぐ preventive 層**であるのに対し、
-Bash リダイレクト等の残余経路（guardrail では warn 止まり）に対しては
-**detective な backstop** が必要だから。preventive（deny で書かせない）と
-detective（後から注入を見つける）の二段で「鎖を外す」改ざんを捕捉する。
+背景 (why): [docs/rules/governance-rationale.md](../../docs/rules/governance-rationale.md#self-auditmd)
 
 ## CCH delivery hook allowlist
 

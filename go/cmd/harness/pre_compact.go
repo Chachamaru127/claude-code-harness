@@ -23,6 +23,13 @@ type preCompactDecision struct {
 	Reason   string `json:"reason,omitempty"`
 }
 
+type preCompactContinue struct {
+	Continue bool   `json:"continue"`
+	Message  string `json:"message,omitempty"`
+}
+
+const preCompactAutoCheckpointMessage = "chore(plans): auto-checkpoint before compaction"
+
 func runPreCompact(_ []string) {
 	exitCode, err := evaluatePreCompact(os.Stdin, os.Stdout)
 	if err != nil {
@@ -56,6 +63,9 @@ func evaluatePreCompact(r io.Reader, w io.Writer) (int, error) {
 		return 0, nil
 	}
 	if isPlansDirty(projectRoot, plansPath) {
+		if readPrecompactAutoCommitFromHarnessConfig(projectRoot) {
+			return tryAutoCommitPlansBeforeCompact(w, projectRoot, plansPath)
+		}
 		return writePreCompactBlock(w, "Plans.md has uncommitted edits; save or checkpoint before compacting"), nil
 	}
 
@@ -117,6 +127,87 @@ func readPlansDirectoryFromHarnessConfig(projectRoot string) string {
 		return value
 	}
 	return ""
+}
+
+// readPrecompactAutoCommitFromHarnessConfig parses precompactAutoCommit from
+// .claude-code-harness.config.yaml. Default is true (auto-commit ON); only an
+// explicit false disables it.
+func readPrecompactAutoCommitFromHarnessConfig(projectRoot string) bool {
+	const configFile = ".claude-code-harness.config.yaml"
+	const key = "precompactAutoCommit:"
+
+	f, err := os.Open(filepath.Join(projectRoot, configFile))
+	if err != nil {
+		return true
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.HasPrefix(line, key) {
+			continue
+		}
+		value := strings.TrimSpace(line[len(key):])
+		value = strings.Trim(value, `"'`)
+		value = strings.ToLower(strings.TrimSpace(value))
+		return value != "false"
+	}
+	return true
+}
+
+func tryAutoCommitPlansBeforeCompact(w io.Writer, projectRoot, plansPath string) (int, error) {
+	relPath, err := filepath.Rel(projectRoot, plansPath)
+	if err != nil || relPath == "." || strings.HasPrefix(relPath, "..") {
+		relPath = "Plans.md"
+	}
+
+	addCmd := exec.Command("git", "add", "--", relPath)
+	addCmd.Dir = projectRoot
+	if out, err := addCmd.CombinedOutput(); err != nil {
+		return writePreCompactBlock(w, plansDirtyBlockReasonWithCommitErr(string(out), err)), nil
+	}
+
+	commitCmd := exec.Command("git", "commit", "-m", preCompactAutoCheckpointMessage, "--", relPath)
+	commitCmd.Dir = projectRoot
+	if out, err := commitCmd.CombinedOutput(); err != nil {
+		resetCmd := exec.Command("git", "reset", "HEAD", "--", relPath)
+		resetCmd.Dir = projectRoot
+		_ = resetCmd.Run()
+		return writePreCompactBlock(w, plansDirtyBlockReasonWithCommitErr(string(out), err)), nil
+	}
+
+	hashCmd := exec.Command("git", "rev-parse", "--short", "HEAD")
+	hashCmd.Dir = projectRoot
+	hashOut, err := hashCmd.Output()
+	if err != nil {
+		return writePreCompactBlock(w, plansDirtyBlockReasonWithCommitErr("", err)), nil
+	}
+	shortHash := strings.TrimSpace(string(hashOut))
+
+	resp := preCompactContinue{
+		Continue: true,
+		Message:  fmt.Sprintf("Plans.md auto-committed (%s) before compaction", shortHash),
+	}
+	data, err := json.Marshal(resp)
+	if err != nil {
+		fmt.Fprintf(w, "{\"continue\":true}\n")
+		return 0, nil
+	}
+	fmt.Fprintf(w, "%s\n", data)
+	return 0, nil
+}
+
+func plansDirtyBlockReasonWithCommitErr(gitOutput string, commitErr error) string {
+	const base = "Plans.md has uncommitted edits; save or checkpoint before compacting"
+	hint := strings.TrimSpace(gitOutput)
+	if hint == "" && commitErr != nil {
+		hint = commitErr.Error()
+	}
+	if hint == "" {
+		return base + " (auto-commit failed)"
+	}
+	return base + " (auto-commit failed: " + strings.TrimSpace(hint) + ")"
 }
 
 func readPreCompactInput(r io.Reader) (preCompactInput, error) {

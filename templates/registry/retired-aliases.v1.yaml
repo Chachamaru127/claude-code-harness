@@ -17,6 +17,7 @@ entries:
       - "Plans.md"
       - "docs/social/"
       - "skills/claude-codex-upstream-update/"
+      - "docs/rules/migration-policy.md"
 
   - id: guardrails-rules-ts
     kind: path
@@ -25,6 +26,7 @@ entries:
     reason: "TypeScript guardrail rules file; replaced by go/internal/guardrail/rules.go"
     allowlist:
       - "go/"
+      - "docs/rules/migration-policy.md"
 
   - id: ts-guardrail-engine-concept
     kind: concept
@@ -42,6 +44,7 @@ entries:
       - "docs/positioning-notes.md"
       - "docs/release-copy-phase21.md"
       - "Plans.md"
+      - "docs/rules/migration-policy.md"
 
   - id: skill-gogcli-ops
     kind: path
@@ -90,3 +93,37 @@ entries:
       - "Plans.md"
       - "templates/registry/"
       - "docs/reports/"
+
+  - id: rule-command-editing
+    kind: path
+    pattern: ".claude/rules/command-editing.md"
+    removed_in: "Phase 124.1"
+    reason: "v2.17.0 で commands→skills 移行済み、DEPRECATED バナー付きのまま残っていた legacy command 規約ファイルを削除 (常時ロード context 棚卸し、Phase 124.1)。規約は skill-editing.md に統合済み"
+    allowlist:
+      - "CHANGELOG.md"
+      - ".claude/memory/archive/"
+      - "Plans.md"
+      - "templates/registry/"
+      - "docs/rules/skill-editing-templates.md"
+
+  - id: rule-opus-4-7-prompt-audit
+    kind: path
+    pattern: "opus-4-7-prompt-audit"
+    removed_in: "Phase 124.3"
+    reason: "Opus 4.7 世代の agent prompt 監査基準を Claude 5 世代向け claude-5-prompt-standard.md に置換 (operator 承認 2026-07-26)。Anthropic の Claude 5 ガイダンス (例文の大量提示は探索空間を狭める / ルールで縛るより判断に任せる) と衝突する条項 (曖昧語 blanket 禁止、行動指示への逐語要素一律必須化、before/after 例の大量記録義務) を撤廃し、契約系条項 (schema 名・列挙値・回数上限・wrapper command・権限境界・effort tier 指定) のみ維持して後継ファイルに引き継いだ"
+    allowlist:
+      - "CHANGELOG.md"
+      - ".claude/memory/archive/"
+      - "Plans.md"
+      - "templates/registry/"
+      - "docs/CLAUDE-feature-table.md"
+      - "docs/opus-4-7-impact.md"
+      - "docs/upstream-update-snapshot-2026-05-15.md"
+      - "docs/task-budgets-research.md"
+      - "docs/smoke-test-v4.2.0.md"
+      - ".claude/memory/session-log.md"
+      - "skills/harness-work/SKILL.md"
+      - "skills/harness-work/references/"
+      - "opencode/skills/harness-work/SKILL.md"
+      - ".claude/rules/claude-5-prompt-standard.md"
+      - "codex/AGENTS.md"

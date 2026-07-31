@@ -1,6 +1,6 @@
 {
   "name": "claude-code-harness",
-  "version": "5.3.0",
+  "version": "5.5.0",
   "description": "Public supported Cursor adapter for Claude Code Harness Plan, Work, Review, and Release workflows.",
   "author": {
     "name": "Chachamaru",

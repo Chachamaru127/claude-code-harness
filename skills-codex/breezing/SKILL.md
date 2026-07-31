@@ -28,6 +28,17 @@ effort: high
 
 **後方互換エイリアス**: `harness-work --breezing` をチーム実行モードで動かします。
 
+## Default Pipeline（plan → work → review → report を 1 コマンドで完走）
+
+Claude Code 版と同一の契約（operator 裁定 2026-07-24。正本: `skills/breezing/SKILL.md` の同名節）:
+
+1. **Plan gate**: 依頼スコープの task が Plans.md に無い/不足なら、先に `harness-plan` を実行してから続行（スコープ既定は「今進められる全作業」）
+2. **Work**: 既存のチーム実行フロー（per-task review 含む）
+3. **Integrated Review Gate（既定 ON）**: 実装完了後・**最終化（完了報告・run 完了宣言）の前に**、run 全体 diff に `harness-review` を実行。review target は通常 `{base_ref}..HEAD`、`--no-commit` run は working tree（未 commit 変更 + untracked）。fresh-context 独立 reviewer + cross-CLI second opinion を併走させ、APPROVE まで修正 → 再レビューを反復（最大 3 回。未収束は影響 task を `cc:WIP` に戻して human escalation）
+4. **Finalize + Report**: gate APPROVE 後に Plans.md 更新・完了報告を確定。最終報告は easy 作法（host に `easy` skill があればその作法、なければ Completion Report テンプレート）
+
+低リスクの高速 run で 3 を省きたい時は `--no-review-gate`（per-task review は維持、統合レビューのみスキップ）。
+
 ## Quick Reference
 
 ```bash

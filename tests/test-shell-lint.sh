@@ -19,6 +19,7 @@ targets=(
   "scripts/release-preflight.sh"
   "scripts/setup-codex.sh"
   "scripts/setup-opencode.sh"
+  "scripts/plan-preapproval.sh"
   "scripts/set-impl-backend.sh"
   "scripts/resolve-impl-backend.sh"
   "scripts/cursor-companion.sh"

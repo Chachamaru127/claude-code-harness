@@ -96,11 +96,13 @@ namespace as the user-facing mental model.
 The concrete model for any host+role is resolved by
 `scripts/model-routing.sh --host <backend> --role <role>`. This contract does
 not reimplement model selection. The claude-host brain tiers (`deep`,
-`advisor`) default to `claude-opus-4-8`; setting `HARNESS_BRAIN_MODEL=fable`
-opts those two tiers into `claude-fable-5`. Unset, empty, or `opus` keeps the
-default; any other value fails with exit 2 instead of falling back silently.
-The opt-in never changes the worker or review tiers and never touches the
-codex/cursor catalogs.
+`advisor`) default to `claude-opus-5` (Opus 4.8 was retired from the catalog
+on 2026-07-25; the claude lineup is brain = Opus 5, review = Fable 5,
+worker = Sonnet 5). Unset, empty, `opus`, or `opus5` keeps the default;
+setting `HARNESS_BRAIN_MODEL=fable` opts those two tiers into
+`claude-fable-5`; any other value fails with exit 2 instead of falling back
+silently. The opt-in never changes the worker or review tiers and never
+touches the codex/cursor catalogs.
 
 Cursor remains `internal-compatible`, not a public `supported` claim. The
 shipped `harness` CLI keeps Cursor opt-in by default; individual

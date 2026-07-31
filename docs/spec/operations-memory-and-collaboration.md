@@ -85,6 +85,16 @@ coordinate them to reduce file conflicts, but only under these rules.
   `git --git-common-dir`, never under a worktree-local `.claude/`, so parallel
   worktree Workers share a single lease space. Lease keys are the sha256 of the
   repo-relative path, never an absolute path.
+- The live-session set used by lease staleness is the union of (a) the shared
+  presence directory `<git-common-dir parent>/.claude/sessions/live-sessions/`
+  and (b) the worktree-local `active.json` roster. Presence files are
+  session-owned: a session creates/refreshes only its own file on SessionStart
+  and deletes only its own file on Stop; entries older than 24h are pruned
+  during register. Presence files are mode 0600 inside a 0700 directory (the
+  same floor as the lease store). A missing presence directory is
+  `not-configured` and silent — behavior falls back to the local-only roster
+  (the pre-presence behavior). A nil local roster removes only the local half
+  of the union; a fresh presence file still keeps its holder alive.
 - Lease acquisition is atomic (`O_CREAT|O_EXCL`). Staleness requires both TTL
   expiry and the holder session id being absent from the live-session set; pid
   liveness is only an auxiliary signal.
@@ -112,6 +122,29 @@ coordinate them to reduce file conflicts, but only under these rules.
   for those sessions.
 - Mode 2 peer: a concurrent session the human opened themselves (not
   orchestrator-spawned).
+- Directed messages (livemsg) share the same data-not-instructions envelope on
+  every delivery surface: the CLI delivery path (`inbox check` / `inbox
+  monitor`) strips control characters and ANSI escapes, prepends the
+  non-instruction disclaimer, and bounds the payload (4096-byte total inject
+  cap plus a per-message cap so one message cannot evict the rest). `inbox
+  send` sanitizes on write as well. Delivery identity resolves at runtime
+  (`--from-env` for generated Codex/Cursor hooks; env expansion plus Stop-stdin
+  session id for the tracked Claude hook), never as gen-time embedded values.
+- A human-sent nudge is coordination data, not an instruction, and carries no
+  user authority. Risk Gate approvals happen only on the target session's own
+  console; a nudge can steer, it can never consent.
+- Read-state visibility: senders may observe whether a directed message was
+  read (`inbox sent`: read flag + read_at derived from message_read events).
+  Read state is observability only — it never gates or retries delivery.
+- Presence card content: a presence file may carry optional
+  `{label, task, since}` JSON (session label, declared current task, RFC3339
+  start). Content never affects liveness — filename + mtime remain the only
+  liveness inputs — and garbage content is tolerated fail-open. Declarations
+  are session-owned (a session rewrites only its own card). The team view
+  lists label (short-id fallback), current task, and elapsed time so a task
+  number can be reverse-looked-up to its session. The team list uses the same
+  live-session union as lease staleness: shared presence plus the worktree-local
+  active.json roster.
 
 ## Worktree Root Discipline
 
@@ -191,6 +224,51 @@ Historical L3 note: an earlier bridge subsystem prototyped a `bridge-event.v1` e
     (release-preflight fail-closed host smoke, validate-plugin, CI, independent
     test-wiring auditor, binary drift gate); the distributed default stays the
     human stop, and a missing or unparseable config fails safe to stop.
+  - `plan-preapproval.v2` is not a third runtime-floor exception. The Go
+    preapproval reader is wired only to the `ask` branch of guardrail rule R12
+    (`confirm-direct-push-protected-branch`). It never runs before or inside the
+    five runtime-floor category checks, and it never overrides R12 `deny`.
+    Therefore the exhaustive runtime-floor exception list remains exactly
+    `runtimefloor.secretAllow` and `runtimefloor.releaseAuto`.
+  - Destructive-removal syntax is scanned by the shared `go/pkg/shellscan`
+    package so the runtime floor and R05 cannot evolve separate coverage.
+    Dangerous forms are the union of recursive `rm` short flags (including
+    `-r` without `-f`), GNU `--recursive`, `find ... -delete`, `find ... -exec
+    rm`, and removal of protected macOS paths. Document-only heredoc bodies and
+    line comments are excluded, but bodies passed to bash, sh, zsh, dash, ksh,
+    Python, Perl, Ruby, or Node remain executable input and must stay scannable.
+    Removal targets stop at `&&`, `||`, `;`, `|`, or newline; `--` ends option
+    parsing, and `find` removal uses its search root as the target. After the
+    Runtime Floor rejects worktree escapes, R05 may skip its `ask` only when
+    every extracted target and `ProjectRoot` resolve through symlinks and every
+    real target is inside the real project root. GNU and BSD `find` global
+    options are parsed; BSD `-f path`, `-fpath`, and combined `-Efpath`
+    contribute `path` as a search root.
+    Missing targets are classified from the nearest resolvable ancestor. Empty
+    extraction, shell-expanded or
+    argument-producer-appended targets, relative targets combined with
+    directory-changing commands, dynamic command names, raw `..` path
+    components, empty roots, resolution errors, any external target, and `find`
+    modes that follow descendant symlinks or use `-files0-from` retain `ask`.
+    Backtick target substitution also retains `ask`. Shell command names are
+    evaluated with the shared tokenizer so quoting, escaping, and line
+    continuations cannot bypass these checks. Removal nested in a
+    general-purpose interpreter retains `ask`. A non-removal shell segment
+    before a dangerous removal, or an unknown launcher before `rm` or `find`,
+    also retains `ask` because it can change target resolution after policy
+    evaluation. Pipelines and background execution retain `ask` because their
+    segments execute concurrently. Process substitution through `<(` or `>(`
+    is also indeterminate. Executable paths and environment assignments before
+    the removal program retain `ask`; file-descriptor duplication such as
+    `2>&1` remains ordinary redirection. `WorkMode` retains its existing R05
+    bypass. `find -exec`, `-execdir`, `-ok`, and `-okdir` apply the same checks
+    to each launched command. A validated bare `rm` may run there; nested `find`
+    removal retains `ask` because the outer extraction does not contain its
+    roots.
+  - Worktree-local recursive deletion can permanently lose unstaged changes and
+    untracked files. A linked worktree's `.git` file points to metadata in the
+    main repository, so committed objects and the staged index snapshot survive
+    deletion; working-tree-only data does not.
 - Auto-approve scope. Inside a CONFINED worktree the Lead may auto-judge
   code/file/git "ask" gates; the runtime hard floor is the only escalation path.
   Auto-approve must NOT be enabled until both the runtime floor and worktree

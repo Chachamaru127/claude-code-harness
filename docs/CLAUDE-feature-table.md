@@ -7,7 +7,7 @@
 
 | 機能 | 活用スキル | 用途 |
 |------|-----------|------|
-| **Phase 89 セッション協調 (file lease + register + broadcast 復活)** | hooks, breezing, harness-work | `A: 実装あり`。同一 PC・同一 repo の複数 CC セッションで `.go`/`.md`/`.sh` 編集衝突を `continueOnBlock` 経由でモデルにフィードバック。`go/internal/hookhandler/session_lease.go` (`git --git-common-dir` 配下に sha256 hex 命名の lock + `os.Link` create-only + (TTL AND active.json) stale 判定 + 24h auto-prune + worktree shared store)、`session_register.go` (SessionStart/Stop で active.json 記名解除 + tri-state)、`file_lease_hook.go` (PreToolUse silent acquire + PostToolUse `permissionDecision:"deny"` + `continueOnBlock:true` + 8-char holder prefix + sanitized path)、`inbox_check.go` (structured fields only + 4096B cap + ANSI/NUL 除去 + `userprompt-inject-policy` disclaimer)、`session_auto_broadcast.go` (`.go`/`.md`/`.sh` extension match via `filepath.Ext` で 2026-02 死骸復活、`*<ext>` label で debug 可視化)。`hooks/hooks.json` + `.claude-plugin/hooks.json` dual-sync で PreToolUse/PostToolUse/SessionStart/Stop に配線。`continueOnBlock` は diagnostic feedback (R01-R13 guard rail でない、`hooks-2.1.139-plus.md` §3 整合)。harness-mem 非依存 = 同一 PC 限定、別 clone 間は非共有。 |
+| **Phase 89 セッション協調 (file lease + register + broadcast 復活)** | hooks, breezing, harness-work | `A: 実装あり`。同一 PC・同一 repo の複数 CC セッションで `.go`/`.md`/`.sh` 編集衝突を `continueOnBlock` 経由でモデルにフィードバック。`go/internal/hookhandler/session_lease.go` (`git --git-common-dir` 配下に sha256 hex 命名の lock + `os.Link` create-only + (TTL AND active.json) stale 判定 + 24h auto-prune + worktree shared store)、`session_register.go` (SessionStart/Stop で active.json 記名解除 + tri-state)、`file_lease_hook.go` (PreToolUse silent acquire + PostToolUse `permissionDecision:"deny"` + `continueOnBlock:true` + 8-char holder prefix + sanitized path)、`inbox_check.go` (structured fields only + 4096B cap + ANSI/NUL 除去 + `userprompt-inject-policy` disclaimer)、`session_auto_broadcast.go` (`.go`/`.md`/`.sh` extension match via `filepath.Ext` で 2026-02 死骸復活、`*<ext>` label で debug 可視化)。`hooks/hooks.json` + `.claude-plugin/hooks.json` dual-sync で PreToolUse/PostToolUse/SessionStart/Stop に配線。`continueOnBlock` は diagnostic feedback (R01-R13 guard rail でない、`hooks-2.1.139-plus.md` §3 整合)。Phase 120: `session_presence.go` が git-common-dir 親の `live-sessions/` presence (session-owned, 0600/0700, 24h prune) を追加し、lease staleness の生存判定を「共有 presence ∪ ローカル active.json」の worktree 横断 union に修正 (名簿 active.json と broadcast/inbox は従来どおり worktree ローカル)。harness-mem 非依存 = 同一 PC 限定、別 clone 間は非共有。Phase 121 (HOTL session messaging): livemsg directed message の配送路に信頼契約 (sanitize + 非命令 disclaimer + 4096B/768B cap)、人間送信 CLI `inbox send` / 既読可視化 `inbox sent`、Claude Stop 境界配線 (`hooks/hooks.json` dual-sync、未読 0 は silent)、生成 hook identity の runtime 解決 (`--from-env`、`{{TEAM}}` placeholder 撤去)、presence card `{label, task, since}` + `harness session declare/list` (task 番号→セッション逆引き、liveness は filename+mtime のまま)。 |
 | **Phase 80 Claude Code 2.1.143-2.1.152 + Codex 0.131-0.134 upstream refresh** | upstream-update, hooks, skill-editing, setup, codex, harness-plan | `A: 実装あり / C: 自動継承 / P: Plans 化 / Reject: 未確認 claim (B: 0 件)`。`docs/upstream-update-snapshot-2026-05-27.md` + `docs/upstream-adoption-plan-2026-05-27.md` を Plans `80.1.1`-`80.1.6` に接続。Claude: `disallowed-tools`, `/reload-skills`, `SessionStart.reloadSkills`, `MessageDisplay` opt-in policy, `/code-review` rename, `claude agents --json`, Auto mode consent 廃止 (Harness default 維持)。Codex: `--profile` primary, curl/PowerShell installer docs, MCP environment/OAuth (defer), read-only MCP parallelism (inherit). |
 | **Phase 69 Claude Code 2.1.133-2.1.142 後続活用** | upstream-update, hooks, guardrails, agents, harness-plan, harness-work | `A: 実装あり / C: 自動継承 / P: Plans 化 (B: 0 件)`。`docs/upstream-update-snapshot-2026-05-15.md` を Tier 1 5 件 (`worktree.baseRef` template 明示 / hooks `$CLAUDE_EFFORT` rule / `autoMode.hard_deny` baseline 7 件 / hook `args` exec form + `continueOnBlock` + SessionStart command-only rules / hook `terminalSequence` opt-in 実装) + Tier 2 5 件 (CC native `/goal` も Plans.md SSOT に従う policy / `claude agents` agent-view policy + 9 flag 利用条件 / background permission mode 保持の Worker 期待値 / `claude plugin details` の CI 補助情報化 / Phase 69 rule SSOT) に分解。`.claude/rules/hooks-2.1.139-plus.md` と `docs/agent-view-policy.md` を新設、`templates/claude/settings.security.json.template` に `worktree.baseRef: "fresh"` / `autoMode.hard_deny` を baseline 追加 (`.claude-plugin/settings.json` への手動マージは self-write guardrail のため release operator 作業)、`scripts/lib/terminal-notify.sh` 経由で `webhook-notify.sh` と `notification-handler.sh` が `HARNESS_TERMINAL_NOTIFY` opt-in で `terminalSequence` を emit する。 |
 | **Phase 67 Codex 0.130.0 stable snapshot** | upstream-update, setup, codex, harness-review | `A: 検証強化 / C: 自動継承 / P: Plans 化 (B: 0 件)`。`docs/upstream-update-snapshot-2026-05-10.md` を Plans `67.1.1`-`67.1.4` に接続し、`rust-v0.130.0` stable の `codex remote-control`, plugin-bundled hooks, plugin sharing metadata, app-server Thread pagination APIs, Bedrock `aws login`, selected-environment `view_image`, live threads from latest config snapshot, `apply_patch` 後の turn diffs, ThreadStore summaries/resume/fork, `response.processed`, Windows sandbox runtime bin cache, `cargo install --locked`, OTel trace metadata, built-in MCPs, `CODEX_HOME` environments TOML provider を A/C/P 分類した。 |
@@ -129,7 +129,7 @@
 | **Slack Integration (`@Claude`)** | — | 将来対応（Teams/Enterprise 前提）。Harness 側の実装なし |
 | **Server-managed settings (public beta)** | setup | サーバー配信による一括設定管理。Teams/Enterprise 向け |
 | **Microsoft Foundry** | setup, breezing | 新クラウドプロバイダとして追加 |
-| **`PreCompact` hook** | hooks | コンテキスト圧縮前の状態保存と WIP タスク警告（実装済み） |
+| **`PreCompact` hook** | hooks | compact 前に Plans.md 未保存なら pathspec 限定 auto-checkpoint コミット後に続行（失敗時または `precompactAutoCommit: false` のみ block） |
 | **`Notification` hook event** | hooks | 通知発火時のカスタムハンドラ（実装済み） |
 | **`/context` コマンド (v2.1.74)** | all skills | コンテキスト消費の可視化と最適化提案 |
 | **`maxTurns` エージェント安全制限** | agents/ | ターン上限による暴走防止。Worker: 100, Reviewer: 50, Scaffolder: 75 |
@@ -498,7 +498,7 @@ CC 2.1.68 で追加された `type: "agent"` フック。LLM エージェント�
 Harness では3箇所に限定採用し、コスト管理のため `model: "haiku"` と `matcher` で対象を絞る:
 
 - **PreToolUse Write|Edit**: シークレット埋め込み・TODO スタブ・セキュリティ脆弱性のガード
-- **PreCompact**: compact 前の WIP タスク残存警告（harness-loop 所有セッションは抑止）
+- **PreCompact**: dirty Plans.md は pathspec 限定 auto-checkpoint（`chore(plans): auto-checkpoint before compaction`）後に compact 続行。commit 失敗または `precompactAutoCommit: false` のみ block（harness-loop 所有セッションは別途 block）
 - **PostToolUse Write|Edit**: コードレビュー（品質・命名・単一責任）
 
 効果不足時は `command` 型にロールバック可能な設計。
@@ -1387,10 +1387,11 @@ Azure ベースの新クラウドプロバイダ。Bedrock / Vertex に続く第
 
 ### `PreCompact` hook
 
-コンテキスト圧縮が実行される直前に発火するフックイベント。Harness では以下の2層で実装済み:
+コンテキスト圧縮が実行される直前に発火するフックイベント。Harness では以下の3層で実装済み:
 
 1. **`pre-compact-save.js`**: セッション状態（進捗、メトリクス）を永続化
-2. **agent hook**: `cc:WIP` タスクが残っていないかチェックし、警告メッセージを注入
+2. **`bin/harness pre-compact` (Go)**: dirty Plans.md を pathspec 限定で auto-checkpoint コミットし `{"continue":true,...}` で compact 続行。commit 失敗または `precompactAutoCommit: false` のときのみ block
+3. **agent hook**: `cc:WIP` タスクが残っていないかチェックし、警告メッセージを注入
 
 ```json
 "PreCompact": [
@@ -1757,7 +1758,7 @@ CC 2.1.99 で PreCompact フックが `"block"` / `"allow"` / `"defer"` の 3-wa
 
 **Harness での活用**:
 - Breezing Worker が cc:WIP 状態のとき compaction を `"block"` し、WIP 完了後に `"allow"` するパターンが安全に実装できる
-- `hooks/hooks.json` の PreCompact ハンドラは `bin/harness pre-compact` 経由で Plans.md の cc:WIP を検出し block を返す
+- `hooks/hooks.json` の PreCompact ハンドラは `bin/harness pre-compact` 経由で dirty Plans.md を pathspec 限定 auto-checkpoint し、通常は compact 続行（commit 失敗または `precompactAutoCommit: false` のみ block）
 - `"defer"` はヘッドレス環境での条件付き延期に活用予定（現在は block/allow の 2-way を使用）
 
 **ユーザー体験の改善**:

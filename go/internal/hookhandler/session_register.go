@@ -30,6 +30,7 @@ type ActiveSession struct {
 type registerInput struct {
 	SessionID string `json:"session_id"`
 	CWD       string `json:"cwd"`
+	Label     string `json:"label,omitempty"`
 }
 
 // HandleSessionRegister adds the current session to active.json on
@@ -82,6 +83,11 @@ func HandleSessionRegister(in io.Reader, _ io.Writer) error {
 	}
 
 	_ = writeActiveJSON(activeFile, sessions)
+
+	projectRoot := resolveProjectRoot()
+	label := firstNonEmpty(inp.Label, os.Getenv("HARNESS_SESSION_LABEL"))
+	refreshSharedPresence(projectRoot, inp.SessionID, label)
+	pruneStaleSharedPresence(projectRoot, inp.SessionID)
 	return nil
 }
 
@@ -115,6 +121,7 @@ func HandleSessionUnregister(in io.Reader, _ io.Writer) error {
 	}
 	delete(sessions, inp.SessionID)
 	_ = writeActiveJSON(activeFile, sessions)
+	removeSharedPresence(resolveProjectRoot(), inp.SessionID)
 	return nil
 }
 

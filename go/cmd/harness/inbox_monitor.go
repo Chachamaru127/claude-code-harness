@@ -37,6 +37,9 @@ func runInboxMonitorCommand(args []string, stdout, stderr io.Writer) int {
 			fmt.Fprintf(stderr, "harness inbox monitor: %v\n", err)
 			return
 		}
+		if out.Unread == 0 {
+			return
+		}
 		data, err := json.Marshal(out)
 		if err != nil {
 			fmt.Fprintf(stderr, "harness inbox monitor: marshal: %v\n", err)

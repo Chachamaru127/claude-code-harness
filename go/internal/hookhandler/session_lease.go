@@ -504,10 +504,15 @@ func readLock(path string) (LeaseHolder, error) {
 
 // isStale evaluates the AND condition that defines a reclaimable lease:
 // the TTL has expired AND the holder session id is absent from the live
-// session set. Either half on its own is intentionally insufficient — TTL
-// alone would reclaim a long-running edit session, and liveness alone would
-// allow a freshly-crashed session to be evicted before the user has a
-// chance to notice. Combining the two narrows reclaim to the genuine
+// session set. The live-session set is the union of shared presence
+// (cross-worktree live-sessions/ files) and the worktree-local roster
+// (LiveSessions from active.json). When LiveSessions is nil, only the local
+// roster half is omitted and isStale falls back to TTL-only for that half;
+// shared presence is still consulted independently. Either half on its own
+// is intentionally insufficient — TTL alone would reclaim a long-running
+// edit session, and liveness alone would allow a freshly-crashed session
+// to be evicted before the user has a chance to notice. Combining TTL
+// expiry with absence from the union narrows reclaim to the genuine
 // dead-session case.
 func isStale(h LeaseHolder, cfg LeaseConfig, now time.Time) bool {
 	ttl := cfg.TTL
@@ -518,11 +523,11 @@ func isStale(h LeaseHolder, cfg LeaseConfig, now time.Time) bool {
 	if age < ttl {
 		return false
 	}
+	if isHolderAliveViaSharedPresence(h.SessionID, cfg, now) {
+		return false
+	}
 	if cfg.LiveSessions == nil {
-		// No liveness signal available — fall back to TTL-only. This is
-		// the safer half of the AND for callers that cannot read
-		// active.json yet (early bootstrap).
-		return true
+		return true // TTL-only fallback for the LOCAL half only
 	}
 	_, alive := cfg.LiveSessions[h.SessionID]
 	return !alive

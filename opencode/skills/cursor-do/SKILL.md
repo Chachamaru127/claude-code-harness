@@ -7,7 +7,7 @@ description: "Delegate a single write task to Cursor Composer via cursor-compani
 
 1 件の実装タスクを Cursor Composer (`composer-2.5-fast`) に専用 worktree 内で委譲し、Lead が diff をレビューしてから main へ cherry-pick する skill。breezing の team フローを起こさず、1 タスク 1 cherry-pick を最短経路で回す。
 
-封じ込めは Cursor 側にはない (`.claude/rules/cursor-cli-only.md`)。**専用 `.git` を持つ worktree + Lead diff review + cherry-pick (R01-R13 経路)** の 3 点だけが実効的な境界。cursor の出力は Lead レビューまで untrusted として扱う。
+封じ込めは Cursor 側にはない ([references/cursor-cli-only.md](${CLAUDE_SKILL_DIR}/references/cursor-cli-only.md))。**専用 `.git` を持つ worktree + Lead diff review + cherry-pick (R01-R13 経路)** の 3 点だけが実効的な境界。cursor の出力は Lead レビューまで untrusted として扱う。
 
 ## Step 0 — NARRATION RULES (UX Contract)
 
@@ -171,7 +171,7 @@ bash -c '
 
 ## Step 5 — cursor-companion.sh task --write で委譲
 
-Lead が直接 companion を呼ぶ (`.claude/rules/cursor-cli-only.md` Topology 節 — 非 claude backend では Worker 介在なし)。プロンプトは引数の task そのまま + 必要な追補のみ。冗長な前置きは付けない。
+Lead が直接 companion を呼ぶ ([references/cursor-cli-only.md](${CLAUDE_SKILL_DIR}/references/cursor-cli-only.md) Topology 節 — 非 claude backend では Worker 介在なし)。プロンプトは引数の task そのまま + 必要な追補のみ。冗長な前置きは付けない。
 
 ```bash
 bash -c '
@@ -382,4 +382,4 @@ cursor:do completed
 - `cursor:ask` — 読取専用の質問・調査・敵対的視点 (worktree 不要)
 - `breezing --cursor` — 複数タスクを team フローで cursor 委譲する場合
 - `harness-work` — claude backend の default フロー (Worker agent 経由)
-- `.claude/rules/cursor-cli-only.md` — Cursor backend governance + Topology
+- `references/cursor-cli-only.md` — Cursor backend governance + Topology (旧 `.claude/rules/cursor-cli-only.md` の全文がここに移設済み)

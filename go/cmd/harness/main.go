@@ -106,6 +106,8 @@ func main() {
 		runChannelsWake(os.Args[2:])
 	case "inbox":
 		runInbox(os.Args[2:])
+	case "session":
+		runSession(os.Args[2:])
 	case "self-audit":
 		runSelfAudit(os.Args[2:])
 	case "retired-alias":

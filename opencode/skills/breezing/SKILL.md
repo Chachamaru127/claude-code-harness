@@ -7,6 +7,23 @@ description: "Team execution mode — backward-compatible alias for harness-work
 
 > **後方互換エイリアス**: `harness-work` をチーム実行モードで動かします。
 
+## Default Pipeline（plan → work → review → report を 1 コマンドで完走）
+
+`/breezing` は「計画 → 実装 → OK が出るまでレビュー → 報告」を 1 回の起動で完走する。
+operator が `/harness-plan` や `/harness-review` を個別に指示する必要はない（operator 裁定 2026-07-24）。
+
+1. **Plan gate**: 依頼スコープに対応する task が Plans.md に無い、または不足している場合、先に `harness-plan` を実行して task を生成してから続行する。既に plan がある場合はそのまま Phase 0 へ。plan 生成時のスコープは harness-plan の「スコープ既定: 今進められる全作業」に従う。
+2. **Work**: 既存の Phase 0 → A → B（per-task review 含む）。
+3. **Integrated Review Gate（Phase D、既定 ON）**: Phase B 完了後、**Phase C の最終化（完了報告・run 完了宣言）より前に**、run 全体の diff に `harness-review` を実行する。
+   - review target: 通常 run は `{base_ref}..HEAD`。`--no-commit` run は commit range が空になりうるため、**working tree（未 commit 変更 + untracked ファイル）を対象にする**
+   - fresh-context の独立 reviewer subagent（実装 Worker と会話状態を共有しない）と、`bash "${HARNESS_PLUGIN_ROOT}/scripts/codex-companion.sh" review --base "${base_ref}"` の second opinion を併走させる
+   - いずれかが REQUEST_CHANGES 相当 → 修正 → 再レビュー。**APPROVE が出るまで反復する**（最大 3 回）。未収束の場合は影響 task の marker を `cc:WIP` に戻し、human escalation で停止して findings と修正状況を報告する
+   - primary verdict（`APPROVE | REQUEST_CHANGES`）は brain（claude host）が出す。role-scoped 制約は維持
+4. **Finalize + Report（Phase C）**: gate の APPROVE を得てから Plans.md 更新・commit・完了報告を確定する。gate 未通過のまま run を「完了」として報告してはならない。最終報告は easy 作法で出す（host session に `easy` skill があれば invoke してその作法に従う。無ければ `harness-work` の Completion Report テンプレート）。
+
+`--reviewer-only` / `--no-commit` 等の既存フラグは、この pipeline の該当段だけを動かす per-run override として働く。
+低リスクの高速 run で Phase D を省きたい時は `--no-review-gate` を渡す（Phase B の per-task review は省かれない。省くのは run 全体 diff への統合レビューだけ）。
+
 ## Narration Rules (UX Contract)
 
 敵は **冗長さ** であって進捗報告ではない。**起動時に実行計画を簡潔に明示してから実行を開始する**。見やすい進捗報告は歓迎する。冗長な繰り返し・中身のない前置きだけを禁ずる。
@@ -25,19 +42,20 @@ description: "Team execution mode — backward-compatible alias for harness-work
 
 banner 1 行 (`🚀 <backend> / <model> / <branch> / <task>`) + 計画 2-4 行。1 秒以内に出し、即 Step 1 へ。
 
-### Fallback 警告（backend = `claude` 確定時）
+### Backend 既定と per-run のフラット判断（2026-07-24 operator 裁定）
 
-resolver 出力が `claude`、または resolver 未経由で backend が `claude` と確定した場合、**起動 banner 直後に 1 行だけ**次を出す（計画行の前）:
+既定 backend は **`claude`（Native subagent）**。resolver の未設定 fallback も `claude` であり、これは罠ではなく意図された既定。
+⚠️ 警告は resolver が **不正値 fallback** の stderr 警告を出した時だけ banner 直後に 1 行で出す（正常に `claude` へ解決された場合は出さない。同一 run 内で繰り返さない）。
 
-```
-⚠️ backend=claude (via resolver / not via resolver) — composer/cursor を使う場合は `--cursor` or `bash "${HARNESS_PLUGIN_ROOT}/scripts/resolve-impl-backend.sh"` を確認
-```
+Lead は run 単位で、作業内容・量からフラットに backend を選んでよい。選ぶ時は resolver への明示 override（`--backend <v>` / `--codex` / `--cursor`）を使う。env 直読みは引き続き禁止:
 
-- **`via resolver` / `not via resolver`**: resolver を実行したかで literal を選ぶ（経由時 `via resolver`、未経由時 `not via resolver`）
-- **確認先**: `--cursor` flag と bundled `resolve-impl-backend.sh`（`bash "${HARNESS_PLUGIN_ROOT}/scripts/resolve-impl-backend.sh"`）の 2 つを必ず含める
-- **env unset 罠の可視化**: default / env / file 解決で `claude` に落ちたことを 1 行で示し、cursor 意図なら override または persistent default を促す
+| 作業の性質 | 推奨 backend | 理由 |
+|---|---|---|
+| 通常の実装・修正・テスト（既定） | `claude` (native) | Worker 契約（`worker-report.v1` / self_review 5 件）が全部効く |
+| 大規模で独立性の高い一括実装、Claude 側 rate limit 回避 | `codex` | deep tier を xhigh で委譲できる（model は `model-routing.sh` が解決） |
+| UI 大量生成、lean な高速委譲 | `cursor` | lean path（worktree 隔離 + Lead diff review） |
 
-「禁止 (= 冗長さ)」節と衝突しない: この警告は banner 直後 **1 行に圧縮**し、同一 run 内で繰り返さない（計画行・進捗行に同内容を言い換えない）。
+モデル ID は skill に書かない。`bash "${HARNESS_PLUGIN_ROOT}/scripts/model-routing.sh" --host <backend> --role worker` が正本。
 
 ### 進捗報告は出してよい (見やすい範囲で)
 
@@ -52,17 +70,11 @@ resolver 出力が `claude`、または resolver 未経由で backend が `claud
 - **3 行以上の経緯振り返り**: 結論を引き伸ばす長い前置き。経緯が必要なら 1 行に圧縮
 - **起動シーケンス中の ★ Insight ブロック**: Insight は最終 report で 1 回のみ
 
-違反例 (冗長):
+例 (違反 → 正常):
 ```
-× 「composer 2.5 使うモード」= cursor backend で Composer に委託、ですね（と解釈の言い換え）
-× 「前回 Reviewer が止まったので別系統に逃がすのは理にかなっています」（3 行以上の振り返り）
-× 「使い方を確認します」 → bash → 「呼べます」（中身のない前置き + 同じ事実の 2 回言い換え）
-```
-
-正常例 (簡潔 + 計画明示):
-```
-🚀 cursor / composer-2.5-fast / feat/hah-11-golden-rule-lint / Reviewer
-これから: backend resolve → composer に advisory findings 委譲 (read-only) → brain 一次レビューで verdict 確定
+× 「composer 2.5 使うモード」= cursor backend で Composer に委託、ですね（解釈の言い換え、中身のない前置き）
+○ 🚀 cursor / composer-2.5-fast / feat/hah-11-golden-rule-lint / Reviewer
+  これから: backend resolve → composer に advisory findings 委譲 (read-only) → brain 一次レビューで verdict 確定
 ```
 
 ## Quick Reference
@@ -82,18 +94,9 @@ resolver 出力が `claude`、または resolver 未経由で backend が `claud
 
 ## Brief Composer v0
 
-`/breezing` の argument-hint（`all|N-M|--codex|--cursor|--reviewer-only|--parallel N|--no-commit|--no-discuss|--auto-mode`）の**どれにも一致しない自由文入力**向けの分解・確認フロー。
-
-1. **分類** — Lead は `bash scripts/breezing-brief.sh classify "<args>"` を実行する。
-   - 出力 `structured` → 既存の structured 引数経路（上記 Quick Reference）へそのまま進む。
-   - 出力 `free-text` → 次ステップへ。
-2. **分解** — Lead の LLM が自由文を **3〜7 個の subtasks** に分解し、`brief-card.v1` JSON カードを組み立てる（schema: `templates/schemas/brief-card.v1.json`）。v0 では `breezing-brief.sh` は LLM を呼ばない。
-3. **提示** — カード（goal / subtasks[id,title,dod] / scope_files / risk_notes / confidence）をユーザーに提示する。`confidence` は `high` | `medium` | `low` のいずれか。
-4. **確定** — ユーザー Yes/No の後、`bash scripts/breezing-brief.sh confirm <yes|no> <card.json>` を実行する。
-   - `yes` → `DISPATCH: <subtask 数>` を出力し、既存 team 経路（worktree-per-task）へ渡す。
-   - `no` → `DISPATCH: 0`（実行 0 件の dry 契約）。
-
-検証のみ必要な場合: `bash scripts/breezing-brief.sh validate <card.json>`（exit 0 = valid）。
+argument-hint のどれにも一致しない自由文入力は `bash scripts/breezing-brief.sh classify "<args>"` で `structured` / `free-text` を判定する。
+`free-text` は 3〜7 個の subtasks に分解した `brief-card.v1` カードをユーザーに提示し、`breezing-brief.sh confirm <yes|no> <card.json>` で確定する。
+分解ロジック・schema・`DISPATCH` 契約の詳細は [references/lean-path-detail.md](${CLAUDE_SKILL_DIR}/references/lean-path-detail.md) を参照。
 
 ## Options
 
@@ -107,6 +110,7 @@ resolver 出力が `claude`、または resolver 未経由で backend が `claud
 | `--parallel N` | Implementer 並列数 | auto |
 | `--no-commit` | 自動コミット抑制 | false |
 | `--no-discuss` | 計画議論スキップ | `--cursor` で true 既定 |
+| `--no-review-gate` | Phase D（Integrated Review Gate）をスキップ。Phase B の per-task review は維持 | false |
 | `--auto-mode` | Harness 側の Auto Mode rollout を明示。CC 2.1.111 で不要になった `--enable-auto-mode` とは別物 | false |
 
 ## Natural Language Backend Triggers
@@ -153,9 +157,11 @@ resolver 出力が `claude`、または resolver 未経由で backend が `claud
 
 Breezing run 開始時は、Lead が `harness-work` と同じ preapproval preflight を実行する。
 
-- `.claude/state/plan-preapprovals.json` があれば `templates/schemas/plan-preapproval.v1.json` で validate する。
+- 各 task の開始時、task worktree の `.claude/state/active-task.json` に `{"phase":"<phase>","task":"<task>"}` を原子的に書く。task 終了時は成功、失敗、停止の全経路で削除する。
+- `.claude/state/plan-preapprovals.json` があれば `scripts/plan-preapproval.sh validate` で v2 を validate する。v1 は既存記録の読み取り互換として受け付ける。
 - 実行対象 task の `decision: approved` 事項だけを宣言済みとして扱い、Worker briefing に渡す。
 - `secret-read` は `bash "${HARNESS_PLUGIN_ROOT}/scripts/plan-preapproval.sh" apply-secret-allow "$PROJECT_ROOT"` で project config `.claude-code-harness.config.json` の `runtimefloor.secretAllow` に per-run 反映し、108.2 の project config floor と接続する。
+- R12 の `ask` は、同じ phase/task、期限内、使用回数内で、`external-send` と実行コマンドが一致する v2 承認だけが抑制する。明示 `deny` と runtime floor は抑制しない。
 - 宣言済み事項では途中停止せず、work 中の宣言済み事項起因 `AskUserQuestion` はゼロにする。確認は plan 承認時の 1 回のみ。
 - 記録に無い未計画の secret-read / 外部送信 / 破壊的操作は従来どおり runtime floor / ask で停止する。安全網を狭めない。
 
@@ -209,9 +215,9 @@ rm -f "$CODEX_PROMPT"
 backend 判定は **必ず resolver 経由**。`HARNESS_IMPL_BACKEND` env を直接読んで backend を決めてはならない。
 env / `--cursor` per-run flag / project `env.local` / user file を
 `bash "${HARNESS_PLUGIN_ROOT}/scripts/resolve-impl-backend.sh"` で precedence 解決し、その出力を backend として使う
-（env unset でも project / user file から拾える）。永続 default を cursor にしたい場合は
-`bash "${HARNESS_PLUGIN_ROOT}/scripts/set-impl-backend.sh" cursor` で project / user file に書き込み、
-run 開始時に resolver が解決する。review / advisor ロールは Opus に固定したまま。
+（env unset でも project / user file から拾える）。永続 default を変えたい場合は
+`bash "${HARNESS_PLUGIN_ROOT}/scripts/set-impl-backend.sh" <claude|codex|cursor> [--user]` で project / user file に書き込み、
+run 開始時に resolver が解決する（現行の operator 既定はユーザースコープで `claude`）。review / advisor ロールは brain に固定したまま。
 バックエンド選択の正本（precedence、role-scope、self_review スキップ、cursor banner）は
 `harness-work` の「Execution Backend Selection（実装バックエンド選択）」を参照する。
 
@@ -222,18 +228,8 @@ run 開始時に resolver が解決する。review / advisor ロールは Opus �
 `bash "${HARNESS_PLUGIN_ROOT}/scripts/resolve-impl-backend.sh"` の出力が `cursor` のときに有効
 （`--cursor` は resolver への明示 override として precedence 最上位）。Worker 層を介在させず Lead が直接 `cursor-companion.sh` を呼ぶ（Phase 85 SSOT、`.claude/rules/cursor-cli-only.md` Topology 節）。
 
-#### 削除される step（claude backend と比べて節約）
-
-| Step | 削除理由 | 節約秒数 |
-|---|---|---|
-| `claude-code-harness:worker` agent spawn | cursor backend は Worker 介在なし | 5-30s |
-| self_review 5 件ゲート | `worker-report.v1` が cursor では生成されないため不要 | 10-60s × retry |
-| sprint-contract 3 段チェーン (generate→enrich→ensure) | Worker 契約不要なら contract 不要 | 2-5s × N |
-| Phase 0 Q1-Q3 interactive | `--no-discuss all` 既定 (Plans/Depends は Lead が直読み) | 15-30s |
-| Effort スコアリング | cursor backend では ultrathink 注入不要 | 0.5-1s × N |
-| Plans.md re-parse (per task) | session 内 cache (mtime+hash で短絡) | 3-8s |
-
-合計 baseline `15-35s` → target `3-7s` で 1 タスク目の cursor 委譲開始までを短縮。
+cursor backend は Worker agent spawn / self_review 5 件ゲート / sprint-contract 3 段チェーン / Phase 0 interactive / effort スコアリングを省略し、baseline `15-35s` → target `3-7s` で 1 タスク目の委譲を開始する。節約内訳の全表は
+[references/lean-path-detail.md](${CLAUDE_SKILL_DIR}/references/lean-path-detail.md) を参照。
 
 #### 既定 flow（cursor backend）
 
@@ -241,7 +237,9 @@ run 開始時に resolver が解決する。review / advisor ロールは Opus �
 2. **1 bash で並列 pre-check**: `git branch --show-current` + `cat VERSION` + `Plans.md tail` + `cursor-agent --version`
 3. **1 bash で resolve**: `bash "${HARNESS_PLUGIN_ROOT}/scripts/resolve-impl-backend.sh"` + `bash "${HARNESS_PLUGIN_ROOT}/scripts/model-routing.sh" --host cursor --role worker --field model`
 4. **即 委譲**: `bash "${HARNESS_PLUGIN_ROOT}/scripts/cursor-companion.sh" task --write --workspace <wt> "<task>"`
+   - 委譲開始時に `bin/harness session declare --task <task-id>` で共有 presence に作業宣言（他セッションから task 番号で逆引き可能になる）
 5. cursor 出力を Lead が diff レビュー → cherry-pick → Plans.md `cc:done [hash]` 更新
+   - 更新後 `bin/harness session declare --clear` で presence の task 宣言を解除
 
 #### Reviewer-only mode (`--cursor --reviewer-only`) — read = lean
 
@@ -259,10 +257,7 @@ Worker 実装は既完了（別系統 = claude / Codex で済んだ）、advisor
 read mode で省略できるもの: 専用 `.git` worktree / cursor 出力の取り込みレビュー / cherry-pick / `worker-report.v1` / self_review 5 件。**省略不可**: 対象 diff への brain 一次レビュー（verdict 確定）。
 read mode でも保持必要: `.cursorignore` / egress allowlist (`*.cursor.sh`) / permissions.json (best-effort)。詳細は `.claude/rules/cursor-cli-only.md` 「Read mode delegation (lean path)」節を参照。
 
-**用途**:
-- Anthropic 側 server rate limit で Reviewer が止まった時に advisory findings を先に集めておく前倒し（brain verdict の代替にはならない — verdict は brain 復帰後に確定）
-- Worker 完了済みで Reviewer だけ別系統に分散
-- Codex review が auth 失敗した時の manual fallback
+**用途**（rate limit 時の前倒し集約 / Reviewer だけ別系統に分散 / Codex review auth 失敗時の fallback、詳細は [references/lean-path-detail.md](${CLAUDE_SKILL_DIR}/references/lean-path-detail.md)）。
 
 #### Cursor adapter support claim
 
@@ -352,35 +347,8 @@ heartbeat を増やして安心感を作るのではなく、status / log / drif
 
 ### Monitor ツール活用ガイド (CC 2.1.98+)
 
-長時間実行コマンドを監視する時は、ポーリング (Read で定期的にファイル末尾を読む) ではなく **Monitor ツール** を使用する。Monitor はバックグラウンドプロセスの stdout 各行を逐次通知として Lead に届けるため、polling より低レイテンシかつ低トークン消費で状況を把握できる。
-
-**適用例**:
-- `go test ./... -v` の実行中進捗監視
-- `gh run watch` による GitHub Actions 進捗追跡
-- `npm run build --watch` / `vite build --watch` のビルドエラー即時検知
-- `codex-companion.sh status <job-id>` での Codex job 完了検知
-- `docker-compose logs -f` / `kubectl logs -f` のデプロイログ追跡
-
-**使い分けの判断基準**:
-
-| 対象 | Monitor 使う? | 理由 |
-|---|---|---|
-| Agent (Worker / Reviewer) の完了監視 | 不要 | Agent 層が自前で完了通知する |
-| `run_in_background: true` で投げた shell process | 推奨 | stdout 各行を逐次通知で拾える |
-| 短時間の一発コマンド (`go test` 1 回実行) | 不要 | 通常の Bash tool 実行で十分 |
-| 長時間 tail / watch / stream 系コマンド | 推奨 | polling より効率的 |
-
-**Breezing Lead での典型パターン**:
-
-```
-Lead:
-  Task(Worker1, ...)           ← Agent 完了待ち (Monitor 不要)
-  Task(Worker2, ...)           ← 同上
-  Bash(run_in_background, "gh run watch --exit-status")
-  Monitor(tailCommand="...")   ← CI 失敗を即時検知 → Worker に修正指示
-```
-
-これにより Lead が「Worker 完了 → CI 失敗検知 → 修正指示」の反応速度を上げられる。
+`run_in_background: true` で投げた長時間 shell process（`gh run watch`、build --watch 等）は、ポーリングではなく **Monitor ツール**で stdout を逐次通知として拾う。Agent (Worker/Reviewer) の完了監視や短時間の一発コマンドには不要。
+使い分け表・典型パターンは [references/monitor-and-learning.md](${CLAUDE_SKILL_DIR}/references/monitor-and-learning.md) を参照。
 
 ### Review Policy（全モード統一）
 
@@ -406,67 +374,17 @@ Breezing モードでもレビューは **Codex exec 優先 → 内部 Reviewer 
 
 ### Phase 0: Planning Discussion（構造化 3 問チェック）
 
-全タスク実行前に、以下の 3 問で計画の健全性を確認する。
-`--no-discuss` 指定時は全スキップ。
-
-**Q1. スコープ確認**:
-> 「{{N}} 件のタスクを実行します。スコープは適切ですか？」
-
-多すぎる場合は優先度（Required > Recommended > Optional）で絞り込みを提案。
-
-**Q2. 依存関係確認**（Plans.md に Depends カラムがある場合のみ）:
-> 「タスク {{X}} は {{Y}} に依存しています。実行順序は合っていますか？」
-
-Depends カラムを読み取り、依存チェーンを表示。循環依存があればエラー。
-
-**Q3. リスクフラグ**（`[needs-spike]` タスクがある場合のみ）:
-> 「タスク {{Z}} は [needs-spike] です。先に spike しますか？」
-
-spike 未完了の `[needs-spike]` タスクがある場合、spike を先行実行するか確認。
-
-3 問とも問題なければ、Phase A に進む（合計 30 秒で完了する設計）。
+全タスク実行前に、スコープ（Q1）・依存関係（Q2、Depends カラムがある時のみ）・リスクフラグ（Q3、`[needs-spike]` がある時のみ）の 3 問で計画の健全性を確認する（合計 30 秒設計）。
+`--no-discuss` 指定時は全スキップ。3 問の具体文言と判定ロジックは [references/lean-path-detail.md](${CLAUDE_SKILL_DIR}/references/lean-path-detail.md) を参照。
 
 ### Universal Violations Injection（セッション内 Worker 間の学習伝播）
 
-同一 `/breezing` 起動内で蓄積された Reviewer の universal gotchas を次 Worker の briefing 冒頭に自動注入する。**同一セッション内のみ有効**（セッション終了で破棄、`session-memory` には書かない）。
-
-```python
-# Phase A 開始時に Lead プロセスの in-memory 配列を初期化
-universal_violations = []  # List[str] — このセッション内で蓄積
-
-# Phase B で Worker を spawn する直前、briefing 冒頭に注入:
-def build_worker_briefing(task, contract_path):
-    header = ""
-    if universal_violations:
-        header = (
-            "🚨 同一セッションで既に検出された universal 違反（再発禁止）:\n"
-            + "\n".join(f"- {v}" for v in universal_violations)
-            + "\n\n"
-        )
-    return header + f"タスク: {task.内容}\nDoD: {task.DoD}\ncontract_path: {contract_path}\nmode: breezing"
-
-# Reviewer が review-result.v1 を返した後、Lead が scope="universal" のみ抽出して累積:
-for update in reviewer_result.memory_updates:
-    # 後方互換: 文字列は task-specific 扱い → 無視
-    if isinstance(update, str):
-        continue
-    if update.get("scope") == "universal":
-        universal_violations.append(update["text"])
-```
-
-**方針**: 過剰設計回避のため、`session-memory` や `decisions.md` への永続化は行わない。Lead プロセスの in-memory 配列に保持するだけで、`/breezing` セッション終了時に破棄する（issue #87 本文の方針）。
+同一 `/breezing` 起動内で蓄積された Reviewer の universal gotchas を次 Worker の briefing 冒頭に自動注入する。**同一セッション内のみ有効**（セッション終了で破棄、`session-memory` には書かない）。実装（in-memory 配列 + briefing 注入コード）は
+[references/monitor-and-learning.md](${CLAUDE_SKILL_DIR}/references/monitor-and-learning.md) を参照。
 
 ### 依存グラフに基づくタスク割り当て
 
-Plans.md に Depends カラムがある場合（v2 フォーマット）、依存グラフに従ってタスクを実行する:
-
-1. **Depends が `-` のタスク**を先に実行。独立タスクが複数あれば並列 spawn 可能
-2. 各 Worker 完了後、Lead がレビュー→cherry-pick（harness-work Phase B 参照）
-3. 依存元タスクが main に cherry-pick されたら、そのタスクに依存していたタスクを次に実行
-4. 全タスクが完了するまで繰り返す
-
-> **注意**: 各タスクの「Worker 完了→レビュー→cherry-pick」は逐次処理。
-> 並列化できるのは独立タスク（Depends が `-`）の Worker spawn 部分のみ。
+Plans.md に Depends カラムがある場合（v2 フォーマット）、`Depends` が `-` の独立タスクを先に並列 spawn し、各 Worker 完了後に Lead がレビュー→cherry-pick する（harness-work Phase B 参照）。依存元が main に入ったら、それに依存していたタスクを次に実行し、全タスク完了まで繰り返す。逐次処理なのは「Worker 完了→レビュー→cherry-pick」で、並列化できるのは独立タスクの Worker spawn 部分のみ。詳細は [references/lean-path-detail.md](${CLAUDE_SKILL_DIR}/references/lean-path-detail.md) を参照。
 
 ## Codex Native Orchestration
 

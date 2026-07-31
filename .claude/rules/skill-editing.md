@@ -105,76 +105,7 @@ description: "CI skill"
 
 ## Skill File Structure Template
 
-### SKILL.md Template
-
-```markdown
----
-name: skill-name
-description: "Description with trigger phrases. Use when... Do NOT load for..."
-allowed-tools: ["Read", "Write", "Edit", "Bash"]
-argument-hint: "[subcommand|option]"
----
-
-# Skill Name
-
-Overview description of the skill.
-
-## Quick Reference
-
-- "**trigger phrase 1**" → this skill
-- "**trigger phrase 2**" → this skill
-
-## Features / Deliverables
-
-| Feature | Reference |
-|---------|-----------|
-| **Feature 1** | See [feature1.md](${CLAUDE_SKILL_DIR}/references/feature1.md) |
-| **Feature 2** | See [feature2.md](${CLAUDE_SKILL_DIR}/references/feature2.md) |
-
-## Execution Flow
-
-1. Parse user request
-2. Load appropriate reference file
-3. Execute steps from reference
-4. Report results
-
-## Related Skills
-
-- `related-skill-1` - Description
-- `related-skill-2` - Description
-```
-
-### Reference File Template
-
-```markdown
-# Feature Name Reference
-
-Detailed documentation for this feature.
-
-## When to Use
-
-- Condition 1
-- Condition 2
-
-## Execution Steps
-
-### Step 1: ...
-
-### Step 2: ...
-
-## Examples
-
-### Example 1
-
-...
-
-## Troubleshooting
-
-### Issue 1
-
-**Cause**: ...
-**Solution**: ...
-```
+SKILL.md / reference の雛形: [docs/rules/skill-editing-templates.md](../../docs/rules/skill-editing-templates.md#skill-file-structure-template)
 
 ## Editing Checklist
 
@@ -191,15 +122,8 @@ When creating or editing skill files:
 
 ## Migration from Commands
 
-Commands have been migrated to skills. Key differences:
-
-| Aspect | Commands (Legacy) | Skills (Current) |
-|--------|-------------------|------------------|
-| Location | `commands/` | `skills/` |
-| Structure | Single file | Directory with SKILL.md + references |
-| Frontmatter | `description` only | Full skill configuration |
-| Auto-loading | Limited | Full description-based matching |
-| Supporting files | Not supported | `references/` subdirectory |
+Commands have been migrated to skills (legacy comparison table moved to
+[docs/rules/skill-editing-templates.md](../../docs/rules/skill-editing-templates.md#migration-from-commands)).
 
 ## `context: fork` + `disable-model-invocation: true` 時の auto-start pattern
 
@@ -256,5 +180,4 @@ REVIEW_AUTOSTART: base_ref={ref}, type=code
 ## Related Documentation
 
 - [Claude Code Skills Documentation](https://code.claude.com/docs/en/skills)
-- [command-editing.md](./command-editing.md) - Legacy command rules (deprecated)
 - [CLAUDE.md](../../CLAUDE.md) - Project Development Guide
