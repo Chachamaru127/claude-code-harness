@@ -66,7 +66,11 @@ mkdir -p "${PROJECT_ROOT}/.claude/state" "${PROJECT_ROOT}/out" 2>/dev/null
 
 # background regen (hook は即座に return)
 (
-  SNAP_TMP="$(mktemp /tmp/progress-snap-XXXX.json 2>/dev/null)"
+  # BSD (macOS) mktemp only substitutes X's at the END of the template, so a
+  # suffixed form like progress-snap-XXXX.json yields that literal path — not a
+  # unique one. Any leftover from an interrupted run then fails with EEXIST and
+  # this regen stays silently broken. Keep the X's trailing.
+  SNAP_TMP="$(mktemp "${TMPDIR:-/tmp}/progress-snap-XXXXXX" 2>/dev/null)"
   if bash "$SNAPSHOT_SCRIPT" --plans "$PLANS_FILE" --project "$PROJECT_NAME" > "$SNAP_TMP" 2>/dev/null; then
     if bash "$RENDER_SCRIPT" --template progress --data "$SNAP_TMP" --out "$OUT_HTML" >/dev/null 2>&1; then
       # 成功: state file 更新

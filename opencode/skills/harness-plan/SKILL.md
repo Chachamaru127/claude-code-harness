@@ -156,8 +156,9 @@ See [references/create.md](${CLAUDE_SKILL_DIR}/references/create.md)
 
 - 1 行の `理由` は secret 値を含めない。path / コマンド名 / 対象サービスまでに留める。
 - plan 承認時に、事前確認セクションの全事項を一括提示し、ユーザーから承認 / 否認を得る。
-- 承認結果は `.claude/state/plan-preapprovals.json` に `plan-preapproval.v1` として記録する。schema は `templates/schemas/plan-preapproval.v1.json`。
-- 記録は `事項 + 理由 1 行 + scope (phase/task)` を維持し、`operations` には `secret-read` / `external-send` / `destructive` の列挙、`paths` / `commands` / `targets` には対象を列挙、`decision` と `approved_at` を入れる。
+- 承認結果は `.claude/state/plan-preapprovals.json` に `plan-preapproval.v2` として記録する。schema は `templates/schemas/plan-preapproval.v2.json`。v1 は既存記録の読み取り互換に限る。
+- 記録は `事項 + 理由 1 行 + scope (phase/task)` を維持する。`operations` には `secret-read` / `external-send` / `destructive` を列挙する。`paths` / `commands` / `targets` には対象を列挙する。`decision`、`approved_at`、RFC3339 の `expires_at` を入れる。
+- `max_uses` は必要な再試行回数を含む上限を設定する。省略時は 10 回。`uses` は新規承認時に 0 とする。
 - 確認は plan 承認時の 1 回のみ。`harness-work` / `breezing` 実行中、宣言済み事項だけを理由に `AskUserQuestion` を出してはいけない。
 - 記録に無い未計画の secret-read / 外部送信 / 破壊的操作は、従来どおり runtime floor / ask で停止する。安全網を狭めない。
 - secret-read の承認は secret 値の表示許可ではない。必要最小の path を宣言し、work 開始時に project config の `runtimefloor.secretAllow` へ per-run 反映するための入力として扱う。

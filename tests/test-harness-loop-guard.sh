@@ -41,7 +41,7 @@ trap cleanup EXIT
 cleanup
 
 # テスト用の擬似 harness-loop 起動スクリプト（flow.md の Step 0 を再現）
-MOCK_LOOP_SCRIPT="$(mktemp /tmp/test-harness-loop-XXXXXX.sh)"
+MOCK_LOOP_SCRIPT="$(mktemp "${TMPDIR:-/tmp}/test-harness-loop.XXXXXX")"
 cat > "${MOCK_LOOP_SCRIPT}" << 'SCRIPT'
 #!/bin/bash
 # flow.md Step 0 の多重起動防止ロックを再現

@@ -131,7 +131,19 @@ func preToolHostedResult(stdin []byte, hostHint string) (preToolHostedOutcome, e
 	return out, nil
 }
 
+// pinFloorEnvBaseline clears the owner-scoped floor exemptions so the deny
+// assertions below measure the shipped default rather than whatever session the
+// test happens to run in. HARNESS_RUNTIME_FLOOR_EGRESS=off and a broad
+// HARNESS_RUNTIME_FLOOR_SECRET_ALLOW are legitimate operator settings; without
+// this pin they silently turn egress and secret-read denials into passes.
+func pinFloorEnvBaseline(t *testing.T) {
+	t.Helper()
+	t.Setenv("HARNESS_RUNTIME_FLOOR_EGRESS", "")
+	t.Setenv("HARNESS_RUNTIME_FLOOR_SECRET_ALLOW", "")
+}
+
 func Test3CliFloorParity_AllFifteenCases(t *testing.T) {
+	pinFloorEnvBaseline(t)
 	worktreeRoot := t.TempDir()
 
 	for _, host := range threeCliFloorHosts {
@@ -162,6 +174,7 @@ func Test3CliFloorParity_AllFifteenCases(t *testing.T) {
 }
 
 func TestAllThreeHostsReturnExit2OnFloor(t *testing.T) {
+	pinFloorEnvBaseline(t)
 	worktreeRoot := t.TempDir()
 	command := "stripe charges create"
 

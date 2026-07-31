@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 268" width="880" height="268" role="img" aria-label="Claude Code Harness operating loop: Plan, Work, Review, Release — every command passes the runtime floor before it runs">
+  <title>Plan → Work → Review → Release, with every command checked before it runs</title>
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#9A978D"/>
+    </marker>
+    <marker id="arLoop" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="#A8A59B"/>
+    </marker>
+  </defs>
+
+  <style>
+    .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+    .sans { font-family: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif; }
+
+    .stage      { fill:#FCFBF9; stroke:#DFDCD3; stroke-width:1.2; }
+    .stage-lbl  { fill:#1B1B22; font-size:15px; font-weight:700; letter-spacing:.06em; text-anchor:middle; }
+    .stage-sub  { fill:#5A5A64; font-size:10.5px; letter-spacing:.02em; text-anchor:middle; }
+    .cmd        { fill:#918E96; font-size:9.5px; letter-spacing:.02em; text-anchor:middle; }
+
+    .eyebrow    { fill:#313A7E; font-size:10px; font-weight:700; letter-spacing:.22em; }
+    .floor-band { fill:#FCFBF9; stroke:#DFDCD3; stroke-width:1; }
+    .floor-ttl  { fill:#1B1B22; font-size:12px; font-weight:700; letter-spacing:.04em; }
+    .floor-note { fill:#5A5A64; font-size:10px; }
+    .chip       { fill:#E4F2EA; stroke:#B7DCC7; stroke-width:1; }
+    .chip-lbl   { fill:#1D6B42; font-size:9.5px; letter-spacing:.02em; text-anchor:middle; }
+
+    /* --- the pulse that travels through the loop --- */
+    .lit      { animation: lit  8s cubic-bezier(.4,0,.2,1) infinite; }
+    .lit-ring { animation: ring 8s cubic-bezier(.4,0,.2,1) infinite; }
+    .d1 { animation-delay: 0s }
+    .d2 { animation-delay: 1.6s }
+    .d3 { animation-delay: 3.2s }
+    .d4 { animation-delay: 4.8s }
+
+    @keyframes lit  { 0%,100% { fill:#FCFBF9 } 2%,17% { fill:#E9EAF4 } }
+    @keyframes ring { 0%,100% { stroke:#DFDCD3; stroke-width:1.2 } 2%,17% { stroke:#313A7E; stroke-width:2 } }
+
+    /* --- edge flow: dashes march toward the next stage --- */
+    .edge { stroke:#9A978D; stroke-width:1.6; fill:none; stroke-dasharray:5 5;
+            animation: march 1.1s linear infinite; }
+    @keyframes march { to { stroke-dashoffset:-20 } }
+
+    .loop { stroke:#A8A59B; stroke-width:1.4; fill:none; stroke-dasharray:4 6;
+            animation: march 1.6s linear infinite; }
+    .loop-lbl { fill:#8C8C92; font-size:9px; letter-spacing:.14em; text-anchor:middle; }
+
+    /* --- the floor is always on: steady heartbeat --- */
+    .beat { animation: beat 2.4s ease-in-out infinite; }
+    @keyframes beat { 0%,100% { opacity:.4 } 50% { opacity:1 } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .lit, .lit-ring, .edge, .loop, .beat { animation: none }
+      .edge, .loop { stroke-dasharray: none }
+    }
+  </style>
+
+  <rect width="880" height="268" rx="14" fill="#F5F4F1" stroke="#E4E2DB"/>
+  <text class="mono eyebrow" x="34" y="34">CLAUDE CODE HARNESS — OPERATING LOOP</text>
+
+  <g>
+    <rect class="stage lit lit-ring d1" x="34"  y="56" width="186" height="72" rx="9"/>
+    <rect class="stage lit lit-ring d2" x="238" y="56" width="186" height="72" rx="9"/>
+    <rect class="stage lit lit-ring d3" x="442" y="56" width="186" height="72" rx="9"/>
+    <rect class="stage lit lit-ring d4" x="646" y="56" width="186" height="72" rx="9"/>
+
+    <text class="sans stage-lbl" x="127" y="84">PLAN</text>
+    <text class="sans stage-lbl" x="331" y="84">WORK</text>
+    <text class="sans stage-lbl" x="535" y="84">REVIEW</text>
+    <text class="sans stage-lbl" x="739" y="84">RELEASE</text>
+
+    <text class="sans stage-sub" x="127" y="102">Spec + task ledger</text>
+    <text class="sans stage-sub" x="331" y="102">Approved slice only</text>
+    <text class="sans stage-sub" x="535" y="102">Independent verdict</text>
+    <text class="sans stage-sub" x="739" y="102">Verified evidence</text>
+
+    <text class="mono cmd" x="127" y="119">/harness-plan</text>
+    <text class="mono cmd" x="331" y="119">/harness-work</text>
+    <text class="mono cmd" x="535" y="119">/harness-review</text>
+    <text class="mono cmd" x="739" y="119">/harness-release</text>
+  </g>
+
+  <path class="edge" d="M222 92 H234" marker-end="url(#ar)"/>
+  <path class="edge" d="M426 92 H438" marker-end="url(#ar)"/>
+  <path class="edge" d="M630 92 H642" marker-end="url(#ar)"/>
+
+  <path class="loop" d="M739 132 V148 H127 V132" marker-end="url(#arLoop)"/>
+  <rect x="392" y="140" width="80" height="15" rx="7" fill="#F5F4F1"/>
+  <text class="mono loop-lbl" x="432" y="151">NEXT SLICE</text>
+
+  <rect class="floor-band" x="34" y="164" width="798" height="76" rx="10"/>
+  <circle class="beat" cx="56" cy="190" r="4.5" fill="#2F8F5B"/>
+  <text class="sans floor-ttl" x="70" y="194">RUNTIME FLOOR — checked before every command runs</text>
+  <text class="sans floor-note" x="70" y="212">Not overridable by any setting. Every tool call passes here first.</text>
+
+  <g>
+    <rect class="chip" x="470" y="176" width="82" height="22" rx="11"/>
+    <text class="mono chip-lbl" x="511" y="191">billing</text>
+    <rect class="chip" x="558" y="176" width="82" height="22" rx="11"/>
+    <text class="mono chip-lbl" x="599" y="191">egress</text>
+    <rect class="chip" x="646" y="176" width="82" height="22" rx="11"/>
+    <text class="mono chip-lbl" x="687" y="191">secrets</text>
+    <rect class="chip" x="734" y="176" width="82" height="22" rx="11"/>
+    <text class="mono chip-lbl" x="775" y="191">deploy</text>
+    <rect class="chip" x="646" y="206" width="170" height="22" rx="11"/>
+    <text class="mono chip-lbl" x="731" y="221">destruction outside worktree</text>
+  </g>
+
+  <text class="mono" x="34" y="258" fill="#8C8C92" font-size="9.5">15 guardrail rules · 5 floor categories · every stop is logged</text>
+</svg>
