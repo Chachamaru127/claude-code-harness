@@ -76,7 +76,7 @@ var verifyDenySurface = policy.VerifyDenySurface
 
 // ScriptRunner runs a repo script and returns (exitCode, combinedOutput). The
 // default production runner shells out to `bash <repoRoot>/<script>`; tests
-// inject a fake so the gate logic is exercised without executing anything.
+// inject a test double so the gate logic is exercised without executing anything.
 type ScriptRunner interface {
 	Run(repoRoot, script string, args ...string) (int, string)
 }
@@ -129,7 +129,8 @@ func policyCheckStep(repoRoot string, changedFiles []string) StepResult {
 			path = filepath.Join(repoRoot, f)
 		}
 		input := hookproto.HookInput{
-			ToolName: "Write",
+			AuditRoot: repoRoot,
+			ToolName:  "Write",
 			ToolInput: map[string]interface{}{
 				"file_path": path,
 				// A non-empty content keeps the input well-formed for any rule

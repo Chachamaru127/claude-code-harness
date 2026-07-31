@@ -54,7 +54,7 @@ trap cleanup EXIT
 echo "--- テスト 1: flock 排他制御の基本動作 ---"
 
 # flock ロジックを抽出した最小スクリプト（plans-watcher.sh の _plans_acquire_lock を再現）
-LOCK_SCRIPT="$(mktemp /tmp/test-flock-worker-XXXXXX.sh)"
+LOCK_SCRIPT="$(mktemp "${TMPDIR:-/tmp}/test-flock-worker.XXXXXX")"
 cat > "${LOCK_SCRIPT}" << SCRIPT
 #!/bin/bash
 LOCK_FILE="\$1"
@@ -155,7 +155,7 @@ fi
 echo ""
 echo "--- テスト 2: 排他制御なしのロストアップデート確認（期待: 不整合あり）---"
 
-LOCK_SCRIPT_NOLOCK="$(mktemp /tmp/test-nolock-worker-XXXXXX.sh)"
+LOCK_SCRIPT_NOLOCK="$(mktemp "${TMPDIR:-/tmp}/test-nolock-worker.XXXXXX")"
 cat > "${LOCK_SCRIPT_NOLOCK}" << 'SCRIPT'
 #!/bin/bash
 COUNTER_FILE="$1"
@@ -237,7 +237,7 @@ FAIL_CLOSED_LOCK="${WORK_DIR}/.claude/state/locks/fc-test.flock"
 mkdir -p "$(dirname "${FAIL_CLOSED_LOCK}")"
 
 # 最小の fail-closed スクリプト（plans-watcher.sh の retry + exit 11 ロジックを抜粋）
-FC_SCRIPT="$(mktemp /tmp/test-fc-XXXXXX.sh)"
+FC_SCRIPT="$(mktemp "${TMPDIR:-/tmp}/test-fc.XXXXXX")"
 cat > "${FC_SCRIPT}" << 'FCSCRIPT'
 #!/bin/bash
 LOCK_FILE="$1"

@@ -98,6 +98,7 @@ func Normalize(raw []byte, hostHint string) (hookproto.HookInput, string, error)
 		SessionID:     firstNonEmpty(p.SessionID, p.ConversationID, p.ConversationID2),
 		CWD:           firstNonEmpty(p.CWD, p.WorkspaceRoot, firstSlice(p.WorkspaceRoots)),
 		HookEventName: p.HookEventName,
+		Host:          host,
 	}
 
 	// PluginRoot keeps existing behavior: explicit plugin_root wins, else fall

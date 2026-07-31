@@ -2,6 +2,13 @@
 # Phase 108.4 — runtimefloor secret-read allowlist e2e validation.
 set -euo pipefail
 
+# Clear the owner-scoped floor exemptions so this script measures the shipped
+# default. The declared-path cases below export
+# HARNESS_RUNTIME_FLOOR_SECRET_ALLOW per command on purpose; an inherited value
+# would instead make the *undeclared* case pass without the floor ever denying,
+# which is a false pass on a security assertion.
+unset HARNESS_RUNTIME_FLOOR_EGRESS HARNESS_RUNTIME_FLOOR_SECRET_ALLOW
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKTREE_DIR="$(mktemp -d)"
 HARNESS_BIN="$(mktemp)"

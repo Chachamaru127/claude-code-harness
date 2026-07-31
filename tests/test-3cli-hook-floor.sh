@@ -4,6 +4,13 @@
 # exit code 2 with a host-appropriate deny envelope.
 set -euo pipefail
 
+# Clear the owner-scoped floor exemptions so the deny assertions below measure
+# the shipped default rather than the session this script runs in.
+# HARNESS_RUNTIME_FLOOR_EGRESS=off and a broad HARNESS_RUNTIME_FLOOR_SECRET_ALLOW
+# are legitimate operator settings; inherited, they turn egress and secret-read
+# denials into false passes.
+unset HARNESS_RUNTIME_FLOOR_EGRESS HARNESS_RUNTIME_FLOOR_SECRET_ALLOW
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORKTREE_DIR="$(mktemp -d)"
 HARNESS_BIN="$(mktemp)"
