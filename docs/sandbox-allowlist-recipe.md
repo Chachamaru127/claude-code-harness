@@ -30,7 +30,8 @@ Firecrawl plugin の `SKILL.md` を確認すると `allowed-tools: Bash(firecraw
 `HARNESS_RUNTIME_FLOOR_SECRET_ALLOW` のような広域・常設の secret-read allow 宣言は、新規運用では避ける。
 代わりに `/harness-plan create` の計画確定時に **事前確認セクション**を出し、task scope ごとに必要な secret-read path / 外部送信 / 破壊的操作を一括承認する。
 
-承認結果は `.claude/state/plan-preapprovals.json`（`plan-preapproval.v1`）に保存し、`/harness-work` / `/breezing` の run 開始時に `scripts/plan-preapproval.sh apply-secret-allow "$PROJECT_ROOT"` が承認済み `secret-read` path だけを project config の `runtimefloor.secretAllow` へ反映する。
+承認結果は `.claude/state/plan-preapprovals.json`（`plan-preapproval.v2`）に保存する。v2 は phase/task scope、`expires_at`、`max_uses`、`uses` を持つ。v1 は既存記録の読み取り互換に限る。
+`/harness-work` / `/breezing` は task 開始時に `.claude/state/active-task.json` を書く。`scripts/plan-preapproval.sh apply-secret-allow "$PROJECT_ROOT"` は現在の phase/task と一致する承認済み `secret-read` path だけを project config の `runtimefloor.secretAllow` へ反映する。
 記録に無い未計画の secret-read / 外部送信は従来どおり runtime floor / ask で停止するため、安全網は狭めない。
 
 ## 解決: `~/.claude/settings.json` に sandbox 設定を merge

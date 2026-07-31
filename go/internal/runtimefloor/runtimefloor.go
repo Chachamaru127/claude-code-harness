@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/Chachamaru127/claude-code-harness/go/pkg/shellscan"
 )
 
 type Category string
@@ -76,8 +78,6 @@ var (
 	remoteHostPattern = regexp.MustCompile(`(?i)(?:^|\s)(?:[\w.-]+@)?([a-z0-9][\w.-]*\.[a-z]{2,})(?::|/|\s|$)`)
 	// schemelessHostAuthority matches curl/wget args like example.com/path without a URL scheme.
 	schemelessHostAuthority = regexp.MustCompile(`(?i)^(?:[\w.-]+@)?([a-z0-9][\w.-]*\.[a-z]{2,})(?::\d+)?$`)
-
-	rmRecursivePattern = regexp.MustCompile(`(?i)\brm\s+(?:-[a-z]*r[a-z]*\s+|-[a-z]*f[a-z]*r[a-z]*\s+|-[a-z]*r[a-z]*f[a-z]*\s+)`)
 )
 
 func CheckCommand(cmd string, ctx Context) Decision {
@@ -226,7 +226,7 @@ func checkSecretRead(cmd string, ctx Context) Decision {
 	// inside a `<<'EOF' ... EOF` block, or after `#`) is not an actual read and
 	// must not trip the floor. The read verb + indicator still fire on real
 	// reads like `cat .env`.
-	scannable := stripNonExecutableText(cmd)
+	scannable := shellscan.StripNonExecutableText(cmd)
 	if !secretReadVerbs.MatchString(scannable) {
 		return Decision{}
 	}
@@ -336,6 +336,18 @@ func configSecretAllowPatterns(ctx Context) ([]string, bool, bool) {
 		rootAbs = filepath.Clean(projectRoot)
 	}
 	rootAbs = filepath.Clean(rootAbs)
+	// The symlink-boundary check below compares an EvalSymlinks()-resolved
+	// declaration path against the root. On macOS /var is itself a symlink to
+	// /private/var, so resolving an ordinary in-worktree file (no declared
+	// symlink at all) yields a path under /private/var while rootAbs is still
+	// under /var — comparing that against the unresolved rootAbs would deny
+	// every existing file. Resolve the root once with the same function so
+	// both sides of the comparison are in the same coordinate space.
+	rootResolved, err := filepath.EvalSymlinks(rootAbs)
+	if err != nil {
+		rootResolved = rootAbs
+	}
+	rootResolved = filepath.Clean(rootResolved)
 
 	var out []string
 	for _, raw := range cfg.RuntimeFloor.SecretAllow {
@@ -352,12 +364,57 @@ func configSecretAllowPatterns(ctx Context) ([]string, bool, bool) {
 			if !pathUnderWorktree(abs, rootAbs) {
 				continue
 			}
+			if !secretAllowSymlinkStaysInWorktree(abs, rootResolved) {
+				continue
+			}
 			out = append(out, abs)
 			continue
 		}
-		out = append(out, filepath.Join(rootAbs, filepath.Clean(p)))
+		// Resolve relative declarations against the project root and enforce
+		// the same worktree-boundary check as the absolute-path branch above.
+		// A raw string check on p (e.g. rejecting a leading "..") is not
+		// sufficient: multi-segment escapes ("a/../../etc") or platform
+		// separator quirks can still resolve outside rootAbs after Join, so
+		// the check must run on the resolved path, not the declaration text.
+		joined := filepath.Clean(filepath.Join(rootAbs, filepath.Clean(p)))
+		if !pathUnderWorktree(joined, rootAbs) {
+			continue
+		}
+		if !secretAllowSymlinkStaysInWorktree(joined, rootResolved) {
+			continue
+		}
+		out = append(out, joined)
 	}
 	return out, true, true
+}
+
+// secretAllowSymlinkStaysInWorktree reports whether a worktree-bound
+// secretAllow declaration stays inside the worktree after symlinks are
+// resolved. rootResolved must already be EvalSymlinks()-resolved (or its
+// EvalSymlinks fallback) so both sides of the comparison are in the same
+// coordinate space — see the comment in configSecretAllowPatterns about the
+// macOS /var -> /private/var symlink. This closes an escape where a
+// declaration names a path that is textually inside the worktree but is (or
+// contains) a symlink pointing outside it (same class of escape as Phase
+// 126.4's R05 use of EvalSymlinks). Symlink resolution is used ONLY to
+// decide pass/deny here — the allowlist itself must keep storing the
+// operator's DECLARED path (the caller appends its own `abs`/`joined` value,
+// not this function's return), because isAllowlistedSecretPath() matches the
+// token the command names against declared patterns via strings.HasPrefix.
+// Substituting the resolved realpath into the allowlist would both (a) stop
+// matching the operator's own declared path (regression) and (b) start
+// matching the realpath even though the operator never declared it
+// (widening) — the declaration and the allowlist entry must refer to the
+// same path. If the symlink cannot be resolved (path does not exist yet,
+// permission error, etc.) this reports true — fail-safe here means "do not
+// widen the allowlist" for a resolved escape, not "silently drop a
+// legitimate not-yet-created declaration".
+func secretAllowSymlinkStaysInWorktree(path, rootResolved string) bool {
+	resolved, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return true
+	}
+	return pathUnderWorktree(filepath.Clean(resolved), rootResolved)
 }
 
 func resolveProjectRoot(ctx Context) (string, string, bool) {
@@ -431,65 +488,6 @@ func enclosingToken(s string, idx int) string {
 	return s[start:end]
 }
 
-var heredocOpen = regexp.MustCompile(`<<-?\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)(['"]?)`)
-
-// stripNonExecutableText removes heredoc bodies and trailing line comments so
-// that secret indicators appearing only as document text do not trigger the
-// floor. It is deliberately conservative: it strips heredoc bodies between an
-// opener (`<<WORD`) and the matching terminator line, and removes `#` comments
-// that start at line-begin or after whitespace (not inside a token).
-func stripNonExecutableText(cmd string) string {
-	lines := strings.Split(cmd, "\n")
-	out := make([]string, 0, len(lines))
-	var terminator string       // non-empty while inside a heredoc body
-	var inSingle, inDouble bool // shell quote state carried ACROSS lines
-
-	for _, line := range lines {
-		if terminator != "" {
-			// Inside a heredoc body: drop lines until the terminator line.
-			// Quotes here are literal document text, so quote state is not
-			// touched while suppressing the body.
-			if strings.TrimSpace(line) == terminator {
-				terminator = ""
-			}
-			continue
-		}
-		// Detect a heredoc opener on this line; keep the line itself (the
-		// opener is part of the command) but suppress the following body.
-		if m := heredocOpen.FindStringSubmatch(line); m != nil {
-			terminator = m[2]
-		}
-		var stripped string
-		stripped, inSingle, inDouble = stripLineComment(line, inSingle, inDouble)
-		out = append(out, stripped)
-	}
-	return strings.Join(out, "\n")
-}
-
-// stripLineComment removes a `#` comment from a single line when the `#` is at
-// line start or preceded by whitespace and is not inside single/double quotes.
-// Quote state is threaded in and out so that a string opened on a previous line
-// keeps the `#` on a continuation line from being misread as a comment — without
-// this, a multi-line quoted string whose closing quote shares a line with `#`
-// would let stripLineComment delete real trailing code (e.g. `&& cat .env`),
-// silently defeating the secret-read floor.
-func stripLineComment(line string, inSingle, inDouble bool) (string, bool, bool) {
-	for i := 0; i < len(line); i++ {
-		c := line[i]
-		switch {
-		case c == '\'' && !inDouble:
-			inSingle = !inSingle
-		case c == '"' && !inSingle:
-			inDouble = !inDouble
-		case c == '#' && !inSingle && !inDouble:
-			if i == 0 || line[i-1] == ' ' || line[i-1] == '\t' {
-				return line[:i], inSingle, inDouble
-			}
-		}
-	}
-	return line, inSingle, inDouble
-}
-
 func checkProdDeploy(cmd string, ctx Context) Decision {
 	if ghReleaseDeletePattern.re.MatchString(cmd) {
 		return stop(CategoryProdDeploy, ghReleaseDeletePattern.pattern,
@@ -514,7 +512,8 @@ func checkWorktreeEscape(cmd string, ctx Context) Decision {
 	if ctx.WorktreeRoot == "" {
 		return Decision{}
 	}
-	if !rmRecursivePattern.MatchString(cmd) {
+	dangerous, targets := shellscan.DangerousRemoval(cmd)
+	if !dangerous {
 		return Decision{}
 	}
 
@@ -523,9 +522,6 @@ func checkWorktreeEscape(cmd string, ctx Context) Decision {
 		worktreeRoot = filepath.Clean(ctx.WorktreeRoot)
 	}
 
-	tempRoots := allowlistedTempRoots()
-
-	targets := extractRmTargets(cmd)
 	for _, target := range targets {
 		expanded, ok := expandPathTarget(target)
 		if !ok {
@@ -538,69 +534,13 @@ func checkWorktreeEscape(cmd string, ctx Context) Decision {
 		if pathUnderWorktree(abs, worktreeRoot) {
 			continue
 		}
-		if pathUnderAnyRoot(abs, tempRoots) {
+		if shellscan.IsAllowlistedTempPath(abs) {
 			continue
 		}
 		return stop(CategoryWorktreeEscape, "rm "+target,
 			"destructive command outside task worktree requires human approval")
 	}
 	return Decision{}
-}
-
-// allowlistedTempRoots lists OS-managed scratch roots where a destructive rm
-// carries no data-loss risk. The set covers /tmp, /var/tmp, their macOS
-// /private/* canonical forms, the $TMPDIR override, and per-user cache roots
-// (~/.cache on Linux, ~/Library/Caches on macOS). Worktree-escape stays in
-// effect for everything else (Desktop, Documents, repo-adjacent paths).
-func allowlistedTempRoots() []string {
-	roots := []string{
-		"/tmp",
-		"/var/tmp",
-		"/private/tmp",
-		"/private/var/tmp",
-	}
-	if t := strings.TrimSpace(os.Getenv("TMPDIR")); t != "" {
-		if abs, err := filepath.Abs(t); err == nil {
-			roots = append(roots, filepath.Clean(abs))
-		} else {
-			roots = append(roots, filepath.Clean(t))
-		}
-	}
-	if home, err := os.UserHomeDir(); err == nil && home != "" {
-		roots = append(roots, filepath.Join(home, ".cache"))
-		roots = append(roots, filepath.Join(home, "Library", "Caches"))
-	}
-	return roots
-}
-
-func pathUnderAnyRoot(absPath string, roots []string) bool {
-	for _, root := range roots {
-		if root == "" {
-			continue
-		}
-		if pathUnderWorktree(absPath, root) {
-			return true
-		}
-	}
-	return false
-}
-
-func extractRmTargets(cmd string) []string {
-	fields := strings.Fields(cmd)
-	var targets []string
-	for i, field := range fields {
-		if !strings.EqualFold(field, "rm") {
-			continue
-		}
-		for j := i + 1; j < len(fields); j++ {
-			arg := fields[j]
-			if strings.HasPrefix(arg, "-") {
-				continue
-			}
-			targets = append(targets, arg)
-		}
-	}
-	return targets
 }
 
 func expandPathTarget(target string) (string, bool) {

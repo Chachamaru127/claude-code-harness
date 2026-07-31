@@ -459,8 +459,26 @@ else
     fail_test "secret-read allowlist e2e pipeline に問題があります — 'bash tests/test-runtimefloor-secret-allowlist-e2e.sh' で詳細確認"
 fi
 
+# floor テストの env 独立性（owner の免除設定が検査結果を書き換えないこと）
+# HARNESS_RUNTIME_FLOOR_EGRESS=off / SECRET_ALLOW は正規のオーナー設定なので、
+# 継承されると deny を検証する assertion が黙って pass に化ける
+FLOOR_ENV_PINS=0
+grep -q '^unset HARNESS_RUNTIME_FLOOR_EGRESS HARNESS_RUNTIME_FLOOR_SECRET_ALLOW$' \
+    "$PLUGIN_ROOT/tests/test-3cli-hook-floor.sh" && FLOOR_ENV_PINS=$((FLOOR_ENV_PINS + 1))
+grep -q '^unset HARNESS_RUNTIME_FLOOR_EGRESS HARNESS_RUNTIME_FLOOR_SECRET_ALLOW$' \
+    "$PLUGIN_ROOT/tests/test-runtimefloor-secret-allowlist-e2e.sh" && FLOOR_ENV_PINS=$((FLOOR_ENV_PINS + 1))
+grep -q 'os.Unsetenv("HARNESS_RUNTIME_FLOOR_EGRESS")' \
+    "$PLUGIN_ROOT/go/internal/runtimefloor/runtimefloor_test.go" && FLOOR_ENV_PINS=$((FLOOR_ENV_PINS + 1))
+grep -q 'func pinFloorEnvBaseline' \
+    "$PLUGIN_ROOT/go/cmd/harness/hook_codec_3cli_floor_test.go" && FLOOR_ENV_PINS=$((FLOOR_ENV_PINS + 1))
+if [ "$FLOOR_ENV_PINS" -eq 4 ]; then
+    pass_test "runtime floor テストが owner-scoped 免除 env を自前で無効化しています (env 独立、4/4 surface)"
+else
+    fail_test "runtime floor テストの env 独立性が欠けています (${FLOOR_ENV_PINS}/4) — 免除 env を export したセッションで deny assertion が false pass 化します"
+fi
+
 if bash "$PLUGIN_ROOT/tests/test-plan-preapproval.sh" >/dev/null 2>&1; then
-    pass_test "plan-preapproval.v1 schema と secret-read runtimefloor bridge が動作します (test-plan-preapproval.sh)"
+    pass_test "plan-preapproval.v1/v2 schema と scoped secret-read runtimefloor bridge が動作します (test-plan-preapproval.sh)"
 else
     fail_test "plan-preapproval の契約テストに失敗 — 'bash tests/test-plan-preapproval.sh' で詳細確認"
 fi
@@ -1029,6 +1047,20 @@ else
     fail_test "3-surface-e2e の契約テストに失敗 — 'bash tests/test-3-surface-e2e.sh' で詳細確認"
 fi
 
+# 3 surface の skill 契約テスト。未配線だったため frontmatter の
+# user-invocable 乖離を約 2 ヶ月検知できていなかった (Phase 127.3)
+if bash "$PLUGIN_ROOT/tests/test-harness-plan-brief.sh" > /dev/null 2>&1; then
+    pass_test "harness-plan-brief skill 契約 (frontmatter / schema / fixture / render) が維持されています (test-harness-plan-brief.sh)"
+else
+    fail_test "harness-plan-brief の skill 契約テストに失敗 — 'bash tests/test-harness-plan-brief.sh' で詳細確認"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-harness-accept.sh" > /dev/null 2>&1; then
+    pass_test "harness-accept skill 契約 (frontmatter / schema / recommendation 閾値) が維持されています (test-harness-accept.sh)"
+else
+    fail_test "harness-accept の skill 契約テストに失敗 — 'bash tests/test-harness-accept.sh' で詳細確認"
+fi
+
 if bash "$PLUGIN_ROOT/tests/test-audit-ui-presence.sh" > /dev/null 2>&1; then
     pass_test "Phase 65.5.2 監査 UI: 3 HTML templates 全てに audit-trail section + 4 項目 (検索範囲/参照ID/redact/log) (test-audit-ui-presence.sh)"
 else
@@ -1273,6 +1305,16 @@ if bash "$PLUGIN_ROOT/tests/test-generate-skill-manifest.sh" > /dev/null 2>&1; t
     pass_test "skill manifest contract passes (test-generate-skill-manifest.sh)"
 else
     fail_test "skill manifest contract failed — 'bash tests/test-generate-skill-manifest.sh' で詳細確認"
+fi
+
+echo ""
+echo "18. mktemp BSD-safe template (Phase 127.1)"
+echo "----------------------------------------"
+
+if bash "$PLUGIN_ROOT/tests/test-mktemp-bsd-template-safety.sh" > /dev/null 2>&1; then
+    pass_test "mktemp templates are BSD-safe (X が末尾で、後ろに suffix が付かない)"
+else
+    fail_test "mktemp BSD-safety contract failed — 'bash tests/test-mktemp-bsd-template-safety.sh' で詳細確認"
 fi
 
 echo ""

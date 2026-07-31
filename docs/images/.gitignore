@@ -11,9 +11,14 @@
 # Allow top-of-README brand logo (README.md:2, README_ja.md:2)
 !/claude-harness-logo-with-text.png
 
-# Allow generated README hero visuals selected through the Phase 75 approval gate
+# Allow README hero visuals.
+# loop-*.svg are the current animated operating-loop heroes (README.md,
+# README_ja.md). hero-operating-loop-*.png are the previous static heroes,
+# kept tracked but no longer referenced from either README.
 !/readme/
 /readme/*
+!/readme/loop-en.svg
+!/readme/loop-ja.svg
 !/readme/hero-operating-loop-en.png
 !/readme/hero-operating-loop-ja.png
 

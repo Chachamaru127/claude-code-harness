@@ -810,6 +810,10 @@ run_i18n_gate "Japanese UX opt-in surfaces" \
   bash "$PLUGIN_ROOT/tests/test-i18n-japanese-ux-regression.sh"
 run_i18n_gate "harness-work completion report locale and mirror parity" \
   bash "$PLUGIN_ROOT/tests/test-harness-work-completion-i18n.sh"
+# PR #247 レビュー指摘: このファイルは i18n gate に入っておらず、
+# 既存の precedence 検証ごと未実行だった (D53 と同型の未配線テスト)
+run_i18n_gate "locale resolver precedence and per-turn language directive" \
+  bash "$PLUGIN_ROOT/tests/test-i18n-locale-resolver.sh"
 
 if [ $I18N_ISSUES -eq 0 ]; then
   echo "  ✅ i18n 回帰ゲートOK"
