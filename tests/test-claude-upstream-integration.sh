@@ -134,14 +134,22 @@ grep -q 'updatedInput' "${ASK_NORMALIZER_GO}" || {
 }
 
 # v2.1.113: Bash hardening parity checks for find deletion and macOS dangerous removal paths
-GUARDRAIL_HELPERS_GO="${ROOT_DIR}/go/internal/policy/helpers.go"
+# Phase 126.1 moved the shared removal-detection helpers from
+# go/internal/policy/helpers.go into go/pkg/shellscan so the runtime floor and
+# the policy rules evaluate the same command text. The pin follows the code to
+# its new home; the guarantee (these detections must not disappear) is unchanged.
+GUARDRAIL_SHELLSCAN_GO="${ROOT_DIR}/go/pkg/shellscan/shellscan.go"
 GUARDRAIL_RULES_TEST_GO="${ROOT_DIR}/go/internal/policy/rules_test.go"
-grep -q 'hasDangerousFindDelete' "${GUARDRAIL_HELPERS_GO}" || {
+grep -q 'func dangerousFind' "${GUARDRAIL_SHELLSCAN_GO}" || {
   echo "guardrail helpers are missing find -delete / -exec rm detection"
   exit 1
 }
-grep -q 'hasDangerousMacOSRemovalPath' "${GUARDRAIL_HELPERS_GO}" || {
+grep -q 'func isDangerousMacOSTarget' "${GUARDRAIL_SHELLSCAN_GO}" || {
   echo "guardrail helpers are missing macOS dangerous removal path detection"
+  exit 1
+}
+grep -q 'func DangerousRemoval' "${GUARDRAIL_SHELLSCAN_GO}" || {
+  echo "shellscan is missing the shared DangerousRemoval entry point"
   exit 1
 }
 grep -q 'TestR05_FindDelete' "${GUARDRAIL_RULES_TEST_GO}" || {

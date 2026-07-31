@@ -1,0 +1,1872 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23313A7E'/%3E%3Cpath d='M8 16h16M18 10l6 6-6 6' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+  <title>依頼した作業は、どこを通って完了まで進むのか？ — CLAUDE CODE HARNESS / インタラクティブ</title>
+  <style>
+    :root {
+      --bg: #f5f4f1;
+      --surface: #fcfbf9;
+      --surface-2: #f0efea;
+      --ink: #1b1b22;
+      --ink-soft: #5a5a64;
+      --ink-faint: #8c8c92;
+      --line: #e4e2db;
+      --line-strong: #d2cfc6;
+      --primary: #313a7e;
+      --primary-soft: #e9eaf4;
+      --primary-ink: #262e66;
+      --kernel: #191b2c;
+      --kernel-2: #23263c;
+      --kernel-line: #343750;
+      --kernel-ink: #c9cbe0;
+      --done: #2f8f5b;
+      --done-soft: #e4f2ea;
+      --wip: #b8821c;
+      --wip-soft: #f6edd8;
+      --risk: #b5462f;
+      --risk-soft: #f6e7e2;
+      --plain: #1f7a6d;
+      --plain-soft: #e1f1ee;
+      --plain-line: #bbe0d9;
+      --radius: 12px;
+      --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      --sans: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      color-scheme: light;
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(49, 58, 126, 0.08), transparent 28rem),
+        var(--bg);
+      font-family: var(--sans);
+      line-height: 1.75;
+      overflow-wrap: anywhere;
+      word-break: keep-all;
+    }
+
+    button,
+    summary {
+      font: inherit;
+    }
+
+    button {
+      color: inherit;
+    }
+
+    button:focus-visible,
+    summary:focus-visible {
+      outline: 3px solid rgba(49, 58, 126, 0.34);
+      outline-offset: 3px;
+    }
+
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0 0 0 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    .wrap {
+      width: min(1440px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      margin: 24px auto 18px;
+      padding: clamp(24px, 4vw, 48px);
+      overflow: hidden;
+      color: #fff;
+      background:
+        linear-gradient(135deg, rgba(49, 58, 126, 0.96), rgba(25, 27, 44, 0.98)),
+        var(--kernel);
+      border: 1px solid var(--kernel-line);
+      border-radius: 18px;
+      box-shadow: 0 18px 60px rgba(25, 27, 44, 0.16);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: #bfc3ff;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 900px;
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 3.4rem);
+      line-height: 1.2;
+      letter-spacing: -0.035em;
+    }
+
+    .thesis {
+      max-width: 980px;
+      margin: 24px 0 0;
+      padding: 14px 18px;
+      color: #f4f5ff;
+      background: rgba(255, 255, 255, 0.08);
+      border-left: 4px solid #9ca3ff;
+      border-radius: 0 10px 10px 0;
+      font-size: clamp(1rem, 1.7vw, 1.2rem);
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin-top: 18px;
+      color: var(--kernel-ink);
+      font-size: 0.82rem;
+    }
+
+    .explorer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 390px);
+      gap: 18px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .card {
+      min-width: 0;
+      background: rgba(252, 251, 249, 0.94);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 34px rgba(27, 27, 34, 0.07);
+    }
+
+    .canvas-card {
+      overflow: hidden;
+    }
+
+    .canvas-head {
+      display: grid;
+      gap: 14px;
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .canvas-title-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .section-label {
+      margin: 0 0 3px;
+      color: var(--primary);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+    }
+
+    .canvas-head h2,
+    .side-section h2 {
+      margin: 0;
+      font-size: 1.08rem;
+      line-height: 1.35;
+    }
+
+    .flow-description {
+      margin: 5px 0 0;
+      color: var(--ink-soft);
+      font-size: 0.88rem;
+    }
+
+    .view-state {
+      flex: 0 0 auto;
+      padding: 5px 9px;
+      color: var(--primary-ink);
+      background: var(--primary-soft);
+      border: 1px solid #cfd2ec;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .plain-summary {
+      margin: 0;
+      padding: 12px 14px;
+      color: #15564d;
+      background: var(--plain-soft);
+      border: 1px solid var(--plain-line);
+      border-radius: 10px;
+      font-size: 0.92rem;
+    }
+
+    .plain-summary strong {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 0.76rem;
+      letter-spacing: 0.06em;
+    }
+
+    .canvas-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .control-button {
+      min-height: 38px;
+      padding: 7px 12px;
+      cursor: pointer;
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: 9px;
+      font-size: 0.82rem;
+      font-weight: 750;
+    }
+
+    .control-button:hover:not(:disabled) {
+      border-color: var(--primary);
+    }
+
+    .control-button[aria-pressed="true"] {
+      color: #fff;
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .control-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.42;
+    }
+
+    .diagram-shell {
+      max-width: 100%;
+      padding: 18px;
+      overflow-x: auto;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        var(--kernel);
+      background-size: 24px 24px;
+      scrollbar-color: var(--kernel-line) var(--kernel);
+    }
+
+    .diagram {
+      position: relative;
+      display: grid;
+      gap: 14px;
+      min-width: 760px;
+      min-height: 470px;
+      isolation: isolate;
+    }
+
+    .edge-layer {
+      position: absolute;
+      z-index: 1;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    .lane {
+      position: relative;
+      z-index: 2;
+      min-width: 0;
+      padding: 12px;
+      background: rgba(35, 38, 60, 0.78);
+      border: 1px solid var(--kernel-line);
+      border-radius: 12px;
+    }
+
+    .lane-title {
+      min-height: 42px;
+      margin: 0 0 12px;
+      padding-bottom: 9px;
+      color: #aeb3e7;
+      border-bottom: 1px solid var(--kernel-line);
+      font-size: 0.73rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .lane-nodes {
+      display: grid;
+      gap: 54px;
+      align-content: start;
+    }
+
+    .node-card {
+      position: relative;
+      z-index: 3;
+      min-height: 90px;
+      padding: 13px;
+      color: #f0f1ff;
+      background: #2b2e47;
+      border: 1px solid #484c6b;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(8, 9, 18, 0.22);
+      transition:
+        opacity 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease,
+        transform 160ms ease;
+    }
+
+    .node-card.is-dim {
+      opacity: 0.25;
+    }
+
+    .node-card.is-flow {
+      border-color: #99a0ff;
+      box-shadow: 0 0 0 2px rgba(153, 160, 255, 0.16);
+    }
+
+    .node-card.is-step {
+      border-color: #fff;
+      box-shadow:
+        0 0 0 3px rgba(153, 160, 255, 0.38),
+        0 12px 26px rgba(8, 9, 18, 0.34);
+      transform: translateY(-2px);
+    }
+
+    .node-label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 850;
+      line-height: 1.35;
+    }
+
+    .node-summary {
+      display: block;
+      margin-top: 7px;
+      color: var(--kernel-ink);
+      font-size: 0.73rem;
+      line-height: 1.55;
+    }
+
+    .edge-line {
+      fill: none;
+      stroke: #656982;
+      stroke-width: 1.5;
+      opacity: 0.2;
+      transition:
+        opacity 160ms ease,
+        stroke 160ms ease,
+        stroke-width 160ms ease;
+    }
+
+    .edge-line.is-flow {
+      stroke: #a7adff;
+      stroke-width: 3;
+      opacity: 0.88;
+    }
+
+    .edge-line.is-step {
+      stroke: #fff;
+      stroke-width: 5;
+      opacity: 1;
+    }
+
+    .step-badge circle {
+      fill: var(--primary);
+      stroke: #fff;
+      stroke-width: 1.5;
+    }
+
+    .step-badge.is-current circle {
+      fill: #fff;
+      stroke: var(--primary);
+      stroke-width: 3;
+    }
+
+    .step-badge text {
+      fill: #fff;
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 900;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+
+    .step-badge.is-current text {
+      fill: var(--primary);
+    }
+
+    .sidebar {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .side-section {
+      padding: 18px;
+    }
+
+    .side-head {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .side-count {
+      color: var(--ink-faint);
+      font-size: 0.74rem;
+    }
+
+    .flow-list,
+    .step-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .flow-button {
+      width: 100%;
+      padding: 12px;
+      cursor: pointer;
+      text-align: left;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .flow-button:hover {
+      border-color: #aeb2d6;
+    }
+
+    .flow-button[aria-pressed="true"] {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+      box-shadow: inset 4px 0 0 var(--primary);
+    }
+
+    .flow-button-title {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 850;
+      line-height: 1.4;
+    }
+
+    .flow-button-description {
+      display: block;
+      margin-top: 4px;
+      color: var(--ink-soft);
+      font-size: 0.72rem;
+      line-height: 1.5;
+    }
+
+    .step-card {
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .step-card.is-current {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(49, 58, 126, 0.1);
+    }
+
+    .step-select {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 10px;
+      width: 100%;
+      padding: 12px;
+      cursor: pointer;
+      text-align: left;
+      background: transparent;
+      border: 0;
+    }
+
+    .step-select:hover {
+      background: var(--surface-2);
+    }
+
+    .step-number {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      color: #fff;
+      background: var(--primary);
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 900;
+    }
+
+    .step-route {
+      display: block;
+      color: var(--primary);
+      font-size: 0.7rem;
+      font-weight: 850;
+      line-height: 1.4;
+    }
+
+    .step-action {
+      display: block;
+      margin-top: 3px;
+      font-size: 0.86rem;
+      font-weight: 850;
+      line-height: 1.4;
+    }
+
+    .step-description {
+      display: block;
+      margin-top: 5px;
+      color: var(--ink-soft);
+      font-size: 0.76rem;
+      line-height: 1.58;
+    }
+
+    .step-more {
+      padding: 0 12px 10px 54px;
+      color: var(--ink-soft);
+      font-size: 0.73rem;
+    }
+
+    .step-more summary {
+      cursor: pointer;
+      color: var(--primary);
+      font-weight: 800;
+    }
+
+    .detail-grid {
+      display: grid;
+      gap: 7px;
+      margin: 8px 0 0;
+    }
+
+    .detail-row {
+      margin: 0;
+    }
+
+    .detail-row strong {
+      color: var(--ink);
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+    }
+
+    .error-box,
+    .noscript {
+      margin: 18px;
+      padding: 14px;
+      color: #7f2c1e;
+      background: var(--risk-soft);
+      border: 1px solid #e5c0b4;
+      border-radius: 10px;
+    }
+
+    .report-footer {
+      margin-bottom: 28px;
+      padding: 18px 20px;
+      color: var(--ink-soft);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      font-size: 0.78rem;
+    }
+
+    .report-footer strong {
+      color: var(--ink);
+    }
+
+    .source-list {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+
+    @media (max-width: 960px) {
+      .explorer {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      }
+    }
+
+    @media (max-width: 680px) {
+      .wrap {
+        width: min(100% - 20px, 1440px);
+      }
+
+      .hero {
+        margin-top: 10px;
+        padding: 22px 18px;
+        border-radius: 14px;
+      }
+
+      .canvas-title-row {
+        display: grid;
+      }
+
+      .view-state {
+        width: fit-content;
+      }
+
+      .sidebar {
+        grid-template-columns: 1fr;
+      }
+
+      .diagram {
+        min-width: 640px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 12mm;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      .wrap {
+        width: 100%;
+      }
+
+      .hero {
+        margin-top: 0;
+        box-shadow: none;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .explorer {
+        display: block;
+      }
+
+      .canvas-card,
+      .side-section,
+      .report-footer {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+
+      .canvas-controls,
+      .flow-section {
+        display: none;
+      }
+
+      .diagram-shell {
+        overflow: visible;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .diagram {
+        min-width: 0;
+      }
+
+      .node-card,
+      .edge-line {
+        opacity: 1 !important;
+      }
+
+      .sidebar {
+        margin-top: 12px;
+      }
+
+      .step-card {
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero wrap">
+    <p class="eyebrow" id="project-name">CLAUDE CODE HARNESS / インタラクティブ</p>
+    <h1 id="report-title">依頼した作業は、どこを通って完了まで進むのか？</h1>
+    <p class="thesis" id="report-thesis">CCH は「手順の流れ」と「安全の判定」を別々の経路として持ち、すべての実行がコマンド直前の判定を必ず通る構造になっている。</p>
+    <div class="hero-meta">
+      <span id="generated-at">作成日: 2026-07-29</span>
+      <span>判断用の派生レポート</span>
+      <span>正本はフッターの出典</span>
+    </div>
+  </header>
+
+  <main class="explorer wrap" id="workflow-explorer">
+    <section class="card canvas-card" aria-labelledby="active-flow-title">
+      <div class="canvas-head">
+        <div class="canvas-title-row">
+          <div>
+            <p class="section-label">選択中の流れ</p>
+            <h2 id="active-flow-title">フローを読み込み中</h2>
+            <p class="flow-description" id="active-flow-description"></p>
+          </div>
+          <span class="view-state" id="view-state">流れ全体</span>
+        </div>
+
+        <p class="plain-summary">
+          <strong>やさしく言うと</strong>
+          <span id="plain-summary">選んだフローの要点をここに表示します。</span>
+        </p>
+
+        <div class="canvas-controls" aria-label="段階を移動">
+          <button class="control-button" id="previous-step" type="button">← 前へ</button>
+          <button class="control-button" id="show-overview" type="button" aria-pressed="true">流れ全体</button>
+          <button class="control-button" id="next-step" type="button">次へ →</button>
+        </div>
+      </div>
+
+      <div class="diagram-shell" aria-label="システム構成図。横方向にスクロールできます。">
+        <div class="diagram" id="diagram">
+          <svg class="edge-layer" id="edge-layer" aria-hidden="true"></svg>
+        </div>
+      </div>
+
+      <noscript>
+        <p class="noscript">この図の切替にはJavaScriptが必要です。印刷版または「処理の順番」を参照してください。</p>
+      </noscript>
+    </section>
+
+    <aside class="sidebar" aria-label="流れと処理の順番">
+      <section class="card side-section flow-section" aria-labelledby="flows-heading">
+        <div class="side-head">
+          <div>
+            <p class="section-label">1つ選ぶ</p>
+            <h2 id="flows-heading">見たい流れを選ぶ</h2>
+          </div>
+          <span class="side-count" id="flow-count"></span>
+        </div>
+        <div class="flow-list" id="flow-list" role="list"></div>
+      </section>
+
+      <section class="card side-section" aria-labelledby="steps-heading">
+        <div class="side-head">
+          <div>
+            <p class="section-label">上から順に読む</p>
+            <h2 id="steps-heading">処理の順番</h2>
+          </div>
+          <span class="side-count" id="step-count"></span>
+        </div>
+        <div class="step-list" id="step-list" role="list"></div>
+      </section>
+    </aside>
+
+    <p id="workflow-status" class="visually-hidden" aria-live="polite"></p>
+  </main>
+
+  <footer class="report-footer wrap">
+    <strong>SSOT出典</strong>
+    <ul class="source-list" id="source-list"></ul>
+    <p>本レポートは理解と判断のための派生物です。仕様や実装の正本ではありません。</p>
+  </footer>
+
+  <script id="report-data" type="application/json">
+{
+  "meta": {
+    "project": "CLAUDE CODE HARNESS / インタラクティブ",
+    "title": "依頼した作業は、どこを通って完了まで進むのか？",
+    "thesis": "CCH は「手順の流れ」と「安全の判定」を別々の経路として持ち、すべての実行がコマンド直前の判定を必ず通る構造になっている。",
+    "generatedAt": "2026-07-29",
+    "sourceRefs": [
+      "spec.md — Purpose / North Star（3 層）/ Risk Gate distribution contract",
+      "docs/spec/operations-memory-and-collaboration.md — 最終防壁 5 分類の非上書き契約 / auto-approve scope",
+      "go/internal/policy/rules.go — ガードレール規則 R01〜R15",
+      "go/internal/runtimefloor/runtimefloor.go — 最終防壁の実装（5 分類）",
+      "go/internal/guardrail/pre_tool.go — 実行直前判定の入口（floor → 規則の順）",
+      "go/internal/auditlog/auditlog.go — 発火記録（Phase 126.2）",
+      "templates/schemas/plan-preapproval.v2.json — 事前承認の形式（期限 / 回数上限 / 対象作業）",
+      "README.md — 対応ホストの tier",
+      "CHANGELOG.md [Unreleased] — Phase 126 の変更",
+      "docs/reports/2026-07-29-cch-user-guide.html — 静的版（何をする道具か・比較・判断）"
+    ]
+  },
+  "categories": [
+    {
+      "id": "cat-human",
+      "label": "人（判断する側）"
+    },
+    {
+      "id": "cat-skill",
+      "label": "CCH の手順とチーム"
+    },
+    {
+      "id": "cat-host",
+      "label": "AI ツール（実行する側）"
+    },
+    {
+      "id": "cat-engine",
+      "label": "CCH の判定エンジン"
+    },
+    {
+      "id": "cat-repo",
+      "label": "リポジトリ・外部"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "n-op",
+      "label": "operator（あなた）",
+      "categoryId": "cat-human",
+      "summary": "依頼と最終判断だけを行う。途中の検証は行わない"
+    },
+    {
+      "id": "n-plan",
+      "label": "計画スキル",
+      "categoryId": "cat-skill",
+      "summary": "/harness-plan。依頼を仕様と作業一覧に変換し、事前確認を出す"
+    },
+    {
+      "id": "n-work",
+      "label": "実装スキル",
+      "categoryId": "cat-skill",
+      "summary": "/harness-work。作業一覧を実行し、件数に応じて編成を選ぶ"
+    },
+    {
+      "id": "n-worker",
+      "label": "実装役",
+      "categoryId": "cat-skill",
+      "summary": "実際にコードを書く役。Codex や Cursor へ外注もできる"
+    },
+    {
+      "id": "n-review",
+      "label": "レビュー役",
+      "categoryId": "cat-skill",
+      "summary": "実装役の会話を引き継がない独立した目。身内チェックにならない"
+    },
+    {
+      "id": "n-release",
+      "label": "リリーススキル",
+      "categoryId": "cat-skill",
+      "summary": "/harness-release。版更新から公開までを続けて行う"
+    },
+    {
+      "id": "n-host",
+      "label": "AI ツール本体",
+      "categoryId": "cat-host",
+      "summary": "Claude Code / Codex CLI / Cursor。コマンドを実際に走らせる"
+    },
+    {
+      "id": "n-hook",
+      "label": "フック（差し込み口）",
+      "categoryId": "cat-host",
+      "summary": "各ツール標準の割り込み点。実行直前に判定エンジンを呼ぶ"
+    },
+    {
+      "id": "n-floor",
+      "label": "最終防壁（5 分類）",
+      "categoryId": "cat-engine",
+      "summary": "課金 / 外部送信 / 秘密読取 / 本番反映 / 作業場外の破壊。設定で外せない"
+    },
+    {
+      "id": "n-rules",
+      "label": "ガードレール規則（R01〜R15）",
+      "categoryId": "cat-engine",
+      "summary": "拒否・確認・警告を決める。一部は設定で変更できる"
+    },
+    {
+      "id": "n-approval",
+      "label": "事前承認の記録",
+      "categoryId": "cat-engine",
+      "summary": "計画時に取った承認。期限・対象作業・回数上限を持つ"
+    },
+    {
+      "id": "n-audit",
+      "label": "発火ログ",
+      "categoryId": "cat-engine",
+      "summary": "止めた事実を 1 行記録。コマンド本文は残さない"
+    },
+    {
+      "id": "n-spec",
+      "label": "仕様と作業一覧",
+      "categoryId": "cat-repo",
+      "summary": "spec.md と Plans.md。完了条件を検証可能な形で持つ"
+    },
+    {
+      "id": "n-code",
+      "label": "コード",
+      "categoryId": "cat-repo",
+      "summary": "作業ツリー上の実ファイル"
+    },
+    {
+      "id": "n-git",
+      "label": "git / PR",
+      "categoryId": "cat-repo",
+      "summary": "コミット、ブランチ、プルリクエスト"
+    },
+    {
+      "id": "n-public",
+      "label": "公開先",
+      "categoryId": "cat-repo",
+      "summary": "タグと GitHub Release。外部に出る面"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-op-plan",
+      "sourceNodeId": "n-op",
+      "targetNodeId": "n-plan",
+      "label": "依頼"
+    },
+    {
+      "id": "e-plan-spec",
+      "sourceNodeId": "n-plan",
+      "targetNodeId": "n-spec",
+      "label": "書き出し"
+    },
+    {
+      "id": "e-plan-op",
+      "sourceNodeId": "n-plan",
+      "targetNodeId": "n-op",
+      "label": "事前確認"
+    },
+    {
+      "id": "e-op-approval",
+      "sourceNodeId": "n-op",
+      "targetNodeId": "n-approval",
+      "label": "承認を記録"
+    },
+    {
+      "id": "e-op-work",
+      "sourceNodeId": "n-op",
+      "targetNodeId": "n-work",
+      "label": "実行指示"
+    },
+    {
+      "id": "e-work-spec",
+      "sourceNodeId": "n-work",
+      "targetNodeId": "n-spec",
+      "label": "読み取り"
+    },
+    {
+      "id": "e-work-worker",
+      "sourceNodeId": "n-work",
+      "targetNodeId": "n-worker",
+      "label": "割り当て"
+    },
+    {
+      "id": "e-worker-host",
+      "sourceNodeId": "n-worker",
+      "targetNodeId": "n-host",
+      "label": "実行要求"
+    },
+    {
+      "id": "e-host-hook",
+      "sourceNodeId": "n-host",
+      "targetNodeId": "n-hook",
+      "label": "実行直前に割り込み"
+    },
+    {
+      "id": "e-hook-floor",
+      "sourceNodeId": "n-hook",
+      "targetNodeId": "n-floor",
+      "label": "第 1 層へ"
+    },
+    {
+      "id": "e-floor-rules",
+      "sourceNodeId": "n-floor",
+      "targetNodeId": "n-rules",
+      "label": "第 2 層へ"
+    },
+    {
+      "id": "e-rules-approval",
+      "sourceNodeId": "n-rules",
+      "targetNodeId": "n-approval",
+      "label": "承認を照会"
+    },
+    {
+      "id": "e-rules-audit",
+      "sourceNodeId": "n-rules",
+      "targetNodeId": "n-audit",
+      "label": "記録"
+    },
+    {
+      "id": "e-rules-host",
+      "sourceNodeId": "n-rules",
+      "targetNodeId": "n-host",
+      "label": "判定を返す"
+    },
+    {
+      "id": "e-host-code",
+      "sourceNodeId": "n-host",
+      "targetNodeId": "n-code",
+      "label": "書き込み"
+    },
+    {
+      "id": "e-work-review",
+      "sourceNodeId": "n-work",
+      "targetNodeId": "n-review",
+      "label": "レビュー依頼"
+    },
+    {
+      "id": "e-review-code",
+      "sourceNodeId": "n-review",
+      "targetNodeId": "n-code",
+      "label": "差分を読む"
+    },
+    {
+      "id": "e-review-spec",
+      "sourceNodeId": "n-review",
+      "targetNodeId": "n-spec",
+      "label": "完了条件と突合"
+    },
+    {
+      "id": "e-review-work",
+      "sourceNodeId": "n-review",
+      "targetNodeId": "n-work",
+      "label": "指摘を返す"
+    },
+    {
+      "id": "e-work-git",
+      "sourceNodeId": "n-work",
+      "targetNodeId": "n-git",
+      "label": "コミット"
+    },
+    {
+      "id": "e-work-op",
+      "sourceNodeId": "n-work",
+      "targetNodeId": "n-op",
+      "label": "完了報告"
+    },
+    {
+      "id": "e-op-release",
+      "sourceNodeId": "n-op",
+      "targetNodeId": "n-release",
+      "label": "リリース指示"
+    },
+    {
+      "id": "e-release-op",
+      "sourceNodeId": "n-release",
+      "targetNodeId": "n-op",
+      "label": "単一確認"
+    },
+    {
+      "id": "e-release-git",
+      "sourceNodeId": "n-release",
+      "targetNodeId": "n-git",
+      "label": "版更新・PR"
+    },
+    {
+      "id": "e-release-pub",
+      "sourceNodeId": "n-release",
+      "targetNodeId": "n-public",
+      "label": "タグと公開"
+    }
+  ],
+  "flows": [
+    {
+      "id": "flow-guard",
+      "title": "危険な操作が止まるまで",
+      "description": "AI がコマンドを実行しようとしてから、許可・確認・拒否が返るまで",
+      "plainSummary": "すべての実行はコマンド直前で 2 層の判定を通る。第 1 層は設定で外せない。",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "edgeId": "e-worker-host",
+          "action": "実行を要求する",
+          "description": "実装役が、シェルコマンドやファイル書き込みをツールへ要求する。",
+          "why": "ここより先は AI の判断ではなく機械の判定に委ねるため。",
+          "payload": "ツール名（Bash / Write / Edit など）と引数"
+        },
+        {
+          "stepNumber": 2,
+          "edgeId": "e-host-hook",
+          "action": "実行の直前で割り込む",
+          "description": "ツールが標準の差し込み口を呼ぶ。実行はまだ起きていない。",
+          "why": "実行後のファイル差分では、外部送信や削除のような副作用を見られないため。",
+          "codeReference": "go/internal/guardrail/pre_tool.go"
+        },
+        {
+          "stepNumber": 3,
+          "edgeId": "e-hook-floor",
+          "action": "最終防壁が 5 分類で判定する",
+          "description": "課金操作 / 外部への送信 / 秘密ファイルの読み取り / 本番反映 / 作業場の外の破壊のいずれかに当たれば、その場で拒否する。",
+          "why": "自律実行の暴走に対する最後の一線であり、設定から到達できない独立経路に置くため。",
+          "payload": "コマンド文字列（heredoc の本文とコメントは実行される場合のみ走査対象）",
+          "codeReference": "go/internal/runtimefloor/runtimefloor.go"
+        },
+        {
+          "stepNumber": 4,
+          "edgeId": "e-floor-rules",
+          "action": "ガードレール規則へ渡す",
+          "description": "第 1 層に当たらなければ、R01〜R15 を上から順に評価する。最初に一致した規則が判定を決める。",
+          "why": "日常の運用調整はこの層で行い、最終防壁の絶対性を薄めないため。",
+          "codeReference": "go/internal/policy/rules.go"
+        },
+        {
+          "stepNumber": 5,
+          "edgeId": "e-rules-approval",
+          "action": "事前承認があるか照会する",
+          "description": "確認を出す規則に当たった場合、計画時に取った承認が有効かを見る。期限内・対象作業が一致・回数上限内・コマンドが一致、の 4 つすべてを満たすときだけ確認を省く。",
+          "why": "確認の時点を作業中から計画時へ前倒しするため。承認は最終防壁には効かない。",
+          "codeReference": "templates/schemas/plan-preapproval.v2.json"
+        },
+        {
+          "stepNumber": 6,
+          "edgeId": "e-rules-audit",
+          "action": "止めた事実を記録する",
+          "description": "拒否・確認・警告が起きたとき、規則名と分類と判定を 1 行残す。コマンドやパスの生文字列は書かず、秘密読取と課金の分類ではハッシュも省く。",
+          "why": "「どの規則が何回止めたか」を後から推測でなく実測で確認するため。",
+          "codeReference": "go/internal/auditlog/auditlog.go"
+        },
+        {
+          "stepNumber": 7,
+          "edgeId": "e-rules-host",
+          "action": "判定を返す",
+          "description": "許可ならコマンドが走る。確認なら人に問う。拒否ならその場で終了する。",
+          "why": "判定の一元化により、ツールが 3 つでも規則が枝分かれしないため。"
+        }
+      ]
+    },
+    {
+      "id": "flow-plan",
+      "title": "計画をつくる",
+      "description": "依頼を、検証できる作業一覧と承認済みの範囲に変換する",
+      "plainSummary": "やることを文書に固定し、途中で止まりそうな操作を先にまとめて承認する。",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "edgeId": "e-op-plan",
+          "action": "やりたいことを渡す",
+          "description": "自然文で依頼する。範囲を指定しない場合は「いま着手できる全作業」として解釈される。",
+          "why": "範囲を人が細かく切るより、全量を出させてから落とすほうが漏れが少ないため。"
+        },
+        {
+          "stepNumber": 2,
+          "edgeId": "e-plan-spec",
+          "action": "仕様と作業一覧に落とす",
+          "description": "何が正しいかを定める仕様と、何をするかを並べた作業一覧の 2 つを書く。各作業には完了条件を、判定できる形で書く。",
+          "why": "「いい感じ」で終われないようにし、後のレビューが機械的に判定できるようにするため。",
+          "payload": "spec.md（product contract）と Plans.md（task ledger）"
+        },
+        {
+          "stepNumber": 3,
+          "edgeId": "e-plan-op",
+          "action": "事前確認を提示する",
+          "description": "この計画で発生しそうな危険操作（秘密ファイルの読み取り / 外部への送信 / 破壊的操作）を列挙して見せる。",
+          "why": "作業中に何度も聞くのをやめ、判断を計画時の 1 回に集約するため。"
+        },
+        {
+          "stepNumber": 4,
+          "edgeId": "e-op-approval",
+          "action": "承認を記録する",
+          "description": "承認した事項が、期限・対象作業・使用回数の上限つきで保存される。承認していない操作は従来どおり止まる。",
+          "why": "一度の承認が永久に効き続ける恒久緩和にしないため。",
+          "codeReference": ".claude/state/plan-preapprovals.json"
+        }
+      ]
+    },
+    {
+      "id": "flow-work",
+      "title": "実装させる",
+      "description": "作業一覧を上から実行し、コードとコミットにする",
+      "plainSummary": "件数に応じて編成が変わる。実装は別ツールへ外注もできる。",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "edgeId": "e-op-work",
+          "action": "実行を指示する",
+          "description": "対象を「次の 1 件」「全部」「番号指定」から選ぶ。指定しない場合は件数から編成を自動で選ぶ。",
+          "why": "1 件と 20 件では最適な進め方が違うため。"
+        },
+        {
+          "stepNumber": 2,
+          "edgeId": "e-work-spec",
+          "action": "作業と完了条件を読む",
+          "description": "作業一覧から次の対象と、その完了条件、依存関係を取り出す。依存が未完なら順序を入れ替える。",
+          "why": "順序の判断を人がやらずに済ませるため。"
+        },
+        {
+          "stepNumber": 3,
+          "edgeId": "e-work-worker",
+          "action": "実装役へ割り当てる",
+          "description": "1 件なら単独、2〜3 件なら並列、4 件以上ならチーム編成を選ぶ。実装を Codex CLI や Cursor へ外注する場合は、作業を隔離した場所で行う。",
+          "why": "外注時に本体の作業ツリーを汚さないため。",
+          "payload": "隔離した作業ツリー（worktree）"
+        },
+        {
+          "stepNumber": 4,
+          "edgeId": "e-worker-host",
+          "action": "コマンドの実行を要求する",
+          "description": "ここから先は「危険な操作が止まるまで」のフローに合流する。すべての実行が判定を通る。",
+          "why": "外注先であっても同じ境界を適用するため。"
+        },
+        {
+          "stepNumber": 5,
+          "edgeId": "e-host-code",
+          "action": "コードに書き込む",
+          "description": "判定を通った操作だけが実ファイルに届く。動作が変わる変更では、先に失敗するテストを書いた証拠を求める。",
+          "why": "テストが後付けだと、通すためのテストになりやすいため。"
+        },
+        {
+          "stepNumber": 6,
+          "edgeId": "e-work-git",
+          "action": "コミットする",
+          "description": "レビューを通った変更を履歴に残す。作業一覧の完了印も同時に更新する。",
+          "why": "どの変更がどの作業に対応するかを、後から追えるようにするため。"
+        }
+      ]
+    },
+    {
+      "id": "flow-review",
+      "title": "レビューする",
+      "description": "実装した本人とは別の目で、差分と完了条件を突き合わせる",
+      "plainSummary": "会話を共有しない役が見る。重大な指摘が残る限り完了にならない。",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "edgeId": "e-work-review",
+          "action": "レビュー役を立てる",
+          "description": "実装役の会話履歴を引き継がない別の役を立てる。必要なら別ツールの意見も取る。",
+          "why": "同じ文脈を持つ相手が見ると、自分の前提をそのまま肯定してしまうため。"
+        },
+        {
+          "stepNumber": 2,
+          "edgeId": "e-review-code",
+          "action": "差分を読む",
+          "description": "変更されたファイルの差分を、実装の意図を知らない状態から読む。",
+          "why": "説明ではなく成果物そのものを判定材料にするため。"
+        },
+        {
+          "stepNumber": 3,
+          "edgeId": "e-review-spec",
+          "action": "完了条件と突き合わせる",
+          "description": "計画時に決めた完了条件を満たしているかを 1 項目ずつ確認する。テストの弱体化や期待値の緩和は指摘対象になる。",
+          "why": "「動いた」と「要件を満たした」を混同しないため。"
+        },
+        {
+          "stepNumber": 4,
+          "edgeId": "e-review-work",
+          "action": "指摘を返す",
+          "description": "重大な指摘があれば実装役へ差し戻す。反復には上限があり、超えると人の判断へ上げる。",
+          "why": "直らない問題で無限に往復しないため。"
+        }
+      ]
+    },
+    {
+      "id": "flow-release",
+      "title": "リリースする",
+      "description": "版を上げ、変更履歴を整え、外部に出す",
+      "plainSummary": "人の確認はこの工程で 1 回だけ。道中では聞き直さない。",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "edgeId": "e-op-release",
+          "action": "リリースを指示する",
+          "description": "未レビューの実装が残っていれば、先にレビューへ回される。",
+          "why": "検証していないものを公開面に出さないため。"
+        },
+        {
+          "stepNumber": 2,
+          "edgeId": "e-release-op",
+          "action": "まとめて 1 回だけ確認する",
+          "description": "版番号の上げ幅、変更履歴、PR とマージ、タグ、公開範囲を一括で提示する。ここが唯一の確認点になる。",
+          "why": "道中の確認を自動化した分、判断をこの 1 回に集約するため。"
+        },
+        {
+          "stepNumber": 3,
+          "edgeId": "e-release-git",
+          "action": "版を上げて PR を通す",
+          "description": "版番号を関連ファイル間で同期し、変更履歴の未公開分を確定させ、PR を作って検査の通過を待つ。",
+          "why": "版の食い違いは配布後に気づくと修正が高くつくため。"
+        },
+        {
+          "stepNumber": 4,
+          "edgeId": "e-release-pub",
+          "action": "タグを打って公開する",
+          "description": "公開は最終防壁の対象だが、プロジェクト設定で許可した場合に限り、削除を伴わない公開操作だけが通る。",
+          "why": "公開の信頼根拠を人の物理操作から、検査の連鎖へ移すため。",
+          "codeReference": ".claude-code-harness.config.json（runtimefloor.releaseAuto）"
+        }
+      ]
+    }
+  ]
+}
+  </script>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const svgNamespace = "http://www.w3.org/2000/svg";
+      const elements = {
+        projectName: document.getElementById("project-name"),
+        reportTitle: document.getElementById("report-title"),
+        reportThesis: document.getElementById("report-thesis"),
+        generatedAt: document.getElementById("generated-at"),
+        diagram: document.getElementById("diagram"),
+        edgeLayer: document.getElementById("edge-layer"),
+        flowList: document.getElementById("flow-list"),
+        stepList: document.getElementById("step-list"),
+        activeFlowTitle: document.getElementById("active-flow-title"),
+        activeFlowDescription: document.getElementById("active-flow-description"),
+        plainSummary: document.getElementById("plain-summary"),
+        flowCount: document.getElementById("flow-count"),
+        stepCount: document.getElementById("step-count"),
+        viewState: document.getElementById("view-state"),
+        status: document.getElementById("workflow-status"),
+        previous: document.getElementById("previous-step"),
+        overview: document.getElementById("show-overview"),
+        next: document.getElementById("next-step"),
+        sourceList: document.getElementById("source-list")
+      };
+
+      let data;
+
+      try {
+        data = JSON.parse(document.getElementById("report-data").textContent);
+        const errors = validateData(data);
+        if (errors.length) throw new Error(errors.join(" / "));
+      } catch (error) {
+        showError(error.message);
+        return;
+      }
+
+      const nodeMap = new Map(data.nodes.map((node) => [node.id, node]));
+      const edgeMap = new Map(data.edges.map((edge) => [edge.id, edge]));
+      const state = {
+        flowIndex: 0,
+        stepIndex: null,
+        printStepIndex: null,
+        openedDetails: []
+      };
+
+      applyMetadata();
+      renderDiagramNodes();
+      renderFlowList();
+      selectFlow(0);
+      attachControls();
+
+      let resizeFrame = 0;
+      window.addEventListener("resize", () => {
+        cancelAnimationFrame(resizeFrame);
+        resizeFrame = requestAnimationFrame(drawEdges);
+      });
+
+      window.addEventListener("beforeprint", preparePrint);
+      window.addEventListener("afterprint", restoreAfterPrint);
+
+      function applyMetadata() {
+        document.title = data.meta.title;
+        elements.projectName.textContent = `${data.meta.project} / INTERACTIVE WORKFLOW`;
+        elements.reportTitle.textContent = data.meta.title;
+        elements.reportThesis.textContent = data.meta.thesis;
+        elements.generatedAt.textContent = `作成日: ${data.meta.generatedAt || "未設定"}`;
+        elements.flowCount.textContent = `${data.flows.length}件`;
+
+        elements.sourceList.replaceChildren();
+        for (const source of data.meta.sourceRefs || []) {
+          const item = document.createElement("li");
+          const code = document.createElement("code");
+          code.textContent = source;
+          item.append(code);
+          elements.sourceList.append(item);
+        }
+      }
+
+      function renderDiagramNodes() {
+        const fragment = document.createDocumentFragment();
+        elements.diagram.style.gridTemplateColumns =
+          `repeat(${data.categories.length}, minmax(170px, 1fr))`;
+
+        for (const category of data.categories) {
+          const lane = document.createElement("section");
+          lane.className = "lane";
+          lane.setAttribute("aria-label", category.label);
+
+          const title = document.createElement("h3");
+          title.className = "lane-title";
+          title.textContent = category.label;
+          lane.append(title);
+
+          const nodeList = document.createElement("div");
+          nodeList.className = "lane-nodes";
+
+          for (const node of data.nodes.filter((item) => item.categoryId === category.id)) {
+            const card = document.createElement("div");
+            card.className = "node-card";
+            card.id = `node-${node.id}`;
+            card.dataset.nodeId = node.id;
+
+            const label = document.createElement("span");
+            label.className = "node-label";
+            label.textContent = node.label;
+
+            const summary = document.createElement("span");
+            summary.className = "node-summary";
+            summary.textContent = node.summary || "";
+
+            card.append(label, summary);
+            nodeList.append(card);
+          }
+
+          lane.append(nodeList);
+          fragment.append(lane);
+        }
+
+        elements.diagram.append(fragment);
+      }
+
+      function renderFlowList() {
+        elements.flowList.replaceChildren();
+
+        data.flows.forEach((flow, index) => {
+          const item = document.createElement("div");
+          item.setAttribute("role", "listitem");
+
+          const button = document.createElement("button");
+          button.className = "flow-button";
+          button.type = "button";
+          button.dataset.flowIndex = String(index);
+          button.setAttribute("aria-pressed", "false");
+
+          const title = document.createElement("span");
+          title.className = "flow-button-title";
+          title.textContent = flow.title;
+
+          const description = document.createElement("span");
+          description.className = "flow-button-description";
+          description.textContent = flow.description;
+
+          button.append(title, description);
+          button.addEventListener("click", () => selectFlow(index));
+          button.addEventListener("keydown", (event) => {
+            moveFocus(event, ".flow-button", index);
+          });
+          item.append(button);
+          elements.flowList.append(item);
+        });
+      }
+
+      function selectFlow(index) {
+        state.flowIndex = index;
+        state.stepIndex = null;
+
+        for (const button of elements.flowList.querySelectorAll(".flow-button")) {
+          button.setAttribute(
+            "aria-pressed",
+            String(Number(button.dataset.flowIndex) === state.flowIndex)
+          );
+        }
+
+        renderSteps();
+        updateView();
+      }
+
+      function renderSteps() {
+        const flow = currentFlow();
+        elements.stepList.replaceChildren();
+        elements.stepCount.textContent = `${flow.steps.length}段階`;
+
+        flow.steps.forEach((step, index) => {
+          const edge = edgeMap.get(step.edgeId);
+          const source = nodeMap.get(edge.sourceNodeId);
+          const target = nodeMap.get(edge.targetNodeId);
+
+          const card = document.createElement("article");
+          card.className = "step-card";
+          card.dataset.stepIndex = String(index);
+          card.setAttribute("role", "listitem");
+
+          const button = document.createElement("button");
+          button.className = "step-select";
+          button.type = "button";
+          button.dataset.stepIndex = String(index);
+
+          const number = document.createElement("span");
+          number.className = "step-number";
+          number.textContent = String(step.stepNumber);
+
+          const copy = document.createElement("span");
+
+          const route = document.createElement("span");
+          route.className = "step-route";
+          route.textContent = `${source.label} → ${target.label}`;
+
+          const action = document.createElement("span");
+          action.className = "step-action";
+          action.textContent = step.action;
+
+          const description = document.createElement("span");
+          description.className = "step-description";
+          description.textContent = step.description;
+
+          copy.append(route, action, description);
+          button.append(number, copy);
+          button.addEventListener("click", () => selectStep(index));
+          button.addEventListener("keydown", (event) => {
+            moveFocus(event, ".step-select", index);
+          });
+          card.append(button);
+
+          const details = buildStepDetails(step);
+          if (details) card.append(details);
+          elements.stepList.append(card);
+        });
+      }
+
+      function buildStepDetails(step) {
+        if (!step.why && !step.payload && !step.codeReference) return null;
+
+        const details = document.createElement("details");
+        details.className = "step-more";
+
+        const summary = document.createElement("summary");
+        summary.textContent = "理由、受け渡す情報、コードを見る";
+        details.append(summary);
+
+        const grid = document.createElement("div");
+        grid.className = "detail-grid";
+
+        const fields = [
+          ["なぜ", step.why],
+          ["受け渡すもの", step.payload],
+          ["コード参照", step.codeReference]
+        ];
+
+        for (const [label, value] of fields) {
+          if (!value) continue;
+          const row = document.createElement("p");
+          row.className = "detail-row";
+          const strong = document.createElement("strong");
+          strong.textContent = `${label}: `;
+          row.append(strong);
+
+          if (label === "コード参照") {
+            const code = document.createElement("code");
+            code.textContent = value;
+            row.append(code);
+          } else {
+            row.append(document.createTextNode(value));
+          }
+          grid.append(row);
+        }
+
+        details.append(grid);
+        return details;
+      }
+
+      function selectStep(index) {
+        state.stepIndex = index;
+        updateView();
+        const selected = elements.stepList.querySelector(`[data-step-index="${index}"]`);
+        selected?.scrollIntoView({
+          block: "nearest",
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth"
+        });
+      }
+
+      function updateView() {
+        const flow = currentFlow();
+        const currentStep = state.stepIndex === null ? null : flow.steps[state.stepIndex];
+
+        elements.activeFlowTitle.textContent = flow.title;
+        elements.activeFlowDescription.textContent = flow.description;
+        elements.plainSummary.textContent = flow.plainSummary;
+        elements.viewState.textContent = currentStep
+          ? `段階 ${currentStep.stepNumber}/${flow.steps.length}`
+          : `流れ全体・${flow.steps.length}段階`;
+        elements.status.textContent = currentStep
+          ? `${flow.title}、段階${currentStep.stepNumber}/${flow.steps.length}を表示`
+          : `${flow.title}、流れ全体${flow.steps.length}段階を表示`;
+
+        elements.overview.setAttribute("aria-pressed", String(state.stepIndex === null));
+        elements.previous.disabled = state.stepIndex === null;
+        elements.next.disabled = state.stepIndex === flow.steps.length - 1;
+
+        const flowEdgeIds = new Set(flow.steps.map((step) => step.edgeId));
+        const flowNodeIds = new Set();
+        for (const edgeId of flowEdgeIds) {
+          const edge = edgeMap.get(edgeId);
+          flowNodeIds.add(edge.sourceNodeId);
+          flowNodeIds.add(edge.targetNodeId);
+        }
+
+        const stepNodeIds = new Set();
+        if (currentStep) {
+          const edge = edgeMap.get(currentStep.edgeId);
+          stepNodeIds.add(edge.sourceNodeId);
+          stepNodeIds.add(edge.targetNodeId);
+        }
+
+        for (const card of elements.diagram.querySelectorAll(".node-card")) {
+          const nodeId = card.dataset.nodeId;
+          card.classList.toggle("is-dim", !flowNodeIds.has(nodeId));
+          card.classList.toggle("is-flow", flowNodeIds.has(nodeId));
+          card.classList.toggle("is-step", stepNodeIds.has(nodeId));
+        }
+
+        for (const card of elements.stepList.querySelectorAll(".step-card")) {
+          const isCurrent = Number(card.dataset.stepIndex) === state.stepIndex;
+          card.classList.toggle("is-current", isCurrent);
+          const button = card.querySelector(".step-select");
+          if (isCurrent) {
+            button.setAttribute("aria-current", "step");
+          } else {
+            button.removeAttribute("aria-current");
+          }
+        }
+
+        requestAnimationFrame(drawEdges);
+      }
+
+      function drawEdges() {
+        const flow = currentFlow();
+        const currentStep = state.stepIndex === null ? null : flow.steps[state.stepIndex];
+        const flowEdgeIds = new Set(flow.steps.map((step) => step.edgeId));
+        const bounds = elements.diagram.getBoundingClientRect();
+
+        elements.edgeLayer.replaceChildren(buildMarkers());
+        elements.edgeLayer.setAttribute("viewBox", `0 0 ${bounds.width} ${bounds.height}`);
+
+        for (const edge of data.edges) {
+          const sourceElement = document.getElementById(`node-${edge.sourceNodeId}`);
+          const targetElement = document.getElementById(`node-${edge.targetNodeId}`);
+          if (!sourceElement || !targetElement) continue;
+
+          const source = sourceElement.getBoundingClientRect();
+          const target = targetElement.getBoundingClientRect();
+          const geometry = edgeGeometry(source, target, bounds);
+          const path = document.createElementNS(svgNamespace, "path");
+          const isFlow = flowEdgeIds.has(edge.id);
+          const isCurrent = currentStep?.edgeId === edge.id;
+
+          path.setAttribute("d", geometry.path);
+          path.setAttribute("class", [
+            "edge-line",
+            isFlow ? "is-flow" : "",
+            isCurrent ? "is-step" : ""
+          ].filter(Boolean).join(" "));
+          path.setAttribute(
+            "marker-end",
+            isCurrent
+              ? "url(#arrow-step)"
+              : isFlow
+                ? "url(#arrow-flow)"
+                : "url(#arrow-dim)"
+          );
+          elements.edgeLayer.append(path);
+
+          const matchingSteps = flow.steps.filter((step) => step.edgeId === edge.id);
+          matchingSteps.forEach((step, badgeIndex) => {
+            const badge = createStepBadge(
+              step.stepNumber,
+              geometry.midX,
+              geometry.midY + badgeIndex * 26,
+              currentStep?.stepNumber === step.stepNumber
+            );
+            elements.edgeLayer.append(badge);
+          });
+        }
+      }
+
+      function edgeGeometry(source, target, bounds) {
+        const sourceCenterX = source.left + source.width / 2;
+        const targetCenterX = target.left + target.width / 2;
+        const forward = targetCenterX >= sourceCenterX;
+        const x1 = (forward ? source.right : source.left) - bounds.left;
+        const y1 = source.top + source.height / 2 - bounds.top;
+        const x2 = (forward ? target.left : target.right) - bounds.left;
+        const y2 = target.top + target.height / 2 - bounds.top;
+        const curve = Math.max(42, Math.abs(x2 - x1) * 0.46);
+        const direction = forward ? 1 : -1;
+        const c1x = x1 + curve * direction;
+        const c2x = x2 - curve * direction;
+
+        return {
+          path: `M ${x1} ${y1} C ${c1x} ${y1}, ${c2x} ${y2}, ${x2} ${y2}`,
+          midX: (x1 + x2) / 2,
+          midY: (y1 + y2) / 2
+        };
+      }
+
+      function buildMarkers() {
+        const definitions = document.createElementNS(svgNamespace, "defs");
+        const markers = [
+          ["arrow-dim", "#656982", 0.35],
+          ["arrow-flow", "#a7adff", 1],
+          ["arrow-step", "#ffffff", 1]
+        ];
+
+        for (const [id, color, opacity] of markers) {
+          const marker = document.createElementNS(svgNamespace, "marker");
+          marker.id = id;
+          marker.setAttribute("viewBox", "0 0 10 10");
+          marker.setAttribute("refX", "9");
+          marker.setAttribute("refY", "5");
+          marker.setAttribute("markerWidth", "7");
+          marker.setAttribute("markerHeight", "7");
+          marker.setAttribute("orient", "auto-start-reverse");
+
+          const arrow = document.createElementNS(svgNamespace, "path");
+          arrow.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
+          arrow.setAttribute("fill", color);
+          arrow.setAttribute("opacity", String(opacity));
+          marker.append(arrow);
+          definitions.append(marker);
+        }
+
+        return definitions;
+      }
+
+      function createStepBadge(number, x, y, isCurrent) {
+        const group = document.createElementNS(svgNamespace, "g");
+        group.setAttribute(
+          "class",
+          `step-badge${isCurrent ? " is-current" : ""}`
+        );
+        group.setAttribute("transform", `translate(${x} ${y})`);
+
+        const circle = document.createElementNS(svgNamespace, "circle");
+        circle.setAttribute("r", isCurrent ? "13" : "11");
+
+        const text = document.createElementNS(svgNamespace, "text");
+        text.textContent = String(number);
+
+        group.append(circle, text);
+        return group;
+      }
+
+      function attachControls() {
+        elements.overview.addEventListener("click", () => {
+          state.stepIndex = null;
+          updateView();
+        });
+
+        elements.previous.addEventListener("click", () => {
+          if (state.stepIndex === null) return;
+          if (state.stepIndex === 0) {
+            state.stepIndex = null;
+            updateView();
+          } else {
+            selectStep(state.stepIndex - 1);
+          }
+        });
+
+        elements.next.addEventListener("click", () => {
+          const flow = currentFlow();
+          if (state.stepIndex === null) {
+            selectStep(0);
+          } else if (state.stepIndex < flow.steps.length - 1) {
+            selectStep(state.stepIndex + 1);
+          }
+        });
+      }
+
+      function moveFocus(event, selector, index) {
+        if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
+        event.preventDefault();
+        const container = selector === ".step-select"
+          ? elements.stepList
+          : elements.flowList;
+        const buttons = [...container.querySelectorAll(selector)];
+        const delta = event.key === "ArrowDown" ? 1 : -1;
+        buttons[(index + delta + buttons.length) % buttons.length]?.focus();
+      }
+
+      function currentFlow() {
+        return data.flows[state.flowIndex];
+      }
+
+      function validateData(value) {
+        const errors = [];
+        const arrays = ["categories", "nodes", "edges", "flows"];
+
+        if (!value?.meta?.title) errors.push("meta.titleがありません");
+        if (!value?.meta?.thesis) errors.push("meta.thesisがありません");
+
+        for (const key of arrays) {
+          if (!Array.isArray(value?.[key]) || value[key].length === 0) {
+            errors.push(`${key}が空です`);
+          }
+        }
+        if (errors.length) return errors;
+
+        const ids = (items) => new Set(items.map((item) => item.id));
+        const categoryIds = ids(value.categories);
+        const nodeIds = ids(value.nodes);
+        const edgeIds = ids(value.edges);
+
+        for (const node of value.nodes) {
+          if (!categoryIds.has(node.categoryId)) {
+            errors.push(`${node.id}のcategoryIdが不正です`);
+          }
+        }
+        for (const edge of value.edges) {
+          if (!nodeIds.has(edge.sourceNodeId) || !nodeIds.has(edge.targetNodeId)) {
+            errors.push(`${edge.id}のnode参照が不正です`);
+          }
+        }
+        for (const flow of value.flows) {
+          flow.steps?.forEach((step, index) => {
+            if (step.stepNumber !== index + 1) {
+              errors.push(`${flow.id}のstepNumberが連番ではありません`);
+            }
+            if (!edgeIds.has(step.edgeId)) {
+              errors.push(`${flow.id}が存在しないedgeを参照しています`);
+            }
+          });
+        }
+        return errors;
+      }
+
+      function showError(message) {
+        const box = document.createElement("div");
+        box.className = "error-box";
+        box.setAttribute("role", "alert");
+        box.textContent = `レポートデータを表示できません: ${message}`;
+        elements.diagram.replaceChildren(box);
+      }
+
+      function preparePrint() {
+        state.printStepIndex = state.stepIndex;
+        state.openedDetails = [...document.querySelectorAll(".step-more")]
+          .filter((details) => details.open);
+        for (const details of document.querySelectorAll(".step-more")) details.open = true;
+        state.stepIndex = null;
+        updateView();
+        requestAnimationFrame(drawEdges);
+      }
+
+      function restoreAfterPrint() {
+        for (const details of document.querySelectorAll(".step-more")) {
+          details.open = state.openedDetails.includes(details);
+        }
+        state.stepIndex = state.printStepIndex;
+        updateView();
+      }
+    })();
+  </script>
+</body>
+</html>

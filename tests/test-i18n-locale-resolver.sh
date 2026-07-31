@@ -179,12 +179,22 @@ if jq -r '.hookSpecificOutput.additionalContext' <<< "$userprompt_en" | grep -q 
   echo "$userprompt_en" >&2
   exit 1
 fi
+if ! jq -r '.hookSpecificOutput.additionalContext' <<< "$userprompt_en" | grep -q 'Response Language: English'; then
+  echo "FAIL: default userprompt must inject the English response-language directive" >&2
+  echo "$userprompt_en" >&2
+  exit 1
+fi
 
 userprompt_ja_project="$tmpdir/userprompt-ja"
 make_userprompt_project "$userprompt_ja_project"
 userprompt_ja="$(userprompt_policy "$userprompt_ja_project" "ja" "$prompt_payload")"
 if ! jq -r '.hookSpecificOutput.additionalContext' <<< "$userprompt_ja" | grep -q 'work モード継続中'; then
   echo "FAIL: CLAUDE_CODE_HARNESS_LANG=ja must preserve Japanese userprompt work warning" >&2
+  echo "$userprompt_ja" >&2
+  exit 1
+fi
+if ! jq -r '.hookSpecificOutput.additionalContext' <<< "$userprompt_ja" | grep -q '応答言語: 日本語'; then
+  echo "FAIL: CLAUDE_CODE_HARNESS_LANG=ja must inject the Japanese response-language directive" >&2
   echo "$userprompt_ja" >&2
   exit 1
 fi

@@ -2,17 +2,20 @@
 //
 // It contains the pure rule-evaluation core: each rule is a
 // (toolPattern, evaluate) pair evaluated in order; the first match wins
-// (short-circuit). This package depends only on the Go standard library and
-// pkg/hookproto so that the rule logic can be reused without pulling in the
-// configuration and state layers (those live in internal/guardrail).
+// (short-circuit). This package depends only on the Go standard library,
+// pkg/hookproto, and the dependency-free pkg/shellscan leaf package so that the
+// rule logic can be reused without pulling in the configuration and state
+// layers (those live in internal/guardrail).
 package policy
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 
 	"github.com/Chachamaru127/claude-code-harness/go/pkg/hookproto"
+	"github.com/Chachamaru127/claude-code-harness/go/pkg/shellscan"
 )
 
 // tddEnforceLevelMax mirrors config.TDDEnforceLevelMax ("max") as a plain
@@ -213,6 +216,14 @@ var Rules = []GuardRule{
 			if isUnderProjectRoot(filePath, ctx.ProjectRoot) {
 				return nil
 			}
+			physicalPath := filePath
+			if !filepath.IsAbs(physicalPath) && ctx.ProjectRoot != "" {
+				physicalPath = filepath.Join(ctx.ProjectRoot, physicalPath)
+			}
+			resolvedPath, err := evalSymlinksAllowMissing(physicalPath)
+			if err == nil && shellscan.IsAllowlistedTempPath(resolvedPath) {
+				return nil
+			}
 			// Work mode skips confirmation
 			if ctx.WorkMode {
 				return nil
@@ -233,10 +244,14 @@ var Rules = []GuardRule{
 			if !ok {
 				return nil
 			}
-			if !hasDangerousRmRf(command) {
+			dangerous, targets := shellscan.DangerousRemoval(command)
+			if !dangerous {
 				return nil
 			}
 			if ctx.WorkMode {
+				return nil
+			}
+			if dangerousRemovalTargetsWithinProject(command, targets, ctx.ProjectRoot) {
 				return nil
 			}
 			return &hookproto.HookResult{
@@ -393,6 +408,13 @@ var Rules = []GuardRule{
 			case ProtectedBranchPushPolicyAllow:
 				return nil
 			default:
+				// Plan preapproval can suppress this guardrail confirmation,
+				// but never the explicit deny branch above or the runtime
+				// action hard floor evaluated before policy rules.
+				if ctx.ConsumePlanPreapproval != nil &&
+					ctx.ConsumePlanPreapproval("external-send", command) {
+					return nil
+				}
 				return &hookproto.HookResult{
 					Decision: hookproto.DecisionAsk,
 					Reason:   "Direct push to main/master. Run it after user confirmation? (setting: protected_branch_push=ask)",
@@ -430,6 +452,7 @@ func EvaluateRules(ctx hookproto.RuleContext) hookproto.HookResult {
 			continue
 		}
 		if result := rule.Evaluate(ctx); result != nil {
+			result.RuleID = rule.ID
 			return *result
 		}
 	}

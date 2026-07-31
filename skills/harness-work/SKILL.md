@@ -357,6 +357,18 @@ Phase C（統合: commit log 集計・リッチ完了報告・Plans.md 最終確
 完全版の pseudocode（B-1〜B-7 の逐次手順含む）は
 [references/execution-modes.md#breezing-phase-detail](${CLAUDE_SKILL_DIR}/references/execution-modes.md) を参照。
 
+### Active task scope
+
+各タスクの preapproval preflight より前に、対象 worktree の
+`.claude/state/active-task.json` へ `{"phase":"<phase>","task":"<task>"}` を
+原子的に書く。Go guardrail はこのファイルを現在スコープの正本として読む。
+タスク終了時は成功、失敗、停止のどの経路でも削除する。環境変数
+`HARNESS_ACTIVE_PHASE` / `HARNESS_ACTIVE_TASK` は、state ファイルが存在しない
+host の fallback に限る。
+
+Parallel / Breezing ではタスクごとの worktree に書く。同じ worktree の
+`active-task.json` を複数タスクで共有しない。
+
 ### Advisor Protocol（全モード共通）
 
 Advisor は「実装者」でも「レビュー担当」でもない。迷った時だけ、実行役が次の一歩を決めるための相談役として入る。
