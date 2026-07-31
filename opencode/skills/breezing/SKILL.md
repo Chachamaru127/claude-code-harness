@@ -157,9 +157,11 @@ argument-hint のどれにも一致しない自由文入力は `bash scripts/bre
 
 Breezing run 開始時は、Lead が `harness-work` と同じ preapproval preflight を実行する。
 
-- `.claude/state/plan-preapprovals.json` があれば `templates/schemas/plan-preapproval.v1.json` で validate する。
+- 各 task の開始時、task worktree の `.claude/state/active-task.json` に `{"phase":"<phase>","task":"<task>"}` を原子的に書く。task 終了時は成功、失敗、停止の全経路で削除する。
+- `.claude/state/plan-preapprovals.json` があれば `scripts/plan-preapproval.sh validate` で v2 を validate する。v1 は既存記録の読み取り互換として受け付ける。
 - 実行対象 task の `decision: approved` 事項だけを宣言済みとして扱い、Worker briefing に渡す。
 - `secret-read` は `bash "${HARNESS_PLUGIN_ROOT}/scripts/plan-preapproval.sh" apply-secret-allow "$PROJECT_ROOT"` で project config `.claude-code-harness.config.json` の `runtimefloor.secretAllow` に per-run 反映し、108.2 の project config floor と接続する。
+- R12 の `ask` は、同じ phase/task、期限内、使用回数内で、`external-send` と実行コマンドが一致する v2 承認だけが抑制する。明示 `deny` と runtime floor は抑制しない。
 - 宣言済み事項では途中停止せず、work 中の宣言済み事項起因 `AskUserQuestion` はゼロにする。確認は plan 承認時の 1 回のみ。
 - 記録に無い未計画の secret-read / 外部送信 / 破壊的操作は従来どおり runtime floor / ask で停止する。安全網を狭めない。
 

@@ -39,13 +39,13 @@ for file in files:
 
 text = "\n".join(file.read_text() for file in files)
 required = {
-    "README.md": "docs/images/readme/hero-operating-loop-en.png",
-    "README_ja.md": "docs/images/readme/hero-operating-loop-ja.png",
+    "README.md": "docs/images/readme/loop-en.svg",
+    "README_ja.md": "docs/images/readme/loop-ja.svg",
 }
 for file in files:
     expected = required[file.name]
     if expected not in file.read_text():
-        errors.append(f"{file.name}: missing approved Pattern A hero image: {expected}")
+        errors.append(f"{file.name}: missing approved operating-loop hero image: {expected}")
 
 if "docs/images/hokage/hokage-hero.jpg" in text:
     errors.append("obsolete hero path still present")

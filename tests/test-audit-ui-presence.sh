@@ -95,7 +95,7 @@ done
 # ============================================================
 
 # audit-log.sh の実 output を生成して検証
-TMP_AUDIT="$(mktemp /tmp/audit-test-XXXX.jsonl)"
+TMP_AUDIT="$(mktemp "${TMPDIR:-/tmp}/audit-test.XXXXXX")"
 trap 'rm -f "$TMP_AUDIT"' EXIT
 
 bash "$ROOT_DIR/scripts/cross-project-audit-log.sh" \

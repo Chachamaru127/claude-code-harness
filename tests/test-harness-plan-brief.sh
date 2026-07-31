@@ -206,7 +206,7 @@ if [[ ! -x "$RENDER_SCRIPT" ]]; then
 elif [[ ! -f "$TEMPLATE_PATH" ]]; then
   fail "Template not found: $TEMPLATE_PATH"
 else
-  TMP_OUT="$(mktemp /tmp/plan-brief-test-XXXXXX.html)"
+  TMP_OUT="$(mktemp "${TMPDIR:-/tmp}/plan-brief-test.XXXXXX")"
   trap 'rm -f "$TMP_OUT"' EXIT
   if bash "$RENDER_SCRIPT" --template plan-brief --data "$FIXTURE_PATH" --out "$TMP_OUT" 2>/dev/null; then
     pass "render-html.sh succeeds with plan-brief template + fixture"
@@ -252,7 +252,7 @@ fi
 if [[ ! -x "$OPEN_SCRIPT" ]]; then
   fail "plan-brief-open.sh not executable: $OPEN_SCRIPT"
 else
-  TMP_HTML="$(mktemp /tmp/plan-brief-open-test-XXXXXX.html)"
+  TMP_HTML="$(mktemp "${TMPDIR:-/tmp}/plan-brief-open-test.XXXXXX")"
   echo "<html></html>" > "$TMP_HTML"
 
   OPEN_OUT="$(BROWSER=true bash "$OPEN_SCRIPT" "$TMP_HTML" 2>/dev/null || true)"

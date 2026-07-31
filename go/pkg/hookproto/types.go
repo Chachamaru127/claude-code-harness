@@ -25,7 +25,9 @@ type HookInput struct {
 	PermissionSuggestions []PermissionUpdateEntry `json:"permission_suggestions,omitempty"`
 
 	// Harness extension fields
+	Host       string `json:"host,omitempty"`
 	PluginRoot string `json:"plugin_root,omitempty"`
+	AuditRoot  string `json:"-"`
 }
 
 // ---------------------------------------------------------------------------
@@ -47,6 +49,7 @@ type HookResult struct {
 	Decision      HookDecision `json:"decision"`
 	Reason        string       `json:"reason,omitempty"`
 	SystemMessage string       `json:"systemMessage,omitempty"`
+	RuleID        string       `json:"-"`
 }
 
 // ---------------------------------------------------------------------------
@@ -135,12 +138,16 @@ type RuleContext struct {
 	CodexMode                 bool
 	BreezingRole              string // "" means not in breezing mode
 	ProtectedBranchPushPolicy string // ask, deny, or allow
-	ProtectedPathAskList      []ProtectedPathAskEntry
-	TddEnforceLevel           string // off, central, or max
-	TddHookEnabled            bool
-	TddBypass                 bool
-	TddBypassReason           string
-	TddBypassReasonRequired   bool
+	// ConsumePlanPreapproval is supplied by internal/guardrail. Policy rules
+	// call it only at a specific ask branch so state is consumed only when that
+	// rule would otherwise interrupt the operation.
+	ConsumePlanPreapproval  func(operation, command string) bool
+	ProtectedPathAskList    []ProtectedPathAskEntry
+	TddEnforceLevel         string // off, central, or max
+	TddHookEnabled          bool
+	TddBypass               bool
+	TddBypassReason         string
+	TddBypassReasonRequired bool
 }
 
 // ProtectedPathAskEntry is a narrow R03 break-glass policy entry loaded from
