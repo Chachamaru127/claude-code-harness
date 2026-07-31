@@ -21,6 +21,7 @@ func TestPolicyGate_IntactSurfacePreconditionHolds(t *testing.T) {
 	// And with the precondition satisfied, the normal decision path is intact:
 	// a denied action still maps to exit 2, a benign one to exit 0.
 	if _, code := policyCheckResult(hookproto.HookInput{
+		CWD:       t.TempDir(),
 		ToolName:  "Bash",
 		ToolInput: map[string]interface{}{"command": "git push --force origin main"},
 	}); code != 2 {
@@ -38,6 +39,7 @@ func TestPolicyGate_IntactSurfacePreconditionHolds(t *testing.T) {
 // (R06: git force-push) yields process exit code 2 with a non-nil deny payload.
 func TestPolicyCheckResult_Deny(t *testing.T) {
 	out, code := policyCheckResult(hookproto.HookInput{
+		CWD:      t.TempDir(),
 		ToolName: "Bash",
 		ToolInput: map[string]interface{}{
 			"command": "git push --force origin main",

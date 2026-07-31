@@ -6,14 +6,15 @@
 
 <p align="center">
   <strong>Plan. Work. Review. Ship.</strong><br>
-  <em>Claude Code の作業を、計画・実装・レビュー・出荷まで崩れにくくする Harness。</em>
+  <em>Claude Code / Codex CLI / Cursor / Grok の作業を、計画から出荷まで崩れにくくする。</em>
 </p>
 
 <p align="center">
   <a href="https://github.com/Chachamaru127/claude-code-harness/releases/latest"><img src="https://img.shields.io/github/v/release/Chachamaru127/claude-code-harness?display_name=tag&sort=semver" alt="Latest Release"></a>
   <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
   <a href="docs/CLAUDE_CODE_COMPATIBILITY.md"><img src="https://img.shields.io/badge/Claude_Code-v2.1+-purple.svg" alt="Claude Code"></a>
-  <img src="https://img.shields.io/badge/Skills-5_Verbs-orange.svg" alt="Skills">
+  <img src="https://img.shields.io/badge/Skills-5_core_%2F_21_total-orange.svg" alt="Skills: 5 core verbs / 21 total">
+  <img src="https://img.shields.io/badge/Guardrails-R01%E2%80%93R15_%2B_5_floors-B5462F.svg" alt="Guardrails: R01-R15 plus 5 runtime floor categories">
   <img src="https://img.shields.io/badge/Core-Go_Native-00ADD8.svg" alt="Go Core">
 </p>
 
@@ -22,34 +23,29 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/readme/hero-operating-loop-ja.png" alt="Claude Code Harness の作業ループ: 仕様、計画、実装、レビュー、出荷" width="900">
+  <img src="docs/images/readme/loop-ja.svg" alt="運用ループ: 計画、実装、レビュー、リリース。すべてのコマンドは実行直前に検査される" width="880">
 </p>
 
-Claude Code は強力ですが、そのままだと計画が会話に埋もれ、検証が後回しに
-なり、レビューとリリース判断が毎回やり直しになりがちです。Harness はその
-流れを、最初から「確認できる作業手順」に変えます。
+## 何を解決するか
 
-導入後の標準は、ただ「AI に実装して」と頼むことではありません。
+AI に任せた開発は、放っておくと崩れます。計画は会話に埋もれて消えます。締切が
+近づくとテストが後回しになります。レビューはコードが入ったあとに始まります。
+リリースの根拠は、毎回記憶からの再構成になります。
 
-1. 仕様と計画を作る。
-2. 承認した範囲だけ実装する。
-3. 結果を検証する。
-4. 実装者とは別の視点でレビューする。
-5. PR やリリースに必要な根拠をまとめる。
+Harness は「AI に実装を頼む」を、繰り返せる 1 本の道に置き換えます。
 
-## 最短導入
+**仕様を書く → 承認した範囲だけ実装する → 検証する → 別の目でレビューする →
+根拠をまとめる。**
 
-新規ユーザーは、今使っている tool から始めます。既存ユーザーは、削除や
-再インストールの前に migration report を出します。
+AI を賢くする道具ではありません。AI の周りにある**手順と境界**を固定します。
+だからモデルが新しくなっても、仕組みはそのまま使えます。
 
-| 導線 | 開始場所 |
-|---|---|
-| 新規ユーザー | [Tool-first onboarding](docs/onboarding/index.md) |
-| 既存ユーザー | [Migration check](docs/onboarding/migration.md) |
-| Claude Code 30秒導入 | [30秒でインストール](#30秒でインストール) |
-| Trigger 確認 | [Skill trigger gate](docs/onboarding/skill-trigger-acceptance.md) |
+> **この README の記述は機械で検査されています。** 書かれている部品が実際に
+> 配線されているか、作業一覧の依存関係が矛盾していないか、配布バイナリが
+> ソースから同じものを再生成できるかを、CI が確認します。検査を通った機能だけが
+> ここに載ります。「書いた」は「動く」ではありません。
 
-## 30秒でインストール
+## 30 秒で導入
 
 ```bash
 claude
@@ -58,156 +54,198 @@ claude
 /harness-setup
 ```
 
-次に実行するのは、小さな要望を渡す `/harness-plan` です。
+そのあと、小さめの依頼を 1 つ渡してみてください。
 
 ```bash
-/harness-plan README の導入説明を改善したい
+/harness-plan README の導入手順をわかりやすくして
 ```
 
-## 最初の15分
+Harness が仕様（= 何が正しいかを決めた文書）と作業一覧（= やることを並べた表）
+の下書きを作ります。**あなたの仕事は計画を書くことではありません。**
+実行が進む前に、出てきた内容を承認するか直すことです。
 
-1. 使う tool の導線で導入する。
-2. `/harness-setup` または同等の setup script を実行する。
-3. `/harness-plan` に小さな要望を渡す。Harness が `spec.md` と
-   `Plans.md` の draft を作るので差分を確認する。typo、docs、status 更新
-   のような軽量作業は軽い導線のままです。
-4. 生成された正本を承認するか、直したい点を返す。
-5. 承認済みの最小 task を、たとえば `/harness-work 1.1.1` のように実行する。
-6. `/harness-review` を走らせ、検証出力を残す。
+別のツールを使っている場合は、後述の[ツール別の導入](#ツール別の導入)を見てください。
 
-あなたが一から手で plan を書く前提ではありません。役割は、生成された
-正本の差分を承認するか、直すべき点を返すことです。
+## 5 動詞のワークフロー
 
-## 中で何が起きるか
+覚えるのは plan、work、review、sync、release の 5動詞スキルだけです。
+この 5 つで回すのが 5動詞ワークフローです。
+（`/harness-setup` は導入時に 1 回だけ実行します。）
 
-Harness は agent 作業の前後に、正本と検証の loop を置きます。
-基本は plan、work、review、sync、release の 5動詞スキルで動かす 5動詞ワークフローです。
+| コマンド | 何が起きるか |
+|---|---|
+| `/harness-plan` | 依頼を仕様と作業一覧にする。範囲、完了条件、依存関係、未確定事項、停止条件を書く |
+| `/harness-work` | 承認された作業を 1 件、または計画全体を実装する。必要な作業ではテストを先に書く |
+| `/harness-work all` | 承認済みの計画をまとめて実行する。計画が固まり、リポジトリの状態が把握できてから使う |
+| `/harness-review` | **実装とは切り離して**結果を見る。重大な指摘が残る限り完了にならない |
+| `/harness-sync` | 計画と実際の実装を突き合わせて、ずれを報告する |
+| `/harness-release` | 検証済みの根拠だけを、変更履歴とタグとリリースにまとめる |
 
-1. あなたは作りたい結果を普通に伝える。
-2. `/harness-plan` が `spec.md` と `Plans.md` を作成・更新し、範囲、
-   受入条件、未確認事項、止める条件を書き出す。
-3. 単発・軽微でない計画では `team_validation_mode` を残し、TeamAgent /
-   サブエージェント、または manual-pass の視点で、spec/Plans 整合、memory
-   再利用、product fit、security fit、works-in-practice を確認する。
-4. Harness はその2ファイルを正本として読み、AI が見ていない情報は
-   勝手に補わず `unknown` のまま扱う。
-5. `/harness-work` が承認された範囲だけを TDD と検証つきで実装する。
-6. `/harness-review` が実装とレビューを分離する。
-7. `/harness-release` が検証済み evidence だけを出荷用にまとめる。
+各工程は、次の工程が必要とする材料を残します。
 
-## コマンド
+| 工程 | 成果物 | 通過条件 |
+|---|---|---|
+| 計画 | 仕様と作業一覧 | あなたが承認するか、直す |
+| 実装 | コードとテスト | 作業がそう指定していればテストを先に書く |
+| レビュー | 独立した判定 | 重大な指摘があれば完了できない |
+| PR | 根拠一式 | PR が出せる状態と、リリースできる状態は別 |
+| リリース | タグと配布物 | リリース前検査を通る |
 
-| コマンド | 中でやること |
-|----------|--------------|
-| `/harness-setup` | プロジェクトのガイド、コマンド面、フック、基本チェックを揃え、同じ前提で作業を始められるようにする。 |
-| `/harness-plan` | 要望を `spec.md` と `Plans.md` に落とし、範囲、受入条件、依存、未確認事項、止める条件、非軽量計画の validation を明示する。 |
-| `/harness-work` | 承認済みの1タスクまたは範囲だけを実行し、必要なテストと検証を残す。 |
-| `/harness-work all` | 承認済み計画を実装・レビューの流れに通す。計画と repo baseline が見えてから使う。 |
-| `/harness-review` | 実装とは別の立場で結果を確認し、重大な指摘を完了前の blocker として扱う。 |
-| `/harness-release` | 実装とレビューの後に、release readiness、CHANGELOG、tag、evidence package を確認する。 |
-| `bin/harness doctor --migration-report` | 古い plugin cache、Codex skills、OpenCode files、symlink、memory state を削除なしで棚卸しする。 |
+AI が実際に見ていない情報は、勝手に埋めずに「未確認」のまま残します。
 
-## 基本フロー
+## 安全の仕組み
 
-| 段階 | 出力 | 合格条件 |
-|------|------|----------|
-| 調査 | 根拠と unknown | 見ていない情報を claim にしない。 |
-| 計画 | `spec.md` + `Plans.md` | 生成された正本をユーザーが承認または修正する。 |
-| 実装 | code と tests | task が要求する場合は TDD。 |
-| レビュー | 独立 verdict | major finding は完了前に止める。 |
-| PR | evidence pack | PR ready と release ready を混同しない。 |
-| Release | tag / release artifact | release path の preflight を通す。 |
+ここが、単なる指示テンプレートとの違いです。すべてのツール呼び出しは、
+**実行される前に** Go 製の判定エンジンを通ります。あとから差分を見る方式では、
+外部への送信や削除のような副作用を捉えられないためです。
+
+**強さの違う 2 層**を重ねています。
+
+| 層 | 決めること | 外せるか |
+|---|---|---|
+| **実行時フロア**（5 分類） | 拒否する | **外せない**。設定でも環境変数でも権限モードでも通らない |
+| **ガードレール**（R01〜R15） | 拒否 / 確認 / 警告 | 一部はプロジェクト設定で変更できる |
+
+フロアが見ているのは、課金、外部への送信、秘密ファイルの読み取り、本番反映、
+そして作業ツリーの外を壊す操作です。設定から到達できない独立した経路に置いて
+あるので、自律実行中の AI が理屈をこねて通り抜けることはできません。
+
+ガードレールは調整する側の層です。`main` への直接 push、保護されたファイルへの
+書き込み、強制 push、履歴の巻き戻しなど、それぞれに判定が決まっています。
+プロジェクトの事情に合わせる余地はこちらにあります。
+
+**確認は計画時に前倒しします。** 作業中に何度も聞くのではなく、その計画で必要に
+なる危ない操作をまとめて先に承認します。承認には期限と対象作業と使用回数の上限
+が付くので、一度の承認が恒久的な穴になりません。
+
+**止めた事実は必ず残ります。** 規則名と分類と判定を 1 行ずつ記録します。
+コマンドの文字列は書きません。ハッシュと長さだけで、秘密ファイル読み取りと課金の
+分類ではそれすら省きます。「何に止められたか」を推測ではなく数えられます。
+
+## 非エンジニアが判断するための画面
+
+コードを読まずに判断できるよう、1 画面で完結する HTML を 3 つ用意しています。
+
+| 画面 | いつ | 何が見えるか |
+|---|---|---|
+| **計画概要** | 計画の確定時 | 理解、選択肢、リスク、合格条件 |
+| **進捗** | 作業中 | 作業中、未着手、完了の件数と、ずれの警告。自動で作り直される |
+| **受け入れ** | リリース前 | 条件ごとの合否と、出す / 待つ / 差し戻すの推奨 |
 
 ## ツール別の導入
 
-| Tool | Tier | Route |
+導入経路が 4 つあることと、4 つが同じ品質を保証することは**別です**。
+セットアップ script があるのは「入口がある」という意味であって、
+同じ製品保証がある意味ではありません。
+
+区分の英語表記と日本語の対応は、下の折りたたみにまとめています。
+
+| Tool | Tier | 経路 |
 |---|---|---|
-| Claude Code | `supported` | Claude plugin marketplace から導入し、`/harness-setup`。 |
-| Codex CLI | `supported` | `scripts/setup-codex.sh --user`; live H4 (2026-07-17) + H7 preflight; 3cli Bash PreToolUse floor — Codex app parity なし。 |
-| Codex app | `candidate` | candidate smoke のみ。Codex CLI proof を流用しない。 |
-| OpenCode | `internal-compatible` | `scripts/setup-opencode.sh`; runtime parity は主張しない。 |
-| Cursor | `supported` | `scripts/setup-cursor.sh` による実ディレクトリ local install; workflow smoke + release-preflight fail-closed gate 通過; FS jail なし — containment は harness-side。[docs/CURSOR_INTEGRATION.md](docs/CURSOR_INTEGRATION.md) 参照。 |
-| Grok | `supported` | `scripts/setup-grok.sh` による plugin package install/check; live H4 (2026-07-17) + H7 preflight; Claude-envelope PreToolUse floor — 完全 Claude hook parity なし。 |
-| Hermes Agent | `candidate` | 手動 symlink の調査 route のみ。dynamic slash discovery は local 観測、runtime parity は未主張。 |
-| GitHub Copilot CLI | `candidate` | manual profile research のみ。 |
-| Antigravity CLI | `future/unsupported` | この phase では end-user install route なし。 |
+| Claude Code | `supported` | プラグイン marketplace のあと `/harness-setup` |
+| Codex CLI | `supported` | `scripts/setup-codex.sh --user` |
+| Cursor | `supported` | `scripts/setup-cursor.sh`。閉じ込めは Harness 側で行う（[詳細](docs/CURSOR_INTEGRATION.md)） |
+| Grok | `supported` | `scripts/setup-grok.sh` |
+| Codex app | `candidate` | 簡易検証のみ。CLI 版の実績は流用しない |
+| OpenCode | `internal-compatible` | `scripts/setup-opencode.sh`。実行時の同等性は主張しない |
+| Hermes Agent | `candidate` | 手動リンクによる調査経路 |
+| GitHub Copilot CLI | `candidate` | 手動プロファイルによる調査のみ |
+| Antigravity CLI | `future/unsupported` | 現段階では導入経路なし |
 
-## 既存ユーザーの移行
+<details>
+<summary><strong>対応の区分と、そこに厳しくしている理由</strong></summary>
 
-既存環境では `bin/harness doctor --migration-report` を先に実行します。
-古い Claude plugin cache、重複 Codex skills、旧 symlink、OpenCode backup
-path、harness-mem state を削除なしで棚卸しします。
+<br>
 
-## サポート境界
-
-**4 つの入れ方があること ≠ 4 host が同一 capability を持つこと。** setup 経路があるのは
-「入口がある」という意味であり、製品保証の共有ではありません。公開の **正式対応**
-は英語 tier `supported` に対応します。**Claude Code、Codex CLI、Cursor、Grok** は
-検証済み claim path で H1–H8 を満たしています（live H4 2026-07-17; H7
-release-preflight fail-closed 2026-07-19）。OpenCode ほか非昇格 host のみ、表の記載どおり
-`internal-compatible` または `candidate` のままです。各 host の昇格は H1–H8 を同一 claim
-path で満たした時だけ（`docs/spec/planning-and-host-adapter.md`、Phase 111）。
-
-| EN tier | 公開 JP で言ってよい語 |
+| 英語表記 | 日本語の公式表記 |
 |---|---|
 | `supported` | 正式対応 |
 | `internal-compatible` | 互換利用可 / 制限付き対応 |
 | `candidate` | 試験対応 / プレビュー |
 | `future/unsupported` | 非対応 / 将来検討 |
 
-Harness は候補 host の導線を説明できますが、Superpowers や Hermes Agent
-など他プロジェクトの実績を自分のサポート実績としては扱いません。各 host は、
-Harness 自身の bootstrap、trigger、runtime、release evidence が揃った時だけ
-tier を上げます。
+Claude Code、Codex CLI、Cursor、Grok は、主張している経路で H1〜H8 の検査を
+通っています（H4 実機確認 2026-07-17、H7 リリース前検査の fail-closed 配線
+2026-07-19）。他の行は、それぞれが自分で H1〜H8 を通るまで現在の区分のままです
+（`docs/spec/planning-and-host-adapter.md`、Phase 111）。
 
-`not_observed != absent`: この環境で未観測なら「未証明」です。「存在しない」
-でも「証明済み」でもありません。
+Harness は Superpowers や Hermes Agent など他プロジェクトの対応実績を
+引き継ぎません。あるホストが格上げされるのは、Harness 自身の導入、起動、実行、
+リリースの証拠が揃ったときだけです。
+
+`not_observed != absent`（観測していないことは、無いことではない）。手元に証拠が
+無いのは「ここでは証明できていない」という意味です。不可能という意味でも、
+対応済みという意味でもありません。
+
+</details>
+
+<details>
+<summary><strong>すでに使っている方へ: 先に棚卸しを出してください</strong></summary>
+
+<br>
+
+```bash
+bin/harness doctor --migration-report
+```
+
+古いプラグインの残骸、重複した Codex スキル、古いリンク、OpenCode の
+バックアップ、記憶の状態を一覧にします。**何も削除しません。**
+
+</details>
+
+<details>
+<summary><strong>応用機能</strong></summary>
+
+<br>
+
+基本の流れが動くようになってから使ってください。
+
+| 機能 | 何が増えるか | 境界 |
+|---|---|---|
+| **Breezing** | 計画役、批評役、実装役に分けたチーム実行。作業量が多いときに効く | 計画の質とレビューで縛られる点は変わらない |
+| **Codex による第二意見** | `scripts/codex-companion.sh` を通した形式付きのレビュー | 素の `codex exec` は Harness の経路ではない |
+| **harness-mem** | プロジェクト単位の記憶と、セッションをまたいだ想起 | 任意。削除は明示的に行う |
+| **OpenCode 連携** | 案内を OpenCode 互換の形に出力する | 実行時の同等性は主張しない |
+| auto-approve（実験中） | `HARNESS_AUTO_APPROVE=on` で判定結果を台帳に記録する | 既定は無効。確認そのものは**まだ省略されない** |
+
+</details>
 
 ## 動作要件
 
-- supported な Claude 導線では Claude Code v2.1+。
-- local setup を行うための書き込み可能な project repo。
-- 配布時の既定言語は English。日本語 UI を明示する場合は `CLAUDE_CODE_HARNESS_LANG=ja claude` で起動。
-- Go ネイティブガードレールエンジンは Node.js 不要。
-- 任意で [harness-mem](https://github.com/Chachamaru127/harness-mem) を使うと、
-  healthy に設定されている時だけセッション横断の記憶を扱える。
-
-## 高度な使い方
-
-基本の trigger path が見えてから使います。
-
-| 機能 | 何が増えるか | 境界 |
-|------|--------------|------|
-| Breezing | 大きめの task list に Planner / Critic / Worker 型のチーム実行を足す。 | 計画品質と review gate は残る。 |
-| Codex companion review | `scripts/codex-companion.sh` 経由で schema-backed な Codex second opinion を得る。 | raw `codex exec` は Harness companion path ではない。 |
-| OpenCode bootstrap | Harness guidance を OpenCode 互換の面へ mirror する。 | real runtime parity は主張しない。 |
-| harness-mem | project-scoped memory と session 間 recall を足す。 | 任意 companion。purge は必ず明示操作。 |
+- Claude Code の正式対応経路では **v2.1 以降**
+- 書き込み権限のあるリポジトリ
+- 配布時の既定言語は English。日本語 UI を明示する場合は
+  `CLAUDE_CODE_HARNESS_LANG=ja claude` で起動
+- Go ネイティブガードレールエンジンは Node.js 不要
+- 任意: セッションをまたいだ記憶に
+  [harness-mem](https://github.com/Chachamaru127/harness-mem)
 
 ## ドキュメント
 
-| リソース | 説明 |
-|----------|------|
-| [Tool-first onboarding](docs/onboarding/index.md) | 使う tool 別の開始地点。 |
-| [Install routes](docs/onboarding/install.md) | tool 別 setup と support tier の境界。 |
-| [Migration check](docs/onboarding/migration.md) | 既存ユーザーへの影響、互換性、rollback。 |
-| [Skill trigger gate](docs/onboarding/skill-trigger-acceptance.md) | 導入後に skill / workflow が使えるかの確認。 |
-| [Capability matrix](docs/tool-capability-matrix.md) | supported / internal-compatible / candidate / unsupported の根拠。 |
-| [Claude Code Compatibility](docs/CLAUDE_CODE_COMPATIBILITY.md) | Claude Code 要件と互換性メモ。 |
-| [Cursor Integration](docs/CURSOR_INTEGRATION.md) | Cursor handoff 境界と supported adapter メモ（containment は harness-side）。 |
-| [Distribution Scope](docs/distribution-scope.md) | 配布対象 / 互換維持 / 開発専用の境界。 |
-| [Hardening parity](docs/hardening-parity.md) | Claude hooks と Codex gates の安全境界の違い。 |
-| [Work All Evidence Pack](docs/evidence/work-all.md) | full-plan 実行の成功系/失敗系検証契約。 |
-| [Changelog](CHANGELOG.md) | ユーザー向け変更履歴。 |
+| 資料 | 内容 |
+|---|---|
+| [ツール別の入口](docs/onboarding/index.md) | どのツールから始めるか |
+| [導入経路](docs/onboarding/install.md) | ツールごとの設定と対応範囲 |
+| [移行チェック](docs/onboarding/migration.md) | 既存環境への影響と戻し方 |
+| [起動確認](docs/onboarding/skill-trigger-acceptance.md) | 導入成功をどう確認するか |
+| [対応一覧](docs/tool-capability-matrix.md) | ホストごとの主張の全体表 |
+| [Claude Code 互換性](docs/CLAUDE_CODE_COMPATIBILITY.md) | 必要バージョンと注意点 |
+| [Cursor 連携](docs/CURSOR_INTEGRATION.md) | 受け渡しの境界と閉じ込め |
+| [配布範囲](docs/distribution-scope.md) | 同梱、互換、開発専用の区別 |
+| [ホスト間の安全差](docs/hardening-parity.md) | ツールによる防御の違い |
+| [全計画実行の根拠](docs/evidence/work-all.md) | 成功と失敗の判定契約 |
+| [言語設定](docs/i18n.md) | 出力言語の切り替え方 |
+| [変更履歴](CHANGELOG.md) | 版ごとの変更点 |
 
 ## コントリビュート
 
-Issue と PR を歓迎します。[CONTRIBUTING.md](CONTRIBUTING.md) を参照。
+Issue と PR を歓迎します。[CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
 
 ## 謝辞
 
-- [AI Masao](https://note.com/masa_wunder) - 階層的スキル設計
-- [Beagle](https://github.com/beagleworks) - テスト改ざん防止パターン
+- [AI Masao](https://note.com/masa_wunder) さん（階層的なスキル設計）
+- [Beagle](https://github.com/beagleworks) さん（テスト改ざん防止のパターン）
 
 ## ライセンス
 
-MIT License。[LICENSE.md](LICENSE.md) を参照。
+MIT ライセンス。[LICENSE.md](LICENSE.md) を参照してください。

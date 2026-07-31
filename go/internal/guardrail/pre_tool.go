@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/Chachamaru127/claude-code-harness/go/internal/auditlog"
 	"github.com/Chachamaru127/claude-code-harness/go/internal/policy"
 	"github.com/Chachamaru127/claude-code-harness/go/internal/runtimefloor"
 	"github.com/Chachamaru127/claude-code-harness/go/internal/state"
@@ -107,16 +108,7 @@ func resolveTddRuntimeConfig(input hookproto.HookInput, projectRoot string) tddR
 // The SQLite lookup is best-effort: any DB error is silently ignored so that
 // the hook fast-path remains available even when the DB is unreachable.
 func BuildContext(input hookproto.HookInput) hookproto.RuleContext {
-	projectRoot := input.CWD
-	if projectRoot == "" {
-		projectRoot = os.Getenv("HARNESS_PROJECT_ROOT")
-	}
-	if projectRoot == "" {
-		projectRoot = os.Getenv("PROJECT_ROOT")
-	}
-	if projectRoot == "" {
-		projectRoot, _ = os.Getwd()
-	}
+	projectRoot := resolveProjectRoot(input)
 
 	// 環境変数ベースの値（明示的なオーバーライド）
 	workMode := isTruthy(os.Getenv("HARNESS_WORK_MODE")) ||
@@ -148,6 +140,7 @@ func BuildContext(input hookproto.HookInput) hookproto.RuleContext {
 		CodexMode:                 codexMode,
 		BreezingRole:              breezingRole,
 		ProtectedBranchPushPolicy: resolveProtectedBranchPushPolicy(input, projectRoot),
+		ConsumePlanPreapproval:    newPlanPreapprovalConsumer(projectRoot, input),
 		ProtectedPathAskList:      resolveProtectedPathAskList(input, projectRoot),
 		TddEnforceLevel:           tddRuntime.Level,
 		TddHookEnabled:            tddRuntime.HookEnabled,
@@ -155,6 +148,20 @@ func BuildContext(input hookproto.HookInput) hookproto.RuleContext {
 		TddBypassReason:           tddBypassReason,
 		TddBypassReasonRequired:   tddBypass && (tddRuntime.BypassAuditRequired || tddBypassReason == ""),
 	}
+}
+
+func resolveProjectRoot(input hookproto.HookInput) string {
+	projectRoot := input.CWD
+	if projectRoot == "" {
+		projectRoot = os.Getenv("HARNESS_PROJECT_ROOT")
+	}
+	if projectRoot == "" {
+		projectRoot = os.Getenv("PROJECT_ROOT")
+	}
+	if projectRoot == "" {
+		projectRoot, _ = os.Getwd()
+	}
+	return projectRoot
 }
 
 // loadWorkStateFromDB は指定した DB パスから work_state を取得する。
@@ -183,6 +190,22 @@ func loadWorkStateFromDB(dbPath, sessionID string) (*state.WorkState, error) {
 // EvaluatePreTool is the PreToolUse hook entry point.
 // It runs the runtime action hard floor first, then evaluates guard rules.
 func EvaluatePreTool(input hookproto.HookInput) hookproto.HookResult {
+	result := evaluatePreTool(input)
+	auditlog.Record(resolveAuditRoot(input), input, result)
+	return result
+}
+
+func resolveAuditRoot(input hookproto.HookInput) string {
+	if input.AuditRoot != "" {
+		return input.AuditRoot
+	}
+	return resolveProjectRoot(input)
+}
+
+func evaluatePreTool(input hookproto.HookInput) hookproto.HookResult {
+	// Plan preapprovals are intentionally absent from this runtime-floor path.
+	// The five floor categories remain non-overridable except for their two
+	// explicit operator-configured exceptions (secretAllow and releaseAuto).
 	if input.ToolName == "Bash" {
 		if command, ok := input.ToolInput["command"].(string); ok {
 			worktreeRoot := input.CWD
@@ -202,6 +225,7 @@ func EvaluatePreTool(input hookproto.HookInput) hookproto.HookResult {
 						decision.Category,
 						decision.Reason,
 					),
+					RuleID: fmt.Sprintf("RUNTIME_FLOOR:%s", decision.Category),
 				}
 			}
 		}
