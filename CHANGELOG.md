@@ -6,6 +6,87 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Security
+
+実行時フロア (runtime floor) を設定ファイルから無効化できる経路が 2 つ実在していました。いずれも外部からの Pull Request をレビューする過程で見つかり、実際に動かして確認しています。修正はすべて**制限を強める方向のみ**で、既存の拒否・確認ルールを緩めた箇所はありません。
+
+#### AI が自分で秘密ファイルの読み取り制限を外せた問題 (Phase 128.1 / 128.3)
+
+**今まで**: プロジェクト設定 `.claude-code-harness.config.json` の `runtimefloor.secretAllow` は、秘密ファイルの読み取りを例外的に許可するための宣言です。ここに絶対パスを書いた場合は作業ツリーの内側かどうかを検査していましたが、**相対パスを書いた場合は検査していませんでした**。`../../../../etc/shadow` のように書けば、作業ツリーの外側のファイルがそのまま許可され、「どの設定でも上書きできない」はずの秘密読み取りフロアを迂回できました。
+
+しかもこの設定ファイルはどの拒否リストにも入っておらず、**AI 自身が書き換えられる状態**でした。つまり AI が自分で許可を書き足してから読む、という経路が成立していました。
+
+なお仕様書は元から「相対パスはプロジェクトルート配下に解決される」と記述しており、実装がそれを守っていなかった状態です。新しい制約を足したのではなく、仕様どおりに直した修正です。
+
+**今後**: 相対・絶対のどちらの宣言も、解決後のパスで作業ツリーの境界を検査します。「文字列上は内側だが symlink で外を指す」宣言も落とします。symlink の解決は許可・拒否の判定にのみ使い、許可リストには宣言されたパスをそのまま保存します (実体パスを保存すると、宣言したパスが自分の宣言に一致しなくなる不具合と、宣言していないパスが許可される緩みが同時に起きます)。
+
+あわせて `.claude-code-harness.config.{json,yaml}` への書き込みを拒否対象に加えました。設定ファイル自体が守りの範囲を決める以上、AI が自由に書き換えられる状態はフロアの契約と両立しません。この変更により `releaseAuto` の切り替えは手動編集になります。
+
+#### `main` への強制 push が確認なしで通っていた問題 (Phase 128.2)
+
+**今まで**: 保護ブランチの判定が、git の強制 push 短縮形の先頭 `+` を取り除かずに照合していました。実測すると `git push origin main` は確認が出るのに、`git push origin +main` と `git push origin +refs/heads/main` は**何の判定も出ずに通過**しました。別系統の `--force` フラグ検出はこの短縮形を拾いません。
+
+**今後**: 照合前に `+` を取り除きます。強制 push も通常の push と同じく確認が出ます。`git reset --hard +main` も同時に拒否されるようになりました。保護対象でないブランチ (`+feature/x` など) は従来どおり通ります。
+
+実測 (再ビルドした実行ファイルで確認):
+
+| 操作 | 修正前 | 修正後 |
+|---|---|---|
+| `git push origin +main` | 素通り | 確認 |
+| `git push origin +refs/heads/main` | 素通り | 確認 |
+| `git push origin +feature/x` (保護対象外) | 素通り | 素通り |
+| 設定ファイル `.json` への書き込み | 通る | 拒否 |
+| 設定ファイル `.yaml` への書き込み | 通る | 拒否 |
+| 雛形 `claude-code-harness.config.example.json` | 通る | 通る |
+
+### Added
+
+- **Per-turn output-language enforcement**: the `UserPromptSubmit` hook
+  (`scripts/userprompt-inject-policy.sh`) now injects a response-language
+  directive on every turn, resolved from `i18n.language` in
+  `.claude-code-harness.config.yaml` (with `CLAUDE_CODE_HARNESS_LANG` as a
+  fallback, then `en`). This keeps responses in the configured language instead
+  of drifting to Japanese. Regression coverage added in
+  `tests/test-i18n-locale-resolver.sh`.
+
+### Fixed
+
+- **Language config discoverability**: added an explicit `i18n.language` block to
+  `.claude-code-harness.config.yaml`, and corrected `docs/i18n.md` to point at the
+  config file the runtime actually reads (`.claude-code-harness.config.yaml`)
+  instead of `harness.toml`.
+
+
+#### オーナーの floor 免除設定が、それを検証するテストの結果を書き換えていた問題
+
+**今まで**: `HARNESS_RUNTIME_FLOOR_EGRESS=off` と `HARNESS_RUNTIME_FLOOR_SECRET_ALLOW` は正規のオーナー設定ですが、これを export したシェルからテストを起動すると子プロセスに継承され、runtime floor の deny を検証する assertion が素通りしていました。影響は 2 面あります。落ちる側は shell 2 本と Go 12 subtest で、リリースのたびに誤った赤を出していました。**より重いのは通る側**で、e2e は egress で異常終了するため後続の prod-deploy / worktree-escape の 2 検査が実行されないまま OK 扱いになり、また allowlist 非宣言 path の deny 検証は、免除設定が対象を覆っていれば floor が一度も拒否しなくても pass します。
+
+**今後**: floor を検証する 4 つの surface (shell 2 本、`runtimefloor` パッケージの `TestMain`、`cmd/harness` の floor テスト) が自分で免除設定を無効化してから測ります。宣言済み path の検証は従来どおり per-command で明示的に設定します。`tests/validate-plugin.sh` に 4/4 surface の pin を追加したため、新しい floor テストが無効化を忘れると検知されます。
+
+#### macOS で進捗 HTML の自動再生成が、中断後に永久に止まっていた問題
+
+**今まで**: PostToolUse hook の背景処理が一時ファイルを `mktemp /tmp/progress-snap-XXXX.json` で作っていました。BSD (macOS) の `mktemp` は **X が末尾にある場合しか置換しない**ため、この形式は毎回まったく同じパスを返します。通常は処理末尾の `rm -f` で消えますが、一度でも中断して残骸が残ると以降は `File exists` で失敗し続け、hook は `regenerated:true` を返しながら**実際には HTML も state file も更新しない**状態になります。GNU (Linux/CI) は末尾以外の X も置換するため CI では再現しませんでした。
+
+**今後**: X を末尾に置く形式 (`"${TMPDIR:-/tmp}/progress-snap-XXXXXX"`) に変更し、BSD / GNU の双方で一意なパスを得ます。残骸がある状態でも再生成が通ることを確認済みです。
+
+#### 同じ書式が残っていた 9 箇所の一掃と、再発の機械検出 (Phase 127)
+
+**今まで**: 上記と同じ非一意テンプレートが検査スクリプト 9 箇所に残っていました。残骸が無い間は動くため気づけませんが、潜在障害が 2 つありました。中断で残骸を残す 2 ファイル (`test-accept-record.sh` / `test-harness-accept.sh`) は後始末が無く、一度中断すれば以降永久に失敗します。また literal path は一意でないため、並行実行時に同一パスを掴んで相互汚染します。`shellcheck` はこの書式を検出しないため、既存の lint では止められませんでした。
+
+**今後**: 9 箇所すべてを `"${TMPDIR:-/tmp}/<名前>.XXXXXX"` へ統一し、後始末が無かった 2 ファイルに後始末を追加しました。再発は `tests/test-mktemp-bsd-template-safety.sh` が検出し、`tests/validate-plugin.sh` から実行されます。検出は静的走査のため、テンプレートを変数経由で間接的に渡す形は対象外です (現時点で該当箇所はゼロ)。
+
+実測: 旧テンプレートの literal path を一時領域に置くと、修正前は `mktemp: mkstemp failed ...: File exists` で停止し、修正後は同じ地点を通過します。
+
+#### 発注者向け 3 画面が、文書どおりのコマンドで起動できなかった問題 (Phase 127.3)
+
+**今まで**: 非エンジニアの発注者向け 3 画面 (計画概要 / 進捗 / 受け入れ判断) は、ドキュメント上は `/harness-plan-brief`、`/harness-progress`、`/harness-accept` と入力して呼ぶものとして案内されていましたが、3 つとも設定が「ユーザーからは呼べない」状態でした。3 つとも入力補助のヒント (`argument-hint`) を持っており、設定だけが噛み合っていませんでした。これらの画面は発注者本人が見るためのものなので、本人が呼べないと存在価値が失われます。
+
+契約テストは当初から「ユーザーから呼べる」ことを要求していましたが、そのテストが検査一覧に組み込まれていなかったため、スキル本体とテストが同じコミットで生まれた時点の矛盾が約 2 ヶ月そのまま残っていました。
+
+**今後**: 3 つとも `/harness-<名前>` で起動できます。契約テスト 2 本を検査一覧に組み込み、進捗画面側にも同じ検査を追加したため、今後この乖離は検査で止まります。Cursor 向け配布は従来どおり自動で非表示側へ正規化されます (配布層の契約は変更なし)。
+
+## [5.5.0] - 2026-07-29
+
 ### テーマ: 止まらないモード — 確認の削減と、その過程で見つかった防御の穴の封鎖 (Phase 126)
 
 ### Fixed
@@ -5592,7 +5673,8 @@ Purpose: 自己修正ループ失敗時に「止まるだけ」から「次の�
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.4.0...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.5.0...HEAD
+[5.5.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.4.0...v5.5.0
 [5.4.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.3.1...v5.4.0
 [5.3.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.3.0...v5.3.1
 [5.3.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.2.0...v5.3.0

@@ -70,6 +70,14 @@ var protectedPathRules = []protectedPathRule{
 	{protectedPathDeny, "shell rc/profile file", regexp.MustCompile(`(?:^|/)\.(?:bashrc|bash_profile|bash_login|profile|zshrc|zprofile|zshenv|zlogin|zlogout|kshrc|cshrc|tcshrc)$`)},
 	{protectedPathDeny, "shell rc/profile file", regexp.MustCompile(`(?:^|/)\.config/fish/config\.fish$`)},
 	{protectedPathDeny, "shell rc/profile file", regexp.MustCompile(`(?:^|/)(?:Microsoft\.)?(?:PowerShell_)?profile\.ps1$`)},
+	// Phase 128.3: .claude-code-harness.config.{json,yaml,yml} governs
+	// runtimefloor.secretAllow / runtimefloor.releaseAuto and other control-plane
+	// settings, the same governance tier as .claude/settings* and
+	// .claude-plugin/settings*. Denied so the AI cannot loosen its own hard
+	// floor by editing the declaration that scopes it. Does not match the
+	// checked-in template "claude-code-harness.config.example.json" (no leading
+	// dot, distinct ".example." infix).
+	{protectedPathDeny, "harness control-plane config", regexp.MustCompile(`(?:^|/)\.claude-code-harness\.config\.(?:json|ya?ml)$`)},
 
 	// ask: agent capability surfaces and editor automation settings
 	{protectedPathAsk, "Claude capability path", regexp.MustCompile(`(?:^|/)\.claude/(?:skills|agents|commands)(?:/|$)`)},
@@ -442,7 +450,14 @@ var protectedBranchRefPattern = regexp.MustCompile(
 )
 
 func normalizeGitToken(token string) string {
-	return strings.Trim(token, "'\"")
+	token = strings.Trim(token, "'\"")
+	// Strip the git force-refspec prefix ("+main", "+refs/heads/main") before
+	// matching against protectedBranchRefPattern. The pattern is anchored
+	// with "^" and does not account for the leading "+", so without this the
+	// force-refspec shorthand slips past both R11 (reset --hard) and R12
+	// (direct push) protected-branch detection (Phase 128.2).
+	token = strings.TrimPrefix(token, "+")
+	return token
 }
 
 func hasProtectedBranchResetHard(command string) bool {

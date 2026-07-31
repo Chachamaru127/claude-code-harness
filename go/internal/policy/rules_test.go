@@ -113,6 +113,55 @@ func TestR02_WriteToPemFile(t *testing.T) {
 	}
 }
 
+// Phase 128.3: .claude-code-harness.config.json/.yaml scopes
+// runtimefloor.secretAllow / runtimefloor.releaseAuto, so the AI must not be
+// able to write it directly (that would let it loosen its own hard floor).
+func TestR02_WriteToHarnessConfigJSONDenied(t *testing.T) {
+	ctx := makeCtx("Write", map[string]interface{}{"file_path": ".claude-code-harness.config.json"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionDeny {
+		t.Errorf("expected deny, got %s", result.Decision)
+	}
+}
+
+func TestR02_EditToHarnessConfigYAMLDenied(t *testing.T) {
+	ctx := makeCtx("Edit", map[string]interface{}{"file_path": ".claude-code-harness.config.yaml"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionDeny {
+		t.Errorf("expected deny, got %s", result.Decision)
+	}
+}
+
+// Non-regression: the checked-in example/template file lives in the same
+// project-root directory but must not be swept up by the deny rule — it has
+// no leading dot and an ".example." infix, and operators/AI both edit it
+// freely as documentation.
+func TestR02_WriteToHarnessConfigExampleNotDenied(t *testing.T) {
+	ctx := makeCtx("Write", map[string]interface{}{"file_path": "claude-code-harness.config.example.json"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionApprove {
+		t.Errorf("expected approve for example config template, got %s", result.Decision)
+	}
+}
+
+// Non-regression: an unrelated file in the same project-root directory must
+// not be caught by the new pattern.
+func TestR02_WriteToUnrelatedRootFileNotDenied(t *testing.T) {
+	ctx := makeCtx("Write", map[string]interface{}{"file_path": "harness.config.notes.json"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionApprove {
+		t.Errorf("expected approve for unrelated root file, got %s", result.Decision)
+	}
+}
+
+func TestR03_RedirectToHarnessConfigJSONDenied(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "echo '{}' > .claude-code-harness.config.json"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionDeny {
+		t.Errorf("expected deny, got %s", result.Decision)
+	}
+}
+
 func TestR02_WriteToClaudeSkillsAsks(t *testing.T) {
 	ctx := makeCtx("Write", map[string]interface{}{"file_path": "/project/.claude/skills/demo/SKILL.md"})
 	result := EvaluateRules(ctx)
@@ -1259,6 +1308,17 @@ func TestR11_ResetSoftMain(t *testing.T) {
 	}
 }
 
+// Phase 128.2: apply the same "+" force-refspec normalization used by R12 to
+// R11's ref matching, so a "+"-prefixed protected-branch target is still
+// caught by reset --hard detection.
+func TestR11_ResetHardForceRefspecShorthandMain(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "git reset --hard +main"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionDeny {
+		t.Errorf("expected deny for +main force-refspec reset --hard, got %s", result.Decision)
+	}
+}
+
 // ---------------------------------------------------------------------------
 // R12: configurable direct push policy for protected branch
 // ---------------------------------------------------------------------------
@@ -1293,6 +1353,45 @@ func TestR12_PushRefspecToMain(t *testing.T) {
 	}
 	if result.Reason == "" {
 		t.Error("expected ask reason for refspec push to main")
+	}
+}
+
+// Phase 128.2: the "+" force-refspec shorthand ("git push origin +main")
+// must not slip past R12 protected-branch detection. Before the fix,
+// protectedBranchRefPattern's "^" anchor rejected the leading "+" and the
+// push was evaluated as non-protected.
+func TestR12_PushForceRefspecShorthandToMain(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "git push origin +main"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionAsk {
+		t.Errorf("expected ask for +main force-refspec push, got %s", result.Decision)
+	}
+	if result.Reason == "" {
+		t.Error("expected ask reason for +main force-refspec push")
+	}
+}
+
+func TestR12_PushForceRefspecShorthandToRefsHeadsMain(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "git push origin +refs/heads/main"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionAsk {
+		t.Errorf("expected ask for +refs/heads/main force-refspec push, got %s", result.Decision)
+	}
+	if result.Reason == "" {
+		t.Error("expected ask reason for +refs/heads/main force-refspec push")
+	}
+}
+
+// Non-regression: a "+" prefixed refspec that does NOT target a protected
+// branch must still pass through untouched.
+func TestR12_PushForceRefspecShorthandToFeatureNotProtected(t *testing.T) {
+	ctx := makeCtx("Bash", map[string]interface{}{"command": "git push origin +feature/x"})
+	result := EvaluateRules(ctx)
+	if result.Decision != hookproto.DecisionApprove {
+		t.Errorf("expected approve for +feature/x (non-protected), got %s", result.Decision)
+	}
+	if result.SystemMessage != "" {
+		t.Errorf("expected no warning for +feature/x push, got: %s", result.SystemMessage)
 	}
 }
 

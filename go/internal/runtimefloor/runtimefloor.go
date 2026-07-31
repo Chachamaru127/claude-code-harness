@@ -336,6 +336,18 @@ func configSecretAllowPatterns(ctx Context) ([]string, bool, bool) {
 		rootAbs = filepath.Clean(projectRoot)
 	}
 	rootAbs = filepath.Clean(rootAbs)
+	// The symlink-boundary check below compares an EvalSymlinks()-resolved
+	// declaration path against the root. On macOS /var is itself a symlink to
+	// /private/var, so resolving an ordinary in-worktree file (no declared
+	// symlink at all) yields a path under /private/var while rootAbs is still
+	// under /var — comparing that against the unresolved rootAbs would deny
+	// every existing file. Resolve the root once with the same function so
+	// both sides of the comparison are in the same coordinate space.
+	rootResolved, err := filepath.EvalSymlinks(rootAbs)
+	if err != nil {
+		rootResolved = rootAbs
+	}
+	rootResolved = filepath.Clean(rootResolved)
 
 	var out []string
 	for _, raw := range cfg.RuntimeFloor.SecretAllow {
@@ -352,12 +364,57 @@ func configSecretAllowPatterns(ctx Context) ([]string, bool, bool) {
 			if !pathUnderWorktree(abs, rootAbs) {
 				continue
 			}
+			if !secretAllowSymlinkStaysInWorktree(abs, rootResolved) {
+				continue
+			}
 			out = append(out, abs)
 			continue
 		}
-		out = append(out, filepath.Join(rootAbs, filepath.Clean(p)))
+		// Resolve relative declarations against the project root and enforce
+		// the same worktree-boundary check as the absolute-path branch above.
+		// A raw string check on p (e.g. rejecting a leading "..") is not
+		// sufficient: multi-segment escapes ("a/../../etc") or platform
+		// separator quirks can still resolve outside rootAbs after Join, so
+		// the check must run on the resolved path, not the declaration text.
+		joined := filepath.Clean(filepath.Join(rootAbs, filepath.Clean(p)))
+		if !pathUnderWorktree(joined, rootAbs) {
+			continue
+		}
+		if !secretAllowSymlinkStaysInWorktree(joined, rootResolved) {
+			continue
+		}
+		out = append(out, joined)
 	}
 	return out, true, true
+}
+
+// secretAllowSymlinkStaysInWorktree reports whether a worktree-bound
+// secretAllow declaration stays inside the worktree after symlinks are
+// resolved. rootResolved must already be EvalSymlinks()-resolved (or its
+// EvalSymlinks fallback) so both sides of the comparison are in the same
+// coordinate space — see the comment in configSecretAllowPatterns about the
+// macOS /var -> /private/var symlink. This closes an escape where a
+// declaration names a path that is textually inside the worktree but is (or
+// contains) a symlink pointing outside it (same class of escape as Phase
+// 126.4's R05 use of EvalSymlinks). Symlink resolution is used ONLY to
+// decide pass/deny here — the allowlist itself must keep storing the
+// operator's DECLARED path (the caller appends its own `abs`/`joined` value,
+// not this function's return), because isAllowlistedSecretPath() matches the
+// token the command names against declared patterns via strings.HasPrefix.
+// Substituting the resolved realpath into the allowlist would both (a) stop
+// matching the operator's own declared path (regression) and (b) start
+// matching the realpath even though the operator never declared it
+// (widening) — the declaration and the allowlist entry must refer to the
+// same path. If the symlink cannot be resolved (path does not exist yet,
+// permission error, etc.) this reports true — fail-safe here means "do not
+// widen the allowlist" for a resolved escape, not "silently drop a
+// legitimate not-yet-created declaration".
+func secretAllowSymlinkStaysInWorktree(path, rootResolved string) bool {
+	resolved, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return true
+	}
+	return pathUnderWorktree(filepath.Clean(resolved), rootResolved)
 }
 
 func resolveProjectRoot(ctx Context) (string, string, bool) {
