@@ -90,8 +90,19 @@ enabled):
    project config `.claude-code-harness.config.json` key
    `runtimefloor.secretAllow`. If project config is unreadable, malformed, or
    has an invalid `runtimefloor.secretAllow` shape, the fail-safe behavior is an
-   empty allowlist (all secret reads denied). Relative paths resolve under the
-   project root; absolute paths outside the project root are invalid and ignored.
+   empty allowlist (all secret reads denied). Both relative and absolute
+   `secretAllow` declarations are resolved to an absolute path first and then
+   checked against the worktree boundary; any declaration whose resolved path
+   falls outside the worktree — including a relative declaration that escapes
+   via `..` segments — is invalid and discarded rather than widening the
+   allowlist. This boundary check also follows symlinks: a declaration that is
+   textually inside the worktree but resolves through a symlink to a target
+   outside it is likewise discarded. Symlink resolution is used only to make
+   that pass/deny decision — the allowlist itself always stores the
+   operator's declared path, never the resolved realpath, so a declared
+   symlink inside the worktree stays readable under its declared name and a
+   realpath the operator never declared stays denied even when a declared
+   symlink happens to point at it.
 5. **Bounded, externally-anchored review.** The OK-until-clean loop is capped
    (e.g. 3 rounds) with human escalation on repeated same-cause failure. Severity
    is a fixed taxonomy: security / data-loss / correctness findings always block
@@ -105,7 +116,17 @@ enabled):
    untouchable class: no AI path may modify them; human-only. The audit trail of
    autonomous decisions is derived mechanically from an immutable event log, not
    from agent self-narration. A kill switch (`~/.harness/HALT`) denies all tool
-   use ahead of any LLM judgment.
+   use ahead of any LLM judgment. `.claude-code-harness.config.{json,yaml}` is a
+   control-plane file at the same governance tier as settings files — it scopes
+   `runtimefloor.secretAllow` (the secret-read hard floor's allowlist) and
+   `runtimefloor.releaseAuto` — so it is joined to the same protected-path deny
+   tier as `.claude/settings*` / `.claude-plugin/settings*`, enforced in
+   `go/internal/policy/helpers.go`'s `protectedPathRules` (R02/R03, level
+   `protectedPathDeny`) and fingerprinted by `go/internal/policy/selfaudit.go`'s
+   deny-surface baseline (Phase 128.3). Native Claude Code deny lists
+   (`.claude-plugin/settings.json`, `templates/security/deny-baseline.json`)
+   remain human-only edits and are out of scope for this Go-layer control;
+   AI-authored PRs enforce it purely through the guardrail engine.
 
 Prose-quality governance is scoped, not universal. Writing-norms enforcement
 (derived from the Japanese technical-writing standard validated in Phase 101)

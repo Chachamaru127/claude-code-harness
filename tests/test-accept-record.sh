@@ -275,7 +275,8 @@ else
 fi
 
 # verified_criteria_at_decision の取り扱い
-TMP_CRITERIA="$(mktemp /tmp/criteria-XXXXXX.json)"
+TMP_CRITERIA="$(mktemp "${TMPDIR:-/tmp}/criteria.XXXXXX")"
+trap 'rm -f "$TMP_CRITERIA"' EXIT
 cat > "$TMP_CRITERIA" <<'JSON'
 {
   "items": [

@@ -336,7 +336,7 @@ RECOVERING → ABORTED     (リカバリ失敗、人間介入必要)
 | R01 | Bash | `sudo` 検出 | deny | なし |
 | R02 | Write/Edit/MultiEdit | 保護パス (.env, .git/, *.pem, *.key, id_rsa 等) | deny | なし |
 | R03 | Bash | redirection / `tee` による `> .env`, `tee .git/` 等 | deny（TOML ask-list の `.env` / `.env.*` exact match + reason のみ ask） | `[[safety.guardrail.protectedPathAskList]]` |
-| R04 | Write/Edit/MultiEdit | プロジェクトルート外への絶対パス | ask | workMode |
+| R04 | Write/Edit/MultiEdit | プロジェクトルート外への絶対パス（OS 一時領域を除く） | ask | workMode / OS 一時領域 |
 | R05 | Bash | `rm -rf` / `rm --recursive` | ask | workMode |
 | R06 | Bash | `git push --force` / `-f` | deny | なし |
 | R07 | Write/Edit/MultiEdit | codexMode 中の直接書き込み | deny | なし |
@@ -348,6 +348,17 @@ RECOVERING → ABORTED     (リカバリ失敗、人間介入必要)
 | R13 | Write/Edit/MultiEdit | package.json, Dockerfile, workflow 等 | approve + warn | なし |
 
 R03 の target extraction は redirection / `tee` ベース。`sed -i` 等の in-place 書き込み検出は v1 範囲外。
+
+### R04 の自動承認スコープ
+
+R04 は次の順で判定する。
+
+1. プロジェクトルート内は発火しない。
+2. symlink 解決後の実体が `/tmp`、`/var/tmp`、`/private/tmp`、`/private/var/tmp`、`$TMPDIR`、`~/.cache`、`~/Library/Caches` の配下なら発火しない。
+3. `WorkMode` なら、その他のプロジェクト外パスでも発火しない。
+4. それ以外のプロジェクト外パスは `ask` を返す。
+
+未作成パスは、存在する祖先まで遡って symlink を解決してから一時領域か判定する。解決できない場合は一時領域スキップを適用せず、`ask` を維持する。R02 と R03 は R04 より先に評価されるため、保護パスの確認と拒否はこの自動承認スコープの対象外。
 
 テスト ID: `TestR01_*` 〜 `TestR13_*` (go/internal/guard/rules_test.go)
 

@@ -43,6 +43,16 @@ else
   fail "(a) SKILL.md frontmatter name missing"
 fi
 
+# docs/cognitive-load-surfaces.md は `/harness-progress` を発注者が打つ
+# コマンドとして記載しており、frontmatter にも argument-hint がある。
+# user-invocable: false だとその導線が成立しないため true を pin する
+# (Phase 127.3。plan-brief / accept 側は各 skill のテストが同じ pin を持つ)
+if grep -q "^user-invocable: true" "$SKILL_MD"; then
+  pass "(a) SKILL.md frontmatter: user-invocable = true (発注者が /harness-progress で起動できる)"
+else
+  fail "(a) SKILL.md frontmatter missing 'user-invocable: true'"
+fi
+
 if grep -q "^description:" "$SKILL_MD" && grep -q "^description-en:" "$SKILL_MD"; then
   pass "(a) SKILL.md has both description + description-en (i18n gate)"
 else

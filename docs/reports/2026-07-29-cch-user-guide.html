@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Code Harness は何をする道具か — ユーザー向け説明 (v5.4.0)</title>
+<style>
+:root{
+  --bg:#F5F4F1; --surface:#FCFBF9; --surface-2:#F0EFEA;
+  --ink:#1B1B22; --ink-soft:#5A5A64; --ink-faint:#8C8C92;
+  --line:#E4E2DB; --line-strong:#D2CFC6;
+  --primary:#313A7E; --primary-soft:#E9EAF4; --primary-ink:#262E66;
+  --kernel:#191B2C; --kernel-2:#23263c; --kernel-line:#343750; --kernel-ink:#C9CBE0;
+  --done:#2F8F5B; --done-soft:#E4F2EA; --done-line:#B7DCC7;
+  --wip:#B8821C; --wip-soft:#F6EDD8;
+  --risk:#B5462F; --risk-soft:#F6E7E2; --risk-line:#E5C0B4;
+  --info:#2C5A7A; --info-soft:#E3ECF1;
+  --cf:#B5611A; --cf-soft:#F4E7D8; --cf-line:#E0C49E;
+  --plain:#1f7a6d; --plain-soft:#E1F1EE; --plain-line:#BBE0D9;
+  --api:#8B3A62; --api-soft:#F4E6EE; --api-line:#E0B8CC;
+  --sub:#2F6D5A; --sub-soft:#E2F0EB; --sub-line:#B8D9CC;
+  --radius:10px;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--sans);
+  line-height:1.85; word-break:keep-all; overflow-wrap:normal;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px 96px}
+/* ---------- hero ---------- */
+.hero{
+  background:linear-gradient(155deg,#191B2C 0%,#23263c 55%,#2b2f4d 100%);
+  color:#EFEFF6; padding:56px 0 48px; margin-bottom:44px;
+}
+.hero .wrap{padding-bottom:0}
+.badge{
+  display:inline-block;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+  font-weight:700;color:#B9BCD8;border:1px solid #454A6E;
+  padding:5px 11px;border-radius:999px;margin-bottom:18px;
+}
+.hero h1{font-size:32px;line-height:1.45;margin:0 0 14px;font-weight:800;letter-spacing:.01em}
+.hero .tag{color:#AFB2CE;font-size:15px;margin:0 0 26px;max-width:78ch}
+.thesis{
+  border-left:4px solid #7C86D8;background:rgba(255,255,255,.055);
+  padding:16px 20px;border-radius:0 var(--radius) var(--radius) 0;
+  font-size:16.5px;font-weight:600;color:#F2F2F8;margin:0 0 26px;max-width:82ch;
+}
+.hero-meta{display:flex;flex-wrap:wrap;gap:10px 26px;font-size:12.5px;color:#9598BA}
+.hero-meta b{color:#C6C9E4;font-weight:600}
+/* ---------- sections ---------- */
+section{margin:0 0 46px}
+.kicker{
+  font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:800;
+  color:var(--primary);margin:0 0 6px;
+}
+h2{font-size:22px;line-height:1.5;margin:0 0 14px;font-weight:800;letter-spacing:.01em}
+h3{font-size:16px;margin:26px 0 10px;font-weight:700}
+p{margin:0 0 14px;max-width:80ch}
+ul,ol{margin:0 0 14px;padding-left:1.3em;max-width:80ch}
+li{margin:0 0 7px}
+strong{font-weight:700}
+code{font-family:var(--mono);font-size:.88em;background:var(--surface-2);
+  padding:1.5px 5px;border-radius:4px;border:1px solid var(--line)}
+.small{font-size:13px;color:var(--ink-soft)}
+/* ---------- plainbox / tldr ---------- */
+.plainbox{
+  background:var(--plain-soft);border:1px solid var(--plain-line);
+  border-left:4px solid var(--plain);border-radius:0 var(--radius) var(--radius) 0;
+  padding:20px 22px;margin:0 0 22px;
+}
+.plainbox h3{margin:0 0 10px;font-size:15px;color:#155F55;letter-spacing:.02em}
+.plainbox p{margin:0 0 10px;max-width:none}
+.plainbox p:last-child{margin-bottom:0}
+.tlgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:0 0 8px}
+.tlcard{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 18px;
+}
+.tlcard .q{font-weight:700;font-size:14px;margin:0 0 7px;color:var(--primary-ink)}
+.tlcard .a{margin:0;font-size:14px;color:var(--ink-soft)}
+/* ---------- figure (dark panel) ---------- */
+.figure{
+  background:var(--kernel);border:1px solid var(--kernel-line);border-radius:var(--radius);
+  padding:24px 22px;margin:18px 0 20px;color:var(--kernel-ink);
+}
+.figure .cap{font-size:11px;letter-spacing:.13em;text-transform:uppercase;
+  color:#7F84AD;font-weight:700;margin:0 0 16px}
+.chain{display:flex;flex-direction:column;gap:0}
+.step{
+  background:var(--kernel-2);border:1px solid var(--kernel-line);border-radius:8px;
+  padding:13px 16px;
+}
+.step .t{font-weight:700;color:#E7E8F5;font-size:14.5px;margin:0 0 4px}
+.step .d{font-size:13px;color:#9DA2C6;margin:0}
+.arrow{text-align:center;color:#5A5F86;font-size:16px;line-height:1;padding:7px 0}
+.ngrid{display:grid;gap:12px}
+.ngrid.c2{grid-template-columns:repeat(2,1fr)}
+.ngrid.c3{grid-template-columns:repeat(3,1fr)}
+.ngrid.c4{grid-template-columns:repeat(4,1fr)}
+.node{
+  background:var(--kernel-2);border:1px solid var(--kernel-line);border-radius:8px;
+  padding:13px 14px;
+}
+.node .h{font-weight:700;color:#E7E8F5;font-size:13.5px;margin:0 0 5px}
+.node .b{font-size:12.5px;color:#9DA2C6;margin:0}
+.node.on{border-color:#4F7F63;background:#1D2A24}
+.node.warn{border-color:#8A6A2A;background:#2A2418}
+.node.off{border-color:#3A3D57;opacity:.62}
+.numbadge{
+  display:inline-block;min-width:19px;height:19px;line-height:19px;text-align:center;
+  border-radius:999px;background:#3C4270;color:#DDE0F2;font-size:11px;font-weight:700;
+  margin-right:7px;
+}
+/* ---------- table ---------- */
+table{width:100%;border-collapse:collapse;margin:14px 0 18px;font-size:14px}
+th,td{border:1px solid var(--line);padding:9px 12px;text-align:left;vertical-align:top}
+th{background:var(--surface-2);font-weight:700;font-size:13px}
+tr.hit td{background:var(--done-soft)}
+tr.gap td{background:var(--risk-soft)}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+/* ---------- misc blocks ---------- */
+.verdict{
+  background:var(--done-soft);border:1px solid var(--done-line);
+  border-left:4px solid var(--done);border-radius:0 var(--radius) var(--radius) 0;
+  padding:20px 22px;margin:26px 0;
+}
+.verdict h3{margin:0 0 9px;font-size:15px;color:#1D6B42}
+.verdict p{margin:0;max-width:none}
+.openbox{
+  background:var(--wip-soft);border:1px solid #E4CE9E;
+  border-left:4px solid var(--wip);border-radius:0 var(--radius) var(--radius) 0;
+  padding:20px 22px;margin:26px 0;
+}
+.openbox h3{margin:0 0 9px;font-size:15px;color:#8A6212}
+.openbox ul{margin-bottom:0;max-width:none}
+.steps{list-style:none;padding:0;counter-reset:s;max-width:none}
+.steps li{counter-increment:s;position:relative;padding-left:38px;margin:0 0 14px}
+.steps li::before{
+  content:counter(s);position:absolute;left:0;top:1px;width:25px;height:25px;
+  line-height:25px;text-align:center;border-radius:999px;
+  background:var(--primary);color:#fff;font-size:12.5px;font-weight:700;
+}
+.steps .why{display:block;font-size:12.5px;color:var(--ink-soft);margin-top:3px}
+.choices{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:16px 0 20px}
+.choice{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:16px 17px;border-top:3px solid var(--info)}
+.choice.a{border-top-color:var(--done)}
+.choice.b{border-top-color:var(--wip)}
+.choice.c{border-top-color:var(--info)}
+.choice h4{margin:0 0 8px;font-size:14.5px;font-weight:700}
+.choice p{font-size:13px;margin:0 0 8px;color:var(--ink-soft);max-width:none}
+footer{
+  border-top:1px solid var(--line-strong);margin-top:52px;padding-top:26px;
+  font-size:12.5px;color:var(--ink-soft);
+}
+footer h3{font-size:13px;margin:0 0 8px;color:var(--ink)}
+footer ul{max-width:none;font-size:12.5px}
+footer .disc{margin-top:18px;color:var(--ink-faint);font-size:12px}
+@media (max-width:760px){
+  .tlgrid,.ngrid.c2,.ngrid.c3,.ngrid.c4,.choices{grid-template-columns:1fr}
+  .hero h1{font-size:25px}
+  .wrap{padding:0 16px 64px}
+}
+@media print{
+  body{background:#fff}
+  .hero{background:#191B2C !important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .figure,.plainbox,.verdict,.openbox,tr.hit td,tr.gap td{
+    -webkit-print-color-adjust:exact;print-color-adjust:exact}
+  section{break-inside:avoid}
+  .figure{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="badge">claude-code-harness / ユーザー向け説明</span>
+    <h1>Claude Code Harness は、結局なにをしてくれる道具なのか？</h1>
+    <p class="tag">AI コーディングツールに「作業の型」と「安全の枠」を後付けする拡張機能です。v5.4.0 時点の実装を、使う人の視点から説明します。</p>
+    <p class="thesis">人間が計画から検証まで見張る代わりに、AI が計画・実装・検証の材料を揃え、人間は最後の判断だけをする。その状態を、規則で機械的に強制する道具です。</p>
+    <div class="hero-meta">
+      <span><b>版</b> v5.4.0（Phase 126 適用済み）</span>
+      <span><b>作成</b> 2026-07-29</span>
+      <span><b>対象</b> operator</span>
+      <span><b>位置づけ</b> 派生物であり仕様の正本ではない</span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+<!-- ============ TL;DR ============ -->
+<section>
+  <div class="plainbox">
+    <h3>やさしく言うと</h3>
+    <p>AI にコードを書かせると、たいてい 2 つのことで困ります。ひとつは「勝手に進みすぎて、気づいたら意図と違うものができている」。もうひとつは「危ないことをしないか心配で、結局ずっと張り付いて見ていることになる」。</p>
+    <p>Claude Code Harness（以下 CCH）は、この 2 つを別々の仕組みで解きます。前者には<strong>作業の型</strong>を与えます。計画を先に文書へ固定し、実装し、独立した目でレビューし、リリースする。この 4 工程を飛ばせないようにします。後者には<strong>安全の枠</strong>を与えます。危険な操作をコマンド実行の直前で機械的に止めます。</p>
+    <p>役割でたとえるなら、工事現場の監督と安全柵です。監督（作業の型）は「図面なしで着工しない」「検査前に引き渡さない」と手順を守らせます。安全柵（安全の枠）は、誰が何を言おうと立ち入り禁止区域に入れません。実際には、監督にあたるのが 21 個のスキル（`/harness-plan` などの手順書）、安全柵にあたるのが 15 個の規則と 5 分類の最終防壁です。</p>
+    <p>押さえる本質は「AI を賢くする道具ではない」という点です。AI の判断そのものには手を触れず、<strong>その周りの手順と境界</strong>だけを固めます。だから AI のモデルが新しくなっても仕組みはそのまま使えます。</p>
+  </div>
+
+  <div class="tlgrid">
+    <div class="tlcard">
+      <p class="q">これを入れると何が変わる？</p>
+      <p class="a">AI が「計画 → 実装 → レビュー → リリース」の順を飛ばせなくなります。加えて、外部への送信・秘密ファイルの読み取り・本番反映・作業場の外の削除・課金操作が、実行の直前で止まります。</p>
+    </div>
+    <div class="tlcard">
+      <p class="q">毎回確認を求められて面倒では？</p>
+      <p class="a">確認は計画を決める時点に前倒しします。「この作業では公開に push します」と一度承認しておけば、作業中は同じことで聞き直しません。承認には期限と回数の上限が付きます。</p>
+    </div>
+    <div class="tlcard">
+      <p class="q">Claude 専用？</p>
+      <p class="a">いいえ。Claude Code に加えて Codex CLI と Cursor が正式対応です。同じ 1 つの判定エンジンを、各ツールの標準的な差し込み口から呼ぶ構造なので、規則が枝分かれしません。</p>
+    </div>
+    <div class="tlcard">
+      <p class="q">導入コストは？</p>
+      <p class="a">セットアップ 1 コマンドと、最初の計画づくり 1 回です。既存のリポジトリに後付けでき、コードの書き方や言語には制約を課しません。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 01 ============ -->
+<section>
+  <p class="kicker">01 — 構成要素</p>
+  <h2>何でできているか（実名と正体）</h2>
+  <p>CCH は 4 種類の部品でできています。名前より「どこで効くか」を押さえてください。</p>
+
+  <div class="figure">
+    <p class="cap">構成要素と担当範囲</p>
+    <div class="ngrid c4">
+      <div class="node">
+        <p class="h">スキル（21 個）</p>
+        <p class="b">`/harness-plan` のように呼び出す手順書。AI が読んで従う作業マニュアル。計画・実装・レビュー・リリースなど工程ごとにある。</p>
+      </div>
+      <div class="node">
+        <p class="h">エージェント（4 個）</p>
+        <p class="b">実装役・レビュー役・助言役など、役割を分けた AI の設定。レビュー役は実装役の会話を引き継がないので、身内チェックにならない。</p>
+      </div>
+      <div class="node">
+        <p class="h">フック（27 種）</p>
+        <p class="b">ツールの動作に割り込む差し込み口。コマンド実行の直前・直後、セッション開始時などに、後述の判定エンジンを呼ぶ。</p>
+      </div>
+      <div class="node">
+        <p class="h">判定エンジン（Go 製）</p>
+        <p class="b">許可・確認・拒否を機械的に決める本体。規則 15 個と最終防壁 5 分類を持つ。全ツール共通で、ここだけが判断する。</p>
+      </div>
+    </div>
+  </div>
+
+  <p><strong>押さえる本質</strong>は、判定が 1 か所に集まっていることです。ツールが 3 つあっても規則は 3 つに増えません。各ツールの差し込み口から同じエンジンを呼びます。<strong>AI に任せてよい詳細</strong>は、スキルの中身やフックの配線です。使う側が読む必要はありません。</p>
+
+  <table>
+    <tr><th>数えられるもの</th><th class="num">現在</th><th>意味</th></tr>
+    <tr><td>スキル</td><td class="num">21</td><td>工程ごとの手順書。中核は計画・実装・レビュー・リリース・初期設定の 5 つ</td></tr>
+    <tr><td>ガードレール規則</td><td class="num">15</td><td>R01〜R15。許可・確認・拒否を決める</td></tr>
+    <tr><td>最終防壁の分類</td><td class="num">5</td><td>設定で無効化できない絶対の境界</td></tr>
+    <tr><td>自動テスト</td><td class="num">1,587 + 188</td><td>Go の関数単位テストと、手順を通しで動かす検査</td></tr>
+  </table>
+</section>
+
+<!-- ============ 02 ============ -->
+<section>
+  <p class="kicker">02 — ワークフロー</p>
+  <h2>つながるとどう回るか（4 工程）</h2>
+  <p>使う側が意識するのは 4 つのコマンドだけです。それぞれが次の工程に必要な材料を残します。</p>
+
+  <div class="figure">
+    <p class="cap">通常の 1 サイクル</p>
+    <div class="chain">
+      <div class="step">
+        <p class="t"><span class="numbadge">1</span>計画 — <code>/harness-plan</code></p>
+        <p class="d">やりたいことを渡すと、仕様と作業一覧の 2 つの文書に落とします。各作業には「何をもって完了とするか」を検証可能な形で書きます。ここで <b>事前確認</b> も出ます。この作業で発生しそうな危険操作を先にまとめて承認します。</p>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <p class="t"><span class="numbadge">2</span>実装 — <code>/harness-work</code></p>
+        <p class="d">作業一覧を上から実行します。件数に応じて、単独・並列・チーム編成を自動で選びます。実装を別のツール（Codex や Cursor）に外注することもできます。動作が変わる変更では、先に失敗するテストを書く証拠を求めます。</p>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <p class="t"><span class="numbadge">3</span>レビュー — <code>/harness-review</code></p>
+        <p class="d">実装した本人とは別の目で差分を見ます。会話の履歴を共有しない独立したレビュー役が入り、必要なら別ツールの意見も取ります。重大な指摘が残っている限り完了になりません。</p>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <p class="t"><span class="numbadge">4</span>リリース — <code>/harness-release</code></p>
+        <p class="d">版番号の更新、変更履歴の整理、PR、タグ、公開までを続けて行います。人間の確認はこの工程で 1 回だけです。そこまでの道中では聞き直しません。</p>
+      </div>
+    </div>
+  </div>
+
+  <p>この順序は推奨ではなく、機械的に守らせます。たとえばレビューで重大な指摘が残っていれば完了扱いにできませんし、リリース前に未レビューの実装があれば先にレビューへ回されます。</p>
+</section>
+
+<!-- ============ 03 ============ -->
+<section>
+  <p class="kicker">03 — 安全設計</p>
+  <h2>安全網は 2 層ある（役割が違う）</h2>
+  <p>ここが CCH の中心です。<strong>強さも、外せるかどうかも違う 2 層</strong>を重ねています。</p>
+
+  <div class="figure">
+    <p class="cap">コマンドが実行されるまでに通る 2 層</p>
+    <div class="chain">
+      <div class="step">
+        <p class="t">AI がコマンドを実行しようとする</p>
+        <p class="d">ファイル書き込み、シェルコマンド、ファイル読み取りなど</p>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <p class="t"><span class="numbadge">1</span>最終防壁（5 分類） — 設定で外せない</p>
+        <p class="d">課金操作 / 外部への送信 / 秘密ファイルの読み取り / 本番反映・公開 / 作業場の外の破壊。該当したら即座に拒否します。権限を緩めるモードで動かしていても効きます。</p>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <p class="t"><span class="numbadge">2</span>ガードレール規則（R01〜R15） — 一部は設定可能</p>
+        <p class="d">保護されたファイルへの書き込み、強制 push、履歴の巻き戻し、秘密ファイルの誤コミットなど。拒否するもの、確認を出すもの、警告だけのものがあります。</p>
+      </div>
+      <div class="arrow">↓</div>
+      <div class="step">
+        <p class="t">実行 / 確認ダイアログ / 拒否</p>
+        <p class="d">どちらかで止まった場合、その事実が記録ファイルに 1 行残ります</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>なぜ 2 層に分けてあるか</h3>
+  <p>用途が違うためです。<strong>最終防壁</strong>は「自律的に動く AI が暴走したときの最後の一線」で、どの設定からも到達できない独立した経路に置いてあります。無効化する手段を構造的に持ちません。ここを緩めたいという要求は、原則として通らない設計です。</p>
+  <p>一方の<strong>ガードレール規則</strong>は日常の運用を調整する層です。たとえば「main への直接 push」は既定で確認を出しますが、設定で禁止にも許可にも変えられます。プロジェクトの事情に合わせる余地はこちらにあります。</p>
+
+  <table>
+    <tr><th>層</th><th>止め方</th><th>無効化</th><th>例</th></tr>
+    <tr class="gap"><td>最終防壁</td><td>即座に拒否</td><td>できない</td><td>作業場の外の削除、秘密鍵の読み取り、本番デプロイ</td></tr>
+    <tr><td>ガードレール規則</td><td>拒否 / 確認 / 警告</td><td>一部は設定可能</td><td>保護ファイルの書き換え、強制 push、main への直接 push</td></tr>
+  </table>
+
+  <h3>確認を減らす仕組み（事前確認）</h3>
+  <p>安全網を強くすると確認が増えます。CCH はこれを<strong>時点をずらす</strong>ことで解きます。作業中に何度も聞くのではなく、計画を決める時点で「この作業では公開に push します」とまとめて一度承認します。</p>
+  <p>承認には<strong>期限・対象作業の一致・使用回数の上限</strong>の 3 つが付きます。一度承認したものが永久に効き続けることはありません。また、この承認は最終防壁には効きません。緩められるのはガードレール規則の側だけです。</p>
+</section>
+
+<!-- ============ 04 ============ -->
+<section>
+  <p class="kicker">04 — 対応ホスト</p>
+  <h2>どこから使えるか</h2>
+  <p>対応の度合いは正直に区別しています。「動くはず」ではなく、検証の証拠がある範囲だけを対応と呼びます。</p>
+
+  <table>
+    <tr><th>ツール</th><th>対応</th><th>実際にできること</th></tr>
+    <tr class="hit"><td>Claude Code</td><td>正式対応</td><td>すべての工程。主たる開発対象</td></tr>
+    <tr class="hit"><td>Codex CLI</td><td>正式対応</td><td>セットアップ script あり。作業の通し検証とリリース前検査が通っている</td></tr>
+    <tr class="hit"><td>Cursor</td><td>正式対応</td><td>セットアップ script あり。作業の通し検証とリリース前検査が通っている</td></tr>
+    <tr><td>Codex アプリ版</td><td>候補</td><td>簡易検証のみ。CLI 版の実績は流用しない</td></tr>
+    <tr><td>OpenCode</td><td>内部互換</td><td>案内を出力する形。実行時の同等性は主張しない</td></tr>
+  </table>
+
+  <p>「候補」と「内部互換」を対応と書かないのは、後から食い違いが出たときに一番損をするのが使う側だからです。この区別は文書上の建前ではなく、対応を格上げするには検証を通す必要があります。</p>
+</section>
+
+<!-- ============ 05 ============ -->
+<section>
+  <p class="kicker">05 — 比較</p>
+  <h2>普通に AI へ頼む場合と、何がどう違うか</h2>
+
+  <table>
+    <tr><th>場面</th><th>CCH なし</th><th>CCH あり</th></tr>
+    <tr><td>作業の始め方</td><td>チャットで依頼して即着手</td><td>仕様と作業一覧を先に文書化。完了条件を検証可能な形で固定</td></tr>
+    <tr><td>レビュー</td><td>実装した AI が自分で確認</td><td>会話を共有しない独立した目が見る。重大な指摘が残ると完了にできない</td></tr>
+    <tr><td>危険な操作</td><td>権限設定に依存。緩めれば素通り</td><td>実行直前に機械判定。最終防壁は権限設定を無視して効く</td></tr>
+    <tr><td>確認の回数</td><td>作業中に都度</td><td>計画時に一括。承認済みの範囲は作業中に聞かない</td></tr>
+    <tr><td>止まった理由</td><td>記録が残らない</td><td>規則名と判定を記録。後から集計できる</td></tr>
+    <tr><td>ツールの乗り換え</td><td>ツールごとに設定をやり直す</td><td>判定エンジンは共通。対応ホストなら同じ規則が効く</td></tr>
+  </table>
+
+  <p>費用対効果で見ると、効くのは<strong>作業が長くなるほど</strong>です。10 分で終わる修正には手順が重すぎます。逆に、複数ファイルにまたがる変更や、AI に任せて席を外したい作業では、後戻りの回数が減る分だけ元が取れます。</p>
+</section>
+
+<!-- ============ 06 ============ -->
+<section>
+  <p class="kicker">06 — 直近の変更</p>
+  <h2>今回の版で変わったこと（Phase 126）</h2>
+  <p>「確認が多すぎて作業が進まない」という指摘から始まった改修です。確認を減らす作業の途中で、<strong>逆に防御が効いていない箇所が 2 つ</strong>見つかったため、そちらを先に塞ぎました。</p>
+
+  <h3>塞いだ穴</h3>
+  <div class="figure">
+    <p class="cap">見つかった 2 件（いずれも実測で確認）</p>
+    <div class="ngrid c2">
+      <div class="node warn">
+        <p class="h">① 自律実行中の削除が無防備だった</p>
+        <p class="b">削除コマンドの書き方を変えるだけで、作業場の外を消す操作が最終防壁をすり抜けていた。受け止めていた確認の側は、自律実行中に無効になる設計だったため、防御が両方とも外れていた。</p>
+      </div>
+      <div class="node warn">
+        <p class="h">② 秘密ファイルの読み取りを迂回できた</p>
+        <p class="b">複数行の文字列をシェルに渡す書き方の中に読み取りを隠すと、判定側が「ただの文書」とみなして中身を見ていなかった。実際にはシェルがそれを実行する。</p>
+      </div>
+    </div>
+  </div>
+
+  <h3>減らした確認</h3>
+  <table>
+    <tr><th>場面</th><th>変更前</th><th>変更後</th></tr>
+    <tr><td>一時ファイルの書き込み</td><td>確認</td><td>通過</td></tr>
+    <tr><td>作業ツリー内の削除</td><td>確認</td><td>通過</td></tr>
+    <tr><td>承認済みの保護ブランチ push</td><td>確認</td><td>通過（承認が有効な間のみ）</td></tr>
+  </table>
+
+  <p>緩めたのは「安全だと確定できる場合だけ」です。削除の対象が実行時にしか決まらない書き方は、すべて確認が残ります。具体的には、変数展開で対象が決まる、コマンド置換で後から作られる、削除の前に別のコマンドがある、パイプラインやバックグラウンド実行、親ディレクトリ参照を含む、といった場合です。近道（シンボリックリンク）は実体をたどってから判定するため、作業場の内側から外を指すリンク経由でも通りません。</p>
+
+  <h3>記録が残るようになった</h3>
+  <p>確認や拒否が起きるたびに、規則名・分類・判定を 1 行記録します。これにより「どの規則が何回止めたか」を後から数えられます。秘密情報は残しません。コマンドやファイルパスの生の文字列は書かず、ハッシュと長さだけを持ちます。秘密ファイル読み取りと課金操作の分類では、そのハッシュと長さすら省きます。</p>
+</section>
+
+<!-- ============ 07 ============ -->
+<section>
+  <p class="kicker">07 — 着手判断</p>
+  <h2>どこから始めるか</h2>
+
+  <div class="choices">
+    <div class="choice a">
+      <h4>まず体験する</h4>
+      <p>初期設定を 1 回走らせ、小さめの依頼で計画から実装まで一周する。手順の重さと効果を自分の作業で測る。</p>
+      <p class="small">向いている場面: 導入するか決めていない</p>
+    </div>
+    <div class="choice b">
+      <h4>安全網だけ先に入れる</h4>
+      <p>工程の型は使わず、危険操作の判定だけを効かせる。既存の進め方を変えずに、事故だけ減らす。</p>
+      <p class="small">向いている場面: 手順を変えたくない</p>
+    </div>
+    <div class="choice c">
+      <h4>長時間の自律作業に使う</h4>
+      <p>計画で承認をまとめて取り、席を外して回す。止まった箇所は記録から後で確認する。</p>
+      <p class="small">向いている場面: まとまった量の作業がある</p>
+    </div>
+  </div>
+
+  <ol class="steps">
+    <li>初期設定を実行する
+      <span class="why">なぜ: 対応ホストごとに差し込み口の配線が要るため。1 コマンドで済む</span></li>
+    <li>小さな依頼で計画を作る
+      <span class="why">なぜ: 仕様と作業一覧がどう書かれるかを見ると、以降の期待値が合う</span></li>
+    <li>事前確認の内容を読んでから承認する
+      <span class="why">なぜ: ここで承認した範囲は作業中に聞き直されない。承認の粒度を体感できる</span></li>
+    <li>1 件だけ実装させてレビューまで通す
+      <span class="why">なぜ: レビューが独立して働くかを、自分の目で確かめられる</span></li>
+    <li>止まった箇所があれば記録を見る
+      <span class="why">なぜ: どの規則が効きすぎているかを推測でなく実測で判断できる</span></li>
+  </ol>
+</section>
+
+<div class="verdict">
+  <h3>判定</h3>
+  <p>CCH は「AI を賢くする道具」ではなく「AI に任せた作業の手順と境界を機械的に固定する道具」です。効果が出るのは、作業が長く、後戻りの損失が大きい場面に限られます。短い修正には手順が重すぎるため、常用より用途を選んで使うほうが費用対効果は高くなります。</p>
+</div>
+
+<div class="openbox">
+  <h3>正直な但し書き</h3>
+  <ul>
+    <li><strong>これは仕様の正本ではありません。</strong>実装は変わり続けます。判断の根拠に使う場合は、末尾の出典を直接あたってください。</li>
+    <li><strong>数値は本文書の作成時点の実測です。</strong>スキル 21 個、規則 15 個などは版によって変わります。</li>
+    <li><strong>安全網は万能ではありません。</strong>最終防壁が見ているのはシェルコマンドの文面です。判定できない書き方は「安全側に倒す」設計ですが、それは「すべてを検出できる」という意味ではありません。</li>
+    <li><strong>確認を緩める設定には副作用があります。</strong>たとえば外部送信の制限を切ると、作業場の中で読んだ情報を外へ送る経路が理論上は開きます。人が見ている前提での運用かどうかで判断が変わります。</li>
+    <li><strong>修正はプラグイン更新まで反映されません。</strong>本体を直してもすぐ効くわけではなく、更新して再読み込みが要ります。</li>
+  </ul>
+</div>
+
+<footer>
+  <h3>出典（SSOT）</h3>
+  <ul>
+    <li><code>spec.md</code> — Purpose / North Star（3 層）/ Risk Gate distribution contract</li>
+    <li><code>docs/spec/operations-memory-and-collaboration.md</code> — 最終防壁 5 分類と非上書き契約、auto-approve scope</li>
+    <li><code>README.md</code> — ホスト対応 tier（Codex CLI / Cursor = supported、Codex app = candidate、OpenCode = internal-compatible）</li>
+    <li><code>go/internal/policy/rules.go</code> — ガードレール規則 R01〜R15</li>
+    <li><code>go/internal/runtimefloor/runtimefloor.go</code> — 最終防壁の実装</li>
+    <li><code>CHANGELOG.md</code> [Unreleased] — Phase 126 の変更内容</li>
+    <li><code>Plans.md</code> Phase 126 — 各作業の完了条件と検証記録</li>
+  </ul>
+  <h3>分析方法と制約</h3>
+  <ul>
+    <li>数値はリポジトリ実測（スキル 21、エージェント 4、規則 15、フック 27 種、Go テスト 1,587、シェル検査 188、規約 21）。</li>
+    <li>Phase 126 の変更前後の挙動は、判定エンジンに直接入力を渡して観測した実測値。テスト結果の引用ではない。</li>
+    <li>ホスト対応 tier は README の記載をそのまま採用。本文書では格上げも格下げもしていない。</li>
+    <li>費用対効果の記述（短い修正には重い等）は運用上の判断であり、計測に基づく数値ではない。</li>
+  </ul>
+  <p class="disc">本レポートは派生物であり、仕様の正本ではありません。作成 2026-07-29 / claude-code-harness v5.4.0。</p>
+</footer>
+
+</div>
+</body>
+</html>

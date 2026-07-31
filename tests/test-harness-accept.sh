@@ -30,6 +30,14 @@ PASS=0
 FAIL=0
 FAIL_MESSAGES=()
 
+TEMP_FILES=()
+cleanup_temp_files() {
+  if [[ ${#TEMP_FILES[@]} -gt 0 ]]; then
+    rm -f "${TEMP_FILES[@]}" 2>/dev/null || true
+  fi
+}
+trap cleanup_temp_files EXIT
+
 pass() { PASS=$((PASS + 1)); echo "✓ $1"; }
 fail() { FAIL=$((FAIL + 1)); FAIL_MESSAGES+=("$1"); echo "✗ $1" >&2; }
 
@@ -224,7 +232,8 @@ except jsonschema.ValidationError as e:
 
   # HTML render check
   local tmp_out
-  tmp_out="$(mktemp /tmp/accept-test-${fixture_base}-XXXXXX.html)"
+  tmp_out="$(mktemp "${TMPDIR:-/tmp}/accept-test-${fixture_base}.XXXXXX")"
+  TEMP_FILES+=("$tmp_out")
 
   if bash "$RENDER_SCRIPT" --template accept --data "$fixture" --out "$tmp_out" 2>/dev/null; then
     pass "[$label] render-html.sh succeeds with accept template"
