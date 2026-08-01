@@ -103,6 +103,15 @@ Change history for claude-code-harness.
 
 検出は静的走査のため、変数経由で組み立てたコマンド文字列と、producer が関数呼び出しやコマンド置換の形は対象外です。`|| true` で終わる行は `pipefail` が結果を昇格させないため除外します。
 
+| 項目 | 変更前 | 変更後 |
+|---|---|---|
+| 書き方 | `printf '%s' "$内容" \| grep -q "$探す文字列"` | `grep -q "$探す文字列" <<<"$内容"` |
+| 該当箇所 | 173 箇所 (`tests/` 131 + `scripts/` 42) | 0 箇所 |
+| 入力の前方に一致がある場合 | 「無い」と誤判定される | 正しく判定される |
+| 再発の検出 | なし (`shellcheck` は検出しない) | `tests/test-pipefail-grep-q-safety.sh` が検出 |
+| 検査一覧 | 131 項目 | 132 項目 |
+| 検査の除去に必要な変更 | — | 2 ファイル (`validate-plugin.sh` と `test-validate-plugin-wiring.sh` の pin) |
+
 実測: 変換前は 173 箇所を検出して exit 1、変換後は 0 箇所。`shellcheck` の警告数は変換前後とも 29 件で同数 (herestring 起因の新規指摘はゼロ)。`tests/validate-plugin.sh`、`scripts/ci/check-consistency.sh` 全 24 検査、`go test ./...` はいずれも変換後も合格します。整合性検査スクリプト自身も変換対象に含まれており、書き換え後も全検査を通過します。
 
 ## [5.5.0] - 2026-07-29

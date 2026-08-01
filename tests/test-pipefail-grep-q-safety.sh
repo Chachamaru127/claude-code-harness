@@ -60,31 +60,51 @@ scan_file() {
   # 除外するもの:
   #   - コメント行 (行頭が #)。説明文中に構文を書けるようにするため
   #   - `|| true` / `|| :` で終わる行。pipefail が結果を昇格させないため実害がない
-  perl -ne '
-    next if /^\s*#/;
-    next if /\|\|\s*(?:true|:)\s*$/;
-    my $line = $_;
-    # 引用符の外にあるパイプ位置を集める
-    my ($q, $i, @pipes) = ("", 0);
-    while ($i < length $line) {
-      my $c = substr($line, $i, 1);
-      if ($q) { $q = "" if $c eq $q; $i++; next; }
-      if ($c eq q{"} || $c eq q{'"'"'}) { $q = $c; $i++; next; }
-      if ($c eq "\\") { $i += 2; next; }
-      # `||` は or 演算子なのでパイプとして数えない
-      if ($c eq "|") {
-        if (substr($line, $i, 2) eq "||") { $i += 2; next; }
-        push @pipes, $i;
-      }
-      $i++;
+  perl -e '
+    # 物理行を論理行へ畳む。行末の継続文字 `\` を跨ぐパイプラインを見落とさないため。
+    my @logical;
+    my ($buf, $start) = ("", 0);
+    while (my $l = <>) {
+      chomp $l;
+      $start = $. unless length $buf;
+      if ($l =~ s/\\$//) { $buf .= $l; next; }
+      push @logical, [$start, $buf . $l];
+      $buf = "";
     }
-    for my $p (@pipes) {
-      my $before = substr($line, 0, $p);
-      my $after  = substr($line, $p + 1);
-      next unless $before =~ /(?:^|[^\w])(?:printf|echo|cat)\s/;
-      next unless $after  =~ /^\s*grep\s+(?:-[a-zA-Z]+\s+)*-[a-zA-Z]*q/;
-      print "$.:$line";
-      last;
+    push @logical, [$start, $buf] if length $buf;
+
+    for my $rec (@logical) {
+      my ($lineno, $line) = @$rec;
+      next if $line =~ /^\s*#/;
+      next if $line =~ /\|\|\s*(?:true|:)\s*$/;
+
+      # 引用符の外にあるパイプ位置を集める
+      my ($q, $i, @pipes) = ("", 0);
+      while ($i < length $line) {
+        my $c = substr($line, $i, 1);
+        if ($q) {
+          # 二重引用符の中では `\` がエスケープとして働く。単一引用符の中では働かない。
+          if ($q eq q{"} && $c eq "\\") { $i += 2; next; }
+          $q = "" if $c eq $q;
+          $i++; next;
+        }
+        if ($c eq q{"} || $c eq q{'"'"'}) { $q = $c; $i++; next; }
+        if ($c eq "\\") { $i += 2; next; }
+        # `||` は or 演算子なのでパイプとして数えない
+        if ($c eq "|") {
+          if (substr($line, $i, 2) eq "||") { $i += 2; next; }
+          push @pipes, $i;
+        }
+        $i++;
+      }
+      for my $p (@pipes) {
+        my $before = substr($line, 0, $p);
+        my $after  = substr($line, $p + 1);
+        next unless $before =~ /(?:^|[^\w])(?:printf|echo|cat)\s/;
+        next unless $after  =~ /^\s*grep\s+(?:-[a-zA-Z]+\s+)*-[a-zA-Z]*q/;
+        print "$lineno:$line\n";
+        last;
+      }
     }
   ' "$1" 2>/dev/null | sed "s|^|$1:|"
 }
@@ -162,6 +182,23 @@ echo "producer | grep -q は使わないこと"
 grep -q "needle" <<<"$x"
 FIXEOF
 
+# (h) pipefail 有り + 行末の継続文字を跨ぐパイプライン → 検出する
+cat > "$FIXTURE_DIR/continuation.sh" <<'FIXEOF'
+#!/bin/bash
+set -euo pipefail
+printf '%s' "$x" \
+  | grep -q "needle"
+FIXEOF
+
+# (i) pipefail 有り + 二重引用符の中のエスケープされた引用符 → 検出しない
+# `\"` を閉じ引用符と誤解すると、後続の `| grep -q` が引用符の外に見えてしまう
+cat > "$FIXTURE_DIR/escaped-quote.sh" <<'FIXEOF'
+#!/bin/bash
+set -euo pipefail
+echo "he said \"use x | grep -q y\" today"
+grep -q "needle" <<<"$x"
+FIXEOF
+
 expect_scan() {
   local file="$1" expected="$2" label="$3"
   local got
@@ -182,6 +219,8 @@ expect_scan "$FIXTURE_DIR/herestring.sh"  miss "herestring (正しい書き方)"
 expect_scan "$FIXTURE_DIR/grep-c.sh"      miss "grep -c (早期終了しない)"
 expect_scan "$FIXTURE_DIR/comment.sh"     miss "コメント行に書かれた構文"
 expect_scan "$FIXTURE_DIR/quoted.sh"      miss "引用符の中に書かれた構文"
+expect_scan "$FIXTURE_DIR/continuation.sh"   hit  "行末の継続文字を跨ぐパイプライン"
+expect_scan "$FIXTURE_DIR/escaped-quote.sh"  miss "二重引用符内のエスケープされた引用符"
 
 # ---- 3. サマリ ----
 
