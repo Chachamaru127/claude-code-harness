@@ -115,7 +115,7 @@ test_lock_functionality() {
         # ロック状態確認
         local check_result
         check_result=$(./scripts/codex-worker-lock.sh check --path "$test_path" 2>/dev/null)
-        if echo "$check_result" | grep -q '"locked":true'; then
+        if grep -q '"locked":true' <<<"$check_result"; then
             echo "  ✓ ロック状態確認成功"
         else
             echo "  ✗ ロック状態確認失敗"
@@ -192,7 +192,7 @@ test_skill_misfire_prevention() {
     local issues=0
 
     # codex-worker が review トリガーを除外しているか
-    if echo "$worker_desc" | grep -q "レビュー"; then
+    if grep -q "レビュー" <<<"$worker_desc"; then
         echo "  ✓ codex-worker: レビュー除外あり"
     else
         echo "  ✗ codex-worker: レビュー除外なし"
@@ -200,7 +200,7 @@ test_skill_misfire_prevention() {
     fi
 
     # codex-review が worker トリガーを除外しているか
-    if echo "$review_desc" | grep -qE "Codex に実装させて|Codex Worker|codex-worker"; then
+    if grep -qE "Codex に実装させて|Codex Worker|codex-worker" <<<"$review_desc"; then
         echo "  ✓ codex-review: Worker 除外あり"
     else
         echo "  ✗ codex-review: Worker 除外なし"

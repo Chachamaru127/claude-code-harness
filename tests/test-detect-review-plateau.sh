@@ -56,14 +56,14 @@ run_case() {
   fi
 
   # ENTRIES 行が存在するかチェック
-  if echo "$actual_output" | grep -q '^ENTRIES:'; then
+  if grep -q '^ENTRIES:' <<<"$actual_output"; then
     pass "$label: ENTRIES line present"
   else
     fail "$label: ENTRIES line missing"
   fi
 
   # REASON 行が存在するかチェック
-  if echo "$actual_output" | grep -q '^REASON:'; then
+  if grep -q '^REASON:' <<<"$actual_output"; then
     pass "$label: REASON line present"
   else
     fail "$label: REASON line missing"
@@ -71,7 +71,7 @@ run_case() {
 
   # N>=3 の場合は JACCARD_AVG 行も期待
   if [ "$expected_exit" != "1" ]; then
-    if echo "$actual_output" | grep -q '^JACCARD_AVG:'; then
+    if grep -q '^JACCARD_AVG:' <<<"$actual_output"; then
       pass "$label: JACCARD_AVG line present"
     else
       fail "$label: JACCARD_AVG line missing (expected for N>=3)"

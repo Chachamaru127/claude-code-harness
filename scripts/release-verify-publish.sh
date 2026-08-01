@@ -50,7 +50,7 @@ while [ "$attempt" -lt "$MAX_ATTEMPTS" ]; do
 
   if [ "$api_exit" -ne 0 ]; then
     combined="${api_stdout}${api_stderr}"
-    if echo "$combined" | grep -qi "not found\|HTTP 404\|404"; then
+    if grep -qi "not found\|HTTP 404\|404" <<<"$combined"; then
       # Release not yet created — workflow may still be running; keep polling
       last_draft="not-found"
       last_assets="0"

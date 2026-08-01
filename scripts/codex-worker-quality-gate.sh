@@ -97,7 +97,7 @@ gate_evidence() {
 
     if [[ -f "$worker_output_log" ]]; then
         search_content=$(cat "$worker_output_log")
-        if echo "$search_content" | grep -qE "$AGENTS_SUMMARY_PATTERN"; then
+        if grep -qE "$AGENTS_SUMMARY_PATTERN" <<<"$search_content"; then
             found_in_log=true
         fi
     fi
@@ -106,13 +106,13 @@ gate_evidence() {
     if [[ "$found_in_log" == "false" ]]; then
         local commit_msg
         commit_msg=$(cd "$worktree" && git log -1 --pretty=%B 2>/dev/null || echo "")
-        if echo "$commit_msg" | grep -qE "$AGENTS_SUMMARY_PATTERN"; then
+        if grep -qE "$AGENTS_SUMMARY_PATTERN" <<<"$commit_msg"; then
             search_content="$commit_msg"
         fi
     fi
 
     # パターンマッチ（AGENTS_SUMMARY 行からのみ HASH を抽出）
-    if echo "$search_content" | grep -qE "$AGENTS_SUMMARY_PATTERN"; then
+    if grep -qE "$AGENTS_SUMMARY_PATTERN" <<<"$search_content"; then
         local found_hash
         # AGENTS_SUMMARY を含む行からのみ HASH を抽出（無関係な HASH を拾わない）
         found_hash=$(echo "$search_content" | grep -E 'AGENTS_SUMMARY' | grep -oE 'HASH:[A-Fa-f0-9]{8}' | head -1 | cut -d: -f2)
@@ -236,7 +236,7 @@ gate_test() {
 
         # Critical パターン検出（skip 系 - 明確な改ざん）
         for pattern in "${tamper_critical_patterns[@]}"; do
-            if echo "$added_lines" | grep -qE "$pattern"; then
+            if grep -qE "$pattern" <<<"$added_lines"; then
                 echo "{\"status\": \"critical\", \"details\": \"改ざん検出: 追加行に '$pattern' パターン\"}" > "$output_file"
                 return 2  # Critical: 改ざん検出
             fi
@@ -244,7 +244,7 @@ gate_test() {
 
         # Warning パターン検出（eslint-disable - 正当な場合もある）
         for pattern in "${tamper_warn_patterns[@]}"; do
-            if echo "$added_lines" | grep -qE "$pattern"; then
+            if grep -qE "$pattern" <<<"$added_lines"; then
                 log_warn "要確認: 追加行に '$pattern' パターン（改ざんの可能性）"
                 # Warning として記録するが、Critical ではない
             fi
@@ -266,11 +266,11 @@ gate_test() {
 
         # Catch-all assertion 検出（常に成功する無意味なアサーション）
         # expect(true).toBe(true), expect(1).toBe(1) 等
-        if echo "$added_lines" | grep -qE 'expect\((true|false|1|0|null|undefined)\)\.(toBe|toEqual|toStrictEqual)\((true|false|1|0|null|undefined)\)'; then
+        if grep -qE 'expect\((true|false|1|0|null|undefined)\)\.(toBe|toEqual|toStrictEqual)\((true|false|1|0|null|undefined)\)' <<<"$added_lines"; then
             log_warn "要確認: catch-all assertion 検出（expect(true).toBe(true) 等）"
         fi
         # 定数に対する弱いアサーション: expect(false).toBeFalsy() 等
-        if echo "$added_lines" | grep -qE 'expect\((true|false|null|undefined|0)\)\.(toBeUndefined|toBeNull|toBeFalsy|toBeTruthy)\(\)'; then
+        if grep -qE 'expect\((true|false|null|undefined|0)\)\.(toBeUndefined|toBeNull|toBeFalsy|toBeTruthy)\(\)' <<<"$added_lines"; then
             log_warn "要確認: 定数に対する弱いアサーション検出"
         fi
 
@@ -286,15 +286,15 @@ gate_test() {
         config_diff=$(cd "$worktree" && git diff "$merge_base"..HEAD --unified=0 -- '.eslintrc*' 'eslint.config.*' 'tsconfig.json' 'tsconfig.*.json' 'biome.json' 'jest.config.*' 'vitest.config.*' '.github/workflows/*.yml' '.github/workflows/*.yaml' 2>/dev/null | grep '^+' | grep -v '^+++ ' || echo "")
         if [[ -n "$config_diff" ]]; then
             # lint ルール無効化
-            if echo "$config_diff" | grep -qE '"off"|:[[:space:]]*0'; then
+            if grep -qE '"off"|:[[:space:]]*0' <<<"$config_diff"; then
                 log_warn "要確認: 設定ファイルで lint ルール無効化を検出"
             fi
             # CI continue-on-error
-            if echo "$config_diff" | grep -qE 'continue-on-error:[[:space:]]*true'; then
+            if grep -qE 'continue-on-error:[[:space:]]*true' <<<"$config_diff"; then
                 log_warn "要確認: CI の continue-on-error 追加を検出"
             fi
             # TypeScript strict モード緩和
-            if echo "$config_diff" | grep -qE '"strict"[[:space:]]*:[[:space:]]*false|"noImplicitAny"[[:space:]]*:[[:space:]]*false'; then
+            if grep -qE '"strict"[[:space:]]*:[[:space:]]*false|"noImplicitAny"[[:space:]]*:[[:space:]]*false' <<<"$config_diff"; then
                 echo '{"status": "critical", "details": "改ざん検出: TypeScript strict モードの緩和"}' > "$output_file"
                 return 2
             fi
@@ -367,14 +367,14 @@ gate_hardening() {
         added_lines=$(collect_added_lines "$worktree" "$diff_base")
 
         # 2-1. bypass flags
-        if echo "$added_lines" | grep -qE -- '--no-verify|--no-gpg-sign'; then
+        if grep -qE -- '--no-verify|--no-gpg-sign' <<<"$added_lines"; then
             violations+=("Added lines contain bypass flags: --no-verify or --no-gpg-sign")
             [[ "$status" == "passed" ]] && status="failed"
         fi
 
         # 2-2. protected branch reset
-        if echo "$added_lines" | grep -qE 'git[[:space:]]+reset[[:space:]]+--hard'; then
-            if echo "$added_lines" | grep -qE '(origin/)?(main|master)'; then
+        if grep -qE 'git[[:space:]]+reset[[:space:]]+--hard' <<<"$added_lines"; then
+            if grep -qE '(origin/)?(main|master)' <<<"$added_lines"; then
                 violations+=("Added lines contain protected hard reset command against main/master")
                 [[ "$status" == "passed" ]] && status="failed"
             fi
@@ -392,17 +392,17 @@ gate_hardening() {
         done <<< "$changed_files"
 
         # 2-4. secrets / credentials
-        if echo "$added_lines" | grep -qE '(api[_-]?key|secret[_-]?key|auth[_-]?token|access[_-]?token|password|credential|private[_-]?key)[[:space:]]*[:=]'; then
+        if grep -qE '(api[_-]?key|secret[_-]?key|auth[_-]?token|access[_-]?token|password|credential|private[_-]?key)[[:space:]]*[:=]' <<<"$added_lines"; then
             violations+=("Added lines contain hardcoded secret-like assignment")
             [[ "$status" == "passed" ]] && status="failed"
         fi
 
-        if echo "$added_lines" | grep -qE '(postgres://|mysql://|mongodb://|redis://|amqp://|DATABASE_URL|REDIS_URL)'; then
+        if grep -qE '(postgres://|mysql://|mongodb://|redis://|amqp://|DATABASE_URL|REDIS_URL)' <<<"$added_lines"; then
             violations+=("Added lines contain hardcoded service/database connection string")
             [[ "$status" == "passed" ]] && status="failed"
         fi
 
-        if echo "$added_lines" | grep -qE '(192\.168\.[0-9]+\.[0-9]+|10\.[0-9]+\.[0-9]+\.[0-9]+|172\.(1[6-9]|2[0-9]|3[01])\.[0-9]+\.[0-9]+)'; then
+        if grep -qE '(192\.168\.[0-9]+\.[0-9]+|10\.[0-9]+\.[0-9]+\.[0-9]+|172\.(1[6-9]|2[0-9]|3[01])\.[0-9]+\.[0-9]+)' <<<"$added_lines"; then
             violations+=("Added lines contain private IP address")
             [[ "$status" == "passed" ]] && status="failed"
         fi

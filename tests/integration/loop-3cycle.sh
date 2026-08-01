@@ -39,7 +39,7 @@ EOF
 
   output="$(cd "${TMP_DIR}" && bash "./scripts/${command_name}" 2>/dev/null)"
 
-  printf '%s' "${output}" | grep -q "cycle-${cycle_no}" || {
+  grep -q "cycle-${cycle_no}" <<<"${output}" || {
     echo "cycle-${cycle_no} の文脈が出力に見つかりません"
     exit 1
   }

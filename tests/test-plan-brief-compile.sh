@@ -106,9 +106,9 @@ run_case() {
   # confidence_evidence explains the single-axis plan_readiness score.
   local evidence_text
   evidence_text="$(printf '%s' "$out" | jq -r '.confidence_evidence | join("\n")')"
-  if printf '%s' "$evidence_text" | grep -q 'plan_readiness DoD 明確度' && \
-     printf '%s' "$evidence_text" | grep -q 'plan_readiness 依存解決率' && \
-     printf '%s' "$evidence_text" | grep -q 'readiness 点数には加算しない'; then
+  if grep -q 'plan_readiness DoD 明確度' <<<"$evidence_text" && \
+     grep -q 'plan_readiness 依存解決率' <<<"$evidence_text" && \
+     grep -q 'readiness 点数には加算しない' <<<"$evidence_text"; then
     pass "[$label] confidence_evidence explains plan_readiness single-axis scoring"
   else
     fail "[$label] confidence_evidence does not explain plan_readiness scoring"

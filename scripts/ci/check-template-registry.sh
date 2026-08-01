@@ -98,7 +98,7 @@ for key in $REGISTRY_KEYS; do
     echo "❌ Missing version: $key"
     INVALID_VERSIONS=$((INVALID_VERSIONS + 1))
     ERRORS=$((ERRORS + 1))
-  elif ! echo "$version" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+  elif ! grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' <<<"$version"; then
     echo "❌ Invalid version format: $key (got: $version)"
     INVALID_VERSIONS=$((INVALID_VERSIONS + 1))
     ERRORS=$((ERRORS + 1))

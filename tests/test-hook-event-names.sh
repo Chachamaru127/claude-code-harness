@@ -161,7 +161,7 @@ test_auto_broadcast_empty_input() {
   output=$(echo '' | bash "$script" 2>/dev/null || true)
 
   # 出力が正しい JSON で PostToolUse を含むか
-  if ! echo "$output" | grep -q '"hookEventName":"PostToolUse"'; then
+  if ! grep -q '"hookEventName":"PostToolUse"' <<<"$output"; then
     echo "    Error: Empty input should return PostToolUse hookEventName"
     echo "    Got: $output"
     return 1
@@ -191,7 +191,7 @@ test_auto_broadcast_no_match() {
   output=$(echo '{"tool_input":{"file_path":"src/components/Button.tsx"}}' | bash "$script" 2>/dev/null || true)
 
   # 出力が正しい JSON で PostToolUse を含むか
-  if ! echo "$output" | grep -q '"hookEventName":"PostToolUse"'; then
+  if ! grep -q '"hookEventName":"PostToolUse"' <<<"$output"; then
     echo "    Error: Non-matching path should return PostToolUse hookEventName"
     echo "    Got: $output"
     return 1

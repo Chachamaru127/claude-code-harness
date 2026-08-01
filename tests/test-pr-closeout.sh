@@ -209,10 +209,10 @@ title_len="$(jq -r '.title' "${PAYLOAD_A}" | wc -m | tr -d ' ')"
 [ "${title_len}" -le 70 ] || fail "(f) title must be <= 70 chars, got ${title_len}"
 
 body_text="$(jq -r '.body' "${PAYLOAD_A}")"
-echo "${body_text}" | grep -Fq 'acc-1' || fail "(f) body must include accepted finding id"
-echo "${body_text}" | grep -Fq 'rej-1' || fail "(f) body must include rejected finding id"
-echo "${body_text}" | grep -Fq 'Accepted findings' || fail "(f) body must sectionize accepted findings"
-echo "${body_text}" | grep -Fq 'Rejected findings' || fail "(f) body must sectionize rejected findings"
+grep -Fq 'acc-1' <<<"${body_text}" || fail "(f) body must include accepted finding id"
+grep -Fq 'rej-1' <<<"${body_text}" || fail "(f) body must include rejected finding id"
+grep -Fq 'Accepted findings' <<<"${body_text}" || fail "(f) body must sectionize accepted findings"
+grep -Fq 'Rejected findings' <<<"${body_text}" || fail "(f) body must sectionize rejected findings"
 
 # (g) harness-review path must not auto push / create PR
 review_hits="$(rg -n 'gh pr create|git push' "${PROJECT_ROOT}/skills/harness-review" 2>/dev/null || true)"

@@ -779,8 +779,8 @@ run_startup_failure_case() {
   set -e
 
   if [ "${status}" -ne 0 ] && \
-     printf '%s' "${output}" | grep -q 'Failed to start codex-loop' && \
-     ! printf '%s' "${output}" | grep -q 'Started codex-loop'; then
+     grep -q 'Failed to start codex-loop' <<<"${output}" && \
+     ! grep -q 'Started codex-loop' <<<"${output}"; then
     pass "startup failure case: start fails instead of printing success"
   else
     fail "startup failure case: start did not fail fast"
@@ -1063,9 +1063,9 @@ run_plain_status_case() {
     bash "${LOOP_SCRIPT}" status
   )"
 
-  if printf '%s' "${output}" | grep -q 'codex-loop: completed' && \
-     printf '%s' "${output}" | grep -q 'selection: all' && \
-     printf '%s' "${output}" | grep -q 'exit reason:'; then
+  if grep -q 'codex-loop: completed' <<<"${output}" && \
+     grep -q 'selection: all' <<<"${output}" && \
+     grep -q 'exit reason:' <<<"${output}"; then
     pass "plain status case: human-readable status output rendered"
   else
     fail "plain status case: human-readable status output missing expected fields"
@@ -1110,8 +1110,8 @@ PY
   task_03="$(grep '^| JLB3R-03 ' "${repo}/Plans.md" || true)"
 
   if [ "${selection}" = "JLB3R-02..JLB3R-08" ] && \
-     printf '%s' "${task_02}" | grep -q 'cc:完了' && \
-     printf '%s' "${task_03}" | grep -q 'cc:TODO'; then
+     grep -q 'cc:完了' <<<"${task_02}" && \
+     grep -q 'cc:TODO' <<<"${task_03}"; then
     pass "named selection case: Plans.md-aware range selection works"
   else
     fail "named selection case: range selection did not target expected tasks"
@@ -1585,7 +1585,7 @@ run_reentry_guard_case() {
   status=$?
   set -e
 
-  if [ "${status}" -ne 0 ] && printf '%s' "${output}" | grep -q 'already running'; then
+  if [ "${status}" -ne 0 ] && grep -q 'already running' <<<"${output}"; then
     pass "reentry guard case: second run invocation refused"
   else
     fail "reentry guard case: second run invocation was not refused"

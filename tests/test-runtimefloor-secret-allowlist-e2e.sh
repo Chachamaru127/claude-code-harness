@@ -99,7 +99,7 @@ declared_output="$(
 declared_exit=$?
 set -e
 [ "$declared_exit" -eq 0 ] || fail "declared env pipeline stopped unexpectedly: ${declared_output}"
-printf '%s' "$declared_output" | grep -q 'declared-env:PIPELINE_DONE:3' \
+grep -q 'declared-env:PIPELINE_DONE:3' <<<"$declared_output" \
   || fail "declared env pipeline did not complete all steps: ${declared_output}"
 grep -q 'TOKEN=fixture-only' "${PIPELINE_DIR}/out/secret-copy.txt" \
   || fail "declared env pipeline did not execute secret read step"
@@ -114,7 +114,7 @@ config_output="$(run_pipeline "declared-config" "${PIPELINE_COMMANDS[@]}")"
 config_exit=$?
 set -e
 [ "$config_exit" -eq 0 ] || fail "declared config pipeline stopped unexpectedly: ${config_output}"
-printf '%s' "$config_output" | grep -q 'declared-config:PIPELINE_DONE:3' \
+grep -q 'declared-config:PIPELINE_DONE:3' <<<"$config_output" \
   || fail "declared config pipeline did not complete all steps: ${config_output}"
 pass "declared project-config secret-read pipeline completes"
 
@@ -124,7 +124,7 @@ undeclared_output="$(run_pipeline "undeclared" "${PIPELINE_COMMANDS[@]}")"
 undeclared_exit=$?
 set -e
 [ "$undeclared_exit" -eq 2 ] || fail "undeclared pipeline exit = ${undeclared_exit}, want 2; output: ${undeclared_output}"
-printf '%s' "$undeclared_output" | grep -q 'undeclared:HOOK_STOP:2:2:' \
+grep -q 'undeclared:HOOK_STOP:2:2:' <<<"$undeclared_output" \
   || fail "undeclared pipeline did not stop at secret-read step 2: ${undeclared_output}"
 assert_deny_envelope "$undeclared_output"
 [ ! -f "${PIPELINE_DIR}/out/secret-copy.txt" ] \
@@ -147,7 +147,7 @@ for entry in "${FLOOR_COMMANDS[@]}"; do
   set -e
   [ "$exit_code" -eq 2 ] || fail "${category}: expected exit 2, got ${exit_code}; stdout: ${stdout}"
   assert_deny_envelope "$stdout"
-  printf '%s' "$stdout" | grep -q "RUNTIME_FLOOR:${category}" \
+  grep -q "RUNTIME_FLOOR:${category}" <<<"$stdout" \
     || fail "${category}: deny reason did not name category; stdout: ${stdout}"
   pass "runtime floor deny unchanged for ${category}"
 done

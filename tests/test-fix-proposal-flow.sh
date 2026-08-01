@@ -37,12 +37,12 @@ EOF
 payload='{"teammate_name":"impl-1","task_id":"26.0.1","task_subject":"元タスク"}'
 output="$(printf '%s' "${payload}" | PROJECT_ROOT="${TMP_DIR}" bash "${TASK_COMPLETED_SCRIPT}")"
 
-echo "${output}" | grep -q '"decision":"approve"' || {
+grep -q '"decision":"approve"' <<<"${output}" || {
   echo "task-completed output should approve"
   exit 1
 }
 
-echo "${output}" | grep -q 'fix proposal queued' || {
+grep -q 'fix proposal queued' <<<"${output}" || {
   echo "task-completed output should mention queued proposal"
   exit 1
 }
@@ -59,7 +59,7 @@ grep -q '"source_task_id": "26.0.1"' "${TMP_DIR}/.claude/state/pending-fix-propo
 
 approve_output="$(printf '%s' '{"prompt":"approve fix 26.0.1"}' | PROJECT_ROOT="${TMP_DIR}" bash "${FIX_INJECTOR_SCRIPT}")"
 
-echo "${approve_output}" | grep -q 'fix proposal を反映しました' || {
+grep -q 'fix proposal を反映しました' <<<"${approve_output}" || {
   echo "approve output should mention applied proposal"
   exit 1
 }
@@ -80,7 +80,7 @@ cat > "${TMP_DIR}/.claude/state/pending-fix-proposals.jsonl" <<'EOF'
 EOF
 
 ambiguous_output="$(printf '%s' '{"prompt":"yes"}' | PROJECT_ROOT="${TMP_DIR}" bash "${FIX_INJECTOR_SCRIPT}")"
-echo "${ambiguous_output}" | grep -q '対象を明示してください' || {
+grep -q '対象を明示してください' <<<"${ambiguous_output}" || {
   echo "ambiguous approval should require explicit task id"
   exit 1
 }
@@ -91,7 +91,7 @@ grep -q '"source_task_id":"26.0.2"' "${TMP_DIR}/.claude/state/pending-fix-propos
 }
 
 missing_target_output="$(printf '%s' '{"prompt":"approve fix 99.9.9"}' | PROJECT_ROOT="${TMP_DIR}" bash "${FIX_INJECTOR_SCRIPT}")"
-echo "${missing_target_output}" | grep -q '指定された fix proposal が見つかりません' || {
+grep -q '指定された fix proposal が見つかりません' <<<"${missing_target_output}" || {
   echo "missing target approval should be rejected"
   exit 1
 }
@@ -126,7 +126,7 @@ EOF
 retry_payload='{"teammate_name":"impl-1","task_id":"26.0.1.fix2","task_subject":"再修正タスク"}'
 retry_output="$(printf '%s' "${retry_payload}" | PROJECT_ROOT="${TMP_DIR}" bash "${TASK_COMPLETED_SCRIPT}")"
 
-echo "${retry_output}" | grep -q '26.0.1.fix3' || {
+grep -q '26.0.1.fix3' <<<"${retry_output}" || {
   echo "task-completed should increment fix suffix for repeated retries"
   exit 1
 }
@@ -161,7 +161,7 @@ grep -q '^SAFE$' "${TMP_SYMLINK_DIR}/target.txt" || {
   exit 1
 }
 
-echo "${symlink_output}" | grep -q 'proposal 保存に失敗' || {
+grep -q 'proposal 保存に失敗' <<<"${symlink_output}" || {
   echo "task-completed should warn when proposal state path is unsafe"
   exit 1
 }
@@ -180,7 +180,7 @@ grep -q '^| 26.0.1 | 元タスク | 既存DoD | - | cc:完了 |$' "${TMP_PLAN_SY
   exit 1
 }
 
-echo "${plan_symlink_output}" | grep -q 'Plans.md path が symlink' || {
+grep -q 'Plans.md path が symlink' <<<"${plan_symlink_output}" || {
   echo "fix injector should report symlinked Plans path"
   exit 1
 }

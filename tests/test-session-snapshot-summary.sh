@@ -37,27 +37,27 @@ resume_output="$(cd "${TMP_DIR}" && bash "${TMP_DIR}/scripts/session-resume.sh" 
 init_context="$(printf '%s' "${init_output}" | jq -r '.hookSpecificOutput.additionalContext')"
 resume_context="$(printf '%s' "${resume_output}" | jq -r '.hookSpecificOutput.additionalContext')"
 
-if echo "${init_output}" | grep -q '\[record-usage\]'; then
+if grep -q '\[record-usage\]' <<<"${init_output}"; then
   echo "session-init stdout should not include record-usage noise"
   exit 1
 fi
 
-if echo "${init_context}" | grep -qx '0'; then
+if grep -qx '0' <<<"${init_context}"; then
   echo "session-init additionalContext should not contain standalone zero lines"
   exit 1
 fi
 
-if echo "${resume_context}" | grep -qx '0'; then
+if grep -qx '0' <<<"${resume_context}"; then
   echo "session-resume additionalContext should not contain standalone zero lines"
   exit 1
 fi
 
-echo "${init_output}" | grep -q '最新 snapshot' || {
+grep -q '最新 snapshot' <<<"${init_output}" || {
   echo "session-init output missing latest snapshot summary"
   exit 1
 }
 
-echo "${resume_output}" | grep -q '前回比' || {
+grep -q '前回比' <<<"${resume_output}" || {
   echo "session-resume output missing delta summary"
   exit 1
 }
@@ -65,15 +65,15 @@ echo "${resume_output}" | grep -q '前回比' || {
 rm -f "${TMP_DIR}/.claude/state/snapshots/"progress-*.json
 quiet_output="$(cd "${TMP_DIR}" && bash "${TMP_DIR}/scripts/session-init.sh" < /dev/null)"
 quiet_context="$(printf '%s' "${quiet_output}" | jq -r '.hookSpecificOutput.additionalContext')"
-if echo "${quiet_output}" | grep -q '\[record-usage\]'; then
+if grep -q '\[record-usage\]' <<<"${quiet_output}"; then
   echo "session-init quiet output should not include record-usage noise"
   exit 1
 fi
-if echo "${quiet_context}" | grep -qx '0'; then
+if grep -qx '0' <<<"${quiet_context}"; then
   echo "session-init quiet additionalContext should not contain standalone zero lines"
   exit 1
 fi
-if echo "${quiet_output}" | grep -q '最新 snapshot'; then
+if grep -q '最新 snapshot' <<<"${quiet_output}"; then
   echo "session-init should skip snapshot summary when no snapshot exists"
   exit 1
 fi

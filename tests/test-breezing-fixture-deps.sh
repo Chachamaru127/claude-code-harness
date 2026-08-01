@@ -38,7 +38,7 @@ for manifest in "${manifests[@]}"; do
   fi
 
   floor="${range#^}"
-  if ! printf '%s\n' "${floor}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+  if ! grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' <<<"${floor}"; then
     offenders+=("${manifest}: vitest range must be caret semver (^X.Y.Z), got ${range}")
     continue
   fi

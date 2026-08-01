@@ -567,7 +567,7 @@ if [ -f "$SETTINGS_FILE" ]; then
       # イベントが存在し、かつコマンドに "claude-code-harness" が含まれる場合のみ
       if jq -e ".hooks.${event}" "$SETTINGS_FILE" >/dev/null 2>&1; then
         COMMANDS=$(jq -r ".hooks.${event}[]?.hooks[]?.command // .hooks.${event}[]?.command // empty" "$SETTINGS_FILE" 2>/dev/null)
-        if echo "$COMMANDS" | grep -q "claude-code-harness"; then
+        if grep -q "claude-code-harness" <<<"$COMMANDS"; then
           OLD_HARNESS_EVENTS+=("$event")
         fi
       fi

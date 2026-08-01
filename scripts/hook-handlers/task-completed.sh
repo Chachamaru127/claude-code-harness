@@ -692,22 +692,22 @@ except Exception as e:
     fi
 
     # 原因分類（テスト出力のキーワードから推定）
-    if echo "${_last_output}" | grep -qi "syntax\|SyntaxError\|parse error\|unexpected token"; then
+    if grep -qi "syntax\|SyntaxError\|parse error\|unexpected token" <<<"${_last_output}"; then
       _failure_category="syntax_error"
       _recommended_action="構文エラーを修正してください。コードの文法を確認してください。"
-    elif echo "${_last_output}" | grep -qi "cannot find module\|module not found\|import.*error\|ModuleNotFoundError"; then
+    elif grep -qi "cannot find module\|module not found\|import.*error\|ModuleNotFoundError" <<<"${_last_output}"; then
       _failure_category="import_error"
       _recommended_action="モジュール/インポートエラーを修正してください。依存関係を確認してください（npm install / pip install）。"
-    elif echo "${_last_output}" | grep -qi "type.*error\|TypeError\|is not assignable\|Property.*does not exist"; then
+    elif grep -qi "type.*error\|TypeError\|is not assignable\|Property.*does not exist" <<<"${_last_output}"; then
       _failure_category="type_error"
       _recommended_action="型エラーを修正してください。型定義と実装の不一致を確認してください。"
-    elif echo "${_last_output}" | grep -qi "assertion\|AssertionError\|expect.*received\|toBe\|toEqual\|FAIL\|FAILED"; then
+    elif grep -qi "assertion\|AssertionError\|expect.*received\|toBe\|toEqual\|FAIL\|FAILED" <<<"${_last_output}"; then
       _failure_category="assertion_error"
       _recommended_action="テストアサーションが失敗しています。期待値と実際の値の差分を確認してください。"
-    elif echo "${_last_output}" | grep -qi "timeout\|Timeout\|ETIMEDOUT\|timed out"; then
+    elif grep -qi "timeout\|Timeout\|ETIMEDOUT\|timed out" <<<"${_last_output}"; then
       _failure_category="timeout"
       _recommended_action="タイムアウトが発生しました。非同期処理やネットワーク依存を確認してください。"
-    elif echo "${_last_output}" | grep -qi "permission\|EACCES\|EPERM\|access denied"; then
+    elif grep -qi "permission\|EACCES\|EPERM\|access denied" <<<"${_last_output}"; then
       _failure_category="permission_error"
       _recommended_action="権限エラーが発生しています。ファイルのパーミッションを確認してください。"
     else

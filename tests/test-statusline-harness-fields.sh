@@ -16,12 +16,12 @@ rich_output="$(
   printf '%s' "${rich_input}" | bash "${TMP_DIR}/statusline-harness.sh"
 )"
 
-printf '%s' "${rich_output}" | grep -q 'effort:high' || {
+grep -q 'effort:high' <<<"${rich_output}" || {
   echo "statusline output must show effort:high when effort.level is present"
   exit 1
 }
 
-printf '%s' "${rich_output}" | grep -q 'think:on' || {
+grep -q 'think:on' <<<"${rich_output}" || {
   echo "statusline output must show think:on when thinking.enabled is true"
   exit 1
 }
@@ -31,12 +31,12 @@ sparse_output="$(
   printf '%s' "${sparse_input}" | bash "${TMP_DIR}/statusline-harness.sh"
 )"
 
-if printf '%s' "${sparse_output}" | grep -q 'effort:'; then
+if grep -q 'effort:' <<<"${sparse_output}"; then
   echo "statusline output must stay quiet when effort.level is absent"
   exit 1
 fi
 
-if printf '%s' "${sparse_output}" | grep -q 'think:'; then
+if grep -q 'think:' <<<"${sparse_output}"; then
   echo "statusline output must stay quiet when thinking.enabled is absent"
   exit 1
 fi
@@ -75,7 +75,7 @@ linux_like_output="$(
   printf '%s' "${rich_input}" | bash "${TMP_DIR}/statusline-harness.sh"
 )"
 
-printf '%s' "${linux_like_output}" | grep -q 'effort:high' || {
+grep -q 'effort:high' <<<"${linux_like_output}" || {
   echo "statusline output must keep working when GNU stat returns a non-numeric -f %m value"
   exit 1
 }

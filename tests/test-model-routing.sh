@@ -43,13 +43,13 @@ cursor_advisor_model="$(bash "${ROUTER}" --host cursor --role advisor --field mo
 }
 
 cursor_args="$(bash "${ROUTER}" --host cursor --tier review --format args | tr '\n' ' ')"
-printf '%s' "${cursor_args}" | grep -q -- '--model composer-2.5-fast' || {
+grep -q -- '--model composer-2.5-fast' <<<"${cursor_args}" || {
   echo "cursor args must include review model"
   exit 1
 }
 
 cursor_env="$(bash "${ROUTER}" --host cursor --tier standard --format env)"
-printf '%s' "${cursor_env}" | grep -q '^CURSOR_MODEL=composer-2.5-fast$' || {
+grep -q '^CURSOR_MODEL=composer-2.5-fast$' <<<"${cursor_env}" || {
   echo "cursor env must export CURSOR_MODEL"
   exit 1
 }
@@ -73,23 +73,23 @@ grok_reviewer_model="$(bash "${ROUTER}" --host grok --role reviewer --field mode
 }
 
 grok_args="$(bash "${ROUTER}" --host grok --tier review --format args | tr '\n' ' ')"
-printf '%s' "${grok_args}" | grep -q -- '--model grok-4.5' || {
+grep -q -- '--model grok-4.5' <<<"${grok_args}" || {
   echo "grok args must include review model"
   exit 1
 }
 
 grok_env="$(bash "${ROUTER}" --host grok --tier standard --format env)"
-printf '%s' "${grok_env}" | grep -q '^GROK_MODEL=grok-composer-2.5-fast$' || {
+grep -q '^GROK_MODEL=grok-composer-2.5-fast$' <<<"${grok_env}" || {
   echo "grok env must export GROK_MODEL"
   exit 1
 }
 
 codex_args="$(bash "${ROUTER}" --host codex --tier review --format args | tr '\n' ' ')"
-printf '%s' "${codex_args}" | grep -q -- '--model gpt-5.6-sol' || {
+grep -q -- '--model gpt-5.6-sol' <<<"${codex_args}" || {
   echo "codex args must include review model"
   exit 1
 }
-printf '%s' "${codex_args}" | grep -q -- 'model_reasoning_effort="xhigh"' || {
+grep -q -- 'model_reasoning_effort="xhigh"' <<<"${codex_args}" || {
   echo "codex args must include xhigh reasoning config"
   exit 1
 }

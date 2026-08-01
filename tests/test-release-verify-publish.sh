@@ -52,7 +52,7 @@ MOCK
   fi
 
   if [ -n "$check_pattern" ]; then
-    if echo "$actual_output" | grep -q "$check_pattern" ; then
+    if grep -q "$check_pattern" <<<"$actual_output"; then
       pass "${case_name}: exit=${actual_exit}, pattern '${check_pattern}' found"
     else
       fail "${case_name}: exit=${actual_exit} OK but pattern '${check_pattern}' not in output: ${actual_output}"

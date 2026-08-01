@@ -49,7 +49,7 @@ TASK_DEPENDS=""
 if [ -f "$PLANS_MD" ]; then
   # タスクIDパターン（#123, 34.2.2, #34.2.2 形式）での検索
   TASK_ID_PATTERN=""
-  if echo "$TASK_INPUT" | grep -qE '^#?[0-9]+(\.[0-9]+)*$'; then
+  if grep -qE '^#?[0-9]+(\.[0-9]+)*$' <<<"$TASK_INPUT"; then
     TASK_ID_PATTERN=$(echo "$TASK_INPUT" | tr -d '#')
     # テーブル行をパース: | 番号 | 内容 | DoD | Depends | Status |
     TASK_ROW=$(grep -E "^\|[[:space:]]*${TASK_ID_PATTERN}[[:space:]]*\|" "$PLANS_MD" 2>/dev/null || true)
@@ -106,7 +106,7 @@ fi
 KEYWORDS="refactor migration security cross-cutting リファクタ 移行 認証 セキュリティ 横断"
 KEYWORD_MATCH=0
 for kw in $KEYWORDS; do
-  if echo "$ANALYSIS_TEXT" | grep -qi "$kw" 2>/dev/null; then
+  if grep -qi "$kw" 2>/dev/null <<<"$ANALYSIS_TEXT"; then
     KEYWORD_MATCH=1
     break
   fi

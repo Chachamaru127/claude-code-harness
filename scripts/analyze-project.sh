@@ -289,7 +289,7 @@ detect_git_info() {
 
   # コミット規約の検出
   local conventional_commits="false"
-  if echo "$commit_prefixes" | grep -qE "(feat|fix|chore):" 2>/dev/null; then
+  if grep -qE "(feat|fix|chore):" 2>/dev/null <<<"$commit_prefixes"; then
     conventional_commits="true"
   fi
 

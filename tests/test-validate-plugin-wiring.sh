@@ -31,6 +31,7 @@ REQUIRED_INVOCATIONS=(
   "tests/test-release-preflight-host-smoke.sh"
   "tests/test-breezing-fixture-deps.sh"
   "tests/test-plans-marker-count.sh"
+  "tests/test-pipefail-grep-q-safety.sh"
 )
 
 missing=0

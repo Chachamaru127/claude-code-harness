@@ -88,13 +88,14 @@ jsonNC="$(FORCE_AVAIL=none run_card --format json Z 2>/dev/null)"
 NL="${TMP}/none.jsonl"; NT="${TMP}/none.json"
 deg="$(HARNESS_ORCHESTRATION_LEDGER="${NL}" HARNESS_ORCHESTRATION_TOTALS="${NT}" HARNESS_ORCH_FORCE_AVAIL=none bash "${CARD}" --format json Z 2>/dev/null)"
 [ "$(echo "${deg}" | jq -r '.observed')" = "false" ] && ok "degrade observed=false" || ng "degrade observed"
-echo "${deg}" | jq -r '.note' | grep -qi 'no delegations observed' && ok "degrade note present" || ng "degrade note"
+deg_note="$(jq -r '.note' <<<"${deg}")"
+grep -qi 'no delegations observed' <<<"${deg_note}" && ok "degrade note present" || ng "degrade note"
 
 # 9. terminal format compact + non-empty
 term="$(run_card --format terminal S 2>/dev/null)"
 lc="$(printf '%s\n' "${term}" | grep -c . )"
 [ -n "${term}" ] && [ "${lc}" -ge 2 ] && [ "${lc}" -le 8 ] && ok "terminal format compact (${lc} lines)" || ng "terminal format (${lc} lines)"
-printf '%s' "${term}" | grep -qiE 'codex|cursor' && ok "terminal mentions backends" || ng "terminal content"
+grep -qiE 'codex|cursor' <<<"${term}" && ok "terminal mentions backends" || ng "terminal content"
 
 printf '\n%d passed, %d failed\n' "${PASS}" "${FAIL}"
 [ "${FAIL}" -eq 0 ]

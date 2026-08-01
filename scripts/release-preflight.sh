@@ -529,7 +529,7 @@ release_claims_adapter_support() {
     in_unreleased { print }
   ' CHANGELOG.md)"
 
-  printf '%s\n' "$unreleased" | grep -Eiq 'OpenCode|Codex|Cursor|Grok|adapter|mirror|multi-harness|Hokage Core|capability matrix'
+  grep -Eiq 'OpenCode|Codex|Cursor|Grok|adapter|mirror|multi-harness|Hokage Core|capability matrix' <<<"$unreleased"
 }
 
 should_run_adapter_gates() {

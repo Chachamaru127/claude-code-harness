@@ -163,7 +163,7 @@ run_action_case() {
   # user_request_hash sha256 hex
   local hash
   hash="$(printf '%s' "$out" | jq -r '.data.user_request_hash')"
-  if [[ "${#hash}" -eq 64 ]] && printf '%s' "$hash" | grep -qE '^[0-9a-f]{64}$'; then
+  if [[ "${#hash}" -eq 64 ]] && grep -qE '^[0-9a-f]{64}$' <<<"$hash"; then
     pass "[$label] data.user_request_hash is sha256 hex (64 chars)"
   else
     fail "[$label] data.user_request_hash invalid: '$hash'"
@@ -199,7 +199,7 @@ run_action_case() {
   # timestamp
   local ts
   ts="$(printf '%s' "$out" | jq -r '.data.timestamp')"
-  if printf '%s' "$ts" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$'; then
+  if grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$' <<<"$ts"; then
     pass "[$label] data.timestamp ISO8601 UTC"
   else
     fail "[$label] timestamp not ISO8601 UTC"

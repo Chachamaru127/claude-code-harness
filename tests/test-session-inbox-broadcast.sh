@@ -35,13 +35,13 @@ output="$(
     | bash "${REPO_ROOT}/scripts/pretooluse-inbox-check.sh"
 )"
 
-if ! printf '%s' "${output}" | grep -q '2026-03-03 09:12'; then
+if ! grep -q '2026-03-03 09:12' <<<"${output}"; then
   echo "expected inbox notification to include date-bearing timestamp" >&2
   echo "${output}" >&2
   exit 1
 fi
 
-if printf '%s' "${output}" | grep -q '\[09:12\]'; then
+if grep -q '\[09:12\]' <<<"${output}"; then
   echo "inbox notification must not use ambiguous HH:MM-only timestamp" >&2
   echo "${output}" >&2
   exit 1

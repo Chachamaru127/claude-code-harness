@@ -127,7 +127,7 @@ run_case() {
   # generated_at ISO8601
   local ts
   ts="$(printf '%s' "$out" | jq -r '.generated_at')"
-  if printf '%s' "$ts" | grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$'; then
+  if grep -qE '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$' <<<"$ts"; then
     pass "[$label] generated_at is ISO8601 UTC"
   else
     fail "[$label] generated_at not ISO8601 UTC: $ts"

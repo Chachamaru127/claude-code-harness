@@ -2323,7 +2323,7 @@ PY
     task_status="$(task_status_value "$(plans_file_path)" "${task_id}" 2>/dev/null || true)"
 
     static_verdict="REQUEST_CHANGES"
-    if [ -n "${post_head}" ] && [ "${post_head}" != "${pre_head}" ] && printf '%s' "${task_status}" | grep -Eq 'cc:完了|pm:確認済|cursor:確認済|cc:done|pm:approved'; then
+    if [ -n "${post_head}" ] && [ "${post_head}" != "${pre_head}" ] && grep -Eq 'cc:完了|pm:確認済|cursor:確認済|cc:done|pm:approved' <<<"${task_status}"; then
       static_verdict="APPROVE"
     fi
 

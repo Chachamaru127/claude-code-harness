@@ -291,7 +291,7 @@ else
   fail "(d) unreachable expected exit 0 (got ${unreach_exit})"
 fi
 
-if printf '%s' "$unreach_out" | grep -qx 'judgment-card: record skipped (unreachable)'; then
+if grep -qx 'judgment-card: record skipped (unreachable)' <<<"$unreach_out"; then
   pass "(d) unreachable emits 1-line warning"
 else
   fail "(d) unreachable warning missing (output: ${unreach_out})"

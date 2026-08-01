@@ -86,13 +86,13 @@ CACHE_MAX_AGE=5
 cache_mtime() {
     local ts=""
     ts="$(stat -c %Y "$CACHE_FILE" 2>/dev/null || true)"
-    if [ -n "$ts" ] && printf '%s' "$ts" | grep -Eq '^[0-9]+$'; then
+    if [ -n "$ts" ] && grep -Eq '^[0-9]+$' <<<"$ts"; then
         printf '%s\n' "$ts"
         return 0
     fi
 
     ts="$(stat -f %m "$CACHE_FILE" 2>/dev/null || true)"
-    if [ -n "$ts" ] && printf '%s' "$ts" | grep -Eq '^[0-9]+$'; then
+    if [ -n "$ts" ] && grep -Eq '^[0-9]+$' <<<"$ts"; then
         printf '%s\n' "$ts"
         return 0
     fi

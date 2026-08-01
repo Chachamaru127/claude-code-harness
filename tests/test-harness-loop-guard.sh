@@ -84,7 +84,7 @@ fi
 # テスト 2: 2 回目の起動は already running エラーになること
 echo "--- テスト 2: 多重起動防止 ---"
 SECOND_OUTPUT="$(bash "${MOCK_LOOP_SCRIPT}" "${LOCK_FILE}" 2>&1 || true)"
-if echo "${SECOND_OUTPUT}" | grep -q "already running"; then
+if grep -q "already running" <<<"${SECOND_OUTPUT}"; then
     pass_test "2 回目の起動: 'already running' エラーが返されました"
 else
     fail_test "2 回目の起動: 'already running' エラーが返されませんでした（出力: ${SECOND_OUTPUT}）"

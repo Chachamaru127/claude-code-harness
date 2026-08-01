@@ -30,7 +30,7 @@ assert_contains() {
   local label="$1"
   local needle="$2"
   local haystack="$3"
-  if printf '%s' "$haystack" | grep -qF -- "$needle"; then
+  if grep -qF -- "$needle" <<<"$haystack"; then
     pass "$label"
   else
     fail "$label (expected to contain '${needle}')"
@@ -41,7 +41,7 @@ assert_not_contains() {
   local label="$1"
   local needle="$2"
   local haystack="$3"
-  if printf '%s' "$haystack" | grep -qF -- "$needle"; then
+  if grep -qF -- "$needle" <<<"$haystack"; then
     fail "$label (must not contain '${needle}')"
   else
     pass "$label"
@@ -52,7 +52,7 @@ assert_not_matches() {
   local label="$1"
   local pattern="$2"
   local haystack="$3"
-  if printf '%s' "$haystack" | grep -qE -- "$pattern"; then
+  if grep -qE -- "$pattern" <<<"$haystack"; then
     fail "$label (must not match /${pattern}/)"
   else
     pass "$label"

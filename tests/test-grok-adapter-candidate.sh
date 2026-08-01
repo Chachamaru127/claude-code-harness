@@ -104,15 +104,15 @@ grok_release="$(bash "$ROUTER" --host grok --role release --field model)"
 [ "$grok_release" = "grok-4.5" ] || fail "grok release model routing mismatch"
 
 grok_json="$(bash "$ROUTER" --host grok --role worker --format json)"
-printf '%s' "$grok_json" | grep -q '"host":"grok"' || fail "grok json format missing host"
-printf '%s' "$grok_json" | grep -q '"model":"grok-composer-2.5-fast"' || fail "grok json format missing model"
+grep -q '"host":"grok"' <<<"$grok_json" || fail "grok json format missing host"
+grep -q '"model":"grok-composer-2.5-fast"' <<<"$grok_json" || fail "grok json format missing model"
 
 grok_args="$(bash "$ROUTER" --host grok --tier review --format args | tr '\n' ' ')"
-printf '%s' "$grok_args" | grep -q -- '--model grok-4.5' || fail "grok args must include review model"
+grep -q -- '--model grok-4.5' <<<"$grok_args" || fail "grok args must include review model"
 
 grok_env="$(bash "$ROUTER" --host grok --tier standard --format env)"
-printf '%s' "$grok_env" | grep -q '^GROK_MODEL=grok-composer-2.5-fast$' || fail "grok env must export GROK_MODEL"
-printf '%s' "$grok_env" | grep -q '^GROK_EFFORT=medium$' || fail "grok env must export GROK_EFFORT"
+grep -q '^GROK_MODEL=grok-composer-2.5-fast$' <<<"$grok_env" || fail "grok env must export GROK_MODEL"
+grep -q '^GROK_EFFORT=medium$' <<<"$grok_env" || fail "grok env must export GROK_EFFORT"
 
 # Existing hosts must remain stable when grok is added
 claude_worker="$(bash "$ROUTER" --host claude --role worker --field model)"

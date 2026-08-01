@@ -49,7 +49,7 @@ fi
 # Only operates on tool_response.output; never modifies tool_response.stderr or
 # JSON-contract tool outputs (those tools list themselves in JSON_CONTRACT_TOOLS).
 JSON_CONTRACT_TOOLS_REGEX='^(Read|Grep|Glob|TodoWrite|Bash)$'
-if printf '%s' "${TOOL_NAME}" | grep -Eq "${JSON_CONTRACT_TOOLS_REGEX}"; then
+if grep -Eq "${JSON_CONTRACT_TOOLS_REGEX}" <<<"${TOOL_NAME}"; then
   # Skip JSON-contract tools to avoid mixing human-readable text into structured output.
   exit 0
 fi
@@ -58,7 +58,7 @@ NORMALIZED_OUTPUT="${TOOL_OUTPUT}"
 APPLIED_RULE=""
 
 # Rule 1: redact OpenAI / Anthropic API key patterns (defense-in-depth).
-if printf '%s' "${TOOL_OUTPUT}" | grep -Eq 'sk-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9-]{20,}'; then
+if grep -Eq 'sk-[A-Za-z0-9]{20,}|sk-ant-[A-Za-z0-9-]{20,}' <<<"${TOOL_OUTPUT}"; then
   NORMALIZED_OUTPUT="$(printf '%s' "${TOOL_OUTPUT}" | sed -E 's/sk-[A-Za-z0-9]{20,}/sk-REDACTED/g; s/sk-ant-[A-Za-z0-9-]{20,}/sk-ant-REDACTED/g')"
   APPLIED_RULE="redact-api-key"
 fi

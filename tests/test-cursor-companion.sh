@@ -241,22 +241,22 @@ fi
   . "${WRAPPER}"
   masked="$(mask_args "--api-key" "SUPERSECRET" "--header" "Authorization: Bearer ABCDEFG" "prompt-text")"
   # SUPERSECRET は --api-key の次なので [REDACTED] になる
-  if printf '%s' "${masked}" | grep -q "SUPERSECRET"; then
+  if grep -q "SUPERSECRET" <<<"${masked}"; then
     echo "FAIL: (iii) --api-key value 'SUPERSECRET' must be masked, masked='${masked}'" >&2
     exit 1
   fi
   # ABCDEFG は Authorization ヘッダの値なので [REDACTED] になる
-  if printf '%s' "${masked}" | grep -q "ABCDEFG"; then
+  if grep -q "ABCDEFG" <<<"${masked}"; then
     echo "FAIL: (iii) Authorization bearer 'ABCDEFG' must be masked, masked='${masked}'" >&2
     exit 1
   fi
   # [REDACTED] が含まれている
-  if ! printf '%s' "${masked}" | grep -q "\[REDACTED\]"; then
+  if ! grep -q "\[REDACTED\]" <<<"${masked}"; then
     echo "FAIL: (iii) mask_args must emit '[REDACTED]', masked='${masked}'" >&2
     exit 1
   fi
   # PROMPT は素通し（マスクしない）
-  if ! printf '%s' "${masked}" | grep -q "prompt-text"; then
+  if ! grep -q "prompt-text" <<<"${masked}"; then
     echo "FAIL: (iii) prompt body 'prompt-text' must NOT be masked, masked='${masked}'" >&2
     exit 1
   fi
@@ -269,15 +269,15 @@ fi
   # shellcheck disable=SC1090
   . "${WRAPPER}"
   masked="$(mask_args "-H" "Authorization: Bearer XYZ123" "next")"
-  if printf '%s' "${masked}" | grep -q "XYZ123"; then
+  if grep -q "XYZ123" <<<"${masked}"; then
     echo "FAIL: (iii-b) -H Authorization value must be masked, masked='${masked}'" >&2
     exit 1
   fi
-  if ! printf '%s' "${masked}" | grep -q "\[REDACTED\]"; then
+  if ! grep -q "\[REDACTED\]" <<<"${masked}"; then
     echo "FAIL: (iii-b) mask_args must emit '[REDACTED]', masked='${masked}'" >&2
     exit 1
   fi
-  if ! printf '%s' "${masked}" | grep -q "next"; then
+  if ! grep -q "next" <<<"${masked}"; then
     echo "FAIL: (iii-b) following token 'next' must remain, masked='${masked}'" >&2
     exit 1
   fi
@@ -290,11 +290,11 @@ fi
   # shellcheck disable=SC1090
   . "${WRAPPER}"
   masked="$(mask_args "--auth-token" "TOPSECRET" "prompt")"
-  if printf '%s' "${masked}" | grep -q "TOPSECRET"; then
+  if grep -q "TOPSECRET" <<<"${masked}"; then
     echo "FAIL: (iii-c) --auth-token value must be masked, masked='${masked}'" >&2
     exit 1
   fi
-  if ! printf '%s' "${masked}" | grep -q "prompt"; then
+  if ! grep -q "prompt" <<<"${masked}"; then
     echo "FAIL: (iii-c) prompt must remain unmasked, masked='${masked}'" >&2
     exit 1
   fi
@@ -310,15 +310,15 @@ fi
   # shellcheck disable=SC1090
   source "${WRAPPER}"
   masked="$(mask_args "Authorization: Bearer STANDALONE_TOKEN" "prompt-after")"
-  if echo "${masked}" | grep -q "STANDALONE_TOKEN"; then
+  if grep -q "STANDALONE_TOKEN" <<<"${masked}"; then
     echo "FAIL: (iii-d) standalone Authorization token must be masked, masked='${masked}'" >&2
     exit 1
   fi
-  if ! echo "${masked}" | grep -q "\[REDACTED\]"; then
+  if ! grep -q "\[REDACTED\]" <<<"${masked}"; then
     echo "FAIL: (iii-d) [REDACTED] missing from masked, masked='${masked}'" >&2
     exit 1
   fi
-  if ! echo "${masked}" | grep -q "prompt-after"; then
+  if ! grep -q "prompt-after" <<<"${masked}"; then
     echo "FAIL: (iii-d) trailing prompt must remain unmasked, masked='${masked}'" >&2
     exit 1
   fi

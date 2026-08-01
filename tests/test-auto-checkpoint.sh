@@ -123,7 +123,7 @@ test_success_case() {
   # status が "ok" であること
   local last_line
   last_line="$(tail -1 "${events_file}")"
-  if ! printf '%s' "${last_line}" | grep -q '"status":"ok"'; then
+  if ! grep -q '"status":"ok"' <<<"${last_line}"; then
     fail_test "正常系: checkpoint-events.jsonl の status が ok でない: ${last_line}"
     return
   fi
@@ -176,7 +176,7 @@ test_failure_case_disable_flag() {
 
   local last_checkpoint
   last_checkpoint="$(tail -1 "${events_file}")"
-  if ! printf '%s' "${last_checkpoint}" | grep -q '"status":"failed"'; then
+  if ! grep -q '"status":"failed"' <<<"${last_checkpoint}"; then
     fail_test "異常系(DISABLE): checkpoint-events.jsonl の status が failed でない: ${last_checkpoint}"
     return
   fi
@@ -233,7 +233,7 @@ test_failure_case_api_error() {
 
   local last_checkpoint
   last_checkpoint="$(tail -1 "${events_file}")"
-  if ! printf '%s' "${last_checkpoint}" | grep -q '"status":"failed"'; then
+  if ! grep -q '"status":"failed"' <<<"${last_checkpoint}"; then
     fail_test "異常系(API error): checkpoint-events.jsonl の status が failed でない: ${last_checkpoint}"
     return
   fi

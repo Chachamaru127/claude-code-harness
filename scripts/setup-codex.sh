@@ -205,7 +205,7 @@ cleanup_legacy_skill_name_duplicates() {
         dst_skill_name="$(extract_skill_frontmatter_name "$dst_entry/SKILL.md" || true)"
         [ -n "$dst_skill_name" ] || continue
 
-        if printf '%s\n' "$src_skill_names" | grep -Fxq "$dst_skill_name"; then
+        if grep -Fxq "$dst_skill_name" <<<"$src_skill_names"; then
             backup_path "$dst_entry" "$backup_root"
             deduped=$((deduped + 1))
         fi

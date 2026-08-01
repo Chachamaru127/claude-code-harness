@@ -85,7 +85,7 @@ for file in "${PUBLIC_FILES[@]}"; do
     text="${hit#*:}"
     lowered="$(printf '%s' "$text" | tr '[:upper:]' '[:lower:]')"
     stripped="$(printf '%s' "$lowered" | neutralize_denials)"
-    if printf ' %s \n' "$stripped" | grep -Eq "$PROXIMITY"; then
+    if grep -Eq "$PROXIMITY" <<<"$stripped"; then
       echo "test-support-claim-wording: overclaim ${file}:${lineno}:${text}" >&2
       violations=$((violations + 1))
     fi

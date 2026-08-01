@@ -79,7 +79,7 @@ verify_text_readable() {
   if command -v lynx >/dev/null 2>&1; then
     local dump
     dump="$(lynx -dump -nolist "$html_path" 2>/dev/null || true)"
-    if echo "$dump" | grep -q "$must_contain"; then
+    if grep -q "$must_contain" <<<"$dump"; then
       pass "$label: lynx -dump で '$must_contain' が読める"
     else
       fail "$label: lynx -dump で '$must_contain' が読めない"

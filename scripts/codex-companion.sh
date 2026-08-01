@@ -347,7 +347,7 @@ if [ "$SUBCOMMAND" = "task" ]; then
   # --resume-last は継続プロンプト（「続きをやって」等）が入るため effort 計算が不正確になる
   EFFORT_ALREADY_SET=0
   for arg in "$@"; do
-    if [ "$arg" = "--effort" ] || echo "$arg" | grep -qE '^--effort='; then
+    if [ "$arg" = "--effort" ] || grep -qE '^--effort=' <<<"$arg"; then
       EFFORT_ALREADY_SET=1
       break
     fi

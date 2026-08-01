@@ -39,7 +39,7 @@ SHA1_PRE_SYNC=$(sha256_of "$PLUGIN_JSON")
 # is available, which would silently skip every sync below and falsely pass
 # this test. We require the "harness sync: done" marker to confirm execution.
 SYNC_OUTPUT="$(./bin/harness sync 2>&1)"
-if ! printf '%s\n' "$SYNC_OUTPUT" | grep -q "harness sync: done"; then
+if ! grep -q "harness sync: done" <<<"$SYNC_OUTPUT"; then
   echo "FAIL: ./bin/harness sync did not produce expected output (silent no-op?)"
   echo "  Got: $SYNC_OUTPUT"
   echo "  This usually means the platform binary harness-\$(uname-os)-\$(uname-arch)"

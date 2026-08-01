@@ -69,8 +69,8 @@ EOF
 )
 
 list_output="$(bash "${HARNESS_ROOT}/scripts/plan-registry.sh" --root "${TMP_DIR}" list)"
-printf '%s\n' "$list_output" | grep -q $'default\tPlans.md\tactive'
-printf '%s\n' "$list_output" | grep -q $'roadmap\tplans/roadmap.md\t'
+grep -q $'default\tPlans.md\tactive' <<<"$list_output"
+grep -q $'roadmap\tplans/roadmap.md\t' <<<"$list_output"
 
 assert_eq "$(bash "${HARNESS_ROOT}/scripts/plan-registry.sh" --root "${TMP_DIR}" path roadmap)" "plans/roadmap.md" "registry path resolves roadmap"
 bash "${HARNESS_ROOT}/scripts/plan-registry.sh" --root "${TMP_DIR}" switch roadmap >/dev/null

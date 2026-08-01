@@ -76,14 +76,14 @@ else
 fi
 
 # floor 該当時は ISSUE_CARD が出ない（should-issue が HARD_STOP のみ）
-if printf '%s' "$out_should" | grep -q 'ISSUE_CARD'; then
+if grep -q 'ISSUE_CARD' <<<"$out_should"; then
   fail "floor should not emit ISSUE_CARD"
 else
   pass "floor should-issue does not emit ISSUE_CARD"
 fi
 
 # compute-impact もカード発行シグナルなし（hard_stop JSON のみ）
-if printf '%s' "$out_impact" | grep -q 'ISSUE_CARD'; then
+if grep -q 'ISSUE_CARD' <<<"$out_impact"; then
   fail "compute-impact floor should not emit ISSUE_CARD"
 else
   pass "compute-impact floor does not emit ISSUE_CARD"

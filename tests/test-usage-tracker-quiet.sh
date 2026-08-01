@@ -13,21 +13,21 @@ trap 'rm -rf "${TMP_DIR}"' EXIT
 mkdir -p "${TMP_DIR}/.claude/state"
 
 userprompt_output="$(cd "${TMP_DIR}" && printf '%s' '{"prompt":"/work 27.1.3"}' | bash "${USERPROMPT_TRACK_SCRIPT}")"
-if echo "${userprompt_output}" | grep -q '\[record-usage\]'; then
+if grep -q '\[record-usage\]' <<<"${userprompt_output}"; then
   echo "userprompt-track-command stdout should not include record-usage noise"
   exit 1
 fi
-echo "${userprompt_output}" | grep -q '{"continue":true}' || {
+grep -q '{"continue":true}' <<<"${userprompt_output}" || {
   echo "userprompt-track-command should return continue JSON"
   exit 1
 }
 
 usage_output="$(cd "${TMP_DIR}" && printf '%s' '{"tool_name":"Skill","tool_input":{"skill":"claude-code-harness:memory"}}' | bash "${USAGE_TRACKER_SCRIPT}")"
-if echo "${usage_output}" | grep -q '\[record-usage\]'; then
+if grep -q '\[record-usage\]' <<<"${usage_output}"; then
   echo "usage-tracker stdout should not include record-usage noise"
   exit 1
 fi
-echo "${usage_output}" | grep -q '{"continue":true}' || {
+grep -q '{"continue":true}' <<<"${usage_output}" || {
   echo "usage-tracker should return continue JSON"
   exit 1
 }

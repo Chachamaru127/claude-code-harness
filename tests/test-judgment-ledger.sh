@@ -62,7 +62,7 @@ if [[ "$failopen_rc" -eq 0 ]]; then
 else
   fail "append fail-open exit 0 (rc=$failopen_rc)"
 fi
-if printf '%s' "$failopen_out" | grep -q 'append skipped'; then
+if grep -q 'append skipped' <<<"$failopen_out"; then
   pass "append fail-open stderr warning"
 else
   fail "append fail-open stderr warning missing"

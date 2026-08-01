@@ -215,8 +215,8 @@ cat >> "${HOOK_TMP}/plans/Plans.md" <<'EOF'
   #### H-3: Heading WIP `cc:wip`
 EOF
 summary_output="$(cd "${HOOK_TMP}" && CLAUDE_CODE_HARNESS_LANG=ja bash "${PROJECT_ROOT}/scripts/session-summary.sh" 2>/dev/null)"
-printf '%s' "$summary_output" | grep -q '現在のタスク: active work'
-printf '%s' "$summary_output" | grep -q '完了タスク: 2件'
+grep -q '現在のタスク: active work' <<<"$summary_output"
+grep -q '完了タスク: 2件' <<<"$summary_output"
 if grep -q 'legend only' "${HOOK_TMP}/.claude/memory/session-log.md"; then
   echo "[FAIL] session-summary must not include marker legend rows in WIP handoff" >&2
   exit 1

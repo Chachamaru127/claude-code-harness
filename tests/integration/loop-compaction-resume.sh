@@ -53,22 +53,22 @@ cp "${TMP_DIR}/.claude/state/handoff-artifact.json" "${TMP_DIR}/.claude/state/pr
 init_output="$(cd "${TMP_DIR}" && bash "./scripts/session-init.sh" 2>/dev/null)"
 resume_output="$(cd "${TMP_DIR}" && bash "./scripts/session-resume.sh" 2>/dev/null)"
 
-printf '%s' "${init_output}" | grep -q 'Structured Handoff' || {
+grep -q 'Structured Handoff' <<<"${init_output}" || {
   echo "session-init が structured handoff を復元していません"
   exit 1
 }
 
-printf '%s' "${resume_output}" | grep -q 'Structured Handoff' || {
+grep -q 'Structured Handoff' <<<"${resume_output}" || {
   echo "session-resume が structured handoff を復元していません"
   exit 1
 }
 
-printf '%s' "${resume_output}" | grep -q 'resume after compaction' || {
+grep -q 'resume after compaction' <<<"${resume_output}" || {
   echo "resume 後の next action が見つかりません"
   exit 1
 }
 
-printf '%s' "${resume_output}" | grep -q 'plugin-first workflow remains readable' || {
+grep -q 'plugin-first workflow remains readable' <<<"${resume_output}" || {
   echo "resume 後の continuity が見つかりません"
   exit 1
 }

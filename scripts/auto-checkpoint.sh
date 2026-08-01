@@ -218,7 +218,7 @@ main() {
     local api_response=""
     if api_response="$("${HARNESS_MEM_CLIENT}" record-checkpoint "${payload}" 2>&1)"; then
       # ok フィールドが false でなければ成功扱い
-      if printf '%s' "${api_response}" | grep -q '"ok":false'; then
+      if grep -q '"ok":false' <<<"${api_response}"; then
         api_success=0
         api_error="$(printf '%s' "${api_response}" | grep -o '"error":"[^"]*"' | head -1 | sed 's/"error":"//;s/"//' || printf 'api_error')"
       else

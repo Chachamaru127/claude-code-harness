@@ -169,9 +169,9 @@ detect_in_dir() {
     fi
     if [ -n "${has_test_script}" ] && [ "${has_test_script}" != "echo \"Error: no test specified\" && exit 1" ]; then
       lower="$(printf '%s' "${has_test_script}" | tr '[:upper:]' '[:lower:]')"
-      if printf '%s' "${lower}" | grep -q 'vitest'; then
+      if grep -q 'vitest' <<<"${lower}"; then
         emit_json "vitest" "npm test" "node" "**/*.test.ts" "package.json:scripts.test"
-      elif printf '%s' "${lower}" | grep -q 'jest'; then
+      elif grep -q 'jest' <<<"${lower}"; then
         emit_json "jest" "npm test" "node" "**/*.test.{ts,tsx,js,jsx}" "package.json:scripts.test"
       else
         emit_json "npm" "npm test" "node" "**/*.test.{ts,tsx,js,jsx}" "package.json:scripts.test"

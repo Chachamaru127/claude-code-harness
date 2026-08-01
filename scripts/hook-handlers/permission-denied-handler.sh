@@ -167,7 +167,7 @@ fi
 # retry: true を返すことで、モデルがリトライ可能であることを伝える
 _notification_text="[PermissionDenied] Worker のツール ${TOOL_NAME} が auto mode で拒否されました。理由: ${DENIED_REASON}。代替アプローチを検討するか、必要なら手動承認してください。"
 _is_worker=false
-if [ "${AGENT_TYPE}" = "worker" ] || [ "${AGENT_TYPE}" = "task-worker" ] || echo "${AGENT_TYPE}" | grep -qE ':worker$'; then
+if [ "${AGENT_TYPE}" = "worker" ] || [ "${AGENT_TYPE}" = "task-worker" ] || grep -qE ':worker$' <<<"${AGENT_TYPE}"; then
   _is_worker=true
 
   # broadcast ファイルに書き込み（Lead セッションが読み取れるように）

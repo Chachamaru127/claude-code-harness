@@ -1318,6 +1318,16 @@ else
 fi
 
 echo ""
+echo "19. pipefail 下の producer | grep -q 安全性 (Phase 129.1)"
+echo "----------------------------------------"
+
+if bash "$PLUGIN_ROOT/tests/test-pipefail-grep-q-safety.sh" > /dev/null 2>&1; then
+    pass_test "pipefail 下で結果が反転する 'producer | grep -q' は存在しません"
+else
+    fail_test "pipefail grep -q safety contract failed — 'bash tests/test-pipefail-grep-q-safety.sh' で詳細確認"
+fi
+
+echo ""
 echo "=========================================="
 echo "テスト結果サマリー"
 echo "=========================================="

@@ -115,7 +115,7 @@ jq -e '.recentEdits | index("tracked.txt")' "${artifact_file}" >/dev/null || {
   exit 1
 }
 
-echo "${pre_output}" | grep -q 'structured handoff artifact' || {
+grep -q 'structured handoff artifact' <<<"${pre_output}" || {
   echo "pre-compact hook did not report the structured handoff artifact"
   exit 1
 }
@@ -123,27 +123,27 @@ echo "${pre_output}" | grep -q 'structured handoff artifact' || {
 post_output="$(cd "${TMP_DIR}" && printf '%s' '{"event":"PostCompact"}' | bash "${TMP_DIR}/scripts/hook-handlers/post-compact.sh")"
 post_context="$(printf '%s' "${post_output}" | jq -r '.additionalContext // empty')"
 
-echo "${post_context}" | grep -q 'Structured Handoff' || {
+grep -q 'Structured Handoff' <<<"${post_context}" || {
   echo "post-compact did not re-inject the structured handoff section"
   exit 1
 }
 
-echo "${post_context}" | grep -q 'Next action' || {
+grep -q 'Next action' <<<"${post_context}" || {
   echo "post-compact did not surface the next action"
   exit 1
 }
 
-echo "${post_context}" | grep -q 'Failed checks' || {
+grep -q 'Failed checks' <<<"${post_context}" || {
   echo "post-compact did not surface failed checks"
   exit 1
 }
 
-echo "${post_context}" | grep -q 'Context reset' || {
+grep -q 'Context reset' <<<"${post_context}" || {
   echo "post-compact did not surface context reset"
   exit 1
 }
 
-echo "${post_context}" | grep -q 'Continuity' || {
+grep -q 'Continuity' <<<"${post_context}" || {
   echo "post-compact did not surface continuity"
   exit 1
 }
@@ -151,22 +151,22 @@ echo "${post_context}" | grep -q 'Continuity' || {
 init_output="$(cd "${TMP_DIR}" && bash "${TMP_DIR}/scripts/session-init.sh")"
 init_context="$(printf '%s' "${init_output}" | jq -r '.hookSpecificOutput.additionalContext')"
 
-echo "${init_context}" | grep -q 'Structured Handoff' || {
+grep -q 'Structured Handoff' <<<"${init_context}" || {
   echo "session-init did not consume the structured handoff artifact"
   exit 1
 }
 
-echo "${init_context}" | grep -q 'Next action' || {
+grep -q 'Next action' <<<"${init_context}" || {
   echo "session-init did not surface the next action"
   exit 1
 }
 
-echo "${init_context}" | grep -q 'Context reset' || {
+grep -q 'Context reset' <<<"${init_context}" || {
   echo "session-init did not surface context reset"
   exit 1
 }
 
-echo "${init_context}" | grep -q 'Continuity' || {
+grep -q 'Continuity' <<<"${init_context}" || {
   echo "session-init did not surface continuity"
   exit 1
 }
@@ -179,22 +179,22 @@ jq -e '.harness.context_reset.recommended == true and .harness.continuity.plugin
 resume_output="$(cd "${TMP_DIR}" && bash "${TMP_DIR}/scripts/session-resume.sh")"
 resume_context="$(printf '%s' "${resume_output}" | jq -r '.hookSpecificOutput.additionalContext')"
 
-echo "${resume_context}" | grep -q 'Structured Handoff' || {
+grep -q 'Structured Handoff' <<<"${resume_context}" || {
   echo "session-resume did not consume the structured handoff artifact"
   exit 1
 }
 
-echo "${resume_context}" | grep -q 'Open risks' || {
+grep -q 'Open risks' <<<"${resume_context}" || {
   echo "session-resume did not surface open risks"
   exit 1
 }
 
-echo "${resume_context}" | grep -q 'Context reset' || {
+grep -q 'Context reset' <<<"${resume_context}" || {
   echo "session-resume did not surface context reset"
   exit 1
 }
 
-echo "${resume_context}" | grep -q 'Continuity' || {
+grep -q 'Continuity' <<<"${resume_context}" || {
   echo "session-resume did not surface continuity"
   exit 1
 }

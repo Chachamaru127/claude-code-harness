@@ -38,13 +38,13 @@ if [ -z "${REVIEWER_TOOLS_LINES}" ]; then
   exit 1
 fi
 for forbidden in Write Edit Bash MultiEdit; do
-  if printf '%s' "${REVIEWER_TOOLS_LINES}" | grep -qw "${forbidden}"; then
+  if grep -qw "${forbidden}" <<<"${REVIEWER_TOOLS_LINES}"; then
     echo "FAIL (2b): reviewer.md tools allowlist must NOT include ${forbidden}"
     exit 1
   fi
 done
 for required in Read Grep Glob; do
-  if ! printf '%s' "${REVIEWER_TOOLS_LINES}" | grep -qw "${required}"; then
+  if ! grep -qw "${required}" <<<"${REVIEWER_TOOLS_LINES}"; then
     echo "FAIL (2c): reviewer.md tools allowlist must include ${required}"
     exit 1
   fi
@@ -53,7 +53,7 @@ done
 # (3) Reviewer の disallowedTools に Write/Edit/Bash/Agent が含まれる (defense-in-depth)
 REVIEWER_DISALLOWED_LINES="$(awk '/^disallowedTools:/{flag=1; next} /^[a-zA-Z]+:/{flag=0} flag && /^  -/' "${REVIEWER}")"
 for required_disallowed in Write Edit Bash Agent; do
-  if ! printf '%s' "${REVIEWER_DISALLOWED_LINES}" | grep -qw "${required_disallowed}"; then
+  if ! grep -qw "${required_disallowed}" <<<"${REVIEWER_DISALLOWED_LINES}"; then
     echo "FAIL (3): reviewer.md disallowedTools must include ${required_disallowed}"
     exit 1
   fi
@@ -61,7 +61,7 @@ done
 
 # (4) Worker の disallowedTools には少なくとも Agent が含まれる (NG-3 enforcement)
 WORKER_DISALLOWED_LINES="$(awk '/^disallowedTools:/{flag=1; next} /^[a-zA-Z]+:/{flag=0} flag && /^  -/' "${WORKER}")"
-if ! printf '%s' "${WORKER_DISALLOWED_LINES}" | grep -qw "Agent"; then
+if ! grep -qw "Agent" <<<"${WORKER_DISALLOWED_LINES}"; then
   echo "FAIL (4): worker.md disallowedTools must include Agent (NG-3 nested teammate spawn 禁止)"
   exit 1
 fi

@@ -873,7 +873,7 @@ else
   if [ -z "$REVIEWER_MODEL" ]; then
     echo "  ❌ agents/reviewer.md に model: pin がない（Fable 継承を防ぐため非 Fable pin が必須）"
     ERRORS=$((ERRORS + 1))
-  elif printf '%s' "$REVIEWER_MODEL" | grep -qiE 'fable|inherit'; then
+  elif grep -qiE 'fable|inherit' <<<"$REVIEWER_MODEL"; then
     echo "  ❌ agents/reviewer.md の model が Fable/inherit: $REVIEWER_MODEL"
     echo "      cyber-safeguard 自動切替を避けるため非 Fable の固定 model に pin すること"
     ERRORS=$((ERRORS + 1))
