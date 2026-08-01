@@ -183,3 +183,34 @@ team_validation_mode: subagent (PR #246 のセキュリティレビューを独�
 - **dependabot PR 9 件** (#276 #275 #274 #273 #272 #271 #264 #260 #241): 依存バージョン更新のみで本 Phase のセキュリティ修正と無関係。混ぜるとレビュー面が膨らみ、脆弱性修正の出荷が遅れる。本 Phase 完了後に別スコープでまとめて処理する
 - **#246 の `paths.protected` / R16 再実装**: 設計は妥当だが、現行 main への載せ替えが必要で規模が大きい。先に脆弱性 2 件を出荷する方が価値が高い。Phase 129 以降で扱う
 - **#246 の `allow_rm_rf`**: Phase 126 の `shellscan.RemovalContextIndeterminate` を壊さない再設計が必要。保留
+
+## Phase 129: シェル検査の信頼性 — 合否が反転する構文の一掃と機械検出
+
+Purpose: `printf/echo "$内容" | grep -q "$探す文字列"` は `set -o pipefail` 下で、**探す文字列が実在するのに「無い」と判定される**ことがある。`grep -q` が最初の一致で終了してパイプを閉じ、分割書き込み中の producer が EPIPE で失敗し、`pipefail` がそれをパイプライン全体の失敗へ昇格させるため。一致が入力の前方にあるほど再現するので、**合否が「探す文字列が何行目にあるか」で決まる**。
+
+実測 (PR #285、`skills/harness-accept/SKILL.md` frontmatter 2019 バイトに 200 回試行): 2 行目の項目と 3 行目の項目がいずれも 200/200 で誤判定、8 行目の項目は 0/200。`tests/test-harness-accept.sh` は 63 合格 3 失敗の状態だった。PR #285 で実害が確認できた 2 箇所 (`tests/test-harness-accept.sh` / `scripts/render-html.sh`) のみ修正済み。
+
+残存は **175 箇所 / 約 60 ファイル** (pipefail 有効なもの)。現時点で通っているのは入力が小さいか一致が末尾にあるためで、入力が育つと同じ形で壊れる。Phase 127 の BSD `mktemp` と同じ構造 (静的 lint が検出しない・環境依存で再現しない・失敗が沈黙する) のため、同じ手当て (一掃 + 機械検出の配線) を行う。
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 129.1 | `[lane:gate]` `[tdd:required]` 検出テスト `tests/test-pipefail-grep-q-safety.sh` を新設。pipefail 有効なファイル内の `(printf\|echo) ... \| grep -q` を静的走査し、検出したら exit 1。除外条件 (`\|\| true` で終わる行、producer がコマンド置換でなくファイル引数の `cat file \| grep`) を明示 | (a) 現行 main に対して 175 箇所前後を検出して exit 1 する RED を実測ログ付きで示す (b) 除外条件が意図どおり効くことを fixture で固定 (c) 検出は静的走査であり変数経由の間接指定は対象外と明記 | - | cc:todo |
+| 129.2 | `[lane:gate]` `[tdd:required]` `tests/` 配下の該当箇所を herestring (`<<<`) へ機械変換。`printf '%s' "$x" \| grep -q P` → `grep -q P <<<"$x"`、`echo "$x" \| grep -q P` → 同左。`cat file \| grep -q P` は `grep -q P file` へ | (a) アサーションの削除・期待値の緩和がゼロであることを `git diff` の全行分類で示す (b) 変換後に `tests/validate-plugin.sh` が 131 合格 0 失敗を維持 (c) 129.1 の検出が tests/ 配下でゼロになる | 129.1 | cc:todo |
+| 129.3 | `[lane:gate]` `[tdd:required]` `scripts/` および `hooks/` 配下の該当箇所を同様に変換。product code のため、変換前後で出力が同一であることを個別に確認する | (a) 変換した各 script について、変換前後の出力一致を実測で示す (b) `scripts/ci/check-consistency.sh` 全 24 通過 (c) `shellcheck` に新規指摘なし (d) 129.1 の検出がゼロになる | 129.2 | cc:todo |
+| 129.4 | `[lane:release]` `[tdd:skip:verification]` 検証 + closeout: 129.1 を `tests/validate-plugin.sh` へ配線 (配線の正本は validate-plugin.sh。`.github/workflows/` は触らない)、CHANGELOG `[Unreleased]` へ追記、PR 作成 → CI green → squash merge | (a) `validate-plugin.sh` の合格数が新規配線分だけ増えて失敗ゼロ (b) `VERSION` / `plugin.json` / `harness.toml` 非接触を `git diff` で確認 (c) skill mirror in-sync (d) 必須 CI 全 pass 後に merge | 129.3 | cc:todo |
+
+Spec skip reason: 内部検査スクリプトの記述方法の是正であり、product behavior・API・データモデル・権限・課金・外部連携のいずれも変えない。`spec.md` の更新は不要。
+
+team_validation_mode: not_required_lightweight (機構は PR #285 で実測確定済み。変換は機械的で、正しさは既存テスト網が判定する)
+
+事前確認 (plan-time pre-approval):
+- 事項: external-send — `git push origin <branch>` + `gh pr create` + CI green 確認 + `gh pr merge --squash`
+  理由: 129.4 DoD (d) の closeout に必要
+  scope: Phase 129 / Task 129.4
+  承認: 未承認 (operator 判断待ち)
+- secret-read: なし
+- destructive: なし
+
+対象外と裁定 (黙って落とさないための明示):
+- **`go/` 配下**: Go には同じ構文が存在しない
+- **`|| true` で終わる箇所**: pipefail が結果を昇格させないため実害なし。ただし 129.1 の検出では除外理由をコメントで残す
