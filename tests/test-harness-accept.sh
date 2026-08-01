@@ -53,8 +53,13 @@ else
     fail "SKILL.md frontmatter has no closing '---' marker"
   else
     FM_CONTENT="$(sed -n "1,${FM_END_LINE}p" "$SKILL_PATH")"
+    # herestring を使う (パイプにしない)。`printf ... | grep -q` は grep が最初の
+    # 一致で終了してパイプを閉じるため、printf の残りの write が EPIPE になる。
+    # set -o pipefail はその失敗をパイプライン全体の結果に昇格させるので、
+    # 「一致したのに不一致と判定される」偽の失敗が起きる。frontmatter のように
+    # stdio バッファ (1KB 前後) を超える入力で、一致行が前方にあるほど再現する。
     for required in "name: harness-accept" "user-invocable: true" "argument-hint:" "allowed-tools:" "description:" "description-en:" "description-ja:"; do
-      if printf '%s' "$FM_CONTENT" | grep -q "$required"; then
+      if grep -q "$required" <<<"$FM_CONTENT"; then
         pass "SKILL.md frontmatter has '$required'"
       else
         fail "SKILL.md frontmatter missing '$required'"

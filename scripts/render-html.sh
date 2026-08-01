@@ -328,7 +328,12 @@ if [[ "$WITH_REDACTION" == "true" ]]; then
   # bash parameter substitution: pattern の '/' は最初の 1 つのみ separator、
   # 以降は literal。replacement 内の '<\/body>' は literal な「<\/body>」になるので
   # 必ず '</body>' (backslash なし) を書く。
-  if printf '%s' "$TEMPLATE_CONTENT" | grep -q "</body>"; then
+  # herestring を使う (パイプにしない)。`printf ... | grep -q` は grep が最初の一致で
+  # 終了してパイプを閉じるため、printf の残りの write が EPIPE になり、pipefail が
+  # それをパイプライン全体の失敗に昇格させる。今は </body> がテンプレート末尾にあり
+  # grep が全量を読むので顕在化しないが、前方に </body> が現れると footer 挿入が
+  # 黙って append 側に落ちる。
+  if grep -q "</body>" <<<"$TEMPLATE_CONTENT"; then
     BODY_CLOSE_TAG="</body>"
     TEMPLATE_CONTENT="${TEMPLATE_CONTENT/${BODY_CLOSE_TAG}/${AUDIT_FOOTER}${BODY_CLOSE_TAG}}"
   else
