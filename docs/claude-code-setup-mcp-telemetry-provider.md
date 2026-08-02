@@ -77,6 +77,28 @@ MCP tool search は context 節約のために tool schema を遅延ロードす
 }
 ```
 
+## Parallel Search MCP (optional)
+
+現在の Web 検索と URL 本文の取得が必要な場合は、Parallel Search MCP を
+remote HTTP server として opt-in できる。既存の `mcpServers` を置き換えず、
+次の entry を merge する。
+
+```json
+{
+  "mcpServers": {
+    "parallel-search": {
+      "type": "http",
+      "url": "https://search.parallel.ai/mcp"
+    }
+  }
+}
+```
+
+default endpoint は account、API key、OAuth を必要としない。
+`web_search` は現在の Web 検索、`web_fetch` は指定 URL から clean Markdown を
+取得する。毎 turn 必須の server ではないため、通常は `alwaysLoad` を付けず
+deferred のまま使う。Harness の default server や provider は変更しない。
+
 ## Plugin cleanup
 
 `claude plugin prune` は、plugin dependency として自動インストールされたが、今は不要になった plugin を消す cleanup。

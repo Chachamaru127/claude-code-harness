@@ -6,6 +6,11 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Added
+
+- Claude Code setup guide に、account や API key を必要としない optional な
+  Parallel Search MCP の remote HTTP 設定例を追加。
+
 ## [5.6.0] - 2026-08-01
 
 ### テーマ: 実行時フロアの回避経路封鎖と、検査基盤の信頼性回復 (Phase 127-129)
