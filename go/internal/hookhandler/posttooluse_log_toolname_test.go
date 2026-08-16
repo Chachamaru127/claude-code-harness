@@ -9,8 +9,8 @@ import (
 	"testing"
 )
 
-// TestPostToolUseLogToolName_AlwaysContinue は常に continue=true を返すことを確認する。
-func TestPostToolUseLogToolName_AlwaysContinue(t *testing.T) {
+// TestPostToolUseLogToolName_SuccessIsSilent は記録専用の成功時に親文脈へ出力しないことを確認する。
+func TestPostToolUseLogToolName_SuccessIsSilent(t *testing.T) {
 	dir := t.TempDir()
 	h := &PostToolUseLogToolNameHandler{ProjectRoot: dir}
 
@@ -20,17 +20,13 @@ func TestPostToolUseLogToolName_AlwaysContinue(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	var resp map[string]bool
-	if err := json.Unmarshal(bytes.TrimRight(out.Bytes(), "\n"), &resp); err != nil {
-		t.Fatalf("invalid JSON: %s", out.String())
-	}
-	if !resp["continue"] {
-		t.Errorf("expected continue=true")
+	if out.Len() != 0 {
+		t.Errorf("expected no success output, got: %s", out.String())
 	}
 }
 
-// TestPostToolUseLogToolName_EmptyInput は空入力でも continue=true を返すことを確認する。
-func TestPostToolUseLogToolName_EmptyInput(t *testing.T) {
+// TestPostToolUseLogToolName_EmptyInputIsSilent は空入力でも親文脈へ出力しないことを確認する。
+func TestPostToolUseLogToolName_EmptyInputIsSilent(t *testing.T) {
 	dir := t.TempDir()
 	h := &PostToolUseLogToolNameHandler{ProjectRoot: dir}
 
@@ -40,12 +36,8 @@ func TestPostToolUseLogToolName_EmptyInput(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	var resp map[string]bool
-	if err := json.Unmarshal(bytes.TrimRight(out.Bytes(), "\n"), &resp); err != nil {
-		t.Fatalf("invalid JSON: %s", out.String())
-	}
-	if !resp["continue"] {
-		t.Errorf("expected continue=true for empty input")
+	if out.Len() != 0 {
+		t.Errorf("expected no empty-input output, got: %s", out.String())
 	}
 }
 

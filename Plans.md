@@ -89,6 +89,12 @@ Phase 119-124 (2026-07-19 〜 2026-07-25、全 task `cc:done`) は
 [.claude/memory/archive/Plans-2026-07-30-phase119-124.md](.claude/memory/archive/Plans-2026-07-30-phase119-124.md) に退避。
 それ以前は `.claude/memory/archive/Plans-*.md` を参照。
 
-現在、進行中の Phase はない。
+## Phase 134: PostToolUse の成功時コンテキストを無音化する
+
+| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 134.1 | autopilot の品質・安全シグナルを維持し、PostToolUse の成功時だけ親へ返す不要な出力を削減する | 全20 handler の matcher・成功/異常時stdout bytes・副作用・無音化可否を記録する。無音化対象は記録副作用を保持し、承認拒否・競合・品質/CI失敗・memory・失敗通知・progress の回帰試験を追加する。plugin-root 探索は安全境界として監査し、前後で成功添付bytesまたは cache_read を削減、品質ゲート通過率と完走率を下げない。hooks の二重manifest同期、plugin検証、レビューを通す。 | - | cc:WIP |
+
+現在、進行中の Phase は Phase 134。
 
 ---
