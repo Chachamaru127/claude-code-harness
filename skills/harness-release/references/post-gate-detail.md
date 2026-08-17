@@ -1,8 +1,8 @@
-# Post-Gate Mechanics: PR/Main Merge, Plugin Tag, Verify Publish
+# Post-Gate Mechanics: PR/Main Merge, Semver Tag, Verify Publish
 
 Full command sequences for the three Post-Gate steps the main `SKILL.md` only
 summarizes: merging the release PR into the default branch, creating the
-Claude plugin tag, and verifying the tag-triggered publish workflow.
+semver tag, and verifying the tag-triggered publish workflow.
 
 ## PR / Main Merge Gate
 
@@ -28,17 +28,17 @@ tag はこの Gate 完了後、default branch の HEAD もしくは release comm
 
 ## Claude plugin project の tag 作成
 
-`.claude-plugin/plugin.json` がある project では、PR/main merge 後に default branch 上でもう一度 version sync を確認してから plugin tag を作る:
+`.claude-plugin/plugin.json` がある project では、PR/main merge 後に default branch 上でもう一度 version sync を確認してから semver tag を作る:
 
 ```bash
 HARNESS_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-.}"
 python3 "${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py" --root .
 
-claude plugin tag .claude-plugin --dry-run
-claude plugin tag .claude-plugin --push --remote origin
+git tag -a "v${NEW_VERSION}" -m "v${NEW_VERSION}"
+git push origin "v${NEW_VERSION}"
 ```
 
-`claude plugin tag` が作る tag は `{plugin-name}--v{version}` 形式。既存の GitHub Release workflow が `vX.Y.Z` tag を前提にしている project では、plugin tag とは別に `git tag -a v<new>` を作る。plugin 配布の tag は `claude plugin tag` に任せ、GitHub Release 用 semver tag は release automation の互換 surface として扱う。
+tag は `vX.Y.Z` 形式の semver tag 1 本に統一する。`claude plugin tag` が作る `{plugin-name}--v{version}` 形式の plugin tag は 2026-08-17 に廃止した (decisions.md D69): `marketplace.json` の `source` が相対パス `"./"` で install は tag を参照しないため実効性が無く、v5.6.0 以降 3 リリース連続で欠番のまま誰も困らなかった。既存の `claude-code-harness--v5.5.0` 以前の tag は履歴として残すが、新規には作らない。
 
 ## Verify Workflow Publish
 

@@ -1,4 +1,4 @@
-# Phase 134 PostToolUse コンテキスト監査
+# PostToolUse コンテキスト監査
 
 対象: `.claude-plugin/hooks.json` / `hooks/hooks.json`（同一内容）
 

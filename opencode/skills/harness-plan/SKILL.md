@@ -321,6 +321,13 @@ node scripts/generate-sprint-contract.js --plan roadmap 9.1.1
 Depends は `-`（依存なし）/ タスク番号 / カンマ区切り複数 / フェーズ依存のいずれか。生成テンプレート全文（Purpose 行含む）は
 [references/create.md](${CLAUDE_SKILL_DIR}/references/create.md) を参照。
 
+### DoD / acceptance_criteria の採点設計
+
+DoD や `acceptance_criteria` を書くときは、「アルバイトの人がチェックリストで○×を付けられるか」で判定する。
+機械○×の床（テスト・字数・exit code）/ LLM 観点採点（構成・訴求のチェックリスト）/ 本質 doc 参照（spec.md・decisions.md の該当条項）の
+3 層に翻訳する規律、および曖昧形容詞（良い/ちゃんとした/わかりやすい 等）を検出したときの翻訳手順は
+[references/criteria-design.md](${CLAUDE_SKILL_DIR}/references/criteria-design.md) を参照。
+
 ### TDD tags
 
 Plans.md の task には、TDD 判定を明示するタグを内容または DoD に書ける。

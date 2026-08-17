@@ -55,7 +55,19 @@ cost_so_far_usd:          <float, state file から>
 cost_estimate_usd:        <float, state file から>
 alerts:                    []   ← Phase 65.4.3 以降で populate
 generated_at:             <ISO8601 UTC>
+writing_lint_pending:     [{id, pattern, approve_command, pending_count}]  ← optional/additive (Phase 136.2)
 ```
+
+### writing_lint_pending (Phase 136.2)
+
+`scripts/writing-rule-list.sh --status pending --json` の出力をそのまま snapshot に
+組み込む optional フィールド。pending proposal が 0 件のときは配列が空になり、
+`progress.html.template` の該当セクションは何も展開せず非表示になる (render-html.sh
+の `{{#section}}` は配列が空だと block を 0 回展開するため)。
+
+表示するのは **コピペ用のコマンド文字列** (`scripts/writing-rule-approve.sh --id <id>`)
+であって押せるボタンではない。承認は人間が CLI で `writing-rule-approve.sh` を実行する
+一択の経路のまま (Phase 135.4。自動昇格経路は無い)。
 
 ## Execution Flow
 
@@ -76,7 +88,9 @@ bash scripts/progress-snapshot.sh \
 ```
 
 `scripts/progress-snapshot.sh` (Phase 65.4.1 で実装) は Plans.md を parse し
-`progress-snapshot.v1` schema 準拠の JSON を出力する。
+`progress-snapshot.v1` schema 準拠の JSON を出力する。内部で
+`scripts/writing-rule-list.sh --status pending --json` も呼び、`writing_lint_pending`
+を additive に組み込む (Phase 136.2。writing-rule-list.sh が無い/失敗する場合は空配列)。
 
 ### Step 2: HTML をレンダリング
 

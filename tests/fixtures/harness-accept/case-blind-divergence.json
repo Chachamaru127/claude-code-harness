@@ -1,0 +1,57 @@
+{
+  "schema": "acceptance-context.v1",
+  "user_request": "投資家向け提案資料の要約スライドを作る",
+  "user_request_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+  "demo_artifacts": [
+    { "kind": "text", "path": ".claude/state/views/proposal-summary.html" }
+  ],
+  "verified_criteria": [
+    { "name": "AC-1: 章立てが仕様通り", "passed": true, "evidence": "spec.md §3 の 5 章構成と一致" },
+    { "name": "AC-2: 数値の出典明記",   "passed": true, "evidence": "全数値に SSOT 参照あり" },
+    { "name": "AC-3: レンダリング確認", "passed": true, "evidence": "render-html.sh 成功" },
+    { "name": "AC-4: 誤字なし",         "passed": true, "evidence": "spellcheck PASS" },
+    { "name": "AC-5: 文字数制限内",     "passed": true, "evidence": "1200 words < 1500 上限" }
+  ],
+  "unverified_caveats": [],
+  "past_issue_patterns": [],
+  "recommendation": "wait",
+  "recommendation_evidence": [
+    "verified 5 件 / 全 5 件 (100%) → ship 閾値以上",
+    "blind evaluator が believable=not_believable / useful=not_useful と判定したため ship を wait に丸めた"
+  ],
+  "project": "claude-code-harness",
+  "generated_at": "2026-08-15T10:00:00Z",
+  "verified_criteria_items": [
+    { "name": "AC-1: 章立てが仕様通り", "status_label": "passed", "evidence": "spec.md §3 の 5 章構成と一致", "evidence_warn": "" },
+    { "name": "AC-2: 数値の出典明記",   "status_label": "passed", "evidence": "全数値に SSOT 参照あり", "evidence_warn": "" },
+    { "name": "AC-3: レンダリング確認", "status_label": "passed", "evidence": "render-html.sh 成功", "evidence_warn": "" },
+    { "name": "AC-4: 誤字なし",         "status_label": "passed", "evidence": "spellcheck PASS", "evidence_warn": "" },
+    { "name": "AC-5: 文字数制限内",     "status_label": "passed", "evidence": "1200 words < 1500 上限", "evidence_warn": "" }
+  ],
+  "unverified_caveats_items": [],
+  "recommendation_evidence_items": [
+    { "text": "verified 5 件 / 全 5 件 (100%) → ship 閾値以上" },
+    { "text": "blind evaluator が believable=not_believable / useful=not_useful と判定したため ship を wait に丸めた" }
+  ],
+  "blind_evaluation": {
+    "applicable": true,
+    "eligibility_reason": "persuasive-doc",
+    "audience_purpose_line": "初めてこのプロダクトを検討する投資家。5分で読み切れて、投資判断に足る根拠が示されている必要がある",
+    "evaluator_believable": "not_believable",
+    "evaluator_useful": "not_useful",
+    "evaluator_friction_points": ["市場規模の根拠が数値のみで比較対象が無く、大きさの実感が湧かない"],
+    "internal_recommendation": "ship",
+    "divergence": "internal_high_evaluator_low",
+    "divergence_notes": "verified_criteria は 5/5 で ship 相当だが、評価者は信頼できない/役に立たないと判定 (根拠の見せ方が読者に伝わっていない)"
+  },
+  "blind_evaluation_items": [
+    {
+      "divergence_label": "internal_high_evaluator_low",
+      "audience_purpose_line": "初めてこのプロダクトを検討する投資家。5分で読み切れて、投資判断に足る根拠が示されている必要がある",
+      "evaluator_believable": "not_believable",
+      "evaluator_useful": "not_useful",
+      "friction_points_text": "市場規模の根拠が数値のみで比較対象が無く、大きさの実感が湧かない",
+      "divergence_notes": "verified_criteria は 5/5 で ship 相当だが、評価者は信頼できない/役に立たないと判定 (根拠の見せ方が読者に伝わっていない)"
+    }
+  ]
+}

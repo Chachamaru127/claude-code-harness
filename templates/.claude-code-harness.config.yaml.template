@@ -77,6 +77,14 @@ quality_pack:
   tsc: true
   console_log: true
 
+# Japanese writing-style lint (PostToolUse dictionary scan + Stop re-scan).
+# See go/internal/writinglint/.
+writing_lint:
+  enabled: false
+  scene: ""           # empty: no scene narrowing (every enabled rule applies)
+  structural: true     # sentence-ending repeats + polite/plain style mixing
+  # dict_path: ".claude/writing-lint/rules.jsonl"  # optional override (default: ~/.claude/writing-lint/rules.jsonl)
+
 # Review settings (commit judgment + Codex mode).
 review:
   # Review mode: default (Claude only) or codex (GPT experts delegation).

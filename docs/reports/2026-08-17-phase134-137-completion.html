@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 134-137 完走報告 — 検証チェーンは本物になったか</title>
+<style>
+:root{
+  --bg:#F5F4F1; --surface:#FCFBF9; --surface-2:#F0EFEA;
+  --ink:#1B1B22; --ink-soft:#5A5A64; --ink-faint:#8C8C92;
+  --line:#E4E2DB; --line-strong:#D2CFC6;
+  --primary:#313A7E; --primary-soft:#E9EAF4; --primary-ink:#262E66;
+  --kernel:#191B2C; --kernel-2:#23263c; --kernel-line:#343750; --kernel-ink:#C9CBE0;
+  --done:#2F8F5B; --done-soft:#E4F2EA; --done-line:#B7DCC7;
+  --wip:#B8821C; --wip-soft:#F6EDD8;
+  --risk:#B5462F; --risk-soft:#F6E7E2; --risk-line:#E5C0B4;
+  --info:#2C5A7A; --info-soft:#E3ECF1;
+  --plain:#1f7a6d; --plain-soft:#E1F1EE; --plain-line:#BBE0D9;
+  --radius:10px;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.85;word-break:keep-all;overflow-wrap:break-word}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 80px}
+.hero{background:linear-gradient(135deg,var(--kernel),var(--kernel-2));color:#fff;padding:44px 24px 36px;margin:0 -20px 32px;border-radius:0 0 14px 14px}
+.hero .inner{max-width:1040px;margin:0 auto}
+.badge{display:inline-block;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#DFE1F0;font-size:12px;letter-spacing:.08em;padding:3px 12px;border-radius:999px;margin-bottom:14px}
+.hero h1{font-size:26px;line-height:1.5;margin-bottom:10px}
+.hero .tag{color:var(--kernel-ink);font-size:14px;margin-bottom:18px}
+.thesis{border-left:4px solid #8FA0FF;background:rgba(255,255,255,.07);padding:12px 16px;border-radius:6px;font-size:15px;line-height:1.9}
+.hero-meta{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;font-size:12px;color:#9FA3C0}
+section{margin-bottom:40px}
+.kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:6px}
+h2{font-size:20px;margin-bottom:14px}
+h3{font-size:15px;margin:18px 0 8px}
+p{margin-bottom:10px}
+.plainbox{background:var(--plain-soft);border:1px solid var(--plain-line);border-radius:var(--radius);padding:16px 18px;margin-bottom:16px}
+.plainbox .lbl{font-size:12px;font-weight:700;color:var(--plain);margin-bottom:6px}
+.tlgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tlcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.tlcard .q{font-size:13px;font-weight:700;color:var(--primary-ink);margin-bottom:6px}
+.tlcard .a{font-size:13.5px;color:var(--ink-soft)}
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;font-size:13.5px;margin:12px 0}
+th{background:var(--surface-2);text-align:left;padding:9px 12px;font-size:12.5px;border-bottom:1px solid var(--line-strong)}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr.hit td{background:var(--done-soft)}
+tr.gap td{background:var(--risk-soft)}
+code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+.figure{background:var(--kernel);border-radius:var(--radius);padding:20px;margin:14px 0;color:var(--kernel-ink)}
+.figure .cap{font-size:12px;color:#8B8FB0;margin-bottom:14px;letter-spacing:.04em}
+.bagrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.bacol{background:var(--kernel-2);border:1px solid var(--kernel-line);border-radius:8px;padding:14px}
+.bacol .t{font-size:12px;font-weight:700;letter-spacing:.06em;margin-bottom:10px;color:#fff}
+.node{border:1px solid var(--kernel-line);border-radius:7px;padding:8px 10px;font-size:12.5px;margin-bottom:8px;background:rgba(255,255,255,.04)}
+.node .who{font-size:10.5px;color:#8B8FB0;display:block}
+.node.ok{border-color:#3E7A5C;background:rgba(47,143,91,.16)}
+.node.ng{border-color:#8F4A3A;background:rgba(181,70,47,.16)}
+.arrow{text-align:center;color:#6A6E92;font-size:13px;margin:2px 0 8px}
+.verdict{background:var(--done-soft);border:1px solid var(--done-line);border-radius:var(--radius);padding:18px 20px;margin:24px 0}
+.verdict .lbl{font-weight:700;color:var(--done);font-size:13px;margin-bottom:6px}
+.openbox{background:var(--wip-soft);border:1px solid #E8D9AE;border-radius:var(--radius);padding:18px 20px;margin:24px 0}
+.openbox .lbl{font-weight:700;color:var(--wip);font-size:13px;margin-bottom:6px}
+.openbox li,.verdict li{margin-left:1.3em;margin-bottom:6px;font-size:13.5px}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0}
+.choice{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--primary);border-radius:var(--radius);padding:14px 16px;font-size:13.5px}
+.choice.rec{border-top-color:var(--done)}
+.choice .t{font-weight:700;margin-bottom:8px}
+.choice .pros{color:var(--done);font-size:12.5px}
+.choice .cons{color:var(--risk);font-size:12.5px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;font-size:13px}
+summary{cursor:pointer;font-weight:600;color:var(--primary-ink);font-size:13px}
+footer{border-top:1px solid var(--line-strong);padding-top:18px;font-size:12px;color:var(--ink-faint)}
+footer h4{font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px}
+footer li{margin-left:1.4em;margin-bottom:2px}
+@media(max-width:640px){.tlgrid,.bagrid,.choices{grid-template-columns:1fr}}
+@media print{body{background:#fff}.hero{border-radius:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}.figure,.verdict,.openbox,.plainbox,tr.hit td,tr.gap td{-webkit-print-color-adjust:exact;print-color-adjust:exact}details{open:true}}
+</style>
+</head>
+<body>
+<div class="hero"><div class="inner">
+<span class="badge">claude-code-harness / 完走報告 + 着手判断</span>
+<h1>検証チェーンは本物になったか — Phase 134-137 の実装とレビューの結末</h1>
+<div class="tag">外部 12 ソースの検討から始まった「検証を本物にする」改修。実装 24 task、レビュー 3 往復の結果。</div>
+<div class="thesis">結論: 全 24 task を実装し、レビュー 3 回目で APPROVE (critical/major/minor ゼロ)。「やった体」の緑を作る 3 つの継ぎ目は全部塞がった。残る判断は 1 つ、main への PR を作るかどうか。推奨は「作る」。</div>
+<div class="hero-meta"><span>作成: 2026-08-17</span><span>対象: 立花</span><span>本レポートは派生物であり正本ではない (正本: Plans.md / decisions.md / review-result.v1)</span></div>
+</div></div>
+<div class="wrap">
+
+<section>
+<div class="plainbox"><div class="lbl">やさしく言うと</div>
+今回作ったのは「AI の作業を、AI の自己申告ではなく実行記録で検証する仕組み」です。今までは、ブラウザ検証ができない環境だと無言で LLM の読解だけのレビューに切り替わり、緑のまま通っていました。今回からは「検証できなかった」という事実が最後の判断画面まで機械的に伝わり、未検証のままでは ship 推奨になりません。おまけとして、AI の変な日本語を書いた直後に直させる仕組みと、立花の指摘を辞書に育てる仕組みも入りました。
+</div>
+<div class="tlgrid">
+<div class="tlcard"><div class="q">Q. 何がどれだけ終わった？</div><div class="a">Phase 134-137 の 19 task + レビュー修正 5 件、計 105 ファイル (+7,651 行)。テストは 144 項目 + Go 52 パッケージが全部緑。</div></div>
+<div class="tlcard"><div class="q">Q. 品質の裏付けは？</div><div class="a">レビュー 3 往復 (毎回 codex 第二意見つき)。1 回目 major 4 件 → 修正 → 2 回目で新規 major 1 件 → 修正 → 3 回目 APPROVE。指摘は全部、再現実行つきで確認されたもの。</div></div>
+<div class="tlcard"><div class="q">Q. いま効いてる？</div><div class="a">まだです。branch <code>feat/phase134-137-verification-chain</code> に commit 済みなだけで、main 未 merge。さらに稼働セッションに効くのは release + plugin 更新後 (過去実測と同じ)。</div></div>
+<div class="tlcard"><div class="q">Q. 立花がやることは？</div><div class="a">PR を作るかの判断 1 つだけ。作る場合はこのチャットで「PR 作って」と言えば、レビュー結果つきで作成します。</div></div>
+</div>
+</section>
+
+<section>
+<div class="kicker">01 — What</div>
+<h2>何を作ったか: 4 つの Phase</h2>
+<table>
+<tr><th style="width:9em">Phase</th><th>中身</th><th style="width:11em">元ネタ</th></tr>
+<tr><td>134 検証チェーン<br>(8 task)</td><td>検証の入口・中間・出口の切れた継ぎ目を接続 + scope leash (計画外ファイルへの書き込み検知) を本配線 + Playwright 録画を証拠として収集</td><td>Matt Pocock (evals 思想) / mugi_uno (録画) / しまぶー (再調査)</td></tr>
+<tr><td>135 writing lint<br>(5 task)</td><td>NG 日本語を書いた直後に検出し「文ごと書き直し + 良い例」を返す。指摘→ルール案の自動下書き→立花が CLI 1 発で承認。辞書は個人層に分離</td><td>yugen_matuni (Hooks 記事)</td></tr>
+<tr><td>136 surface<br>(3 task)</td><td>判断画面 3 枚のスマホ対応 + 承認待ちキュー表示 + diagram-design 接続点</td><td>みのるん (html-share の発想だけ)</td></tr>
+<tr><td>137 ループ施策<br>(3 task)</td><td>採点設計の 3 層規律 + 出荷前だけの blind 評価 (基準を知らない読み手) + 評価者 4 契約の明文化</td><td>まさお (eval-loop / goal-loop)</td></tr>
+</table>
+<details><summary>取り込まなかったもの (意図的スコープ外)</summary>
+score 型 eval-loop の全面導入 (既存 verdict 型レビューと契約が二重化、原著者実測でも機能系には過剰 = D65) / html-share の AWS インフラ / foyer 型中間 IF (CCH は plugin として「入る側」= D66) / 報告動画 skill。Phase 138 (汎用 feedback ルール + count 段階付け + PR evidence pack) は起票済み・未実装で次の弾。
+</details>
+</section>
+
+<section>
+<div class="kicker">02 — Before / After</div>
+<h2>「やった体」検証はこう塞がった</h2>
+<div class="figure"><div class="cap">検証チェーンの before / after (同一骨格。左から右へ: レビュー依頼 → 検証実行 → 受け入れ判断)</div>
+<div class="bagrid">
+<div class="bacol"><div class="t">BEFORE (2026-08-15 まで)</div>
+<div class="node ng">入口: reviewer_profile は常に static<span class="who">risk flag を立てても LLM 読解のみ</span></div>
+<div class="arrow">↓</div>
+<div class="node ng">中間: ブラウザ検証不能 → 無言で static に縮退<span class="who">PENDING_BROWSER が verdict に出ない</span></div>
+<div class="arrow">↓</div>
+<div class="node ng">出口: Accept の証拠は LLM が再申告<span class="who">実行 artifact を読まない。緑のまま ship</span></div>
+</div>
+<div class="bacol"><div class="t">AFTER (今回)</div>
+<div class="node ok">入口: risk flag で runtime/browser へ自動昇格<span class="who">無言降格は exit 5 で拒否 (ratchet)</span></div>
+<div class="arrow">↓</div>
+<div class="node ok">中間: 縮退は pending_validations として記録<span class="who">fail-visible。録画 evidence も収集 (縮退規則つき)</span></div>
+<div class="arrow">↓</div>
+<div class="node ok">出口: accept-collect-evidence.sh が artifact を機械読み<span class="who">未検証 criteria は passed:false、ship 推奨にならない</span></div>
+</div>
+</div></div>
+<p>合わせて <code>scopeleash</code> (Phase 101 の検証スパイクのまま 2 か月眠っていた「計画外ファイルへの書き込み検知」) を PreToolUse に本配線しました。既定は warn (記録と注意のみ)。enforce への昇格は運用実績を見て立花が判断する設計です (D63)。</p>
+</section>
+
+<section>
+<div class="kicker">03 — Review</div>
+<h2>レビュー 3 往復の中身</h2>
+<table>
+<tr><th style="width:6em">回</th><th>verdict</th><th>要点</th></tr>
+<tr class="gap"><td>1 回目</td><td>REQUEST_CHANGES</td><td>major 4 件: ①Stop 再検査が別セッションの記録で誤 block ②不正 regex を 1 件誤承認すると lint 全体が無音停止 ③過去の残骸録画が今回の証拠として混入 ④scope leash を enforce にすると harness 自身を deny。どれも「今日作った機構の完全性を自分で壊す」系の本物の指摘</td></tr>
+<tr class="gap"><td>2 回目</td><td>REQUEST_CHANGES</td><td>major 4 件は全部修正確認。ただし修正自身が新規 major 1 件 (vet 拒否された提案が approved のまま固まり再承認不能) を持ち込んでいた。レビュアーが実際に再現実行して発見</td></tr>
+<tr class="hit"><td>3 回目</td><td><b>APPROVE</b></td><td>順序修正を独立再現で確認 (拒否 → pending 維持 → 修正後に同一 id で再承認成功)。critical/major/minor ゼロ。残るは低確率のディスク障害時の理論的不整合 1 件 (non-blocking observation として記録)</td></tr>
+</table>
+<p>全修正に「修正前に失敗する回帰テスト」を付け、RED→GREEN を実測してから commit しています。例: vet 順序バグは修正前 script に戻すと FAIL=2、修正後 PASS=21。</p>
+<details><summary>数字で見る (最終 branch の状態)</summary>
+commit 4 本 (<code>c771707d</code> 実装 / <code>450cca8b</code> Plans / <code>609039f6</code> 修正 R1 / <code>e846c206</code> 修正 R2)。105 files changed, +7,651 / −52。<code>tests/validate-plugin.sh</code> 144 合格 0 失敗 (新設の検証チェーン配線ゲート section 22 + config schema 検証 section 23 を含む)。Go 52 パッケージ全 PASS、gofmt/vet clean。binary 4 平台再ビルド + drift gate PASS。mirror (codex/opencode) in-sync。
+</details>
+</section>
+
+<section>
+<div class="kicker">04 — Judgment</div>
+<h2>押さえる本質と、着手判断</h2>
+<p><b>押さえる本質</b>: 今回の設計判断は 7 本 (D62-D68) を decisions.md に Why つきで記録済み。特に効くのは 3 つ — ①縮退は fail-visible (止めずに可視化して判断を倒す) ②データ駆動ルールの強制力上限は ask、deny は人間 only ③LLM はビルド時、実行時は決定論、信頼するのは実行記録。<br><b>AI に任せてよい詳細</b>: 各 handler の実装、テスト fixture、hooks 配線、mirror 同期。</p>
+<div class="choices">
+<div class="choice rec"><div class="t">A. PR を作って main へ (推奨)</div>
+<div class="pros">+ APPROVE 済み・全ゲート緑で寝かせる理由がない。+ Phase 138 が 135.4 に依存しており、merge しないと次の弾が積めない</div>
+<div class="cons">− merge 後も稼働セッションに効くのは release + plugin 更新後 (もう 1 手必要)</div></div>
+<div class="choice"><div class="t">B. branch のまま保留</div>
+<div class="pros">+ 追加で見たい観点があれば再レビューを積める</div>
+<div class="cons">− main が進むと conflict リスクが増える。− 検証チェーンが効かない期間が延びる</div></div>
+</div>
+</section>
+
+<div class="verdict"><div class="lbl">判定</div>
+Phase 134-137 は完了、レビュー APPROVE。今回の依頼の芯だった「検証がオナニーにならない仕組み」は、入口・中間・出口の 3 点で機械的に担保される形になった。推奨アクション: PR 作成 → merge 後、次スプリントで Phase 138 (汎用 feedback ルール = 「同じ指摘を二度させない」の一般化) に着手。
+</div>
+
+<div class="openbox"><div class="lbl">正直な但し書き</div>
+<ul>
+<li>merge しても稼働中セッションの hook は installed plugin の古い binary を使う (過去実測)。実効化には release + plugin 更新が必要。</li>
+<li>writing lint の辞書は空の状態から始まる。育つのは立花が指摘 → 承認してから。既定 off (config で opt-in)。</li>
+<li>blind 評価 (137.2) は説得系/文書系のみ発動。機能系タスクでは何も変わらない (意図した設計)。</li>
+<li>レビュー 2 回目の指摘どおり、初回実装の RED 実測記録の一部は squash により repo 内から辿れない (GREEN は全部再実行で確認済み)。今後は tdd-red-log への永続化を推奨される。</li>
+<li>今回のセッションで露呈した運用課題 2 件は別途対処済み/起票済み: worker の rm ask 連発 (worker 契約 NG-4 追加 + work-mode) と、監視が session limit を ask 待ちと誤診した件 (通知 4 回のうち後半 2 回は誤報)。</li>
+</ul>
+</div>
+
+<footer>
+<h4>SSOT 出典</h4>
+<ul>
+<li>Plans.md — Phase 134-137 各 task 行 (cc:done + commit note) / Phase 138 (cc:todo)</li>
+<li>.claude/memory/decisions.md — D62 (fail-visible) / D63 (scope leash warn 既定) / D64 (辞書の個人層分離) / D65 (eval-loop 薄い取り込み) / D66 (foyer 節度) / D67 (deny 昇格は人間 only) / D68 (ビルド時 LLM・実行時決定論)</li>
+<li>review-result.v1 — 3 回分の verdict (REQUEST_CHANGES ×2 → APPROVE、いずれも codex companion 並走)</li>
+<li>commits — c771707d / 450cca8b / 609039f6 / e846c206 (branch feat/phase134-137-verification-chain, base 1be0770a)</li>
+<li>設計正本 — ~/.claude/plans/cch-users-tachibanashuuta-downloads-ai-lively-eclipse.md</li>
+</ul>
+<h4>分析方法と制約</h4>
+<ul>
+<li>実装は Workflow (計 33 subagent、2 run + 修正 run)。テスト結果は全て実行ベース (validate-plugin.sh / go test / 個別契約テスト) で、本レポートの数値は最終 branch での再実行値。</li>
+<li>レビューは harness-review skill (fork) + codex companion の 2 系統。findings は全件レビュアーの再現実行で確認されたもののみ採用。</li>
+</ul>
+<p style="margin-top:10px">本レポートは派生物であり正本ではない。</p>
+</footer>
+</div>
+</body>
+</html>

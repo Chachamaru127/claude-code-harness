@@ -89,6 +89,11 @@ jq -n   --slurpfile src "$INPUT_FILE"   --slurpfile browser "$BROWSER_SLURP_FILE
     end;
   def is_browser_pending(v):
     v == null or v == "" or v == "PENDING_BROWSER" or v == "SKIPPED" or v == "DOWNGRADE_TO_STATIC";
+  # pending_validations 用: browser_verdict が明示的な縮退マーカーの時だけ layer を積む
+  # (is_browser_pending は「browser を使っていない」null/"" も pending 扱いするため、
+  #  fail-visible 表示にはこちらの厳密判定を使う)
+  def is_pending_marker(v):
+    v == "PENDING_BROWSER" or v == "SKIPPED" or v == "DOWNGRADE_TO_STATIC";
   # companion verdict 正規化: approve→APPROVE, needs-attention→REQUEST_CHANGES
   def normalize_verdict(v):
     if v == "approve" then "APPROVE"
@@ -199,7 +204,15 @@ jq -n   --slurpfile src "$INPUT_FILE"   --slurpfile browser "$BROWSER_SLURP_FILE
         + findings_to_followups($in)
         + findings_to_followups($browser_in)
       ),
-      dual_review: ($in.dual_review // null)
+      dual_review: ($in.dual_review // null),
+      pending_validations: (
+        (if is_pending_marker($browser_verdict) then
+          [{layer: "browser", reason: ("browser verdict is " + $browser_verdict)}]
+         else [] end)
+        + (if ($in.verdict == "SKIPPED") and (($in.reviewer_profile // "static") != "static") then
+          [{layer: "runtime", reason: ($in.note // "runtime artifact reported SKIPPED")}]
+         else [] end)
+      )
     }' > "$OUTPUT_FILE"
 
 # blocking gaps がある場合は verdict を REQUEST_CHANGES に強制

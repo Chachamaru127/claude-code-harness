@@ -126,6 +126,8 @@ func main() {
 		runImpactScore(os.Args[2:])
 	case "pre-compact":
 		runPreCompact(os.Args[2:])
+	case "writing-rule-vet":
+		runWritingRuleVet(os.Args[2:])
 	case "version":
 		fmt.Printf("%s (Hokage)\n", version)
 	case "--version", "-v":
@@ -184,6 +186,7 @@ func usage() {
 	fmt.Fprintln(os.Stderr, "  wt fingerprint diff --before <p> --after <p>  Detect worktree-escape (exit 2 on change)")
 	fmt.Fprintln(os.Stderr, "  impact-score --files-changed N --lines-changed M [--floor-category CAT]  Compute judgment-card impact_score")
 	fmt.Fprintln(os.Stderr, "  pre-compact             Evaluate whether PreCompact should be blocked")
+	fmt.Fprintln(os.Stderr, "  writing-rule-vet        Validate a writing-rule.v1 JSON record from stdin (RE2 compile + type checks); prints \"ok\" and exits 0, or exits 1 with a reason on stderr")
 	fmt.Fprintln(os.Stderr, "  gen [hooks] [--check] [root]  Generate per-host hooks.json from hosts.toml (--check vs golden)")
 	fmt.Fprintln(os.Stderr, "  work <taskID>           Emit the work prompt + task context (host executes; no LLM call)")
 	fmt.Fprintln(os.Stderr, "  plan                    Emit the plan prompt for the host to execute")
@@ -468,6 +471,11 @@ func runHook(hookType string, args []string) {
 		if err := h.Handle(os.Stdin, os.Stdout); err != nil {
 			fmt.Fprintf(os.Stderr, "stop-failure handler error: %v\n", err)
 		}
+	case "writing-lint-stop":
+		h := &hookhandler.StopWritingLintHandler{}
+		if err := h.Handle(os.Stdin, os.Stdout); err != nil {
+			fmt.Fprintf(os.Stderr, "writing-lint-stop handler error: %v\n", err)
+		}
 	case "notification-ext":
 		if err := hookhandler.HandleNotification(os.Stdin, os.Stdout); err != nil {
 			fmt.Fprintf(os.Stderr, "notification-ext handler error: %v\n", err)
@@ -479,6 +487,10 @@ func runHook(hookType string, args []string) {
 	case "quality-pack":
 		if err := hookhandler.HandlePostToolUseQualityPack(os.Stdin, os.Stdout); err != nil {
 			fmt.Fprintf(os.Stderr, "quality-pack handler error: %v\n", err)
+		}
+	case "writing-lint":
+		if err := hookhandler.HandlePostToolUseWritingLint(os.Stdin, os.Stdout); err != nil {
+			fmt.Fprintf(os.Stderr, "writing-lint handler error: %v\n", err)
 		}
 	case "inject-policy":
 		h := &hookhandler.UserPromptInjectPolicyHandler{}

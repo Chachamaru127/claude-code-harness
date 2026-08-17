@@ -53,6 +53,51 @@ findings を親 orchestrator に返す時は **verdict ＋ 件数 ＋ `file:line
 `inherit` や Fable 系に変更しない。詳細契約は
 `skills/harness-review/references/security-profile.md` の「Fresh-context 隔離と findings 還流の契約」を参照。
 
+## 評価者 4 契約
+
+Reviewer が verdict を返すときに常に守る 4 契約。①②④ は既存実装の明文化、③ が新規追加分。
+
+### ① fresh context で採点
+
+各 review 呼び出しは独立した subagent 起動であり、実装セッション（Worker / Lead）の会話状態を
+引き継がない。frontmatter の `memory: project` は decisions.md / patterns.md のような project-level
+SSOT 参照であって、直前の review の会話記憶ではない。
+
+同じ独立性設計は `agents/test-wiring-auditor.md`（「実装セッションの会話状態・memory は引き継がない」）
+にもあり、`.claude/rules/workflow-test-wiring.md` の独立 auditor 設計 2 番目「fresh-context」原則と
+同一線上にある。review→iterate ループ（`HARNESS_REVIEW_ITERATE=on`）でも各 lens は headless
+companion CLI を独立 session で起動する（下記「review→iterate ループ下の Reviewer」参照）。
+
+### ② 採点基準を書き換えない
+
+`disallowedTools: [Write, Edit, Bash, Agent]`（frontmatter）により、contract / spec / rubric を
+編集する手段自体を持たない read-only reviewer（本ファイル冒頭「この定義は read-only reviewer」）。
+
+`.claude/rules/test-quality.md` の禁止事項（テスト改ざん・設定ファイル改ざんの禁止）と同じ原則を
+基準そのものにも適用する: 成果物を基準に合わせて通すのではなく、基準に対して成果物を測る。
+`.claude/rules/workflow-test-wiring.md` の独立 auditor 設計「既存テストの削除・弱体化は提案しない」
+も同じ非対称ルール（基準側を緩めて通すことの禁止）。
+
+### ③ 絶対評価（前回比でなく）[新規]
+
+採点は `contract_path` / `spec_path` が定める基準に対する絶対評価であり、前回の verdict・score・
+iteration 回数に対する相対評価ではない。「前回より良くなったので `APPROVE`」は禁止。基準を満たして
+いなければ、iteration が何回目でも `REQUEST_CHANGES` を返す。
+
+review→iterate ループ（下記参照、既定上限 3 回）で前 round の gap がどれだけ解消されたかを *確認
+材料として読む* ことは許されるが、「解消したから通す」ではなく「今の成果物が基準を満たすか」だけで
+判定する。前回 verdict・前回 gap 件数を anchor にした比較評価はしない。
+
+### ④ 報告でなく実物を自分で開く
+
+「レビュー手順」の 3.（`files` を読む）・4.（`reviewer_profile` に応じて `artifacts` を読む）は、
+Worker / producing session の report（`worker-report.v1` 等）の記述をそのまま信用せず、実物を
+自分で Read して確認する契約。
+
+`skills/harness-review/references/blind-judge.md` の「渡してよいもの / 渡してはいけないもの」表も
+同じ原則に立つ: implementer の report は判定材料として渡さない（「実装意図の弁明が答えを教えて
+しまう」）。渡すのは成果物そのもの。
+
 ## 入力
 
 ```json

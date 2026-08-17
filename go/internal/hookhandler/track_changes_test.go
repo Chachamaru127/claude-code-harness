@@ -205,6 +205,96 @@ func TestHandleTrackChanges_CWDRelativePath(t *testing.T) {
 	}
 }
 
+// Regression (Phase 134 finding): the recorded entry must carry session_id
+// from the PostToolUse payload so Stop-time consumers can scope
+// "files touched this session" reads to the writing session.
+func TestHandleTrackChanges_RecordsSessionID(t *testing.T) {
+	tmpDir := t.TempDir()
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(origDir)
+
+	input := `{"tool_name":"Write","session_id":"s1","tool_input":{"file_path":"src/main.go"}}`
+	var out bytes.Buffer
+	if err := HandleTrackChanges(strings.NewReader(input), &out); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	data, err := os.ReadFile(changedFilesPath)
+	if err != nil {
+		t.Fatalf("changed-files.jsonl not created: %v", err)
+	}
+
+	var entry changedFileEntry
+	if err := json.Unmarshal([]byte(strings.TrimSpace(string(data))), &entry); err != nil {
+		t.Fatalf("invalid JSONL entry: %v, raw: %s", err, data)
+	}
+	if entry.SessionID != "s1" {
+		t.Errorf("expected session_id=s1, got %q", entry.SessionID)
+	}
+}
+
+// Regression (advisor-flagged blind spot): dedup must be scoped per session.
+// Without this, session B's write of a file session A already recorded
+// within the 2h window would be silently dropped, leaving B's own edit
+// invisible to B's own Stop gate (defeating the session filter added for
+// the Phase 134 finding).
+func TestHandleTrackChanges_DedupIsPerSession(t *testing.T) {
+	tmpDir := t.TempDir()
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(origDir)
+
+	// Session A records notes.md.
+	inputA := `{"tool_name":"Write","session_id":"s-A","tool_input":{"file_path":"notes.md"}}`
+	var outA bytes.Buffer
+	if err := HandleTrackChanges(strings.NewReader(inputA), &outA); err != nil {
+		t.Fatalf("session A call error: %v", err)
+	}
+
+	// Session B records the SAME file within the dedup window: must NOT be
+	// suppressed, because it is a different session.
+	inputB := `{"tool_name":"Write","session_id":"s-B","tool_input":{"file_path":"notes.md"}}`
+	var outB bytes.Buffer
+	if err := HandleTrackChanges(strings.NewReader(inputB), &outB); err != nil {
+		t.Fatalf("session B call error: %v", err)
+	}
+
+	data, err := os.ReadFile(changedFilesPath)
+	if err != nil {
+		t.Fatalf("changed-files.jsonl not found: %v", err)
+	}
+	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
+	if len(lines) != 2 {
+		t.Fatalf("expected 2 entries (one per session), got %d lines: %s", len(lines), data)
+	}
+
+	// Session A records notes.md again within the window: must be
+	// suppressed (same-session dedup still works).
+	var outA2 bytes.Buffer
+	if err := HandleTrackChanges(strings.NewReader(inputA), &outA2); err != nil {
+		t.Fatalf("session A second call error: %v", err)
+	}
+	data2, err := os.ReadFile(changedFilesPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	lines2 := strings.Split(strings.TrimSpace(string(data2)), "\n")
+	if len(lines2) != 2 {
+		t.Fatalf("expected same-session repeat to dedup (still 2 lines), got %d lines: %s", len(lines2), data2)
+	}
+}
+
 func TestHandleTrackChanges_DedupWithin2Hours(t *testing.T) {
 	tmpDir := t.TempDir()
 	origDir, err := os.Getwd()

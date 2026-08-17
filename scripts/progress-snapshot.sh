@@ -19,12 +19,18 @@
 # Optional: --state-file
 #   .claude/state/session-cost.json から elapsed_minutes / cost_so_far_usd
 #   等を読む (なければ全部 0)
+#
+# Optional: --writing-lint-proposals
+#   scripts/writing-rule-list.sh --status pending --json に --proposals として
+#   forward する (Phase 136.2)。未指定時は writing-rule-list.sh の default
+#   (~/.claude/writing-lint/proposals.jsonl) を使う。writing-rule-list.sh が
+#   実行不可 / proposals ファイルが無い場合は writing_lint_pending: [] で fallback。
 
 set -euo pipefail
 
 usage() {
   cat <<'USAGE' >&2
-Usage: progress-snapshot.sh --plans <path> --project <name> [--state-file <path>]
+Usage: progress-snapshot.sh --plans <path> --project <name> [--state-file <path>] [--writing-lint-proposals <path>]
 
 Required:
   --plans <path>       Plans.md ファイルパス
@@ -35,21 +41,27 @@ Optional:
                        期待 fields: elapsed_minutes / estimated_total_minutes /
                                    cost_so_far_usd / cost_estimate_usd
                        なければ全て 0 で fallback
+  --writing-lint-proposals <path>
+                       writing-rule-list.sh --proposals に forward する path。
+                       未指定なら writing-rule-list.sh の default を使う。
 
 Exit: 0=success / 1=runtime error / 2=usage error
 USAGE
   exit 2
 }
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLANS_PATH=""
 PROJECT=""
 STATE_FILE=""
+WRITING_LINT_PROPOSALS_PATH=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --plans)      PLANS_PATH="${2:-}"; shift 2 ;;
     --project)    PROJECT="${2:-}"; shift 2 ;;
     --state-file) STATE_FILE="${2:-}"; shift 2 ;;
+    --writing-lint-proposals) WRITING_LINT_PROPOSALS_PATH="${2:-}"; shift 2 ;;
     -h|--help)    usage ;;
     *) echo "ERROR: unknown argument: $1" >&2; usage ;;
   esac
@@ -89,6 +101,18 @@ fi
 
 TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
+# writing_lint_pending (Phase 136.2): scripts/writing-rule-list.sh --json の
+# pending 一覧をそのまま snapshot に組み込む。script が無い / 失敗した場合は [] fallback。
+WRITING_RULE_LIST="$SCRIPT_DIR/writing-rule-list.sh"
+WRITING_LINT_PENDING_JSON="[]"
+if [[ -x "$WRITING_RULE_LIST" ]]; then
+  if [[ -n "$WRITING_LINT_PROPOSALS_PATH" ]]; then
+    WRITING_LINT_PENDING_JSON="$(bash "$WRITING_RULE_LIST" --status pending --json --proposals "$WRITING_LINT_PROPOSALS_PATH" 2>/dev/null || echo "[]")"
+  else
+    WRITING_LINT_PENDING_JSON="$(bash "$WRITING_RULE_LIST" --status pending --json 2>/dev/null || echo "[]")"
+  fi
+fi
+
 export PLANS_PATH_PY="$PLANS_PATH"
 export PROJECT_PY="$PROJECT"
 export TIMESTAMP_PY="$TIMESTAMP"
@@ -96,6 +120,7 @@ export ELAPSED_MIN_PY="$ELAPSED_MIN"
 export ESTIMATE_MIN_PY="$ESTIMATE_MIN"
 export COST_SO_FAR_PY="$COST_SO_FAR"
 export COST_ESTIMATE_PY="$COST_ESTIMATE"
+export WRITING_LINT_PENDING_JSON_PY="$WRITING_LINT_PENDING_JSON"
 
 exec python3 - <<'PYEOF'
 import os
@@ -117,6 +142,26 @@ def to_float(s):
 
 COST_SO_FAR = to_float(os.environ["COST_SO_FAR_PY"])
 COST_ESTIMATE = to_float(os.environ["COST_ESTIMATE_PY"])
+
+# writing_lint_pending (Phase 136.2)
+try:
+    _pending_raw = json.loads(os.environ.get("WRITING_LINT_PENDING_JSON_PY", "[]"))
+except (TypeError, ValueError):
+    _pending_raw = []
+if not isinstance(_pending_raw, list):
+    _pending_raw = []
+
+_pending_count = len(_pending_raw)
+writing_lint_pending = [
+    {
+        "id": rec.get("id", ""),
+        "pattern": rec.get("pattern", ""),
+        "approve_command": "scripts/writing-rule-approve.sh --id {}".format(rec.get("id", "")),
+        "pending_count": _pending_count,
+    }
+    for rec in _pending_raw
+    if isinstance(rec, dict)
+]
 
 # Plans.md の task 行を parse:
 #   "| 65.4.1 | <title> | <DoD> | <Depends> | cc:todo |"
@@ -180,6 +225,7 @@ snapshot = {
     "_todo_count": len(todo),
     "_wip_count": len(wip),
     "_done_count": len(done),
+    "writing_lint_pending": writing_lint_pending,
 }
 
 print(json.dumps(snapshot, ensure_ascii=False, indent=2))

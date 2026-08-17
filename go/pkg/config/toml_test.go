@@ -372,6 +372,50 @@ bypass_audit_required = false
 	}
 }
 
+func TestParse_ScopeLeashDefaultFallback(t *testing.T) {
+	cfg, err := config.ParseBytes([]byte(`
+[project]
+name = "minimal"
+`))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if cfg.ScopeLeash.EnforceLevel != config.ScopeLeashLevelWarn {
+		t.Errorf("scope_leash.enforce_level default = %q, want warn", cfg.ScopeLeash.EnforceLevel)
+	}
+}
+
+func TestParse_ScopeLeashLevels(t *testing.T) {
+	for _, level := range []string{
+		config.ScopeLeashLevelOff,
+		config.ScopeLeashLevelWarn,
+		config.ScopeLeashLevelEnforce,
+	} {
+		data := []byte(`
+[scope_leash]
+enforce_level = "` + level + `"
+`)
+		cfg, err := config.ParseBytes(data)
+		if err != nil {
+			t.Fatalf("level %q should parse: %v", level, err)
+		}
+		if cfg.ScopeLeash.EnforceLevel != level {
+			t.Errorf("level %q: parsed level = %q", level, cfg.ScopeLeash.EnforceLevel)
+		}
+	}
+}
+
+func TestParse_ScopeLeashRejectMalformedLevel(t *testing.T) {
+	data := []byte(`
+[scope_leash]
+enforce_level = "strict"
+`)
+	_, err := config.ParseBytes(data)
+	if err == nil {
+		t.Fatal("expected error for malformed scope_leash.enforce_level, got nil")
+	}
+}
+
 func TestParse_TDDRejectMalformedLevelBytes(t *testing.T) {
 	data := []byte(`
 [tdd.enforce]

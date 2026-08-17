@@ -59,9 +59,23 @@ Phase 65.1.x (`harness-plan-brief`) の対構造として動作し、Plan Brief 
   "recommendation": "ship|wait|reject",
   "recommendation_evidence": ["string"],
   "project": "string",
-  "generated_at": "ISO8601"
+  "generated_at": "ISO8601",
+  "blind_evaluation": {
+    "applicable": true,
+    "eligibility_reason": "persuasive-doc|functional-skip|not_applicable|unavailable",
+    "audience_purpose_line": "string",
+    "evaluator_believable": "believable|not_believable|uncertain",
+    "evaluator_useful": "useful|not_useful|uncertain",
+    "evaluator_friction_points": ["string"],
+    "internal_recommendation": "ship|wait|reject",
+    "divergence": "none|internal_high_evaluator_low|internal_low_evaluator_high",
+    "divergence_notes": "string"
+  }
 }
 ```
+
+`blind_evaluation` は Phase 137.2 で追加した optional field (additive、既存 consumer は無視してよい)。
+詳細は [`references/blind-evaluator.md`](${CLAUDE_SKILL_DIR}/references/blind-evaluator.md) を参照。
 
 完全 schema は [`schemas/acceptance-context.v1.schema.json`](${CLAUDE_SKILL_DIR}/schemas/acceptance-context.v1.schema.json) を参照。
 
@@ -70,16 +84,34 @@ Phase 65.1.x (`harness-plan-brief`) の対構造として動作し、Plan Brief 
 ```
 verified_count    = count of verified_criteria where passed=true
 total_criteria    = count of verified_criteria
+pending_count     = count of criteria whose evidence が "pending_validations: " prefix を持つ (Step 4 の記入規約)
 ratio             = verified_count / total_criteria  (total=0 のときは 0)
 
-  ratio >= 0.8 → "ship"
-  ratio >= 0.5 → "wait"
-  ratio <  0.5 → "reject"
   total = 0    → "reject" (criteria 0 件は判定不能、安全側 reject)
+  ratio >= 0.8 → base = "ship"
+  ratio >= 0.5 → base = "wait"
+  ratio <  0.5 → base = "reject"
+
+  # pending 補正 (Phase 134.4): 検証待ちの criteria が残っている限り ship にしない
+  pending_count >= 1 かつ base == "ship" → interim = "wait" (ship から丸める)
+  それ以外                                 → interim = base
+
+  # blind_evaluation 補正 (Phase 137.2): fresh fork 評価者が「信じられない/役に立たない」と
+  # 判定し、かつ内側の recommendation が依然 ship なら wait に丸める。reject へはさらに丸めない
+  blind_evaluation.applicable == true
+    かつ blind_evaluation.divergence == "internal_high_evaluator_low"
+    かつ interim == "ship"
+    → recommendation = "wait"
+  それ以外
+    → recommendation = interim
 ```
 
 評価根拠は `recommendation_evidence` に literal な数値で残す。
 例: `"verified 4 件 / 全 5 件 (80%) → ship 閾値以上"`
+pending 補正が効いた場合は `"pending_validations 該当 criteria N 件が未解消のため ship を wait に丸めた"` のように理由を明記する。
+blind_evaluation 補正が効いた場合は `"blind evaluator が believable=not_believable / useful=not_useful と判定したため ship を wait に丸めた"` のように理由を明記する。
+アルゴリズムと Eligibility (説得系/文書系のみ適用、機能系は `functional-skip` で skip) の詳細は
+[`references/blind-evaluator.md`](${CLAUDE_SKILL_DIR}/references/blind-evaluator.md) 参照。
 
 ## Execution Flow
 
@@ -159,20 +191,65 @@ bash scripts/accept-past-issues.sh --project "$PROJECT_NAME" --task "$USER_REQUE
 このスクリプトは patterns.md (P1-P33) と過去の `acceptance-context.v1` record を semantic search し、
 最大 3 件の `past-issue.v1` を返す。各々 `verified_in_current_task: bool` 付き。
 
-### Step 4: verified_criteria を組み立てる
+### Step 4: verified_criteria を artifact から組み立てる (Phase 134.4)
 
-Plan Brief 時の acceptance_criteria 各項目について、現タスクの状態を評価する。
-ユーザー (もしくは Claude) が「verify した evidence」を提示し、`evidence` 文字列を埋める。
+まず `scripts/accept-collect-evidence.sh <task-id>` (read-only) を実行し、`accept-evidence.v1` を取得する:
 
-`evidence` が空文字列の場合、HTML 上で警告表示される (DoD c)。
+```bash
+EVIDENCE_JSON="$(bash scripts/accept-collect-evidence.sh "$TASK_ID")"
+```
+
+これは 4 artifact (`.claude/state/review/<task-id>.worker-report.json` / `.claude/state/review-result.json`
+[`task.id` 一致時のみ採用] / `<task-id>.runtime-review.json` / `<task-id>.browser-result.json`) を読み、
+各 artifact の `present` / `reason` / `data` と `pending_validations` (Reviewer が積んだ未解消レイヤー) を正規化して返す。
+
+**原則: artifact から引用する。新規主張を作らない。** Plan Brief 時の acceptance_criteria 各項目について、
+`EVIDENCE_JSON` の 4 artifact の中から該当する記述を探し、その内容を `evidence` にそのまま転記する。
+Claude が artifact に無い「動作確認した」を独自に主張することは禁止。
+
+各 criterion の判定:
+
+- artifact 内に該当する検証結果があり合格 → `passed: true`、`evidence` に artifact の該当箇所を引用する
+- 該当 artifact が欠損 (`present: false`) か、`EVIDENCE_JSON.pending_validations` に該当 layer がある場合 → `passed: false`。
+  `evidence` には次の literal prefix で実状態を転記する (pending_count の機械カウントに使う規約):
+  - pending 由来: `"pending_validations: " + <該当 pending_validations[].reason>`
+  - artifact 欠損由来: `"artifact missing: " + <path> + " (" + <reason> + ")"`
+- 上記いずれの場合も、同じ内容を `unverified_caveats` に 1 行追記する
+
+`evidence` が空文字列の場合、HTML 上で警告表示される (DoD c、既存動作)。
+
+**demo_artifacts への video 合流 (Phase 134.6)**: `EVIDENCE_JSON.demo_artifacts` (browser-review-runner.sh
+が拾った playwright screencast の `{kind:"video", path}`) を、コンテキスト JSON の `demo_artifacts` 配列に
+追記する。ただし `path` はプロジェクトルート相対のまま転記してはならない — 出力先 HTML は
+`.claude/state/views/accept-<timestamp>.html` にあり、`<video src>` はブラウザが HTML のある場所
+(`.claude/state/views/`) を基点に解決するため、`../../../` を前置してプロジェクトルートから
+そこへ辿れる相対パスに書き換えてから追記する (例: `test-results/x/trace.webm` →
+`../../../test-results/x/trace.webm`)。`accept.html.template` は `kind=="video"` のエントリだけ
+`<video>` 埋め込みで表示する (それ以外の kind は従来通りテキスト表示のまま)。
 
 TDD が必要な task では、Acceptance Demo に `TDD verified: yes|no` の 1 行を必ず出す。
 TDD 不要または skip の場合は `TDD verified: not-required` または `TDD verified: skip:<reason>` と表示する。
 `yes` にできるのは `.claude/state/tdd-red-log/<task-id>.jsonl` の Red 証跡、または literal failing test output が確認できる時だけ。
 
+### Step 4.5: blind evaluation (optional, Phase 137.2)
+
+Eligibility を確認する: 成果物の主目的が「説得すること・読ませて理解させること」の文書系
+(提案書・レポート・README 等) なら適用、「動くこと」の機能系 (コード・設定・スキーマ等) なら
+skip する。詳細な Eligibility 表と手順は
+[`references/blind-evaluator.md`](${CLAUDE_SKILL_DIR}/references/blind-evaluator.md) 参照。
+
+- **機能系タスク → skip**: `blind_evaluation = { applicable: false, eligibility_reason: "functional-skip" }`
+  として Step 5 に進む (DoD b)。評価者は起動しない。
+- **説得系/文書系 → 適用**: Task tool で fresh sub-agent (`subagent_type: general-purpose`) を起動し、
+  依頼文 + 成果物 + 読者像 1 行**のみ**を渡す (`verified_criteria` / `recommendation` の閾値 / 過去の
+  判定は渡さない)。Judge Prompt Template で「信じられるか / 役に立つか / 引っかかった箇所」の
+  3点を受け取り、`blind_evaluation` を組み立てる。
+- Task tool が使えない環境: `eligibility_reason: "unavailable"` とし fake の結果を作らない。
+
 ### Step 5: recommendation を算出する
 
 上記「Recommendation 算出ロジック」に従って ship / wait / reject を決定する。
+Step 4.5 で `blind_evaluation` を適用した場合、divergence による補正もここで適用する。
 
 ### Step 6: HTML を生成する
 
@@ -215,6 +292,8 @@ bash scripts/plan-brief-open.sh "$HTML_OUT"
 ## Related
 
 - `harness-plan-brief` (Phase 65.1.2) — 計画段階の対構造スキル。本スキルは Plan Brief 時の `personal-preference.v1` を `user_request_hash` で join して read
+- `scripts/accept-collect-evidence.sh` (Phase 134.4) — 4 artifact (worker-report / review-result / runtime-review / browser-result) を読み `accept-evidence.v1` を返す read-only script (Step 4 で使用)
+- `references/blind-evaluator.md` (Phase 137.2) — Step 4.5 の optional blind evaluation。説得系/文書系のみ適用、機能系は skip。`blind-judge.md` から設計原則を継承しつつ Output Contract と recommendation への反映は独立に定義
 - `scripts/accept-past-issues.sh` (Phase 65.2.2) — 過去の問題パターン取得 (read side)
 - `scripts/accept-record-decision.sh` (Phase 65.2.3) — 承認 memory write (`acceptance-decision.v1`)
 - `scripts/render-html.sh` (Phase 65.1.1) — HTML テンプレートエンジン

@@ -1,14 +1,17 @@
 package guardrail
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Chachamaru127/claude-code-harness/go/internal/auditlog"
 	"github.com/Chachamaru127/claude-code-harness/go/internal/policy"
 	"github.com/Chachamaru127/claude-code-harness/go/internal/runtimefloor"
+	"github.com/Chachamaru127/claude-code-harness/go/internal/scopeleash"
 	"github.com/Chachamaru127/claude-code-harness/go/internal/state"
 	"github.com/Chachamaru127/claude-code-harness/go/pkg/config"
 	"github.com/Chachamaru127/claude-code-harness/go/pkg/hookproto"
@@ -97,6 +100,203 @@ func resolveTddRuntimeConfig(input hookproto.HookInput, projectRoot string) tddR
 	}
 
 	return cfg
+}
+
+// ---------------------------------------------------------------------------
+// Scope leash (134.5): advisory (warn, default) / enforce check on
+// Write/Edit/MultiEdit against the active task's auto-inferred declared
+// scope. Evaluated in evaluatePreTool after the runtime floor block AND after
+// tryRegisterBreezingRole (breezing_state.go), so harness's own self-registration
+// write is always decided by its own dedicated logic first. Unlike the floor
+// this is a soft check by default and does not modify the live guardrail
+// rule table (spec invariant 6) — see go/internal/scopeleash's package doc.
+// ---------------------------------------------------------------------------
+
+const (
+	scopeLeashLevelOff     = config.ScopeLeashLevelOff
+	scopeLeashLevelWarn    = config.ScopeLeashLevelWarn
+	scopeLeashLevelEnforce = config.ScopeLeashLevelEnforce
+)
+
+func normalizeScopeLeashLevel(value string) string {
+	switch strings.ToLower(strings.Trim(strings.TrimSpace(value), `"'`)) {
+	case scopeLeashLevelOff:
+		return scopeLeashLevelOff
+	case scopeLeashLevelEnforce:
+		return scopeLeashLevelEnforce
+	default:
+		return scopeLeashLevelWarn
+	}
+}
+
+func readScopeLeashLevelFromHarnessTOML(path string) (string, bool) {
+	cfg, err := config.ParseFile(path)
+	if err != nil {
+		return "", false
+	}
+	return normalizeScopeLeashLevel(cfg.ScopeLeash.EnforceLevel), true
+}
+
+func resolveScopeLeashLevel(input hookproto.HookInput, projectRoot string) string {
+	level := scopeLeashLevelWarn
+	candidates := []string{filepath.Join(projectRoot, "harness.toml")}
+	if input.PluginRoot != "" && input.PluginRoot != projectRoot {
+		candidates = append(candidates, filepath.Join(input.PluginRoot, "harness.toml"))
+	}
+	for _, path := range candidates {
+		if loaded, ok := readScopeLeashLevelFromHarnessTOML(path); ok {
+			level = loaded
+			break
+		}
+	}
+	if value := os.Getenv("HARNESS_SCOPE_LEASH_LEVEL"); value != "" {
+		level = normalizeScopeLeashLevel(value)
+	}
+	return level
+}
+
+// scopeLeashContractDoc mirrors just the field of sprint-contract.json this
+// check needs (go/internal/hookhandler/sprint_contract.go's sprintContractTask).
+type scopeLeashContractDoc struct {
+	Task struct {
+		DeclaredScope []string `json:"declared_scope"`
+	} `json:"task"`
+}
+
+// loadDeclaredScope reads the declared_scope baked into the task's
+// sprint-contract.json at generation time (Generate() in sprint_contract.go).
+// Any read/parse failure yields an empty scope (fail-open: no contract on
+// disk means nothing to check against, not a block).
+func loadDeclaredScope(projectRoot, taskID string) []string {
+	path := filepath.Join(projectRoot, ".claude", "state", "contracts", taskID+".sprint-contract.json")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var doc scopeLeashContractDoc
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return nil
+	}
+	return doc.Task.DeclaredScope
+}
+
+// scopeLeashWarningEntry is one line of .claude/state/scope-leash.jsonl.
+type scopeLeashWarningEntry struct {
+	Timestamp string `json:"timestamp"`
+	TaskID    string `json:"task_id"`
+	File      string `json:"file"`
+	Level     string `json:"level"`
+}
+
+// recordScopeLeashWarning appends a warn-level out-of-scope write to
+// .claude/state/scope-leash.jsonl. Best-effort: write failures are ignored so
+// the hook fast-path stays available (same contract as track_changes.go).
+func recordScopeLeashWarning(projectRoot, taskID, targetPath string) {
+	stateDir := filepath.Join(projectRoot, ".claude", "state")
+	if err := os.MkdirAll(stateDir, 0o755); err != nil {
+		return
+	}
+	entry := scopeLeashWarningEntry{
+		Timestamp: time.Now().UTC().Format(time.RFC3339),
+		TaskID:    taskID,
+		File:      targetPath,
+		Level:     scopeLeashLevelWarn,
+	}
+	data, err := json.Marshal(entry)
+	if err != nil {
+		return
+	}
+	f, err := os.OpenFile(filepath.Join(stateDir, "scope-leash.jsonl"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+	fmt.Fprintf(f, "%s\n", data)
+}
+
+// scopeLeashExemptDir is the repo-relative directory the scope leash never
+// evaluates against declared scope. declared_scope is auto-inferred from
+// Plans.md Title/DoD path tokens (go/internal/scopeleash.InferScopeFromPlan)
+// and never contains .claude/ paths — that's the harness's own runtime state
+// (active-task.json, sprint contracts, breezing role registration, ...), not
+// task-declared product scope. Without this exemption, enforce_level=enforce
+// would deny the harness's own internal writes the moment a task's inferred
+// scope doesn't happen to mention .claude/ (code review major finding,
+// 2026-08-16). No warning is recorded for an exempt write either — this is
+// not "out of scope for the task", it's out of the check's domain entirely.
+const scopeLeashExemptDir = ".claude"
+
+// isScopeLeashExempt reports whether targetPath, made project-root-relative,
+// falls under scopeLeashExemptDir.
+func isScopeLeashExempt(targetPath, projectRoot string) bool {
+	rel := targetPath
+	if projectRoot != "" {
+		if r, err := filepath.Rel(projectRoot, targetPath); err == nil && !strings.HasPrefix(r, "..") {
+			rel = r
+		}
+	}
+	rel = filepath.ToSlash(rel)
+	rel = strings.TrimPrefix(rel, "./")
+	return rel == scopeLeashExemptDir || strings.HasPrefix(rel, scopeLeashExemptDir+"/")
+}
+
+// evaluateScopeLeash returns nil when there is nothing to say (off level,
+// non-write tool, no active task, empty declared scope, or in-scope write).
+// A non-nil Deny short-circuits the caller like the runtime floor; a non-nil
+// Approve carries the warn-level SystemMessage to merge into the final result.
+func evaluateScopeLeash(input hookproto.HookInput, projectRoot string) *hookproto.HookResult {
+	if input.ToolName != "Write" && input.ToolName != "Edit" && input.ToolName != "MultiEdit" {
+		return nil
+	}
+	level := resolveScopeLeashLevel(input, projectRoot)
+	if level == scopeLeashLevelOff {
+		return nil
+	}
+
+	activeTask, ok := resolveActiveTaskScope(projectRoot)
+	if !ok || activeTask.Task == "" {
+		return nil
+	}
+
+	declaredScope := loadDeclaredScope(projectRoot, activeTask.Task)
+	if len(declaredScope) == 0 {
+		// 空 scope は即 skip: no declared scope means nothing to enforce, and
+		// treating "no contract yet" as "everything out of scope" would flag
+		// every write in a session that never generated a sprint-contract.
+		return nil
+	}
+
+	targetPath, ok := input.ToolInput["file_path"].(string)
+	if !ok || strings.TrimSpace(targetPath) == "" {
+		return nil
+	}
+
+	if isScopeLeashExempt(targetPath, projectRoot) {
+		return nil
+	}
+
+	if scopeleash.CheckWrite(declaredScope, targetPath, projectRoot) {
+		return nil
+	}
+
+	reason := fmt.Sprintf(
+		"SCOPE_LEASH: %s is outside task %s's declared scope %v",
+		targetPath, activeTask.Task, declaredScope,
+	)
+
+	if level == scopeLeashLevelEnforce {
+		return &hookproto.HookResult{
+			Decision: hookproto.DecisionDeny,
+			Reason:   reason,
+			RuleID:   "SCOPE_LEASH",
+		}
+	}
+
+	recordScopeLeashWarning(projectRoot, activeTask.Task, targetPath)
+	return &hookproto.HookResult{
+		Decision:      hookproto.DecisionApprove,
+		SystemMessage: reason,
+	}
 }
 
 // BuildContext constructs a RuleContext from a HookInput and environment variables.
@@ -316,10 +516,33 @@ func evaluatePreTool(input hookproto.HookInput) hookproto.HookResult {
 	// hook payload の agent_id / session_id キーで roles ファイルへ登録する。
 	// 登録キーは payload 由来のみ (書かれた内容の ID は使わない = 他セッション
 	// への role 付与を防ぐ)。登録 Write 自体は approve する。
+	//
+	// This must run BEFORE the scope-leash check below: registration is the
+	// harness's own internal bookkeeping, not subject to any task's declared
+	// scope, and should be decided by its own dedicated logic regardless of
+	// what evaluateScopeLeash would otherwise conclude (code review major
+	// finding, 2026-08-16 — see also the .claude/ exemption in
+	// isScopeLeashExempt, which is the other half of that fix).
 	if result := tryRegisterBreezingRole(input); result != nil {
 		return *result
 	}
 
+	// Scope leash (134.5): off/warn/enforce advisory check, see the block
+	// above evaluateScopeLeash. warn does not block — its SystemMessage is
+	// merged into the final result below.
+	scopeLeashProjectRoot := resolveProjectRoot(input)
+	var scopeWarning string
+	if scopeResult := evaluateScopeLeash(input, scopeLeashProjectRoot); scopeResult != nil {
+		if scopeResult.Decision == hookproto.DecisionDeny {
+			return *scopeResult
+		}
+		scopeWarning = scopeResult.SystemMessage
+	}
+
 	ctx := BuildContext(input)
-	return policy.EvaluateRules(ctx)
+	result := policy.EvaluateRules(ctx)
+	if scopeWarning != "" && result.Decision == hookproto.DecisionApprove && result.SystemMessage == "" {
+		result.SystemMessage = scopeWarning
+	}
+	return result
 }

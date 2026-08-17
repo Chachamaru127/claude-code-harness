@@ -8,6 +8,7 @@
 //	[env]      — environment variables injected into CC sessions
 //	[safety]   — permissions and sandbox settings
 //	[tdd]      — TDD enforcement rollout controls
+//	[scope_leash] — in-run declared-scope leash controls (Plans.md 134.5)
 //	[telemetry]— harness-internal settings (not reflected to CC files)
 //
 // Unsupported keys (userConfig, channels) are explicitly rejected.
@@ -26,11 +27,12 @@ import (
 
 // Config is the top-level harness.toml structure.
 type Config struct {
-	Project ProjectConfig     `toml:"project"`
-	Agent   AgentConfig       `toml:"agent"`
-	Env     map[string]string `toml:"env"`
-	Safety  SafetyConfig      `toml:"safety"`
-	TDD     TDDConfig         `toml:"tdd"`
+	Project    ProjectConfig     `toml:"project"`
+	Agent      AgentConfig       `toml:"agent"`
+	Env        map[string]string `toml:"env"`
+	Safety     SafetyConfig      `toml:"safety"`
+	TDD        TDDConfig         `toml:"tdd"`
+	ScopeLeash ScopeLeashConfig  `toml:"scope_leash"`
 }
 
 // ProjectConfig maps to [project] in harness.toml.
@@ -147,6 +149,17 @@ const (
 	TDDEnforceLevelMax     = "max"
 )
 
+// ScopeLeashConfig maps to [scope_leash] in harness.toml.
+type ScopeLeashConfig struct {
+	EnforceLevel string `toml:"enforce_level"`
+}
+
+const (
+	ScopeLeashLevelOff     = "off"
+	ScopeLeashLevelWarn    = "warn"
+	ScopeLeashLevelEnforce = "enforce"
+)
+
 // ---------------------------------------------------------------------------
 // Unsupported key detection
 // ---------------------------------------------------------------------------
@@ -216,18 +229,29 @@ func applyDefaults(cfg *Config, meta toml.MetaData) {
 	if !meta.IsDefined("tdd", "enforce", "bypass_audit_required") {
 		cfg.TDD.Enforce.BypassAuditRequired = true
 	}
+	if !meta.IsDefined("scope_leash", "enforce_level") {
+		cfg.ScopeLeash.EnforceLevel = ScopeLeashLevelWarn
+	}
 }
 
 func validateConfig(cfg *Config) error {
 	switch cfg.TDD.Enforce.Level {
 	case TDDEnforceLevelOff, TDDEnforceLevelCentral, TDDEnforceLevelMax:
-		return nil
 	default:
 		return fmt.Errorf(
 			"harness.toml: unsupported tdd.enforce.level %q (allowed: off, central, max)",
 			cfg.TDD.Enforce.Level,
 		)
 	}
+	switch cfg.ScopeLeash.EnforceLevel {
+	case ScopeLeashLevelOff, ScopeLeashLevelWarn, ScopeLeashLevelEnforce:
+	default:
+		return fmt.Errorf(
+			"harness.toml: unsupported scope_leash.enforce_level %q (allowed: off, warn, enforce)",
+			cfg.ScopeLeash.EnforceLevel,
+		)
+	}
+	return nil
 }
 
 // validateKeys checks that no unsupported top-level keys are present.

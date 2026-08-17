@@ -194,6 +194,11 @@ sprint contract input として `spec_path` / `lane` / `stage` を認識する�
 - Worker は `Agent` tool を呼ばない（frontmatter の `disallowedTools: [Agent]` で強制済み）
 - Advisor が必要な場合は `advisor-request.v1` を返すだけで、自力で spawn しない
 
+**NG-4: 一時領域の掃除で operator を停止させない**
+
+- `mktemp -d` の一時領域は消さず残してよい（OS が掃除する）。テストスクリプト内の `trap` cleanup は可
+- Bash tool から `rm` を打つ場合は前置（`cd` / `&&` / heredoc）なしの単独コマンドで出す。前置付き `rm` は guardrail R05 が ask になり、autonomous run 中の operator を呼び出してしまう（2026-08-15 に実測 2 回）
+
 ## Advisor 相談判定
 
 次のどれかに一致したら、作業を続けず `advisor-request.v1` を返す。
@@ -260,11 +265,11 @@ Worker 自身は stall 検出を行わない (Lead 側の責務)。Worker は `t
 - **self-review scope**: diff を生成した **producing context** からの自己レビューは禁止（spec.md Execution Backend Contract の self-review scope と整合）。`worker-report.v1` の `self_review` 5 件ゲートは **backend=claude** の agent spawn 経路向けであり、Sub-Lead 配下の cursor companion subWorker では Lead/companion 経路の diff レビューが品質ゲートになる。
 - **例外**: **fresh-context advisory pre-review**（producing session と会話状態を共有しない read-only reviewer pass）は許可。primary verdict は brain（Lead）のみが出す（`HARNESS_REVIEW_ITERATE=on` 時の `reviewiterate` ループ参照）。
 
-上記は Mode 1 階層の追加文脈であり、`worker-report.v1` / `self_review` 5 件 / NG-1〜3 の既存 Worker 契約は変えない。
+上記は Mode 1 階層の追加文脈であり、`worker-report.v1` / `self_review` 5 件 / NG-1〜4 の既存 Worker 契約は変えない。
 
 ## モード別ルール
 
-> **注意**: embedded git repo 検出 (NG-2) と nested teammate spawn 禁止 (NG-3) は universal NG rules として全 mode に適用される。Plans.md cc:* マーカー書換禁止 (NG-1) は `mode == breezing` 限定で、他 mode の Plans.md 更新契約は維持される。
+> **注意**: embedded git repo 検出 (NG-2)、nested teammate spawn 禁止 (NG-3)、一時領域掃除での operator 停止禁止 (NG-4) は universal NG rules として全 mode に適用される。Plans.md cc:* マーカー書換禁止 (NG-1) は `mode == breezing` 限定で、他 mode の Plans.md 更新契約は維持される。
 
 ### `mode: solo`
 
@@ -339,6 +344,8 @@ git switch -c harness-work/<task-id>
 | `tdd-red-evidence-attached` | `tdd.enforce.enabled=true` の時だけ有効。TDD 必須タスクで、実装前に失敗テストを確認した証跡がある | `.claude/state/tdd-red-log/<task-id>.jsonl` の FAIL 記録、または literal failing test output |
 
 project ごとの追加 rule は `harness.toml` の `[worker.self_review]` で override する（`harness-setup init` が雛形を生成）。
+
+**永続化**: active な `self_review` 全項目が `verified: true` かつ `evidence` 非空になった時点で、commit 前に上記 `worker-report.v1` JSON をそのまま `.claude/state/review/<task-id>.worker-report.json` へ Write する（`<task-id>` は `.claude/state/contracts/<task-id>.sprint-contract.json` と同じ命名慣例）。`verified: false` または `evidence: ""` が 1 件でも残る間は書かない（差し戻し中の未完成な self_review を評価対象の artifact として残さないため）。この JSON は `harness-accept` 等の受け入れフローが読む evidence artifact になる。
 
 ### Advisor 相談時
 

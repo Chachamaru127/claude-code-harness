@@ -70,6 +70,56 @@ func TestSprintContractGenerator_RuntimeContract(t *testing.T) {
 	}
 }
 
+func TestSprintContractGenerator_DeclaredScope(t *testing.T) {
+	dir := t.TempDir()
+	plansPath := filepath.Join(dir, "Plans.md")
+	if err := os.WriteFile(plansPath, []byte(`| Task | 内容 | DoD | Depends | Status |
+|------|------|-----|---------|--------|
+| 134.5 | scope leash 配線を `+"`go/internal/guardrail/pre_tool.go`"+` に実装 | (a) `+"`go/internal/hookhandler/sprint_contract.go`"+` で declared_scope を焼き込む | - | cc:todo |
+`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	g := &SprintContractGenerator{
+		ProjectRoot: dir,
+		PlansFile:   plansPath,
+		Now:         func() string { return "2026-08-15T00:00:00Z" },
+	}
+	doc, err := g.Generate("134.5")
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+
+	want := []string{
+		"go/internal/guardrail/pre_tool.go",
+		"go/internal/hookhandler/sprint_contract.go",
+	}
+	if len(doc.Task.DeclaredScope) != len(want) {
+		t.Fatalf("declared_scope = %v, want %v", doc.Task.DeclaredScope, want)
+	}
+	for i, p := range want {
+		if doc.Task.DeclaredScope[i] != p {
+			t.Fatalf("declared_scope[%d] = %q, want %q (full: %v)", i, doc.Task.DeclaredScope[i], p, doc.Task.DeclaredScope)
+		}
+	}
+
+	data, err := json.Marshal(doc)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	task, ok := raw["task"].(map[string]any)
+	if !ok {
+		t.Fatalf("task block missing: %s", data)
+	}
+	if _, exists := task["declared_scope"]; !exists {
+		t.Fatalf("declared_scope key missing from marshaled contract: %s", data)
+	}
+}
+
 func TestSprintContractGenerator_UIRubricDefaults(t *testing.T) {
 	dir := t.TempDir()
 	plansPath := filepath.Join(dir, "Plans.md")

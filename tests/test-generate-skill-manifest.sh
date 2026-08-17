@@ -77,6 +77,7 @@ EXPECTED_MODEL_INVOKABLE='[
   "harness-setup",
   "harness-sync",
   "harness-work",
+  "japanese-writing-drafter",
   "maintenance",
   "memory"
 ]'

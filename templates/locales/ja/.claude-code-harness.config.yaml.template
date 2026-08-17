@@ -62,6 +62,14 @@ quality_pack:
   tsc: true
   console_log: true
 
+# 日本語文章スタイル lint (PostToolUse 辞書照合 + Stop 再検査)
+# 詳細: go/internal/writinglint/
+writing_lint:
+  enabled: false
+  scene: ""           # 空: シーン絞り込みなし（有効な全ルールを適用）
+  structural: true     # 文末3連続 + 敬体常体混在
+  # dict_path: ".claude/writing-lint/rules.jsonl"  # 辞書パスの上書き（省略時: ~/.claude/writing-lint/rules.jsonl）
+
 # Review settings (commit judgment + Codex mode)
 review:
   # Review mode: default (Claude only) or codex (GPT experts delegation)

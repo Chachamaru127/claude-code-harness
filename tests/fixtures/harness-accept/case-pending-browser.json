@@ -1,0 +1,41 @@
+{
+  "schema": "acceptance-context.v1",
+  "user_request": "Playwright スクリーンキャスト evidence を組み込む",
+  "user_request_hash": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "demo_artifacts": [
+    { "kind": "text", "path": ".claude/state/review/task-134-6.worker-report.json" },
+    { "kind": "video", "path": "test-results/task-134-6/trace.webm" }
+  ],
+  "verified_criteria": [
+    { "name": "AC-1", "passed": true,  "evidence": "OK" },
+    { "name": "AC-2", "passed": true,  "evidence": "OK" },
+    { "name": "AC-3", "passed": true,  "evidence": "OK" },
+    { "name": "AC-4", "passed": true,  "evidence": "OK" },
+    { "name": "AC-5", "passed": false, "evidence": "pending_validations: browser verdict is PENDING_BROWSER" }
+  ],
+  "unverified_caveats": [
+    "AC-5 は browser verdict が PENDING_BROWSER のため未解消 (pending_validations 由来)"
+  ],
+  "past_issue_patterns": [],
+  "recommendation": "wait",
+  "recommendation_evidence": [
+    "verified 4 件 / 全 5 件 (80%) → ship 閾値以上",
+    "pending_validations 該当 criteria 1 件が未解消のため ship を wait に丸めた"
+  ],
+  "project": "claude-code-harness",
+  "generated_at": "2026-08-15T09:00:00Z",
+  "verified_criteria_items": [
+    { "name": "AC-1", "status_label": "passed", "evidence": "OK", "evidence_warn": "" },
+    { "name": "AC-2", "status_label": "passed", "evidence": "OK", "evidence_warn": "" },
+    { "name": "AC-3", "status_label": "passed", "evidence": "OK", "evidence_warn": "" },
+    { "name": "AC-4", "status_label": "passed", "evidence": "OK", "evidence_warn": "" },
+    { "name": "AC-5", "status_label": "failed", "evidence": "pending_validations: browser verdict is PENDING_BROWSER", "evidence_warn": "" }
+  ],
+  "unverified_caveats_items": [
+    { "text": "AC-5 は browser verdict が PENDING_BROWSER のため未解消 (pending_validations 由来)" }
+  ],
+  "recommendation_evidence_items": [
+    { "text": "verified 4 件 / 全 5 件 (80%) → ship 閾値以上" },
+    { "text": "pending_validations 該当 criteria 1 件が未解消のため ship を wait に丸めた" }
+  ]
+}

@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Progress Tracker: {{project}}</title>
 <style>
   /* Claude Harness Brand palette */
@@ -29,6 +30,8 @@
     font-family: "Inter", "Noto Sans JP", system-ui, sans-serif;
     font-weight: 400;
     line-height: 1.7;
+    word-break: keep-all;
+    overflow-wrap: normal;
   }
   main {
     max-width: 760px;
@@ -193,6 +196,46 @@
     color: var(--harness-muted);
     font-size: 0.8em;
   }
+  /* 箱の見た目 (背景・border) は行 (.wl-row) 側にだけ付ける。writing-lint-pending 自体は
+     枠なしにして、pending 配列が空のとき section の中身が展開されない = 視覚的な
+     箱も残らない (DoD b: pending 0 件でセクション非表示) */
+  .wl-header {
+    margin: 0 0 4px;
+  }
+  .wl-note {
+    font-size: 0.85em;
+    color: var(--harness-muted);
+    margin-bottom: 12px;
+  }
+  /* section 全体は render-html.sh の block iteration により writing_lint_pending
+     の件数だけ繰り返し出力される。見出しと注記は 1 回だけ表示すればよいので、
+     先頭以外の重複を CSS の一般兄弟結合子で隠す (JS 不使用)。 */
+  .writing-lint-pending .wl-header ~ .wl-header,
+  .writing-lint-pending .wl-note ~ .wl-note {
+    display: none;
+  }
+  .wl-row {
+    background: #fff;
+    border: 1px solid var(--harness-line);
+    border-radius: 4px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+  }
+  .wl-row:last-child { margin-bottom: 0; }
+  .wl-pattern {
+    font-size: 0.9em;
+    margin-bottom: 4px;
+  }
+  .wl-cmd {
+    display: block;
+    font-family: ui-monospace, "SF Mono", monospace;
+    font-size: 0.85em;
+    background: #F5F4F1;
+    padding: 6px 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre;
+  }
 </style>
 </head>
 <body>
@@ -266,6 +309,15 @@
         <span class="task-title">{{title}}</span>
       </li>{{/todo_tasks}}
     </ul>
+  </section>
+
+  <section class="writing-lint-pending">{{#writing_lint_pending}}
+    <h2 class="wl-header">承認待ちの表現ルール ({{pending_count}} 件)</h2>
+    <div class="wl-note">ボタンではありません。下のコマンドをターミナルにそのままコピペして実行してください。</div>
+    <div class="wl-row">
+      <div class="wl-pattern">{{pattern}}</div>
+      <code class="wl-cmd">{{approve_command}}</code>
+    </div>{{/writing_lint_pending}}
   </section>
 
   <section class="audit-trail" style="margin-top:32px;padding:16px 20px;background:#F5F4F1;border:1px solid #E5E5E5;border-radius:4px;font-size:0.85em;color:#52524C;">

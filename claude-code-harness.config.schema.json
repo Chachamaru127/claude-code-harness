@@ -277,6 +277,65 @@
         }
       },
       "default": {}
+    },
+    "quality_pack": {
+      "type": "object",
+      "description": "Optional quality automation pack (PostToolUse). Keys mirror posttooluse_quality_pack.go's readQualityPackConfig (previously informal/undocumented).",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable the quality pack"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["warn", "run"],
+          "default": "warn",
+          "description": "warn: print a recommendation only. run: execute the check (e.g. prettier --write)"
+        },
+        "prettier": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the Prettier check"
+        },
+        "tsc": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the tsc --noEmit check"
+        },
+        "console_log": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable the console.log detection check"
+        }
+      },
+      "default": {}
+    },
+    "writing_lint": {
+      "type": "object",
+      "description": "Japanese writing-style lint (PostToolUse dictionary scan + Stop re-scan). Keys mirror posttooluse_writing_lint.go's readWritingLintConfig and writinglint.ResolveDictPath.",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable writing-lint (default off)"
+        },
+        "scene": {
+          "type": "string",
+          "default": "",
+          "description": "Scene key used to narrow which dictionary rules apply (Rule.AppliesToScene). Empty means no narrowing: every enabled rule runs, and rules with an empty scenes list always apply. The code-comment scene is a stretch goal and out of scope for the current implementation."
+        },
+        "structural": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable structural checks (3+ consecutive identical sentence endings, polite/plain style mixing)"
+        },
+        "dict_path": {
+          "type": "string",
+          "description": "Writing-rule.v1 JSONL dictionary path, resolved relative to the project root. Precedence: this key > env CLAUDE_WRITING_LINT_DICT > ~/.claude/writing-lint/rules.jsonl."
+        }
+      },
+      "default": {}
     }
   },
   "additionalProperties": false

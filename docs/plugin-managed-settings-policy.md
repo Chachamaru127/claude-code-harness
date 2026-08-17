@@ -54,7 +54,7 @@ Harness の方針:
 
 - `.claude-plugin/settings.json` や project template に `DISABLE_UPDATES` を既定値として入れない。
 - 企業配布では managed settings または端末管理の環境変数として設定する。
-- update を止める場合でも、`harness-release` の version sync / plugin tag / validate flow は維持する。
+- update を止める場合でも、`harness-release` の version sync / semver tag / validate flow は維持する。
 
 ## Marketplace policy
 

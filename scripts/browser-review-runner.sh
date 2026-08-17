@@ -44,6 +44,12 @@ NOTE=""
 COMMAND_OUTPUT=""
 BROWSER_VERDICT=""
 
+# Screencast evidence (Phase 134.6 / fix): マーカーをコマンド実行前に打ち、
+# 収集時は「マーカーより新しい .webm のみ」に限定する。過去の無関係な run の
+# 残骸録画 (stale .webm) を今回の evidence として拾わないため。
+SCREENCAST_MARKER="$(mktemp)"
+trap 'rm -f "$SCREENCAST_MARKER"' EXIT
+
 run_with_timeout() {
   local timeout_seconds="$1"
   shift
@@ -184,7 +190,7 @@ if [ -n "$COMMAND" ]; then
   export BROWSER_REVIEW_TIMEOUT_SECONDS="$TIMEOUT_SECONDS"
 
   LOG_FILE="$(mktemp)"
-  trap 'rm -f "$LOG_FILE"' EXIT
+  trap 'rm -f "$LOG_FILE" "$SCREENCAST_MARKER"' EXIT
   set +e
   run_with_timeout "$TIMEOUT_SECONDS" bash -lc "$COMMAND" >"$LOG_FILE" 2>&1
   EXIT_CODE=$?
@@ -217,13 +223,36 @@ if [ -z "$NOTE" ]; then
   NOTE="$(unavailable_note_for_route)"
 fi
 
+# Screencast evidence (Phase 134.6): playwright route の実行後に
+# test-results/**/*.webm を探索し、見つかれば artifacts: [{kind:"video", path}] を積む。
+# 今回の run より前に存在した .webm (stale) は SCREENCAST_MARKER より古いため
+# -newer で除外される。過去の無関係な Playwright run の残骸録画を今回の evidence
+# として拾わないため (fix: 上記マーカーはコマンド実行前に打刻済み)。
+# 縮退規則: 録画なし (stale のみを含む) → kind:"text" + note「use.video 未設定の可能性」/
+#           playwright 以外の route → artifacts: [] (探索自体を行わない)
+ARTIFACTS_JSON='[]'
+if [ "$ROUTE" = "playwright" ]; then
+  WEBM_LIST=""
+  if [ -d test-results ]; then
+    WEBM_LIST="$(find test-results -type f -name '*.webm' -newer "$SCREENCAST_MARKER" 2>/dev/null | sort || true)"
+  fi
+  if [ -n "$WEBM_LIST" ]; then
+    ARTIFACTS_JSON="$(printf '%s\n' "$WEBM_LIST" | jq -R -s -c '
+      split("\n") | map(select(length > 0)) | map({kind: "video", path: .})
+    ')"
+  else
+    ARTIFACTS_JSON='[{"kind":"text","note":"use.video 未設定の可能性"}]'
+  fi
+fi
+
 jq -n \
   --slurpfile artifact "$ARTIFACT_FILE" \
   --arg generated_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg browser_verdict "$BROWSER_VERDICT" \
   --arg runner_status "$RUNNER_STATUS" \
   --arg note "$NOTE" \
-  --arg command_output "$COMMAND_OUTPUT" '
+  --arg command_output "$COMMAND_OUTPUT" \
+  --argjson artifacts "$ARTIFACTS_JSON" '
   ($artifact[0] // {}) as $in
   | $in
   | .schema_version = "browser-review-result.v1"
@@ -233,6 +262,7 @@ jq -n \
   | .verdict = $browser_verdict
   | .note = $note
   | .command_output = (if $command_output == "" then null else $command_output end)
+  | .artifacts = $artifacts
   ' > "$OUTPUT_FILE"
 
 echo "$OUTPUT_FILE"

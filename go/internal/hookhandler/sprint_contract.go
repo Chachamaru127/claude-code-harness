@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Chachamaru127/claude-code-harness/go/internal/scopeleash"
 )
 
 // SprintContractGenerator は Plans.md から sprint-contract を生成する。
@@ -48,6 +50,10 @@ type sprintContractTask struct {
 	DefinitionOfDone   string   `json:"definition_of_done"`
 	DependsOn          []string `json:"depends_on"`
 	StatusAtGeneration string   `json:"status_at_generation"`
+	// DeclaredScope is the auto-inferred file scope (scopeleash.InferScopeFromPlan)
+	// mined from this task's Title/DoD columns. Read by the PreToolUse scope
+	// leash check (go/internal/guardrail/pre_tool.go) at runtime.
+	DeclaredScope []string `json:"declared_scope"`
 }
 
 type sprintContractBody struct {
@@ -199,6 +205,10 @@ func (g *SprintContractGenerator) Generate(taskID string) (*sprintContractDoc, e
 	riskFlags := detectSprintRiskFlags(row)
 	advisor := buildSprintAdvisor(row, riskFlags)
 	tdd := detectSprintTDD(projectRoot, row)
+	declaredScope, err := scopeleash.InferScopeFromPlan(string(markdown), row.TaskID)
+	if err != nil {
+		declaredScope = []string{}
+	}
 
 	var browserMode *string
 	var route *string
@@ -254,6 +264,7 @@ func (g *SprintContractGenerator) Generate(taskID string) (*sprintContractDoc, e
 			DefinitionOfDone:   row.DoD,
 			DependsOn:          sprintToList(row.Depends),
 			StatusAtGeneration: row.Status,
+			DeclaredScope:      declaredScope,
 		},
 		Contract: sprintContractBody{
 			Checks: []sprintCheck{

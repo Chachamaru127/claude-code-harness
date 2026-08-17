@@ -204,6 +204,8 @@ bash scripts/render-html.sh \
   --out "$HTML_OUT"
 ```
 
+`diagram-design` skill がインストールされていれば図の描画に使う。無ければ静的レイアウトのまま。
+
 ### Step 5: ブラウザで自動 open する
 
 `scripts/plan-brief-open.sh` で OS 別 dispatch:

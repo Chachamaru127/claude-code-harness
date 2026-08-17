@@ -1,14 +1,18 @@
 package hookhandler
 
 import (
+	"bufio"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/Chachamaru127/claude-code-harness/go/internal/plans"
+	"github.com/Chachamaru127/claude-code-harness/go/internal/scopeleash"
 )
 
 // stopSessionInput は Stop フックの stdin JSON ペイロード。
@@ -17,6 +21,7 @@ type stopSessionInput struct {
 	StopHookActive       bool   `json:"stop_hook_active"`
 	TranscriptPath       string `json:"transcript_path"`
 	LastAssistantMessage string `json:"last_assistant_message"`
+	SessionID            string `json:"session_id"`
 }
 
 // stopSessionResponse は Stop フックのレスポンス。
@@ -97,7 +102,135 @@ func (h *StopSessionEvaluatorHandler) Handle(in io.Reader, out io.Writer) error 
 		})
 	}
 
+	if notice := h.droppedScopeAdvisory(projectRoot, input.SessionID); notice != "" {
+		return writeJSON(out, stopSessionResponse{OK: true, SystemMessage: notice})
+	}
+
 	return writeJSON(out, stopSessionResponse{OK: true})
+}
+
+// droppedScopeAdvisory (134.5) is the DroppedScope extension of this Stop
+// handler: when the active task declared a scope (via the sprint-contract's
+// declared_scope, baked in at generation time) and this run never touched
+// some of it, surface an advisory notice. This never blocks the stop — it
+// only decorates the ok:true response's systemMessage — and it registers no
+// new hook (hooks.json is unchanged); it is purely an extension of the
+// existing Stop handler.
+func (h *StopSessionEvaluatorHandler) droppedScopeAdvisory(projectRoot, sessionID string) string {
+	taskID, ok := resolveActiveTaskForStop(projectRoot)
+	if !ok {
+		return ""
+	}
+	declared := loadDeclaredScopeForStop(projectRoot, taskID)
+	if len(declared) == 0 {
+		return ""
+	}
+	touched := loadTouchedFilesForStop(projectRoot, sessionID)
+	dropped := scopeleash.DroppedScope(declared, touched)
+	if len(dropped) == 0 {
+		return ""
+	}
+	return fmt.Sprintf(
+		localizedHarnessMessage("ja",
+			"[ScopeLeash] Task %s declared scope not touched this run: %s",
+			"[ScopeLeash] タスク %s の declared_scope のうち今回未着手のもの: %s"),
+		taskID, strings.Join(dropped, ", "),
+	)
+}
+
+// resolveActiveTaskForStop resolves the task ID .claude/state/active-task.json
+// declares, falling back to HARNESS_ACTIVE_TASK when the file is absent.
+// Mirrors go/internal/guardrail's resolveActiveTaskScope (task field only;
+// that function lives in a different package with no import path back here).
+func resolveActiveTaskForStop(projectRoot string) (string, bool) {
+	activeTaskPath := filepath.Join(projectRoot, ".claude", "state", "active-task.json")
+	data, err := os.ReadFile(activeTaskPath)
+	switch {
+	case err == nil:
+		var scope struct {
+			Task string `json:"task"`
+		}
+		if jsonErr := json.Unmarshal(data, &scope); jsonErr != nil {
+			return "", false
+		}
+		task := strings.TrimSpace(scope.Task)
+		return task, task != ""
+	case !errors.Is(err, os.ErrNotExist):
+		return "", false
+	}
+
+	task := strings.TrimSpace(os.Getenv("HARNESS_ACTIVE_TASK"))
+	return task, task != ""
+}
+
+// loadDeclaredScopeForStop reads the declared_scope baked into taskID's
+// sprint-contract.json at generation time (Generate() in sprint_contract.go).
+func loadDeclaredScopeForStop(projectRoot, taskID string) []string {
+	path := filepath.Join(projectRoot, ".claude", "state", "contracts", taskID+".sprint-contract.json")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil
+	}
+	var doc struct {
+		Task struct {
+			DeclaredScope []string `json:"declared_scope"`
+		} `json:"task"`
+	}
+	if err := json.Unmarshal(data, &doc); err != nil {
+		return nil
+	}
+	return doc.Task.DeclaredScope
+}
+
+// loadTouchedFilesForStop reads the de-duplicated set of files the current
+// session wrote to from .claude/state/changed-files.jsonl (track_changes.go's
+// PostToolUse record). Order is first-seen; malformed lines are skipped.
+//
+// changed-files.jsonl is a cross-session append-only log: entries from other
+// sessions (including entries written before session_id was recorded) remain
+// on disk indefinitely. This narrows results to entries whose session_id
+// matches sessionID, so a stale entry from a different session's writes
+// cannot be misread as "this session touched this file". Both an empty
+// sessionID (Stop payload lacked session_id) and an empty entry.SessionID
+// (pre-existing log line, or an entry genuinely missing session_id) fail the
+// match and are skipped — the conservative direction, since callers use this
+// to decide whether to block/advise the current Stop.
+func loadTouchedFilesForStop(projectRoot, sessionID string) []string {
+	if sessionID == "" {
+		return nil
+	}
+
+	f, err := os.Open(filepath.Join(projectRoot, changedFilesPath))
+	if err != nil {
+		return nil
+	}
+	defer f.Close()
+
+	seen := map[string]struct{}{}
+	var touched []string
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		var entry changedFileEntry
+		if err := json.Unmarshal([]byte(line), &entry); err != nil {
+			continue
+		}
+		if entry.File == "" {
+			continue
+		}
+		if entry.SessionID != sessionID {
+			continue
+		}
+		if _, dup := seen[entry.File]; dup {
+			continue
+		}
+		seen[entry.File] = struct{}{}
+		touched = append(touched, entry.File)
+	}
+	return touched
 }
 
 // recordLastMessage は session.json に last_message_length と last_message_hash を記録する。

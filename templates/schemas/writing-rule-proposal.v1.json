@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://claude-code-harness.local/schemas/writing-rule-proposal.v1.json",
+  "title": "writing-rule-proposal.v1",
+  "description": "Pending writing-rule proposal drafted from an in-conversation operator correction (Phase 135.4). Human-CLI-only promotion: scripts/writing-rule-approve.sh moves an entry from pending to approved and appends the corresponding writing-rule.v1 record to rules.jsonl. There is no automatic promotion path.",
+  "type": "object",
+  "required": [
+    "id",
+    "pattern",
+    "good",
+    "status"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pattern": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Go regexp (RE2) syntax only — no lookahead/lookbehind/backreferences. Copied verbatim into writing-rule.v1 on approval."
+    },
+    "good": {
+      "type": "string",
+      "description": "Suggested good-pattern rewrite, taken from the operator's own correction."
+    },
+    "scenes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Scene tags this rule would apply to. Empty/absent means all scenes."
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["info", "warning", "error"]
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "approved", "rejected"]
+    },
+    "evidence": {
+      "type": "string",
+      "description": "The operator's correction that this proposal is drafted from (before/after excerpt)."
+    },
+    "created_at": {
+      "type": "string",
+      "description": "UTC timestamp (RFC 3339) the proposal was drafted."
+    },
+    "decided_at": {
+      "type": "string",
+      "description": "UTC timestamp (RFC 3339) the proposal was approved or rejected. Absent while status is pending."
+    }
+  }
+}

@@ -74,7 +74,7 @@ v3.6.1 (03/09) — Auto Mode 準備         ← prep は patch
 - 見出し照合は `### Breaking` の **prefix match**（`skills/harness-release/references/bump-detection.md`
   の正記法 `### Breaking Changes` も同一トリガーとして扱う）。実装正本は
   `go/internal/releasetrain`（`harness release --check`）。対象 tag は `v[0-9]` 始まりの
-  semver tag のみ（`claude-code-harness--v*` の plugin tag は対象外）。
+  semver tag のみ（`claude-code-harness--v*` の plugin tag は 2026-08-17 に廃止済み・履歴のみ残存。D69）。
 - これは gate ではなく**提案**。無視はノーコスト、次の閾値で再提案される。Session Monitor
   に tri-state（Candidate / None / NotApplicable）で受動表示し、
   `active-watching-test-policy.md` の 3 状態命名に従う（候補なしは silent）。

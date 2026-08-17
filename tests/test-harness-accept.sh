@@ -102,6 +102,40 @@ if [[ -f "$SKILL_PATH" ]]; then
   else
     fail "SKILL.md does not explicitly forbid cross-project"
   fi
+
+  # blind evaluation optional step (Phase 137.2)
+  if grep -qE 'blind_evaluation' "$SKILL_PATH"; then
+    pass "SKILL.md documents blind_evaluation field"
+  else
+    fail "SKILL.md missing blind_evaluation documentation"
+  fi
+  if grep -qE 'functional-skip' "$SKILL_PATH"; then
+    pass "SKILL.md documents functional-skip eligibility (DoD b)"
+  else
+    fail "SKILL.md missing functional-skip eligibility documentation (DoD b)"
+  fi
+  if grep -qE 'blind-evaluator\.md' "$SKILL_PATH"; then
+    pass "SKILL.md links references/blind-evaluator.md"
+  else
+    fail "SKILL.md does not link references/blind-evaluator.md"
+  fi
+fi
+
+BLIND_EVAL_REF="$ROOT_DIR/skills/harness-accept/references/blind-evaluator.md"
+if [[ -f "$BLIND_EVAL_REF" ]]; then
+  pass "references/blind-evaluator.md exists"
+  if grep -qE 'blind-judge\.md' "$BLIND_EVAL_REF"; then
+    pass "blind-evaluator.md documents lineage from harness-review/references/blind-judge.md"
+  else
+    fail "blind-evaluator.md missing reference to blind-judge.md"
+  fi
+  if grep -qE 'functional-skip' "$BLIND_EVAL_REF" && grep -qE '機能系' "$BLIND_EVAL_REF"; then
+    pass "blind-evaluator.md documents functional-skip eligibility for 機能系 tasks (DoD b)"
+  else
+    fail "blind-evaluator.md missing functional-skip / 機能系 eligibility documentation"
+  fi
+else
+  fail "references/blind-evaluator.md not found"
 fi
 
 # ---- 3. JSON Schema validity ----
@@ -135,6 +169,23 @@ else
     pass "Schema user_request_hash enforces sha256 hex pattern"
   else
     fail "Schema user_request_hash does not enforce sha256 pattern"
+  fi
+
+  # blind_evaluation (Phase 137.2 DoD c: additive のみ — top-level required に含まれない)
+  if jq -e '.properties.blind_evaluation' "$SCHEMA_PATH" >/dev/null 2>&1; then
+    pass "Schema declares optional property 'blind_evaluation'"
+  else
+    fail "Schema missing optional property 'blind_evaluation'"
+  fi
+  if jq -e '(.required | index("blind_evaluation")) == null' "$SCHEMA_PATH" >/dev/null 2>&1; then
+    pass "Schema top-level 'required' does not include 'blind_evaluation' (additive-only, DoD c)"
+  else
+    fail "Schema top-level 'required' unexpectedly includes 'blind_evaluation'"
+  fi
+  if jq -e '.properties.blind_evaluation_items' "$SCHEMA_PATH" >/dev/null 2>&1; then
+    pass "Schema declares optional property 'blind_evaluation_items'"
+  else
+    fail "Schema missing optional property 'blind_evaluation_items'"
   fi
 fi
 
@@ -231,8 +282,25 @@ except jsonschema.ValidationError as e:
     else                                derived_rec="reject"
     fi
   fi
+
+  # pending 補正 (Phase 134.4 DoD b): evidence が "pending_validations: " prefix を
+  # 持つ criterion 数を独立カウントし、base=ship を wait に丸める規約を再検証する
+  local derived_pending_count
+  derived_pending_count="$(jq '[.verified_criteria[] | select(.passed == false and (.evidence | startswith("pending_validations: ")))] | length' "$fixture")"
+  if [[ "$derived_pending_count" -ge 1 && "$derived_rec" == "ship" ]]; then
+    derived_rec="wait"
+  fi
+
+  # blind_evaluation 補正 (Phase 137.2 DoD a): applicable かつ divergence が
+  # internal_high_evaluator_low の場合、依然 ship なら wait に丸める規約を再検証する
+  local derived_divergence
+  derived_divergence="$(jq -r '.blind_evaluation.applicable == true and .blind_evaluation.divergence == "internal_high_evaluator_low"' "$fixture")"
+  if [[ "$derived_divergence" == "true" && "$derived_rec" == "ship" ]]; then
+    derived_rec="wait"
+  fi
+
   if [[ "$derived_rec" == "$exp_rec" ]]; then
-    pass "[$label] recommendation rule (verified/total → ship/wait/reject) derives to $exp_rec"
+    pass "[$label] recommendation rule (verified/total + pending 補正 + blind_evaluation 補正 → ship/wait/reject) derives to $exp_rec"
   else
     fail "[$label] recommendation rule derivation: got $derived_rec, expected $exp_rec"
   fi
@@ -288,6 +356,103 @@ run_case "all-unverified" "case-all-unverified" "reject" 0 5
 
 # ---- Case 4: zero criteria (0/0) → reject (safe-side) ----
 run_case "zero-criteria" "case-zero-criteria" "reject" 0 0
+
+# ---- Case 5: pending-browser (4/5 = 80% base=ship, pending 補正で wait) (Phase 134.4 DoD b) ----
+run_case "pending-browser" "case-pending-browser" "wait" 4 5
+
+# ---- Case 6: demo_artifacts の video 埋め込みが HTML に出る (Phase 134.6 DoD c) ----
+
+VIDEO_FIXTURE="$FIX_DIR/case-pending-browser.json"
+VIDEO_TMP_OUT="$(mktemp "${TMPDIR:-/tmp}/accept-test-video.XXXXXX")"
+TEMP_FILES+=("$VIDEO_TMP_OUT")
+
+if bash "$RENDER_SCRIPT" --template accept --data "$VIDEO_FIXTURE" --out "$VIDEO_TMP_OUT" 2>/dev/null; then
+  if grep -qF 'class="artifact-video"' "$VIDEO_TMP_OUT"; then
+    pass "[video-artifact] demo_artifacts kind=video gets the artifact-video branch class"
+  else
+    fail "[video-artifact] HTML missing artifact-video branch class"
+  fi
+
+  if grep -qF '<video class="video-embed" controls preload="none" src="test-results/task-134-6/trace.webm">' "$VIDEO_TMP_OUT"; then
+    pass "[video-artifact] video embed src resolves to the fixture path (DoD c)"
+  else
+    fail "[video-artifact] video embed src does not match the fixture path"
+  fi
+else
+  fail "[video-artifact] render-html.sh failed for video fixture"
+fi
+rm -f "$VIDEO_TMP_OUT"
+
+# ---- Case 7: blind evaluation divergence (Phase 137.2 DoD a) ----
+# 内側 verified_criteria は 5/5 (100% → base=ship) だが blind evaluator が
+# not_believable/not_useful と判定 → recommendation は wait に丸まり、乖離が HTML に出る
+
+run_case "blind-divergence" "case-blind-divergence" "wait" 5 5
+
+BLIND_DIVERGENCE_FIXTURE="$FIX_DIR/case-blind-divergence.json"
+BLIND_DIVERGENCE_TMP_OUT="$(mktemp "${TMPDIR:-/tmp}/accept-test-blind-divergence.XXXXXX")"
+TEMP_FILES+=("$BLIND_DIVERGENCE_TMP_OUT")
+
+if bash "$RENDER_SCRIPT" --template accept --data "$BLIND_DIVERGENCE_FIXTURE" --out "$BLIND_DIVERGENCE_TMP_OUT" 2>/dev/null; then
+  if grep -qF 'internal_high_evaluator_low' "$BLIND_DIVERGENCE_TMP_OUT"; then
+    pass "[blind-divergence] HTML shows divergence label (DoD a)"
+  else
+    fail "[blind-divergence] HTML missing divergence label"
+  fi
+  if grep -qF 'not_believable' "$BLIND_DIVERGENCE_TMP_OUT" && grep -qF 'not_useful' "$BLIND_DIVERGENCE_TMP_OUT"; then
+    pass "[blind-divergence] HTML shows evaluator_believable/evaluator_useful"
+  else
+    fail "[blind-divergence] HTML missing evaluator_believable/evaluator_useful"
+  fi
+  # base recommendation (verified 5/5=100%) would independently derive to ship;
+  # blind_evaluation 補正で wait に丸まったことを fixture 上で検証する
+  base_ratio_x10="$(jq -n --argjson v 5 --argjson t 5 '($v * 10 / $t)')"
+  if [[ "$base_ratio_x10" == "10" ]]; then
+    pass "[blind-divergence] base ratio (5/5=100%) independently derives to ship threshold"
+  else
+    fail "[blind-divergence] base ratio derivation unexpected: $base_ratio_x10"
+  fi
+  if jq -e '.blind_evaluation.applicable == true and .blind_evaluation.divergence == "internal_high_evaluator_low"' "$BLIND_DIVERGENCE_FIXTURE" >/dev/null 2>&1; then
+    pass "[blind-divergence] fixture records applicable=true / divergence=internal_high_evaluator_low"
+  else
+    fail "[blind-divergence] fixture blind_evaluation fields incorrect"
+  fi
+else
+  fail "[blind-divergence] render-html.sh failed for blind-divergence fixture"
+fi
+rm -f "$BLIND_DIVERGENCE_TMP_OUT"
+
+# ---- Case 8: functional-skip (Phase 137.2 DoD b) ----
+# 機能系タスクは blind evaluation ステップが skip される (applicable=false)。
+# recommendation は verified_criteria の比率のみで決まり (影響を受けない)、
+# HTML 上に divergence セクションの中身が出ない
+
+run_case "functional-skip" "case-functional-skip" "ship" 5 5
+
+FUNC_SKIP_FIXTURE="$FIX_DIR/case-functional-skip.json"
+if jq -e '.blind_evaluation.applicable == false and .blind_evaluation.eligibility_reason == "functional-skip"' "$FUNC_SKIP_FIXTURE" >/dev/null 2>&1; then
+  pass "[functional-skip] fixture records applicable=false / eligibility_reason=functional-skip (DoD b)"
+else
+  fail "[functional-skip] fixture blind_evaluation fields incorrect"
+fi
+if jq -e '.blind_evaluation_items | length == 0' "$FUNC_SKIP_FIXTURE" >/dev/null 2>&1; then
+  pass "[functional-skip] blind_evaluation_items empty — no divergence to render"
+else
+  fail "[functional-skip] blind_evaluation_items unexpectedly non-empty"
+fi
+
+FUNC_SKIP_TMP_OUT="$(mktemp "${TMPDIR:-/tmp}/accept-test-func-skip.XXXXXX")"
+TEMP_FILES+=("$FUNC_SKIP_TMP_OUT")
+if bash "$RENDER_SCRIPT" --template accept --data "$FUNC_SKIP_FIXTURE" --out "$FUNC_SKIP_TMP_OUT" 2>/dev/null; then
+  if grep -qF 'internal_high_evaluator_low' "$FUNC_SKIP_TMP_OUT"; then
+    fail "[functional-skip] HTML unexpectedly rendered a divergence label"
+  else
+    pass "[functional-skip] HTML renders no divergence label (step skipped, DoD b)"
+  fi
+else
+  fail "[functional-skip] render-html.sh failed for functional-skip fixture"
+fi
+rm -f "$FUNC_SKIP_TMP_OUT"
 
 # ---- Summary ----
 

@@ -120,6 +120,24 @@
     },
     "_todo_count": {"type": "integer"},
     "_wip_count": {"type": "integer"},
-    "_done_count": {"type": "integer"}
+    "_done_count": {"type": "integer"},
+    "writing_lint_pending": {
+      "type": "array",
+      "description": "Optional/additive (Phase 136.2). Pending (status=pending) writing-rule proposals from `scripts/writing-rule-list.sh --status pending --json`. Absent or empty means no pending proposals, and progress.html.template hides the whole queue section in that case (render-html.sh renders a {{#section}} block zero times when the backing array is empty). Each item repeats pending_count so the section-only templating can still show the total once (CSS :first-child sibling trick) while listing every item's copy-paste approve command.",
+      "items": {
+        "type": "object",
+        "required": ["id", "pattern", "approve_command", "pending_count"],
+        "additionalProperties": false,
+        "properties": {
+          "id": {"type": "string"},
+          "pattern": {"type": "string"},
+          "approve_command": {
+            "type": "string",
+            "description": "Copy-paste command string, e.g. 'scripts/writing-rule-approve.sh --id <id>'. Not a clickable button — the operator runs it manually in a terminal."
+          },
+          "pending_count": {"type": "integer", "minimum": 0}
+        }
+      }
+    }
   }
 }

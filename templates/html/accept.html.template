@@ -2,6 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Acceptance Demo: {{user_request}}</title>
 <style>
   /* Claude Harness Brand palette */
@@ -24,6 +25,8 @@
     font-family: "Inter", "Noto Sans JP", system-ui, sans-serif;
     font-weight: 400;
     line-height: 1.7;
+    word-break: keep-all;
+    overflow-wrap: normal;
   }
   main {
     max-width: 760px;
@@ -162,6 +165,21 @@
     color: #fff;
     margin-right: 8px;
   }
+  ul.artifacts li .video-embed {
+    display: none;
+  }
+  ul.artifacts li.artifact-video .video-embed {
+    display: block;
+    max-width: 100%;
+    margin-top: 8px;
+    border-radius: 4px;
+  }
+  ul.cards li.divergence {
+    border-left-color: var(--harness-warn);
+  }
+  ul.cards li.divergence .name {
+    color: var(--harness-warn);
+  }
   footer.accept-footer {
     margin-top: 56px;
     padding-top: 16px;
@@ -211,10 +229,24 @@
   <section class="accept-section">
     <h2>提示された成果物</h2>
     <ul class="cards artifacts">{{#demo_artifacts}}
-      <li>
+      <li class="artifact-{{kind}}">
         <span class="kind">{{kind}}</span>
         <span class="name">{{path}}</span>
+        <video class="video-embed" controls preload="none" src="{{path}}"></video>
       </li>{{/demo_artifacts}}
+    </ul>
+  </section>
+
+  <section class="accept-section">
+    <h2>内側スコアとの乖離 (blind evaluation)</h2>
+    <ul class="cards">{{#blind_evaluation_items}}
+      <li class="divergence">
+        <span class="name">{{divergence_label}}</span>
+        <div class="evidence">読者像: {{audience_purpose_line}}</div>
+        <div class="evidence">信じられるか: {{evaluator_believable}} / 役に立つか: {{evaluator_useful}}</div>
+        <div class="evidence">引っかかった箇所: {{friction_points_text}}</div>
+        <div class="evidence-warn">{{divergence_notes}}</div>
+      </li>{{/blind_evaluation_items}}
     </ul>
   </section>
 

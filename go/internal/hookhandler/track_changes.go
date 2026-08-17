@@ -15,6 +15,7 @@ import (
 type trackChangesInput struct {
 	ToolName  string `json:"tool_name"`
 	CWD       string `json:"cwd"`
+	SessionID string `json:"session_id"`
 	ToolInput struct {
 		FilePath string `json:"file_path"`
 	} `json:"tool_input"`
@@ -24,11 +25,21 @@ type trackChangesInput struct {
 }
 
 // changedFileEntry は .claude/state/changed-files.jsonl の1行分のエントリ。
+//
+// SessionID (Phase 134 finding): changed-files.jsonl is a cross-session
+// append-only log with no prior session scoping. Stop consumers
+// (stop_writing_lint.go, stop_session_evaluator.go's DroppedScope) must be
+// able to narrow "touched files" to the current session only, or a stale
+// major-severity hit left by a different session can block an unrelated
+// session's Stop. omitempty keeps pre-existing log lines (written before
+// this field existed) round-tripping as an empty SessionID, which readers
+// treat as "unknown session" and skip rather than misattribute.
 type changedFileEntry struct {
 	File      string `json:"file"`
 	Action    string `json:"action"`
 	Timestamp string `json:"timestamp"`
 	Important bool   `json:"important"`
+	SessionID string `json:"session_id,omitempty"`
 }
 
 // trackChangesMaxLines は JSONL ファイルのローテーション閾値。
@@ -102,8 +113,11 @@ func HandleTrackChanges(in io.Reader, out io.Writer) error {
 	now := time.Now().UTC()
 	timestamp := now.Format(time.RFC3339)
 
-	// dedup チェック: 同一ファイルが2時間以内に記録済みかどうか
-	if isDuplicateWithin(filePath, now, trackChangesDedupWindow) {
+	// dedup チェック: 同一セッションが同一ファイルを2時間以内に記録済みかどうか。
+	// セッション単位にしないと、別セッションの記録が dedup で先勝ちし、今回
+	// セッションのエントリが一切書かれず loadTouchedFilesForStop の session
+	// フィルタが「touched なし」を返す穴になる (Phase 134 finding の随伴修正)。
+	if isDuplicateWithin(filePath, input.SessionID, now, trackChangesDedupWindow) {
 		return emptyPostToolOutput(out)
 	}
 
@@ -125,6 +139,7 @@ func HandleTrackChanges(in io.Reader, out io.Writer) error {
 		Action:    toolName,
 		Timestamp: timestamp,
 		Important: important,
+		SessionID: input.SessionID,
 	}
 	entryJSON, err := json.Marshal(entry)
 	if err != nil {
@@ -178,8 +193,13 @@ func isImportantFile(filePath string) bool {
 	return false
 }
 
-// isDuplicateWithin は同じファイルが window 時間内に記録済みかどうかを確認する。
-func isDuplicateWithin(filePath string, now time.Time, window time.Duration) bool {
+// isDuplicateWithin は同じセッションが同じファイルを window 時間内に記録済み
+// かどうかを確認する。sessionID が空の場合は従来通りファイル一致のみで判定
+// する (session_id を送らない呼び出し元との互換を保つ)。sessionID が非空の
+// 場合は entry.SessionID が一致する行のみを対象にする — 別セッションの記録
+// で dedup が先勝ちし、このセッションのエントリが書かれずに終わる (結果
+// loadTouchedFilesForStop のセッションフィルタが常に空を返す) 事態を防ぐ。
+func isDuplicateWithin(filePath, sessionID string, now time.Time, window time.Duration) bool {
 	f, err := os.Open(changedFilesPath)
 	if err != nil {
 		// ファイルが存在しない場合は重複なし
@@ -198,6 +218,9 @@ func isDuplicateWithin(filePath string, now time.Time, window time.Duration) boo
 			continue
 		}
 		if entry.File != filePath {
+			continue
+		}
+		if sessionID != "" && entry.SessionID != sessionID {
 			continue
 		}
 		t, err := time.Parse(time.RFC3339, entry.Timestamp)

@@ -134,6 +134,65 @@
           "text": { "type": "string" }
         }
       }
+    },
+    "blind_evaluation": {
+      "type": "object",
+      "description": "Optional (Phase 137.2, additive). Fresh fork 評価者 (rubric/合格ライン/途中経過なし) による第一印象。説得系/文書系の成果物のみ実行し、機能系タスクは applicable=false でスキップする。",
+      "required": ["applicable", "eligibility_reason"],
+      "additionalProperties": false,
+      "properties": {
+        "applicable": {
+          "type": "boolean",
+          "description": "Eligibility を満たし評価者を起動したか。false なら以下の evaluator_* / divergence は省略可"
+        },
+        "eligibility_reason": {
+          "type": "string",
+          "enum": ["persuasive-doc", "functional-skip", "not_applicable", "unavailable"]
+        },
+        "audience_purpose_line": {
+          "type": "string",
+          "description": "評価者に渡した読者/目的 1 行 (監査用にそのまま記録)"
+        },
+        "evaluator_believable": {
+          "type": "string",
+          "enum": ["believable", "not_believable", "uncertain"]
+        },
+        "evaluator_useful": {
+          "type": "string",
+          "enum": ["useful", "not_useful", "uncertain"]
+        },
+        "evaluator_friction_points": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "internal_recommendation": {
+          "type": "string",
+          "enum": ["ship", "wait", "reject"],
+          "description": "blind_evaluation 補正前の recommendation (pending 補正後・interim 値)"
+        },
+        "divergence": {
+          "type": "string",
+          "enum": ["none", "internal_high_evaluator_low", "internal_low_evaluator_high"]
+        },
+        "divergence_notes": { "type": "string" }
+      }
+    },
+    "blind_evaluation_items": {
+      "type": "array",
+      "description": "Derived rendering helper for render-html.sh. divergence != none のときだけ 0/1 件を populate する (Phase 137.2)。",
+      "items": {
+        "type": "object",
+        "required": ["divergence_label", "audience_purpose_line", "evaluator_believable", "evaluator_useful", "friction_points_text", "divergence_notes"],
+        "additionalProperties": false,
+        "properties": {
+          "divergence_label": { "type": "string" },
+          "audience_purpose_line": { "type": "string" },
+          "evaluator_believable": { "type": "string" },
+          "evaluator_useful": { "type": "string" },
+          "friction_points_text": { "type": "string" },
+          "divergence_notes": { "type": "string" }
+        }
+      }
     }
   }
 }

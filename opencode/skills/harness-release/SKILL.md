@@ -145,7 +145,7 @@ dirty tree のまま version bump / tag / GitHub Release に進まない。
    - `Cargo.toml` (Rust, `[package]`)
 4. `gh` CLI がインストール済みで、認証済み
 5. git リモート `origin` が GitHub を指す
-6. Claude Code plugin project の場合は、`claude` CLI が `plugin tag` をサポートしている
+6. Claude Code plugin project の場合は、`claude` CLI が `plugin validate` をサポートしている
 
 これらが満たされない場合、Preflight で detect して abort します。
 
@@ -156,9 +156,9 @@ owner / branch / release asset / CI metadata の自動取得は host ごとの�
 ## 単一ゲートフロー
 
 Bare release（0. Review Gate → 0.5 Work Commit Gate）→
-Pre-Gate（1. Preflight → 2. Version file 検出 → 3. バージョン読み取り → 4. plugin tag preflight → 5. bump 推定 → 6. 新バージョン算出 → 7. CHANGELOG ドラフト → 8. Release notes ドラフト）→
+Pre-Gate（1. Preflight → 2. Version file 検出 → 3. バージョン読み取り → 4. plugin version sync preflight → 5. bump 推定 → 6. 新バージョン算出 → 7. CHANGELOG ドラフト → 8. Release notes ドラフト）→
 **単一確認ゲート**（下記「Confirmation Gate」参照、`yes` / `<修正指示>` / `cancel` の 3 択）→
-Post-Gate（9. Version file 書き換え → 10. CHANGELOG 昇格 → 11. commit → 12. branch push → 13. PR 作成/更新 → 14. default branch merge → 15. 到達可能性確認 → 16. plugin tag → 17. semver tag → 18. tag push → 19. workflow publish verify → 20. 完了報告）
+Post-Gate（9. Version file 書き換え → 10. CHANGELOG 昇格 → 11. commit → 12. branch push → 13. PR 作成/更新 → 14. default branch merge → 15. 到達可能性確認 → 16. semver tag → 17. tag push → 18. workflow publish verify → 19. 完了報告）
 の 3 段階で進む。各段の詳細は「Pre-Gate 詳細」「Confirmation Gate」「Post-Gate 詳細」を参照。
 
 ## Pre-Gate 詳細
@@ -198,11 +198,11 @@ release preflight は host workflow smoke を `REQUIRED=1`（fail-closed）で�
 `VERSION` → `package.json` → `pyproject.toml`（`[project]` / `[tool.poetry]`）→ `Cargo.toml` の優先順で探索し、最初に見つかったものを正本とする。
 検出スニペット・読み取りロジックの詳細: [version-files.md](${CLAUDE_SKILL_DIR}/references/version-files.md)
 
-### 3. Claude Plugin Tag Preflight
+### 3. Claude Plugin Version Sync Preflight
 
-`.claude-plugin/plugin.json` が存在する project では、通常の GitHub Release tag とは別に Claude plugin release tag も作る。
+`.claude-plugin/plugin.json` が存在する project では、semver tag を切る前に plugin manifest の validation と全 version surface の同期を確認する。
 
-ひとことで言うと、`git tag -a` を手で組み立てる前に、Claude Code 本体の plugin validation に通してから `{plugin-name}--v{version}` tag を作る。
+> **plugin tag (`{plugin-name}--v{version}`) は 2026-08-17 に廃止**。`marketplace.json` の `source` が相対パス (`"./"`) で install は tag を参照しないため、実効性が無いまま v5.6.0 以降 3 リリース連続で欠番になっていた。GitHub Release 用 semver tag `vX.Y.Z` に一本化する (decisions.md D69)。
 
 Pre-Gate ではファイルを書き換えず、以下を確認する。
 version sync は `grep` / `sed` で拾わず、JSON は structured parser で読む:
@@ -213,8 +213,6 @@ claude plugin validate .claude-plugin/plugin.json
 
 HARNESS_PLUGIN_ROOT="${CLAUDE_PLUGIN_ROOT:-.}"
 python3 "${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py" --root .
-
-claude plugin tag .claude-plugin --dry-run
 ```
 
 `${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py` は、存在する release surface をすべて読み取り、canonical を `VERSION > package.json > .claude-plugin/plugin.json > .codex-plugin/plugin.json` の順で決める。
@@ -240,7 +238,7 @@ python3 "${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py" --root . 
 - `package.json` / marketplace entry の version が古いまま release workflow に進む事故
 - plugin manifest / marketplace entry の validation を通さず、あとで plugin install / update 側で詰まる事故
 
-`--dry-run` では `claude plugin tag` が実際に作る tag 名と内部の `git tag -a` / push 相当コマンドが見える。ここで見えた command を Confirmation Gate の plan に含める。
+この check の結果 (canonical version と各 surface の一致) を Confirmation Gate の plan に含める。
 
 ### 4. Bump 自動推定
 
@@ -287,8 +285,7 @@ Release Plan: v<old> → v<new> (<bump>)
    - git push origin <release-branch>
    - gh pr create/update + gh pr merge into <default-branch>
    - git fetch origin <default-branch> && git checkout <default-branch>
-   - claude plugin tag .claude-plugin --push --remote origin  # plugin project の場合。default branch 上で実行
-   - git tag -a v<new>                                        # GitHub Release 用 semver tag が必要な場合。default branch 上で作成
+   - git tag -a v<new>                                        # GitHub Release 用 semver tag。default branch 上で作成
    - git push origin <default-branch> --tags
    - (tag push 後は GitHub Actions release workflow が自動で release 公開)
 
@@ -304,13 +301,13 @@ Proceed? [yes / cancel / <修正指示>]
 | ファイル書き換え失敗 | そこで abort、ローカルは dirty なまま人間が判断 |
 | commit 失敗 | hook 拒否等。ユーザーに原因を提示して修正を促す |
 | PR 作成/merge 失敗 | release を未完了として停止。tag / GitHub Release には進まない |
-| plugin tag validation 失敗 | `VERSION` / `.claude-plugin/plugin.json` / marketplace entry の不一致を修正し、tag 作成には進まない |
+| plugin version sync 失敗 | `VERSION` / `.claude-plugin/plugin.json` / marketplace entry の不一致を修正し、tag 作成には進まない |
 | push 失敗 | リモート側の問題。ローカル commit/tag は残す |
 
-### PR / Main Merge Gate、plugin tag、Verify Publish
+### PR / Main Merge Gate、semver tag、Verify Publish
 
 Post-Gate の release commit 後、tag を作る前に GitHub PR を default branch へ merge する（`gh pr create` → `gh pr merge --merge` → default branch fetch/checkout で release commit の到達可能性を確認）。release branch 上だけに存在する commit を指す tag で GitHub Release を作ってはいけない。
-`.claude-plugin/plugin.json` がある project では、merge 後に default branch 上で version sync を再確認してから `claude plugin tag .claude-plugin --push --remote origin` で plugin tag（`{plugin-name}--v{version}` 形式）を作る。
+`.claude-plugin/plugin.json` がある project では、merge 後に default branch 上で version sync を再確認してから semver tag `vX.Y.Z` を作る (plugin tag は 2026-08-17 廃止、D69)。
 tag push 後は `bash scripts/release-verify-publish.sh` で `.github/workflows/release.yml` の公開結果を verify する（5 秒間隔 × 60 回 polling、exit 0=PASS / 2=WARN(timeout) / 3=ERROR）。
 コマンド全文・失敗時の判断基準は [post-gate-detail.md](${CLAUDE_SKILL_DIR}/references/post-gate-detail.md) を参照。
 
@@ -318,7 +315,7 @@ tag push 後は `bash scripts/release-verify-publish.sh` で `.github/workflows/
 
 Pre-Gate 全てを実行し、Confirmation Gate までの内容を表示するが、**gate で止まり Post-Gate に進まない**。
 
-Claude plugin project の場合、dry-run でも `python3 "${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py" --root .` と `claude plugin tag .claude-plugin --dry-run` を実行し、実際に作られる plugin tag 名と push 対象を表示する。ここで `VERSION` / `package.json` / `.claude-plugin/plugin.json` / `.codex-plugin/plugin.json` / `.claude-plugin/marketplace.json` の version surface が不一致または欠落していれば、dry-run の時点で止める。
+Claude plugin project の場合、dry-run でも `python3 "${HARNESS_PLUGIN_ROOT}/scripts/check-release-version-sync.py" --root .` を実行し、canonical version と各 surface の一致を表示する。ここで `VERSION` / `package.json` / `.claude-plugin/plugin.json` / `.codex-plugin/plugin.json` / `.claude-plugin/marketplace.json` の version surface が不一致または欠落していれば、dry-run の時点で止める。
 
 ## 環境変数
 

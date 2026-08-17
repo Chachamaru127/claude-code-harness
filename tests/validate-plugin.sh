@@ -1379,6 +1379,44 @@ else
 fi
 
 echo ""
+echo "22. Verification chain wiring (Phase 134.8)"
+echo "----------------------------------------"
+
+if bash "$PLUGIN_ROOT/scripts/ci/check-verification-chain-wiring.sh" > /dev/null 2>&1; then
+    pass_test "検証チェーン 5 点配線 (scope leash import / pending_validations / harness-accept evidence 呼び出し / 昇格テーブル / ratchet) が揃っています"
+else
+    fail_test "verification chain wiring contract failed — 'bash scripts/ci/check-verification-chain-wiring.sh' で詳細確認"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-risk-flag-escalation.sh" > /dev/null 2>&1; then
+    pass_test "risk_flags → reviewer_profile 自動昇格 + ratchet の契約テストが通ります (test-risk-flag-escalation.sh)"
+else
+    fail_test "risk-flag escalation 契約テスト失敗 — 'bash tests/test-risk-flag-escalation.sh' で詳細確認"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-pending-browser-visible.sh" > /dev/null 2>&1; then
+    pass_test "PENDING_BROWSER が passed:false まで無言縮退せず伝わる契約テストが通ります (test-pending-browser-visible.sh)"
+else
+    fail_test "pending-browser visibility 契約テスト失敗 — 'bash tests/test-pending-browser-visible.sh' で詳細確認"
+fi
+
+if bash "$PLUGIN_ROOT/tests/test-scope-leash-fires-on-security-diff.sh" > /dev/null 2>&1; then
+    pass_test "scope leash が実バイナリ経由で warn 記録 / enforce deny する契約テストが通ります (test-scope-leash-fires-on-security-diff.sh)"
+else
+    fail_test "scope leash 実効性契約テスト失敗 — 'bash tests/test-scope-leash-fires-on-security-diff.sh' で詳細確認"
+fi
+
+echo ""
+echo "23. Config schema (Phase 135.5)"
+echo "----------------------------------------"
+
+if bash "$PLUGIN_ROOT/scripts/ci/check-config-schema.sh" > /dev/null 2>&1; then
+    pass_test "claude-code-harness.config.schema.json が既存 config (quality_pack) / writing_lint config の双方を検証します"
+else
+    fail_test "config schema contract failed — 'bash scripts/ci/check-config-schema.sh' で詳細確認"
+fi
+
+echo ""
 echo "=========================================="
 echo "テスト結果サマリー"
 echo "=========================================="

@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://claude-code-harness.local/schemas/writing-rule.v1.json",
+  "title": "writing-rule.v1",
+  "description": "Writing-lint dictionary entry: an RE2 regexp pattern paired with a good-pattern rewrite, scoped to writing scenes (Phase 135).",
+  "type": "object",
+  "required": [
+    "id",
+    "pattern",
+    "good",
+    "enabled"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "pattern": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Go regexp (RE2) syntax only — no lookahead/lookbehind/backreferences."
+    },
+    "good": {
+      "type": "string",
+      "description": "Suggested good-pattern rewrite shown alongside a hit."
+    },
+    "scenes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Scene tags this rule applies to. Empty/absent means all scenes."
+    },
+    "enabled": {
+      "type": "boolean"
+    },
+    "severity": {
+      "type": "string",
+      "enum": ["info", "warning", "error"]
+    }
+  }
+}

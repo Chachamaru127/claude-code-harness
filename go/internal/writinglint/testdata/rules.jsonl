@@ -1,0 +1,5 @@
+# fixture dictionary for writinglint tests
+{"id": "meta-narration", "pattern": "以下に示します", "good": "結論から直接書く", "scenes": ["external"], "enabled": true, "severity": "warning"}
+{"id": "hedge-important", "pattern": "重要なのは.+である", "good": "何が変わるかを具体的に書く", "scenes": ["external", "chat"], "enabled": true, "severity": "warning"}
+{"id": "disabled-rule", "pattern": "この行はヒットしない", "good": "n/a", "scenes": [], "enabled": false, "severity": "info"}
+{"id": "no-scene-rule", "pattern": "とても", "good": "強調語を削り具体的な数値・事実に置き換える", "enabled": true, "severity": "info"}

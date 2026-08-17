@@ -311,14 +311,17 @@ grep -q '書き込み系 MCP tool は hook から呼ばない' "${PHASE53_SNAPSH
   exit 1
 }
 
-# Phase 53.1.3: claude plugin tag must be visible in release preflight / dry-run guidance
+# Phase 53.1.3 (superseded 2026-08-17, D69): the plugin tag (`{plugin-name}--v{version}`)
+# was retired because marketplace.json's relative source means install never reads it.
+# The release skill must NOT invoke `claude plugin tag` anymore, but must keep the
+# structured version-sync preflight that 53.1.3 also introduced.
 HARNESS_RELEASE_SKILL="${ROOT_DIR}/skills/harness-release/SKILL.md"
-grep -q 'claude plugin tag .claude-plugin --dry-run' "${HARNESS_RELEASE_SKILL}" || {
-  echo "harness-release is missing claude plugin tag dry-run guidance"
+if grep -q 'claude plugin tag .claude-plugin' "${HARNESS_RELEASE_SKILL}"; then
+  echo "harness-release must not invoke 'claude plugin tag' (retired 2026-08-17, D69)"
   exit 1
-}
-grep -q 'claude plugin tag .claude-plugin --push --remote origin' "${HARNESS_RELEASE_SKILL}" || {
-  echo "harness-release is missing claude plugin tag push guidance"
+fi
+grep -q 'plugin tag' "${HARNESS_RELEASE_SKILL}" || {
+  echo "harness-release must record the plugin tag retirement so operators can find the rationale"
   exit 1
 }
 grep -q 'check-release-version-sync.py' "${HARNESS_RELEASE_SKILL}" || {
@@ -333,6 +336,9 @@ grep -q '53.1.3 plugin tag release flow decision' "${PHASE53_SNAPSHOT_DOC}" || {
   echo "Phase 53 snapshot is missing the 53.1.3 plugin tag release flow decision"
   exit 1
 }
+# The snapshot doc is a historical record of the 2026-04-23 decision and keeps the
+# original dry-run command; the retirement is recorded in decisions.md D69, not by
+# rewriting the snapshot.
 grep -q 'claude plugin tag .claude-plugin --dry-run' "${PHASE53_SNAPSHOT_DOC}" || {
   echo "Phase 53 snapshot must record the claude plugin tag dry-run command"
   exit 1

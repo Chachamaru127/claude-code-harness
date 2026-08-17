@@ -371,6 +371,11 @@
             "timeout": 5
           },
           {
+            "type": "command",
+            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook writing-lint",
+            "timeout": 5
+          },
+          {
             "type": "agent",
             "prompt": "Perform a lightweight code review on the file that was just written/edited. Check for: (1) hardcoded secrets or API keys, (2) TODO/FIXME stubs left without implementation, (3) obvious security issues. This is a non-blocking advisory check. If issues found, include them in systemMessage. Input: $ARGUMENTS",
             "model": "haiku",
@@ -572,6 +577,15 @@
             "type": "command",
             "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook session-unregister",
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/bash -c 'valid_root(){ local r=\"${1:-}\"; [ -n \"$r\" ] && [ -x \"$r/bin/harness\" ] && [ -f \"$r/.claude-plugin/plugin.json\" ] && /usr/bin/grep -q \"\\\"name\\\"[[:space:]]*:[[:space:]]*\\\"claude-code-harness\\\"\" \"$r/.claude-plugin/plugin.json\"; }; root=\"${CLAUDE_PLUGIN_ROOT:-}\"; if ! valid_root \"$root\"; then root=\"\"; for c in \"${CLAUDE_PROJECT_DIR:-}\" \"$PWD\" \"$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace\" \"$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/\"*; do if valid_root \"$c\"; then root=\"$c\"; break; fi; done; fi; if ! valid_root \"$root\"; then echo \"[claude-code-harness] plugin root not found; hook skipped\" >&2; exit 0; fi; exec \"$root/bin/harness\" \"$@\"' _ hook writing-lint-stop",
+            "timeout": 20
           }
         ]
       }

@@ -93,3 +93,9 @@ entries:
     primary_producer: ".claude/state/breezing-session-roles.json keyed by hook payload agent_id/session_id + reviewer agent_type during active breezing (guardrail/breezing_state.go, shell parity restored 132.6). Env remains the producer for worktree-spawned teammate sessions (breezing Lead exports it at spawn)"
     reason: "operator/spawner sets this for worktree teammates. Real defect until 2026-08-11: the Go migration dropped the shell guard's roles-file resolution, leaving R08 unable to fire — now restored"
     registered: "2026-08-10"
+
+  - key: "HARNESS_SCOPE_LEASH_LEVEL"
+    consumer: "go/internal/guardrail/pre_tool.go:151"
+    primary_producer: "harness.toml [scope_leash] enforce_level (resolveScopeLeashLevel reads it first; default warn)"
+    reason: "operator sets this as a manual override for the in-run scope leash (Plans.md 134.5), same override-over-file shape as the TDD enforce knobs above"
+    registered: "2026-08-15"

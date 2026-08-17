@@ -1,0 +1,39 @@
+{
+  "schema": "acceptance-context.v1",
+  "user_request": "Guardrail R05 に symlink 経路の pattern を追加する",
+  "user_request_hash": "2222222222222222222222222222222222222222222222222222222222222222",
+  "demo_artifacts": [
+    { "kind": "text", "path": "go/internal/guardrail/pre_tool_test.go の出力ログ" }
+  ],
+  "verified_criteria": [
+    { "name": "AC-1: symlink 経路が ask になる", "passed": true, "evidence": "go test ./go/internal/guardrail/... PASS" },
+    { "name": "AC-2: 既存 pattern に regression なし", "passed": true, "evidence": "go test ./... PASS" },
+    { "name": "AC-3: gofmt / go vet clean", "passed": true, "evidence": "gofmt -l . 出力ゼロ" },
+    { "name": "AC-4: knobenv_test.go 更新反映", "passed": true, "evidence": "diff 確認済み" },
+    { "name": "AC-5: CHANGELOG Unreleased 追記", "passed": true, "evidence": "CHANGELOG.md 差分確認" }
+  ],
+  "unverified_caveats": [],
+  "past_issue_patterns": [],
+  "recommendation": "ship",
+  "recommendation_evidence": [
+    "verified 5 件 / 全 5 件 (100%) → ship 閾値以上"
+  ],
+  "project": "claude-code-harness",
+  "generated_at": "2026-08-15T10:05:00Z",
+  "verified_criteria_items": [
+    { "name": "AC-1: symlink 経路が ask になる", "status_label": "passed", "evidence": "go test ./go/internal/guardrail/... PASS", "evidence_warn": "" },
+    { "name": "AC-2: 既存 pattern に regression なし", "status_label": "passed", "evidence": "go test ./... PASS", "evidence_warn": "" },
+    { "name": "AC-3: gofmt / go vet clean", "status_label": "passed", "evidence": "gofmt -l . 出力ゼロ", "evidence_warn": "" },
+    { "name": "AC-4: knobenv_test.go 更新反映", "status_label": "passed", "evidence": "diff 確認済み", "evidence_warn": "" },
+    { "name": "AC-5: CHANGELOG Unreleased 追記", "status_label": "passed", "evidence": "CHANGELOG.md 差分確認", "evidence_warn": "" }
+  ],
+  "unverified_caveats_items": [],
+  "recommendation_evidence_items": [
+    { "text": "verified 5 件 / 全 5 件 (100%) → ship 閾値以上" }
+  ],
+  "blind_evaluation": {
+    "applicable": false,
+    "eligibility_reason": "functional-skip"
+  },
+  "blind_evaluation_items": []
+}

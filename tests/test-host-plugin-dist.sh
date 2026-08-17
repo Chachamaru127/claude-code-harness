@@ -86,7 +86,15 @@ assert_present "$GROK_OUT" "skills/breezing/SKILL.md"
 assert_present "$GROK_OUT" "scripts/model-routing.sh"
 assert_present "$GROK_OUT" "scripts/setup-grok.sh"
 assert_present "$GROK_OUT" ".grok/AGENTS.md"
-assert_absent "$GROK_OUT" ".claude-plugin"
+# 133.8/9a192025: grok dist intentionally carries the same guardrail closure
+# as claude dist (.claude-plugin/plugin.json + hooks/hooks.json + bin/harness),
+# because the valid_root bootstrap only recognizes a directory holding both
+# bin/harness and a .claude-plugin/plugin.json naming this plugin. Without
+# that closure, guardrail hooks silently no-op (exit 0) for grok-only
+# installs. See scripts/build-host-plugin-dist.sh build_grok() comment.
+assert_present "$GROK_OUT" ".claude-plugin/plugin.json"
+assert_present "$GROK_OUT" "hooks/hooks.json"
+assert_present "$GROK_OUT" "bin/harness"
 assert_absent "$GROK_OUT" ".codex-plugin"
 assert_absent "$GROK_OUT" ".cursor-plugin"
 

@@ -13,9 +13,34 @@ CONTRACT_FILE="${1:-}"
 shift || true
 
 if [ -z "$CONTRACT_FILE" ]; then
-  echo "Usage: scripts/enrich-sprint-contract.sh <contract-file> [--check TEXT] [--non-goal TEXT] [--runtime CMD] [--risk FLAG] [--note TEXT] [--profile PROFILE] [--route ROUTE] [--approve]" >&2
+  echo "Usage: scripts/enrich-sprint-contract.sh <contract-file> [--check TEXT] [--non-goal TEXT] [--runtime CMD] [--risk FLAG] [--note TEXT] [--profile PROFILE] [--profile-override-reason TEXT] [--route ROUTE] [--approve]" >&2
   exit 1
 fi
+
+# risk_flags → reviewer_profile 自動昇格テーブル。強さ順は static<runtime<browser<ui-rubric。
+# 対象外の flag (例: perf-sensitive) は昇格させない。
+required_profile_for_risk() {
+  case "$1" in
+    security-sensitive) echo "runtime" ;;
+    data-migration) echo "runtime" ;;
+    ux-regression) echo "browser" ;;
+    *) echo "" ;;
+  esac
+}
+
+profile_rank() {
+  case "$1" in
+    static) echo 0 ;;
+    runtime) echo 1 ;;
+    browser) echo 2 ;;
+    ui-rubric) echo 3 ;;
+    *) echo 0 ;;
+  esac
+}
+
+has_profile_override_reason() {
+  jq -e '(.review.reviewer_notes // []) | any(startswith("profile-override-reason: "))' "$TMP_FILE" >/dev/null 2>&1
+}
 
 if [ ! -f "$CONTRACT_FILE" ]; then
   echo "Contract file not found: $CONTRACT_FILE" >&2
@@ -51,7 +76,17 @@ while [ "$#" -gt 0 ]; do
       ;;
     --risk)
       shift
-      append_json_array '.contract.risk_flags' "$(jq -nc --arg flag "${1:-}" '$flag')"
+      RISK_FLAG="${1:-}"
+      append_json_array '.contract.risk_flags' "$(jq -nc --arg flag "$RISK_FLAG" '$flag')"
+      REQUIRED_PROFILE="$(required_profile_for_risk "$RISK_FLAG")"
+      if [ -n "$REQUIRED_PROFILE" ] && ! has_profile_override_reason; then
+        CURRENT_PROFILE="$(jq -r '.review.reviewer_profile // "static"' "$TMP_FILE")"
+        if [ "$(profile_rank "$CURRENT_PROFILE")" -lt "$(profile_rank "$REQUIRED_PROFILE")" ]; then
+          tmp_next="$(mktemp)"
+          jq --arg profile "$REQUIRED_PROFILE" '.review.reviewer_profile = $profile' "$TMP_FILE" > "$tmp_next"
+          mv "$tmp_next" "$TMP_FILE"
+        fi
+      fi
       ;;
     --note)
       shift
@@ -62,6 +97,10 @@ while [ "$#" -gt 0 ]; do
       tmp_next="$(mktemp)"
       jq --arg profile "${1:-static}" '.review.reviewer_profile = $profile' "$TMP_FILE" > "$tmp_next"
       mv "$tmp_next" "$TMP_FILE"
+      ;;
+    --profile-override-reason)
+      shift
+      append_json_array '.review.reviewer_notes' "$(jq -nc --arg reason "${1:-}" '"profile-override-reason: " + $reason')"
       ;;
     --route)
       shift

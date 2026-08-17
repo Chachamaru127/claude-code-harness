@@ -33,6 +33,9 @@ REQUIRED_INVOCATIONS=(
   "tests/test-plans-marker-count.sh"
   "tests/test-pipefail-grep-q-safety.sh"
   "tests/test-plans-hash-reachability.sh"
+  "tests/test-risk-flag-escalation.sh"
+  "tests/test-pending-browser-visible.sh"
+  "tests/test-scope-leash-fires-on-security-diff.sh"
 )
 
 missing=0

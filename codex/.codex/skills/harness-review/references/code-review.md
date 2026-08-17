@@ -83,6 +83,15 @@ finding 段階と verdict 段階を分ける。
 Opus 4.8 は「low-severity は報告するな」を忠実に守り、調査はしても報告を絞って recall を落とす癖がある。
 finding を絞るのは verdict 段階の責務であり、調査段階で findings を捨てない。
 
+## 確定前の再調査（1 回限定）
+
+verdict を確定する前に、より良い案がないか徹底的に再調査する。
+findings で見えている系統だけでなく、圏外の別系統案（未検討の別アプローチ）も最低 1 つ検討する。
+より良い案が見つからなければ、ここまでの findings / verdict 方針をそのまま維持する。
+
+この再調査は 1 回限定。同じ review 内で繰り返さない（ループ化禁止）。
+Severity 表 / 下記 Verdict の閾値ロジックはこの step で変更しない。
+
 ## Verdict
 
 1. critical / major がある → `REQUEST_CHANGES`

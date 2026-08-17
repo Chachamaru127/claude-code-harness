@@ -211,6 +211,78 @@ else
 fi
 
 # ============================================================
+# Phase 136.2: writing_lint_pending (承認待ちキュー表示)
+# ============================================================
+
+# (c) schema additive: writing_lint_pending は required に無い optional field
+if jq -e '
+  (.properties.writing_lint_pending.type == "array") and
+  (.required | index("writing_lint_pending") == null)
+' "$SCHEMA" >/dev/null 2>&1; then
+  pass "(c) schema: writing_lint_pending is additive (optional array, not in required[])"
+else
+  fail "(c) schema: writing_lint_pending missing or incorrectly marked required"
+fi
+
+# (a) pending fixture → snapshot → HTML に approve コマンド文字列が出る
+PROPOSALS_PENDING="$TMP_DIR/proposals-pending.jsonl"
+cat > "$PROPOSALS_PENDING" <<'JSONL'
+{"id": "wl-fixture-1", "pattern": "以下の点をご確認ください", "good": "本題から直接書く", "status": "pending"}
+JSONL
+
+SNAP5="$TMP_DIR/snap5.json"
+bash "$SNAPSHOT_SCRIPT" --plans "$FIXTURE1" --project "case5" \
+  --writing-lint-proposals "$PROPOSALS_PENDING" > "$SNAP5"
+
+if jq -e '
+  (.writing_lint_pending | length == 1) and
+  (.writing_lint_pending[0].approve_command == "scripts/writing-rule-approve.sh --id wl-fixture-1") and
+  (.writing_lint_pending[0].pending_count == 1)
+' "$SNAP5" >/dev/null 2>&1; then
+  pass "(a) Case 5: snapshot writing_lint_pending has 1 item with correct approve_command"
+else
+  fail "(a) Case 5: snapshot incorrect. content: $(cat "$SNAP5")"
+fi
+
+HTML5="$TMP_DIR/html5.html"
+bash "$RENDER_SCRIPT" --template progress --data "$SNAP5" --out "$HTML5" 2>"$TMP_DIR/r5-stderr.txt"
+
+if grep -qF "scripts/writing-rule-approve.sh --id wl-fixture-1" "$HTML5"; then
+  pass "(a) Case 5: rendered HTML contains the copy-paste approve command string"
+else
+  fail "(a) Case 5: rendered HTML missing approve command string"
+fi
+
+if grep -q "ボタンではありません" "$HTML5"; then
+  pass "(a) Case 5: rendered HTML notes it is not a clickable button"
+else
+  fail "(a) Case 5: rendered HTML missing the 'not a button' notice"
+fi
+
+# (b) pending 0 件 → セクション非表示 (見出し・行が出ない)
+PROPOSALS_EMPTY="$TMP_DIR/proposals-empty.jsonl"
+: > "$PROPOSALS_EMPTY"
+
+SNAP6="$TMP_DIR/snap6.json"
+bash "$SNAPSHOT_SCRIPT" --plans "$FIXTURE1" --project "case6" \
+  --writing-lint-proposals "$PROPOSALS_EMPTY" > "$SNAP6"
+
+if jq -e '.writing_lint_pending | length == 0' "$SNAP6" >/dev/null 2>&1; then
+  pass "(b) Case 6: snapshot writing_lint_pending is empty array when no pending proposals"
+else
+  fail "(b) Case 6: snapshot writing_lint_pending not empty. content: $(cat "$SNAP6")"
+fi
+
+HTML6="$TMP_DIR/html6.html"
+bash "$RENDER_SCRIPT" --template progress --data "$SNAP6" --out "$HTML6" 2>"$TMP_DIR/r6-stderr.txt"
+
+if grep -q 'class="wl-row"' "$HTML6" || grep -q "承認待ちの表現ルール" "$HTML6"; then
+  fail "(b) Case 6: rendered HTML shows the pending queue section despite 0 pending items"
+else
+  pass "(b) Case 6: rendered HTML hides the pending queue section (no wl-row / heading text)"
+fi
+
+# ============================================================
 # 共通: missing Plans.md → exit 1
 # ============================================================
 
