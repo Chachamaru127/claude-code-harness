@@ -13,7 +13,7 @@ func TestUsageTrackerHandler_SuccessIsSilent(t *testing.T) {
 	h := &UsageTrackerHandler{ProjectRoot: t.TempDir()}
 
 	var out bytes.Buffer
-	err := h.Handle(strings.NewReader(`{}`), &out)
+	err := h.Handle(strings.NewReader(`{"tool_name":"Skill","tool_input":{"skill":"claude-code-harness:harness-review"}}`), &out)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
