@@ -78,6 +78,7 @@ const (
 )
 
 // Handle は stdin から PostToolUse ペイロードを読み取り、ログを記録する。
+// 記録だけが成功した場合は stdout を空にし、親コンテキストへ添付しない。
 func (h *PostToolUseLogToolNameHandler) Handle(r io.Reader, w io.Writer) error {
 	data, _ := io.ReadAll(r)
 
@@ -114,9 +115,7 @@ func (h *PostToolUseLogToolNameHandler) Handle(r io.Reader, w io.Writer) error {
 		}
 	}
 
-	// 常に {"continue": true} を返す
-	_, err := fmt.Fprintf(w, `{"continue":true}%s`, "\n")
-	return err
+	return nil
 }
 
 // resolveProjectRoot はプロジェクトルートを解決する。

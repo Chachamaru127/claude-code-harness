@@ -2,7 +2,6 @@ package hookhandler
 
 import (
 	"bytes"
-	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,12 +19,8 @@ func TestClearPendingHandler_NoPendingDir(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	var resp clearPendingResponse
-	if err := json.Unmarshal(bytes.TrimRight(out.Bytes(), "\n"), &resp); err != nil {
-		t.Fatalf("invalid JSON: %s", out.String())
-	}
-	if !resp.Continue {
-		t.Errorf("expected continue=true")
+	if out.Len() != 0 {
+		t.Errorf("expected no success output, got: %s", out.String())
 	}
 }
 
@@ -59,12 +54,8 @@ func TestClearPendingHandler_DeletesPendingFiles(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	var resp clearPendingResponse
-	if err := json.Unmarshal(bytes.TrimRight(out.Bytes(), "\n"), &resp); err != nil {
-		t.Fatalf("invalid JSON: %s", out.String())
-	}
-	if !resp.Continue {
-		t.Errorf("expected continue=true")
+	if out.Len() != 0 {
+		t.Errorf("expected no success output, got: %s", out.String())
 	}
 
 	// .pending ファイルが削除されているか確認
@@ -97,12 +88,8 @@ func TestClearPendingHandler_EmptyPendingDir(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	var resp clearPendingResponse
-	if err := json.Unmarshal(bytes.TrimRight(out.Bytes(), "\n"), &resp); err != nil {
-		t.Fatalf("invalid JSON: %s", out.String())
-	}
-	if !resp.Continue {
-		t.Errorf("expected continue=true")
+	if out.Len() != 0 {
+		t.Errorf("expected no success output, got: %s", out.String())
 	}
 }
 
@@ -118,12 +105,8 @@ func TestClearPendingHandler_EmptyInput(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	var resp clearPendingResponse
-	if err := json.Unmarshal(bytes.TrimRight(out.Bytes(), "\n"), &resp); err != nil {
-		t.Fatalf("invalid JSON: %s", out.String())
-	}
-	if !resp.Continue {
-		t.Errorf("expected continue=true")
+	if out.Len() != 0 {
+		t.Errorf("expected no empty-input output, got: %s", out.String())
 	}
 }
 
@@ -152,11 +135,7 @@ func TestClearPendingHandler_MultipleRuns(t *testing.T) {
 		t.Fatalf("second run should not error: %v", err)
 	}
 
-	var resp clearPendingResponse
-	if err := json.Unmarshal(bytes.TrimRight(out2.Bytes(), "\n"), &resp); err != nil {
-		t.Fatalf("invalid JSON: %s", out2.String())
-	}
-	if !resp.Continue {
-		t.Errorf("expected continue=true on second run")
+	if out2.Len() != 0 {
+		t.Errorf("expected no second-run output, got: %s", out2.String())
 	}
 }

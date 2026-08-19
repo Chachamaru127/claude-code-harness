@@ -53,18 +53,13 @@ type usageEntry struct {
 	Timestamp string `json:"timestamp"`
 }
 
-// usageTrackerResponse は UsageTracker フックのレスポンス。
-type usageTrackerResponse struct {
-	Continue bool `json:"continue"`
-}
-
 const (
 	usageStatsFile    = "usage-stats.jsonl"
 	usageMaxSizeBytes = 100 * 1024 // 100KB
 )
 
 // Handle は stdin から PostToolUse ペイロードを読み取り、使用状況を記録する。
-// エラーが発生しても常に {"continue":true} を返す（使用追跡はメインフローをブロックしない）。
+// 使用追跡はメインフローをブロックせず、成功時は親コンテキストへ何も返さない。
 func (h *UsageTrackerHandler) Handle(r io.Reader, w io.Writer) error {
 	data, _ := io.ReadAll(r)
 
@@ -77,7 +72,7 @@ func (h *UsageTrackerHandler) Handle(r io.Reader, w io.Writer) error {
 		}
 	}
 
-	return writeUsageJSON(w, usageTrackerResponse{Continue: true})
+	return nil
 }
 
 // resolveProjectRoot は記録先のプロジェクトルートを決定する。
@@ -251,14 +246,4 @@ func digest(raw json.RawMessage) string {
 // nowISO は現在時刻を RFC3339 形式で返す。
 func nowISO() string {
 	return time.Now().UTC().Format(time.RFC3339)
-}
-
-// writeUsageJSON は v を JSON として w に書き出す。
-func writeUsageJSON(w io.Writer, v interface{}) error {
-	data, err := json.Marshal(v)
-	if err != nil {
-		return fmt.Errorf("marshaling JSON: %w", err)
-	}
-	_, err = fmt.Fprintf(w, "%s\n", data)
-	return err
 }

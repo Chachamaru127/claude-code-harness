@@ -9,25 +9,21 @@ import (
 	"testing"
 )
 
-func TestUsageTrackerHandler_AlwaysContinue(t *testing.T) {
+func TestUsageTrackerHandler_SuccessIsSilent(t *testing.T) {
 	h := &UsageTrackerHandler{ProjectRoot: t.TempDir()}
 
 	var out bytes.Buffer
-	err := h.Handle(strings.NewReader(`{}`), &out)
+	err := h.Handle(strings.NewReader(`{"tool_name":"Skill","tool_input":{"skill":"claude-code-harness:harness-review"}}`), &out)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	var resp usageTrackerResponse
-	if err := json.Unmarshal(bytes.TrimRight(out.Bytes(), "\n"), &resp); err != nil {
-		t.Fatalf("invalid JSON: %s", out.String())
-	}
-	if !resp.Continue {
-		t.Errorf("expected continue=true")
+	if out.Len() != 0 {
+		t.Errorf("expected no success output, got: %s", out.String())
 	}
 }
 
-func TestUsageTrackerHandler_EmptyInput(t *testing.T) {
+func TestUsageTrackerHandler_EmptyInputIsSilent(t *testing.T) {
 	h := &UsageTrackerHandler{ProjectRoot: t.TempDir()}
 
 	var out bytes.Buffer
@@ -36,12 +32,8 @@ func TestUsageTrackerHandler_EmptyInput(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	var resp usageTrackerResponse
-	if err := json.Unmarshal(bytes.TrimRight(out.Bytes(), "\n"), &resp); err != nil {
-		t.Fatalf("invalid JSON: %s", out.String())
-	}
-	if !resp.Continue {
-		t.Errorf("expected continue=true")
+	if out.Len() != 0 {
+		t.Errorf("expected no empty-input output, got: %s", out.String())
 	}
 }
 
@@ -61,12 +53,8 @@ func TestUsageTrackerHandler_SkillTracking(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	var resp usageTrackerResponse
-	if err := json.Unmarshal(bytes.TrimRight(out.Bytes(), "\n"), &resp); err != nil {
-		t.Fatalf("invalid JSON: %s", out.String())
-	}
-	if !resp.Continue {
-		t.Errorf("expected continue=true")
+	if out.Len() != 0 {
+		t.Errorf("expected no success output, got: %s", out.String())
 	}
 
 	// JSONL ファイルが作成されているか確認

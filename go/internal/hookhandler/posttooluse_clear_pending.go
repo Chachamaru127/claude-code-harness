@@ -1,8 +1,6 @@
 package hookhandler
 
 import (
-	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -16,11 +14,6 @@ import (
 type ClearPendingHandler struct {
 	// ProjectRoot はプロジェクトルートのパス。空の場合は cwd を使用する。
 	ProjectRoot string
-}
-
-// clearPendingResponse は ClearPending フックのレスポンス。
-type clearPendingResponse struct {
-	Continue bool `json:"continue"`
 }
 
 // Handle は stdin からペイロードを読み取り（使用しない）、
@@ -38,7 +31,7 @@ func (h *ClearPendingHandler) Handle(r io.Reader, w io.Writer) error {
 
 	// pending ディレクトリが存在しない場合はスキップ
 	if _, err := os.Stat(pendingDir); os.IsNotExist(err) {
-		return writePendingJSON(w, clearPendingResponse{Continue: true})
+		return nil
 	}
 
 	// *.pending ファイルをすべて削除
@@ -49,15 +42,5 @@ func (h *ClearPendingHandler) Handle(r io.Reader, w io.Writer) error {
 		}
 	}
 
-	return writePendingJSON(w, clearPendingResponse{Continue: true})
-}
-
-// writePendingJSON は v を JSON として w に書き出す。
-func writePendingJSON(w io.Writer, v interface{}) error {
-	data, err := json.Marshal(v)
-	if err != nil {
-		return fmt.Errorf("marshaling JSON: %w", err)
-	}
-	_, err = fmt.Fprintf(w, "%s\n", data)
-	return err
+	return nil
 }
