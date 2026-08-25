@@ -1,0 +1,2647 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23313A7E'/%3E%3Cpath d='M8 16h16M18 10l6 6-6 6' stroke='white' stroke-width='3' fill='none'/%3E%3C/svg%3E">
+  <title>CCH ハーネス設計レビュー 2026-08-24</title>
+  <style>
+    :root {
+      --bg: #f5f4f1;
+      --surface: #fcfbf9;
+      --surface-2: #f0efea;
+      --ink: #1b1b22;
+      --ink-soft: #5a5a64;
+      --ink-faint: #8c8c92;
+      --line: #e4e2db;
+      --line-strong: #d2cfc6;
+      --primary: #313a7e;
+      --primary-soft: #e9eaf4;
+      --primary-ink: #262e66;
+      --kernel: #191b2c;
+      --kernel-2: #23263c;
+      --kernel-line: #343750;
+      --kernel-ink: #c9cbe0;
+      --done: #2f8f5b;
+      --done-soft: #e4f2ea;
+      --wip: #b8821c;
+      --wip-soft: #f6edd8;
+      --risk: #b5462f;
+      --risk-soft: #f6e7e2;
+      --plain: #1f7a6d;
+      --plain-soft: #e1f1ee;
+      --plain-line: #bbe0d9;
+      --radius: 12px;
+      --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      --sans: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      color-scheme: light;
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 0%, rgba(49, 58, 126, 0.08), transparent 28rem),
+        var(--bg);
+      font-family: var(--sans);
+      line-height: 1.75;
+      overflow-wrap: anywhere;
+      word-break: keep-all;
+    }
+
+    button,
+    summary {
+      font: inherit;
+    }
+
+    button {
+      color: inherit;
+    }
+
+    button:focus-visible,
+    summary:focus-visible {
+      outline: 3px solid rgba(49, 58, 126, 0.34);
+      outline-offset: 3px;
+    }
+
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0 0 0 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+
+    .wrap {
+      width: min(1440px, calc(100% - 32px));
+      margin: 0 auto;
+    }
+
+    .hero {
+      margin: 24px auto 18px;
+      padding: clamp(24px, 4vw, 48px);
+      overflow: hidden;
+      color: #fff;
+      background:
+        linear-gradient(135deg, rgba(49, 58, 126, 0.96), rgba(25, 27, 44, 0.98)),
+        var(--kernel);
+      border: 1px solid var(--kernel-line);
+      border-radius: 18px;
+      box-shadow: 0 18px 60px rgba(25, 27, 44, 0.16);
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: #bfc3ff;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 900px;
+      margin: 0;
+      font-size: clamp(1.8rem, 4vw, 3.4rem);
+      line-height: 1.2;
+      letter-spacing: -0.035em;
+    }
+
+    .thesis {
+      max-width: 980px;
+      margin: 24px 0 0;
+      padding: 14px 18px;
+      color: #f4f5ff;
+      background: rgba(255, 255, 255, 0.08);
+      border-left: 4px solid #9ca3ff;
+      border-radius: 0 10px 10px 0;
+      font-size: clamp(1rem, 1.7vw, 1.2rem);
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      margin-top: 18px;
+      color: var(--kernel-ink);
+      font-size: 0.82rem;
+    }
+
+    .decision-section {
+      margin-bottom: 18px;
+      padding: 20px;
+    }
+
+    .decision-head {
+      margin-bottom: 14px;
+    }
+
+    .decision-head h2 {
+      margin: 0;
+      font-size: 1.22rem;
+      line-height: 1.35;
+    }
+
+    .decision-head p:last-child {
+      margin: 6px 0 0;
+      color: var(--ink-soft);
+    }
+
+    .decision-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .decision-card {
+      min-width: 0;
+      padding: 16px;
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-top: 4px solid var(--primary);
+      border-radius: 10px;
+    }
+
+    .decision-card h3 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+      line-height: 1.45;
+    }
+
+    .decision-facts {
+      display: grid;
+      gap: 9px;
+      margin: 0;
+    }
+
+    .decision-fact {
+      display: grid;
+      gap: 2px;
+    }
+
+    .decision-fact dt {
+      color: var(--primary);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .decision-fact dd {
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+
+    .decision-fact:first-child dd {
+      color: var(--ink);
+      font-weight: 800;
+    }
+
+    .decision-choices {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 14px;
+    }
+
+    .decision-choice {
+      flex: 1 1 30%;
+      min-width: 0;
+      padding: 9px 6px;
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      color: var(--ink-soft);
+      font: inherit;
+      font-size: 0.82rem;
+      font-weight: 800;
+      line-height: 1.3;
+      cursor: pointer;
+    }
+
+    .decision-choice[data-choice="go"][aria-pressed="true"] {
+      background: var(--done-soft);
+      border-color: var(--done);
+      color: var(--done);
+    }
+
+    .decision-choice[data-choice="talk"][aria-pressed="true"] {
+      background: var(--wip-soft);
+      border-color: var(--wip);
+      color: var(--wip);
+    }
+
+    .decision-choice[data-choice="stop"][aria-pressed="true"] {
+      background: var(--risk-soft);
+      border-color: var(--risk);
+      color: var(--risk);
+    }
+
+    .decision-memo-label {
+      display: block;
+      margin-top: 12px;
+      color: var(--ink-faint);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+    }
+
+    .decision-memo {
+      width: 100%;
+      min-height: 54px;
+      margin-top: 5px;
+      padding: 8px 9px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--ink);
+      font: inherit;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      resize: vertical;
+    }
+
+    .decision-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .decision-copy {
+      padding: 9px 16px;
+      background: var(--primary);
+      border: 1px solid var(--primary);
+      border-radius: 8px;
+      color: #fff;
+      font: inherit;
+      font-size: 0.85rem;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .decision-copy-state {
+      color: var(--ink-soft);
+      font-size: 0.8rem;
+    }
+
+    .decision-transcript {
+      width: 100%;
+      min-height: 108px;
+      margin-top: 10px;
+      padding: 10px;
+      background: var(--surface-2);
+      border: 1px solid var(--line-strong);
+      border-radius: 8px;
+      color: var(--ink);
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      line-height: 1.65;
+    }
+
+    .explorer {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(320px, 390px);
+      gap: 18px;
+      align-items: start;
+      margin-bottom: 18px;
+    }
+
+    .card {
+      min-width: 0;
+      background: rgba(252, 251, 249, 0.94);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 34px rgba(27, 27, 34, 0.07);
+    }
+
+    .canvas-card {
+      overflow: hidden;
+    }
+
+    .canvas-head {
+      display: grid;
+      gap: 14px;
+      padding: 20px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .canvas-title-row {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .section-label {
+      margin: 0 0 3px;
+      color: var(--primary);
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+    }
+
+    .canvas-head h2,
+    .side-section h2 {
+      margin: 0;
+      font-size: 1.08rem;
+      line-height: 1.35;
+    }
+
+    .flow-description {
+      margin: 5px 0 0;
+      color: var(--ink-soft);
+      font-size: 0.88rem;
+    }
+
+    .view-state {
+      flex: 0 0 auto;
+      padding: 5px 9px;
+      color: var(--primary-ink);
+      background: var(--primary-soft);
+      border: 1px solid #cfd2ec;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .plain-summary {
+      margin: 0;
+      padding: 12px 14px;
+      color: #15564d;
+      background: var(--plain-soft);
+      border: 1px solid var(--plain-line);
+      border-radius: 10px;
+      font-size: 0.92rem;
+    }
+
+    .plain-summary strong {
+      display: block;
+      margin-bottom: 2px;
+      font-size: 0.76rem;
+      letter-spacing: 0.06em;
+    }
+
+    .canvas-controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .control-button {
+      min-height: 38px;
+      padding: 7px 12px;
+      cursor: pointer;
+      background: var(--surface);
+      border: 1px solid var(--line-strong);
+      border-radius: 9px;
+      font-size: 0.82rem;
+      font-weight: 750;
+    }
+
+    .control-button:hover:not(:disabled) {
+      border-color: var(--primary);
+    }
+
+    .control-button[aria-pressed="true"] {
+      color: #fff;
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .control-button:disabled {
+      cursor: not-allowed;
+      opacity: 0.42;
+    }
+
+    .diagram-shell {
+      max-width: 100%;
+      padding: 18px;
+      overflow-x: auto;
+      background:
+        linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+        var(--kernel);
+      background-size: 24px 24px;
+      scrollbar-color: var(--kernel-line) var(--kernel);
+    }
+
+    /* 列と行を 1 つの grid で共有する。列ごとに grid を分けると、
+       同じ row を指定しても列をまたいで高さが揃わないため。 */
+    .diagram {
+      position: relative;
+      display: grid;
+      align-items: start;
+      grid-auto-rows: auto;
+      column-gap: 30px;
+      row-gap: 12px;
+      min-width: 880px;
+      min-height: 470px;
+      padding: 12px 0 40px;
+      isolation: isolate;
+    }
+
+    .edge-layer {
+      position: absolute;
+      z-index: 1;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    /* 列の帯は装飾のみ。ノードとは重ねて敷く。
+       .diagram が align-items:start なので、帯だけは列の高さいっぱいに伸ばす。 */
+    .lane-bg {
+      z-index: 0;
+      align-self: stretch;
+      margin: -12px;
+      background: rgba(35, 38, 60, 0.78);
+      border: 1px solid var(--kernel-line);
+      border-radius: 12px;
+      pointer-events: none;
+    }
+
+    .lane-title {
+      position: relative;
+      z-index: 2;
+      min-width: 0;
+      min-height: 36px;
+      margin: 0;
+      padding-bottom: 8px;
+      color: #c3c8f5;
+      border-bottom: 1px solid var(--kernel-line);
+      font-size: 0.8rem;
+      font-weight: 900;
+      letter-spacing: 0.03em;
+    }
+
+    .node-card {
+      position: relative;
+      z-index: 3;
+      min-width: 0;
+      min-height: 76px;
+      padding: 11px 13px;
+      color: #f0f1ff;
+      background: #2b2e47;
+      border: 1px solid #484c6b;
+      border-radius: 10px;
+      box-shadow: 0 8px 20px rgba(8, 9, 18, 0.22);
+      transition:
+        opacity 160ms ease,
+        border-color 160ms ease,
+        box-shadow 160ms ease,
+        transform 160ms ease;
+    }
+
+    .node-card.is-dim {
+      opacity: 0.34;
+      box-shadow: none;
+    }
+
+    .node-card.is-flow {
+      background: #303552;
+      border-color: #99a0ff;
+      box-shadow: 0 0 0 2px rgba(153, 160, 255, 0.16);
+    }
+
+    .node-card.is-step {
+      border-color: #fff;
+      box-shadow:
+        0 0 0 3px rgba(153, 160, 255, 0.38),
+        0 12px 26px rgba(8, 9, 18, 0.34);
+      transform: translateY(-2px);
+    }
+
+    .node-label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 850;
+      line-height: 1.35;
+    }
+
+    .node-summary {
+      display: block;
+      margin-top: 5px;
+      color: var(--kernel-ink);
+      font-size: 0.72rem;
+      line-height: 1.5;
+    }
+
+    .edge-line {
+      fill: none;
+      stroke: #5c6080;
+      stroke-width: 1.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      opacity: 0.16;
+      transition:
+        opacity 160ms ease,
+        stroke 160ms ease,
+        stroke-width 160ms ease;
+    }
+
+    .edge-line.is-return {
+      stroke-dasharray: 5 5;
+    }
+
+    .edge-line.is-flow {
+      stroke: #a7adff;
+      stroke-width: 2.4;
+      opacity: 0.92;
+    }
+
+    .edge-line.is-step {
+      stroke: #fff;
+      stroke-width: 3.6;
+      opacity: 1;
+    }
+
+    .step-badge .badge-halo {
+      fill: var(--kernel);
+      stroke: none;
+    }
+
+    .step-badge circle.badge-body {
+      fill: var(--primary);
+      stroke: #aeb3e7;
+      stroke-width: 1.4;
+    }
+
+    .step-badge.is-current circle.badge-body {
+      fill: #fff;
+      stroke: var(--primary);
+      stroke-width: 2.6;
+    }
+
+    .step-badge.is-dim {
+      opacity: 0.3;
+    }
+
+    .step-badge text {
+      fill: #fff;
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 900;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+
+    .step-badge.is-current text {
+      fill: var(--primary);
+    }
+
+    .sidebar {
+      display: grid;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .side-section {
+      padding: 18px;
+    }
+
+    .side-head {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .side-count {
+      color: var(--ink-faint);
+      font-size: 0.74rem;
+    }
+
+    .flow-list,
+    .step-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .flow-button {
+      width: 100%;
+      padding: 12px;
+      cursor: pointer;
+      text-align: left;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .flow-button:hover {
+      border-color: #aeb2d6;
+    }
+
+    .flow-button[aria-pressed="true"] {
+      background: var(--primary-soft);
+      border-color: var(--primary);
+      box-shadow: inset 4px 0 0 var(--primary);
+    }
+
+    .flow-button-title {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 850;
+      line-height: 1.4;
+    }
+
+    .flow-button-description {
+      display: block;
+      margin-top: 4px;
+      color: var(--ink-soft);
+      font-size: 0.72rem;
+      line-height: 1.5;
+    }
+
+    .step-card {
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+
+    .step-card.is-current {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(49, 58, 126, 0.1);
+    }
+
+    .step-select {
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 10px;
+      width: 100%;
+      padding: 12px;
+      cursor: pointer;
+      text-align: left;
+      background: transparent;
+      border: 0;
+    }
+
+    .step-select:hover {
+      background: var(--surface-2);
+    }
+
+    .step-number {
+      display: grid;
+      width: 30px;
+      height: 30px;
+      place-items: center;
+      color: #fff;
+      background: var(--primary);
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 900;
+    }
+
+    .step-route {
+      display: block;
+      color: var(--primary);
+      font-size: 0.7rem;
+      font-weight: 850;
+      line-height: 1.4;
+    }
+
+    .step-action {
+      display: block;
+      margin-top: 3px;
+      font-size: 0.86rem;
+      font-weight: 850;
+      line-height: 1.4;
+    }
+
+    .step-description {
+      display: block;
+      margin-top: 5px;
+      color: var(--ink-soft);
+      font-size: 0.76rem;
+      line-height: 1.58;
+    }
+
+    .step-more {
+      padding: 0 12px 10px 54px;
+      color: var(--ink-soft);
+      font-size: 0.73rem;
+    }
+
+    .step-more summary {
+      cursor: pointer;
+      color: var(--primary);
+      font-weight: 800;
+    }
+
+    .detail-grid {
+      display: grid;
+      gap: 7px;
+      margin: 8px 0 0;
+    }
+
+    .detail-row {
+      margin: 0;
+    }
+
+    .detail-row strong {
+      color: var(--ink);
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+    }
+
+    .error-box,
+    .noscript {
+      margin: 18px;
+      padding: 14px;
+      color: #7f2c1e;
+      background: var(--risk-soft);
+      border: 1px solid #e5c0b4;
+      border-radius: 10px;
+    }
+
+    .report-footer {
+      margin-bottom: 28px;
+      padding: 18px 20px;
+      color: var(--ink-soft);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      font-size: 0.78rem;
+    }
+
+    .report-footer strong {
+      color: var(--ink);
+    }
+
+    .source-list {
+      margin: 8px 0 0;
+      padding-left: 20px;
+    }
+
+    @media (max-width: 960px) {
+      .decision-list {
+        grid-template-columns: 1fr;
+      }
+
+      .explorer {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      }
+    }
+
+    @media (max-width: 680px) {
+      .wrap {
+        width: min(100% - 20px, 1440px);
+      }
+
+      .hero {
+        margin-top: 10px;
+        padding: 22px 18px;
+        border-radius: 14px;
+      }
+
+      .canvas-title-row {
+        display: grid;
+      }
+
+      .view-state {
+        width: fit-content;
+      }
+
+      .sidebar {
+        grid-template-columns: 1fr;
+      }
+
+      .diagram {
+        min-width: 640px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.001ms !important;
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+      }
+    }
+
+    @media print {
+      @page {
+        size: A4 portrait;
+        margin: 12mm;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      .wrap {
+        width: 100%;
+      }
+
+      .hero {
+        margin-top: 0;
+        box-shadow: none;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .explorer {
+        display: block;
+      }
+
+      .canvas-card,
+      .decision-card,
+      .decision-section,
+      .side-section,
+      .report-footer {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+
+      .canvas-controls,
+      .flow-section,
+      .decision-actions {
+        display: none;
+      }
+
+      .decision-choice {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .decision-memo,
+      .decision-transcript {
+        border-color: var(--line-strong);
+        overflow: visible;
+      }
+
+      .diagram-shell {
+        overflow: visible;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+      }
+
+      .diagram {
+        min-width: 0;
+      }
+
+      .node-card,
+      .edge-line {
+        opacity: 1 !important;
+      }
+
+      .sidebar {
+        margin-top: 12px;
+      }
+
+      .step-card {
+        break-inside: avoid;
+      }
+    }
+
+    /* ==== review sections (this report only) ==== */
+    /* 5 列を 1280px 幅で横スクロール無しに収める（記憶と学習の列を隠さない） */
+    .explorer { grid-template-columns: minmax(0, 1fr) minmax(300px, 340px); }
+    .diagram { grid-template-columns: repeat(5, minmax(150px, 1fr)) !important; column-gap: 20px; }
+    .node-card { padding: 10px 11px; }
+    .node-label { font-size: 0.84rem; }
+    .node-summary { font-size: 0.7rem; }
+    @media (min-width: 681px) { .diagram { min-width: 0; } }
+    .content-section { margin-bottom: 18px; padding: 22px; }
+    .content-section h2 { margin: 0 0 4px; font-size: 1.22rem; line-height: 1.4; }
+    .lede { margin: 8px 0 0; color: var(--ink-soft); font-size: 0.92rem; }
+    .plainbox { margin: 0 auto 18px; padding: 16px 18px; color: #15564d; background: var(--plain-soft); border: 1px solid var(--plain-line); border-radius: var(--radius); font-size: 0.95rem; line-height: 1.85; }
+    .plainbox .pb-head { display: block; margin-bottom: 4px; font-size: 0.76rem; letter-spacing: 0.06em; }
+    .plainbox p { margin: 6px 0 0; }
+    .concern-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+    .concern { min-width: 0; padding: 14px 16px; background: var(--surface); border: 1px solid var(--line-strong); border-top: 4px solid #2c5a7a; border-radius: 10px; }
+    .concern h3 { margin: 0 0 6px; font-size: 0.95rem; line-height: 1.5; }
+    .concern p { margin: 6px 0 0; color: var(--ink-soft); font-size: 0.86rem; }
+    .chip { display: inline-block; margin: 0 4px 4px 0; padding: 2px 10px; border: 1px solid transparent; border-radius: 999px; font-size: 0.72rem; font-weight: 900; letter-spacing: 0.04em; white-space: nowrap; }
+    .chip-ok { color: var(--done); background: var(--done-soft); border-color: #b7dcc7; }
+    .chip-warn { color: var(--wip); background: var(--wip-soft); border-color: #e0cfa0; }
+    .chip-risk { color: var(--risk); background: var(--risk-soft); border-color: #e5c0b4; }
+    .chip-info { color: #2c5a7a; background: #e3ecf1; border-color: #bfd4e0; }
+    .chip-queue { color: #6b4f9e; background: #eee7f7; border-color: #d4c5ea; }
+    .table-scroll { margin-top: 12px; overflow-x: auto; }
+    .cmp-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .cmp-table th, .cmp-table td { padding: 9px 10px; border: 1px solid var(--line-strong); text-align: left; vertical-align: top; line-height: 1.6; }
+    .cmp-table th { background: var(--surface-2); font-size: 0.76rem; letter-spacing: 0.04em; white-space: nowrap; }
+    .cmp-table tr.hit td { background: var(--done-soft); }
+    .cmp-table tr.gap td { background: var(--risk-soft); }
+    details.fold { margin-top: 10px; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; font-size: 0.85rem; }
+    details.fold summary { cursor: pointer; color: var(--primary); font-weight: 800; }
+    details.fold ul { margin: 8px 0 0; padding-left: 20px; }
+    details.fold li { margin-bottom: 4px; }
+    .verdictbox { margin: 0 auto 18px; padding: 18px 20px; color: #1c5c3c; background: var(--done-soft); border: 1px solid #b7dcc7; border-radius: var(--radius); line-height: 1.85; }
+    .verdictbox p, .openbox p { margin: 6px 0 0; }
+    .openbox { margin: 0 auto 18px; padding: 18px 20px; color: #6b4c11; background: var(--wip-soft); border: 1px solid #e0cfa0; border-radius: var(--radius); line-height: 1.85; }
+    .openbox ul, .verdictbox ul { margin: 8px 0 0; padding-left: 20px; }
+    .openbox li, .verdictbox li { margin-bottom: 4px; }
+    .quote { margin: 12px 0 0; padding: 10px 14px; color: var(--ink-soft); background: var(--surface-2); border-left: 4px solid var(--wip); border-radius: 0 8px 8px 0; font-size: 0.87rem; }
+    .duo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+    .duo-panel { min-width: 0; padding: 16px; color: #f0f1ff; background: var(--kernel); border: 1px solid var(--kernel-line); border-radius: 12px; }
+    .duo-panel h3 { margin: 0 0 10px; color: #c3c8f5; font-size: 0.92rem; }
+    .gauge { display: grid; gap: 9px; }
+    .gauge-row { display: grid; grid-template-columns: 10.5em minmax(0, 1fr) 3.4em; gap: 8px; align-items: center; font-size: 0.76rem; }
+    .gauge-bar { height: 12px; overflow: hidden; background: #2b2e47; border-radius: 999px; }
+    .gauge-fill { height: 100%; border-radius: 999px; }
+    .g-green { background: #5ec895; }
+    .g-amber { background: #e0b45c; }
+    .g-red { background: #e0745c; }
+    .gauge-note { margin: 10px 0 0; color: var(--kernel-ink); font-size: 0.72rem; }
+    .prop-card { margin-top: 12px; padding: 16px; background: var(--surface); border: 1px solid var(--line-strong); border-left: 5px solid var(--done); border-radius: 10px; }
+    .prop-card h3 { margin: 0 0 8px; font-size: 0.98rem; line-height: 1.5; }
+    .prop-facts { display: grid; gap: 2px; margin: 0; font-size: 0.87rem; }
+    .prop-facts dt { color: var(--primary); font-size: 0.72rem; font-weight: 900; letter-spacing: 0.06em; }
+    .prop-facts dd { margin: 0 0 6px; color: var(--ink-soft); }
+    @media (max-width: 780px) {
+      .concern-grid, .duo { grid-template-columns: 1fr; }
+    }
+    @media print {
+      .content-section, .plainbox, .verdictbox, .openbox, .concern, .prop-card { box-shadow: none; break-inside: avoid; }
+      .chip, .cmp-table tr.hit td, .cmp-table tr.gap td, .gauge-fill, .duo-panel { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero wrap">
+    <p class="eyebrow" id="project-name">CLAUDE CODE HARNESS / 設計レビュー 2026-08-24</p>
+    <h1 id="report-title">CCH はハーネスとして正しく設計できているか？</h1>
+    <p class="thesis" id="report-thesis">設計の方向は正しい。競合 7 製品に CCH のような統治層（ガードレールと証拠の鎖）を持つものは無い。問題は設計ではなく運用の 3 つの穴で、記憶の中身が空、日本語チェックの辞書が空、無人実行が確認待ちで止まる、のいずれも修理先まで特定できた。</p>
+    <div class="hero-meta">
+      <span id="generated-at">作成日: 未設定</span>
+      <span>判断用の派生レポート</span>
+      <span>正本はフッターの出典</span>
+    </div>
+  </header>
+
+  <section class="plainbox wrap" aria-label="やさしく言うと">
+    <strong class="pb-head">やさしく言うと</strong>
+    <p>CCH（claude-code-harness）は、AI にプログラムを書かせるときの「安全装置つきの作業手順セット」です。ハーネスとは犬の胴輪と同じ言葉で、力の強い相手を安全に走らせるための装具のことです。実際には、AI の全ツール実行を検査する関所（ガードレール）と、計画 → 実装 → 審査 → 判断という決まった手順が中身です。</p>
+    <p>今回のレビューでは、競合 7 製品、文章矯正 skill 9 個、記事 3 本、Hermes Agent の設計を調べ、CCH の内部も実測しました。さらに、調査に関わっていない別の AI に「この結論を潰せ」と反論させる工程を通しています。</p>
+    <p>結論はこうです。<strong>設計の方向は正しい。競合に同じ統治層を持つ製品は無い。ただし運用に 3 つの穴がある。</strong>①前回の記憶が空のまま次のセッションへ流れている。②日本語チェックのエンジンは完成しているのに辞書が空で一度も動いていない。③無人実行が「確認していい？」で止まる。3 つとも修理先まで特定済みです。</p>
+    <p>下の 3 枚のカードで判断すると、この結果を作業に反映できます。完了条件は「3 件すべてについて、進める範囲と今回は止める範囲が決まる」ことです。</p>
+  </section>
+
+  <section class="card decision-section wrap" id="decision-section" aria-labelledby="decision-heading" hidden>
+    <div class="decision-head">
+      <p class="section-label">立花が今決めること</p>
+      <h2 id="decision-heading">進める範囲を選ぶ</h2>
+      <p>推奨と、今回の許可に含まれないことを分けて表示します。完了条件は、3 件すべてについて進める範囲と今回は止める範囲が決まること。選んだ結果は下のボタンでコピーして、チャットに貼って戻してください。</p>
+    </div>
+    <div class="decision-list" id="decision-list" role="list"></div>
+    <div class="decision-actions">
+      <button type="button" class="decision-copy" id="decision-copy">選んだ結果をまとめてコピー</button>
+      <span class="decision-copy-state" id="decision-copy-state" role="status" aria-live="polite">選んだ内容はこのページに保存されません。コピーして戻してください。</span>
+    </div>
+    <textarea class="decision-transcript" id="decision-transcript" readonly hidden aria-label="コピーする本文"></textarea>
+  </section>
+
+  <main class="explorer wrap" id="workflow-explorer">
+    <section class="card canvas-card" aria-labelledby="active-flow-title">
+      <div class="canvas-head">
+        <div class="canvas-title-row">
+          <div>
+            <p class="section-label">選択中の流れ</p>
+            <h2 id="active-flow-title">フローを読み込み中</h2>
+            <p class="flow-description" id="active-flow-description"></p>
+          </div>
+          <span class="view-state" id="view-state">流れ全体</span>
+        </div>
+
+        <p class="plain-summary">
+          <strong>やさしく言うと</strong>
+          <span id="plain-summary">選んだフローの要点をここに表示します。</span>
+        </p>
+
+        <div class="canvas-controls" aria-label="段階を移動">
+          <button class="control-button" id="previous-step" type="button">← 前へ</button>
+          <button class="control-button" id="show-overview" type="button" aria-pressed="true">流れ全体</button>
+          <button class="control-button" id="next-step" type="button">次へ →</button>
+        </div>
+      </div>
+
+      <div class="diagram-shell" aria-label="システム構成図。横方向にスクロールできます。">
+        <div class="diagram" id="diagram">
+          <svg class="edge-layer" id="edge-layer" aria-hidden="true"></svg>
+        </div>
+      </div>
+
+      <noscript>
+        <p class="noscript">この図の切替にはJavaScriptが必要です。印刷版または「処理の順番」を参照してください。</p>
+      </noscript>
+    </section>
+
+    <aside class="sidebar" aria-label="流れと処理の順番">
+      <section class="card side-section flow-section" aria-labelledby="flows-heading">
+        <div class="side-head">
+          <div>
+            <p class="section-label">1つ選ぶ</p>
+            <h2 id="flows-heading">見たい流れを選ぶ</h2>
+          </div>
+          <span class="side-count" id="flow-count"></span>
+        </div>
+        <div class="flow-list" id="flow-list" role="list"></div>
+      </section>
+
+      <section class="card side-section" aria-labelledby="steps-heading">
+        <div class="side-head">
+          <div>
+            <p class="section-label">上から順に読む</p>
+            <h2 id="steps-heading">処理の順番</h2>
+          </div>
+          <span class="side-count" id="step-count"></span>
+        </div>
+        <div class="step-list" id="step-list" role="list"></div>
+      </section>
+    </aside>
+
+    <p id="workflow-status" class="visually-hidden" aria-live="polite"></p>
+  </main>
+
+
+  <section class="card content-section wrap" aria-labelledby="s1-h">
+    <p class="section-label">01 · 診断</p>
+    <h2 id="s1-h">6 つの心配ごとへの答え</h2>
+    <p class="lede">立花が挙げた懸念 6 点それぞれに、実測と外部調査で答えを出した。</p>
+    <div class="concern-grid">
+      <div class="concern">
+        <h3>1. HOTL を再現できているか</h3>
+        <span class="chip chip-ok">設計は合格</span><span class="chip chip-warn">実証に穴</span>
+        <p>HOTL（Human-on-the-Loop。人が毎回承認するのではなく、ループの外から監督する運転方式）の設計図と検証の鎖は、実測つきで完成している。穴は 2 つ。無人実行の確認待ち停止（Phase 140、未実装）と、範囲逸脱の見張り（scope leash）の発火実績ゼロ。</p>
+        <details class="fold"><summary>根拠の実測</summary>
+          <ul>
+            <li>spec.md の HOTL 契約 6 か条（決定論の検査が最終判定を持つ、AI は憲法ファイルを触れない、等）が明文化されている</li>
+            <li>Phase 134 の 8 タスクすべてが「修理前に壊れていることを実測 → 修理後に直ったことを実測」の記録つきで完了</li>
+            <li>scope leash は配線後、対象になる契約が一度も作られておらず発火ゼロ。壊れている証明でも動いている証明でもない（条件未成立）</li>
+            <li>2026-08-22 の実行で、確認待ちによる夜間停止が 2 回発生。修理案（保留キュー）は起票済みで未実装</li>
+          </ul>
+        </details>
+      </div>
+      <div class="concern">
+        <h3>2. 過去の制約に縛られていないか</h3>
+        <span class="chip chip-ok">縛られていない</span><span class="chip chip-warn">棚卸し周期が無い</span>
+        <p>逆の証拠が出た。今回の反証工程で提案を最も強く潰したのは、外部の意見ではなく CCH 自身の直近の判断記録だった。つまり制約の仕組みは生きて機能している。古びていたのは記録ではなく、CLAUDE.md の旧モデル表記と 2 ヶ月前の機能棚卸し文書という「更新周期の無い文書」の側。</p>
+        <details class="fold"><summary>見つかった stale と誤爆</summary>
+          <ul>
+            <li>CLAUDE.md 14 行目「CC v2.1.111+ と Opus 4.7 の機能を活用」（現行は Opus 5 世代）</li>
+            <li>docs/research/official-feature-inventory-2026-06.md が 2 ヶ月未更新</li>
+            <li>このレビュー作業中に、jq というコマンドの .key という書き方が「秘密ファイル *.key を読もうとした」と誤検知され、読み取り専用の集計が拒否された（実測）</li>
+          </ul>
+        </details>
+      </div>
+      <div class="concern">
+        <h3>3. アンチスロップ対策は日本語 / 英語でできているか</h3>
+        <span class="chip chip-warn">日本語: 道具完成、稼働ゼロ</span><span class="chip chip-ok">英語: 対象外で正しい</span>
+        <p>スロップ（slop。AI 特有の空虚な決まり文句だらけの文章）を止めるエンジンは日本語向けに完成済み。ただし照合する辞書ファイルが空のため一度も動いていない。英語は仕様で明示的に対象外とされ、外部に専用 skill が 9 個あるので内蔵する必要が無い。</p>
+        <details class="fold"><summary>外部 9 skill の調査でわかったこと</summary>
+          <ul>
+            <li>9 個中 9 個が「禁止語と禁止構文の具体リスト」を中核に置く。抽象的な「AI っぽくするな」では効かないという共通認識</li>
+            <li>機械で強制まで行くのは 2 個だけ（1 つは commit を実際に止める）。残り 7 個は指示文のみ</li>
+            <li>後発ほど「削りすぎて無個性になる」失敗への警戒が厚い</li>
+            <li>9 個すべて英語専用。日本語向けは市場にゼロ。CCH の日本語エンジンは方式として業界先端と同型（決定論パターン + 助言）</li>
+          </ul>
+        </details>
+      </div>
+      <div class="concern">
+        <h3>4. 見落としが増えている。hook 構築は適切か</h3>
+        <span class="chip chip-ok">hook の骨格は適切</span><span class="chip chip-risk">根因は記憶側</span>
+        <p>「過去文脈の見落とし」の犯人は hook の数ではなく、記憶の中身だった。前回の文脈を注入する仕組みは動いているのに、届く要約が空（User: not captured）。一方で hook 70 個の注入量は起動時 94.7k トークンに達し、同じ言語指示が 1 ターンに 2 回入る重複も実測された。修理と棚卸しの両方が要る。</p>
+        <details class="fold"><summary>実測の数字</summary>
+          <ul>
+            <li>hook 登録 70 件（hooks.json 実カウント）</li>
+            <li>セッション開始時点の消費 94.7k トークン。うち記憶ファイルだけで 34.7k</li>
+            <li>resume pack の中身が「elicitation_event: {}」「User: not captured」の空要約（このセッションで実測）</li>
+            <li>過去にも、記憶の取り込みが「成功」と返して実際は 0 件の実測あり（D55）</li>
+          </ul>
+        </details>
+      </div>
+      <div class="concern">
+        <h3>5. 競合製品から改善できる点はないか</h3>
+        <span class="chip chip-ok">芯は競合ゼロ地帯</span><span class="chip chip-info">学びは運用面</span>
+        <p>競合 5 製品に、CCH のようなガードレールと証拠の鎖（統治層）を持つものは無かった。市場の負けパターンは「仕組みの複製 + 複雑さの税金」で、離脱者は素の worktree とターミナルに戻っている。CCH が学ぶべきは機能ではなく、「本体（Claude Code）が吸収した機構と重複しない」という身軽さの維持だった。</p>
+        <details class="fold"><summary>1 つ訂正</summary>
+          <ul>
+            <li>途中経過では「機構複製ハーネスの退潮は repo の事実で裏が取れた」と書いたが、Terragon の公式閉鎖理由は「利用者が増えず事業を続けられなかった」。閉鎖は事実、「本体に吸収されて負けた」という因果は推測に格下げする</li>
+          </ul>
+        </details>
+      </div>
+      <div class="concern">
+        <h3>6. Hermes のように自律改善できないか</h3>
+        <span class="chip chip-info">半分できる</span><span class="chip chip-risk">残り半分は D67 の書き換えが必要</span>
+        <p>Hermes の学習ループは「作る」「使った回数を数える」「使われないものを棚から下ろす」の 3 部品。このうち数える部品と棚卸し提案は、今の CCH のルール（D67）と衝突せずに取り込める。取り込めないのは「承認なしで使い始める」部分で、これは 9 日前に立花自身が決めた取り決めと正面衝突する。開くかどうかは判断カード 1 で決める。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card content-section wrap" aria-labelledby="s2-h">
+    <p class="section-label">02 · 判定表</p>
+    <h2 id="s2-h">外部から学べるもの 11 件の仕分け</h2>
+    <p class="lede">調べたすべての要素を 4 種類に仕分けた。採用 = 計画に載せる提案。キュー = 条件が揃ったら再判定。充足済み = 同等以上の仕組みが既にある。不採用 = 取り込まない。</p>
+    <div class="table-scroll">
+      <table class="cmp-table">
+        <tr><th>#</th><th>要素</th><th>出どころ</th><th>判定</th><th>一言理由</th></tr>
+        <tr><td>1</td><td>ルールの使用記録と「引退提案」の自動生成</td><td>Hermes curator</td><td><span class="chip chip-ok">採用</span></td><td>提案の生成まで。実行は立花の承認制にすれば D67 と両立する</td></tr>
+        <tr class="gap"><td>2</td><td>弱い警告レベルのルールを承認なしで自動有効化</td><td>Hermes</td><td><span class="chip chip-risk">不採用</span></td><td>反証成立。Hermes の実績は「棚から下ろす」側で、「棚に並べる」側の安全の根拠にならない。D67 と正面衝突</td></tr>
+        <tr><td>3</td><td>記憶の修理 + 空要約なら注入せず可視表示するゲート</td><td>内部実測</td><td><span class="chip chip-ok">採用</span></td><td>見落としの根因治療。黙って止めず「空だった」と画面に出す</td></tr>
+        <tr><td>4</td><td>セッション近くの記憶を CC 本体の記憶機能へ寄せる整理</td><td>CC 公式 docs</td><td><span class="chip chip-ok">採用（縮小）</span></td><td>別リポジトリとの責任分担の変更を含むため、依頼書（handoff）の作成までに縮小</td></tr>
+        <tr><td>5</td><td>注入トークン量の定期棚卸し（測ってから削る）</td><td>X の潮流 + 実測</td><td><span class="chip chip-ok">採用</span></td><td>P43「数えてから緩和する」の記憶版。安全装置系の hook は削減対象から除外</td></tr>
+        <tr><td>6</td><td>日本語チェック辞書の初期化（既存規範から変換）</td><td>内部実測</td><td><span class="chip chip-ok">採用</span></td><td>エンジンは完成済み。辞書を 1 件ずつ承認して入れるだけで動き出す</td></tr>
+        <tr><td>7</td><td>CC 本体機能との重複点検を定期化</td><td>競合調査</td><td><span class="chip chip-ok">採用（縮小）</span></td><td>棚卸し文書は既にあり 2 ヶ月古いだけ。「本体へ委譲して薄くする」までは踏み込まない</td></tr>
+        <tr class="gap"><td>8</td><td>英語アンチスロップのエンジン内蔵</td><td>9 skill</td><td><span class="chip chip-risk">不採用</span></td><td>仕様で対象外と明言済み。外部 skill 9 個で足りる</td></tr>
+        <tr class="hit"><td>9</td><td>評価駆動開発（テストと誤差分析のループを最重視）</td><td>Andrew Ng</td><td><span class="chip chip-info">充足済み</span></td><td>D65 で部品 3 つを吸収済み。決定論の検査が最終判定を持つ設計も同思想</td></tr>
+        <tr><td>10</td><td>コードの依存関係グラフで読む範囲を最小化</td><td>code-review-graph</td><td><span class="chip chip-queue">キュー</span></td><td>再判定の引き金は CCH 自身のレビュー トークン実測。外部の宣伝値（6.8 倍から 528 倍までぶれる）では動かない</td></tr>
+        <tr class="gap"><td>11</td><td>常時 10 並列で実装させる運用</td><td>手羽先記事</td><td><span class="chip chip-risk">不採用</span></td><td>人のレビューが先に破綻する。worktree 並列と main チャット専念そのものは CCH に充足済み。既定 2 並列を維持</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section class="card content-section wrap" aria-labelledby="s3-h">
+    <p class="section-label">03 · 提案の中身</p>
+    <h2 id="s3-h">計画に載せたい 5 件の詳細</h2>
+    <p class="lede">判断カード 2 で「載せる」を選んだ場合に Plans.md へ入る内容。各件に、本質、変化の前後、立花から見た変化、後戻りのしやすさ、確信度を付けた。</p>
+
+    <article class="prop-card">
+      <h3>提案 A: 記憶の修理と、空要約を見える化するゲート <span class="chip chip-ok">確信度 high</span></h3>
+      <dl class="prop-facts">
+        <dt>本質</dt><dd>「過去文脈の見落とし」の根因治療。新しい注入の仕組みを足す前に、流れている中身を直す。</dd>
+        <dt>何が変わるか</dt><dd>前: 空の要約が黙って注入される → 後: 中身を検査し、空なら注入せず「今回は空だったため未注入」と表示する。要約を作る側の修理は harness-mem への依頼書で出す。</dd>
+        <dt>立花から見た変化</dt><dd>セッション開始時に「前回の文脈があるか、無いならなぜ無いか」が見える。見落としの再発をここで検知できる。</dd>
+        <dt>後戻り</dt><dd>ゲートは表示だけの追加なのでいつでも外せる。</dd>
+      </dl>
+    </article>
+
+    <article class="prop-card">
+      <h3>提案 B: 注入トークン量の定期棚卸し <span class="chip chip-ok">確信度 high</span></h3>
+      <dl class="prop-facts">
+        <dt>本質</dt><dd>「なんとなく重い」を数字にしてから削る。P43（数えてから緩和する）の記憶と注入への適用。</dd>
+        <dt>何が変わるか</dt><dd>前: 注入量が測られず単調増加 → 後: maintenance skill が定期的に消費量と重複注入を測ってレポートする。今回の実測では起動時 94.7k トークン、言語指示の二重注入 1 件、jq の誤検知 1 件。</dd>
+        <dt>立花から見た変化</dt><dd>削る判断を数字で下せる。安全装置系の hook は削減対象から除外するので、棚卸しがハーネスの弱体化に化けない。</dd>
+        <dt>後戻り</dt><dd>測るだけの追加。いつでも止められる。</dd>
+      </dl>
+    </article>
+
+    <article class="prop-card">
+      <h3>提案 C: 日本語チェック辞書の初期化 <span class="chip chip-ok">確信度 high</span></h3>
+      <dl class="prop-facts">
+        <dt>本質</dt><dd>完成済みエンジンの稼働開始。立花の文章規範（空虚な決まり文句の禁止リスト等）は既に文書として存在し、それを辞書形式に変換するだけ。</dd>
+        <dt>何が変わるか</dt><dd>前: 稼働ゼロ → 後: 誤検知しにくい確実なパターンから辞書化し、1 件ずつ立花が承認して有効化。以後、書き込み直後に機械が照合して書き直し例つきで助言する。</dd>
+        <dt>立花から見た変化</dt><dd>自分の文体規範を AI が破ったとき、指摘する前に機械が先に直しを促す。</dd>
+        <dt>後戻り</dt><dd>ルール単位で無効化できる。強制力は助言と確認までで、拒否には使わない。</dd>
+      </dl>
+    </article>
+
+    <article class="prop-card">
+      <h3>提案 D: ルールの使用記録と引退提案（Hermes の安全な半分） <span class="chip chip-warn">確信度 medium-high</span></h3>
+      <dl class="prop-facts">
+        <dt>本質</dt><dd>ルールを「作る」仕組みだけあって「枯らす」仕組みが無い。使った回数と最終使用日を記録し、使われないルールの引退を提案させる。</dd>
+        <dt>何が変わるか</dt><dd>前: 承認済みルールは無期限に生存 → 後: 一定期間使われないルールに引退提案が付く。実行は立花の承認制。削除ではなく保管（archive）で、復元できる。</dd>
+        <dt>立花から見た変化</dt><dd>承認待ち一覧に「増やす提案」と「減らす提案」が両方並ぶ。ルールの腐敗を防げる。</dd>
+        <dt>後戻り</dt><dd>記録と提案生成だけなのでいつでも外せる。承認なし自動化はこの提案に含まれない（判断カード 1 が別枠）。</dd>
+      </dl>
+    </article>
+
+    <article class="prop-card">
+      <h3>提案 E: CC 本体機能との重複点検の定期化 <span class="chip chip-warn">確信度 medium</span></h3>
+      <dl class="prop-facts">
+        <dt>本質</dt><dd>Claude Code 本体は worktree 隔離、コードレビュー、記憶、サブエージェント定義を自前で成熟させた。CCH が同じ機構を重複して持ち続けると、競合が落ちた「複雑さの税金」と同じ道になる。既存の棚卸し文書（2 ヶ月前作成）を定期更新の対象にする。</dd>
+        <dt>何が変わるか</dt><dd>前: 棚卸しが一度きり → 後: 本体のバージョン追従のたびに重複点検が走る。ただし「本体へ委譲して CCH を薄くする」判断は 1 件ずつ別途行う。過去の判定には「本体機能は利便性として採用、安全境界としては使わない」という前例があり、それを守る。</dd>
+        <dt>立花から見た変化</dt><dd>「CCH に残す価値があるのはどこか」が常に最新の答えを持つ。</dd>
+        <dt>後戻り</dt><dd>点検の定期化だけ。委譲の判断はそれぞれ独立に戻せる。</dd>
+      </dl>
+    </article>
+  </section>
+
+  <section class="card content-section wrap" aria-labelledby="s4-h">
+    <p class="section-label">04 · 反証</p>
+    <h2 id="s4-h">疑いの目で、どれだけ潰れたか</h2>
+    <p class="lede">調査に関わっていない別の AI に、採用候補と根拠資料を渡して「潰せる根拠を探せ」と指示した。潰せなければ潰せないと明記させる方式。結果、1 件が不採用に落ち、3 件が縮小された。</p>
+    <div class="table-scroll">
+      <table class="cmp-table">
+        <tr><th>対象</th><th>反証の結果</th><th>何が効いたか</th></tr>
+        <tr class="gap"><td>承認なしの自動有効化（Hermes 方式そのまま）</td><td>不採用に降格</td><td>証拠のすり替えの指摘。Hermes の「346 個中 249 個を安全に棚から下ろした」実績は引退側の話で、採用側の安全の根拠に流用していた。加えて 9 日前の D67 裁定と正面衝突</td></tr>
+        <tr><td>使用記録と引退の仕組み</td><td>縮小して採用</td><td>自動で棚から下ろすのは D67 を超える。提案の生成までに縮小</td></tr>
+        <tr><td>CC 本体への機能委譲</td><td>縮小して採用</td><td>棚卸し文書は既にあり、必要なのは新設ではなく定期更新。Terragon 閉鎖を根拠にした因果話も推測と判定された</td></tr>
+        <tr><td>記憶の CC 本体への部分委譲</td><td>縮小して採用</td><td>別リポジトリとの責任分担の変更は、立花の承認が要る境界（Risk Gate）。依頼書の作成までに縮小</td></tr>
+        <tr class="hit"><td>記憶修理、注入棚卸し、辞書初期化、キュー判定、不採用 2 件</td><td>反証失敗（生き残り）</td><td>根拠が外部の評判ではなく内部の実測だったため崩れなかった</td></tr>
+      </table>
+    </div>
+    <p class="lede">証拠の衝突が 1 件あった。反証役は「Conductor への批判は裏取りできない」としたが、調査役は掲示板 Hacker News の一次コメントを API で直接取得済みだった。一次取得を優先し、批判は成立と裁定した。</p>
+    <div class="quote">このレビューで最も強い反論は、外部からではなく CCH 自身の直近の判断記録（D67、D54/D55、2 ヶ月前の棚卸し文書）から出た。記録の仕組みは、書かれている場所では敵対的な反論に耐えるほど機能している。機能していないのは、それを埋めるはずの記憶パイプラインの側。この対称性が今回の一番の発見。</div>
+  </section>
+
+  <section class="card content-section wrap" aria-labelledby="s5-h">
+    <p class="section-label">05 · 競合</p>
+    <h2 id="s5-h">他の道具と比べてどうか</h2>
+    <p class="lede">Claude Code を自律運転させる競合を、規模、統治層の有無、生の評判で比べた。統治層 = ガードレール（危険操作の関所）と証拠の鎖（実行記録で判断する仕組み）。</p>
+    <div class="table-scroll">
+      <table class="cmp-table">
+        <tr><th>製品</th><th>規模（GitHub スター）</th><th>統治層</th><th>生の評判と状態</th></tr>
+        <tr><td>claude-flow</td><td>69,211</td><td>無し（合流前の確認リストはある）</td><td>活発。ただし一次コメントで「毛糸玉（複雑すぎ）」「やり過ぎ」批判</td></tr>
+        <tr><td>vibe-kanban</td><td>27,903</td><td>無し。既定で全確認スキップ実行</td><td>開発が約 4 ヶ月停止。理由は未確認</td></tr>
+        <tr><td>SuperClaude</td><td>23,844</td><td>無し（実行エンジン自体を持たないと公式明言）</td><td>「お仕着せが強い」「常時トークンを食う」批判</td></tr>
+        <tr><td>claude-squad</td><td>8,360</td><td>薄い（適用前レビュー必須の設計はある）</td><td>「やめて素の worktree に戻した」という掲示板スレあり（題名のみ確認）</td></tr>
+        <tr><td>Conductor</td><td>非公開（Mac アプリ）</td><td>無し</td><td>一次コメントで「ターミナルと worktree で足りる。邪魔」</td></tr>
+        <tr class="hit"><td>CCH（本製品）</td><td>該当なし（個人ハーネス）</td><td>あり。R01-R15 の関所 + 証拠の鎖 + 3 ツール横断</td><td>統治層を持つ競合はゼロ。芯の位置取りは空白地帯</td></tr>
+      </table>
+    </div>
+    <p class="lede">X 上では「道具を捨てて基本に戻った」という報告が目立つ。Claude Code の作者本人の「6 ヶ月ごとに設定と hook を消せ」という発言も複数アカウント経由で流通している（動画由来の二次引用で、一次未確認）。この潮流は CCH への警告でもあり、提案 B と E はその答えになる。</p>
+  </section>
+
+  <section class="card content-section wrap" aria-labelledby="s6-h">
+    <p class="section-label">06 · HERMES 対比</p>
+    <h2 id="s6-h">Hermes と CCH は、厚みの場所が逆</h2>
+    <p class="lede">Hermes Agent（Nous Research 製、常駐型の個人 AI エージェント）は自分で skill を作り、背景の棚卸し係が育てる。CCH は止める側が厚く、Hermes は覚えて育てる側が厚い。両方持つ製品はまだ無い。</p>
+    <div class="duo">
+      <div class="duo-panel">
+        <h3>CCH の厚み（止める側が厚い）</h3>
+        <div class="gauge">
+          <div class="gauge-row"><span>止める仕組み（関所）</span><div class="gauge-bar"><div class="gauge-fill g-green" style="width:88%"></div></div><span>厚い</span></div>
+          <div class="gauge-row"><span>証拠の鎖（実行記録）</span><div class="gauge-bar"><div class="gauge-fill g-green" style="width:72%"></div></div><span>厚い</span></div>
+          <div class="gauge-row"><span>記憶の中身</span><div class="gauge-bar"><div class="gauge-fill g-red" style="width:22%"></div></div><span>薄い</span></div>
+          <div class="gauge-row"><span>ルールの引退の仕組み</span><div class="gauge-bar"><div class="gauge-fill g-red" style="width:6%"></div></div><span>無い</span></div>
+        </div>
+        <p class="gauge-note">棒の長さは今回のレビューによる定性評価。実測値ではない。</p>
+      </div>
+      <div class="duo-panel">
+        <h3>Hermes の厚み（覚える側が厚い）</h3>
+        <div class="gauge">
+          <div class="gauge-row"><span>止める仕組み（関所）</span><div class="gauge-bar"><div class="gauge-fill g-amber" style="width:38%"></div></div><span>薄め</span></div>
+          <div class="gauge-row"><span>記憶と学習</span><div class="gauge-bar"><div class="gauge-fill g-green" style="width:86%"></div></div><span>厚い</span></div>
+          <div class="gauge-row"><span>変更の可逆性（台帳と復元）</span><div class="gauge-bar"><div class="gauge-fill g-green" style="width:92%"></div></div><span>厚い</span></div>
+          <div class="gauge-row"><span>ルールの引退の仕組み</span><div class="gauge-bar"><div class="gauge-fill g-green" style="width:90%"></div></div><span>厚い</span></div>
+        </div>
+        <p class="gauge-note">出典: 公式 docs、原提案 issue #7816、実装 PR #17277。</p>
+      </div>
+    </div>
+    <p class="lede">Hermes の核は「可逆性の厚さが、自律の許可量を決める」という原理。全変更が台帳に残り、1 件ずつ取り消せて、削除は無く、人間が付けた保護（pin）を機械が越えられない。だからこそ承認なしで書かせられる。CCH がこの原理を丸ごと真似るには D67 の書き換えが要る（判断カード 1）。真似ずに取れる安全な半分が提案 D。</p>
+  </section>
+
+  <section class="openbox wrap" aria-label="まだ確かめていないこと">
+    <strong>まだ確かめていないこと（未検証のまま報告に含めた項目）</strong>
+    <ul>
+      <li>Claude Code 作者の「6 ヶ月ごとに消せ」発言: 動画由来の二次引用。複数アカウントの一致で方向は確からしいが一次未確認</li>
+      <li>Hermes の「346 個中 249 個を棚卸し」の数値: 機構は一次確認済み、数値はプロジェクト側の自己報告</li>
+      <li>掲示板 Reddit の各スレ本文: アクセス拒否で全滅。題名のみ確認</li>
+      <li>手羽先記事の表題「週 20 万行、月 100 万」の算出根拠: ログイン壁で確認不能</li>
+      <li>grok 経由の X 調査のうち、個別ポスト URL が付かない部分</li>
+      <li>scope leash（範囲逸脱の見張り）の実動作: 発火条件が未成立のため、動く証明も壊れている証明も無い</li>
+      <li>配布先での権限設定の実効性: CCH が同梱する権限の拒否リストは、配布先の Claude Code に読まれていない可能性が過去の実測記憶にある（確信度 medium）。事実なら配布先には効いていない拒否リストを同梱していることになる。検証タスク化を推奨</li>
+      <li>code-review-graph の性能値: 出典間で 6.8 倍から 528 倍までぶれており額面では使えない</li>
+      <li>vibe-kanban の開発停止の理由</li>
+    </ul>
+  </section>
+
+  <section class="verdictbox wrap" aria-label="総合判定">
+    <strong>総合判定と次の一手</strong>
+    <p>CCH はハーネスとして正しい場所に立っている。競合 7 製品調査と反証工程を通しても、統治層という芯は崩れなかった。直すべきは運用の 3 穴（記憶、辞書、無人停止）で、いずれも修理先が特定済み。外部から取るべきは Hermes の「可逆性の会計」だけで、それも安全な半分から取れる。</p>
+    <ul>
+      <li>この回答までに進めたこと: レビュー全体（外部調査 4 系統、内部実測、反証、判定）。正本ファイルは無変更</li>
+      <li>次に AI が続けること（承認後）: Plans.md への追記案の提示、辞書候補リストの作成、注入量レポート、handoff 依頼書の下書き。完了条件はそれぞれ立花の承認</li>
+      <li>立花の判断が必要: 上の 3 カード（D67 を開くか、5 件を計画に載せるか、Phase 140 を最優先にするか）</li>
+      <li>外部条件待ち: 無し</li>
+    </ul>
+  </section>
+
+  <footer class="report-footer wrap">
+    <strong>SSOT出典</strong>
+    <ul class="source-list" id="source-list"></ul>
+    <p><strong>分析方法と制約</strong>: 2026-08-24 に /muscle スキルで実施。内部 SSOT の全文読解と実測プローブ、外部調査 4 系統（anti-slop 9 skill / 競合と CC 本体吸収 / Hermes と Web 評判 / X 評判 grok）、独立エージェントによる反証パスの構成。Reddit 本文は取得不能、X の一部は個別 URL 無しのため未検証扱い。判断記録（decisions.md D71 相当）への追記は立花の承認後に行う。</p>
+    <p>本レポートは理解と判断のための派生物です。仕様や実装の正本ではありません。</p>
+  </footer>
+
+  <script id="report-data" type="application/json">
+{
+  "meta": {
+    "project": "CLAUDE CODE HARNESS",
+    "eyebrowSuffix": "設計レビュー 2026-08-24",
+    "title": "CCH はハーネスとして正しく設計できているか？",
+    "thesis": "設計の方向は正しい。競合 7 製品に CCH のような統治層（ガードレールと証拠の鎖）を持つものは無い。問題は設計ではなく運用の 3 つの穴で、記憶の中身が空、日本語チェックの辞書が空、無人実行が確認待ちで止まる、のいずれも修理先まで特定できた。",
+    "decisionMode": true,
+    "generatedAt": "2026-08-24",
+    "sourceRefs": [
+      "spec.md（HOTL Governance Contract の 6 不変条件 / Non-Goals / North Star 3 層）",
+      "Plans.md（Phase 134 検証チェーン cc:done / Phase 135 writing lint cc:done / Phase 138 feedback rules cc:todo / Phase 140 defer queue cc:todo）",
+      ".claude/memory/decisions.md（D53-D70。特に D55 ingest 空振り / D62 fail-visible / D64 辞書分離 / D67 自動昇格しない / D68 実行記録を信頼）",
+      ".claude/memory/patterns.md（P37-P43。特に P43 発火数の実測から始める）",
+      "内部実測 2026-08-24: resume pack 空要約（elicitation_event: {} / User: not captured）、scope-leash.jsonl 不存在、~/.claude/writing-lint/rules.jsonl 不存在、セッション開始時 94.7k token 消費、jq の .key が secret-read 誤検知、言語指示の二重注入",
+      "hooks/hooks.json（hook 登録 70 件、実カウント）",
+      "NousResearch/hermes-agent: issue #7816（curator 原提案と設計判断）/ PR #17277（不変条件 4 つ）/ 公式 curator docs / hermes-agent.org",
+      "競合実測 (GitHub API): claude-flow 69.2k★ / vibe-kanban 27.9k★ push 停止 4 ヶ月 / SuperClaude 23.8k★ / claude-squad 8.4k★ / Terragon 公式 shutdown 告知（理由は traction 不足）",
+      "HN 一次コメント: item 44594584（Conductor）/ item 44688828（claude-flow）",
+      "anti-slop 9 skill の SKILL.md 全文（raw.githubusercontent.com 経由、欠測ゼロ）",
+      "Andrew Ng: x.com/AndrewYNg/status/2090840747738374568 と The Batch 2 本（Three Key Loops / AI Engineering Skills Map）",
+      "tirth8205/code-review-graph README（自称ベンチは出典間で 6.8x〜528x と不一致）",
+      "@Tebasaki_lab 記事 x.com/i/article/2090861222463954944（2026-08-23。運用 7 項目）",
+      "grok 経由の X 調査 3 件（個別ポスト URL が無い部分は未検証扱い）",
+      "独立反証パス（調査に参加していない別エージェント。降格 3 件と不採用 1 件を確定）"
+    ]
+  },
+  "decisions": [
+    {
+      "id": "decision-d67",
+      "title": "AI が自分で作ったルールを、承認なしで使い始めることを許すか（Hermes 方式への一歩）",
+      "recommendation": "今は許さない（提案までに留める）",
+      "impact": "許すなら、弱い警告レベルのルールに限り AI が自動で有効化する。9 日前に立花自身が決めた D67（ルールの強制力は提案まで）を書き換えることになる。",
+      "notNow": "承認なしの自動有効化は実装しない。今回足すのは使用回数の記録と「使われないルールを棚から下ろす提案」の生成までで、実行は立花の承認制のまま。",
+      "reversible": "D67 の書き換え自体はいつでもできる。ただし一度自動化を許した後に取り消すのは、動き出したルールの棚卸しが要るぶん手間が大きい。"
+    },
+    {
+      "id": "decision-adopt5",
+      "title": "レビューで決まった改善 5 件を、作業計画 Plans.md に載せてよいか",
+      "recommendation": "載せる",
+      "impact": "①記憶の修理、②注入量の棚卸し、③日本語チェック辞書の初期化、④ルールの使用記録、⑤CC 本体機能との重複点検、の 5 件が計画に入る。実装は着手時にそれぞれ通常レビューを通る。①の一部は別リポジトリ harness-mem への依頼書（handoff）作成を含む。",
+      "notNow": "実装そのものはまだ始めない。外部への送信、公開、他リポジトリへの書き込みもしない。",
+      "reversible": "計画の行を消すだけで戻せる。実装前なら影響はゼロ。"
+    },
+    {
+      "id": "decision-p140",
+      "title": "無人実行が確認待ちで止まる問題の修理（Phase 140）を、次の最優先にするか",
+      "recommendation": "最優先にする",
+      "impact": "「確認が要る操作は保留リストに積んで先へ進み、立花が戻ってからまとめて確認する」仕組みの実装が、次のスプリントの先頭になる。2026-08-22 の実行で 2 回起きた夜間停止の再発を防ぐ。",
+      "notNow": "確認そのものは無くさない。危険な操作の確認は保留リスト経由で必ず立花に届く。",
+      "reversible": "優先順の変更はいつでも戻せる。実装後も設定で従来の「その場で確認」方式に戻せる設計。"
+    }
+  ],
+  "categories": [
+    {
+      "id": "cat-plan",
+      "label": "① 計画と契約"
+    },
+    {
+      "id": "cat-impl",
+      "label": "② 実装"
+    },
+    {
+      "id": "cat-verify",
+      "label": "③ 検証"
+    },
+    {
+      "id": "cat-judge",
+      "label": "④ 判断（立花）"
+    },
+    {
+      "id": "cat-learn",
+      "label": "⑤ 記憶と学習"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "n-plans",
+      "label": "Plans.md（作業台帳）",
+      "categoryId": "cat-plan",
+      "row": 1,
+      "summary": "やるべきタスクと完了条件の一覧表。レビュー時点で未着手 10 件"
+    },
+    {
+      "id": "n-contract",
+      "label": "sprint contract（作業契約書）",
+      "categoryId": "cat-plan",
+      "row": 2,
+      "summary": "タスクごとに、触ってよいファイルと検査の強さを機械が読める形で決める"
+    },
+    {
+      "id": "n-worker",
+      "label": "Worker（実装役の AI）",
+      "categoryId": "cat-impl",
+      "row": 1,
+      "summary": "契約の範囲でコードを書き、自己点検 5 項目に証拠を付けて返す"
+    },
+    {
+      "id": "n-guard",
+      "label": "ガードレール（Go 製の関所）",
+      "categoryId": "cat-impl",
+      "row": 2,
+      "summary": "ツール実行のたびに R01-R15 のルールで、許可 / 確認 / 拒否を返す"
+    },
+    {
+      "id": "n-reviewer",
+      "label": "Reviewer（審査役の AI）",
+      "categoryId": "cat-verify",
+      "row": 1,
+      "summary": "成果物を審査して合格 / 差し戻しを返す。検証できなかった項目は pending として残す"
+    },
+    {
+      "id": "n-accept",
+      "label": "harness-accept（判断材料づくり）",
+      "categoryId": "cat-judge",
+      "row": 1,
+      "summary": "実行記録 4 ファイルから証拠を集め、ship / wait / reject の推奨を組み立てる"
+    },
+    {
+      "id": "n-operator",
+      "label": "立花（operator）",
+      "categoryId": "cat-judge",
+      "row": 2,
+      "summary": "最終判断だけを行う。人は判断に専念する、が CCH の目的（North Star L1）"
+    },
+    {
+      "id": "n-defer",
+      "label": "保留キュー（Phase 140、未実装）",
+      "categoryId": "cat-judge",
+      "row": 3,
+      "summary": "確認が要る操作を、止めずに積んでおく箱。まだ存在しない（cc:todo）"
+    },
+    {
+      "id": "n-hooks",
+      "label": "hook 記録（自動係 70 個）",
+      "categoryId": "cat-learn",
+      "row": 1,
+      "summary": "セッションの出来事をイベントごとに JSONL ファイルへ書き残す"
+    },
+    {
+      "id": "n-mem",
+      "label": "harness-mem（横断記憶）",
+      "categoryId": "cat-learn",
+      "row": 2,
+      "summary": "ツールをまたぐ記憶データベース。今は要約が空になる不具合の実測あり"
+    },
+    {
+      "id": "n-resume",
+      "label": "resume pack（記憶の注入）",
+      "categoryId": "cat-learn",
+      "row": 3,
+      "summary": "次のセッション開始時に、前回の文脈を最大 32KB 差し込む"
+    },
+    {
+      "id": "n-rules",
+      "label": "個人ルール辞書",
+      "categoryId": "cat-learn",
+      "row": 4,
+      "summary": "日本語チェックや指摘ルールの置き場。今は辞書ファイルが無く稼働ゼロ"
+    },
+    {
+      "id": "n-curator",
+      "label": "棚卸し係（吸収案、未実装）",
+      "categoryId": "cat-learn",
+      "row": 5,
+      "summary": "使用回数を数えて、使われないルールの引退を提案する。Hermes 方式の移植案"
+    }
+  ],
+  "edges": [
+    {
+      "id": "e-plans-contract",
+      "sourceNodeId": "n-plans",
+      "targetNodeId": "n-contract",
+      "label": "タスクを契約にする"
+    },
+    {
+      "id": "e-contract-worker",
+      "sourceNodeId": "n-contract",
+      "targetNodeId": "n-worker",
+      "label": "承認済みの範囲を渡す"
+    },
+    {
+      "id": "e-worker-guard",
+      "sourceNodeId": "n-worker",
+      "targetNodeId": "n-guard",
+      "label": "ツール実行を検査に通す"
+    },
+    {
+      "id": "e-worker-reviewer",
+      "sourceNodeId": "n-worker",
+      "targetNodeId": "n-reviewer",
+      "label": "成果物 + 自己点検"
+    },
+    {
+      "id": "e-reviewer-accept",
+      "sourceNodeId": "n-reviewer",
+      "targetNodeId": "n-accept",
+      "label": "判定 + 未検証リスト"
+    },
+    {
+      "id": "e-accept-operator",
+      "sourceNodeId": "n-accept",
+      "targetNodeId": "n-operator",
+      "label": "判断材料 HTML"
+    },
+    {
+      "id": "e-guard-defer",
+      "sourceNodeId": "n-guard",
+      "targetNodeId": "n-defer",
+      "label": "確認待ちを積む（案）"
+    },
+    {
+      "id": "e-defer-operator",
+      "sourceNodeId": "n-defer",
+      "targetNodeId": "n-operator",
+      "label": "まとめてレビュー（案）"
+    },
+    {
+      "id": "e-worker-hooks",
+      "sourceNodeId": "n-worker",
+      "targetNodeId": "n-hooks",
+      "label": "出来事を記録"
+    },
+    {
+      "id": "e-hooks-mem",
+      "sourceNodeId": "n-hooks",
+      "targetNodeId": "n-mem",
+      "label": "記憶 DB へ送る"
+    },
+    {
+      "id": "e-mem-resume",
+      "sourceNodeId": "n-mem",
+      "targetNodeId": "n-resume",
+      "label": "要約を作る"
+    },
+    {
+      "id": "e-resume-plans",
+      "sourceNodeId": "n-resume",
+      "targetNodeId": "n-plans",
+      "label": "次のセッションへ注入"
+    },
+    {
+      "id": "e-operator-rules",
+      "sourceNodeId": "n-operator",
+      "targetNodeId": "n-rules",
+      "label": "訂正がルール案になる"
+    },
+    {
+      "id": "e-rules-guard",
+      "sourceNodeId": "n-rules",
+      "targetNodeId": "n-guard",
+      "label": "承認済みルールで照合"
+    },
+    {
+      "id": "e-rules-curator",
+      "sourceNodeId": "n-rules",
+      "targetNodeId": "n-curator",
+      "label": "使用記録を棚卸し（案）"
+    }
+  ],
+  "flows": [
+    {
+      "id": "flow-hotl",
+      "title": "実装が立花の判断に届くまで（検証の鎖）",
+      "description": "Phase 134 で修理された本線。どこが動いていて、どこが未検証か",
+      "plainSummary": "タスクは契約になり、AI が実装し、審査を通り、証拠つきの判断材料になって立花に届きます。この鎖は 2026-08-15 の修理で機械的につながりました。ただし配線後の実戦データはまだ薄い状態です。",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "edgeId": "e-plans-contract",
+          "action": "タスクを契約化する",
+          "description": "Plans.md の 1 行が sprint contract という JSON になります。危険度フラグ（security-sensitive 等）が付くと、審査の強さが自動で 1 段上がります。修理前は素通りしていたことを実測してから直した記録付きです（134.1）。",
+          "why": "実装が始まる前に「どこまで触ってよいか」を機械が読める形にするためです。",
+          "codeReference": "scripts/enrich-sprint-contract.sh"
+        },
+        {
+          "stepNumber": 2,
+          "edgeId": "e-contract-worker",
+          "action": "承認された範囲だけ実装する",
+          "description": "Worker が契約の範囲でコードを書きます。完了時は自己点検 5 項目それぞれに実コマンドの出力を証拠として添え、worker-report.v1 というファイルで保存します（134.3）。",
+          "why": "「やりました」という自己申告ではなく、後から機械が検証できる記録を残すためです。"
+        },
+        {
+          "stepNumber": 3,
+          "edgeId": "e-worker-guard",
+          "action": "1 実行ごとに関所を通る",
+          "description": "すべてのツール実行が Go 製ガードレール（R01-R15）の判定を受けます。契約範囲の外への書き込みを警告する scope leash も配線済みです（134.5）。ただし発火実績はゼロです。対象になる契約が配線後にまだ作られていないためで、壊れている証明でも動いている証明でもありません。",
+          "why": "作業中の脱線と静かな失敗を、レビューより手前で捕まえるためです。",
+          "codeReference": "go/internal/guardrail/pre_tool.go"
+        },
+        {
+          "stepNumber": 4,
+          "edgeId": "e-worker-reviewer",
+          "action": "審査する",
+          "description": "Reviewer が成果物を審査します。ブラウザ検証などが環境の都合でできなかった項目は、黙って合格にせず pending_validations という未検証リストに記録されます（134.2）。",
+          "why": "「検証できなかった」を「合格した」に見せないためです（D62 fail-visible の原則）。"
+        },
+        {
+          "stepNumber": 5,
+          "edgeId": "e-reviewer-accept",
+          "action": "証拠を機械で集める",
+          "description": "accept-collect-evidence.sh が実行記録 4 ファイルを読み、判断材料を組み立てます。AI が記憶で言い直すのではなく、記録からの引用です（134.4）。",
+          "why": "信頼の根拠を、コードの見た目や自己申告ではなく実行記録に置くためです（D68）。",
+          "codeReference": "scripts/accept-collect-evidence.sh"
+        },
+        {
+          "stepNumber": 6,
+          "edgeId": "e-accept-operator",
+          "action": "立花が判断する",
+          "description": "ship / wait / reject の推奨つき HTML が届きます。未検証リストに 1 件でも該当があれば、点数が高くても ship 推奨にはなりません（80% でも wait になる実測あり）。",
+          "why": "人は判断だけに集中する（North Star L1）ためです。"
+        }
+      ]
+    },
+    {
+      "id": "flow-stall",
+      "title": "無人実行が止まる瞬間（次の最優先候補）",
+      "description": "2026-08-22 に 2 回起きた停止パターンと、Phase 140 の修理案",
+      "plainSummary": "立花が席を外している間に「実行していい？」の確認が出ると、実行全体がそこで止まります。修理案は、確認が要る操作を保留リストに積んで先へ進み、戻ってからまとめて確認する方式です。まだ実装されていません（cc:todo）。",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "edgeId": "e-worker-guard",
+          "action": "確認（ask）が出て止まる",
+          "description": "危険寄りの操作でガードレールが「確認」を返すと、無人の実行はそこで停止します。拒否（deny）は理由が返って作業を続けられるのに、確認だけが止まる、という実測が 2026-08-22 にあります。",
+          "why": "今の確認は「人がその場にいる対話」を前提に設計されているためです。"
+        },
+        {
+          "stepNumber": 2,
+          "edgeId": "e-guard-defer",
+          "action": "保留に積んで続行する（案）",
+          "description": "Phase 140 案では、確認の代わりに操作を保留リスト（deferred-ops.jsonl）へ積み、他のタスクを続けます。同じ操作を勝手に再試行することはしません。",
+          "why": "序盤の 1 つの確認で、夜間の実行全体が無駄になるのを防ぐためです。"
+        },
+        {
+          "stepNumber": 3,
+          "edgeId": "e-defer-operator",
+          "action": "戻ってからまとめて確認（案）",
+          "description": "立花が戻ったら保留一覧を見て、承認したものだけ次の 1 回が通ります。確認そのものは無くなりません。",
+          "why": "確認を廃止するのではなく、確認のタイミングを人の在席に合わせるためです。"
+        }
+      ]
+    },
+    {
+      "id": "flow-memory",
+      "title": "前回の記憶が次のセッションに届くまで（今壊れている場所）",
+      "description": "「過去文脈の見落とし」の根因。配線は生きているが中身が空",
+      "plainSummary": "出来事は記録され、記憶データベースに送られ、要約されて次のセッションに注入されます。ところが今、この要約が「User: not captured」のような空っぽの文で届いています。水道管はつながっているのに水が流れていない状態です。実際には、要約を作る側（harness-mem という別リポジトリ）の修理が必要です。",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "edgeId": "e-worker-hooks",
+          "action": "出来事を記録する",
+          "description": "70 個の hook（決まったタイミングで自動実行される小さな係）がセッションの出来事を JSONL に書き残します。記録自体は動いています。",
+          "why": "後から実行記録として辿れるようにするためです。"
+        },
+        {
+          "stepNumber": 2,
+          "edgeId": "e-hooks-mem",
+          "action": "記憶データベースへ送る",
+          "description": "harness-mem に送られます。ただし過去に、取り込みが「成功」と返しながら実際は 0 件だった実測があります（D55）。成功を装った失敗が起きうる箇所です。",
+          "why": "Claude 以外のツールからも同じ記憶を検索できるようにするためです。"
+        },
+        {
+          "stepNumber": 3,
+          "edgeId": "e-mem-resume",
+          "action": "要約を作る（ここが壊れている）",
+          "description": "このセッションに実際に届いた要約の中身は「Overview: elicitation_event: {}」「User: not captured」でした。決定事項ゼロ、次の行動ゼロ。中身のある要約が作られていません。",
+          "why": "新しいセッションが前回の文脈を持って始まるための機構なので、ここが空だと見落としが起きます。"
+        },
+        {
+          "stepNumber": 4,
+          "edgeId": "e-resume-plans",
+          "action": "次のセッションへ注入する",
+          "description": "注入の配線と 32KB の上限は機能しています。提案は「空の要約なら注入せず、空だったことを画面に出す」ゲートの追加です。黙って注入をやめるのではなく、未注入を見えるようにします。",
+          "why": "壊れた中身を黙って流すと、動いているように見えてしまうためです（D58「配線したは効いているではない」）。"
+        }
+      ]
+    },
+    {
+      "id": "flow-learning",
+      "title": "指摘がルールになり、機械が守るまで（Hermes 吸収案）",
+      "description": "Hermes Agent の学習ループと、CCH の現在地と提案の対応",
+      "plainSummary": "立花の訂正がルール案になり、承認すると辞書に入り、以後は機械が照合します。CCH はこの道を Phase 135 で作りましたが、辞書が空のため一度も動いていません。Hermes はさらに「使われないルールを棚から下ろす係」まで持っています。",
+      "steps": [
+        {
+          "stepNumber": 1,
+          "edgeId": "e-operator-rules",
+          "action": "訂正がルール案になる",
+          "description": "会話中の日本語訂正を検知して提案ファイルへ追記する skill は実装済みです（135.4）。文章以外の指摘を全行動に広げる汎用版（Phase 138）は未実装です。",
+          "why": "立花が同じ指摘を二度しなくて済むようにするためです。"
+        },
+        {
+          "stepNumber": 2,
+          "edgeId": "e-rules-guard",
+          "action": "承認済みルールで照合する",
+          "description": "承認された辞書を、書き込み直後の検査（PostToolUse hook）が正規表現で照合し、書き直し例つきで助言します。エンジンは完成していますが、辞書ファイルが存在せず稼働ゼロです。提案は、立花の既存の文章規範から初期辞書を作ることです。1 件ずつ立花が承認します。",
+          "why": "エンジンは出来ているので、辞書を入れるだけで動き始めるためです。",
+          "codeReference": "go/internal/writinglint/"
+        },
+        {
+          "stepNumber": 3,
+          "edgeId": "e-rules-curator",
+          "action": "使われないルールを棚卸しする（案）",
+          "description": "Hermes の curator は使用回数と最終使用日を記録し、90 日未使用のルールを棚から下ろす提案をします。削除はせず、復元でき、全変更が台帳に残ります。CCH への提案はこの「提案の生成まで」を移植し、実行は立花の承認制にする形です。",
+          "why": "ルールは増える一方だと腐るためです。作る仕組みだけでなく引退の仕組みが要ります。"
+        }
+      ]
+    }
+  ]
+}
+  </script>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const svgNamespace = "http://www.w3.org/2000/svg";
+      const decisionChoices = [
+        ["go", "やっていい"],
+        ["talk", "相談したい"],
+        ["stop", "やらない"]
+      ];
+      const decisionState = new Map();
+      const decisionMemo = new Map();
+      const elements = {
+        projectName: document.getElementById("project-name"),
+        reportTitle: document.getElementById("report-title"),
+        reportThesis: document.getElementById("report-thesis"),
+        generatedAt: document.getElementById("generated-at"),
+        decisionSection: document.getElementById("decision-section"),
+        decisionList: document.getElementById("decision-list"),
+        decisionCopy: document.getElementById("decision-copy"),
+        decisionCopyState: document.getElementById("decision-copy-state"),
+        decisionTranscript: document.getElementById("decision-transcript"),
+        diagram: document.getElementById("diagram"),
+        edgeLayer: document.getElementById("edge-layer"),
+        flowList: document.getElementById("flow-list"),
+        stepList: document.getElementById("step-list"),
+        activeFlowTitle: document.getElementById("active-flow-title"),
+        activeFlowDescription: document.getElementById("active-flow-description"),
+        plainSummary: document.getElementById("plain-summary"),
+        flowCount: document.getElementById("flow-count"),
+        stepCount: document.getElementById("step-count"),
+        viewState: document.getElementById("view-state"),
+        status: document.getElementById("workflow-status"),
+        previous: document.getElementById("previous-step"),
+        overview: document.getElementById("show-overview"),
+        next: document.getElementById("next-step"),
+        sourceList: document.getElementById("source-list")
+      };
+
+      let data;
+
+      try {
+        data = JSON.parse(document.getElementById("report-data").textContent);
+        const errors = validateData(data);
+        if (errors.length) throw new Error(errors.join(" / "));
+      } catch (error) {
+        showError(error.message);
+        return;
+      }
+
+      const nodeMap = new Map(data.nodes.map((node) => [node.id, node]));
+      const edgeMap = new Map(data.edges.map((edge) => [edge.id, edge]));
+      const state = {
+        flowIndex: 0,
+        stepIndex: null,
+        printStepIndex: null,
+        openedDetails: []
+      };
+
+      applyMetadata();
+      renderDecisions();
+      renderDiagramNodes();
+      renderFlowList();
+      selectFlow(0);
+      attachControls();
+
+      let resizeFrame = 0;
+      window.addEventListener("resize", () => {
+        cancelAnimationFrame(resizeFrame);
+        resizeFrame = requestAnimationFrame(drawEdges);
+      });
+
+      window.addEventListener("beforeprint", preparePrint);
+      window.addEventListener("afterprint", restoreAfterPrint);
+
+      function applyMetadata() {
+        document.title = data.meta.title;
+        // 肩ラベルの後半は既定で "INTERACTIVE WORKFLOW"。
+        // 社外向け資料では meta.eyebrowSuffix に "" を入れて消せる。
+        const suffix =
+          data.meta.eyebrowSuffix === undefined
+            ? "INTERACTIVE WORKFLOW"
+            : data.meta.eyebrowSuffix;
+        elements.projectName.textContent = suffix
+          ? `${data.meta.project} / ${suffix}`
+          : data.meta.project;
+        elements.reportTitle.textContent = data.meta.title;
+        elements.reportThesis.textContent = data.meta.thesis;
+        elements.generatedAt.textContent = `作成日: ${data.meta.generatedAt || "未設定"}`;
+        elements.flowCount.textContent = `${data.flows.length}件`;
+
+        elements.sourceList.replaceChildren();
+        for (const source of data.meta.sourceRefs || []) {
+          const item = document.createElement("li");
+          const code = document.createElement("code");
+          code.textContent = source;
+          item.append(code);
+          elements.sourceList.append(item);
+        }
+      }
+
+      function renderDecisions() {
+        if (data.meta.decisionMode !== true) {
+          elements.decisionSection.hidden = true;
+          elements.decisionList.replaceChildren();
+          return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        const labels = [
+          ["推奨", "recommendation"],
+          ["許可すると起きること", "impact"],
+          ["今回はしないこと", "notNow"],
+          ["後から戻せるか", "reversible"]
+        ];
+
+        for (const decision of data.decisions) {
+          const card = document.createElement("article");
+          card.className = "decision-card";
+          card.setAttribute("role", "listitem");
+
+          const title = document.createElement("h3");
+          title.textContent = decision.title;
+
+          const facts = document.createElement("dl");
+          facts.className = "decision-facts";
+          for (const [label, key] of labels) {
+            const row = document.createElement("div");
+            row.className = "decision-fact";
+            const term = document.createElement("dt");
+            term.textContent = label;
+            const detail = document.createElement("dd");
+            detail.textContent = decision[key];
+            row.append(term, detail);
+            facts.append(row);
+          }
+
+          const choices = document.createElement("div");
+          choices.className = "decision-choices";
+          choices.setAttribute("role", "group");
+          choices.setAttribute("aria-label", decision.title + " の判断");
+          for (const [choiceKey, choiceLabel] of decisionChoices) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "decision-choice";
+            button.dataset.choice = choiceKey;
+            button.dataset.decisionId = decision.id;
+            button.setAttribute("aria-pressed", "false");
+            button.textContent = choiceLabel;
+            choices.append(button);
+          }
+
+          const memoLabel = document.createElement("label");
+          memoLabel.className = "decision-memo-label";
+          memoLabel.textContent = "ひとことメモ（任意）";
+          const memo = document.createElement("textarea");
+          memo.className = "decision-memo";
+          memo.dataset.decisionId = decision.id;
+          memo.rows = 2;
+          memoLabel.append(memo);
+
+          card.append(title, facts, choices, memoLabel);
+          fragment.append(card);
+        }
+
+        elements.decisionList.replaceChildren(fragment);
+        elements.decisionSection.hidden = false;
+      }
+
+      // 判断の記録。押した結果はページに保存せず、コピーして戻す前提にする。
+      function handleDecisionChoice(event) {
+        const button = event.target.closest(".decision-choice");
+        if (!button) return;
+        const pressed = button.getAttribute("aria-pressed") === "true";
+        const group = button.parentElement;
+        for (const sibling of group.querySelectorAll(".decision-choice")) {
+          sibling.setAttribute("aria-pressed", "false");
+        }
+        button.setAttribute("aria-pressed", pressed ? "false" : "true");
+        decisionState.set(button.dataset.decisionId, pressed ? "" : button.textContent);
+        elements.decisionCopyState.textContent = "選んだ内容はこのページに保存されません。コピーして戻してください。";
+      }
+
+      function buildDecisionTranscript() {
+        const lines = [data.meta.title, "判断: " + data.meta.project, ""];
+        for (const decision of data.decisions || []) {
+          const choice = decisionState.get(decision.id) || "未選択";
+          const memo = (decisionMemo.get(decision.id) || "").trim();
+          lines.push("- " + decision.title);
+          lines.push("  判断: " + choice + "（推奨: " + decision.recommendation + "）");
+          if (memo) lines.push("  メモ: " + memo);
+        }
+        return lines.join("\n");
+      }
+
+      // クリップボードは、権限待ちや未フォーカスのときに応答が返らないことがある。
+      // 1.2 秒で打ち切り、必ず手でコピーできる本文を出す。押して何も起きない状態を作らない。
+      function writeToClipboard(text) {
+        if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+          return Promise.resolve(false);
+        }
+        return Promise.race([
+          navigator.clipboard.writeText(text).then(() => true, () => false),
+          new Promise((resolve) => setTimeout(() => resolve(false), 1200))
+        ]);
+      }
+
+      async function copyDecisions() {
+        const text = buildDecisionTranscript();
+        elements.decisionCopyState.textContent = "コピーしています…";
+        const copied = await writeToClipboard(text);
+        if (copied) {
+          elements.decisionCopyState.textContent = "コピーしました。そのまま貼り付けて戻してください。";
+          elements.decisionTranscript.hidden = true;
+          return;
+        }
+        elements.decisionTranscript.value = text;
+        elements.decisionTranscript.hidden = false;
+        elements.decisionTranscript.select();
+        elements.decisionCopyState.textContent = "自動コピーができませんでした。下の本文を選んでコピーしてください。";
+      }
+
+      function renderDiagramNodes() {
+        const fragment = document.createDocumentFragment();
+        const columnOf = new Map(
+          data.categories.map((category, index) => [category.id, index + 1])
+        );
+
+        // 行番号を決める。row 指定があれば従い、無ければその列の次の空き行に置く。
+        const nextRow = new Map(data.categories.map((category) => [category.id, 1]));
+        const rowOf = new Map();
+
+        for (const node of data.nodes) {
+          const explicit = Number.isInteger(node.row) && node.row > 0 ? node.row : null;
+          const row = explicit ?? nextRow.get(node.categoryId) ?? 1;
+          rowOf.set(node.id, row);
+          nextRow.set(
+            node.categoryId,
+            Math.max(nextRow.get(node.categoryId) ?? 1, row + 1)
+          );
+        }
+
+        elements.diagram.style.gridTemplateColumns =
+          `repeat(${data.categories.length}, minmax(190px, 1fr))`;
+
+        data.categories.forEach((category, index) => {
+          // 帯はその列でノードが在る範囲までにする。空白まで伸ばすと図が間延びして見える。
+          const rowsHere = data.nodes
+            .filter((node) => node.categoryId === category.id)
+            .map((node) => rowOf.get(node.id) ?? 1);
+          const firstRowHere = rowsHere.length ? Math.min(...rowsHere) : 1;
+          const lastRowHere = rowsHere.length ? Math.max(...rowsHere) : 1;
+
+          const background = document.createElement("div");
+          background.className = "lane-bg";
+          background.style.gridColumn = String(index + 1);
+          background.style.gridRow = `${firstRowHere + 1} / ${lastRowHere + 2}`;
+          background.setAttribute("aria-hidden", "true");
+          fragment.append(background);
+
+          const title = document.createElement("h3");
+          title.className = "lane-title";
+          title.textContent = category.label;
+          title.style.gridColumn = String(index + 1);
+          title.style.gridRow = "1";
+          fragment.append(title);
+        });
+
+        for (const node of data.nodes) {
+          const category = data.categories.find((item) => item.id === node.categoryId);
+          const card = document.createElement("div");
+          card.className = "node-card";
+          card.id = `node-${node.id}`;
+          card.dataset.nodeId = node.id;
+          card.style.gridColumn = String(columnOf.get(node.categoryId) ?? 1);
+          // 1 行目は列見出しが占めるので 1 つ下げる。
+          card.style.gridRow = String((rowOf.get(node.id) ?? 1) + 1);
+          card.setAttribute(
+            "aria-label",
+            category ? `${category.label}／${node.label}` : node.label
+          );
+
+          const label = document.createElement("span");
+          label.className = "node-label";
+          label.textContent = node.label;
+
+          const summary = document.createElement("span");
+          summary.className = "node-summary";
+          summary.textContent = node.summary || "";
+
+          card.append(label, summary);
+          fragment.append(card);
+        }
+
+        elements.diagram.append(fragment);
+      }
+
+      function renderFlowList() {
+        elements.flowList.replaceChildren();
+
+        data.flows.forEach((flow, index) => {
+          const item = document.createElement("div");
+          item.setAttribute("role", "listitem");
+
+          const button = document.createElement("button");
+          button.className = "flow-button";
+          button.type = "button";
+          button.dataset.flowIndex = String(index);
+          button.setAttribute("aria-pressed", "false");
+
+          const title = document.createElement("span");
+          title.className = "flow-button-title";
+          title.textContent = flow.title;
+
+          const description = document.createElement("span");
+          description.className = "flow-button-description";
+          description.textContent = flow.description;
+
+          button.append(title, description);
+          button.addEventListener("click", () => selectFlow(index));
+          button.addEventListener("keydown", (event) => {
+            moveFocus(event, ".flow-button", index);
+          });
+          item.append(button);
+          elements.flowList.append(item);
+        });
+      }
+
+      function selectFlow(index) {
+        state.flowIndex = index;
+        state.stepIndex = null;
+
+        for (const button of elements.flowList.querySelectorAll(".flow-button")) {
+          button.setAttribute(
+            "aria-pressed",
+            String(Number(button.dataset.flowIndex) === state.flowIndex)
+          );
+        }
+
+        renderSteps();
+        updateView();
+      }
+
+      function renderSteps() {
+        const flow = currentFlow();
+        elements.stepList.replaceChildren();
+        elements.stepCount.textContent = `${flow.steps.length}段階`;
+
+        flow.steps.forEach((step, index) => {
+          const edge = edgeMap.get(step.edgeId);
+          const source = nodeMap.get(edge.sourceNodeId);
+          const target = nodeMap.get(edge.targetNodeId);
+
+          const card = document.createElement("article");
+          card.className = "step-card";
+          card.dataset.stepIndex = String(index);
+          card.setAttribute("role", "listitem");
+
+          const button = document.createElement("button");
+          button.className = "step-select";
+          button.type = "button";
+          button.dataset.stepIndex = String(index);
+
+          const number = document.createElement("span");
+          number.className = "step-number";
+          number.textContent = String(step.stepNumber);
+
+          const copy = document.createElement("span");
+
+          const route = document.createElement("span");
+          route.className = "step-route";
+          route.textContent = `${source.label} → ${target.label}`;
+
+          const action = document.createElement("span");
+          action.className = "step-action";
+          action.textContent = step.action;
+
+          const description = document.createElement("span");
+          description.className = "step-description";
+          description.textContent = step.description;
+
+          copy.append(route, action, description);
+          button.append(number, copy);
+          button.addEventListener("click", () => selectStep(index));
+          button.addEventListener("keydown", (event) => {
+            moveFocus(event, ".step-select", index);
+          });
+          card.append(button);
+
+          const details = buildStepDetails(step);
+          if (details) card.append(details);
+          elements.stepList.append(card);
+        });
+      }
+
+      function buildStepDetails(step) {
+        if (!step.why && !step.payload && !step.codeReference) return null;
+
+        const details = document.createElement("details");
+        details.className = "step-more";
+
+        const summary = document.createElement("summary");
+        summary.textContent = "理由、受け渡す情報、コードを見る";
+        details.append(summary);
+
+        const grid = document.createElement("div");
+        grid.className = "detail-grid";
+
+        const fields = [
+          ["なぜ", step.why],
+          ["受け渡すもの", step.payload],
+          ["コード参照", step.codeReference]
+        ];
+
+        for (const [label, value] of fields) {
+          if (!value) continue;
+          const row = document.createElement("p");
+          row.className = "detail-row";
+          const strong = document.createElement("strong");
+          strong.textContent = `${label}: `;
+          row.append(strong);
+
+          if (label === "コード参照") {
+            const code = document.createElement("code");
+            code.textContent = value;
+            row.append(code);
+          } else {
+            row.append(document.createTextNode(value));
+          }
+          grid.append(row);
+        }
+
+        details.append(grid);
+        return details;
+      }
+
+      function selectStep(index) {
+        state.stepIndex = index;
+        updateView();
+        const selected = elements.stepList.querySelector(`[data-step-index="${index}"]`);
+        selected?.scrollIntoView({
+          block: "nearest",
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth"
+        });
+      }
+
+      function updateView() {
+        const flow = currentFlow();
+        const currentStep = state.stepIndex === null ? null : flow.steps[state.stepIndex];
+
+        elements.activeFlowTitle.textContent = flow.title;
+        elements.activeFlowDescription.textContent = flow.description;
+        elements.plainSummary.textContent = flow.plainSummary;
+        elements.viewState.textContent = currentStep
+          ? `段階 ${currentStep.stepNumber}/${flow.steps.length}`
+          : `流れ全体・${flow.steps.length}段階`;
+        elements.status.textContent = currentStep
+          ? `${flow.title}、段階${currentStep.stepNumber}/${flow.steps.length}を表示`
+          : `${flow.title}、流れ全体${flow.steps.length}段階を表示`;
+
+        elements.overview.setAttribute("aria-pressed", String(state.stepIndex === null));
+        elements.previous.disabled = state.stepIndex === null;
+        elements.next.disabled = state.stepIndex === flow.steps.length - 1;
+
+        const flowEdgeIds = new Set(flow.steps.map((step) => step.edgeId));
+        const flowNodeIds = new Set();
+        for (const edgeId of flowEdgeIds) {
+          const edge = edgeMap.get(edgeId);
+          flowNodeIds.add(edge.sourceNodeId);
+          flowNodeIds.add(edge.targetNodeId);
+        }
+
+        const stepNodeIds = new Set();
+        if (currentStep) {
+          const edge = edgeMap.get(currentStep.edgeId);
+          stepNodeIds.add(edge.sourceNodeId);
+          stepNodeIds.add(edge.targetNodeId);
+        }
+
+        for (const card of elements.diagram.querySelectorAll(".node-card")) {
+          const nodeId = card.dataset.nodeId;
+          card.classList.toggle("is-dim", !flowNodeIds.has(nodeId));
+          card.classList.toggle("is-flow", flowNodeIds.has(nodeId));
+          card.classList.toggle("is-step", stepNodeIds.has(nodeId));
+        }
+
+        for (const card of elements.stepList.querySelectorAll(".step-card")) {
+          const isCurrent = Number(card.dataset.stepIndex) === state.stepIndex;
+          card.classList.toggle("is-current", isCurrent);
+          const button = card.querySelector(".step-select");
+          if (isCurrent) {
+            button.setAttribute("aria-current", "step");
+          } else {
+            button.removeAttribute("aria-current");
+          }
+        }
+
+        requestAnimationFrame(drawEdges);
+      }
+
+      function drawEdges() {
+        const flow = currentFlow();
+        const currentStep = state.stepIndex === null ? null : flow.steps[state.stepIndex];
+        const flowEdgeIds = new Set(flow.steps.map((step) => step.edgeId));
+        const bounds = elements.diagram.getBoundingClientRect();
+
+        elements.edgeLayer.replaceChildren(buildMarkers());
+        elements.edgeLayer.setAttribute("viewBox", `0 0 ${bounds.width} ${bounds.height}`);
+
+        // 番号が既に置いた番号と重なったら、空くまで下へ逃がす。
+        const placedBadges = [];
+        const avoidOverlap = (x, y) => {
+          let candidate = y;
+          for (let guard = 0; guard < 8; guard += 1) {
+            const clash = placedBadges.some(
+              (spot) => Math.abs(spot.x - x) < 26 && Math.abs(spot.y - candidate) < 26
+            );
+            if (!clash) break;
+            candidate += 28;
+          }
+          placedBadges.push({ x, y: candidate });
+          return candidate;
+        };
+
+        // 左へ戻る線は図の下を回る。複数あると重なるので通す高さを分ける。
+        const returnLane = new Map();
+        let returnCount = 0;
+
+        for (const edge of data.edges) {
+          const sourceElement = document.getElementById(`node-${edge.sourceNodeId}`);
+          const targetElement = document.getElementById(`node-${edge.targetNodeId}`);
+          if (!sourceElement || !targetElement) continue;
+
+          const source = sourceElement.getBoundingClientRect();
+          const target = targetElement.getBoundingClientRect();
+          const sourceCenter = source.left + source.width / 2;
+          const targetCenter = target.left + target.width / 2;
+
+          if (Math.abs(sourceCenter - targetCenter) >= 14 && targetCenter < sourceCenter) {
+            returnLane.set(edge.id, returnCount);
+            returnCount += 1;
+          }
+        }
+
+        for (const edge of data.edges) {
+          const sourceElement = document.getElementById(`node-${edge.sourceNodeId}`);
+          const targetElement = document.getElementById(`node-${edge.targetNodeId}`);
+          if (!sourceElement || !targetElement) continue;
+
+          const source = sourceElement.getBoundingClientRect();
+          const target = targetElement.getBoundingClientRect();
+          const geometry = edgeGeometry(source, target, bounds, returnLane.get(edge.id) ?? 0);
+          const path = document.createElementNS(svgNamespace, "path");
+          const isFlow = flowEdgeIds.has(edge.id);
+          const isCurrent = currentStep?.edgeId === edge.id;
+
+          path.setAttribute("d", geometry.path);
+          path.setAttribute("class", [
+            "edge-line",
+            geometry.kind === "return" ? "is-return" : "",
+            isFlow ? "is-flow" : "",
+            isCurrent ? "is-step" : ""
+          ].filter(Boolean).join(" "));
+          path.setAttribute(
+            "marker-end",
+            isCurrent
+              ? "url(#arrow-step)"
+              : isFlow
+                ? "url(#arrow-flow)"
+                : "url(#arrow-dim)"
+          );
+          elements.edgeLayer.append(path);
+
+          const matchingSteps = flow.steps.filter((step) => step.edgeId === edge.id);
+          const spread = geometry.kind === "vertical" ? { x: 27, y: 0 } : { x: 0, y: 27 };
+
+          matchingSteps.forEach((step, badgeIndex) => {
+            const shift = badgeIndex - (matchingSteps.length - 1) / 2;
+            const badgeX = geometry.midX + spread.x * shift;
+            const badgeY = avoidOverlap(badgeX, geometry.midY + spread.y * shift);
+            const badge = createStepBadge(
+              step.stepNumber,
+              badgeX,
+              badgeY,
+              currentStep?.stepNumber === step.stepNumber,
+              currentStep !== null && currentStep?.stepNumber !== step.stepNumber
+            );
+            elements.edgeLayer.append(badge);
+          });
+        }
+      }
+
+      function edgeGeometry(source, target, bounds, returnLane = 0) {
+        const s = {
+          left: source.left - bounds.left,
+          right: source.right - bounds.left,
+          top: source.top - bounds.top,
+          bottom: source.bottom - bounds.top
+        };
+        const t = {
+          left: target.left - bounds.left,
+          right: target.right - bounds.left,
+          top: target.top - bounds.top,
+          bottom: target.bottom - bounds.top
+        };
+        const sx = (s.left + s.right) / 2;
+        const tx = (t.left + t.right) / 2;
+        const sy = (s.top + s.bottom) / 2;
+        const ty = (t.top + t.bottom) / 2;
+        const radius = 14;
+
+        // 同じ列に並ぶ場合は縦の直線でつなぐ。膨らませない。
+        if (Math.abs(sx - tx) < 14) {
+          const downward = ty >= sy;
+          const y1 = downward ? s.bottom : s.top;
+          const y2 = downward ? t.top : t.bottom;
+          // 縦の間隔が狭いと番号が線を覆い隠す。そのときだけ番号を線の横へ逃がす。
+          const tight = Math.abs(y2 - y1) < 34;
+          return {
+            path: `M ${sx} ${y1} L ${sx} ${y2}`,
+            midX: tight ? sx + 26 : sx,
+            midY: (y1 + y2) / 2,
+            kind: "vertical"
+          };
+        }
+
+        // 右へ進む場合は列間の余白で一度だけ折れる階段にする。
+        if (tx > sx) {
+          const x1 = s.right;
+          const x2 = t.left;
+          // 隣の列なら間の余白の中央で折る。2 列以上先へ飛ぶ場合は
+          // 出発点のすぐ右で折り、番号が途中の列のノードに重ならないようにする。
+          const spansMany = tx - sx > (s.right - s.left) * 1.4;
+          const turnX = spansMany
+            ? x1 + Math.min(16, (x2 - x1) / 2)
+            : x1 + (x2 - x1) / 2;
+          return {
+            path: orthogonalPath(x1, sy, turnX, x2, ty, radius),
+            midX: turnX,
+            midY: (sy + ty) / 2,
+            kind: "forward"
+          };
+        }
+
+        // 左へ戻る場合は図の下側を回す。ノードの上を横切らせない。
+        const x1 = s.left;
+        const x2 = t.right;
+        const detourY = bounds.height - 14 - returnLane * 14;
+        const reach = Math.max(34, Math.abs(x1 - x2) * 0.16);
+        return {
+          path: [
+            `M ${x1} ${sy}`,
+            `C ${x1 - reach} ${sy}, ${x1 - reach} ${detourY}, ${(x1 + x2) / 2} ${detourY}`,
+            `C ${x2 + reach} ${detourY}, ${x2 + reach} ${ty}, ${x2} ${ty}`
+          ].join(" "),
+          midX: (x1 + x2) / 2,
+          midY: detourY,
+          kind: "return"
+        };
+      }
+
+      // 水平 → 垂直 → 水平の順に折れる直交線。角は同じ半径で丸める。
+      function orthogonalPath(x1, y1, turnX, x2, y2, radius) {
+        if (Math.abs(y1 - y2) < 3) {
+          return `M ${x1} ${y1} L ${x2} ${y2}`;
+        }
+
+        const direction = y2 > y1 ? 1 : -1;
+        const r = Math.max(
+          0,
+          Math.min(
+            radius,
+            Math.abs(y2 - y1) / 2,
+            Math.abs(turnX - x1),
+            Math.abs(x2 - turnX)
+          )
+        );
+
+        if (r < 2) {
+          return `M ${x1} ${y1} L ${turnX} ${y1} L ${turnX} ${y2} L ${x2} ${y2}`;
+        }
+
+        return [
+          `M ${x1} ${y1}`,
+          `L ${turnX - r} ${y1}`,
+          `Q ${turnX} ${y1} ${turnX} ${y1 + r * direction}`,
+          `L ${turnX} ${y2 - r * direction}`,
+          `Q ${turnX} ${y2} ${turnX + r} ${y2}`,
+          `L ${x2} ${y2}`
+        ].join(" ");
+      }
+
+      function buildMarkers() {
+        const definitions = document.createElementNS(svgNamespace, "defs");
+        const markers = [
+          ["arrow-dim", "#656982", 0.35],
+          ["arrow-flow", "#a7adff", 1],
+          ["arrow-step", "#ffffff", 1]
+        ];
+
+        for (const [id, color, opacity] of markers) {
+          const marker = document.createElementNS(svgNamespace, "marker");
+          marker.id = id;
+          marker.setAttribute("viewBox", "0 0 10 10");
+          marker.setAttribute("refX", "9");
+          marker.setAttribute("refY", "5");
+          marker.setAttribute("markerWidth", "4.4");
+          marker.setAttribute("markerHeight", "4.4");
+          marker.setAttribute("orient", "auto-start-reverse");
+
+          const arrow = document.createElementNS(svgNamespace, "path");
+          arrow.setAttribute("d", "M 0 0 L 10 5 L 0 10 z");
+          arrow.setAttribute("fill", color);
+          arrow.setAttribute("opacity", String(opacity));
+          marker.append(arrow);
+          definitions.append(marker);
+        }
+
+        return definitions;
+      }
+
+      function createStepBadge(number, x, y, isCurrent, isDim) {
+        const group = document.createElementNS(svgNamespace, "g");
+        group.setAttribute(
+          "class",
+          [
+            "step-badge",
+            isCurrent ? "is-current" : "",
+            isDim ? "is-dim" : ""
+          ].filter(Boolean).join(" ")
+        );
+        group.setAttribute("transform", `translate(${x} ${y})`);
+
+        // 線の上に置いても数字が読めるよう、背景色で線を一度抜く。
+        const halo = document.createElementNS(svgNamespace, "circle");
+        halo.setAttribute("class", "badge-halo");
+        halo.setAttribute("r", isCurrent ? "15" : "13");
+
+        const circle = document.createElementNS(svgNamespace, "circle");
+        circle.setAttribute("class", "badge-body");
+        circle.setAttribute("r", isCurrent ? "12.5" : "10.5");
+
+        const text = document.createElementNS(svgNamespace, "text");
+        text.textContent = String(number);
+
+        group.append(halo, circle, text);
+        return group;
+      }
+
+      function attachControls() {
+        elements.decisionList.addEventListener("click", handleDecisionChoice);
+        elements.decisionList.addEventListener("input", (event) => {
+          const memo = event.target.closest(".decision-memo");
+          if (!memo) return;
+          decisionMemo.set(memo.dataset.decisionId, memo.value);
+        });
+        elements.decisionCopy.addEventListener("click", copyDecisions);
+
+        elements.overview.addEventListener("click", () => {
+          state.stepIndex = null;
+          updateView();
+        });
+
+        elements.previous.addEventListener("click", () => {
+          if (state.stepIndex === null) return;
+          if (state.stepIndex === 0) {
+            state.stepIndex = null;
+            updateView();
+          } else {
+            selectStep(state.stepIndex - 1);
+          }
+        });
+
+        elements.next.addEventListener("click", () => {
+          const flow = currentFlow();
+          if (state.stepIndex === null) {
+            selectStep(0);
+          } else if (state.stepIndex < flow.steps.length - 1) {
+            selectStep(state.stepIndex + 1);
+          }
+        });
+      }
+
+      function moveFocus(event, selector, index) {
+        if (!["ArrowDown", "ArrowUp"].includes(event.key)) return;
+        event.preventDefault();
+        const container = selector === ".step-select"
+          ? elements.stepList
+          : elements.flowList;
+        const buttons = [...container.querySelectorAll(selector)];
+        const delta = event.key === "ArrowDown" ? 1 : -1;
+        buttons[(index + delta + buttons.length) % buttons.length]?.focus();
+      }
+
+      function currentFlow() {
+        return data.flows[state.flowIndex];
+      }
+
+      function validateData(value) {
+        const errors = [];
+        const arrays = ["categories", "nodes", "edges", "flows"];
+
+        if (!value?.meta?.title) errors.push("meta.titleがありません");
+        if (!value?.meta?.thesis) errors.push("meta.thesisがありません");
+        if (
+          value?.meta?.decisionMode !== undefined &&
+          typeof value.meta.decisionMode !== "boolean"
+        ) {
+          errors.push("meta.decisionModeは真偽値で指定してください");
+        }
+
+        if (value?.meta?.decisionMode === true) {
+          if (!Array.isArray(value.decisions) || value.decisions.length < 1 || value.decisions.length > 3) {
+            errors.push("判断資料のdecisionsは1〜3件にしてください");
+          } else {
+            const decisionIds = new Set();
+            const fields = ["id", "title", "recommendation", "impact", "notNow", "reversible"];
+            for (const decision of value.decisions) {
+              for (const field of fields) {
+                if (typeof decision?.[field] !== "string" || decision[field].trim() === "") {
+                  errors.push(`decisionの${field}がありません`);
+                }
+              }
+              if (decisionIds.has(decision.id)) errors.push(`decision id ${decision.id}が重複しています`);
+              decisionIds.add(decision.id);
+            }
+          }
+        } else if (Array.isArray(value?.decisions) && value.decisions.length > 0) {
+          errors.push("decisionsを表示するにはmeta.decisionModeをtrueにしてください");
+        }
+
+        for (const key of arrays) {
+          if (!Array.isArray(value?.[key]) || value[key].length === 0) {
+            errors.push(`${key}が空です`);
+          }
+        }
+        if (errors.length) return errors;
+
+        const ids = (items) => new Set(items.map((item) => item.id));
+        const categoryIds = ids(value.categories);
+        const nodeIds = ids(value.nodes);
+        const edgeIds = ids(value.edges);
+
+        for (const node of value.nodes) {
+          if (!categoryIds.has(node.categoryId)) {
+            errors.push(`${node.id}のcategoryIdが不正です`);
+          }
+        }
+        for (const edge of value.edges) {
+          if (!nodeIds.has(edge.sourceNodeId) || !nodeIds.has(edge.targetNodeId)) {
+            errors.push(`${edge.id}のnode参照が不正です`);
+          }
+        }
+        for (const flow of value.flows) {
+          flow.steps?.forEach((step, index) => {
+            if (step.stepNumber !== index + 1) {
+              errors.push(`${flow.id}のstepNumberが連番ではありません`);
+            }
+            if (!edgeIds.has(step.edgeId)) {
+              errors.push(`${flow.id}が存在しないedgeを参照しています`);
+            }
+          });
+        }
+        return errors;
+      }
+
+      function showError(message) {
+        const box = document.createElement("div");
+        box.className = "error-box";
+        box.setAttribute("role", "alert");
+        box.textContent = `レポートデータを表示できません: ${message}`;
+        elements.diagram.replaceChildren(box);
+      }
+
+      function preparePrint() {
+        state.printStepIndex = state.stepIndex;
+        state.openedDetails = [...document.querySelectorAll(".step-more")]
+          .filter((details) => details.open);
+        for (const details of document.querySelectorAll(".step-more")) details.open = true;
+        state.stepIndex = null;
+        updateView();
+        requestAnimationFrame(drawEdges);
+      }
+
+      function restoreAfterPrint() {
+        for (const details of document.querySelectorAll(".step-more")) {
+          details.open = state.openedDetails.includes(details);
+        }
+        state.stepIndex = state.printStepIndex;
+        updateView();
+      }
+    })();
+  </script>
+</body>
+</html>

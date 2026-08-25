@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Phase 140/141 追記レビュー: 何がどう変わったか</title>
+<style>
+:root{
+  --bg:#F5F4F1; --surface:#FCFBF9; --surface-2:#F0EFEA;
+  --ink:#1B1B22; --ink-soft:#5A5A64; --ink-faint:#8C8C92;
+  --line:#E4E2DB; --line-strong:#D2CFC6;
+  --primary:#313A7E; --primary-soft:#E9EAF4; --primary-ink:#262E66;
+  --kernel:#191B2C; --kernel-2:#23263c; --kernel-line:#343750; --kernel-ink:#C9CBE0;
+  --done:#2F8F5B; --done-soft:#E4F2EA; --done-line:#B7DCC7;
+  --wip:#B8821C; --wip-soft:#F6EDD8;
+  --risk:#B5462F; --risk-soft:#F6E7E2; --risk-line:#E5C0B4;
+  --info:#2C5A7A; --info-soft:#E3ECF1;
+  --plain:#1f7a6d; --plain-soft:#E1F1EE; --plain-line:#BBE0D9;
+  --radius:10px;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --sans:system-ui,-apple-system,"Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.85;word-break:keep-all;overflow-wrap:break-word}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px 80px}
+.hero{background:linear-gradient(135deg,var(--kernel),var(--kernel-2));color:#fff;padding:44px 24px 36px;margin:0 -20px 32px;border-radius:0 0 14px 14px}
+.hero .inner{max-width:1040px;margin:0 auto}
+.badge{display:inline-block;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#DFE1F0;font-size:12px;letter-spacing:.08em;padding:3px 12px;border-radius:999px;margin-bottom:14px}
+.hero h1{font-size:26px;line-height:1.5;margin-bottom:10px}
+.hero .tag{color:var(--kernel-ink);font-size:14px;margin-bottom:18px}
+.thesis{border-left:4px solid #8FA0FF;background:rgba(255,255,255,.07);padding:12px 16px;border-radius:6px;font-size:15px;line-height:1.9}
+.hero-meta{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;font-size:12px;color:#9FA3C0}
+section{margin-bottom:40px}
+.kicker{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--primary);font-weight:700;margin-bottom:6px}
+h2{font-size:20px;margin-bottom:14px}
+h3{font-size:15px;margin:18px 0 8px}
+p{margin-bottom:10px}
+.plainbox{background:var(--plain-soft);border:1px solid var(--plain-line);border-radius:var(--radius);padding:16px 18px;margin-bottom:16px}
+.plainbox .lbl{font-size:12px;font-weight:700;color:var(--plain);margin-bottom:6px}
+.tlgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.tlcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px}
+.tlcard .q{font-size:13px;font-weight:700;color:var(--primary-ink);margin-bottom:6px}
+.tlcard .a{font-size:13.5px;color:var(--ink-soft)}
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;font-size:13.5px;margin:12px 0}
+th{background:var(--surface-2);text-align:left;padding:9px 12px;font-size:12.5px;border-bottom:1px solid var(--line-strong)}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr.hit td{background:var(--done-soft)}
+tr.gap td{background:var(--risk-soft)}
+code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+.verdict{background:var(--done-soft);border:1px solid var(--done-line);border-radius:var(--radius);padding:18px 20px;margin:24px 0}
+.verdict .lbl{font-weight:700;color:var(--done);font-size:13px;margin-bottom:6px}
+.openbox{background:var(--wip-soft);border:1px solid #E8D9AE;border-radius:var(--radius);padding:18px 20px;margin:24px 0}
+.openbox .lbl{font-weight:700;color:var(--wip);font-size:13px;margin-bottom:6px}
+.openbox li,.verdict li{margin-left:1.3em;margin-bottom:6px;font-size:13.5px}
+details{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin:8px 0;font-size:13px}
+summary{cursor:pointer;font-weight:600;color:var(--primary-ink);font-size:13px}
+.steps{list-style:none;counter-reset:step}
+.steps li{counter-increment:step;position:relative;padding:6px 0 6px 32px;font-size:13.5px}
+.steps li::before{content:counter(step);position:absolute;left:0;top:6px;width:22px;height:22px;border-radius:50%;background:var(--primary);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.steps .why{color:var(--ink-faint);font-size:12px;display:block;margin-top:2px}
+footer{border-top:1px solid var(--line-strong);padding-top:18px;font-size:12px;color:var(--ink-faint)}
+footer h4{font-size:12.5px;color:var(--ink-soft);margin:10px 0 4px}
+footer li{margin-left:1.4em;margin-bottom:2px}
+@media(max-width:640px){.tlgrid{grid-template-columns:1fr}}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition-duration:.001ms!important;animation-duration:.001ms!important;scroll-behavior:auto!important}}
+@media print{body{background:#fff}.hero{border-radius:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}.verdict,.openbox,.plainbox,tr.hit td,tr.gap td{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<div class="hero"><div class="inner">
+<span class="badge">claude-code-harness / レビュー結果 + 変更点報告</span>
+<h1>Plans.md への Phase 140/141 追記は、既存の仕組みを壊さずに通ったか</h1>
+<div class="tag">外部吸収レビュー (2026-08-24) の判断材料 HTML を受けて、Plans.md に優先順位の明記 1 件と新規 Phase (7 task) を追記した working tree の diff レビュー</div>
+<div class="thesis">結論: 通った (APPROVE)。テスト 147 件・整合性チェック 25 項目が全部 green で、実装コードは 1 行も変わっていない。この diff が変えたのは「次に何をするか」の並び順と一覧であって、動いている挙動そのものではない。</div>
+<div class="hero-meta"><span>作成: 2026-08-26</span><span>対象: 立花</span><span>本レポートは派生物であり正本ではない (正本: Plans.md / decisions.md / review-result.v1)</span></div>
+</div></div>
+<div class="wrap">
+
+<section>
+<div class="plainbox"><div class="lbl">やさしく言うと</div>
+今回の変更は、作業計画表 (<code>Plans.md</code>) に「次にやること」を追記しただけで、動いているコードは何も変えていません。内容は 2 つです。1つ目は、以前から計画に入っていた「無人実行中に確認待ちで止まる問題の修理」(Phase 140) を、次に着手する作業の先頭に明記したこと。2つ目は、2026-08-24 に行った外部比較レビューの結論を受けて、新しい作業 7 件 (Phase 141: 記憶の中身が空になる問題の修理、日本語チェック辞書の準備、注入量の棚卸しなど) を計画表に追加したことです。判断材料になったレビュー HTML 1 本も、レポート一覧に登録しました。実装はまだ 1 件も始まっていません (全 7 件が「未着手」の状態で登録されているだけ)。今回のレビューは、この追記が既存の動作や過去の判断と矛盾していないかを確認しました。
+</div>
+<div class="tlgrid">
+<div class="tlcard"><div class="q">Q. ファイルは何が変わった?</div><div class="a">3 ファイル。<code>Plans.md</code>(優先順位の明記 + Phase 141 新設 7 task)、<code>docs/reports/README.md</code>(新規レポート 1 行追加)、<code>docs/reports/2026-08-24-cch-harness-review.html</code>(新規、外部レビューの判断材料)。コード (実装ファイル) は無変更。</div></div>
+<div class="tlcard"><div class="q">Q. 壊れていないか確認した?</div><div class="a">確認済み。整合性チェック 25 項目、構造テスト 147 件、いずれも全部 green。Plans.md の依存関係 (どのタスクがどのタスクを前提にするか) も閉じていることを機械チェックで確認した。</div></div>
+<div class="tlcard"><div class="q">Q. 追加された 7 件の中身に裏付けはあるか?</div><div class="a">ある。新規 HTML 内の判断カードとテーブルは、既に記録済みの過去の判断 (decisions.md の D67 と D71) と矛盾していない。「5 件の改善提案」という数え方と、レビュー本文の分類表にある「採用」6 行の数のズレは 1 件だけ見つけたが、記憶修理の 2 タスクが 1 提案にまとまっているだけで、内容の誤りではない (下記 openbox 参照)。</div></div>
+<div class="tlcard"><div class="q">Q. 立花が今やることは?</div><div class="a">無い。優先順位と 5 件の採用判断は、すでに Plans.md の優先順セクションと decisions.md の D71 に記録済み。次に判断が必要になるのは、Phase 140.1 の実装が終わってレビューに戻ってきたとき。</div></div>
+</div>
+</section>
+
+<section>
+<div class="kicker">01 · What changed</div>
+<h2>3 ファイルの変更点</h2>
+<table>
+<tr><th style="width:15em">ファイル</th><th>変更前</th><th>変更後</th></tr>
+<tr><td><code>Plans.md</code></td><td>Phase 140 (guardrail defer 方式、4 task) が cc:todo のまま並んでいるだけで、他の未着手 Phase との優先順は明記されていなかった</td><td>Phase 140 の直前に「優先順 (operator 裁定 2026-08-25): 次スプリントの先頭。Phase 141 より先に着手」を追記。続けて Phase 141 (外部吸収レビューの反映、7 task) を新設し、Purpose / Spec skip reason / team_validation_mode / 設計原則 / 共有ファイル lane を明記</td></tr>
+<tr><td><code>docs/reports/README.md</code></td><td>索引末尾は 2026-08-17 のプロダクト説明書 v5.9 が最新行</td><td>2026-08-24 のハーネス設計レビュー (新規 HTML) を 1 行追加。索引は追記専用の運用どおり、既存行は無変更</td></tr>
+<tr><td><code>docs/reports/2026-08-24-cch-harness-review.html</code>(新規)</td><td>存在しない</td><td>2,647 行の判断材料 HTML。外部 11 要素の 4 分類判定表、独立反証パスの結果、決定カード 3 枚、SSOT 出典 15 件を含む。新規ファイルのため「変更前」は無い</td></tr>
+</table>
+</section>
+
+<section>
+<div class="kicker">02 · Verification</div>
+<h2>何を確認したか</h2>
+<ol class="steps">
+<li>diff 全文を読解 (<code>Plans.md</code> / <code>docs/reports/README.md</code> の差分行、新規 HTML の全文)<span class="why">why: 追記の内容が Purpose・DoD・Depends の形式に沿っているかを直接確認するため</span></li>
+<li>AI 残骸スキャン (TODO / FIXME / Lorem ipsum / 未回収の指摘語) を手動で実施<span class="why">why: 自動スキャナ (<code>review-ai-residuals.sh</code>) はコード拡張子専用で、docs/html は対象外だったため</span></li>
+<li><code>scripts/ci/check-consistency.sh</code> を実行。25 項目全 green (Plans Depends/Status gate、Client Mirror drift gate、i18n 回帰ゲート等を含む)<span class="why">why: 計画表の依存関係閉包と、レポート一覧・mirror との整合を機械的に確認するため</span></li>
+<li><code>bash tests/validate-plugin.sh</code> を実行。147 件全合格、0 失敗<span class="why">why: 追記が既存の構造契約 (frontmatter、TDD 契約文字列、hooks 同期など) を壊していないことを確認するため</span></li>
+<li>新規 HTML に埋め込まれた JSON データブロックと JavaScript を <code>node</code> で構文検証 (JSON.parse / <code>node --check</code>)。両方 OK<span class="why">why: 判断材料として実際に開いたときに壊れないかを確認するため</span></li>
+<li><code>.claude/memory/decisions.md</code> の D67 (ルールの強制力は提案まで) / D71 (Hermes 型自律改善は可逆な半分のみ採用) と、新規 HTML・Plans.md の記述を突き合わせ<span class="why">why: レビュー結論が過去の判断と矛盾していないかを確認するため。decisions.md はリポジトリの gitignore 対象 (<code>.claude/memory/*</code>) のため diff には含まれないが、突き合わせは実施した</span></li>
+<li>「計画に載せたい 5 件」という数え方と、判定表の「採用」チップ 6 行の数を照合<span class="why">why: 数字のズレが誤記か意図的な集約かを切り分けるため</span></li>
+</ol>
+</section>
+
+<section>
+<div class="kicker">03 · Impact</div>
+<h2>Phase 140 / 141 が実装されたら、何がどう変わるか</h2>
+<p>今回の diff はまだ「計画に載せた」段階で、下表の「直った後」はどれも未実現。実装はタスクごとに通常のレビューを通ってから反映される。</p>
+<table>
+<tr><th style="width:16em">今の問題</th><th style="width:8em">担当 task</th><th>直った後</th></tr>
+<tr class="gap"><td>無人 run が確認 (ask) で序盤停止し、それ以上進まない</td><td>140.1-140.4</td><td>確認が要る操作は保留キューに積んで先へ進み、operator が戻ってから一括承認する</td></tr>
+<tr class="gap"><td>セッション再開時の要約 (resume pack) が空でも、そのまま注入される</td><td>141.1</td><td>要約が空と判定されたら本文を注入せず「未注入」の 1 行マーカーだけを表示する</td></tr>
+<tr><td>セッション近傍の記憶と cross-tool 記憶 (harness-mem) の責任境界が未整理</td><td>141.2</td><td>他リポジトリへの依頼書 (handoff) を起票する段階まで。実装・他 repo への書き込みはまだしない</td></tr>
+<tr><td>起動時に注入されるトークン量が未計測 (このセッションで 94.7k token 相当を実測)</td><td>141.3</td><td>注入源ごとの実測レポートが出る。安全装置系 hook は削減候補から除外。削減の実行はまだしない</td></tr>
+<tr><td>日本語チェック (writing lint) の辞書が空で、エンジンが動いていない</td><td>141.4</td><td>既存の日本語規範から決定論的に判定できる部分を辞書候補として生成 (自動一括承認はしない)</td></tr>
+<tr><td>ルールが使われているかどうかの実績が記録されない</td><td>141.5</td><td>使用回数を記録し、90 日未使用なら「棚卸し提案」を出す。自動での無効化・削除経路は作らない</td></tr>
+<tr><td>Claude Code 本体機能との重複点検が 2 ヶ月更新されていない</td><td>141.6</td><td>棚卸し文書を 2026-08 版に更新し、CC minor 追従のたびに更新する手順を追加</td></tr>
+</table>
+</section>
+
+<div class="verdict"><div class="lbl">判定</div>
+APPROVE。critical / major ゼロ。追記は計画表の形式契約 (Purpose / DoD / Depends / 共有ファイル lane) を満たし、機械ゲート (整合性チェック 25 項目、構造テスト 147 件) が全部 green。実装コードへの影響が無いため regression safety・TDD 適用は not_applicable。仕様正本 (<code>spec.md</code>) との不一致も無い (Phase 141 の Purpose 自身が「既存契約の範囲内で spec.md 変更を伴わない」と明記し、根拠となる 4 契約 <code>HOTL 不変条件 / D62 / D64 / D67</code> は実在を確認済み)。
+</div>
+
+<div class="openbox"><div class="lbl">正直な但し書き</div>
+<ul>
+<li>「5 件」と「採用チップ 6 行」のズレ: レビュー本文の 4 分類判定表では「記憶の修理」(内部実測) と「セッション記憶を CC 本体へ寄せる整理」(CC 公式 docs) が別行 (行 3・4) として採用チップを持つが、計画側では両方とも「①記憶の修理」という 1 提案 (141.1 + 141.2) にまとめられている。これは誤記ではなく、実装単位への集約による表記差。誤って読み流されないよう明記しておく。</li>
+<li>今回のレビューは TeamAgent Debate を native/Task 経由の subagent では実施せず、manual-pass として自分で 4 つの視点 (仕様整合 = D67/D71 突き合わせ、計画整合 = Depends 閉包ゲート、デグレ = 構造テスト 147 件、懐疑 = 5 件/6 行のズレ確認) を個別に実行した。理由: 差分が docs/計画専用で、機械ゲートが主要な検証手段になったため。コード変更を伴うレビューでは subagent 経由の debate を実施する。</li>
+<li><code>.claude/memory/decisions.md</code> / <code>patterns.md</code> はこのリポジトリの <code>.gitignore</code> でバージョン管理対象外と定義されたローカルファイル (設計どおり)。そのため今回の git diff には含まれないが、内容の整合は確認済み。</li>
+<li>この HTML の PDF 化と Slack 配布は行っていない (依頼に含まれなかったため)。必要であれば別途生成できる。</li>
+</ul>
+</div>
+
+<footer>
+<h4>SSOT 出典</h4>
+<ul>
+<li>Plans.md: Phase 140 優先順セクション (2026-08-25 追記) / Phase 141 全 7 task (141.1-141.7)</li>
+<li>.claude/memory/decisions.md: D67 (feedback ルールの強制力は提案まで) / D71 (Hermes 型自律改善は可逆な半分のみ採用)</li>
+<li>docs/reports/README.md: 索引 9 行目 (2026-08-24 CCH ハーネス設計レビュー)</li>
+<li>docs/reports/2026-08-24-cch-harness-review.html: 判定表・決定カード・SSOT 出典 15 件</li>
+<li>tests/validate-plugin.sh: 147 件全合格の実行結果 (このレビューで再実行)</li>
+<li>scripts/ci/check-consistency.sh: 25 項目全 green の実行結果 (このレビューで再実行)</li>
+</ul>
+<h4>分析方法と制約</h4>
+<ul>
+<li>working tree の未コミット変更 3 件 (<code>Plans.md</code> / <code>docs/reports/README.md</code> / 新規 HTML) を対象に、diff 読解 + 機械ゲート再実行 + 過去判断との突き合わせで確認した。現在のブランチは upstream (<code>origin/feat/codex-breezing-luna-max</code>) と一致しており未 push の commit は無い。branch の commit 履歴は既にリリース済み (v5.12.0) のためレビュー対象外とした。</li>
+<li>AI 残骸スキャナは対象拡張子 (コード系) 限定のため、docs/html は目視確認で代替した。</li>
+</ul>
+<p style="margin-top:10px">本レポートは派生物であり正本ではない。</p>
+</footer>
+</div>
+</body>
+</html>
