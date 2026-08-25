@@ -1,6 +1,6 @@
 {
   "name": "claude-code-harness",
-  "version": "5.12.0",
+  "version": "5.12.1",
   "description": "Public supported Grok adapter for Claude Code Harness Plan, Work, Review, and Release workflows.",
   "author": {
     "name": "Chachamaru",

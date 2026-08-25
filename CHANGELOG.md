@@ -6,6 +6,12 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+## [5.12.1] - 2026-08-26
+
+### Changed
+
+- **Plans.md: 2026-08-24 設計レビューの結論を反映**。Phase 140（無人 run の ask 序盤停止対策）を次スプリントの最優先に明記し、Phase 141（記憶パイプライン修理・注入棚卸し・日本語 lint 辞書 seeding・ルール引退提案・native 機能重複点検、7 task）を新設。裏付けの 2 件の判断材料 HTML（2026-08-24 ハーネス設計レビュー、2026-08-26 Phase 140/141 追記レビュー）を `docs/reports/` に追加し索引を更新
+
 ## [5.12.0] - 2026-08-24
 
 ### Added
@@ -6101,7 +6107,8 @@ Purpose: 自己修正ループ失敗時に「止まるだけ」から「次の�
 
 For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.12.0...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.12.1...HEAD
+[5.12.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.12.0...v5.12.1
 [5.12.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.11.0...v5.12.0
 [5.11.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.10.0...v5.11.0
 [5.10.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.9.0...v5.10.0
