@@ -410,8 +410,10 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 |----|------|-----|---------|--------|
 | 147.1 | `[lane:gate]` `[tdd:required]` 独立レビュー、指摘修正、再レビュー | 元の要求と差分を3視点で確認。critical / major 0、独立 APPROVE、修正前後の検証記録 | - | cc:done [実設定依存、cwd別名、Linux引数上限、巨大status、lane分類、cwd回帰の旧表記、GNU statの復元不具合を修正。独立再レビューAPPROVE。26/16/49回帰、Mac/Linuxのroutingとfresh/stale復元PASS] |
 | 147.2 | `[lane:release]` `[tdd:skip:validation-review]` 配布検証と作業コミット | plugin / consistency / mirror / release preflight が合格。警告の根拠を記録し、対象変更だけコミット | 147.1 | cc:done [レビュー済み214ファイルを16843659に記録。clean preflight24合格/5警告/0失敗、警告方針を保存] |
-| 147.3 | `[lane:release]` `[tdd:skip:release-metadata]` 推奨バージョンの公開 | 全 version 面を同期。PR の CI 成功後 main へマージし、到達可能な commit に semver tag を作成 | 147.2 | cc:WIP |
-| 147.4 | `[lane:release]` `[tdd:skip:release-verification]` 公開結果の読戻し | GitHub Release が公開済み。4環境の配布物、版数、digest を確認。完了マーカーと証拠を保持 | 147.3 | cc:TODO |
+| 147.3 | `[lane:release]` `[tdd:skip:release-metadata]` 推奨バージョンの公開 | 全 version 面を同期。PR の CI 成功後 main へマージし、到達可能な commit に semver tag を作成 | 147.2 | cc:done [PR#350の全9検査合格後mainへ統合。8面を5.15.0に同期、mainの2b2b7480へv5.15.0タグを作成] |
+| 147.4 | `[lane:release]` `[tdd:skip:release-verification]` 公開結果の読戻し | GitHub Release が公開済み。4環境の配布物、版数、digest を確認。完了マーカーと証拠を保持 | 147.3 | cc:done [GitHub Release公開済み。4配布物を再取得し、GitHub digestとローカルbuildのSHA-256一致。Mac ARM起動時5.15.0確認、証拠を保存] |
 
 **完了条件**: main、タグ、GitHub Release、4環境の配布物が同じリリースを示し、未解決の critical / major がない。
 **検証記録**: `.claude/state/release-20260906/`。ローカル確認と公開後の確認を別に記録する。
+
+**公開結果**: [v5.15.0](https://github.com/Chachamaru127/claude-code-harness/releases/tag/v5.15.0)。[PR #350](https://github.com/Chachamaru127/claude-code-harness/pull/350) と [公開 workflow](https://github.com/Chachamaru127/claude-code-harness/actions/runs/34007746366) を確認済み。詳細は `.claude/state/release-20260906/publish-verification.json`。Go の任意エンジンは既定 OFF を維持し、新しい provider 性能測定の合格は主張しない。
