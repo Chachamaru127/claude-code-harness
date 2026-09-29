@@ -18,7 +18,7 @@
     "typescript": "^7.0.2"
   },
   "overrides": {
-    "undici": "^7.29.0",
+    "undici": "^7.30.0",
     "minimatch": "^10.2.4",
     "nanoid": "^3.3.17",
     "brace-expansion": "^5.0.9",
