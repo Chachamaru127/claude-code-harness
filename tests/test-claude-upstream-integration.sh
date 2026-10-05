@@ -68,8 +68,16 @@ for hooks_file in "${HOOK_FILES[@]}"; do
     exit 1
   }
 
-  jq -e '.hooks.PermissionRequest[]? | select(.matcher == "Bash" and (.if // "" | contains("Bash(git status*)")) and (.if // "" | contains("Bash(pytest*)")))' "${hooks_file}" >/dev/null || {
-    echo "${hooks_file} is missing PermissionRequest Bash conditional if guard"
+  # The safe-command allowlist lives in Go (policy.isSafeCommand), not in a
+  # hooks.json "if" key -- Claude Code has no such key and warns on it.
+  # Assert the Bash entry exists and routes to `harness hook permission`.
+  jq -e '.hooks.PermissionRequest[]? | select(.matcher == "Bash") | .hooks[]? | select(.command | contains("hook permission"))' "${hooks_file}" >/dev/null || {
+    echo "${hooks_file} is missing PermissionRequest Bash -> hook permission wiring"
+    exit 1
+  }
+
+  jq -e '[.hooks.PermissionRequest[]?, .hooks.PreToolUse[]?, .hooks.PostToolUse[]?] | map(select(has("if"))) | length == 0' "${hooks_file}" >/dev/null || {
+    echo "${hooks_file} uses an unsupported \"if\" key; Claude Code ignores it and warns at startup"
     exit 1
   }
 done
