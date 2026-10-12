@@ -30,6 +30,9 @@ var (
 		"sudo":    {},
 	}
 
+	outputFunctionDefinition = regexp.MustCompile(`(?:^|[\s;|&{}()])(?:function\s+(echo|printf)\b|(echo|printf)\s*\(\s*\))`)
+	outputAliasDefinition    = regexp.MustCompile(`(?:^|[\s;|&{}()])alias\s+([^;\n]+)`)
+
 	macOSUserLibrary = regexp.MustCompile(`^/Users/[^/]+/Library(?:/|$)`)
 )
 
@@ -941,15 +944,58 @@ func InspectVerbInvocations(command, verb string) (invocations []VerbInvocation,
 	return invocations, true
 }
 
-// InspectEgressInvocations bounds arguments to their shell segment, but does
-// not require a known launcher: unknown commands can execute later arguments.
-// Only literal echo/printf arguments are excluded. Expansions and heredoc input
-// remain scannable; ok=false requires the caller to deny indeterminate parsing.
+// InspectEgressInvocations normally bounds arguments to their shell segment;
+// printf -v values also retain later segments where they may be invoked. Unknown
+// launchers remain scannable without requiring a known launcher.
+// Literal echo/printf arguments are excluded only without concurrent consumers,
+// same-command function/alias overrides, or printf -v. Expansions and heredoc
+// input remain scannable; ok=false requires a deny for indeterminate parsing.
 func InspectEgressInvocations(command, verb string) ([]VerbInvocation, bool) {
-	return inspectEgressInvocations(stripNonExecutableText(command, true), strings.ToLower(verb), 0)
+	scannable := stripNonExecutableText(command, true)
+	return inspectEgressInvocations(scannable, strings.ToLower(verb), 0, outputCommandOverrides(scannable))
 }
 
-func inspectEgressInvocations(command, want string, depth int) ([]VerbInvocation, bool) {
+// Textual detection is deliberately conservative: a definition anywhere in the
+// submitted command disables the named exclusion, including inside command strings.
+func outputCommandOverrides(command string) map[string]bool {
+	overridden := make(map[string]bool)
+	for _, match := range outputFunctionDefinition.FindAllStringSubmatch(command, -1) {
+		for _, name := range match[1:] {
+			if name != "" {
+				overridden[name] = true
+			}
+		}
+	}
+	for _, match := range outputAliasDefinition.FindAllStringSubmatch(command, -1) {
+		for _, arg := range tokenize(match[1]) {
+			name, _, assignment := strings.Cut(arg, "=")
+			if assignment && (name == "echo" || name == "printf") {
+				overridden[name] = true
+			}
+		}
+	}
+	return overridden
+}
+
+func printfWritesVariable(args []string) bool {
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if isRedirectionToken(arg) {
+			i++
+			continue
+		}
+		if arg == "--" || !strings.HasPrefix(arg, "-") {
+			return false
+		}
+		// bash/zsh accept both -v NAME and -vNAME.
+		if strings.HasPrefix(arg, "-v") {
+			return true
+		}
+	}
+	return false
+}
+
+func inspectEgressInvocations(command, want string, depth int, overridden map[string]bool) ([]VerbInvocation, bool) {
 	if depth > 4 {
 		return nil, false
 	}
@@ -957,12 +1003,13 @@ func inspectEgressInvocations(command, want string, depth int) ([]VerbInvocation
 	// A consumer of a pipeline/process substitution can execute printed text.
 	// Exclude literal output only when no concurrent consumer is present.
 	literalOutputOnly := !containsConcurrentShellOperator(command, true)
-	for _, segment := range splitCommandSegments(command) {
+	segments := splitCommandSegments(command)
+	for segmentIndex, segment := range segments {
 		tokens := tokenize(segment)
 		// Expansions can execute even when the outer command is echo/printf.
 		for _, tok := range tokens {
 			if strings.Contains(tok, "$(") || strings.ContainsRune(tok, '`') {
-				nested, ok := inspectEgressInvocations(tok, want, depth+1)
+				nested, ok := inspectEgressInvocations(tok, want, depth+1, overridden)
 				if !ok {
 					return nil, false
 				}
@@ -970,6 +1017,7 @@ func inspectEgressInvocations(command, want string, depth int) ([]VerbInvocation
 			}
 		}
 		commandPosition := true
+		variableOutput := false
 		for i := 0; i < len(tokens); i++ {
 			tok := tokens[i]
 			if isRedirectionToken(tok) {
@@ -983,12 +1031,25 @@ func inspectEgressInvocations(command, want string, depth int) ([]VerbInvocation
 				continue
 			}
 			name := commandName(tok)
-			if literalOutputOnly && commandPosition && (name == "echo" || name == "printf") {
+			if commandPosition && name == "printf" {
+				variableOutput = printfWritesVariable(tokens[i+1:])
+			}
+			if literalOutputOnly && commandPosition && !overridden[name] &&
+				(name == "echo" || (name == "printf" && !variableOutput)) {
 				break
 			}
 			commandPosition = false
 			if name == want {
-				inv, ok := parseVerbArgs(tokens[i+1:])
+				args := tokens[i+1:]
+				if variableOutput {
+					// printf -v can store this verb for execution in a later segment.
+					// Retain later tokens rather than pretending the value is inert.
+					args = append([]string(nil), args...)
+					for _, later := range segments[segmentIndex+1:] {
+						args = append(args, tokenize(later)...)
+					}
+				}
+				inv, ok := parseVerbArgs(args)
 				if !ok {
 					return nil, false
 				}
@@ -996,7 +1057,7 @@ func inspectEgressInvocations(command, want string, depth int) ([]VerbInvocation
 				break
 			}
 			if strings.ContainsAny(tok, " \t\r\n;&|()`") {
-				nested, ok := inspectEgressInvocations(tok, want, depth+1)
+				nested, ok := inspectEgressInvocations(tok, want, depth+1, overridden)
 				if !ok {
 					return nil, false
 				}

@@ -86,7 +86,13 @@ enabled):
    Schemeless curl/wget scanning is bounded to shell segments. Unknown launchers
    remain scannable without a launcher allowlist; only literal echo/printf
    arguments are excluded, after scanning command substitutions and only when no
-   pipeline/process-substitution consumer is present. Egress scans
+   pipeline/process-substitution consumer is present. Exclusion also requires no
+   same-command function or alias redefinition of the output command (`echo()` /
+   `printf()`, `function echo` / `function printf`, or `alias echo=` /
+   `alias printf=`). `printf -v` (including an attached variable name) is scanned
+   normally because it writes a variable instead of literal output. A literal
+   curl/wget value in such a write is inspected together with later segment
+   tokens conservatively, since the variable can be invoked there. Egress scans
    retain heredoc input conservatively because arbitrary consumers can execute
    it (including source and dot). Indeterminate argument parsing denies.
    Differential tests preserve main's external-egress denials and separately

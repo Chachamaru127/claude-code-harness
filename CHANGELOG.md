@@ -10,7 +10,8 @@ Change history for claude-code-harness.
 
 - Restore schemeless curl/wget egress denials through unknown launchers and
   source/dot heredocs without a launcher allowlist. Preserve literal echo/printf
-  handling and add a frozen-main differential regression corpus (#381).
+  handling only without same-command function/alias overrides or printf -v,
+  and add a frozen-main differential regression corpus (#381).
 - Pin the breezing benchmark dependency overrides to patched ranges so the
   `test-breezing-agent-eval-deps.sh` audit gate stops failing on newly
   published advisories and blocking every pull request: `undici` to
@@ -21,6 +22,14 @@ Change history for claude-code-harness.
   trigger network-egress denials (#362).
 - Exclude Go test executables from session health-check binary resolution,
   preventing recursive test-process spawning during the full Go test suite.
+- Require harness-mem markers before automatically treating `~/.claude-mem/`
+  as a legacy home, preventing false SessionStart health warnings for users
+  of the separate claude-mem product (#363).
+- Use a resolvable model id in the agent-type hooks. The bare alias
+  `"haiku"` is not resolved on the hook path, so Claude Code logged
+  `[claude-code:unrecognized_model]` for the PreToolUse quality gate, the
+  post-write advisory review, and the PreCompact WIP check. Both
+  `hooks/hooks.json` and its synced copy now name `claude-haiku-5-5`.
 
 ## [5.15.0] - 2026-09-06
 

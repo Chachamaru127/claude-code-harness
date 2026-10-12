@@ -419,9 +419,17 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 ## PR #381: Issue #362 review remediation (2026-10-13)
 
 - Goal: restore egress denial for all 14 reviewer commands while retaining all 36 existing invocation-scope cases.
-- Scope: runtimefloor/shellscan, additive regression tests, differential evidence, bundled binaries, and these docs. No merge, main push, force push, or unrelated edits.
+- Scope: runtimefloor/shellscan, additive regression tests, differential evidence, bundled binaries, and these docs. No PR merge, main push, force push, or unrelated edits.
 - Design: exclude literal echo/printf arguments only without concurrent consumers; scan unknown launchers conservatively and retain heredoc input for egress scanning. Keep other shellscan consumers unchanged.
 - Verification: compare a frozen main egress implementation on the same corpus; security deny-to-allow must be zero. Explicit #362 false-positive corrections are reported separately.
 - Current state: implementation and mandatory validation passed (exit 0): 49 Go packages ok, Go build, four-platform rebuild, consistency, and binary drift. All 14 reviewer commands deny; existing 36 cases are untouched.
 - Evidence: `docs/reports/pr381-egress-remediation.md` and the 433-row CSV; 430 security inputs have zero deny-to-allow, with two intended Issue #362 corrections reported separately. Frozen main checks and helpers match baseline `5ae202d45ad3e060e1e5678c7151b9cbdc75f4a4`.
-- Handoff: additional commit/push authorized; no merge or main write. Independent review remains FAIL pending the requesting reviewer's re-verdict; worker does not change it.
+- Handoff: additional commit/push authorized; no PR merge or main write. Independent review remains FAIL pending the requesting reviewer's re-verdict; worker does not change it.
+
+### Second remediation after re-review FAIL
+
+- Goal: deny the three exact re-review inputs; disable output exclusions for same-command echo/printf function or alias definitions and printf -v. Preserve all 36 existing cases and both Issue #362 echo corrections.
+- Authorized scope: additive tests, scanner, spec/evidence/PR text, main integration, binaries, commit and ordinary branch push. PR merge, main push, force push and test weakening are prohibited.
+- Current state: second remediation implemented and checked; all 16 added cases deny, including the three exact re-review inputs. All 36 original cases are unchanged. origin/main at 1f1f7d2434e53ca34080db0e24c2f1ddf3039b17 integrated; CHANGELOG keeps both sides and four binaries rebuilt from combined source. Independent re-review remains FAIL pending the requesting reviewer.
+- Evidence: 449 comparison rows (all 433 previous rows plus 16 new inputs); security deny-to-allow 0/446. Full Go tests: 49 ok packages, 4 without tests, exit 0. Four-platform build, consistency, and darwin/arm64 binary/source drift checks each exited 0. See docs/reports/pr381-egress-remediation.md.
+- Handoff: commit and ordinary branch push plus PR body update; stop for the requesting reviewer's independent re-verdict. No PR merge, main push or force push.
