@@ -6,6 +6,13 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Changed
+
+- Raise the Go toolchain requirement to 1.26.0 in both `go/go.mod` and
+  `go.work`. Dependency updates that need Go 1.26 (such as
+  `golang.org/x/sys` v0.49.0) previously failed during the build because the
+  workspace still declared 1.25.0, which blocked their pull requests.
+
 ## [5.15.0] - 2026-09-06
 
 ### Added
