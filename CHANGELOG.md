@@ -16,6 +16,11 @@ Change history for claude-code-harness.
 - Require harness-mem markers before automatically treating `~/.claude-mem/`
   as a legacy home, preventing false SessionStart health warnings for users
   of the separate claude-mem product (#363).
+- Use a resolvable model id in the agent-type hooks. The bare alias
+  `"haiku"` is not resolved on the hook path, so Claude Code logged
+  `[claude-code:unrecognized_model]` for the PreToolUse quality gate, the
+  post-write advisory review, and the PreCompact WIP check. Both
+  `hooks/hooks.json` and its synced copy now name `claude-haiku-5-5`.
 
 ## [5.15.0] - 2026-09-06
 
