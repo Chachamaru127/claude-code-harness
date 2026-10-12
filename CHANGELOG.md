@@ -13,6 +13,9 @@ Change history for claude-code-harness.
   published advisories and blocking every pull request: `undici` to
   `^7.30.0`, `brace-expansion` to `^5.0.12`, and a new `@grpc/grpc-js`
   override at `^1.14.6`.
+- Anchor hook state paths to the project root instead of the process working
+  directory, so `.claude/state/` no longer scatters when a hook runs from
+  outside the project, and the writer and reader agree on one root (#338).
 
 ## [5.15.0] - 2026-09-06
 
