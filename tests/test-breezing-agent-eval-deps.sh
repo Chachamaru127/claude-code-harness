@@ -63,7 +63,7 @@ if (pkg.dependencies?.["@vercel/agent-eval"] !== "~1.4.0") {
   fail("@vercel/agent-eval must stay on the current 1.4.x line");
 }
 
-if (pkg.overrides?.undici !== "^7.29.0") {
+if (pkg.overrides?.undici !== "^7.30.0") {
   fail("package.json must pin undici override to a patched range");
 }
 
@@ -75,8 +75,12 @@ if (pkg.overrides?.nanoid !== "^3.3.17") {
   fail("package.json must pin nanoid override to a patched range");
 }
 
-if (pkg.overrides?.["brace-expansion"] !== "^5.0.9") {
+if (pkg.overrides?.["brace-expansion"] !== "^5.0.12") {
   fail("package.json must pin brace-expansion override to a patched range");
+}
+
+if (pkg.overrides?.["@grpc/grpc-js"] !== "^1.14.6") {
+  fail("package.json must pin @grpc/grpc-js override to a patched range");
 }
 
 if (pkg.overrides?.dockerode?.uuid !== "^11.1.1") {
@@ -90,11 +94,12 @@ for (const [name, command] of Object.entries(pkg.scripts || {})) {
 }
 
 assertMinVersion("@vercel/agent-eval", versionOf("node_modules/@vercel/agent-eval"), "1.4.0");
-assertMinVersion("undici", versionOf("node_modules/undici"), "7.29.0");
+assertMinVersion("undici", versionOf("node_modules/undici"), "7.30.0");
 assertMinVersion("minimatch", versionOf("node_modules/minimatch"), "10.2.4");
 assertMinVersion("uuid", versionOf("node_modules/uuid"), "11.1.1");
 assertMinVersion("nanoid", versionOf("node_modules/nanoid"), "3.3.17");
-assertMinVersion("brace-expansion", versionOf("node_modules/brace-expansion"), "5.0.9");
+assertMinVersion("brace-expansion", versionOf("node_modules/brace-expansion"), "5.0.12");
+assertMinVersion("@grpc/grpc-js", versionOf("node_modules/@grpc/grpc-js"), "1.14.6");
 
 const evalDirs = new Set(
   fs.readdirSync("evals", { withFileTypes: true })
