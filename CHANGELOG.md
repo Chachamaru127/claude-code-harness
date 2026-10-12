@@ -13,6 +13,9 @@ Change history for claude-code-harness.
   published advisories and blocking every pull request: `undici` to
   `^7.30.0`, `brace-expansion` to `^5.0.12`, and a new `@grpc/grpc-js`
   override at `^1.14.6`.
+- Require harness-mem markers before automatically treating `~/.claude-mem/`
+  as a legacy home, preventing false SessionStart health warnings for users
+  of the separate claude-mem product (#363).
 - Use a resolvable model id in the agent-type hooks. The bare alias
   `"haiku"` is not resolved on the hook path, so Claude Code logged
   `[claude-code:unrecognized_model]` for the PreToolUse quality gate, the
