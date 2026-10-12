@@ -11,7 +11,16 @@ Change history for claude-code-harness.
 - Raise the Go toolchain requirement to 1.26.0 in both `go/go.mod` and
   `go.work`. Dependency updates that need Go 1.26 (such as
   `golang.org/x/sys` v0.49.0) previously failed during the build because the
-  workspace still declared 1.25.0, which blocked their pull requests.
+  workspace still declared 1.25.0, which blocked their pull requests. The
+  four bundled platform binaries are rebuilt with the same toolchain.
+
+### Fixed
+
+- Pin the breezing benchmark dependency overrides to patched ranges so the
+  `test-breezing-agent-eval-deps.sh` audit gate stops failing on newly
+  published advisories and blocking every pull request: `undici` to
+  `^7.30.0`, `brace-expansion` to `^5.0.12`, and a new `@grpc/grpc-js`
+  override at `^1.14.6`.
 
 ## [5.15.0] - 2026-09-06
 
