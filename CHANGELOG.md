@@ -8,6 +8,11 @@ Change history for claude-code-harness.
 
 ### Fixed
 
+- Pin the breezing benchmark dependency overrides to patched ranges so the
+  `test-breezing-agent-eval-deps.sh` audit gate stops failing on newly
+  published advisories and blocking every pull request: `undici` to
+  `^7.30.0`, `brace-expansion` to `^5.0.12`, and a new `@grpc/grpc-js`
+  override at `^1.14.6`.
 - Require harness-mem markers before automatically treating `~/.claude-mem/`
   as a legacy home, preventing false SessionStart health warnings for users
   of the separate claude-mem product (#363).
