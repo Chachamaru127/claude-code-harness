@@ -182,21 +182,13 @@ func HandlePlansWatcher(in io.Reader, out io.Writer) error {
 		return emptyPostToolOutput(out)
 	}
 
-	// CWD があれば相対パスに変換
-	if input.CWD != "" {
-		changedFile = makeRelativePath(
-			normalizePathSeparators(changedFile),
-			normalizePathSeparators(input.CWD),
-		)
+	projectRoot := resolveProjectRoot(input.CWD)
+	changedFile = normalizePathSeparators(changedFile)
+	if !filepath.IsAbs(changedFile) {
+		changedFile = filepath.Join(firstNonEmpty(input.CWD, projectRoot), changedFile)
 	}
 
-	// Plans.md ファイルを探す（設定ファイルの plansDirectory 対応）
-	// input.CWD が存在する場合はそれを projectRoot として使用する。
-	// フックプロセスの CWD が input.CWD と異なる場合に誤った Plans.md を参照する問題を修正。
-	projectRoot := input.CWD
-	if projectRoot == "" {
-		projectRoot = resolveProjectRoot()
-	}
+	// Plans.md と state を同じプロジェクトルートから解決する。
 	plansFile := resolvePlansPath(projectRoot)
 	if plansFile == "" {
 		return emptyPostToolOutput(out)
@@ -207,28 +199,9 @@ func HandlePlansWatcher(in io.Reader, out io.Writer) error {
 		return emptyPostToolOutput(out)
 	}
 
-	// CWD を一つの変数に決定する。
-	// lock path と state file path を同じ CWD から導出することで、
-	// 異なる worktree（CWD A / CWD B）で hook が同時に走っても
-	// 「同じ CWD → 同じ lock + 同じ state」「異なる CWD → 別 lock + 別 state」となり
-	// プロジェクトごとに独立した排他制御が機能する。
-	cwd := input.CWD
-	if cwd == "" {
-		var cwdErr error
-		cwd, cwdErr = os.Getwd()
-		if cwdErr != nil {
-			cwd = ""
-		}
-	}
-
-	// lock path と state file path を同じ cwd から導出する
-	lockPath := plansLockFile
-	stateFilePath := plansStateFile
-	if cwd != "" {
-		lockPath = filepath.Join(cwd, plansLockFile)
-		// plansStateFile は相対パス定数なので cwd と結合して絶対パス化
-		stateFilePath = filepath.Join(cwd, plansStateFile)
-	}
+	// lock、state、通知を同じルートに置き、サブディレクトリ間でも共有する。
+	lockPath := filepath.Join(projectRoot, plansLockFile)
+	stateFilePath := filepath.Join(projectRoot, plansStateFile)
 
 	// plans-state.json の read-modify-write を flock で保護する。
 	// Worker との競合で state を失わないよう fail-closed: lock 取得失敗時は処理を中断。
@@ -252,10 +225,10 @@ func HandlePlansWatcher(in io.Reader, out io.Writer) error {
 		return emptyPostToolOutput(out)
 	}
 
-	// 前回の状態を読み込む（CWD ベースの絶対パスを使用）
+	// 前回の状態を読み込む（プロジェクトルート基準）
 	prev := loadPrevPlansState(stateFilePath)
 
-	// 状態を保存（CWD ベースの絶対パスを使用）
+	// 状態を保存（プロジェクトルート基準）
 	stateDir := filepath.Dir(stateFilePath)
 	if mkErr := os.MkdirAll(stateDir, 0o755); mkErr == nil {
 		savePlansState(stateFilePath, current)
@@ -270,8 +243,8 @@ func HandlePlansWatcher(in io.Reader, out io.Writer) error {
 	}
 
 	// PM 通知ファイルを生成
-	locale := resolveHarnessLocale(cwd)
-	if err := writePMNotification(cwd, current, hasNewTasks, hasCompletedTasks, locale); err != nil {
+	locale := resolveHarnessLocale(projectRoot)
+	if err := writePMNotification(projectRoot, current, hasNewTasks, hasCompletedTasks, locale); err != nil {
 		fmt.Fprintf(os.Stderr, "[plans-watcher] write notification: %v\n", err)
 	}
 

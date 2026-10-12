@@ -87,27 +87,38 @@ func writeJSON(w io.Writer, v interface{}) error {
 // resolveProjectRoot はプロジェクトルートディレクトリを返す。
 //
 // 解決優先順:
-//  1. HARNESS_PROJECT_ROOT 環境変数
-//  2. PROJECT_ROOT 環境変数
-//  3. git rev-parse --show-toplevel（monorepo の subdir 対応）
-//  4. カレントディレクトリ（フォールバック）
+//  1. HARNESS_PROJECT_ROOT 環境変数（Harness の明示 override）
+//  2. PROJECT_ROOT 環境変数（既存の明示 override）
+//  3. CLAUDE_PROJECT_DIR 環境変数（ホストが指定するプロジェクトルート）
+//  4. 存在する入力 JSON の cwd で git rev-parse --show-toplevel、非 Git ならその cwd
+//  5. process cwd で git rev-parse --show-toplevel、非 Git なら process cwd
 //
-// bash 版 path-utils.sh / config-utils.sh の detect_project_root() に相当。
-func resolveProjectRoot() string {
-	if v := os.Getenv("HARNESS_PROJECT_ROOT"); v != "" {
-		return v
+// 有効な入力 cwd がある場合は process cwd の別リポジトリにフォールバックしない。
+// 入力 cwd が欠損または存在しないディレクトリなら process cwd を使う。
+// 引数なしの呼び出しは環境変数と process cwd から解決する。
+func resolveProjectRoot(inputCWD ...string) string {
+	for _, name := range []string{"HARNESS_PROJECT_ROOT", "PROJECT_ROOT", "CLAUDE_PROJECT_DIR"} {
+		if v := os.Getenv(name); v != "" {
+			return v
+		}
 	}
-	if v := os.Getenv("PROJECT_ROOT"); v != "" {
-		return v
+	cwd := ""
+	if len(inputCWD) > 0 {
+		cwd = inputCWD[0]
 	}
-	// git rev-parse --show-toplevel でリポジトリルートを検出する。
-	// monorepo のサブディレクトリで実行された場合でも .claude/ が見つかるよう対応。
-	if out, err := gitport.Output("", "rev-parse", "--show-toplevel"); err == nil {
+	if cwd != "" {
+		if info, err := os.Stat(cwd); err != nil || !info.IsDir() {
+			cwd = ""
+		}
+	}
+	if cwd == "" {
+		cwd, _ = os.Getwd()
+	}
+	if out, err := gitport.Output(cwd, "rev-parse", "--show-toplevel"); err == nil {
 		if root := strings.TrimSpace(out); root != "" {
 			return root
 		}
 	}
-	cwd, _ := os.Getwd()
 	return cwd
 }
 
