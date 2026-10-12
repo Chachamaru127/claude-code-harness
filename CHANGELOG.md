@@ -6,6 +6,12 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Fixed
+
+- Require harness-mem markers before automatically treating `~/.claude-mem/`
+  as a legacy home, preventing false SessionStart health warnings for users
+  of the separate claude-mem product (#363).
+
 ## [5.15.0] - 2026-09-06
 
 ### Added
