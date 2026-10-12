@@ -573,7 +573,8 @@ func atoi(s string) int {
 // projectRoot/bin/harness は信頼境界外（repo 内に悪意ある binary が混入する
 // 可能性がある）のため解決対象に含めない。
 func resolveHarnessBinary() (string, error) {
-	if exe, err := os.Executable(); err == nil && exe != "" {
+	// Go test binaries run the test suite again when invoked with "mem health".
+	if exe, err := os.Executable(); err == nil && exe != "" && !strings.HasSuffix(exe, ".test") {
 		return exe, nil
 	}
 	if root := os.Getenv("CLAUDE_PLUGIN_ROOT"); root != "" {

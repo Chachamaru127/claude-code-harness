@@ -935,6 +935,76 @@ func InspectVerbInvocations(command, verb string) (invocations []VerbInvocation,
 	return invocations, true
 }
 
+// InspectEgressInvocations limits arguments to their shell segment and ignores
+// verb mentions in ordinary command arguments. For command launchers and shell
+// control flow, retain conservative scanning rather than silently permitting a
+// nested invocation whose executable position cannot be resolved statically.
+func InspectEgressInvocations(command, verb string) ([]VerbInvocation, bool) {
+	return inspectEgressInvocations(command, strings.ToLower(verb), 0)
+}
+
+func inspectEgressInvocations(command, want string, depth int) ([]VerbInvocation, bool) {
+	if depth > 4 {
+		return nil, false
+	}
+	var invocations []VerbInvocation
+	for _, segment := range splitCommandSegments(command) {
+		tokens := tokenize(segment)
+		// Expansions can execute even when the outer command is echo/printf.
+		for _, tok := range tokens {
+			if strings.Contains(tok, "$(") || strings.ContainsRune(tok, '`') {
+				nested, ok := inspectEgressInvocations(tok, want, depth+1)
+				if !ok {
+					return nil, false
+				}
+				invocations = append(invocations, nested...)
+			}
+		}
+		conservative := false
+		for i := 0; i < len(tokens); i++ {
+			tok := tokens[i]
+			if isRedirectionToken(tok) {
+				if i+1 >= len(tokens) || isRedirectionToken(tokens[i+1]) {
+					return nil, false
+				}
+				i++
+				continue
+			}
+			if isAssignment(tok) {
+				continue
+			}
+			name := commandName(tok)
+			if name == want {
+				inv, ok := parseVerbArgs(tokens[i+1:])
+				if !ok {
+					return nil, false
+				}
+				invocations = append(invocations, inv)
+				break
+			}
+			_, wrapper := interpreterWrappers[name]
+			_, interpreter := interpreterNames[name]
+			switch name {
+			case "if", "then", "elif", "else", "while", "until", "do", "!", "{",
+				"time", "timeout", "nice", "xargs", "parallel", "find", "eval":
+				conservative = true
+			}
+			conservative = conservative || wrapper || interpreter
+			if !conservative {
+				break
+			}
+			if strings.ContainsAny(tok, " \t\r\n;&|()`") {
+				nested, ok := inspectEgressInvocations(tok, want, depth+1)
+				if !ok {
+					return nil, false
+				}
+				invocations = append(invocations, nested...)
+			}
+		}
+	}
+	return invocations, true
+}
+
 func inspectSegmentVerb(tokens []string, want string) (VerbInvocation, bool, bool) {
 	for i := 0; i < len(tokens); i++ {
 		tok := tokens[i]

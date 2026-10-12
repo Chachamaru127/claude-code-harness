@@ -6,6 +6,14 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Fixed
+
+- Scope schemeless curl/wget host checks to executable invocations and their
+  shell segments, so literal command mentions and later filenames do not
+  trigger network-egress denials (#362).
+- Exclude Go test executables from session health-check binary resolution,
+  preventing recursive test-process spawning during the full Go test suite.
+
 ## [5.15.0] - 2026-09-06
 
 ### Added

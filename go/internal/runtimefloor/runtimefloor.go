@@ -179,23 +179,23 @@ func egressFloorExempted() bool {
 }
 
 func checkCurlWgetSchemelessHosts(cmd string) Decision {
-	fields := strings.Fields(cmd)
-	for i, field := range fields {
-		if !strings.EqualFold(field, "curl") && !strings.EqualFold(field, "wget") {
-			continue
+	scannable := shellscan.StripNonExecutableText(cmd)
+	for _, verb := range []string{"curl", "wget"} {
+		invocations, ok := shellscan.InspectEgressInvocations(scannable, verb)
+		if !ok {
+			return stop(CategoryEgress, verb,
+				"cannot determine network command arguments")
 		}
-		for j := i + 1; j < len(fields); j++ {
-			token := fields[j]
-			if strings.HasPrefix(token, "-") {
-				continue
-			}
-			authority := extractHostAuthority(token)
-			if authority == "" || isAllowlistedHost(authority) {
-				continue
-			}
-			if schemelessHostAuthority.MatchString(authority) {
-				return stop(CategoryEgress, token,
-					"external network egress requires human approval")
+		for _, inv := range invocations {
+			for _, token := range inv.Positional {
+				authority := extractHostAuthority(token)
+				if authority == "" || isAllowlistedHost(authority) {
+					continue
+				}
+				if schemelessHostAuthority.MatchString(authority) {
+					return stop(CategoryEgress, token,
+						"external network egress requires human approval")
+				}
 			}
 		}
 	}
