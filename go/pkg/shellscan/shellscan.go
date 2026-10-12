@@ -37,6 +37,12 @@ var (
 // A heredoc body is retained when an interpreter command appears on its opener
 // line, including a downstream pipeline such as "cat <<EOF | bash".
 func StripNonExecutableText(command string) string {
+	return stripNonExecutableText(command, false)
+}
+
+// Egress retains all heredoc input: arbitrary consumers (including source/dot)
+// can execute it, so interpreter recognition cannot prove it is inert.
+func stripNonExecutableText(command string, retainHeredocs bool) string {
 	lines := strings.Split(command, "\n")
 	out := make([]string, 0, len(lines))
 	var terminator string
@@ -68,7 +74,7 @@ func StripNonExecutableText(command string) string {
 
 		if heredocTerminator, ok := findHeredocTerminator(stripped); ok {
 			terminator = heredocTerminator
-			keepBody = openerRunsInterpreter(stripped)
+			keepBody = retainHeredocs || openerRunsInterpreter(stripped)
 		}
 		out = append(out, stripped)
 	}
@@ -935,12 +941,12 @@ func InspectVerbInvocations(command, verb string) (invocations []VerbInvocation,
 	return invocations, true
 }
 
-// InspectEgressInvocations limits arguments to their shell segment and ignores
-// verb mentions in ordinary command arguments. For command launchers and shell
-// control flow, retain conservative scanning rather than silently permitting a
-// nested invocation whose executable position cannot be resolved statically.
+// InspectEgressInvocations bounds arguments to their shell segment, but does
+// not require a known launcher: unknown commands can execute later arguments.
+// Only literal echo/printf arguments are excluded. Expansions and heredoc input
+// remain scannable; ok=false requires the caller to deny indeterminate parsing.
 func InspectEgressInvocations(command, verb string) ([]VerbInvocation, bool) {
-	return inspectEgressInvocations(command, strings.ToLower(verb), 0)
+	return inspectEgressInvocations(stripNonExecutableText(command, true), strings.ToLower(verb), 0)
 }
 
 func inspectEgressInvocations(command, want string, depth int) ([]VerbInvocation, bool) {
@@ -948,6 +954,9 @@ func inspectEgressInvocations(command, want string, depth int) ([]VerbInvocation
 		return nil, false
 	}
 	var invocations []VerbInvocation
+	// A consumer of a pipeline/process substitution can execute printed text.
+	// Exclude literal output only when no concurrent consumer is present.
+	literalOutputOnly := !containsConcurrentShellOperator(command, true)
 	for _, segment := range splitCommandSegments(command) {
 		tokens := tokenize(segment)
 		// Expansions can execute even when the outer command is echo/printf.
@@ -960,7 +969,7 @@ func inspectEgressInvocations(command, want string, depth int) ([]VerbInvocation
 				invocations = append(invocations, nested...)
 			}
 		}
-		conservative := false
+		commandPosition := true
 		for i := 0; i < len(tokens); i++ {
 			tok := tokens[i]
 			if isRedirectionToken(tok) {
@@ -970,27 +979,20 @@ func inspectEgressInvocations(command, want string, depth int) ([]VerbInvocation
 				i++
 				continue
 			}
-			if isAssignment(tok) {
+			if commandPosition && isAssignment(tok) {
 				continue
 			}
 			name := commandName(tok)
+			if literalOutputOnly && commandPosition && (name == "echo" || name == "printf") {
+				break
+			}
+			commandPosition = false
 			if name == want {
 				inv, ok := parseVerbArgs(tokens[i+1:])
 				if !ok {
 					return nil, false
 				}
 				invocations = append(invocations, inv)
-				break
-			}
-			_, wrapper := interpreterWrappers[name]
-			_, interpreter := interpreterNames[name]
-			switch name {
-			case "if", "then", "elif", "else", "while", "until", "do", "!", "{",
-				"time", "timeout", "nice", "xargs", "parallel", "find", "eval":
-				conservative = true
-			}
-			conservative = conservative || wrapper || interpreter
-			if !conservative {
 				break
 			}
 			if strings.ContainsAny(tok, " \t\r\n;&|()`") {

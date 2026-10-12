@@ -179,9 +179,8 @@ func egressFloorExempted() bool {
 }
 
 func checkCurlWgetSchemelessHosts(cmd string) Decision {
-	scannable := shellscan.StripNonExecutableText(cmd)
 	for _, verb := range []string{"curl", "wget"} {
-		invocations, ok := shellscan.InspectEgressInvocations(scannable, verb)
+		invocations, ok := shellscan.InspectEgressInvocations(cmd, verb)
 		if !ok {
 			return stop(CategoryEgress, verb,
 				"cannot determine network command arguments")

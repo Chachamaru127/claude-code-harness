@@ -83,6 +83,14 @@ enabled):
    local files, matching the egress allowlist enforced by `isAllowlistedHost`:
    network egress is denied unless the destination host is explicitly declared,
    and secret reads are denied unless the exact path is explicitly declared.
+   Schemeless curl/wget scanning is bounded to shell segments. Unknown launchers
+   remain scannable without a launcher allowlist; only literal echo/printf
+   arguments are excluded, after scanning command substitutions and only when no
+   pipeline/process-substitution consumer is present. Egress scans
+   retain heredoc input conservatively because arbitrary consumers can execute
+   it (including source and dot). Indeterminate argument parsing denies.
+   Differential tests preserve main's external-egress denials and separately
+   identify intentional Issue #362 false-positive corrections.
    The only relaxation secret-read allowlisting provides is for named paths; it
    must never mean broad filesystem access. Empty strings, a bare `*`, `/`, `~`,
    `~/`, or any other all-open declaration are invalid and resolve to deny.

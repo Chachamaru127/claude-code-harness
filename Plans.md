@@ -415,3 +415,13 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 
 **完了条件**: main、タグ、GitHub Release、4環境の配布物が同じリリースを示し、未解決の critical / major がない。
 **検証記録**: `.claude/state/release-20260906/`。ローカル確認と公開後の確認を別に記録する。
+
+## PR #381: Issue #362 review remediation (2026-10-13)
+
+- Goal: restore egress denial for all 14 reviewer commands while retaining all 36 existing invocation-scope cases.
+- Scope: runtimefloor/shellscan, additive regression tests, differential evidence, bundled binaries, and these docs. No merge, main push, force push, or unrelated edits.
+- Design: exclude literal echo/printf arguments only without concurrent consumers; scan unknown launchers conservatively and retain heredoc input for egress scanning. Keep other shellscan consumers unchanged.
+- Verification: compare a frozen main egress implementation on the same corpus; security deny-to-allow must be zero. Explicit #362 false-positive corrections are reported separately.
+- Current state: implementation and mandatory validation passed (exit 0): 49 Go packages ok, Go build, four-platform rebuild, consistency, and binary drift. All 14 reviewer commands deny; existing 36 cases are untouched.
+- Evidence: `docs/reports/pr381-egress-remediation.md` and the 433-row CSV; 430 security inputs have zero deny-to-allow, with two intended Issue #362 corrections reported separately. Frozen main checks and helpers match baseline `5ae202d45ad3e060e1e5678c7151b9cbdc75f4a4`.
+- Handoff: additional commit/push authorized; no merge or main write. Independent review remains FAIL pending the requesting reviewer's re-verdict; worker does not change it.

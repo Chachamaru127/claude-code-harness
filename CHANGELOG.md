@@ -8,6 +8,9 @@ Change history for claude-code-harness.
 
 ### Fixed
 
+- Restore schemeless curl/wget egress denials through unknown launchers and
+  source/dot heredocs without a launcher allowlist. Preserve literal echo/printf
+  handling and add a frozen-main differential regression corpus (#381).
 - Pin the breezing benchmark dependency overrides to patched ranges so the
   `test-breezing-agent-eval-deps.sh` audit gate stops failing on newly
   published advisories and blocking every pull request: `undici` to
