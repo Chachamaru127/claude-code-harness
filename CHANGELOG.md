@@ -22,6 +22,11 @@ Change history for claude-code-harness.
 - Require harness-mem markers before automatically treating `~/.claude-mem/`
   as a legacy home, preventing false SessionStart health warnings for users
   of the separate claude-mem product (#363).
+- Stop reading dotted filenames as schemeless hosts in the egress floor. A
+  token like `late.txt` or `config.json` matches the host shape, but its
+  final label is not a top-level domain, so `echo curl late.txt` is no longer
+  refused as external network egress (#362). Hosts on registered TLDs, such
+  as `evil.sh`, stay denied.
 - Use a resolvable model id in the agent-type hooks. The bare alias
   `"haiku"` is not resolved on the hook path, so Claude Code logged
   `[claude-code:unrecognized_model]` for the PreToolUse quality gate, the
