@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestIntegrate_CallableNotProse(t *testing.T) {
@@ -48,12 +49,38 @@ func runGitAllowFail(dir string, args ...string) (string, error) {
 
 func initRepo(t *testing.T) string {
 	t.Helper()
+	// Keep the test independent of whatever git configuration the host or the
+	// CI runner carries. A global gc.auto or maintenance setting can leave a
+	// detached git process still writing under .git after the test body
+	// returns, which then races t.TempDir()'s cleanup and fails the test with
+	// "unlinkat .../.git: directory not empty". That is a teardown failure,
+	// not a failure of the behaviour under test, and it took down a CI run for
+	// an unrelated change.
+	cfgDir := t.TempDir()
+	emptyCfg := filepath.Join(cfgDir, "gitconfig")
+	if err := os.WriteFile(emptyCfg, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GIT_CONFIG_GLOBAL", emptyCfg)
+	t.Setenv("GIT_CONFIG_SYSTEM", emptyCfg)
+
 	dir := t.TempDir()
+	// Registered after t.TempDir(), so it runs before the directory is
+	// removed: cleanups run last-in-first-out.
+	t.Cleanup(func() { awaitQuietRepo(t, dir) })
 	runGit(t, dir, "init", "-b", "trunk")
 	runGit(t, dir, "config", "user.email", "test@example.com")
 	runGit(t, dir, "config", "user.name", "Test User")
 	runGit(t, dir, "config", "rerere.enabled", "true")
 	runGit(t, dir, "config", "rerere.autoupdate", "true")
+	// git can detach `gc --auto`, and auto-maintenance can run on a schedule.
+	// Either one leaves a process writing under .git after these tests finish,
+	// which then races t.TempDir()'s cleanup and fails the test with
+	// "unlinkat .../.git: directory not empty" — the failure is in the
+	// teardown, not in the behaviour under test. These repos are tiny and
+	// short-lived, so neither is worth the race.
+	runGit(t, dir, "config", "gc.auto", "0")
+	runGit(t, dir, "config", "maintenance.auto", "false")
 	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte("root\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -63,6 +90,49 @@ func initRepo(t *testing.T) string {
 	runGit(t, dir, "add", "README.md", ".gitignore")
 	runGit(t, dir, "commit", "-m", "init")
 	return dir
+}
+
+// awaitQuietRepo waits for processes still working inside dir to finish, and
+// logs the survivors.
+//
+// TestIntegrate_RereReplay_SharedFileConflict has flaked in CI with
+//
+//	TempDir RemoveAll cleanup: unlinkat .../.git: directory not empty
+//
+// which means a process was still writing under .git when t.TempDir()
+// enumerated it. Disabling auto-gc and auto-maintenance in the fixture did not
+// stop it, and it has never reproduced on a developer machine, so the next
+// occurrence has to produce evidence instead of another guess. This is that
+// evidence: the command lines of whatever is still holding the repository.
+// The bounded wait also lets a short-lived writer finish, which is enough for
+// the cases seen so far.
+func awaitQuietRepo(t *testing.T, dir string) {
+	const attempts = 20
+	for i := 0; i < attempts; i++ {
+		out, err := exec.Command("ps", "-eo", "pid=,args=").Output()
+		if err != nil {
+			return
+		}
+		var live []string
+		for _, line := range strings.Split(string(out), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.Contains(line, dir) == false {
+				continue
+			}
+			if strings.Contains(line, "ps -eo") {
+				continue
+			}
+			live = append(live, line)
+		}
+		if len(live) == 0 {
+			return
+		}
+		if i == attempts-1 {
+			t.Logf("processes still using %s at teardown:\n%s", dir, strings.Join(live, "\n"))
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 }
 
 func createTaskBranch(t *testing.T, dir, branch, filename, content string) {

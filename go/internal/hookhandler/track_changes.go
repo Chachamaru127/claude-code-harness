@@ -96,11 +96,20 @@ func HandleTrackChanges(in io.Reader, out io.Writer) error {
 	// クロスプラットフォームパス正規化（Windows バックスラッシュ → スラッシュ）
 	filePath = normalizePathSeparators(filePath)
 
-	// CWD が指定されている場合はプロジェクト相対パスに変換
+	projectRoot := resolveProjectRoot(input.CWD)
+	changedFilesFile := filepath.Join(projectRoot, changedFilesPath)
+	// 入力相対パスを入力 cwd から解決し、Stop 読み手と同じルート相対で記録する。
+	fileCWD, _ := os.Getwd()
 	if input.CWD != "" {
-		cwd := normalizePathSeparators(input.CWD)
-		filePath = makeRelativePath(filePath, cwd)
+		filePath = makeRelativePath(filePath, normalizePathSeparators(input.CWD))
+		if info, err := os.Stat(input.CWD); err == nil && info.IsDir() {
+			fileCWD = input.CWD
+		}
 	}
+	if !filepath.IsAbs(filePath) {
+		filePath = filepath.Join(fileCWD, filePath)
+	}
+	filePath = makeRelativePath(normalizePathSeparators(filePath), normalizePathSeparators(projectRoot))
 
 	toolName := input.ToolName
 	if toolName == "" {
@@ -117,18 +126,18 @@ func HandleTrackChanges(in io.Reader, out io.Writer) error {
 	// セッション単位にしないと、別セッションの記録が dedup で先勝ちし、今回
 	// セッションのエントリが一切書かれず loadTouchedFilesForStop の session
 	// フィルタが「touched なし」を返す穴になる (Phase 134 finding の随伴修正)。
-	if isDuplicateWithin(filePath, input.SessionID, now, trackChangesDedupWindow) {
+	if isDuplicateWithin(changedFilesFile, filePath, input.SessionID, now, trackChangesDedupWindow) {
 		return emptyPostToolOutput(out)
 	}
 
 	// 状態ディレクトリを作成
-	stateDir := filepath.Dir(changedFilesPath)
+	stateDir := filepath.Dir(changedFilesFile)
 	if err := os.MkdirAll(stateDir, 0o755); err != nil {
 		return emptyPostToolOutput(out)
 	}
 
 	// 既存の行数をチェックしてローテーション
-	if err := rotateIfNeeded(changedFilesPath, trackChangesMaxLines); err != nil {
+	if err := rotateIfNeeded(changedFilesFile, trackChangesMaxLines); err != nil {
 		// ローテーション失敗は無視して続行
 		fmt.Fprintf(os.Stderr, "[track-changes] rotate: %v\n", err)
 	}
@@ -146,7 +155,7 @@ func HandleTrackChanges(in io.Reader, out io.Writer) error {
 		return emptyPostToolOutput(out)
 	}
 
-	f, err := os.OpenFile(changedFilesPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+	f, err := os.OpenFile(changedFilesFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 	if err != nil {
 		return emptyPostToolOutput(out)
 	}
@@ -199,8 +208,8 @@ func isImportantFile(filePath string) bool {
 // 場合は entry.SessionID が一致する行のみを対象にする — 別セッションの記録
 // で dedup が先勝ちし、このセッションのエントリが書かれずに終わる (結果
 // loadTouchedFilesForStop のセッションフィルタが常に空を返す) 事態を防ぐ。
-func isDuplicateWithin(filePath, sessionID string, now time.Time, window time.Duration) bool {
-	f, err := os.Open(changedFilesPath)
+func isDuplicateWithin(statePath, filePath, sessionID string, now time.Time, window time.Duration) bool {
+	f, err := os.Open(statePath)
 	if err != nil {
 		// ファイルが存在しない場合は重複なし
 		return false
