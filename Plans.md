@@ -415,3 +415,26 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 
 **完了条件**: main、タグ、GitHub Release、4環境の配布物が同じリリースを示し、未解決の critical / major がない。
 **検証記録**: `.claude/state/release-20260906/`。ローカル確認と公開後の確認を別に記録する。
+
+## Phase 148: 利用者向け日英READMEと変更履歴の再構成 (2026-10-13)
+
+**目的**: 非エンジニアが使い道、導入、任せる範囲、更新時の影響を判断できる文章にする。
+**承認元**: READMEとCHANGELOGを0ベースで日英のplain languageに書き直す依頼。harness-releaseの実行を含む。公開操作は完成した成果物とリリース計画の単一確認後。
+**基準版**: origin/main `6c198b4c76f983d82a93048d67807b45551a6dc6`、VERSION 5.15.0。元の作業ツリーは古く、無関係な未保存変更を含むため専用worktreeを使用。
+**仕様影響**: 文書のみ。host tier、モデル、権限、動作は変更しない。
+**触るパス**: docs/images/readme/hero-motion-{en,ja}.*、docs/images/.gitignore、docs/research/readme-visual-asset-manifest.md、specs/2026-10-readme-motion/design.md、specs/2026-10-readme-motion/build-assets.py、README.md、README_ja.md、CHANGELOG.md、CHANGELOG_ja.md、CHANGELOG.md.archive-2026-10-13.md、codex/README.md（導入導線の整合が必要な場合）、spec.md、Plans.md、tests/test-readme-product-surface.sh（編集方針に依存する文面の期待値のみ）、tests/test-claude-upstream-integration.sh（過去原文の確認先と固定SHA検査のみ）、tests/test-public-claims-contract.sh（taskごとのテスト指定という意味を保持した文章の期待値のみ）。
+**AC**: (1)日英のREADMEが利用目的、導入、最初の依頼、判断、制限、費用、データ、再開、更新を説明する。(2)日英変更履歴が全版と日付、比較リンク、更新判断に効く条件を保持する。(3)コマンドと対応範囲が実仕様と一致し、日英で意味が一致する。(4)元の変更履歴を無改変で保持する。(5)既存の対象検査と独立レビューが合格する。(6)公開前に版数、対象ファイル、main反映と公開内容を本人へ提示する。
+**追加指示**: ヒーローと序盤は読む前提にしない。大きい課題提示と3つの視覚的な対応で理解できる構成にし、説明は後ろへ送る。
+**非対象**: 製品動作、保護設定、既存の個人設定、無関係な報告書。履歴の抹消、架空の互換性保証、リリース成功の先取り。
+**team_validation_mode**: subagent。AstraとFableの事前相談、執筆と別家系の判定、図面検査。
+
+| ID | Task | DoD | Depends | Status |
+|----|------|-----|---------|--------|
+| 148.1 | `[lane:fast]` `[tdd:skip:docs-only]` 実仕様と履歴を確認し日英文書を再作成 | AC1-4を満たす文章。過去原文保存 | - | cc:WIP [日英README/SVGと159版の履歴を作成。原文全件照合で条件を復元。159版/149比較リンク/原文SHA一致。README独立APPROVE、CHANGELOG最終判定待ち] |
+| 148.2 | `[lane:gate]` `[tdd:skip:validation-review]` 文書検証と独立判定 | AC5。試験コマンドの終了コードと判定を記録 | 148.1 | cc:WIP [対象検査10本exit0、範囲検査PASS。独立R1で動く点の文字重なりと4.4.0/4.8.1の安全対策欠落を検出して修正。README/SVG R3独立APPROVE（critical0/major0）。旧版11件の条件復元と履歴/リンク/日本語検査exit0。2.x残り53版、3.x残り24版を全件照合し、35版/20版の日英条件を復元。履歴/リンク/日本語検査exit0。4.x残り49版も全件照合済み。26版の条件復元と4版の補足を反映し対象検査exit0。ローカル記録後、同一SHAで最終試験と履歴再判定] |
+| 148.3 | `[lane:release]` `[tdd:skip:release-preparation]` リリース準備 | AC6。preflight、変更履歴昇格案、公開文面を揃える | 148.2 | cc:WIP [patch5.15.1の日英公開文面をローカル準備。Claude2.1.296の予約名拒否で公開検査は停止中] |
+| 148.4 | `[lane:release]` `[tdd:skip:release-verification]` 承認後に反映と公開を確認 | main到達可能なtag、GitHub Release、配布物の読戻し | 148.3 | cc:TODO |
+
+**停止条件**: 公開承認前はpush、merge、tag、公開をしない。preflightや独立判定の失敗を成功に置き換えない。新しい製品判断が必要な変更は今回の編集へ混ぜない。
+
+**公開準備の現在地**: Claude Code 2.1.296はmanifest名 `claude-code-harness` を予約名として拒否する。`claude plugin validate .claude-plugin/plugin.json` と `claude plugin tag .claude-plugin --dry-run` はexit1。版番号の変更、push、merge、tag、公開は未実施。名前変更や検査回避は今回の文書編集に混ぜない。

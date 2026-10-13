@@ -1,7 +1,7 @@
 # Claude Code Harness V2 Spec
 
 Status: SSOT through the Phase 145/146 frontier model and prompt update
-Last updated: 2026-09-06
+Last updated: 2026-10-13
 
 This file is the root product contract for Claude Code Harness V2.
 Plans.md is the task ledger. `spec.md` is the product contract.
@@ -155,6 +155,24 @@ CCH adopts these rather than rebuilding them. The genuinely novel scope is
 game its own grader.
 
 ## Users And Workflows
+
+### User documentation (2026-10-13)
+
+The README hero presents the user problem in a large short statement and
+three scannable outcomes before explanatory prose. Details follow the first
+action rather than preceding it. The hero animation is a conceptual work path,
+not live progress: self-contained SVG, a 12-second GIF for image-only renderers,
+and a static poster for reduced motion. Local acceptance does not claim GitHub
+image-proxy or cross-OS font verification.
+The English and Japanese READMEs explain outcomes, installation, a first
+request, human decisions, costs and data boundaries, restart, and updates in
+plain language. Technical names are retained when a user must act on them,
+with their meaning explained at first use. An analogy supplements a concrete
+explanation; it never replaces a condition or proves a safety guarantee.
+English and Japanese changelogs retain release versions, dates, comparison
+links, and upgrade-relevant conditions. Historical source remains available
+when entries are rewritten for readers. These are editorial changes, not a
+change to host support, permissions, runtime behavior, or model defaults.
 
 Primary user:
 

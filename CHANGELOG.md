@@ -1,6321 +1,2046 @@
 # Changelog
 
-Change history for claude-code-harness.
+[日本語](CHANGELOG_ja.md) | [Current usage](README.md)
 
-> **📝 Writing Guidelines**: Focus on user-facing changes. Keep internal fixes brief.
+CLI means an application operated by typed commands. A hook runs automatically at a workflow event. A worktree is a separate checkout for a task. Preflight means checks before starting or publishing; a schema defines the shape of a data record. MCP connects an assistant to external capabilities. Model effort values such as high/xhigh/max are provider-specific settings, not completion scores.
+
+Each release describes what changed at that time. Its defaults and commands may have changed again; use the current README for installation.
+**Unreleased** contains changes not yet published in a versioned release.
+
+The [complete original history](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md) is preserved byte for byte.
+For historical technical details and links relative to the old source tree, use the [original changelog at commit 6c198b4c76f9](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md).
+Engineering-only phase/task bookkeeping stays in that archive. Existing comparison references are retained exactly; missing historical comparisons have not been invented.
 
 ## [Unreleased]
 
 ### Changed
 
-- Tell Dependabot to skip major and minor updates of `@vercel/agent-eval` in
-  the breezing benchmark. `tests/test-breezing-agent-eval-deps.sh` pins the
-  package to the `1.4.x` line on purpose, so those bumps arrived red every
-  week (#377). Patch releases are still proposed.
-- Raise the Go toolchain requirement to 1.26.0 in both `go/go.mod` and
-  `go.work`. Dependency updates that need Go 1.26 (such as
-  `golang.org/x/sys` v0.49.0) previously failed during the build because the
-  workspace still declared 1.25.0, which blocked their pull requests. The
-  four bundled platform binaries are rebuilt with the same toolchain.
-- Update the Go dependencies that were waiting on that toolchain:
-  `golang.org/x/sys` 0.47.0 → 0.49.0 (#376) and `modernc.org/sqlite`
-  1.56.0 → 1.60.1 with its `modernc.org/libc` 1.77.1 and `modernc.org/memory`
-  1.12.1 companions (#369). Both Dependabot pull requests are superseded by
-  this change.
+- Rewrite the English and Japanese READMEs and every changelog release in plain language, retaining upgrade conditions and linking the complete original history. A short animated hero shows the work path; a static version is provided for reduced motion.
+- Source builders now need Go 1.26.0 for the module and workspace. All four bundled platform binaries use that toolchain; users of those binaries do not need to install Go.
+- Update `golang.org/x/sys` 0.47.0 to 0.49.0 and `modernc.org/sqlite` 1.56.0 to 1.60.1, with libc 1.77.1 and memory 1.12.1.
+- Benchmark maintainers receive patch updates for the audited `@vercel/agent-eval` 1.4.x line; Dependabot no longer proposes incompatible major/minor bumps against its pinned checks.
 
 ### Fixed
 
-- Stop `go/internal/integrate`'s tests from racing `t.TempDir()` cleanup.
-  Git's auto-gc and auto-maintenance can leave a process writing under
-  `.git` after the test body returns, which fails teardown with "unlinkat
-  .../.git: directory not empty" and took down a CI run for an unrelated
-  change. The fixture now disables both and no longer reads the host's
-  global git configuration.
-- Give the same teardown race a way to be diagnosed. If it recurs, the
-  `go/internal/integrate` fixture now waits briefly for the writer and
-  logs its command line, so the next occurrence produces evidence rather
-  than another guess.
-- Pin the breezing benchmark dependency overrides to patched ranges so the
-  `test-breezing-agent-eval-deps.sh` audit gate stops failing on newly
-  published advisories and blocking every pull request: `undici` to
-  `^7.30.0`, `brace-expansion` to `^5.0.12`, and a new `@grpc/grpc-js`
-  override at `^1.14.6`.
-- Require harness-mem markers before automatically treating `~/.claude-mem/`
-  as a legacy home, preventing false SessionStart health warnings for users
-  of the separate claude-mem product (#363).
-- Stop reading dotted filenames as schemeless hosts in the egress floor. A
-  token like `late.txt` or `config.json` matches the host shape, but its
-  final label is not a top-level domain, so `echo curl late.txt` is no longer
-  refused as external network egress (#362). Hosts on registered TLDs, such
-  as `evil.sh`, stay denied.
-- Use a resolvable model id in the agent-type hooks. The bare alias
-  `"haiku"` is not resolved on the hook path, so Claude Code logged
-  `[claude-code:unrecognized_model]` for the PreToolUse quality gate, the
-  post-write advisory review, and the PreCompact WIP check. Both
-  `hooks/hooks.json` and its synced copy now name `claude-haiku-5-5`.
-- Anchor hook state paths to the project root instead of the process working
-  directory, so `.claude/state/` no longer scatters when a hook runs from
-  outside the project, and the writer and reader agree on one root (#338).
-  The hook input's cwd outranks `CLAUDE_PROJECT_DIR` so per-worktree locks
-  and `Plans.md` monitoring stay independent.
+- Users of the separate claude-mem product no longer receive a false legacy-home warning just because `~/.claude-mem/` exists. Harness now requires harness-mem markers.
+- The external-network guard no longer mistakes dotted filenames such as `late.txt` or `config.json` for hosts. Registered top-level-domain hosts such as `evil.sh` remain blocked.
+- Quality, post-write review, and pre-compaction agent hooks use the resolvable `claude-haiku-5-5` model ID, avoiding the unrecognized-model error from the bare alias.
+- Hook state now stays under the project root even when execution starts elsewhere. Hook-input cwd takes precedence over `CLAUDE_PROJECT_DIR`, preserving separate worktree locks and plan monitoring.
+- Integration tests isolate host Git settings and disable background Git maintenance. If a cleanup race recurs, a brief wait and writer-process report expose the cause. This affects test reliability, not project Git configuration.
+- Patch benchmark dependency overrides to `undici ^7.30.0`, `brace-expansion ^5.0.12`, and `@grpc/grpc-js ^1.14.6`, resolving advisories that blocked pull-request checks.
 
 ## [5.15.0] - 2026-09-06
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5150---2026-09-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L62)
+
 ### Added
 
-- Add a self-contained Japanese product guide showing what to request and
-  what results to expect. Keep model settings in expandable details and make
-  the task flow readable on mobile screens.
+- Japanese readers get a mobile-friendly product guide describing requests and expected results, with model settings in expandable details.
 
 ### Changed
 
-- Describe current task execution, role defaults, manual model choices,
-  progress reporting, and restart behavior in the English, Japanese, and Codex
-  READMEs. Distinguish task-count progress from acceptance results.
-- Route Claude deep-planning and advisor defaults to Fable 5.1/high and Codex frontier
-  roles to GPT-6 astra. Keep lightweight workers and existing Codex role effort
-  separate, and retain the isolated Sonnet security reviewer.
-- Calibrate active workflow, agent, embedded CLI, and setup prompts around
-  scoped outcomes, recoverable inputs, independent delegation, and observed
-  completion evidence. Preserve required checks, review limits, and permissions.
+- The English, Japanese, and Codex guides explain task execution, role defaults, manual model selection, progress, and restart. Task-count progress is distinguished from passing acceptance checks.
+- Claude deep planning and advisors default to Fable 5.1/high; Codex frontier roles use GPT-6 astra. Lightweight workers, existing Codex role effort, and the isolated Sonnet security reviewer retain separate settings.
+- Workflow instructions now require scoped outcomes, recoverable inputs, independent delegation, and observed completion evidence while retaining checks, review limits, and permission boundaries.
 
 ### Fixed
 
-- Keep handoff timestamps numeric during session initialization and resume
-  on both GNU and BSD systems, so Linux can restore structured handoffs.
-- Isolate advisor configuration regression tests from the operator's active
-  settings while continuing to verify explicit project model choices.
-- Normalize supported working-directory aliases before native companion
-  dispatch so reviews inspect the requested project.
-- Deliver large plan context and worker status through input streams, avoiding
-  operating-system argument limits while retaining full evidence and bounded summaries.
-- Bind the managed Codex reviewer profile during setup so an existing default inline
-  role cannot silently shadow its model and instructions. Preserve custom
-  role bindings and distinguish native permission inheritance from companion
-  read-only review execution.
-- Preserve explicit Codex model and effort through companion dispatch, including
-  Codex `ultra`, without prompt-based effort calculation replacing role settings.
-- Resolve advisor defaults for the target project and preserve its explicit
-  model choice instead of reading configuration from the installed plugin.
-- Keep task execution and the primary-environment guard on the same working
-  directory and write intent; reject unsupported config overrides and extra
-  writable roots before dispatch.
-- Include the runtime helpers required by advisor and loop execution in the
-  Claude and Codex plugin packages.
-- Carry the selected plan, completion criteria, concrete failure evidence, and
-  prior advice through loop worker and advisor dispatch, including restart.
-- Preserve Go worker task descriptions and review refinements, and make the
-  opt-in review verdict contract explicit instead of accepting an `APPROVE`
-  substring in contradictory text.
-- Include task completion criteria, inferred scope, exclusions, and reviewer
-  notes in browser review instructions without changing its schema or routes.
+- Linux and macOS preserve numeric handoff timestamps during initialization and resume, so structured handoffs can be restored.
+- Advisor regression tests no longer mutate the operator's settings; explicit project model selections remain checked.
+- Native companion dispatch normalizes supported working-directory spellings so reviews inspect the requested project.
+- Large plan context and worker status travel through input streams, preserving evidence without exceeding operating-system command argument limits.
+- Codex setup binds the managed reviewer profile so a default inline role cannot shadow it. Custom bindings stay intact; native inherited permissions and external read-only review execution remain distinct.
+- External dispatch preserves explicit Codex model and effort, including `ultra`. Advisor defaults come from the target project rather than the installed plugin.
+- Execution and the primary-environment guard use the same working directory and write intent. Unsupported overrides and extra writable roots are rejected before dispatch.
+- Claude and Codex packages include the helpers needed by advisors and loops. Loop dispatch and restart retain the plan, completion criteria, failures, and prior advice.
+- Go workers retain task descriptions and review refinements. Optional review contracts require an explicit verdict rather than accepting an `APPROVE` substring in contradictory text.
+- Browser review instructions include completion criteria, inferred scope, exclusions, and reviewer notes without changing result formats or routes.
 
 ## [5.14.1] - 2026-08-31
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5141---2026-08-31) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L113)
+
 ### Fixed
 
-- **secret-read floor: `~/` vs absolute allowlist, and write-only `cat >`**:
-  `HARNESS_RUNTIME_FLOOR_SECRET_ALLOW` compared command tokens and declarations
-  as raw strings, so a declared `/Users/<home>/LocalWork/` missed
-  `~/LocalWork/.../.env`. Matching now expands a leading `~/` on both sides
-  (process home directory). That is spelling normalization, not a wider
-  allowlist. Bare `~` / `~/` stay invalid. `$HOME` and `~user` are not
-  expanded. Separately, `cat > file` / `cat >> file` / `cat > file <<EOF`
-  with no input file was treated as a read verb, so a later
-  `AISDR_ENV_FILE=.../.env bash script` in the same Bash string was denied.
-  Write-only `cat` is no longer a secret-read verb. `cat FILE`,
-  `cat FILE > out`, `cat FILE>/out`, `cat > out FILE`, and `cat < FILE`
-  still deny. `&>` / `&>>` are treated as redirections, not job separators,
-  so `cat > out &> /dev/null .env` still denies.
+- Secret-read exceptions now match a leading `~/` against the process home on both declarations and command paths. This changes spelling only: bare `~`/`~/`, `$HOME`, and `~user` are not expanded or newly allowed.
+- Write-only `cat > file`, `cat >> file`, and `cat > file <<EOF` no longer trigger secret-read denial for a later environment-file assignment. Reading a file with `cat FILE`, input redirection, or a file argument before/after output redirection remains denied; `&>` and `&>>` do not hide input files.
 
 ## [5.14.0] - 2026-08-31
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5140---2026-08-31) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L131)
+
 ### Added
 
-- **Deferred-ops approval flow (`bin/harness deferred`) + progress surface queue (Phase 140.2)**:
-  the operator side of `destructive_delete=defer`. `bin/harness deferred list` shows the
-  pending entries of `.claude/state/deferred-ops.jsonl` with a copy-paste approve command;
-  `bin/harness deferred approve <id>` flips the single pending line with that id to
-  `approved`, and the guardrail then lets the **next identical run** through exactly once
-  (`approved → consumed`, one-shot consume — same shape as plan preapproval — with an
-  `R05_DEFER_APPROVED` advisory message and a `policy: defer` record in
-  `destructive-delete.jsonl`). Un-approved entries keep denying; after the approval is
-  spent the same command denies and re-queues again. No "approve all", no auto-approval
-  path. The progress surface gains an additive `deferred_ops_pending` section
-  (`progress-snapshot.v1`) listing pending deletions with their approve commands
-  (same shape as the Phase 136.2 writing-lint queue).
-  Review follow-up (independent reviewer findings, both fixed pre-merge): (1) the
-  "operator-only" boundary is now enforced, not just documented — new guardrail rule
-  **R16:no-self-approve-deferred** denies agent Bash invocations of
-  `harness deferred approve` (list stays allowed), and `deferred-ops.jsonl` /
-  `destructive-delete.jsonl` joined the R02/R03 protected-path deny set so an agent
-  cannot forge `"status":"approved"` lines (interpreter writes remain a documented
-  residual, same class as the R05 symlink residual); approve stamps `approved_by`.
-  (2) `recordDeferredOp`'s dedup-check + append now runs under the same file lock as
-  the approve/consume flips, closing a lost-write / duplicate-pending race. R05
-  (defer deny) and R16 joined the deny-surface baseline and rule-coverage pins.
-
-- **`destructive_delete: defer` (Phase 140.1、無人 run の ask 停止対策)**: R05 (rm -rf / find -delete) で warn なら ask になる場面 (root 外の綴り・`..`・未解決 `$VAR`・glob・素の `.`) を、ask の代わりに **deny + 行動契約** に置き換える設定値。deny は run を止めず (エージェントに理由が返り続行する)、操作は `.claude/state/deferred-ops.jsonl` に 1 行 (`id` / `timestamp` / `session_id` / `agent_id` / `cwd` / `command` / `rule_id` / `policy` / `reason` / `status: pending`) 積まれる。同一コマンドの再試行は deny のままキューに重複しない。warn が通す場面は defer でも warn のまま (allow + `destructive-delete.jsonl` 記録)。既定は引き続き warn。設定は `harness.toml [safety.permissions] destructiveDelete` / `.claude-code-harness.config.yaml safety.destructive_delete` / env `HARNESS_DESTRUCTIVE_DELETE_POLICY`。承認 CLI は 140.2 の `bin/harness deferred` で追加済み
-
-| 場面 | ask (opt-out) | warn (既定) | defer (新設) |
-|---|---|---|---|
-| 削除対象が agent 所有と静的に証明できる | allow | allow | allow |
-| 相対 / root 配下の綴りだが前置コマンドあり | ask | allow + warn 記録 | allow + warn 記録 |
-| root 外・`..`・`$VAR`・glob・素の `.` | ask | ask | **deny + キュー** (run は止まらない) |
-
-実効性契約: `tests/test-r05-destructive-delete-policy.sh` に実バイナリ probe 4 本 (deny + キュー 1 行 / 再試行で重複なし / warn 経路の回帰なし) を追加 (修正前 RED、修正後 GREEN)。Go 側は `go/internal/policy` と `go/internal/guardrail` に 10 本追加
+- Optional `destructive_delete: defer` denies uncertain deletions and queues them in `.claude/state/deferred-ops.jsonl` while letting unattended work continue. Duplicate retries remain denied without duplicate entries. `warn` remains the default; its allowed-with-warning cases are unchanged.
+- Select the policy with `harness.toml [safety.permissions] destructiveDelete`, project YAML `safety.destructive_delete`, or `HARNESS_DESTRUCTIVE_DELETE_POLICY`. Statically proven agent-owned targets are allowed; root-external paths, `..`, unresolved variables, globs, and bare `.` are queued under defer. Relative/project paths with preceding commands retain warn behavior.
+- Operators use `bin/harness deferred list` and `bin/harness deferred approve <id>`. Approval permits the next identical command exactly once, then is consumed; another attempt is denied and queued again. There is no bulk or automatic approval. The progress page shows pending entries and approval commands.
+- Agents may list but cannot run deferred approval or edit its approval/audit files through guarded writes. Approval records the operator; queue updates are locked together with approval and consumption. Arbitrary interpreter writes remain a documented residual limitation.
 
 ## [5.13.2] - 2026-08-29
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5132---2026-08-29) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L168)
+
 ### Fixed
 
-- **配布経路の修理: SessionStart の `scripts/sync-plugin-cache.sh` が plugin cache と marketplace 複製を壊していた**。他プロジェクトで `claude plugin list` が Agents (0) になり、`claude plugin update` が 5.13.1 を見つけられなかった原因は Claude Code ではなく CCH 自身の hook script (2026-08-29 に旧 script を空の HOME で走らせて再現)。
-
-| 継ぎ目 | 変更前 | 変更後 |
-|---|---|---|
-| 版ごとの cache dir | まだ入っていない版の dir を同期分 (hooks / skills / scripts / output-styles / VERSION) だけで先に作る。Claude Code は後で既にある dir をそのまま使うので、agents / bin / templates の無い plugin になる (5.8.0 / 5.9.0 / 5.13.0 / 5.13.1) | 既に入っている版だけ更新し、無ければ作らない |
-| marketplace 複製の版 | 別 worktree の VERSION / plugin.json を複製へ書き戻す。`claude plugin update` は複製の plugin.json を最新判定に使うため「5.13.0 が最新」と答え、5.13.1 が入らない | 複製の git HEAD が同じ版のときだけ同期し、VERSION / plugin.json / marketplace.json は書かない |
-| 複製の private path 削除 | tracked の `docs/research/*` を削除し、複製の git を恒久 dirty (21 件の `D`) にする | 削除は cache 側のみ |
-| agents/ | 同期対象外 | `critical_dirs` に追加 (既に入っている cache の欠けも埋まる) |
-
-契約テスト 4 本を `tests/test-sync-plugin-cache.sh` に追加 (旧 script で RED、修正後 GREEN)。manifest (plugin.json) と Go の生成コードは変更なし。`agents/` は宣言なしで自動発見される。
+- Plugin-cache synchronization no longer creates incomplete directories for versions not yet installed. It repairs `agents/` in existing caches and leaves version manifests unchanged.
+- Marketplace copies sync only when their Git HEAD represents the same version. Tracked research files are no longer deleted from those copies, allowing plugin updates to discover the actual newest version. Private-path cleanup applies only to caches.
 
 ### Changed
 
-- **同期レポート `docs/reports/2026-08-27-harness-sync-status.html` を追加 (docs)**: harness-sync の結果 (Plans.md と git のズレ 0 件、Phase 134〜142 の 49 task 中 32 完了) と配布欠けの判断材料。初版の推定「CC が manifest 宣言の部品だけ複製する」は上記の再現で否定されたため改訂済み。Plans.md に Phase 143 (この hotfix) を追加し、次スプリント順 143 → 140 → 142 → 138 を記録 (operator 裁定 2026-08-29)。判断の記録は `.claude/memory/decisions.md` D72
+- The synchronization report corrects the cause of missing plugin components and records the repair priority; it does not change manifests or Go-generated code.
 
 ## [5.13.1] - 2026-08-26
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5131---2026-08-26) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L187)
+
 ### Changed
 
-- **Plans.md: 2026-08-24 設計レビューの結論を反映**。Phase 140（無人 run の ask 序盤停止対策）を次スプリントの最優先に明記し、Phase 142（記憶パイプライン修理・注入棚卸し・日本語 lint 辞書 seeding・ルール引退提案・native 機能重複点検、7 task。レビュー時の作業名は Phase 141 だったが、同時並行で main へ shipped したセッション協調パイプライン Phase 141 との番号衝突により着地時に Phase 142 へ改番）を新設。裏付けの 2 件の判断材料 HTML（2026-08-24 ハーネス設計レビュー、2026-08-26 Phase 140/141 追記レビュー）を `docs/reports/` に追加し索引を更新
+- The development plan prioritizes avoiding early approval stalls in unattended runs and schedules memory-pipeline repair, Japanese writing-rule seeding/retirement, and checks for overlap with native CLI features. These are planned work, not new runtime capabilities.
 
 ## [5.13.0] - 2026-08-25
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5130---2026-08-25) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L193)
+
 ### Added
 
-#### セッション協調パイプライン (Phase 141)
-
-同じ PC 上の複数セッション (Claude Code / Codex / Cursor / Grok / hermes) が**互いを名簿で見て、直接メッセージを送れる**パイプラインを通しました。何に使うかは利用者に委ねる土台であり、送信の検証は既定オフです。
-
-| 継ぎ目 | 変更前 | 変更後 |
-|---|---|---|
-| 名簿の寿命 | `Stop` で presence を削除。Stop はターン境界なので、生きているセッションが最初の 1 ターン後に名簿から消えていた | 削除は `SessionEnd`、`Stop` では mtime を更新。セッションが続く限り名簿に載り続ける |
-| 名簿の更新 | `SessionStart` の 1 回のみ | 毎ターン更新。refresh は mtime だけを触るので `session declare` の task/label は保持される |
-| 身分証 | `HARNESS_LIVEMSG_TEAM` / `..._AGENT` を読む側だけ存在し、書く側が誰もいなかった | `hook session-register` が `CLAUDE_ENV_FILE` へ **`export` 形式**で書き出す (素の `KEY=VALUE` は子プロセス env に届かない)。`deliveryidentity.Resolve()` の優先順位は不変 |
-| broadcast の届く範囲 | presence は worktree 横断で共有、broadcast だけ worktree ローカル。姿は見えるのに通知が届かなかった | broadcast も git-common-dir 親の共有 scope へ統一 |
-| harness-mem との同居 | `active.json` を自スキーマ決め打ちで読み、他ツールのエントリを 24h prune で削除していた | `map[string]json.RawMessage` で読み書きし、知らないエントリは触らず保持 |
-
-- **エージェント主導の送信**: `skills/session-send/SKILL.md` を追加。`bin/harness inbox send --team/--from/--to/--subject` を案内し、送ってよいもの (完了通知 / これから触る場所の宣言 / 引き継ぎ) と送らないもの (作業中の相談 / 推測) を線引きする。根拠は CooperBench の測定 — 同一ファイルを 2 エージェントが触ると成功率が単独の約半分に落ち、失敗の 63% が相手の変更についての誤った思い込みだった
-- **検証の関所 (opt-in、既定 off)**: `[livemsg] verification = "off" | "on"` を追加。解決は `destructiveDelete` と同じ 5 段 (env / project YAML / project `harness.toml` / plugin `harness.toml` / 既定)。**off の間は送信経路が gate を呼ばない**ため、検証を使わない利用者にコストがかからない。on では機械チェック (ファイル実在 / commit 実在 / `git status` との一致) が判定を担う。機械で判定できない主張の委譲先として read-only agent の口 (`Reviewer` interface + `agents/livemsg-gate.md`) を用意しているが、**本実行経路にはまだ接続していない**。判定役が未設定のときは HOLD にせず `not_observed` を記録して機械チェックの結果を通す (判定役の不在は判定ではない。ここで止めると「テストが成功しました」のような完了通知が全て止まり、パイプラインの目的そのものを壊す)。`HOLD` は宛先へ 1 件も届けず、理由を送信側に返す (`templates/schemas/livemsg-gate.v1.json`)
-- **hermes を 5 ツール目として追加**: `hosts.toml` に `[hermes]` を追加。hermes は `~/.hermes/config.yaml` の YAML 宣言型のため hook ファイルは生成せず、turn delivery のみ配線
-- 配線検証: `scripts/ci/check-session-pipeline-wiring.sh` (7 点) を `tests/validate-plugin.sh` に配線 (配線前 RED 実測済み)
+- Sessions on one PC can discover and message each other across Claude Code, Codex, Cursor, Grok, and Hermes. Presence lasts until SessionEnd; turn refreshes preserve declared labels/tasks. Broadcast now spans linked worktrees. Unknown harness-mem roster entries are preserved.
+- Session registration exports delivery identity through `CLAUDE_ENV_FILE`. The `session-send` skill explains `bin/harness inbox send --team/--from/--to/--subject` for completion notices, edit-area declarations, and handoffs; speculative discussions are outside that guidance.
+- Message verification is OFF by default: `[livemsg] verification = "off" | "on"`. Resolution order is environment, project YAML, project TOML, plugin TOML, default. OFF skips verification entirely. ON checks file/commit existence and Git status; HOLD delivers nothing and returns a reason.
+- A read-only reviewer interface exists but is not connected to live message delivery. Without a reviewer, record `not_observed` and use the mechanical check result rather than implying a human-language claim was reviewed. Hermes receives turn delivery only, with no generated enforcement hook.
 
 ### Fixed
 
-Phase 141 のレビューゲートが見つけた 5 件。いずれも「呼び出しは書かれているが、その結果が上の層で捨てられている」という同じ形をしていました (D58「配線した != 効いている」)。
+- HOLD results now actually stop delivery. Version numbers and email addresses no longer look like missing files; slash-free tokens must use a known file extension.
+- Deferred Hermes enforcement no longer prevents delivery generation; hosts missing their required home installation are explicitly skipped. Session lists preserve and show team/agent identity, avoiding silently undelivered messages addressed with session IDs. Wiring checks now inspect actual generated output.
 
-- **検証 gate の verdict が捨てられていた**: 送信経路が gate を呼びながら戻り値を無視していたため、`HOLD` を返しても配送されていた。verdict で分岐し、理由を送信側へ返す
-- **検証 on が通常のメッセージを弾いていた**: パス判定が「ドットを含むトークン」を全てファイル名とみなしていたため、`Go 1.24.0` や `alice@example.com` を含む完了通知が `HOLD` になっていた。スラッシュを含まない綴りは既知の拡張子を要求する
-- **hermes の delivery がどこにも出力されていなかった**: `harness gen` が enforcement hook の「生成保留」で先に return し、delivery 生成に到達していなかった。`hosts.toml` に宣言はあるのに実出力ゼロ。保留は enforcement だけに限定し、`requires_home_path` で未インストールのホストは明示的にスキップする
-- **メッセージの宛先を特定できなかった**: `session list` に `team` / `agent` 列が無く、`session-send` skill はそれを読めと案内していた。breezing 実行中は agent が `BREEZING_ROLE` で session_id と一致しないため、案内どおりに送ると**エラーも出ないまま未達**になっていた。presence card が解決済みの identity を持ち、名簿がそれを表示する
-- **presence card の新フィールドが serialize 時に落ちていた**: `encodePresenceCard` が Label / Task / Since しかコピーしておらず、追加した Team / Agent が黙って捨てられていた
-
-配線チェック `scripts/ci/check-session-pipeline-wiring.sh` は、上記 3 件目を検出できませんでした (設定文字列の存在しか見ていなかった)。実バイナリを走らせて実出力を検査する形に変更しています。
 ## [5.12.0] - 2026-08-24
+
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5120---2026-08-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L225)
 
 ### Added
 
-- **Codex Breezing の実装 Worker を `gpt-5.6-luna` / `max` に統一**。Codex-native の `breezing` は setup が配置する managed custom agent `worker.toml` を選び、`breezing --codex` は中央の worker route を解決する。公式 companion 1.0.6 が受け付けない `max` は Harness が raw `codex exec` の reasoning config へ変換する。reviewer / advisor / deep は従来どおり `gpt-5.6-sol` / `xhigh` のまま
-- **Codex review に Sol/xhigh を確実に適用し、中断時の残留 process を防止**。review ごとの local proxy が `model` / `review_model` / `model_reasoning_effort` を `codex app-server` へ渡し、official companion の結果形式を保持する。`review --commit` は provider dispatch 前に拒否し、成功した delegation だけを ledger に記録する。TERM/INT は companion と proxy へ同時転送し、最大 1 秒待機後に残存 child を KILL/reap する
+- Codex Breezing workers use `gpt-5.6-luna`/`max` through the managed worker profile or central route. Unsupported companion `max` is translated to raw Codex reasoning configuration. Reviewers, advisors, and deep roles stay `gpt-5.6-sol`/`xhigh`.
+- Codex reviews explicitly pass model, review model, and effort through a local app-server proxy. `review --commit` is rejected before dispatch; only successful delegations are recorded. Interrupts reach both companion and proxy, with remaining child processes killed/reaped after at most one second.
 
 ### Changed
 
-- **Codex setup と host distribution の安全境界を追加**。local/remote setup は preflight 後に、Harness 所有の legacy `[notify]` 2 形態だけを backup + atomic migration する。custom/ambiguous shape は no-mutation fail とし、`features.multi_agent` と `features.default_mode_request_user_input` を欠落時に追加する。Claude/Codex dist は worker/reviewer profile と review runtime-helper closure を同梱し、Codex dist は fingerprint 実行に必要な Harness platform binaries も含める。primary-environment guard が拒否した task は provider 起動前に止め、成功 delegation の ledger に数えない
-- **README の Codex 導入説明を実効経路に同期**。英語・日本語のトップ README と `codex/README.md` に、更新後の setup 再実行と Codex 再起動、Worker の Luna/max、Reviewer の Sol/xhigh、メインセッションと明示 backend は固定対象外という境界を追加する
-- **Harness release の公開手順を tag-triggered workflow に統一**。古い直接 Release 作成・編集例を削除し、CHANGELOG を本文として公開する workflow と公開後の検証コマンドを正本にする
-
-#### Verification boundary
-
-- Windows named-pipe path は fixture/static checks のみで、live Windows provider/app-server は未観測。今回の実装は provider/API 呼び出し、実 HOME 変更、live install を行わない
+- After updating Codex, rerun setup and restart Codex. Setup backs up and atomically migrates only the two Harness-owned legacy notify forms after preflight; custom or ambiguous configurations fail without mutation. Missing `features.multi_agent` and `features.default_mode_request_user_input` are added.
+- Claude/Codex packages include worker/reviewer profiles and review helpers; Codex also includes fingerprint-check binaries. Rejected primary-environment checks prevent provider startup. Main-session choices and explicitly selected backends are outside the worker default pin.
+- Release instructions use the tag-triggered workflow and post-publication verification. Windows named-pipe behavior has fixture/static evidence only; live Windows app-server execution was not observed.
 
 ## [5.11.0] - 2026-08-22
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5110---2026-08-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L242)
+
 ### Changed
 
-- **guardrail R05: `destructive_delete` の既定値を `ask` → `warn` に変更** (operator 裁定 2026-08-22)。未設定のプロジェクトでも、静的に検証できない削除は「確認で停止」ではなく「allow + `R05_WARN` 警告 + `.claude/state/destructive-delete.jsonl` 記録」になる。root 外の綴り・`..`・未解決 `$VAR`・glob・素の `.` の常時 ask backstop と runtime floor は不変。従来挙動に戻すには repo の `harness.toml` の `[safety.permissions]` セクションに `destructiveDelete = "ask"` (または yaml `safety.destructive_delete: ask`)。明示された不正値は従来どおり ask に正規化 (fail-safe)。git 外の消えたら困るデータを root 配下に持つ repo と guardrail 開発時は ask への opt-out を推奨
+- Destructive-delete policy now defaults from `ask` to `warn`. Statically unresolved but project-relative targets may proceed with an audit warning; external paths, `..`, unresolved variables, globs, and bare `.` still ask. Set `HARNESS_DESTRUCTIVE_DELETE_POLICY=ask` or project policy to restore the old default.
+- Invalid explicit policy values normalize to ask. Repositories with valuable untracked data under the project root, and guardrail development, should opt out with TOML `destructiveDelete = "ask"` or YAML `safety.destructive_delete: ask`. The runtime floor is unchanged.
 
 ## [5.10.0] - 2026-08-22
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5100---2026-08-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L248)
+
 ### Added
 
-- **guardrail R05: `destructive_delete = ask | warn` (HOTL opt-in)**。`rm -rf` / `find -delete` の対象を静的に「agent 所有」と証明できないとき (cd 後の相対パス、前置コマンドあり) は従来どおり既定 `ask`。`warn` を選ぶと、綴りが project root 配下 / 自セッション scratch / 相対の削除は確認なしで通し、`R05_WARN` 警告を注入して `.claude/state/destructive-delete.jsonl` に記録する (事後レビュー用)。root 外の綴り・`..`・未解決 `$VAR`・glob・素の `.` / `/` は warn でも `ask` のまま (HOTL 契約 invariant 3 の blast-radius backstop)。warn の approve は advisory 扱いで、同一 compound command が後続 deny/ask ルール (R06 force-push / R08 reviewer no-write / R10 / R11 / R12) にも該当する場合はそちらが常に勝つ (bot review 指摘の precedence 欠陥を修正)。設定は `.claude-code-harness.config.yaml` `safety.destructive_delete` / `harness.toml` `[safety.permissions] destructiveDelete` / env `HARNESS_DESTRUCTIVE_DELETE_POLICY`。133.10 の symlink 残余リスクは warn 下で意図的に受容 (既定は不変)。契約テスト `tests/test-r05-destructive-delete-policy.sh` (実バイナリ probe) を `validate-plugin.sh` に配線
+- Choose `destructive_delete = ask | warn` via project YAML `safety.destructive_delete`, TOML `[safety.permissions] destructiveDelete`, or `HARNESS_DESTRUCTIVE_DELETE_POLICY`. Default is still ask in this release. Warn allows uncertain project-relative or own-session scratch deletions with `R05_WARN` and an audit record; external paths, `..`, unresolved variables, globs, and bare `.`/`/` still ask. Later deny/ask rules always override the warning. A documented symlink residual remains.
 
 ### Changed
 
-- **release: plugin tag (`{plugin-name}--v{version}`) を廃止し semver tag `vX.Y.Z` に一本化** (D69)。`marketplace.json` の `source` が相対パスで install は tag を参照しないため実効性が無く、v5.6.0 以降 3 リリース連続で欠番のまま実害が無かった。harness-release の手順・test pin を実態に合わせた。既存の `claude-code-harness--v5.5.0` 以前の tag は履歴として残す
-- **README.md / README_ja.md を再構成し重複を削減**: 「The loop」のコマンド表とステージ表を 1 表に統合、Documentation 表からバッジ / Install by tool 表にすでに張ってあるリンク (Claude Code compatibility、Cursor integration) を除去。ピン済みの tier 表記・見出し・文言はすべて維持 (`tests/test-readme-product-surface.sh` 等 144/144 green)
+- Releases use only `vX.Y.Z` tags. Earlier plugin-prefixed tags remain as history; installation did not depend on them. English/Japanese READMEs remove duplicate command/stage tables and links while retaining support tiers.
 
 ## [5.9.0] - 2026-08-17
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#590---2026-08-17) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L259)
+
 ### Added
 
-#### 検証チェーン配線修理 — HOTL 本実装 (Phase 134)
-
-検証機構の継ぎ目 3 箇所を接続し、「やった体」の緑を潰しました。
-
-| 継ぎ目 | 変更前 | 変更後 |
-|---|---|---|
-| 入口 | `reviewer_profile` は常に既定 `static` (LLM 読解のみ) | `risk_flags` から自動昇格 (security-sensitive→runtime / ux-regression→browser)。`--approve` 時の ratchet が無言降格を exit 5 で拒否 |
-| 中間 | browser 検証が環境不足で `PENDING_BROWSER` に無言縮退し緑のまま | `pending_validations` として review-result に記録 (fail-visible) |
-| 出口 | Accept の evidence は LLM の再申告 | `scripts/accept-collect-evidence.sh` が実行 artifact (worker-report / review-result / runtime-review / browser-result) を機械読みし引用。pending 該当 criteria は `passed: false` になり recommendation は ship にならない |
-
-- scope leash (Phase 101 U0 spike) を本配線: sprint-contract に `declared_scope` を焼き込み、PreToolUse で圏外 Write を検査 (`[scope_leash] enforce_level = off|warn|enforce`、既定 warn)。DroppedScope は Stop で advisory 通知
-- Playwright Screencast を browser evidence として収集し (`artifacts[].kind: video`)、Accept HTML に埋め込み。録画なしは縮退規則つき (`kind: text` + note)
-- `worker-report.v1` を `.claude/state/review/<task-id>.worker-report.json` へ永続化 (従来はプロンプト内報告のみでファイル不在)
-- harness-plan / harness-review に再調査ステップ 1 回 (圏外の別系統案も 1 つ検討) を追加
-- 検証の検証: `scripts/ci/check-verification-chain-wiring.sh` + 実効性契約テスト 3 本を `tests/validate-plugin.sh` に配線 (配線前 RED 実測済み)
-
-#### 日本語 writing lint (Phase 135)
-
-- `go/internal/writinglint/`: NG パターン辞書 (JSONL、個人層 `~/.claude/writing-lint/rules.jsonl`) + 文書集計検査 (文末 3 連続 / 敬体常体混在)。エンジンは repo、辞書は個人層 (D64)
-- PostToolUse `writing-lint`: `.md`/`.txt` 書き込み直後に照合し「該当文を丸ごと書き直し + グッドパターン」を advisory 返却 (既定 off、`writing_lint.enabled` で opt-in)
-- Stop `writing-lint-stop`: セッション終了時に変更 `.md` を全体再検査、severity: major 残存で 1 回だけ block (再入は警告のみ)
-- 指摘→ルール登録ループ: `skills/japanese-writing-drafter` が proposal を自動ドラフト、昇格は `scripts/writing-rule-approve.sh` (人間 CLI のみ、自動昇格経路なし)
-- `claude-code-harness.config.schema.json` に `writing_lint` と既存非公式 `quality_pack` を正式収録
-
-#### surface チェリーピック (Phase 136) / ループエンジニアリング施策 (Phase 137)
-
-- accept / plan-brief / progress の 3 surface にスマホ viewport + レスポンシブ CSS
-- progress surface に writing lint 承認待ちキュー表示 (コピペ用 approve コマンド)
-- diagram-design plugin の接続点 1 文 (インストール済みなら図描画に使う)
-- 採点設計規律 (`skills/harness-plan/references/criteria-design.md`): DoD を「機械○×の床 / LLM 観点 / 本質 doc」の 3 層に翻訳
-- blind 受け手検査: Accept 直前に採点基準を渡さない fresh 評価者で乖離を測る optional step (説得系/文書系のみ)
-- 評価者 4 契約を `agents/reviewer.md` に明文化 (fresh context / 基準書き換え禁止 / 絶対評価 / 実物を開く)
-- Worker 契約に NG-4 (一時領域の掃除で operator を停止させない) を追加
+- Reviews now select runtime checks for security risk and browser checks for UX risk. Approval cannot silently lower the selected profile. Missing browser capability becomes a pending validation; acceptance reads saved execution/review artifacts and does not recommend shipping criteria still pending.
+- Optional scope checks use `[scope_leash] enforce_level = off|warn|enforce`, default warn. Writes outside the declared scope are checked before execution; omitted scope produces a stop-time advisory. Worker reports are saved under `.claude/state/review/`.
+- Browser evidence can include Playwright recordings embedded in acceptance HTML. Missing recordings are represented as text with a reason. Planning/review include one renewed investigation and one alternative outside the initial approach.
+- Japanese writing checks are OFF by default (`writing_lint.enabled`). A personal JSONL dictionary checks edited Markdown/text, repeated sentence endings, and mixed styles. Post-write findings are advisory; a remaining major issue blocks Stop once, then warns on re-entry. Humans alone promote drafted rule proposals with `scripts/writing-rule-approve.sh`.
+- Plan, progress, and acceptance pages adapt to mobile screens. Progress shows pending writing-rule approvals; installed diagram-design may be used for diagrams. Completion criteria separate mechanical checks, language-model judgment, and purpose; an optional blind reader check applies only to persuasive/document work. Reviewers use fresh context, fixed criteria, absolute assessment, and the actual artifact.
+- The configuration schema formally includes writing_lint and quality_pack. Worker guidance avoids stopping the operator for routine temporary cleanup while retaining approval boundaries; verification-chain checks now run during plugin validation.
 
 ### Fixed
 
-#### session-log の分割警告が、移動できるエントリが 1 件も無い状態でも出続けていた問題
-
-**今まで**: 警告は行数だけを見ていました。一方 `/maintenance` が実際に退避できるのは「直近 30 日より古いエントリ」だけです。全エントリが 30 日以内に収まっていると、**警告は出るのに移動対象が 1 件も無い**状態になります。従えば保持ルール違反、従わなければ毎回警告という詰みでした。
-
-上限を 500 から 600 へ引き上げる手当ても行いましたが、数日で 688 行に到達して再び超過しました。数字を動かしても、不一致が起きる位置がずれるだけです。
-
-**今後**: 発火条件を「行数超過 **かつ** 退避できるエントリが 1 件以上ある」に変えました。警告が出たら必ず対処できます。
-
-| 状況 | 変更前 | 変更後 |
-|---|---|---|
-| 688 行 / 全エントリが 30 日以内 | 警告あり (対処不能) | 警告なし |
-| 上限超過 / 古いエントリあり | 警告あり | 警告あり |
-| 上限内 | 警告なし | 警告なし |
-| 日付が解析できない見出し | (判定なし) | 退避可能として数える |
-
-日付が読めない見出しを「新しい」ではなく「退避可能」として数えるのは、解析が壊れたときに警告が黙って消えるのを避けるためです。上限そのものは 600 行のまま変えていません。
-
-対処できない警告は無視される警告になり、他の警告の信用を削ります (`patterns.md` P43「承認され続ける ask は制御ではない」と同じ構造)。
-
-#### 追記専用の状態ファイルが、規約の対象外のまま増え続けていた問題
-
-**今まで**: `/maintenance` の state トリム規約は `agent-trace.jsonl` と `harness-usage.json` だけを名指ししていましたが、**どちらもこのリポジトリに存在しません**。一方で実際に育っていたファイルは対象外のままでした。存在しないファイルを守る規約は、守っているつもりで何も守っていません。
-
-**今後**: 名指しを実在ファイルへ合わせ、保持行数を実測から決めました。
-
-| ファイル | 変更前 | 変更後 |
-|---|---|---|
-| `orchestration-ledger.jsonl` | 規約の対象外 (3,009 行 / 520KB) | 末尾 2000 行 |
-| `instructions-loaded.jsonl` | 規約の対象外 | 末尾 2000 行 |
-| `session-events.jsonl` | 規約の対象外 | 末尾 2000 行 |
-| `changed-files.jsonl` | 規約の対象外 | 末尾 2000 行 |
-| `agent-trace.jsonl` | 末尾 1000 行 | 末尾 1000 行 (存在する場合のみ) |
-
-2000 行の根拠は実測です。30 日で 3,009 行、平均 約100 行/日、繁忙日は 614 行。平常時なら 約20 日分、繁忙が続いても直近 1 週間は残ります。日数ではなく行数で切るのは、日付項目の有無がファイルごとに違うためです。
-
-#### サブディレクトリから呼ばれた tool は、プロジェクトの保護設定が丸ごと効かない場所で判定されていた問題 (Phase 133.11)
-
-**今まで**: guardrail は hook が受け取った作業ディレクトリを、そのままプロジェクトルートとして扱っていました。そのためサブディレクトリで実行された tool は、そのサブディレクトリを「プロジェクト」とみなして判定されます。実測すると、同じセッション・作業モード ON でも、リポジトリ直下からの削除は通るのに `go/` からの同じ削除には確認が出ました。作業モードの状態がリポジトリ直下にしか無く、`go/` を見に行って見つけられないためです。
-
-影響は作業モードだけではありません。保護パス判定・事前承認・TDD 設定もすべてプロジェクトルート基準なので、サブディレクトリ実行時は**保護が効かない側**にずれていました。痕跡として `go/.claude/state/` と `benchmarks/breezing-bench/agent-eval/.claude/state/` が残っており、どちらも状態ファイルだけで設定もルールも含まないことから、誤った解決が作った産物だと確認できます。
-
-**今後**: `.harness` か `.git` を持つ最も近い上位ディレクトリまで遡ってプロジェクトルートを決めます。マーカーが無ければ従来どおりそのディレクトリのままです。
-
-| 項目 | 変更前 | 変更後 |
-|---|---|---|
-| `<repo>/go` からの tool 呼び出し | ルート = `<repo>/go` | ルート = `<repo>` |
-| 作業モード ON + サブディレクトリからの削除 | 確認あり | 確認なし |
-| 作業モード OFF (対照) | 確認あり | 確認あり (変更なし) |
-| 保護パス判定の基準 | 呼び出し位置 | プロジェクトルート |
-
-`.claude` はマーカーにしていません。この不具合が作った状態ディレクトリが自己確証してしまい、一度 tool を呼んだ場所にルートが固定されるためです。探索はホームディレクトリで止めます。プロジェクトルートは「確認なしで削除してよい範囲」でもあるため、dotfiles リポジトリの `~/.git` を拾うとホーム全体が許可範囲になってしまいます。
-
-#### 保護パスへの書き込みが、リダイレクト以外の手段では素通りしていた問題 (Phase 133.12)
-
-**今まで**: Bash からの書き込み検査はリダイレクトと `tee` しか見ていませんでした。実測した 8 手段のうち検出できていたのは 2 つだけです。
-
-| 手段 | 変更前 | 変更後 |
-|---|---|---|
-| `echo x > <保護パス>` | 拒否 | 拒否 |
-| `tee <保護パス>` | 拒否 | 拒否 |
-| `ln -sf src <保護パス>` | **素通り** | 拒否 |
-| `ln src <保護パス>` | **素通り** | 拒否 |
-| `cp src <保護パス>` | **素通り** | 拒否 |
-| `mv src <保護パス>` | **素通り** | 拒否 |
-| `install src <保護パス>` | **素通り** | 拒否 |
-
-**今後**: 宛先を最後の引数に取るコマンド (`ln` / `cp` / `mv` / `install`) をまとめて検査対象にしました。指摘は `ln -s` だけを挙げていましたが、それだけ塞いでも同じことができる経路が 3 つ残ります。取るのは最後の引数だけで、これにより `install -m 755` の `755` を誤ってパスと読む事故も同時に防げます。引数が 1 つだけの形は、生成先がシェルの作業ディレクトリになり確実に特定できないため対象外です。
-
-#### release preflight の host plugin dist gate が grok 配布物の意図した中身を FAIL と誤判定していた問題
-
-grok 配布物には guardrail を動かすための `.claude-plugin/plugin.json` / `hooks/hooks.json` / `bin/harness` が意図的に同梱されています (Phase 133.8)。テスト側の期待値がこの変更に追随しておらず、`release-preflight.sh` の host plugin dist gate が同梱以降ずっと FAIL していました。期待値を実装済みの契約 (3 ファイルの存在確認) に合わせました。
+- Session-log cleanup warns only when the 600-line limit is exceeded and at least one entry can be archived. Entries newer than 30 days remain; unparseable dates count as archivable. Maintenance keeps the last 2,000 lines of orchestration, loaded-instruction, session-event, and changed-file records; agent-trace retains 1,000 if present.
+- Subdirectory tool calls find the nearest `.harness` or `.git` root, stopping before home; without a marker they retain cwd. Project policy, preapproval, test-first settings, and work mode now use that root. `.claude` is not a root marker.
+- Protected-path writes through `ln`, `cp`, `mv`, and `install` are now checked alongside redirection and `tee`. Only a known final destination argument is checked; one-argument forms with an implicit destination remain outside this detection. Grok release checks now accept its intentionally bundled manifest, hooks, and binary.
 
 ### Changed
 
-依存関係を更新しました。Go 側の 2 件は、同梱バイナリがソースと依存から byte 単位で再現できることを検証する drift gate があるため、bump と同じ変更で 4 プラットフォームのバイナリを再生成しています。
-
-| 依存 | 変更 |
-|---|---|
-| `modernc.org/sqlite` | 1.55.0 → 1.56.0 (`modernc.org/libc` 1.74.1 → 1.74.4、`github.com/mattn/go-isatty` 0.0.20 → 0.0.24 を伴う) |
-| `github.com/santhosh-tekuri/jsonschema/v6` | 6.0.2 → 6.0.3 |
-
-#### grok の native hook を配線した (Phase 133.8)
-
-**今まで**: grok 向けの配布物には hook が 1 つも入っておらず、hook ファイルの生成も「未対応のホスト」として失敗していました。判定エンジン自体は `--host grok` で正しく動いていたのに、そこへ到達する経路が無い状態です。
-
-**今後**: 配布物に hook を同梱し、生成器に grok を追加しました。実機で確認できています。
-
-| 項目 | 変更前 | 変更後 |
-|---|---|---|
-| 配布物の hook | 同梱なし | `hooks/hooks.json` (27 イベント) |
-| `harness gen` の grok | "unknown host" で失敗 | `.grok/hooks/harness-pretool.json` を生成 |
-| 生成コマンドのホスト指定 | (生成されない) | `--host grok` を明示 |
-| grok が読み込む hook 数 | 35 | 36 (新規は project 由来の 1 件) |
-
-これは設定ファイルに残っていた「grok はプロジェクト単位の hook を拒否する」という記述を実測で覆します。その記述の出典は同名の別製品 (TypeScript 版) で、実際に動いているものとは系統が異なりました。**能力を語る前に、実際に動くバイナリのバージョンを取る**という原則をあらためて適用しています (今回も版が 0.2.118 から 1.0.3 へ動いていました)。
-
-配布物経由の hook は、プラグインを入れ直すまで検証できないため未確認のまま残しています。設定ファイルに未確認事項として記録しました。
-
-#### 並列実行数の上限を明記した (Phase 133.9)
-
-`--parallel N` は希望値で、実際の同時実行数は Claude Code 側が決めます (既定 20、超過分は待ち行列に入るだけでエラーにはなりません)。入れ子の起動は既定で深さ 3 までです。この関係を `breezing` と `harness-work` の説明に追記しました。ハーネス側では環境変数を明示設定せず、Claude Code の既定に従います。上書きすると本体側の更新に追随できなくなるためです。
+- Update SQLite 1.55.0 to 1.56.0 (libc 1.74.4, go-isatty 0.0.24) and jsonschema/v6 6.0.2 to 6.0.3, rebuilding four platform binaries. Grok packages gain hooks and `harness gen` produces `.grok/hooks/harness-pretool.json --host grok`; live project-hook loading was observed, package reinstall/loading remained unverified.
+- `--parallel N` requests concurrency; Claude Code controls actual scheduling (then-default 20, excess queued) and nested spawn depth (then-default 3). Harness does not override those native defaults.
 
 ## [5.8.0] - 2026-08-14
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#580---2026-08-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L401)
+
 ### Added
 
-- **Grok execution backend** (`scripts/grok-companion.sh`): headless delegation via `grok -p ... --output-format json`, modelled on `cursor-companion.sh` (same exit-code taxonomy, read-only default, worktree fingerprint gate, secret masking). Binary absent は not-configured (exit 3) で degrade する。
-- **Repair-loop state externalisation** (`scripts/repair-loop-state.sh` + `templates/schemas/repair-loop.v1.json`): review→fix→re-review ループの iteration / verdict / findings を `.claude/state/repair-loop/<task>.json` へ外部化し、`MAX_REVIEWS` 超過を `check` の終了コードで機械判定する。会話内の自己申告カウンタを置き換える。
-- **Blind judge** (`skills/harness-review/references/blind-judge.md`, opt-in `--blind-judge`): rubric を見せない第二審。外部向け UI コピー / docs / cognitive-load HTML のみが対象で、コード・テスト・設定・スキーマは対象外。rubric verdict との乖離は advisory finding として出すだけで、verdict を書き換えない。
+- Grok can execute headless delegated tasks with read-only default, worktree-change detection, and secret masking. A missing Grok binary reports not-configured (exit 3). Repair loops save iteration, verdict, and findings in `.claude/state/repair-loop/`; `MAX_REVIEWS` is checked from that state.
+- Optional `--blind-judge` adds a reader who does not see the rubric for public UI copy, documents, and cognitive-load HTML. Code, tests, settings, and schemas are excluded; disagreement is advisory and does not overwrite the primary verdict.
 
 ### Changed
 
-- **Grok のモデル pin を実カタログへ訂正**。`scripts/model-routing.sh` が pin していた 5 つの ID は **1 つも実在しなかった**。原因は 2 世代連続で「同名の別プロダクト」(TypeScript の `grok-cli`) を根拠にしたこと。実際に動く `grok 0.2.118` のアカウントカタログは **`grok-4.6`（既定 / 500k ctx / effort `xhigh`・`high`・`medium`・`low`）と `grok-4.5`（500k ctx / effort `high`・`medium`・`low`）の 2 つのみ**。tier 割当: `lite`/`standard` = `grok-4.5`、`deep`/`advisor`/`review` = `grok-4.6` (`xhigh`)、`release`/`long-context` = `grok-4.6` (`high`)。4 層（router / `hosts.toml` / policy doc / research doc）すべてへ降下。effort の回帰検査は平坦な許可リストから**モデル別**へ強化した（`grok-4.5` は `xhigh` を受け付けない）。
-- **削除確認 (R05) が対象で判断するようになった**。従来は「プロジェクト外の削除は一律確認」で、エージェント自身の scratchpad も対象だった (同じ場所への書き込みは R04 が無言で通すのに、削除だけ確認される非対称)。確認せず通すのは、プロジェクトルート配下、または **このセッション自身の** scratch (OS 一時領域の下で、パス成分にセッション ID を持つもの) だけを消す場合に限る。判断は対象のみで行い、サブエージェントかどうか・worktree の中かどうかでは変えない。
-  - 引き続き確認する: 一時領域のルート自体 (`rm -rf /tmp`)、**他セッションの scratch**、scratchpad 内の symlink で外へ脱出する形、glob、二重代入・コマンド置換・空白を含む値・未定義参照で対象が確定しない形、`xargs` で stdin から対象が増える形、`~/.claude/projects/<slug>/memory` の再帰削除 (R04 は書き込みを通すが、削除は蓄積した知識の喪失なので別扱い)
-  - 併せて 2 つの過剰保守を解除: 対象がすべて絶対パスならパイプ (`|`) は判定不能にしない (パイプ両側の削除対象は元々両方抽出できており、`xargs` 系は独立に検出される)。同一コマンド内で一度だけリテラル代入された変数は解決する (エージェントは `F="$S/x"` の形で対象を組み立てるため、解決しないと実質すべての削除が確認になる)
-  - 既存のガードテストは **1 行も変更していない**
-  - **この緩和自体に対する独立レビュー (refuter) で突破口が 1 件見つかり、同 PR 内で修正した**。変数解決がクォートの種類を区別せず、シェルが展開しない `$`（シングルクォート内、`\$` 退避）まで展開していた。プロジェクト内に `$VAR` という名前の symlink を置くと、実際の削除先はプロジェクト外の任意ファイルになるのに、判定器は「自分の scratch」と誤認して無言で通していた。修正は「シェルが展開しない `$` が 1 つでもあれば変数解決を一切行わない」の 1 本の規則。突破手順そのものを回帰テストに固定してある
+- Correct Grok routing against the actual account catalog: lite/standard use `grok-4.5`; deep/advisor/review use `grok-4.6`/xhigh; release/long-context use `grok-4.6`/high. Both support 500k context, but 4.5 does not accept xhigh. Earlier catalog evidence described a different same-named CLI.
+- Deletion confirmation depends on targets: project paths and this session's temporary paths containing its session ID may proceed. Temp roots, other sessions, escaping symlinks, globs, ambiguous assignments/substitutions/values, xargs-added targets, and recursive memory deletion still ask. Absolute-target pipelines and a single literal variable assignment can be resolved; single-quoted or escaped `$` disables variable resolution.
+- Upstream notes document native concurrency/depth, strict network allowlists, and credential masking. On macOS credential masking falls back to deny, so replacing denyRead remained a proposal.
+- The verified Grok catalog accepts low/medium/high/xhigh for 4.6, low/medium/high for 4.5. Native Claude concurrency/depth notes identify `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` (default 20) and `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` (default 3) as host controls rather than Harness settings.
 
 ### Fixed
 
-- **Cursor CLI binary rename への追随**: 公式 docs が全例を `agent` 表記に統一し `cursor-agent` を legacy alias とした変更に合わせ、`agent` → `cursor-agent` の順で probe するようにした。`agent` は汎用名のため、symlink 解決後の実パス「成分」が厳密に `cursor-agent` である場合だけ採用する identity check を併設（判定のために未知のバイナリを実行しない）。適用箇所は `cursor-companion.sh` / `orchestration-scorecard.sh` / `release-preflight-host-smoke.sh` / `cursor-do` / `cursor-setup` の 5 系統。
-- **grok host descriptor の evidence 訂正** (`hosts.toml`): 「project 級 hook は拒否される」という記述は別系統の `grok-cli v1.1.7` (TypeScript) を根拠にしていた。実機の grok 0.2.118 は claude 互換で hook を読み、`bin/harness hook pre-tool --host grok` は `--host claude` と byte 一致の判定を返す。実際に欠けていたのは CCH 側の配布（`build_grok()` が `hooks/` を同梱しない）だったことを記録した。`hook_generation = "deferred"` は据え置き。
-
-### Documentation
-
-- **CC CLI 新機能の一次ソース検証** (`docs/CLAUDE-feature-table.md`): raw CHANGELOG からの逐語引用で 4 件を確証。subagent 同時実行キャップ (既定 20 / `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS`, 2.1.217)、nested spawn 深さ (既定 3 / `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH`, 2.1.219)、`sandbox.network.strictAllowlist` (2.1.219)、sandbox credential-masking (2.1.224)。credential-masking は **macOS では `deny` にフォールバック**するため、`denyRead` 回避策の置き換えは提案に留め未採用。
+- Cursor discovery checks `agent` before the legacy executable, accepting the generic name only when its resolved path has an exact Cursor identity component; unknown binaries are not executed to identify them. Grok documentation now distinguishes native hook capability from missing Harness packaging; generation is still deferred in this release.
 
 ## [5.7.0] - 2026-08-12
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#570---2026-08-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L427)
+
+This release also records that Claude Code did not read permission rules in `.claude-plugin/settings.json`. A shipped rule is not evidence that the session applied it; verify active rules in `/permissions`.
+
 ### Fixed
 
-#### `work-mode` の session 識別子が実 ID と一致せず配線が無効だった問題 (Phase 132.7)
-
-**今まで**: `harness work-mode on` は `.claude/state/session.json` の内部生成 ID で `work_states` 行を書いていました。guardrail hook は Claude Code が渡す実 session_id で行を引くため、両者は一致せず、書いた行は一度も読まれませんでした (132.3 の blocked 理由)。さらに SessionStart の env handler が `CLAUDE_ENV_FILE` へ `KEY=VALUE` (export なし) で書いており、公式仕様の `export KEY=VALUE` 形式でないため、書いた値が Bash ツールの環境に届いていませんでした (実測: 稼働セッションの `printenv` に `HARNESS_VERSION` が現れない)。
-
-**今後**: SessionStart env handler が payload の実 session_id を `export HARNESS_SESSION_ID='<id>'` として書き出します (全行 export 化 + quote + resume 再発火の重複防止)。`work-mode` の解決順は `--session-id` フラグ → `HARNESS_SESSION_ID` env → `.claude/state/last-session-id.json` (UserPromptSubmit ごとに実 ID を記録、鮮度 2 時間) で、旧 session.json は受理を拒否します。SessionEnd で work state を解除し、24h TTL が背止めになります。実 session_id (独立ソース由来) での実測で on 前 ask → on 後 skip → 他 session 非波及 → off / SessionEnd で復帰の 6 系統を確認済み。CC が env file を Bash 環境へ反映する最終リンクのみ、リリース後の新セッションで要確認です。
-
-#### R07 (codex mode) / R08 (breezing reviewer) が一度も発火できなかった問題 (Phase 132.6)
-
-**今まで**: shell 版ガードは `.claude/state/breezing-session-roles.json` (role) と `.claude/state/breezing-active.json` の `impl_mode` (codex mode) をファイルで解決していましたが、Go 移行時にこの 2 経路が欠落し、env 参照だけが残りました。env を設定する仕組みは存在しないため、R07 (codex mode 中の直接 Write 禁止) と R08 (レビュー担当の書き込み禁止) は実装とテストを持ちながら本番で一度も発火していませんでした (2026-08-11 実測)。
-
-**今後**: ファイルベース解決を `guardrail/breezing_state.go` として移植しました。R08 は roles ファイル (agent_id → session_id の 2 キー lookup) に加え、breezing 実行中の reviewer subagent を CC が付与する `agent_type` で直接判定します。role 自己登録 (`breezing-role-*.json` への Write を捕捉) も移植し、登録キーは hook payload 由来のみ (書かれた内容から他セッションへ role を付与できない)。R07 は `impl_mode=codex` と `work-mode on --codex` の両方で立ち、委譲先の codex host 自身は対象外です。R08 には shell 版と同じ `.claude/state/` 書き込み例外があり、reviewer が自身の verdict artifact を書けます。
-
-#### 4 視点並列レビューが摘出した 2 件の欠陥 (132.6 実装の初版に対する修正)
-
-上記 132.6/132.7 の実装は、コミット前の 4 視点並列レビュー (regression / security / effectiveness / consistency、稼働バイナリへの実プローブつき) で critical 2 件が見つかり、修正済みです。
-
-1. **R08 の state 例外が path traversal でバイパス可能だった**: 初版の `.claude/state/` 例外は素の substring 判定で、`<root>/.claude/state/../../src/x.ts` のような file_path が例外に落ちて reviewer が任意ファイルへ書けました (実測でバイパス成立を確認)。Clean 済みパスの封じ込め判定 (`filepath.Rel` ベース) へ置換し、traversal 3 形の回帰テストを追加しました。
-2. **`agent_id` / `agent_type` が実配線 (hookcodec.Normalize) で落ちていた**: 新設フィールドを codec の rawPayload が拾っておらず、reviewer subagent の CC-native 判定が wire 上で死んでいました (unit テストは hand-built input で green のまま — 「unit は通るが wire が繋がっていない」型)。Normalize に両フィールドを追加し、raw JSON → codec → guardrail を通す wire round-trip テストを追加しました。
-
-さらに**修正版に対する敵対的再検証 (refuter 3 体)** を回し、上記 1・2 の修正がそれぞれ別経路で破れることを実証されたため再修正しました。
-
-3. **R08 の state 例外が symlink 経由で破れた**: traversal (`..`) は塞げていましたが、reviewer が `ln -s` で `.claude/state/escape → <project>/src` を作り、その経由で任意ファイルへ書ける経路が残っていました (実測で 2 ステップとも approve)。判定を lexical 封じ込め **と** `filepath.EvalSymlinks` による物理封じ込めの二段にし、あわせて R08 の禁止コマンドへ `ln` / `tee` を追加しました (パターンは 4 → 6 の純増。削除・緩和はゼロ)。self-audit の deny-surface baseline は R08 の 1 行のみ再生成し、他 9 行が不変であることを確認しています。
-4. **role 自己登録が `session_id` へ fallback して Lead を巻き添えにしていた**: `agent_id` を持たないペイロードで登録すると session_id キーで書かれ、同じ session を共有する Lead 自身の Write まで reviewer と判定されて全滅する経路が残っていました (実測で再現)。登録キーを **`agent_id` のみ**に限定しました。CC は subagent の tool call に必ず `agent_id` を付けるため正当な登録は通り、main thread は自分を reviewer にできません。worktree で spawn された teammate は独立セッションなので、従来どおり spawn 時の env を使います。
-
-#### エージェント自身の記憶ディレクトリへの書き込みで R04 が毎回確認を出していた問題 (Phase 132.1)
-
-**今まで**: `R04:confirm-write-outside-project` は、プロジェクトルート外への `Write` / `Edit` / `MultiEdit` に確認ダイアログを出します。ところが Claude Code はエージェントに `~/.claude/projects/<slug>/memory/` への記憶の保存を指示しており、この書き込みがそのまま R04 に当たっていました。3,099 セッションのログを走査したところ、R04 の発火は 1,099 件で全確認機構の最多、うち **299 件がこの記憶ディレクトリ**、14 件が `~/.claude/plans/` でした。危険性がないにもかかわらず承認され続けた確認で、残る確認の信号価値を下げていました。
-
-**今後**: `shellscan.IsAgentStatePath` を新設し、`~/.claude/projects/<slug>/memory/**` と `~/.claude/plans/**` を R04 の確認対象から外します。`<slug>` は任意の 1 セグメントに一致します (記憶の slug は `ProjectRoot` から導出できないため)。`~/.claude` 配下でも `settings*` / `skills/` / `agents/` / `commands/` / `hooks/` / `plugins/` / `output-styles/` は対象外のままです。これらはデータではなく**挙動**を変えるためです。既存の `IsAllowlistedTempPath` には相乗りさせていません。同関数は `runtimefloor` の worktree 脱出判定と共有しており、拡張するとその床まで緩むためです。
-
-| 観点 | 変更前 | 変更後 |
-|---|---|---|
-| `~/.claude/projects/<slug>/memory/` への Write | `ask` (実測 299 件) | 確認なしで通る |
-| `~/.claude/plans/` への Write | `ask` (実測 14 件) | 確認なしで通る |
-| `~/.claude/settings*` / `skills/` / `agents/` 等 | 確認対象 | 確認対象のまま |
-| `~/.claude/plans-backup/`、`memory-extra/` | 確認対象 | 確認対象のまま (接頭辞衝突を明示的に拒否) |
-| symlink された home | — | 元の形と解決後の形の両方で判定 |
-| worktree 脱出判定 (`runtimefloor`) | — | 影響なし (別関数のため) |
-
-#### `WorkMode` の skip 経路が実装されていながら一度も配線されていなかった問題 (Phase 132.2、docs)
-
-**今まで**: `docs/runtime-floor-secret-allowlist.md` は「`/work` や `/breezing` の実行中は `WorkMode` が R04 の確認を skip する」と記述していました。実際には `ctx.WorkMode` を立てる経路が 2 つとも死んでおり、(a) `HARNESS_WORK_MODE` / `ULTRAWORK_MODE` を設定する箇所が skills / scripts / hooks に 1 つも存在せず、(b) `state.SetWorkState` の呼び出し元も自パッケージ外にありませんでした。skip 経路はコード上に存在するのに、通常の run では一度も到達できない状態でした。これが `/breezing` が確認で止まり続けていた直接の原因です。
-
-**今後**: docs を実態に合わせて訂正し、未配線であること・暫定回避として `~/.claude/settings.json` の `env` に `HARNESS_WORK_MODE=1` を置けること・その場合は work run 以外でも skip が効くこと (リポジトリ間の書き込み確認も消える) を明記しました。破壊的削除は影響を受けません。R05 と protected-path deny が引き続き worktree 外の `rm -rf` を止めます。実際の配線は Phase 132.3 として起票しています。
-
-#### Phase 128 の commit hash 台帳が squash merge で到達不可になっていた問題
-
-**今まで**: `Plans.md` の Phase 128 (128.1-128.5) は、PR #282 の作業ブランチ上で作られた commit hash (`7702ca45` / `476ea403`) を記録していました。PR #282 は squash merge されたため、`main` に実際に入ったのは別の 1 commit (`1f085a35`) で、作業ブランチ側の commit は `main` の履歴から到達不可能になっていました。台帳としての記録が実体を指さない状態でしたが、これを機械検知するゲートは存在しませんでした。
-
-**今後**: 台帳を `main` 上の実体 `1f085a35` に訂正しました。あわせて `scripts/ci/check-plans-hash-reachability.sh` を新設し、`Plans.md` の `cc:done` / `cc:完了` に記録された commit hash が現在の `HEAD` から到達可能であることを検証します。`origin/main` ではなく `HEAD` を基準にすることで、進行中の feature branch 上の記録も、squash merge で祖先から消える今回のようなケースも、正しく検出できます。
-
-| 観点 | 変更前 | 変更後 |
-|---|---|---|
-| Phase 128 の記録 | `7702ca45` / `476ea403` (作業ブランチ側、`main` から到達不可) | `1f085a35` (`main` に入った実体) |
-| 記録が実体を指すか | 指していない | 全 11 hash が `HEAD` から到達可能 |
-| 機械検証 | なし (`check-branch-alignment-ledger.sh` は別ファイルが対象) | `check-plans-hash-reachability.sh` が `tests/validate-plugin.sh` 経由で毎回実行 |
-| 到達不可を検出したときの挙動 | 何も起きない | 違反 hash を列挙して fail |
-| shallow clone | (該当なし) | 検証不能のため `not_observed` として skip |
-
-#### `producer | grep -q` の検出器が producer を 3 種に限定しており、jq/find など他の producer 経由の同型欠陥が検出網から漏れていた問題 (Phase 130)
-
-**今まで**: Phase 129 で導入した検出器 `tests/test-pipefail-grep-q-safety.sh` は、`pipefail` 下で結果が反転する `producer | grep -q` 構文の producer を `printf` / `echo` / `cat` の 3 つに限定していました。そのため `jq` / `find` / `git` / `grep` / `head` / シェル関数呼び出しなど、他の producer を持つ同型の書き方が検出網から漏れたまま残っていました。
-
-`tests/test-i18n-locale-resolver.sh:196` の `jq -r '...' <<< "$内容" | grep -q '応答言語: 日本語'` で実際に再現を確認しました。同一データで 20 回ずつ試行したところ、修正前は 20/20 で「無い」と誤判定されました (探している文字列は実際には先頭 4 バイト目にあり、常に存在します)。
-
-**今後**: 検出器の producer 判定を「種類を問わない」へ広げました (パイプ右側が `grep -q` 系であれば、左側が何であっても検出対象)。広げた検出器を修正前のツリーへ適用すると 29 行を検出し (うち 1 行は `&&` で連結した 3 段判定を含むため、実際の書き換え箇所は 34 箇所)、該当する 14 ファイルをすべて herestring または変数捕捉へ書き換えました。producer がコマンド呼び出しやシェル関数の場合は、まず変数へ捕捉してから `<<<` で判定する形に統一しています (`X="$(producer)"; grep -q P <<<"$X"`)。
-
-あわせて here-document の本文を走査対象から外しました。here-doc の中の `|` は実行されるパイプではなく、説明文やテンプレートの一部です。これを検出すると、正しいコードに対して検査が落ちる誤検出になります。`<<-` のタブ字下げ終端子にも対応し、本文の読み飛ばしが後続の実コードまで隠さないことを非退行 fixture で固定しています。
-
-一方、複数行にまたがる二重引用符文字列 (`python3 -c "..."` のように `"` の開始行と終了行が異なる場合) は、引用符状態を論理行単位でリセットする実装上の制約により、引き続き検出対象外です。目視レビューで実例を 3 件発見し herestring 化しましたが、検出器自体はこの形を機械検出できません。
-
-| 項目 | 変更前 | 変更後 |
-|---|---|---|
-| producer の対象 | `printf` / `echo` / `cat` の 3 種のみ | 種類を問わない |
-| 検出漏れ (見逃し) | jq / find / git / grep / head / シェル関数呼び出しなど | 複数行にまたがる二重引用符文字列のみ |
-| 誤検出 | (該当なし) | here-document 本文を除外 (`<<-` 含む) |
-| 修正前ツリーでの検出行数 | 0 行 (対象外のため) | 29 行 (実際の書き換え箇所は 34 箇所) |
-| fixture | 10 件 | 17 件 |
-
-実測: `tests/test-i18n-locale-resolver.sh` を修正前後でそれぞれ 20 回連続実行したところ、修正前は 20 回中 19〜20 回失敗し (実行環境の状態によっては初回だけ通ります。work モードの状態が無いと出力が短く、バッファ境界を越えないためです)、修正後は 20 回すべて成功しました。まっさらな clone では出力が短いため CI では再現せず、緑のまま潜伏していました。
+- `harness work-mode` uses the actual session ID: explicit `--session-id`, then exported `HARNESS_SESSION_ID`, then the last hook ID no older than two hours. The old monitor ID is rejected. SessionEnd clears work mode and a 24-hour TTL limits leftovers. Live ID probes passed; propagation of the environment file into a new Claude session still required post-release observation.
+- Codex-mode direct-write restrictions and reviewer no-write rules now read Breezing state files and native agent identity. Reviewer result files may be written only inside physically and lexically contained `.claude/state/`; traversal and symlink escapes are blocked. Self-registration requires agent_id so it cannot mark the lead as reviewer.
+- Writes to `~/.claude/projects/<slug>/memory/**` and `~/.claude/plans/**` no longer ask. Settings, skills, agents, commands, hooks, plugins, and similarly prefixed backup directories remain outside that exception; worktree-escape checks are unchanged.
+- Fix false shell-test failures caused by early grep exit under pipefail, and correct plan commit references after squash merging. Reachability checks skip shallow clones as unobserved rather than claiming verification.
+- The earlier global workaround `HARNESS_WORK_MODE=1` also skipped outside-project write confirmation when no work run was active. This release records that limit and supplies session-scoped work-mode control; protected-path denial and outside-worktree destructive checks remain separate.
 
 ### Added
 
-#### rule↔context 配線カバレッジテスト — 「立てる手段の無いフィールド」を機械検知 (Phase 132.6/132.7 再発防止)
-
-**今まで**: policy ルールには文脈を手組みするテストが 144 件ありましたが、実入力から文脈を組み立てる `BuildContext` 側の網羅検査がなく、producer を失ったフィールド (WorkMode / CodexMode / BreezingRole) が「テスト済みなのに本番で不発」のまま数ヶ月残りました。既存の `rulecoverage` ゲートは rule↔テストの軸しか見ないため、この型の欠陥を「カバー済み」と判定します。
-
-**今後**: `go/internal/guardrail/build_context_wiring_test.go` が `RuleContext` の全フィールドについて「実在する producer (env / SQLite / state ファイル / harness.toml) 経由で値が届くこと」を検証します。reflection でフィールド一覧と照合するため、**producer の証明なしにフィールドを増やすとテストが赤くなります**。あわせて `operator-supplied-knobs.v1.yaml` は grandfather 登録を全廃し、全エントリに `primary_producer` (env 以外の一次供給経路) の明記を必須化しました。テスト側には全 knob env をゼロにする共有ヘルパを入れ、開発機の `HARNESS_WORK_MODE=1` がテストプロセスへ漏れて期待値を反転させる事故 (2026-08-11 実測) を塞ぎました。
-
-#### Grok のモデル pin が実在しない ID を指していた問題 (Phase 133.3)
-
-**今まで**: `scripts/model-routing.sh` の grok tier 表は `grok-4.5` と `grok-composer-2.5-fast` を pin していました。2026-08-12 に grok-cli v1.1.7 の `src/grok/models.ts` を直読して照合したところ、**どちらもカタログに存在しない ID** でした (後者は cursor 側の `composer-2.5-fast` の取り違えと見られます)。呼び出せば必ず失敗する pin が長期間残っていたことになります。テストは通っていましたが、router が自分自身と一致することしか確かめておらず、ID の実在は検査対象外でした。
-
-**今後**: 実カタログへ更新しました。`lite` = `grok-3-mini` (grok で `reasoning_effort` を受け付ける唯一のモデル、値は `low`/`high` のみ)、`standard` = `grok-4.20-non-reasoning`、`deep`/`advisor`/`review`/`release` = `grok-4.3` (DEFAULT_MODEL・flagship reasoning・1M ctx)、`long-context` = `grok-4.20-0309-reasoning` (2M ctx)。`grok-4.20-multi-agent-0309` は `responsesOnly` かつ `supportsClientTools:false` のため、tool を使う harness role からは除外しています。effort も grok 自身の語彙 (`low`/`high`) 内に収めました (旧 `medium` は grok が受け付けない値)。回帰網として「全 tier が実在 ID のみを返す」「effort が grok の語彙内」の 2 検査を追加しています。`hosts.toml` と docs の 3 層すべてに降ろしました。
-
-初版では同一ファイル内の 2 つ目の表 (Harness Role Defaults) の advisor / release 行だけ直し漏れ、独立レビューで指摘されました。根因は **docs と正本 (`scripts/model-routing.sh`) の一致を機械検査する仕組みが無かった**ことです。docs の表の行に現れる grok pin を検証するゲートを追加しました。初版のゲートは敵対的再検証で 2 通りの回避が実証されたため強化しています: (i) 走査対象が 1 ファイルのみだった → grok の表を持つ doc 集合へ拡張、(ii) ID 集合への所属しか見ていなかった → tier 名の行はその tier の正解 ID が現れることまで検証。実在検査の基準は router の出力ではなく**記録済みカタログ**にしてあります (カタログ一覧を載せる doc は router が使わない ID を含むのが正しいため)。回避シナリオを再現する変異検査で検知を確認しています。2 巡目の敵対的再検証がさらに 4 件の盲点 (tier セルの装飾・大文字で行判定が外れる / 行ごと削除が素通り / `hosts.toml` の pin が走査外 / tier 語彙がテスト側と二重管理) を実証したため、いずれも塞ぎました。最終的に 9 通りの変異 (別 doc への悪い ID、tier 対応の誤り 4 形、行削除、hosts.toml の drift、router 側 tier の追加漏れ、正当な追記) すべてで期待どおりの判定になることを確認しています。
-
-なお gpt-5.6 の effort `max` は Codex CLI の config.toml での受理が未確証のため、`xhigh` 維持で変更していません。
-
-#### Phase 133 起票 — 4 ツール (Claude / Codex / Grok / Cursor) の 2026-08 仕様調査
-
-5 並列の調査で確証を取った適用候補を Phase 133 として起票しました。即時反映したのは `hosts.toml` の grok 記述のみです (grok-cli v1.1.7 の source 実査で「hook は user-level のみ、project-level hook は grok 自身が拒否」を確認し、admission-test evidence として記録)。cursor の binary 名変更 (`agent` が正、`cursor-agent` は legacy) / grok execution backend / モデルカタログ更新 (operator 裁定事項) / repair loop 状態外部化 / blind judge は task 化に留めています。
-
-#### `harness work-mode` — 自律実行中だけ確認を止める配線の土台 (Phase 132.3。識別子問題は Phase 132.7 の Fixed で解消済み)
-
-**今まで**: `ctx.WorkMode` が立つと R04 (プロジェクト外への書き込み) と R05 (削除) の確認を skip する経路は実装済みでした。しかしこれを立てる手段が 2 つとも死んでおり、`HARNESS_WORK_MODE` / `ULTRAWORK_MODE` を設定する箇所は skills / scripts / hooks に 1 つも無く、`state.SetWorkState` の呼び出し元も自パッケージ外にありませんでした。逃げ道は作られたまま一度も繋がれておらず、`/breezing` が確認ダイアログで止まり続けていました。
-
-**今回入れたもの**: `harness work-mode <on / off / status>` を新設し、`work_states` への書き込みと読み出しを実装しました。session ID が解決できない場合は無言で成功せず、理由を出して非ゼロ終了します。`work_states.session_id` の FOREIGN KEY を満たすため、既存の `sessions` 行が無いときだけ最小行を作ります (無条件 upsert は `mode` / `context_json` を潰すため。この退行はテストで pin 済み)。
-
-**まだ動きません**: 独立レビューと実測で、**session ID の解決先が誤っている**ことが判明しました。`hookhandler.ReadLocalSessionID` が読む `.claude/state/session.json` はセッション監視の状態ファイルで、内部生成の timestamp ベース ID を持ちます。Claude Code が hook に渡す実 `session_id` とは別物です。実測では `work-mode on` の後でも、実 ID を含む payload に対して R04 は `ask` のままでした。識別子の解決を直すまで、この配線は no-op です。
-
-**現時点で `/breezing` の停止を止めているのは** `~/.claude/settings.json` の `env` に置く `HARNESS_WORK_MODE=1` (operator 手動) です。識別子の修正は Plans.md 132.7 として起票しています。
-
-| 観点 | 変更前 | 変更後 |
-|---|---|---|
-| `work_states` への読み書き手段 | 無し | `harness work-mode` |
-| session ID 未解決時 | — | 非ゼロ終了 + 理由出力 |
-| 既存 `sessions` 行の保護 | — | 上書きしない (退行テストあり) |
-| **hook から見た実効性** | **無し** | **無し (識別子不一致。132.7 で対応)** |
-
-#### 未配線の設定ノブを検出するゲート (Phase 132.4)
-
-**今まで**: 「コードが読む設定キーを、repo 内の誰も設定していない」という欠陥を検出する仕組みがありませんでした。コードを読むと分岐が実装済みに見えるため、producer を追跡しない限り気づけません。この型の欠陥は本 repo で繰り返し発生しています (`.claude-plugin/settings.json` の permissions が読まれない件、今回の `HARNESS_WORK_MODE` 件)。
-
-**今後**: `scripts/ci/check-config-knob-wiring.sh` を新設しました。`go/internal/guardrail` と `go/internal/policy` が `os.Getenv` で読む `HARNESS_*` / `ULTRAWORK_*` の各キーについて、repo 内に producer があるか、`templates/registry/operator-supplied-knobs.v1.yaml` に operator 供給として登録されているかを検証します。`tests/validate-plugin.sh` から実行されます。
-
-初回実行で 13 キー中 **10 件**の違反を検出しました。判明していた 2 件に加え、同型の未配線が 8 件見つかっています (`HARNESS_BREEZING_ROLE` / `HARNESS_CODEX_MODE` / `HARNESS_ACTIVE_PHASE` / `HARNESS_ACTIVE_TASK` / `HARNESS_TDD_*` 4 件)。ゲートを green で着地させるため registry へ grandfather 登録しましたが、registry 本文に「追認ではなく一時退避」と明記し、triage を Plans.md 132.6 として起票しています。
-
-
-- **Plans.md hash 台帳の到達可能性ゲート**: `scripts/ci/check-plans-hash-reachability.sh` を新設し `tests/validate-plugin.sh` へ配線した。Status 欄の commit hash が `HEAD` から到達不可なら fail する。shallow clone では検証不能なため not_observed として skip し、既知の grandfather 対象があれば `scripts/ci/plans-hash-baseline.txt` で個別に除外できる (今回のリポジトリでは Phase 128 の訂正後、除外対象は 0 件)
+- `harness work-mode on|off|status` adds a session-specific state control and refuses unresolved identity. Existing session metadata is preserved. Regression checks now prove that policy context fields and configurable knobs have actual producers instead of testing hand-built context only.
+- Grok model routing was changed against a catalog later found to belong to another same-named CLI; see 5.8.0 before using those historical selections. This release retained Codex xhigh because max acceptance was unverified.
+- The later-corrected historical Grok table selected grok-3-mini (low/high), grok-4.20-non-reasoning, grok-4.3 for deep/advisor/review/release, and grok-4.20-0309-reasoning for long context; the responses-only multi-agent model was excluded from tool roles. That table used the wrong product catalog, corrected in 5.8.0.
 
 ### Changed
 
-#### 防御層を追加・変更するときの影響確認を規約化 (Phase 132.5)
-
-**今まで**: 防御層 (`permissions` / guardrail hook / `sandbox`) を足すときの手順が規定されておらず、「何を止めるか」だけを設計して「止めた結果、誰が通れなくなるか」を確認しない事故が起きました。2026-08-10 に同型の失敗を 1 日に 2 回起こしています。
-
-**今後**: `.claude/rules/defense-layer-blast-radius.md` を新設し、`CLAUDE.md` の Permission Boundaries から参照しました。層ごとの強制力と影響範囲の対比 (`permissions` と hook は agent のみ / `sandbox` は OS がプロセスツリー全体に強制)、強制力が強い層ほど適用範囲を狭くする原則、追加前の 5 点チェック、`excludedCommands` が起動コマンド名にしか一致せずサブプロセスへ継承されない事実、user scope 昇格前に 1 プロジェクトで実経路を通す段階適用を定めています。`scripts/ci/check-consistency.sh` が存在と必須フレーズを検証します。
-
-
-#### session-log.md の分割警告が、動かせるエントリが 1 件も無い状態でも出続けていた問題
-
-**今まで**: `session-log.md` の分割警告は 500 行で出ます。一方、`/maintenance` が実際に退避できるのは「直近 30 日より古いエントリ」だけです。この 2 つが噛み合っておらず、**全エントリが 30 日以内に収まっていると、警告は出るのに移動対象が 1 件も無い**状態になります。当リポジトリでは 520 行 / 全 20 エントリが 30 日以内という、まさにその状態で警告が出続けていました。行数だけを見て退避すると保持ルール違反になるため、警告に従うと規約を破ることになります。
-
-**今後**: 上限を 600 行へ引き上げました。上限は読みやすさの目安であり、保持期間 30 日のように守りの強さを持つ値ではないため、噛み合わない箇所は上限側で解消します。保持期間は直近の作業履歴を本体に残す下限として 30 日のまま維持します。判断の根拠は `skills/maintenance/references/cleanup.md` の閾値表に注記として残しました。
-
-| 項目 | 変更前 | 変更後 |
-|---|---|---|
-| `SESSION_LOG_MAX_LINES` の既定値 | 500 | 600 |
-| 520 行時点の挙動 | 警告あり (移動対象は 0 件) | 警告なし |
-| 601 行時点の挙動 | 警告あり | 警告あり (`limit: 600` と表示) |
-| 保持期間 | 30 日 | 30 日 (変更なし) |
-
-環境変数 `SESSION_LOG_MAX_LINES` による上書きは従来どおり有効です。定義は Go 実装・`scripts/auto-cleanup-hook.sh`・`templates/hooks/auto-cleanup-hook.sh`・閾値表の 4 箇所にあり、すべて同時に更新しています。稼働している hook は Go 実装 (`bin/harness hook auto-cleanup`) のため、4 プラットフォームのバイナリを再生成しました。
-
----
-
-依存関係を更新しました。Go 側の 2 件は、同梱バイナリがソースと依存から byte 単位で再現できることを検証する drift gate があるため、bump と同じ変更で 4 プラットフォームのバイナリを再生成しています。
-
-| 依存 | 変更 | 備考 |
-|---|---|---|
-| `golang.org/x/sys` | 0.46.0 → 0.47.0 | 4 プラットフォームのバイナリを再生成 |
-| `modernc.org/sqlite` | 1.54.0 → 1.55.0 | 4 プラットフォームのバイナリを再生成 |
-| `github/codeql-action` (init / analyze / upload-sarif) | 4.37.1 → 4.37.3 | - |
-| `ossf/scorecard-action` | 2.4.3 → 2.4.4 | - |
-| `actions/setup-python` | 6.3.0 → 7.0.0 | v7 の破壊的変更は `pip-install` 入力の削除。当リポジトリの呼び出しは `python-version` のみを渡すため影響なし |
-| `@vercel/agent-eval` (Breezing ベンチ) | 0.14.5 → 1.4.0 | major 更新。使用している API は型 `ExperimentConfig` と CLI `agent-eval <実験名> [--dry]` だけで、experiments 20 本を 1.4.0 の型定義に当てた型検査は 0 error。設定キーの改名なし |
+- Safety-layer guidance distinguishes agent-only permissions/hooks from OS-enforced process-tree sandboxing. Apply stronger controls narrowly and test one project before user-wide adoption; excludedCommands matches launch names, not inherited subprocess privileges.
+- Session-log warning limit rises from 500 to 600 lines; the 30-day retention rule and `SESSION_LOG_MAX_LINES` override stay unchanged. Update x/sys 0.46.0 to 0.47.0 and SQLite 1.54.0 to 1.55.0 with rebuilt binaries; CI actions and benchmark agent-eval move to their documented new versions, including 1.4.0.
+- CI tools update CodeQL 4.37.1 to 4.37.3, Scorecard 2.4.3 to 2.4.4, and setup-python 6.3.0 to 7.0.0; removed pip-install input is unused here. Twenty benchmark experiments type-check against agent-eval 1.4.0 without renamed configuration keys.
 
 ### Security
 
-#### Breezing ベンチの監査済み依存ラインを 1.4.0 へ引き上げ、新規 advisory 3 件を塞いだ
-
-**今まで**: `benchmarks/breezing-bench/agent-eval` の `@vercel/agent-eval` は `^0.14.1` に固定され、`tests/test-breezing-agent-eval-deps.sh` がその pin 文字列を検査していました。この固定は Dependabot alert を掃除したときの「監査済みラインから外れない」ための措置で、1.x が非互換だという判断ではありません。また同ゲートが実行する `npm audit --audit-level=moderate` は、その後に公開された advisory によって `main` 上でも失敗する状態になっていました。
-
-**今後**: 監査済みラインそのものを 1.4.0 へ移しました。あわせて `undici` の override 範囲を引き上げ、`nanoid` と `brace-expansion` の override を追加して、high 3 件を解消しています。ゲート側の検査は 1 つも削らず、固定値を引き上げたうえで新しい override 2 件ぶんの検査を追加しました。
-
-| 項目 | 変更前 | 変更後 |
-|---|---|---|
-| `@vercel/agent-eval` | `^0.14.1` (0.14.5 が解決) | `~1.4.0` (1.4.0 が解決) |
-| `undici` override | `^7.24.0` (7.28.0 が解決) | `^7.29.0` (7.29.0 が解決) |
-| `nanoid` override | なし (3.3.11 が解決) | `^3.3.17` (3.3.18 が解決) |
-| `brace-expansion` override | なし (5.0.8 が解決) | `^5.0.9` (5.0.9 が解決) |
-| `npm audit --audit-level=moderate` | 失敗 (high 3 件) | 成功 (残りは閾値未満の low 5 件) |
-| ゲートの検査本数 | 固定値の完全一致 4 件 / 最低バージョン 4 件 | 固定値の完全一致 6 件 / 最低バージョン 6 件 |
-
-`undici` / `nanoid` / `brace-expansion` の 3 件は `@vercel/agent-eval` のバージョンとは無関係の推移的依存です。更新前の `main` の lockfile に対して同じ監査を実行しても同一の 3 件が出るため、この更新が持ち込んだものではありません。
+- Benchmark dependencies move to audited agent-eval `~1.4.0`, undici `^7.29.0`, nanoid `^3.3.17`, and brace-expansion `^5.0.9`. Three high advisories are resolved; five low advisories remain below the moderate audit threshold. The used CLI and ExperimentConfig interfaces remain type-compatible.
 
 ## [5.6.0] - 2026-08-01
 
-### テーマ: 実行時フロアの回避経路封鎖と、検査基盤の信頼性回復 (Phase 127-129)
-
-外部からの Pull Request をレビューする過程で、実行時フロア (runtime floor) を設定ファイルから無効化できる経路が 2 つ実在することが分かりました。その修正と、監査の過程で見つかった検査基盤側の不具合をまとめて出荷します。検査基盤の不具合はいずれも macOS でのみ再現し、Linux の CI では緑のまま通過していたものです。
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#560---2026-08-01) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L618)
 
 ### Security
 
-実行時フロア (runtime floor) を設定ファイルから無効化できる経路が 2 つ実在していました。いずれも外部からの Pull Request をレビューする過程で見つかり、実際に動かして確認しています。修正はすべて**制限を強める方向のみ**で、既存の拒否・確認ルールを緩めた箇所はありません。
-
-#### AI が自分で秘密ファイルの読み取り制限を外せた問題 (Phase 128.1 / 128.3)
-
-**今まで**: プロジェクト設定 `.claude-code-harness.config.json` の `runtimefloor.secretAllow` は、秘密ファイルの読み取りを例外的に許可するための宣言です。ここに絶対パスを書いた場合は作業ツリーの内側かどうかを検査していましたが、**相対パスを書いた場合は検査していませんでした**。`../../../../etc/shadow` のように書けば、作業ツリーの外側のファイルがそのまま許可され、「どの設定でも上書きできない」はずの秘密読み取りフロアを迂回できました。
-
-しかもこの設定ファイルはどの拒否リストにも入っておらず、**AI 自身が書き換えられる状態**でした。つまり AI が自分で許可を書き足してから読む、という経路が成立していました。
-
-なお仕様書は元から「相対パスはプロジェクトルート配下に解決される」と記述しており、実装がそれを守っていなかった状態です。新しい制約を足したのではなく、仕様どおりに直した修正です。
-
-**今後**: 相対・絶対のどちらの宣言も、解決後のパスで作業ツリーの境界を検査します。「文字列上は内側だが symlink で外を指す」宣言も落とします。symlink の解決は許可・拒否の判定にのみ使い、許可リストには宣言されたパスをそのまま保存します (実体パスを保存すると、宣言したパスが自分の宣言に一致しなくなる不具合と、宣言していないパスが許可される緩みが同時に起きます)。
-
-あわせて `.claude-code-harness.config.{json,yaml}` への書き込みを拒否対象に加えました。設定ファイル自体が守りの範囲を決める以上、AI が自由に書き換えられる状態はフロアの契約と両立しません。この変更により `releaseAuto` の切り替えは手動編集になります。
-
-#### `main` への強制 push が確認なしで通っていた問題 (Phase 128.2)
-
-**今まで**: 保護ブランチの判定が、git の強制 push 短縮形の先頭 `+` を取り除かずに照合していました。実測すると `git push origin main` は確認が出るのに、`git push origin +main` と `git push origin +refs/heads/main` は**何の判定も出ずに通過**しました。別系統の `--force` フラグ検出はこの短縮形を拾いません。
-
-**今後**: 照合前に `+` を取り除きます。強制 push も通常の push と同じく確認が出ます。`git reset --hard +main` も同時に拒否されるようになりました。保護対象でないブランチ (`+feature/x` など) は従来どおり通ります。
-
-実測 (再ビルドした実行ファイルで確認):
-
-| 操作 | 修正前 | 修正後 |
-|---|---|---|
-| `git push origin +main` | 素通り | 確認 |
-| `git push origin +refs/heads/main` | 素通り | 確認 |
-| `git push origin +feature/x` (保護対象外) | 素通り | 素通り |
-| 設定ファイル `.json` への書き込み | 通る | 拒否 |
-| 設定ファイル `.yaml` への書き込み | 通る | 拒否 |
-| 雛形 `claude-code-harness.config.example.json` | 通る | 通る |
+- Secret-read exceptions validate resolved relative and absolute paths against the worktree, including symlink escape. Agents cannot edit `.claude-code-harness.config.json` or `.yaml`; operators must change releaseAuto manually. Public example configuration remains writable.
+- Protected-branch checks now recognize leading `+` force-push refspecs. `git push origin +main` and `+refs/heads/main` ask; hard reset of protected refs is denied. Unprotected `+feature/x` retains its prior behavior.
 
 ### Added
 
-- **Per-turn output-language enforcement**: the `UserPromptSubmit` hook
-  (`scripts/userprompt-inject-policy.sh`) now injects a response-language
-  directive on every turn, resolved from `i18n.language` in
-  `.claude-code-harness.config.yaml` (with `CLAUDE_CODE_HARNESS_LANG` as a
-  fallback, then `en`). This keeps responses in the configured language instead
-  of drifting to Japanese. Regression coverage added in
-  `tests/test-i18n-locale-resolver.sh`.
+- Every prompt receives the configured response language from project YAML `i18n.language`, then `CLAUDE_CODE_HARNESS_LANG`, then English.
 
 ### Fixed
 
-- **Language config discoverability**: added an explicit `i18n.language` block to
-  `.claude-code-harness.config.yaml`, and corrected `docs/i18n.md` to point at the
-  config file the runtime actually reads (`.claude-code-harness.config.yaml`)
-  instead of `harness.toml`.
-
-
-#### オーナーの floor 免除設定が、それを検証するテストの結果を書き換えていた問題
-
-**今まで**: `HARNESS_RUNTIME_FLOOR_EGRESS=off` と `HARNESS_RUNTIME_FLOOR_SECRET_ALLOW` は正規のオーナー設定ですが、これを export したシェルからテストを起動すると子プロセスに継承され、runtime floor の deny を検証する assertion が素通りしていました。影響は 2 面あります。落ちる側は shell 2 本と Go 12 subtest で、リリースのたびに誤った赤を出していました。**より重いのは通る側**で、e2e は egress で異常終了するため後続の prod-deploy / worktree-escape の 2 検査が実行されないまま OK 扱いになり、また allowlist 非宣言 path の deny 検証は、免除設定が対象を覆っていれば floor が一度も拒否しなくても pass します。
-
-**今後**: floor を検証する 4 つの surface (shell 2 本、`runtimefloor` パッケージの `TestMain`、`cmd/harness` の floor テスト) が自分で免除設定を無効化してから測ります。宣言済み path の検証は従来どおり per-command で明示的に設定します。`tests/validate-plugin.sh` に 4/4 surface の pin を追加したため、新しい floor テストが無効化を忘れると検知されます。
-
-#### macOS で進捗 HTML の自動再生成が、中断後に永久に止まっていた問題
-
-**今まで**: PostToolUse hook の背景処理が一時ファイルを `mktemp /tmp/progress-snap-XXXX.json` で作っていました。BSD (macOS) の `mktemp` は **X が末尾にある場合しか置換しない**ため、この形式は毎回まったく同じパスを返します。通常は処理末尾の `rm -f` で消えますが、一度でも中断して残骸が残ると以降は `File exists` で失敗し続け、hook は `regenerated:true` を返しながら**実際には HTML も state file も更新しない**状態になります。GNU (Linux/CI) は末尾以外の X も置換するため CI では再現しませんでした。
-
-**今後**: X を末尾に置く形式 (`"${TMPDIR:-/tmp}/progress-snap-XXXXXX"`) に変更し、BSD / GNU の双方で一意なパスを得ます。残骸がある状態でも再生成が通ることを確認済みです。
-
-#### 同じ書式が残っていた 9 箇所の一掃と、再発の機械検出 (Phase 127)
-
-**今まで**: 上記と同じ非一意テンプレートが検査スクリプト 9 箇所に残っていました。残骸が無い間は動くため気づけませんが、潜在障害が 2 つありました。中断で残骸を残す 2 ファイル (`test-accept-record.sh` / `test-harness-accept.sh`) は後始末が無く、一度中断すれば以降永久に失敗します。また literal path は一意でないため、並行実行時に同一パスを掴んで相互汚染します。`shellcheck` はこの書式を検出しないため、既存の lint では止められませんでした。
-
-**今後**: 9 箇所すべてを `"${TMPDIR:-/tmp}/<名前>.XXXXXX"` へ統一し、後始末が無かった 2 ファイルに後始末を追加しました。再発は `tests/test-mktemp-bsd-template-safety.sh` が検出し、`tests/validate-plugin.sh` から実行されます。検出は静的走査のため、テンプレートを変数経由で間接的に渡す形は対象外です (現時点で該当箇所はゼロ)。
-
-実測: 旧テンプレートの literal path を一時領域に置くと、修正前は `mktemp: mkstemp failed ...: File exists` で停止し、修正後は同じ地点を通過します。
-
-#### 発注者向け 3 画面が、文書どおりのコマンドで起動できなかった問題 (Phase 127.3)
-
-**今まで**: 非エンジニアの発注者向け 3 画面 (計画概要 / 進捗 / 受け入れ判断) は、ドキュメント上は `/harness-plan-brief`、`/harness-progress`、`/harness-accept` と入力して呼ぶものとして案内されていましたが、3 つとも設定が「ユーザーからは呼べない」状態でした。3 つとも入力補助のヒント (`argument-hint`) を持っており、設定だけが噛み合っていませんでした。これらの画面は発注者本人が見るためのものなので、本人が呼べないと存在価値が失われます。
-
-契約テストは当初から「ユーザーから呼べる」ことを要求していましたが、そのテストが検査一覧に組み込まれていなかったため、スキル本体とテストが同じコミットで生まれた時点の矛盾が約 2 ヶ月そのまま残っていました。
-
-**今後**: 3 つとも `/harness-<名前>` で起動できます。契約テスト 2 本を検査一覧に組み込み、進捗画面側にも同じ検査を追加したため、今後この乖離は検査で止まります。Cursor 向け配布は従来どおり自動で非表示側へ正規化されます (配布層の契約は変更なし)。
-
-#### 検査の合否が、一致した位置によって反転していた問題
-
-**今まで**: 文字列が含まれるかを調べる箇所で `printf '%s' "$内容" | grep -q "$探す文字列"` という書き方をしていました。`grep -q` は最初の一致を見つけた瞬間に終了してパイプを閉じます。`printf` は内容を一度に書き切らず分割して書くため、閉じられたパイプへの続きの書き込みが失敗します。`set -o pipefail` はこの失敗をパイプライン全体の結果へ昇格させるので、**探していた文字列が実際には存在するのに「無い」と判定されます**。
-
-一致が入力の前方にあるほど `grep` が早く終了するため再現します。受け入れ判断スキルの契約テストでは、設定ブロック 2019 バイトのうち 2〜4 行目にある 3 項目が「無い」と判定され、8 行目の項目だけが正しく判定されていました。合否が「探す文字列が何行目にあるか」で決まる状態です。
-
-**今後**: パイプを使わず `grep -q "$探す文字列" <<<"$内容"` に変更しました。パイプが存在しないため、この失敗は原理的に起きません。アサーションは 1 つも変更していません。同じ書き方は HTML 生成側の `</body>` 検出にも残っていました。こちらは対象が末尾にあるため現時点では顕在化しませんが、前方に現れると追記位置が黙って変わるため同時に直しました。
-
-実測: 実際の設定ブロックに対し 200 回ずつ試行したところ、修正前は 2 行目の項目と 3 行目の項目がいずれも 200/200 で「無い」と誤判定され、8 行目の項目は 0/200 でした。修正後は 3 項目とも 0/200 です。契約テスト自体は 63 合格 3 失敗から 66 合格 0 失敗になりました。
-
-#### 同じ書き方が残っていた 173 箇所の一掃と、再発の機械検出 (Phase 129)
-
-**今まで**: 上記と同じ書き方が検査スクリプトと補助スクリプトに 173 箇所残っていました。現時点で通っているのは、入力が小さいか探す文字列が末尾にあるためです。入力が育つか、探す文字列が前方に移動した瞬間に、同じ形で静かに反転します。`shellcheck` はこの書き方を検出しないため、既存の lint では止められませんでした。
-
-**今後**: 173 箇所すべてを herestring (`<<<`) へ統一しました。置換は 1 対 1 で、追加 173 行・削除 173 行が完全に一致します (アサーションの削除・期待値の緩和がゼロであることの機械的な根拠)。再発は `tests/test-pipefail-grep-q-safety.sh` が検出し、`tests/validate-plugin.sh` から実行されます。検査一覧からの除去は `tests/test-validate-plugin-wiring.sh` の pin も同時に触らない限りできません。
-
-検出は静的走査のため、変数経由で組み立てたコマンド文字列と、producer が関数呼び出しやコマンド置換の形は対象外です。`|| true` で終わる行は `pipefail` が結果を昇格させないため除外します。
-
-| 項目 | 変更前 | 変更後 |
-|---|---|---|
-| 書き方 | `printf '%s' "$内容" \| grep -q "$探す文字列"` | `grep -q "$探す文字列" <<<"$内容"` |
-| 該当箇所 | 173 箇所 (`tests/` 131 + `scripts/` 42) | 0 箇所 |
-| 入力の前方に一致がある場合 | 「無い」と誤判定される | 正しく判定される |
-| 再発の検出 | なし (`shellcheck` は検出しない) | `tests/test-pipefail-grep-q-safety.sh` が検出 |
-| 検査一覧 | 131 項目 | 132 項目 |
-| 検査の除去に必要な変更 | — | 2 ファイル (`validate-plugin.sh` と `test-validate-plugin-wiring.sh` の pin) |
-
-実測: 変換前は 173 箇所を検出して exit 1、変換後は 0 箇所。`shellcheck` の警告数は変換前後とも 29 件で同数 (herestring 起因の新規指摘はゼロ)。`tests/validate-plugin.sh`、`scripts/ci/check-consistency.sh` 全 24 検査、`go test ./...` はいずれも変換後も合格します。整合性検査スクリプト自身も変換対象に含まれており、書き換え後も全検査を通過します。
+- Language documentation now points to the runtime YAML setting. Floor tests clear inherited operator exceptions so environment settings cannot invalidate or skip their checks.
+- macOS progress regeneration uses unique temporary filenames after interruption. Nine other temporary-file sites and 173 pipefail/grep checks are repaired, with recurrence checks; assertions are retained. Static recurrence checks do not cover commands assembled indirectly through variables/functions.
+- Operators can invoke `/harness-plan-brief`, `/harness-progress`, and `/harness-accept` as documented. Cursor distribution keeps its own skill-visibility normalization.
 
 ## [5.5.0] - 2026-07-29
 
-### テーマ: 止まらないモード — 確認の削減と、その過程で見つかった防御の穴の封鎖 (Phase 126)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#550---2026-07-29) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L732)
 
 ### Fixed
 
-#### 自律実行中に作業ツリー外の破壊的削除が素通りしていた問題 (Phase 126.1)
-
-**今まで**: runtime floor の worktree-escape カテゴリは、危険な再帰削除の入口判定に短縮フラグ形式しか登録していませんでした。GNU 長形式の再帰削除や `find` の削除式は floor をすり抜け、policy 側の R05 (確認) だけが受け止めていました。R05 は WorkMode (work / breezing の自律実行中) では評価をスキップするため、**自律実行中は確認も拒否も出ない無防備な状態**でした。spec が floor カテゴリ 5 を "destruction OUTSIDE the task worktree" かつ "non-overridable in every config" と定義している契約に対する実効的な違反です。
-
-**今後**: 危険判定と削除対象の抽出を `go/pkg/shellscan` に集約し、runtime floor と policy が同一の実装を参照します。両者の判定一致を pin する同値性テストを追加したため、再び乖離すればテストが落ちます。
-
-実測 (作業ツリー外を対象とした場合):
-
-| コマンド形 | 修正前 (通常) | 修正前 (自律実行中) | 修正後 |
-|---|---|---|---|
-| 短縮フラグ形式 | deny | deny | deny |
-| GNU 長形式 | ask | **approve** | deny |
-| `find` の削除式 | ask | **approve** | deny |
-
-#### シェルに渡す heredoc の本文経由で秘密ファイル読取の floor を回避できた問題 (Phase 126.1)
-
-**今まで**: heredoc 本文を「文書テキスト」とみなして無条件に除去していました。しかし heredoc をインタプリタに渡す形 (`bash <<EOF` や `cat <<EOF | bash`) では本文が実行されます。このため本文に秘密ファイル読取を書くと、floor の走査対象から消えて **secret-read カテゴリを完全に回避**できました。
-
-**今後**: opener 行がインタプリタを起動する、またはパイプでインタプリタに渡す場合は本文を保持します。実測で修正前 approve → 修正後 deny を確認しています。
-
-#### 文書の本文に削除コマンドの字面があるだけで拒否されていた問題 (Phase 126.1)
-
-**今まで**: worktree-escape の走査が heredoc 本文と行コメントを除去しておらず、さらに削除対象の抽出がコマンド区切りを跨いで末尾まで走査していました。このため文書ファイルへの追記で、本文に削除コマンドの字面が散文として含まれるだけで拒否され、文中の `/` が削除対象と誤認されていました。
-
-**今後**: 除去処理の適用とコマンド区切りでの分割により解消しました。
-
-#### 事前承認の secret-read 反映が scope を検証していなかった問題 (Phase 126.5)
-
-**今まで**: `scripts/plan-preapproval.sh apply-secret-allow` は承認記録の `scope.phase` / `scope.task` を読まずにマージしていました。対象タスク外や将来の全 run にまで承認が効き続ける状態でした。
-
-**今後**: 現在の phase / task と一致する承認だけを反映します。
+- Runtime checks now catch GNU long-form recursive deletion and find-delete outside the task worktree even in autonomous work mode. Shell-executed heredoc bodies remain scanned for secret reads; prose heredocs/comments no longer trigger false destructive-delete matches.
+- Secret preapproval applies only to the matching active task/phase, rather than leaking into unrelated future runs.
 
 ### Added
 
-#### guardrail / floor の発火 audit ログ (Phase 126.2)
-
-**今まで**: どの規則や floor が実際に確認や拒否を発生させているかを事後に集計する手段がありませんでした。`.claude/state/audit/` は空で、`session-events.jsonl` はツール名しか持ちません。停止要因の特定は、hook を 1 件ずつ手で叩いて測るしかありませんでした。
-
-**今後**: 確認・拒否・警告が発生するたびに `.claude/state/audit/guardrail-fires.jsonl` へ 1 行記録します。規則 ID、カテゴリ、判定、host、ツール名を持つため「どの規則が何回止めたか」を集計できます。純粋に通過した操作は記録しないため、ログは止まった回数だけ増えます。
-
-秘密情報は残しません。コマンドや file_path の生文字列は書かず SHA-256 と長さのみを持ちます。floor の `secret-read` / `money-billing` カテゴリではハッシュと長さも省略し、規則 ID とカテゴリと判定だけを残します。
-
-#### OS 一時領域への書き込みで確認が出なくなった (Phase 126.3)
-
-**今まで**: R04 はプロジェクトルート外への書き込みに一律で確認を出していました。エージェントが作業中に作る中間ファイル (プロンプト、集計結果、下書き) は OS の一時領域に置かれるため、そのたびに実行が止まっていました。
-
-**今後**: `/tmp`、`/var/tmp`、`$TMPDIR`、`~/.cache`、`~/Library/Caches` とその実体パスへの書き込みは確認なしで通ります。判定前にシンボリックリンクを実体へ解決するため、一時領域内から外部を指すリンク経由の書き込みは従来どおり確認が出ます。プロジェクト外かつ一時領域でもない場所 (ホーム直下、デスクトップ等) も従来どおりです。
-
-一時領域の判定は runtime floor 側の worktree-escape と共有します。登録側と判定側の両方でシンボリックリンクを解決するため、macOS の既定 `$TMPDIR` (`/var/folders/...` が `/private/var/folders/...` の別名) のように表記が異なる同一ディレクトリも正しく一致します。
-
-#### 作業ツリー内の再帰削除で確認が出なくなった (Phase 126.4)
-
-**今まで**: R05 は危険な再帰削除を検出すると、対象がタスク作業ツリーの内側でも外側でも区別せず確認を出していました。ビルド生成物や一時ディレクトリの掃除は作業ツリー内で日常的に発生するため、そこで実行が止まっていました。
-
-**今後**: 抽出した対象が全て、シンボリックリンクを実体解決した上で作業ツリーの内側にある場合のみ確認を省きます。対象が実行時にしか決まらない書き方はすべて確認を維持します。具体的には、対象が 1 つも抽出できない、シェル展開やコマンド置換で対象が決まる、削除の前に別のコマンドがある、パイプラインやバックグラウンド実行、親ディレクトリ参照を含む、いずれの場合も確認が出ます。
-
-作業ツリー外への削除は 126.1 の floor が受け止めます。floor は WorkMode を参照せず規則群より先に評価されるため、自律実行中でも外れません。
-
-なお作業ツリー内の再帰削除は、git 管理外のファイル (未追跡の生成物、未コミットの作業中ファイル) を復旧不能にします。linked worktree の `.git` はファイルポインタで実体は main repo 側にあるため、コミット済みとステージ済みのデータは残ります。
-
-#### 計画時の事前承認が実行時の確認抑制に接続された (Phase 126.5)
-
-**今まで**: 事前承認のうち Go 側の判定に届いていたのは `secret-read` だけでした。`external-send` と `destructive` は skill の散文にしか存在せず、承認済みの push でも R12 が毎回確認を出していました。
-
-**今後**: `plan-preapproval.v2` を新設し (`expires_at` 必須、`max_uses` 既定 10、`uses`)、保護ブランチへの直接 push で R12 が確認を出す手前に抑制判定を入れました。有効期限内・スコープ一致・回数上限内・コマンド一致のすべてを満たす承認がある場合だけ抑制し、使用のたびに `uses` を加算します。
-
-「一度使ったら失効」ではなく回数上限にしています。PR closeout は CI 修正後に再 push することがあり、単発消費だと 2 回目で確認が復活して当初の目的を壊すためです。恒久緩和を防ぐ性質は、有効期限とスコープ一致と回数上限の 3 つで担保します。
-
-スコープは `.claude/state/active-task.json` (harness-work / breezing がタスク開始時に書く) と環境変数から解決します。解決できない場合は承認なし扱いで確認を維持します。
-
-runtime floor の 5 カテゴリには接続していません。floor は「どの設定でも上書きできない最終防波堤」であり、例外は operator が明示宣言する 2 つに限ると spec が数え上げています。本変更が触るのは guardrail 規則の R12 のみです。
+- Guardrail warnings, asks, and denials are audited in `.claude/state/audit/guardrail-fires.jsonl`; plain allows are omitted. Raw commands/paths are never saved, only SHA-256 and length; secret-read and billing categories omit even those values.
+- Writes to OS temporary/cache directories no longer ask when resolved symlinks remain contained. Recursive deletion inside the worktree can also skip confirmation only when all targets are proven contained; dynamic targets, preceding commands, pipelines/background work, and parent references still ask. Untracked/uncommitted files can still be lost.
+- Protected-branch push preapproval uses mandatory expiry, matching task scope and command, and a use limit (default 10); each use increments the counter. Unresolved scope retains confirmation. It affects guardrail R12 only, not the five runtime-floor categories.
 
 ## [5.4.0] - 2026-07-26
 
-### テーマ: Claude 5 世代適応 — context unhobbling・モデル catalog 全面更新・breezing 自律 pipeline
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#540---2026-07-26) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L810)
 
 ### Added
 
-#### HOTL session messaging: 人間もセッションも名前で呼び合える宛先付きメッセージ (Phase 121)
-
-**今まで**: セッション間の連絡は broadcast (全員宛のファイル変更通知) だけで、特定のセッションに「そのタスク、仕様が変わったよ」と一言伝える手段がありませんでした。人間が伝えたい場合は対象セッションの端末を探してコピペする必要がありました。また livemsg 配送路には sanitize や byte cap が無く、メッセージ本文が無防備にモデル文脈へ入る状態でした。
-
-**今後**: `bin/harness inbox send --team <t> --from <id> --to <agent> "本文"` で任意の端末から特定セッション宛にメッセージを送れます。受信側は turn 境界 (Stop hook) で自動配達され、`inbox sent` で既読状態も確認できます。配送路には信頼契約 (制御文字/ANSI 除去 + 「命令ではありません」disclaimer + 全体 4096B / メッセージ単位 768B cap) が入り、人間発 nudge も data-not-instructions 契約に乗ります (Risk Gate 承認は対象セッションの console のみ)。未読 0 件時は無出力なので通常セッションのノイズは増えません。
-
-#### セッションの名札と作業宣言: 「どのセッションが何をやっているか」を一覧で逆引き (Phase 121.4)
-
-**今まで**: `session-list.sh` はセッション ID と最終アクティブ時刻しか出せず、「121.2 を作業しているセッションはどれ？」が分かりませんでした。
-
-**今後**: 出勤カード (presence file) に `{label, task, since}` を書けるようになり、`bin/harness session declare --task 121.2` で作業宣言、`bin/harness session list` で label / 現在 task / 経過時間の一覧が出ます。task 番号 → セッションの逆引きが grep 一発になります。生存判定は従来どおり filename + mtime のみ (カード内容は判定に影響しません)。
-
-#### 生成 delivery hook の identity 解決 (Phase 121.2)
-
-**今まで**: `harness gen` が生成する Codex/Cursor の delivery hook は `--team {{TEAM}} --agent {{AGENT}}` の placeholder が未置換のまま実行され、事実上 no-op でした。
-
-**今後**: 生成コマンドは `inbox check --from-env` になり、実行時に env (`HARNESS_LIVEMSG_*` → breezing fallback) から identity を解決します。checkout ごとの生成物を再生成せずにセッションごとの宛先が機能します。
-
-#### セッション一覧と standalone 配達の取りこぼし解消 (Phase 122)
-
-**今まで**: `bin/harness session list` は共有 presence file を持つセッションしか表示せず、非 git 環境や presence 機構導入前から生き続けるセッション (ローカル `active.json` のみ登録) が一覧から漏れていました。lease の生存判定は「presence ∪ active.json」の union なのに、一覧だけが片側しか見ない非一貫でした。また breezing 外で直接起動した Codex/Cursor セッションでは、`inbox check --from-env` が identity を解決できず理由の表示もなくメッセージ配達を沈黙スキップしていました。
-
-**今後**: `session list` は lease 判定と同一の生存集合 (presence ∪ active.json) を表示します (roster のみのセッションは短縮 ID label で追記)。`--from-env` は env で解決できない場合に hook stdin の `session_id` へ fallback し (claude host と同じ経路)、それでも不明なら `livemsg: identity unresolved (...)` を stderr に 1 行出して従来どおり fail-open します。host 別の解決順は `docs/claude-livemsg-delivery.md` の fallback チェーン表が正本です。
-
-#### breezing Default Pipeline: plan → work → OK までレビュー → 報告を 1 コマンドで完走
-
-**今まで**: 「`/harness-plan` で計画 → `/breezing` → `/harness-review` を独立サブエージェント + Codex second opinion で OK が出るまで → easy で報告」という一連の流れを、operator が毎回 4 段の指示として打つ必要がありました。
-
-**今後**: `/breezing` 単体でこの pipeline 全体が既定動作になります。plan 未作成なら先に `harness-plan` を実行し (スコープ既定は「今進められる全作業」)、実装後は run 全体 diff への Integrated Review Gate (fresh-context 独立 reviewer + `codex-companion.sh review`) を APPROVE が出るまで最大 3 回反復し、最終報告は easy 作法で出します。
-
-#### harness-plan スコープ既定: 「今進められる全作業」
-
-**今まで**: 計画依頼の範囲解釈がセッション任せで、依頼者の意図 (着手可能な全作業) より狭い計画が作られることがありました。
-
-**今後**: 範囲の明示がない計画依頼は「現時点で着手可能なすべての作業」を既定スコープとして扱います。件数が多い場合も絞り込みではなく Required / Recommended / Optional / Reject の全量分類で提示し、除外は Reject 理由として明示します。
-
-#### `harness validate` が claude-opus-5 を受理 (Phase 123.4)
-
-**今まで**: agent/skill frontmatter に `model: claude-opus-5` を書くと validate が「認識できないモデル名」で reject していました (Opus 5 は 2026-07-24 リリース)。
-
-**今後**: validModelNames に claude-opus-5 を追加し、TDD (RED→GREEN) + 4 平台 binary rebuild + drift gate green で反映済みです。
-
-#### Claude 5 unhobbling: 毎セッション注入される context を 1/3 に削減 (Phase 124)
-
-**今まで**: セッション開始のたびに `.claude/rules/` の 19 ファイル 103.2KB が無条件で Claude の context に注入されていました。中には廃止済み v3 構成の歴史記録 (v3-architecture.md) や、冒頭で自ら DEPRECATED と宣言する文書 (command-editing.md) まで含まれ、Anthropic の Claude 5 指針 (過剰な常時ルールは判断を鈍らせる) に照らして逆効果の状態でした。SKILL.md も最大 958 行 (harness-work) まで肥大していました。
-
-**今後**: governance 契約 (報酬ハック防止・deny 面・Risk Gates) は常時ロードのまま維持し、状況限定ルールは pointer stub 化 (正本は skills references / docs/rules へ)、廃止文書は archive/削除しました。
-
-| 面 | Before | After |
-|---|---|---|
-| 常時注入 rules | 103.2KB (19 ファイル) | **29.2KB** (71.7% 削減) |
-| harness-work SKILL.md | 958 行 | 450 行 |
-| breezing / harness-release / harness-plan | 521 / 535 / 462 行 | 416 / 379 / 393 行 |
-
-agent prompt 監査基準も世代交代しました: opus-4-7-prompt-audit.md (曖昧語 blanket 禁止・例文必須) を退役し、契約条項 (schema 名・列挙値・回数上限・wrapper command・権限境界) だけ残す claude-5-prompt-standard.md に置換 (agents/*.md 編集時のみ paths frontmatter でロード)。
+- Address a session with `bin/harness inbox send --team <t> --from <id> --to <agent> "message"`; `inbox sent` reports read state. Delivery occurs at turn boundaries, strips control/ANSI characters, labels content as data, and caps each message at 768 bytes and total at 4,096 bytes. Only the target console can grant risk approval. No unread messages means no output.
+- `session declare --task <id>` and `session list` show labels, work, and elapsed time. Lists now combine shared presence and local roster, including non-Git sessions. Generated Codex/Cursor delivery resolves identity from environment then hook session_id; unresolved identity warns and does not stop work.
+- `/breezing` now plans when needed, implements, runs fresh-context review plus Codex second opinion up to three rounds until APPROVE, and reports. Unspecified planning scope covers all currently actionable work, classified as required/recommended/optional/rejected with reasons.
+- Validation accepts `claude-opus-5`. Always-loaded rules shrink from 103.2KB to 29.2KB while keeping approval and deny contracts; situation-specific instructions move to references.
 
 ### Changed
 
-#### 実装 backend の既定を Native subagent (claude) に、選択は作業内容でフラット判断
-
-**今まで**: breezing の backend は resolver 既定こそ `claude` でしたが、`backend=claude` になると「cursor を使うべきでは」という Fallback 警告が毎回出る設計で、実質 cursor 優先の運用でした。
-
-**今後**: `claude` (Native subagent、Worker/Reviewer は Sonnet 5 系 tier) が意図された既定になり、警告は resolver の不正値 fallback 時のみ出ます。Lead は作業内容・量に応じて per-run で `--backend codex|cursor` をフラットに選択できます (判断基準表を breezing SKILL に追加)。
-
-#### Codex 委譲モデルを gpt-5.6-sol / xhigh に更新
-
-**今まで**: `scripts/model-routing.sh` の codex catalog は standard=gpt-5.5/medium、deep=gpt-5.5/high で、委譲実装が 1 世代前のモデル・控えめな effort で走っていました。
-
-**今後**: standard / deep / review / advisor tier は `gpt-5.6-sol` の `xhigh` で委譲されます (release / long-context は `gpt-5.6-sol` の high、lite は gpt-5.4-mini のまま)。`codex-companion.sh` は呼び出し時に model-routing.sh を解決するため、追加設定なしで反映されます。
-
-#### Claude catalog を Claude 5 世代へ全面更新 (Opus 4.8 全廃)
-
-**今まで**: claude host の brain tier (deep / advisor) は claude-opus-4-8、review tier は claude-sonnet-5、cursor の brain 系 tier は claude-opus-4-8-thinking-xhigh でした。
-
-**今後**: Opus 5 リリース (2026-07-24) を受けた operator 裁定で、Opus 4.8 を catalog から全廃しました。brain = `claude-opus-5` / xhigh (既定。`HARNESS_BRAIN_MODEL=opus|opus5` も同値、`fable` で Fable 5 に切替)、review = `claude-fable-5` / xhigh、worker = `claude-sonnet-5`、cursor の brain 系 tier = `claude-fable-5` / xhigh。spec (execution-backends-and-distribution.md) と model-routing-policy.md も同期しています。
-
-#### PreCompact: Plans.md 未 commit でブロックせず自動 commit して続行 (Phase 121.6)
-
-**今まで**: `/compact` 時に Plans.md へ未 commit の編集があると PreCompact hook がブロックし、手動で commit してから再実行する必要がありました (どうせ commit してから compact するのに毎回止まる)。
-
-**今後**: Plans.md だけを pathspec 限定で自動 commit (`chore(plans): auto-checkpoint before compaction`) してから compaction が続行します。他の未 commit ファイルは巻き込みません。commit に失敗した場合と `.claude-code-harness.config.yaml` に `precompactAutoCommit: false` を書いた場合のみ従来どおりブロックします。
+- Native Claude subagents become the intended implementation default, with explicit `--backend codex|cursor` choices. Claude brain/advisor default to Opus 5/xhigh (Fable selectable), review to Fable 5/xhigh, worker to Sonnet 5; Cursor brain roles use Fable 5/xhigh. Codex standard/deep/review/advisor use GPT-5.6-sol/xhigh, release/long-context high, lite stays GPT-5.4-mini.
+- Before compaction, only changed `Plans.md` is automatically checkpoint-committed. Other files are excluded. Failed commits or `precompactAutoCommit: false` retain blocking behavior.
 
 ### Fixed
 
-#### セッション協調: 別 worktree で作業中のセッションの lease が横取りされる問題 (Phase 120)
+- File leases use shared presence plus local roster so live sessions in another worktree retain ownership after the 60-minute TTL. Missing shared presence falls back silently. Stop blocks unfinished tasks once, then permits stopping with a warning on re-entry, ending infinite research-session loops.
 
-**今まで**: ファイル編集の貸出札 (lease) は全 worktree 共有なのに、持ち主の生存確認は自分の worktree の名簿 (`active.json`) しか見ていませんでした。別 worktree で生存中のセッションが持つ札は、60 分の TTL が切れると「死んだセッションの札」と誤判定され、横取り可能になっていました (spec の「TTL 満了 AND 名簿不在」契約が実質 TTL-only に縮退)。
+### Removed
 
-**今後**: 各セッションが共有側 (`git --git-common-dir` 親) の `.claude/sessions/live-sessions/<session_id>` に presence ファイルを持ち、生存判定は「共有 presence ∪ ローカル名簿」の union になります。別 worktree の生存保持者の lease は TTL 後も保護されます。presence dir 不在時は従来挙動に fallback (not-configured, silent)。ローカル名簿・bash 版 script のスキーマは非接触です。
-
-#### Stop hook が調査のみのセッションを無限ブロックする問題 (Issue #269, Phase 125)
-
-**今まで**: Plans.md に `cc:WIP` タスクが残っていると、Stop hook が停止を無条件でブロックし続けました。調査・整理だけのセッションには WIP を減らす正当な手段がなく、実測で同一メッセージが 12 回連続発火してセッションを終了できませんでした。
-
-**今後**: 初回の Stop は従来どおりブロックして marker 遷移を促しますが、再入 (`stop_hook_active: true`) 時は WIP が残っていても警告 (systemMessage) を出して停止を許可します。状態ファイルの追加なしで無限ブロックを根絶しました。
+- Remove Opus 4.8 from the model catalog. `HARNESS_BRAIN_MODEL=opus` and `opus5` both select Opus 5.
 
 ## [5.3.1] - 2026-07-20
 
-### テーマ: Plans.md marker 集計の正確化
-
-**session-start や進捗表示の「WIP N件」が、実際に着手中のタスクだけを数えるようになりました。**
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#531---2026-07-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L912)
 
 ### Fixed
 
-- **Plans.md marker 集計の use-mention 混同 + canonical family 取り残しを根治（Phase 119）**
-
-  **今まで**: session-start の「Plans.md: WIP N件」や plans drift 警告が、凡例表・状態遷移説明文・タスク DoD 本文中の marker **言及**まで数えていました（部分文字列一致）。配布テンプレートにも凡例があるため、全ユーザーが初日から誤カウントを持ち、実タスク 0 件でも「WIP 7件 / ⚠️ plans drift」と表示されることがありました。さらに集計は legacy 表記（`cc:WIP` / `cc:完了`）のみ対象で、Phase 77 以降の正本である小文字英語 family（`cc:wip` / `cc:done` 等）で書かれた実タスクを 0 と数えていました。
-
-  **今後**: 集計は既存の Status セル正規パーサ（`go/internal/plans`、最終セル判定 + case-insensitive）に一本化され、「marker が付いたタスク」だけを数えます。canonical / legacy 両 family を正しく集計し（pending / confirmed 分類も追加）、凡例や本文言及は一切カウントしません。Go 側（session monitor / plans watcher / PostCompact 再注入 / session summary / TDD order check）と repo 開発用 shell 側（`scripts/plans-marker-count.sh` 共通 lib）の両方を再配線し、fixture テストで 3 面（言及を数えない / canonical を数える / legacy read-compat）を固定しました。
+- Progress and session-start counts parse actual task Status cells, case-insensitively, across current and legacy markers. Legends, examples, and prose no longer create fake WIP counts or drift warnings.
 
 ## [5.3.0] - 2026-07-19
 
-### テーマ: 多 host 正式対応と、人手ゼロで完走するリリース
-
-**Codex CLI / Cursor / Grok が正式対応（supported）になり、リリース工程は「人間の最終 tag push」を機械ゲート網に置き換えて全自動で完走するようになりました。**
-
-### Changed (Breaking-adjacent: public support claims)
-
-- **Codex CLI / Cursor / Grok を `supported`（正式対応）に昇格（Phase 111.3.3 / 111.4.4 / 111.5.4、H8 pin）**: H1–H8 が同一 claim path で green になったため、registry / README（EN+JA）/ onboarding / capability matrix / spec stance 表 / plugin manifest / claim-wording テストの全 public 面を `supported` に一斉更新。昇格は能力の同一性主張ではなく検証済み claim path の主張であり、各 host の caveat（Cursor: FS jail なし・封じ込めは harness 側、Grok: Claude-envelope PreToolUse floor、Codex CLI: 3cli Bash floor ≠ Codex app parity）は明記を維持。Cursor は昇格前提条件として `docs/CURSOR_INTEGRATION.md` に Containment disclosure 節を新設。Codex app / OpenCode / Hermes / Copilot CLI / Antigravity は非昇格のまま wording guard を維持
-
-### Fixed
-
-- **Dependabot critical 20 件解消（Phase 117.1）**: `benchmarks/breezing-bench/` 配下 20 fixture manifest の vitest を `^4.1.0` に一括更新（CVE-2026-47429）。`tests/test-breezing-fixture-deps.sh`（version floor、0-match fail-closed ガード付き）を validate-plugin に配線し wiring pin 15 件に。dependabot.yml へは fixture dir を追加しない方針（使い捨て fixture への update-PR ノイズ回避、検知は alerts + floor テストで担保）。low 1 件（`@ai-sdk/provider-utils`）は upstream 未修正のため据え置き
-
-### Added
-
-- **runtime floor `releaseAuto` opt-in — release 完了の全自動化（Phase 118.1、operator 裁定 2026-07-19）**: `RUNTIME_FLOOR:prod-deploy` の「公開の最終 1 手は人間」を、project config `.claude-code-harness.config.json` の `runtimefloor.releaseAuto: true` で release 完了サブセット（`git push origin v*` / `git push --tags` / `gh release` の非破壊動詞）に限り解除できるようにした。`gh release delete` と npm publish / vercel / kubectl / terraform は opt-in 後も遮断。config 不在・parse 失敗は fail-safe（従来どおり全遮断）で、配布既定は不変。信頼の根拠は preflight fail-closed host smoke / validate-plugin / CI / 独立監査 / drift gate の機械ゲート網に移る。本 repo は opt-in を versioned で有効化
-- **release preflight の host workflow smoke 消費（H7 充足、Phase 111.7.6）**: `scripts/release-preflight.sh` が全 dist host（claude / codex / cursor / grok）の workflow smoke を `REQUIRED=1`（fail-closed）で実行する `check_host_workflow_smoke` を獲得。1 host でも FAIL なら release が止まる。standalone 実行は `scripts/release-preflight-host-smoke.sh`（registry SSOT の `host_registry_dist_hosts` を消費、テスト用 seam `HARNESS_PREFLIGHT_HOST_SMOKE_CMD` 付き）。multi-host `supported` bar H7（release-preflight consumes host gates fail-closed）の充足配線であり、Codex / Cursor / Grok の昇格残ゲートは H8（wording pin）のみになった。契約テスト `tests/test-release-preflight-host-smoke.sh` を validate-plugin に配線し、wiring pin は 14 件に増加
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#530---2026-07-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L926)
 
 ### Changed
 
-- Phase 111.7 closeout: 4 host の live H4 smoke が全 PASS（operator 委任の orca terminal 自動化で実測、2026-07-17）。spec host 表の残ゲート記述を H7 → 充足済みに更新
+- Codex CLI, Cursor, and Grok become supported on verified host workflows, without claiming equal capabilities. Cursor has no filesystem jail; Grok uses a Claude-envelope pre-tool floor; Codex CLI Bash enforcement does not imply Codex app parity. Codex app, OpenCode, Hermes, Copilot CLI, and Antigravity are not promoted.
+
+### Added
+
+- Project JSON `runtimefloor.releaseAuto: true` optionally permits version-tag pushes and non-destructive GitHub release actions. Default remains OFF; missing/malformed config blocks. Release deletion, npm publishing, Vercel, Kubernetes, and Terraform remain blocked. Preflight requires workflow smoke for every distributed host and stops on any failure.
+
+### Fixed
+
+- Benchmark fixture Vitest updates to `^4.1.0` to address CVE-2026-47429 across 20 fixtures. An upstream-unfixed low advisory in provider-utils remains; fixture checks enforce the minimum version.
 
 ## [5.2.0] - 2026-07-17
 
-### テーマ: 統治の三段目 — 独立監査・縮小検知・リリース提案器
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#520---2026-07-17) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L949)
 
 ### Added
 
-- **CI wiring for Hermes/LSP pin tests**: `tests/validate-plugin.sh` now runs
-  `test-hermes-agent-candidate.sh` and `test-lsp-workflow-wiring.sh`, so the
-  v5.1.0 host-tier and LSP-workflow contracts are enforced by CI without
-  editing `.github/workflows/` (which stays operator-only). Governance for
-  this split is codified in `.claude/rules/workflow-test-wiring.md`
-  (test additions = AI-allowed, deletions/weakening = REQUEST_CHANGES,
-  workflows layer = operator-only; independent auditor agent planned as
-  Phase 116).
-- **Overclaim scan covers the capability matrix**:
-  `docs/tool-capability-matrix.md` joined the public support-claim wording
-  scan; blocked-wording table cells now use the `blocked:` prefix so accurate
-  denials pass the neutralize-then-scan checker.
-
-- **Release Train proposer (`harness release --check`)**: read-only のリリース候補
-  提案器。`CHANGELOG.md` の `[Unreleased]` を解析し、最終 semver tag から 7 日経過
-  （`### Security` 有時は 2 日）または `### Breaking` 見出し（prefix match、
-  `### Breaking Changes` も同一トリガー）で
-  `RELEASE_CANDIDATE: bump=<major|minor|patch> ...` を 1 行 emit する。version 面は
-  一切書き換えず常に exit 0（Phase 92.4.1。trigger 定義は
-  `.claude/rules/versioning.md` §Release Train Proposal）。
-- **Session Monitor の RELEASE_CANDIDATE tri-state 表示**: セッション開始時に
-  Candidate のときだけ 📦 1 行を表示し、None / NotApplicable は完全沈黙
-  （active-watching 3 状態流儀。check エラーは not-applicable へ fail-open。
-  Phase 92.4.2）。
-- **独立 test-wiring auditor**: `agents/test-wiring-auditor.md`（固定プロンプト、
-  SHA-256 pin test で無断書換を検知）+ 決定論コア `scripts/test-wiring-audit-core.sh` +
-  `test-wiring-audit.v1` schema（verdict: PASS | ADD_REQUIRED | APPEAL_REJECTED）。
-  テスト追加のみを提案し削除・弱体化は提案しない。appeal は 1 回まで
-  （Phase 116.1、`workflow-test-wiring.md` の auditor 契約の実装）。
-- **edit-time coverage-shrink guard (T13-T16)**: `tests/validate-plugin.sh` /
-  `tests/test-*.sh` への編集で「test 呼び出し削除 / `|| true` 追加 / `set +e` 化 /
-  アサーション行数減」の 4 縮小パターンを PostToolUse hook が warn する
-  （deny しない。Edit は old/new delta 比較、Write は加算パターンのみ。
-  Phase 116.2）。
+- `harness release --check` proposes a bump read-only after seven days from the last semantic-version tag, after two days with Security notes, or immediately with a Breaking heading. It always exits 0 and changes no version files. Session start shows only actual candidates; unavailable checks remain unobserved.
+- Independent test-wiring audit proposes additions only and permits one appeal. Post-write checks warn, without denying, about test removal, added `|| true`, `set +e`, or fewer assertions. Hermes/LSP and public capability-claim checks now run in CI.
 
 ### Changed
 
-- **Cross-repo ticketing consolidated to harness-mem**: the
-  `harness-governance-private` XR-Registry is retired (operator ruling
-  2026-07-16); new cross-repo handoffs use harness-mem `Plans.md §NNN`
-  (route A) only. Recorded in `.claude/rules/cross-repo-handoff.md`.
-- **Version-surface SSOT wording**: docs now point at
-  `./scripts/sync-version.sh` as the single source for version-sync targets
-  (7 strings across 6 files including `.grok-plugin/plugin.json`).
-
-- **versioning.md Release Train 節の精密化**: `### Breaking` の prefix match と
-  semver tag スコープ（plugin tag 除外）、実装正本 `go/internal/releasetrain` への
-  pointer を明文化（Phase 92.4.3）。
+- Cross-repository handoffs use harness-mem task records. Version guidance points to `scripts/sync-version.sh`, which owns seven version strings across six files. Release proposals ignore plugin-prefixed tags and accept Breaking Changes headings.
 
 ### Fixed
 
-- **Reproducible cross-platform builds**: `go/scripts/build-all.sh` now pins
-  `GOTOOLCHAIN` to the `go.mod` directive and builds with `-buildvcs=false`,
-  matching the binary drift gate recipe byte-for-byte.
-- **gitignore negation gaps**: 7 already-tracked `docs/research/*.md` files
-  gained explicit `!` negation lines, closing the silent-untrack trap on
-  future re-adds.
+- Cross-platform builds pin the Go toolchain to go.mod and disable embedded VCS metadata so bundled binaries match reproducibility checks. Seven tracked research files can be re-added without silently falling under gitignore.
 
 ## [5.1.0] - 2026-07-16
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#510---2026-07-16) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1013)
+
 ### Added
 
-- **Java/Kotlin project detection**: setup now recognizes Maven and Gradle
-  projects, gives Java the intended precedence when Java and Kotlin markers
-  coexist, generates the correct test naming guidance, and selects the matching
-  test command.
-
-- **Phase 111 multi-host bar (H1–H8) + host registry**: `hosts/registry.json`,
-  `scripts/lib/host-registry.sh`, structural workflow smoke
-  (`tests/test-host-workflow-smoke.sh`), admission docs, and CI structural smoke.
-  Grok promoted to `internal-compatible` (install/inspect/structural smoke +
-  `hookcodec.HostGrok`). Public `supported` / 正式対応 remains Claude-only until
-  live H4 workflow smoke lands (111.3.3/111.4.4/111.5.4 blocked on purpose).
-
-- **Grok host adapter packaging**: `.grok-plugin/plugin.json`, `.grok/AGENTS.md`,
-  `scripts/setup-grok.sh` (`--check` + isolated HOME install),
-  `scripts/build-host-plugin-dist.sh --host grok` (package-local `./skills/` paths),
-  and `scripts/model-routing.sh --host grok` (role/tier → `grok-4.5` /
-  `grok-composer-2.5-fast`). Other projects can install Harness workflow skills
-  without Claude Code as the session host. Tier is `internal-compatible`; this
-  is not a public `supported` claim and does not imply Claude
-  SessionStart/PreToolUse parity. Evidence:
-  `docs/research/grok-adapter-candidate.md`. Tests:
-  `tests/test-grok-adapter-candidate.sh` plus host-dist / model-routing /
-  bootstrap / capability-matrix gates.
-
-- **Hermes Agent candidate host path (docs)**: operator-local evidence that CCH
-  `skills/` can be exposed to Hermes Agent via manual directory symlinks, with
-  dynamic slash discovery for `/harness-*` and `/breezing`. Tier is
-  `candidate` only — no setup script, host dist, routing model, runtime floor
-  parity, or public `supported` claim; `.agents/skills` is documented as an
-  optional read-only mirror, not a public one. Evidence:
-  `docs/research/hermes-agent-candidate.md`. Tests:
-  `tests/test-hermes-agent-candidate.sh` plus capability-matrix / onboarding /
-  support-wording gates. (Fresh port of PR #239 + its review fixes; no
-  registry/tier change for existing hosts.)
-
-- **LSP/AST workflow wiring**: `harness-work`, `harness-review`, and `breezing`
-  skills (Claude + Codex variants) now state when to use `harness_ast_search`
-  (same-symbol grep twice in one session; homologous multi-module bugfix
-  pre-search) and gate the DoD on `harness_lsp_diagnostics` only for `.ts`/`.tsx`
-  changes — harness MCP not connected or non-eligible file types are treated as
-  not-configured and non-blocking. Contract pinned by
-  `tests/test-lsp-workflow-wiring.sh` and recorded in
-  `docs/spec/workflow-review-and-release.md`. (`harness_lsp_references` /
-  `definition` / `hover` remain instruction stubs and are not wired; the
-  implementation gap is ticketed cross-repo as harness-mem Plans.md §158.)
+- Setup detects Maven/Gradle Java and Kotlin projects, chooses Java when both markers exist, and generates matching test commands and naming guidance.
+- A host registry and structural workflow checks distinguish support tiers. Grok gains setup (`--check` supported), isolated packaging, and routing as internal-compatible; only Claude is publicly supported at this release. Hermes is a manual-symlink candidate, with no setup/package/model routing or enforcement parity.
+- AST search (code-structure search) is requested after repeated same-symbol searches or before similar multi-module fixes. TypeScript/TSX completion uses language-server diagnostics when Harness MCP is connected; other files or no connection are non-blocking. References/definition/hover remain unwired instructions.
+- Initial Grok packaging/routing named grok-4.5 and grok-composer-2.5-fast. Subsequent releases corrected the catalog evidence; do not use these historical IDs as a current setup recipe.
 
 ### Fixed
 
-- **English-default completion output**: completion reports and Breezing output
-  now use English unless Japanese is explicitly selected. English/Japanese
-  templates and their Claude/Codex/OpenCode mirrors are regression-tested.
-
-- **Deterministic Windows Stop guard**: a Stop event during `cc:WIP` now blocks
-  deterministically on Windows as well as POSIX hosts, without moving safety
-  hooks to asynchronous execution or weakening plugin-root validation.
-
-- **Host hook generation**: normal `harness gen` now skips hosts whose native
-  hook generation is explicitly deferred, matching `--check` behavior, instead
-  of returning an error after partially generating the supported host files.
-
-- **Release tag/version safety**: tag-triggered publishing now fails closed
-  unless the pushed `vX.Y.Z` tag exactly matches the repository `VERSION`,
-  preventing mislabeled release binaries.
-
-- **Release documentation reconciliation**: aligned the Phase 111 plan,
-  onboarding link, and `[Unreleased]` notes with Grok's verified
-  `internal-compatible` tier while keeping public `supported` promotion blocked
-  on live H4 evidence. The R15 specification now records effective Git context
-  handling for `git -C`, `--work-tree`, and unresolved dynamic working context.
-
-- **Support wording gate: partial-denial overclaim detection**: the public
-  claim checker (`tests/test-support-claim-wording.sh`) no longer accepts
-  lines like "supported, but runtime floor parity is not proven" — a
-  denial-looking token (`not proven` / `blocked` / `support wording` / 未主張)
-  used to excuse the whole line or file. The checker now removes only denial
-  phrases that consume the support word itself (neutralize-then-scan) and
-  fails on any remaining host-adjacent support claim; Grok/Cursor
-  `internal-compatible` tier pins are kept. Contract fixtures:
-  `tests/test-support-claim-wording-selftest.sh`.
-
-- **Onboarding host-tier test drift**: `tests/test-tool-first-onboarding.sh`
-  still expected the pre-promotion `Cursor|candidate` row and had no Grok row,
-  so it failed against the released `internal-compatible` tier tables. The
-  expectations now match the shipped tiers (Cursor/Grok `internal-compatible`,
-  Hermes Agent `candidate`).
-
-- **Public environment templates (Issue #238)**: writes and staging now allow
-  the exact public template names `.env.example`, `.env.template`,
-  `.env.sample`, and `.env.dist`. Real environment files, added suffixes,
-  secret-directory nesting, and symlink targets remain fail-closed across the
-  Go policy engine and legacy shell guard, including staged paths resolved
-  through relative, absolute, nested, or repeated `git -C` options.
-
-- **Host package release gates**: generated hooks now skip Grok's explicitly
-  deferred native-hook surface instead of failing all Claude/Codex/Cursor
-  generation. Codex host packages include the registry helper closure required
-  to build the advertised Cursor package, and an unconfigured `cursor-agent`
-  deterministically reports exit 3 before optional model routing.
-
-- **Codex / Orca hook compatibility (Phase 112.10)**: the Codex plugin manifest
-  now explicitly overrides plugin-bundled hooks with an inline empty hook map,
-  so Codex no longer falls back to Claude-only agent / async handlers. Generated
-  Codex and Cursor project hook JSON now contains vendor-supported top-level keys
-  only; the shared runtime floor and generated command hooks remain active.
-
-#### Before/After（shared hook compatibility）
-
-| Before | After |
-|--------|-------|
-| Codex / Orca fell back to Claude's `hooks/hooks.json` and warned about unsupported agent / async handlers | Codex manifest uses an inline empty hook override; Claude's agent hooks remain unchanged and are not parsed by Codex |
-| Generated `.codex/hooks.json` included an unknown `floor_policy` top-level key and was rejected | Vendor hook JSON contains only supported keys; the generated `PreToolUse` and delivery command hooks load without parse warnings |
+- Completion output defaults to English unless Japanese is selected. Windows Stop checks deterministically block WIP. Hook generation skips explicitly deferred hosts instead of failing after partial output. Release tags must match VERSION before publishing.
+- Public `.env.example`, `.env.template`, `.env.sample`, and `.env.dist` can be written/staged exactly. Extra suffixes, real secrets, secret-directory nesting, and secret symlink targets remain blocked, including Git commands with changed working directories. Bulk support claims cannot hide behind a partial disclaimer.
+- Codex packages include required registry helpers and override Claude-only agent/async hooks with an inline empty hook map. Generated Codex/Cursor hooks use vendor-supported keys while shared command-based checks and delivery stay active. An unconfigured Cursor executable reports exit 3. Host-tier documentation and tests match the shipped internal-compatible tiers.
 
 ## [5.0.0] - 2026-07-08
 
-### テーマ: 0 ベース再設計線の本流化 + 事前確認フローの導入
-
-**計画確定の段階で「途中で確認が要りそうな事項」をまとめて承認できるようになり、実装中に作業が止まらなくなりました。あわせて次世代設計（0 ベース再設計）を本流に統合しました。**
-
----
-
-#### 1. plan-time 事前確認（作業スコープごとの前倒し承認）
-
-**今まで**: 秘密ファイルの読み取りや外部送信が必要な作業では、実装の途中でその都度確認が入って作業が止まっていました。事前に許可する手段は広域・常設の環境変数しかなく、「このプロジェクト全体を許可」のような粗い宣言しかできませんでした。
-
-**今後**: `/harness-plan` で計画を確定するときに「事前確認セクション」が生成され、その計画で発生しそうな確認事項（秘密ファイル読み取り / 外部送信 / 破壊的操作）を作業スコープ単位で一括提示します。計画承認と同時に承認すれば、`/harness-work` や `/breezing` は完走まで途中で止まりません。計画に無い未宣言の操作は従来どおり停止するので、安全網は狭まりません。
-
-#### 2. secret-read allowlist（floor の事前許可機構）
-
-**今まで**: runtime floor の 5 カテゴリのうち secret-read だけが事前許可機構を持たず、宣言済みのファイルでも毎回停止していました。
-
-**今後**: `HARNESS_RUNTIME_FLOOR_SECRET_ALLOW` とプロジェクト設定 `.claude-code-harness.config.json` の `runtimefloor.secretAllow` で許可 path を宣言でき、宣言済みの読み取りは停止しません。全開放は不可、設定不正時は fail-safe で全 deny、project 外の絶対 path は無効です。
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#500---2026-07-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1129)
 
 ### Breaking Changes
 
-- **0 ベース再設計線の本流化**: v4 系の内部構成（skills 構成、hooks 配線、生成物 layout、cursor/codex delivery hooks の生成物化）を全面刷新した redesign 線が本流になりました。v4.16.x からの更新後は `/reload-plugins` の実行を推奨します。
+- The redesigned skill/hook/distribution structure replaces the 4.x line. After upgrading from 4.16.x, run `/reload-plugins`.
 
 ### Added
 
-- **Harness worktree residue doctor check (Phase 105.7)**: `.harness-worktrees/` を git ignore 対象にし、`harness doctor` が 7 日以上未更新または git 管理外になった Harness worktree を advisory warning として検出するようにしました。新しい / 古い / 不在の 3 状態テストを追加しています。
-
-- **Failure Codifier（Phase 100）**: breezing orchestration ledger + Judgment Ledger から再現失敗パターンを read-only 抽出し、`failure-rule.v1` 候補を confidence score 付きで提案する self-learning loop 中核を追加しました。`templates/schemas/failure-rule.v1.json` / `go/internal/failurecodifier`（Extract / Confidence count≥3 medium・count≥5 high / human-approval gate で auto-promotion 構造的禁止）/ `scripts/failure-codifier-propose.sh --dry-run` / `skills/failure-codifier/SKILL.md` + `references/promotion-workflow.md`（`human-approval-required`）がセットです。`patterns.md` / `decisions.md` への昇格は dry-run 提案のみ — codifier は SSOT を一切書き込みません。
-
-#### Before/After（Failure Codifier）
-
-| Before | After |
-|--------|-------|
-| breezing / judgment 失敗が ledger に散在、再現パターンの体系化なし | orchestration + judgment ledger から failure-rule.v1 候補を read-only 抽出 |
-| SSOT 昇格は ad-hoc 手動のみ | confidence 閾値（3/5）+ `proposed_ssot_target` heuristic 付き JSON 提案 |
-| 自動昇格リスクの明示的ガードなし | `promote.go` が auto-promote を return error で構造的禁止（human 承認必須） |
-
-- **Client Mirror drift detection（Phase 99.2）**: `skills/` SSOT と mirror root（`codex/.codex/skills` / `opencode/skills`、`.agents` は未構成許容）の drift を検出する層を追加しました。`templates/schemas/mirror-state.v1.json` / `go/internal/clientmirror`（Scan/Diff/Fingerprint、`in-sync` / `drift` / `not-configured` の tri-state）/ `bin/harness mirror status`・`verify`（`mirror-state.v1` JSON）/ `scripts/sync-skill-mirrors.sh --check` の `harness mirror verify --json` 委譲 / `skills/` 配下の Edit/Write で警告する PostToolUse drift hook / `.claude/rules/skill-editing.md` Client Mirror 契約節 / CI gate（`check-consistency.sh` section 19）がセットです。auto-sync は既定 OFF、mirror 更新は sync script で意図的に行います。
-
-- **Night Watch patrol layer（Phase 99.1）**: 未解決ループ / 停滞タスク / 古い open decision を夜間バッチで巡回する Night Watch 監視層を追加しました。D40 tri-state health（`not-configured` / `daemon-unreachable` / `corrupted` / healthy）を踏襲し、`NIGHT_WATCH_ENABLED=false` 既定 OFF + opt-in install です。`templates/schemas/night-watch-report.v1.json` / `templates/night-watch-config.yaml`（`stale_task_hours: 72` / `open_decision_hours: 168`）/ `go/internal/nightwatch` / `scripts/night-watch-report.sh --dry-run` / Session Monitor `night_watch` 統合 / `templates/night-watch-cron.template` + `scripts/night-watch-install.sh`（fixture/tempdir のみ）/ CI gate（`check-consistency.sh` section 18）がセットです。Plans.md 停滞判定は file mtime 代理、open decision は `**Status**: Open` マーカー + 見出し日付を使用（Lead 既定）。
-
-- **Judgment Ledger v1（Phase 98.1）**: stage b の `judgment-card.v1` 回答を append-only JSONL ledger 化し、project スコープの search/recall で過去判断を Decision Card の `similar_past_decisions`（最大 3 件）へ再利用できるようにしました。`templates/schemas/judgment-ledger.v1.json` / `go/internal/judgmentledger` / `scripts/judgment-ledger.sh`（append・search・recall）/ `scripts/judgment-card.sh` record-answer 配線 + `recall` subcommand / `docs/judgment-ledger.md` がセットです。search ranking は string-match 方式（Lead 既定）。
-
-#### Before/After（Judgment Ledger v1）
-
-| Before | After |
-|--------|-------|
-| `record-answer` は harness-mem checkpoint のみ（ローカル監査 JSONL なし） | `.claude/state/judgment-ledger.jsonl` へ schema 検証済み append（fail-open） |
-| Decision Card に過去判断の自動 recall なし | ledger search → `similar_past_decisions` 最大 3 件を card recall layer で注入 |
-| project 横断の判断履歴参照なし | project フィールドで分離された file-based index（max 3 件返却） |
-
-- **Retired Alias Registry（Phase 97）**: 退役 alias の永続レジストリ + CI 検出ゲートを Go 層に再導入しました。`templates/schemas/retired-alias.v1.json` / `templates/registry/retired-aliases.v1.yaml` / `go/internal/retiredalias` / `bin/harness retired-alias scan` / `scripts/ci/check-consistency.sh` retired-alias section / `.claude/rules/retired-alias-policy.md` がセットです。
-
-#### Before/After（Retired Alias Registry）
-
-| Before | After |
-|--------|-------|
-| Phase 91.7 で `deleted-concepts.yaml` + `scripts/check-residue.sh` が撤去され、削除済みパス・概念の exclusion-based 検証がない | `retired-alias.v1` schema 駆動の registry + Go scanner + CLI + CI gate で最小スコープ再導入 |
-| 残骸検出は bash/python ワンオフ | `bin/harness retired-alias scan`（ヒット 0 = exit 0、1 件以上 = exit 1） |
-| 運用 SSOT が分散 | `.claude/rules/retired-alias-policy.md` + `templates/registry/retired-aliases.v1.yaml` |
-
-- **Plan B stage a planning（Phase 97-100）**: stage a (self-learning layer) を 6 領域 / 45 task / 4 worktree group に分解し Plans.md に追加。Phase 97 Retired Alias Registry（warm-up）、Phase 98 Judgment Ledger + Channels-Wake、Phase 99 Night Watch + Client Mirror、Phase 100 Failure Codifier（human-approval gate 必須）。34 named TDD RED test、active-watching 3-state pattern（NotConfigured / Unreachable / Healthy / Corrupted）、5-category floor 不変、auto-approve 既定 OFF を全 task で保持。autonomous_run_confidence: medium、4 stop points（98.1.5 / 98.2.4 / 99.1.3 / 100.1.4）で Lead 判断介入。Phase 94 (Release Train Proposal) との関係は stage a 完成後の独立 trigger。
-
-- **Parallel worktree spawn（Phase 92.1.1）**: `scripts/spawn-parallel.sh` で `git fetch origin` + 単一 base SHA から `.harness-worktrees/task-<name>` / `task/<name>` を idempotent に作成。`rerere.enabled` を project config に設定。`spec.md` Worktree Root Discipline で `.harness-worktrees/` と `.claude/worktrees/` の責務分離を明文化。
-
-- **Worktree reap（Phase 92.1.2）**: `scripts/reap-worktrees.sh` で `.harness-worktrees/` 配下の worktree と reap 成功した `task/*` branch のみを掃除（`.claude/worktrees/` 等の他 root は不可侵）。dirty worktree は default skip / `--force` でのみ削除、CWD 内実行は fail-fast、0 件でも安全な no-op。
-
-- **Shared File Discipline（Phase 92.1.3）**: 並列 worktree 実行時の共有ファイル編集規約を `.claude/rules/shared-file-discipline.md` に正本化（共有 append ファイルは owner-assigned append-only / VERSION は worktree 内で bump しない / 生成物は trunk で 1 回再生成）。`check-consistency.sh` の Section 15 が規約存在と 3 invariant キーフレーズを CI 検証。
-
-- **Runtime action hard floor（Phase 92.2.1）**: Bash command を実行前（PreToolUse 層）に pattern-match して 5 カテゴリ（money/billing・外部送信/egress・認証/secret 読取・本番 deploy・worktree 外破壊）の運用は必ず human escalation に上げる仕組みを `go/internal/runtimefloor` として追加しました。`CheckCommand` は disable flag / env var / config 読込を構造的に持たないため、どの設定でも無効化できません。decision は `permissionDecision=ask` + reason `RUNTIME_FLOOR:<category>:...` 形式で返ります。既存の file gate (`go/internal/floor`) は "pre-merge policy gate" と名称分離し、混同を防ぎました。
-
-- **Worktree-escape の OS temp allowlist（Phase 92.2.4）**: Phase 92.2.1 で導入した `worktree-escape` カテゴリの判定を narrow にしました。OS が「消えていい」と保証している scratch 領域（`/tmp` / `/var/tmp` / macOS の `/private/tmp` / `/private/var/tmp` / `$TMPDIR` override / `~/.cache` / `~/Library/Caches`）配下の `rm -rf` は worktree 外でも通します。`~/Desktop` / `~/Documents` / `/etc` / `/opt` 等の本物の data-loss path は引き続き `RUNTIME_FLOOR:worktree-escape` で人間判断必須です。
-
-#### Before/After（Worktree-escape temp allowlist）
-
-| Before | After |
-|--------|-------|
-| `rm /tmp/v3check/p*.png` のような一時ファイル掃除も毎回 hard stop | OS temp 領域配下は通る。本当のデータ損失リスクのある削除のみ stop |
-| `rm ~/Desktop/important.pdf` も `rm /tmp/foo` も同じ扱い | Desktop/Documents 等は stop、`/tmp` 系は通る |
-| Phase 92.2.1 fail-safe（env / config で disable できない）を維持 | 同じ。allowlist は code に hardcode（runtime 上書き経路なし） |
-
-- **Worktree escape fingerprint gate（Phase 92.2.2）**: cursor/codex worker の worktree 封じ込めを `go/internal/wtfingerprint` + `bin/harness wt fingerprint capture/diff` で実装しました。`scripts/cursor-companion.sh` と `scripts/codex-companion.sh` は task 実行を fingerprint capture(before) → 起動 → diff の流れで wrap し、`$HOME/.claude/settings*.json`・`~/.claude/plugins/{installed_plugins,known_marketplaces,blocklist}.json`・`~/.aws/`・`~/.ssh/`・`~/.gnupg/`・`~/.config/gcloud/`・`~/.netrc` への worktree 外書込を検知すると hard-stop します（companion exit 1）。`bin/harness` 不在は fail-fast。`.claude/rules/cursor-cli-only.md` に「`--workspace` は CWD ヒントで書込境界ではない」を明記し、Harness 側 3 段境界（専用 worktree + fingerprint 比較 + Lead diff review/cherry-pick）を SSOT 化しました。CC ランタイム自身が常時書き込む ephemeral 領域（`~/.claude/projects/` / `~/.claude/plugins/cache/` 等）は監視対象外として false WORKTREE-ESCAPE を構造的に防いでいます。
-
-- **Team dispatch hardening（Phase 92.2.3）**: `harness work --team` 経路で companion 起動直前に Phase 92.2.1 の runtime hard floor を通すよう配線しました。floor が止めた場合は companion を起動せず `RUNTIME_FLOOR:<category>:...` を載せた exit 2 envelope を返します。auto-approve（環境変数 `HARNESS_AUTO_APPROVE=on`）は `go/internal/autoapprove` で構造的 fail-safe 化し、`bin/harness wt fingerprint capture` が exit 0 で動かない限り **OFF に強制**されます（env だけでは ON にできない）。新 package `go/internal/orchestrationledger` が `scripts/lib/orchestration-ledger.sh` と互換な 8 フィールド JSONL を `subcommand="team-dispatch"` で append し、auto-approve 判定と floor stop を Lead が監査できるようにしました。
-
-- **Lead 集約 callable（Phase 92.3.1）**: cherry-pick FLOOR を prose 手順から callable 関数 `go/internal/integrate.Integrate(ctx, opts)` へ昇格しました。`rebase task onto trunk → cherry-pick --no-commit → floor.Gate → commit` を 1 関数で実行し、rerere 自動 replay を `using previous resolution` 文言と `.git/rr-cache` mtime 変化の 2 経路で検出します。floor.Gate 失敗時は cherry-pick を abort + working tree を巻き戻し、成功時は `orchestrationledger.EmitIntegration` が `subcommand="integration"` で task branch / commit SHA / `rere_resolved` / `floor_pass` を JSONL ledger に append-only 記録します。GitRunner / ScriptRunner / LedgerWriter は DI 化、e2e テストは temp git repo で 3 task 逐次統合と SHARED.md の rerere replay を実 git で検証（155 test PASS）。
-
-- **本番 WorkerFunc e2e 検証 + companion-result ledger（Phase 92.3.2 / 92.3.3）**: `productionCompanionWorker` が test stub でなく実 companion script を叩く end-to-end 経路を、claude / codex / cursor 異種 3 backend の並列実行 + table-driven 失敗 3 パターン（script 不在 / 非 0 exit / raw stderr）で検証しました。skeptic が指摘していた「stub では PASS したが本番 wiring は未検証」のリンクが埋まりました。あわせて `orchestrationledger.EmitCompanionResult`（`subcommand="companion-result"`）を追加し、companion の全終了経路（script 不在 / runtime floor stop / 実行結果）が backend 別に JSONL ledger へ記録されます。統合後に trunk で生成物を 1 回再生成（platform バイナリ 4 本 + host hooks、Invariant 3）し、validate-plugin 103/0/0 / check-consistency / go test 26 pkg を確認済み。
-
-- **Fable 5 brain opt-in（`HARNESS_BRAIN_MODEL`）**: `scripts/model-routing.sh` の claude 頭脳枠（`deep` / `advisor`）を `HARNESS_BRAIN_MODEL=fable` で `claude-fable-5` に切替可能にしました。デフォルトは `claude-opus-4-8` のまま（opt-in）、未知の値は exit 2 で fail-loud。codex / cursor のモデル表は不変です。`claude-fable-5` を `harness validate` の認識モデルに追加し、配布バイナリを再ビルド済み。
-
-- **Cursor hook deny parity の実証 + Shell tool-name 正規化（Phase 83.7）**: cursor-agent CLI（2026.06.12）の project-level `.cursor/hooks.json` `preToolUse` hook が **書込前 deny を実行できる**ことを live spike で確認しました（protected path への Write が実際に阻止される / 許可 path は誤検知なし）。これにより `.cursor/hooks.json` → `bin/harness hook pre-tool --host cursor` の配線は config shape ではなく実runtime deny 層になります。同時に発見した「live Cursor は shell tool を `Shell` と名乗り、未マップだと R06/R11 を素通りする」fail-open ギャップを `hookcodec.Normalize` の `Shell`→`Bash` 正規化で修正し、live-shape テストを追加。支援 tier は `candidate` のまま不変。
-
-- **AppleScript ポリシー codify（Phase 93.1.2）**: `.claude/rules/cursor-cli-only.md` に「AppleScript は `activate` + `open -a` の 2 動詞のみ許可、`System Events` keystroke/click 注入は禁止」を明文化し、再昇格 4 条件（hook source-identifier / Read tool sandbox 拡張 / Codex 非 Bash イベント / Cursor AppleScript dictionary）を `docs/research/applescript-decision-2026-06.md` に記録しました。
-
-- **3 CLI 公式機能棚卸し（Phase 93.2.1）**: Claude Code / Cursor / Codex の公式機能を「機能名 / 最低バージョン / GA・preview / CCH 重複 / 採用・置換・捨てる」5 列 19 行で `docs/research/official-feature-inventory-2026-06.md` に固定しました。バージョン根拠が repo に無い行は `unverified` と明記（not_observed != absent）。
-
-- **Brief Composer v0（Phase 93.3.1）**: `/breezing` の既存引数に一致しない自由文入力を 3-7 個のサブタスクへ分解して確認する `brief-card.v1`（`templates/schemas/brief-card.v1.json`）と `scripts/breezing-brief.sh`（`classify` / `validate` / `confirm`）を追加しました。No 回答は実行 0 件の dry 契約。既存引数経路への regression はありません（19 assertion + 既存 trigger テスト PASS）。
+- Planning presents anticipated secret reads, external sends, and destructive operations for task-scoped advance approval. Undeclared actions still stop; later releases connect additional preapprovals to runtime checks. Secret paths can be declared with `HARNESS_RUNTIME_FLOOR_SECRET_ALLOW` or JSON `runtimefloor.secretAllow`; blanket opening, invalid config, and project-external absolute paths are rejected.
+- `harness doctor` warns about Harness worktrees older than seven days or no longer registered in Git. Spawn scripts fetch once and create task worktrees from one base SHA; reaping touches only Harness worktrees/task branches, skips dirty worktrees by default, requires force to remove them, and refuses running inside the target.
+- Five runtime checks cover billing, external egress, secret reading, production deployment, and destruction outside the worktree. OS temporary/cache cleanup is allowed narrowly. Worker wrappers fingerprint selected settings and credential locations before/after execution and stop on outside writes; routine runtime caches are excluded. A working fingerprint checker is required before optional automatic approval can activate.
+- Parallel integration rebases, cherry-picks without committing, runs the policy gate, and commits only on success; failure restores the working tree. Shared append files have assigned owners, task worktrees do not bump versions, and generated artifacts rebuild once on trunk.
+- Failure Codifier extracts read-only rule proposals (three occurrences: medium confidence; five: high) and requires human promotion. Judgment history is append-only, project-scoped, and can recall up to three past decisions by string matching. Neither changes policy automatically.
+- Night Watch is OFF by default (`NIGHT_WATCH_ENABLED=false`) and needs opt-in installation. It reports unresolved loops, tasks stale at 72 hours, and decisions open at 168 hours; task age uses file modification time. Mirror status/verify distinguishes in-sync, drift, and unconfigured; automatic synchronization is OFF.
+- A retired-name registry detects migration leftovers. Free-text Breezing requests can be split into three to seven tasks for confirmation; a No response executes none. Claude brain roles optionally select Fable 5 with `HARNESS_BRAIN_MODEL=fable`, otherwise retain Opus 4.8; unknown values fail.
+- Live Cursor pre-tool denial was verified and Shell tool names are normalized to Bash; its support tier remains candidate. AppleScript guidance permits activation/open only, excluding System Events input injection. Official-feature inventory separates observed facts from unverified version claims.
+- The self-learning rollout plan is recorded separately from shipped capabilities; automatic promotion/approval remains OFF. Companion execution and integration outcomes gain audit records so attempted, failed, and completed work can be distinguished.
+- Use `bin/harness wt fingerprint capture/diff` to inspect monitored changes. Monitoring covers Claude settings/plugin registries and credential locations (`~/.aws/`, `~/.ssh/`, `~/.gnupg/`, `~/.config/gcloud/`, `~/.netrc`); routine Claude project/cache writes are excluded. This is before/after detection, not an OS filesystem jail. `HARNESS_AUTO_APPROVE=on` is forced OFF if the fingerprint command cannot succeed.
 
 ### Changed
 
-- **レビュー契約の精緻化（spec.md Execution Backend Contract）**: 自己レビュー禁止の対象を「モデルファミリー」から「diff を生成した同一コンテキスト」に明確化しました。フレッシュコンテキスト（producing worker と会話状態を共有しないセッション）の cursor `review` tier（`composer-2.5-fast`）による advisory プレレビューを、brain 一次レビューの前段として正式に許可します。primary verdict は引き続き brain 固定です。
+- Self-review means sharing the producing context, not merely using the same model family. Fresh Cursor review can advise before primary brain review; it does not replace the primary verdict.
 
 ### Fixed
 
-- **`/harness-release` の workflow delegation（PR #225 取り込み）**: Claude Code 2.1.183+ の runtime hard floor が GitHub CLI release publish 系コマンドを deny するため、skill 側は tag push までを責務とし、GitHub Release 公開は `.github/workflows/release.yml` に委譲する契約へ更新しました。`scripts/release-verify-publish.sh` を追加し、workflow による公開結果（`draft=false` かつ assets 4 本以上）を `gh api` polling で確認します。direct publish 手順は skill / mirror / release notes reference から削除済みです。
-
-- **Reviewer の defensive-security intent 明示（issue #172）**: `claude-code-harness:reviewer` が security レビューを開始した直後に Anthropic 側 model safeguard が false-trigger し、Opus 4.7 にフォールバックされて応答が止まる現象を緩和するため、`agents/reviewer.md` と `skills/harness-review/references/security-profile.md` の冒頭に「authorized defensive code review」「audit-only / exploit payload は出力しない」を scope 宣言として追加しました。security findings は引き続き OWASP / CWE 観点で `major` 以上として記録します（観測の報告のみ、攻撃コードは含めません）。
-
-- **Reviewer cyber-safeguard の構造的緩和（issue #172 続報）**: scope 宣言（prompt 文言）だけでは再発する根因を特定しました。Anthropic の cyber-safeguard は最新メッセージだけでなく **context 全体**（会話履歴・memory・既読ファイル）を判定するため、reviewer の security findings が親 session に還流した時点で切替が起きます。`security-profile.md` に「Fresh-context 隔離と findings 還流の契約」を追加し、(1) `context: fork` + reviewer の非 Fable model pin（`claude-sonnet-4-6`）で classifier が読む security 語彙を構造的に削減、(2) 親 orchestrator への findings 還流を `verdict ＋ 件数 ＋ file:line ＋ 1 行修正方針` に限定して逐語ダンプを禁止、を明文化しました。`check-consistency.sh` に section 16 を追加し、reviewer が非 Fable model に pin されていることと本契約フレーズの存在を CI で固定（Fable/inherit へ変更すると CI が fail）。**保証はあくまで呼び出し側 session を Opus にすること**で、本緩和は trigger 面の縮小である旨も契約に明記しました。
+- Release skills hand publishing to the tag-triggered workflow and verify a non-draft GitHub Release with at least four assets. Security reviews declare authorized audit scope, use isolated fresh-context Sonnet 4.6, and return only verdict/count/location/fix summaries to reduce model safeguard interruptions; this reduces triggering rather than guaranteeing availability.
 
 ## [4.16.4] - 2026-06-28
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4164---2026-06-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1241)
+
 ### Changed
 
-#### runtime action hard floor の egress カテゴリにオーナー単位の scope 制御を追加
-
-**今まで**: `curl` / `wget` / `nc` / `scp` / `rsync` で許可リスト外ホストへ通信すると、
-runtime action hard floor が必ず human approval に上げていました。これは自律 worker の
-暴走防止としては正しい一方、ユーザー自身が回す調査・ダイナミックワークフロー（外部 URL を
-正当に多数取得し、人間がその場で見ている）でも step ごとに同じ確認が出続け、過剰でした。
-egress は環境変数で無効化できない設計のため、これを止める手段がありませんでした。
-
-**今後**: オーナーが `HARNESS_RUNTIME_FLOOR_EGRESS=off` を設定したセッションでは、
-egress カテゴリ**のみ**を floor の対象外にできます。残る 4 カテゴリ（課金 / secret 読取 /
-本番 publish / worktree 外破壊）は引き続き無効化不可です。
-
-```jsonc
-// ~/.claude/settings.json — 調査セッションを既定で egress floor の対象外にする
-{ "env": { "HARNESS_RUNTIME_FLOOR_EGRESS": "off" } }
-```
-
-この変数は PreToolUse hook が読む **Claude Code プロセスの環境**に対してのみ効きます。
-sandbox 化・prompt injection された worker は hook の環境を書き換えられないため、
-設定できるのはセッションを起動する人間（shell export か settings.json）に限られます。
-未設定・`off` 以外の値はすべて従来どおり enforce（fail-safe default）。
+- Commands that send data to hosts outside the allowlist (`curl`, `wget`, `nc`, `scp`, `rsync`) ask you before every run. In research sessions you watch yourself, you can turn off only this check by setting `HARNESS_RUNTIME_FLOOR_EGRESS=off` before Claude Code starts: `export` it in the launching shell, or add `{ "env": { "HARNESS_RUNTIME_FLOOR_EGRESS": "off" } }` to `~/.claude/settings.json`. Only the exact value `off` works; unset or any other value keeps the check. A sandboxed or prompt-injected worker cannot change it, because it is read from the environment of the hook process started by the person launching the session. Billing, secret reading, production publishing, and destruction outside the worktree stay checked and cannot be turned off.
 
 ## [4.16.3] - 2026-06-24
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4163---2026-06-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1267)
+
 ### Fixed
 
-#### Plugin reload 後に `UserPromptSubmit` hook が missing script で警告する問題
-
-**今まで**: `v4.16.2` を local Claude Code plugin cache に適用したあと、versioned cache に
-`scripts/userprompt-inject-policy.sh` など一部 hook script が入っておらず、
-plugin reload 後の最初の入力で non-blocking hook error が表示されることがありました。
-
-**今後**: hook が直接参照する `scripts/*.sh` を host dist と versioned cache sync の両方へ
-動的に含めます。さらに direct script hook は、対象 script が存在しない stale cache root を
-valid root とみなさず、marketplace/source root へ fallback します。
-
-#### Codex host の `breezing --cursor` が helper scripts 欠落で起動できない問題
-
-**今まで**: Codex 用 skill には `--cursor` が書かれていても、install cache に
-`cursor-companion.sh` / `resolve-impl-backend.sh` / `codex-companion.sh` が無い経路では、
-実際の Cursor backend 委譲を開始できませんでした。
-
-**今後**: generated Codex dist と isolated Codex plugin cache に必要 helper scripts が
-入ることを release gate で検証します。`codex-companion.sh task` は `--effort` 未指定でも
-default effort を付与して安全に companion へ渡します。
+- Reloaded plugins now include directly referenced hook scripts in packages/caches and reject stale roots missing them. On Codex, `breezing --cursor` now includes its helper scripts and can start; omitted Codex effort receives a default.
 
 ## [4.16.2] - 2026-06-24
 
-### テーマ: 非エンジニアレビュー由来の安全性・分かりやすさ改善
-
-**「秘密のコミット」事故を防ぐガードレールと、生成物の専門用語を読み解くための用語集を追加。**
-
----
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4162---2026-06-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1291)
 
 ### Fixed
 
-#### Runtime action hard floor を配布版へ昇格
-
-**今まで**: local dogfood では、課金・外部送信・secret 読取・本番 publish・worktree 外破壊の 5 カテゴリを
-実行前に human escalation へ上げる runtime action hard floor を試していました。一方、public `v4.16.1`
-にはこの挙動が入っておらず、local dogfood runtime を public latest へ plain update すると安全挙動が落ちる状態でした。
-
-**今後**: public release line に runtime action hard floor を昇格します。設定や環境変数では無効化できず、
-危険カテゴリは `RUNTIME_FLOOR:<category>:...` の ask decision として必ず人間判断に上がります。
-同時に worktree-escape 判定は narrow にし、OS が scratch 領域として扱う `/tmp` / `/var/tmp` /
-macOS の `/private/tmp` / `$TMPDIR` / user cache 配下の掃除は通します。`~/Desktop` / `~/Documents` /
-`/etc` / `/opt` のような data-loss path は引き続き止めます。
-
----
-
-#### `/harness-release` が CC runtime hard floor で自動完走できなかった問題 (#221 follow-up)
-
-**今まで**: v4.16.1 リリース時、`/harness-release` の最後の GitHub CLI release publish 手順が
-Claude Code 2.1.183+ の runtime hard floor (`prod-deploy` カテゴリ) で deny されて
-自動完走できませんでした。settings.json の `permissions.ask` を追加しても効かず、
-最後の publish step は手動でターミナルから打つ必要がありました。実は `.github/workflows/release.yml`
-が tag push trigger で release を自動公開していたため、skill 側の release publish step は
-重複作業で必ず CC floor に弾かれる構造でした。
-
-**今後**: skill は tag push までで責務終了し、release publish は GitHub Actions workflow に
-完全委譲します。`scripts/release-verify-publish.sh` を新設し、`gh api repos/<owner>/<repo>/releases/tags/<tag>`
-を 5 秒間隔で最大 60 回 polling して workflow による公開 (`draft=false` 且つ assets ≥ 4) を
-verify します。verify は GitHub CLI の release subcommand prefix を避けて、CC floor の
-prod-deploy regex へ触れない形にします。
-timeout 時は tag は既に push 済のため abort せず WARN で人間判断を促します。
-
-```bash
-# Verify step output:
-PASS: v4.16.1 published with 4 assets (attempt 8/60)
-```
-
----
-
-#### 1. 秘密ファイルの誤コミット防止（ガードレール R15）
-
-**今まで**: `git add .env` や `git commit -- .env` のように秘密ファイルを git に載せる操作には deny/ask が無く、R09 は秘密ファイルの**読み取り警告のみ**でした。非エンジニアが「コミットして」に yes と答えると、`.env` や鍵ファイルが履歴に入り込む可能性がありました（push 取消は force-push 必須＝R06 で拒否されるため事実上不可逆）。
-
-**今後**: 新ガードレール **R15** が `git add` / `git stage` / `git commit <pathspec>` の引数を解析し、秘密ファイル（`.env`/`.env.local`/`.env.production`、`*.pem`/`*.key`/`*.p12`/`*.pfx`、`id_rsa`/`id_ed25519`、`secrets/`、`.ssh/`、`.aws/`、`.npmrc`/`.pypirc`/`credentials`）の staging を **deny** します。
-
-- コミットメッセージ内の `.env`（例: `git commit -m "fix .env loading"`）は pathspec と誤認しません（`--` 区切り後のみ pathspec として扱う設計）。
-- `git add .` / `git add -A` などの bulk add は**ブロックしません**（`.gitignore` + 既存の R02/R03 書込ガードに委ねる設計判断。摩擦を増やさないため）。
-- コマンド解析はクォート・バックスラッシュエスケープ対応のシェル字句解析で行い、`git commit -m "x; y" -- .env` や `git commit -m "test\"end" -- .env` のようにメッセージ内へ区切り記号・`--`・エスケープ引用符を混ぜた回避を防ぎます。`git -C <dir>` / `$(...)` / backtick 形式も検出します。
-- 実装: `go/internal/guardrail/{helpers.go,rules.go}`、テスト 33 件追加（deny / 回避耐性 / 誤検知防止 / スコープギャップ）。
-
-#### 2. 非エンジニア向け用語集の追加
-
-**今まで**: `spec` / `contract` / `cc:完了` / `confidence %` / `team_validation_mode` / `$easy` などの用語が生成物に出るのに、利用者向けの定義がどこにも無く、「これで承認していいか」を判断できませんでした。
-
-**今後**: `docs/onboarding/glossary.md` を新設。各用語を**1 文のやさしい説明（日英併記）**で定義し、`confidence %` の目安（75%+=進めてOK / 40-74%=注意 / 40%未満=相談）まで明記。README.md / README_ja.md の Quickstart 導線と Documentation 表からリンク。
+- The public release now includes the pre-execution safety check that earlier existed only in local test builds. Five kinds of action always come to you for confirmation, shown as `RUNTIME_FLOOR:<category>`: billing, sending data outside, reading secrets, publishing to production, and deleting outside the worktree. In this release no setting or environment variable turns them off (4.16.4 later allows turning off only the outside-sending check). Cleanup inside OS temporary and cache areas (`/tmp`, `/var/tmp`, `/private/tmp`, `$TMPDIR`, user cache) is allowed. Deleting in `~/Desktop`, `~/Documents`, `/etc`, or `/opt` still asks.
+- `/harness-release` now stops after pushing the tag. A GitHub Actions workflow triggered by that tag (`.github/workflows/release.yml`) publishes the GitHub Release, because Claude Code 2.1.183+ blocks the publish command itself. The skill then checks every 5 seconds, up to 60 times (about 5 minutes), for a non-draft release with at least 4 attached files. On timeout it warns instead of failing, because the tag is already pushed. Inference (high confidence, from the script at this tag): a project without such a workflow gets no published release, and a project that attaches fewer than 4 files ends with the warning even when publishing succeeded.
+- Explicitly adding secret files to Git is now denied for `git add`, `git stage`, and `git commit <path>`: `.env`, `.env.local`, `.env.production`, `*.pem`, `*.key`, `*.p12`, `*.pfx`, `id_rsa`, `id_ed25519`, `secrets/`, `.ssh/`, `.aws/`, `.npmrc`, `.pypirc`, `credentials`. Removing a secret from remote Git history usually requires rewriting that history and a force update, which Harness denies under its force-push policy. This does not erase copies others already obtained; deleting the file in a new commit leaves the old history intact. Text inside a commit message (for example `-m "fix .env loading"`) is not treated as a path. Bulk `git add .` and `git add -A` are still allowed and rely on `.gitignore` and existing write protection. `git -C <dir>`, `$(...)`, backticks, quoting, and escaped quotes are inspected so they cannot hide a secret path.
+- A bilingual glossary (`docs/onboarding/glossary.md`, linked from the README quickstart) explains terms that appear in generated output, such as spec (product specification), contract (agreed requirements), `cc:完了` (finished and verified), and confidence % (reported certainty). Confidence bands at this release: 75% or more, proceed; 40 to 74%, caution; below 40%, consult. They are decision aids, not a success-probability guarantee.
 
 ## [4.16.1] - 2026-06-19
 
-### テーマ: Phase 94 open issue triage — review approval persistence と関連 follow-up
-
-**v4.16.0 リリース後に着手した Phase 94 open issue triage の修正をまとめた patch release。review verdict の永続化、release の bump commit ブロック解除、skill listing budget の短期対応、i18n / reviewer safeguard まわりのドキュメント整備が中心。**
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4161---2026-06-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1355)
 
 ### Fixed
 
-#### `harness-review` / `harness-release` で出た APPROVE が commit guard を通らなかった問題（#218）
-
-**今まで**: `/harness-review` を単独で実行したり、`/harness-release` の Review Gate が委譲したレビューで `APPROVE` が出ても、その verdict は会話に表示されるだけで `.claude/state/review-result.json` には書かれませんでした。PreToolUse commit guard はそのファイルを読むため、続く `git commit` は「Run /harness-review before committing」で弾かれ、release が事実上動かない状態でした。Plans.md の work skill だけが `write-review-result.sh` を呼んでいた歴史的事情が原因です。
-
-**今後**: 二段防御で必ず保存されるようになりました。`harness-review` skill には Output Contract 直後に `write-review-result.sh` 呼び出し step を追加（work step 10 と同じパターン）。さらに `SubagentStop` hook で reviewer subagent の最終応答から `review-result.v1` JSON ブロックを抽出して自動保存する backstop を新設したため、SKILL step を踏み忘れても保存されます。reviewer subagent は read-only のまま維持(write は hook 側)。`harness-release` の Review Gate にも二段防御の persist check を入れました。
-
-#### release の bump commit が承認消費でブロックされる問題（#219）
-
-**今まで**: PostToolUse の commit-cleanup は `git commit` が 1 回成功するたびに `.claude/state/review-result.json` を無条件で削除して「次回の commit 前に再レビュー」を要求していました。一方 `harness-release` は bare release で work commit + version bump commit と複数回 commit します。最初の work commit で承認が消費されるため、続く bump commit が APPROVE 無しでブロックされ、release が止まる構造でした。
-
-**今後**: cleanup と commit guard の両側で「bookkeeping commit」を識別するようになりました。`VERSION` / `.claude-plugin/plugin.json` / `harness.toml` / `CHANGELOG.md` のみを変更する commit と merge commit はレビュー対象外として、承認削除を skip し、commit guard も承認を要求しません。これにより `harness-release` の自動 commit はそのまま通過します。判定根拠は `.claude/state/commit-cleanup-audit.jsonl` に append-only で記録されます。git unavailable 時は fail-closed（= 従来動作 = 削除）を維持。
-
-#### Skill listing budget overflow による auto-loading 信頼性低下の短期対応（#200）
-
-**今まで**: 28 skills を LLM に送る description の合計が 9,089 chars で、CC の 6,000 chars budget を超えていました。alphabetical 順の終盤スキルが truncate される可能性があり、auto-loading の信頼性が下がっていました。
-
-**今後**: 上位 verbose 10 件（`harness-accept` 601 → 195 chars / `cursor-ask` 531 → 167 / `harness-plan-brief` 523 → 196 / `harness-progress` 489 → 187 / `harness-orchestration` 446 → 175 / `cursor-do` 418 → 197 / `gogcli-ops` 418 → 185 / `memory` 365 → 175 / `cc-cursor-cc` 315 → 199 / `cursor-setup` 311 → 187）の description を ≤200 chars に trim し、total を 10,619 → 8,099 chars に 20% 圧縮しました。trigger phrase（auto-loading キーワード）は保持。詳細仕様は SKILL.md body に移動しています。`scripts/check-skill-description-budget.sh` を新規追加して budget gate を機械検証できるようにしました。残り 28 件の trim と 6,000 chars 厳格達成は次フェーズで対応します。
-
-#### Language / i18n 設定手順を README からたどれるよう整備（#173）
-
-**今まで**: 出力言語の切替方法（英語 default / 日本語 opt-in）は CLAUDE.md の Language 節に短く書かれているだけで、README からは直接たどれませんでした。新規ユーザーは英語以外で出力する方法を見つけるのに時間がかかっていました。
-
-**今後**: `docs/i18n.md` を新規 SSOT として作成し、3 経路（`.claude-code-harness.config.yaml` の `i18n.language` / `CLAUDE_CODE_HARNESS_LANG=ja` / per-message session 指示）と precedence（config > env > en）、「変更されない箇所」（machine-readable JSON, commit prefixes）を明示。README の Documentation 表と CLAUDE.md Language 節からリンクしています。
-
-#### Reviewer の cyber-related safeguard 中断への mitigation（#172）
-
-**今まで**: `claude-code-harness:reviewer`（Opus 4.7）が security 問題を検出した直後、上流の cyber-related safeguard が triggered して reviewer が途中で停止し、verdict JSON が生成されない事象が観測されていました。Harness 側で完全消去はできない（Anthropic 製品仕様の model-side safeguard）。
-
-**今後**: `agents/reviewer.md` に「security finding は中立的事実列挙にとどめる」instruction を追加。exploit code / PoC を本文に展開せず、CVE / CWE / OWASP の識別子のみ引用、mitigation は修正方針だけ記述するルールに narrow しました。完全な workaround として `docs/known-limitations.md` を新規作成し、症状・根本原因・回避策（Opus 4.8 への切替推奨 / security 専門 PR は人手レビューに escalate）を SSOT 化しました。
+- An APPROVE from `/harness-review`, or from the review step inside `/harness-release`, is now saved to `.claude/state/review-result.json`, so the next `git commit` is no longer blocked with "Run /harness-review before committing". A hook that runs when the reviewer finishes saves it as a backup; the reviewer stays read-only. Commits that change only `VERSION`, `.claude-plugin/plugin.json`, `harness.toml`, or `CHANGELOG.md`, and merge commits, no longer use up that approval, so release version-bump commits pass. Decisions are logged in `.claude/state/commit-cleanup-audit.jsonl`. When Git is unavailable the old behavior (delete the approval) stays.
+- Shorter skill descriptions reduce truncation risk but the total still exceeds the 6,000-character target. `docs/i18n.md` explains output language: `i18n.language` in `.claude-code-harness.config.yaml`, then `CLAUDE_CODE_HARNESS_LANG`, then English as default, in that order; you can also ask per message. Machine-readable JSON and commit prefixes stay English. Security reviews state findings without exploit code. The reviewer can still stop mid-review because of the model's own safety filter; `docs/known-limitations.md` advises switching to Opus 4.8 or sending security-focused changes to human review.
 
 ## [4.16.0] - 2026-06-18
 
-### テーマ: Cross-Session Relay とアップストリーム追従、setup/sync/footer/Windows まわりの修正
-
-**独立セッション間の自律 relay と Cross-agent ハンドオフを opt-in で導入。並行して setup / sync / footer / Windows の壊れていた経路を一通り直しました。**
-
-### Fixed
-
-- Cursor アダプタ evidence ドキュメント（`docs/research/cursor-adapter-candidate.md`）の tier 表記を `internal-compatible` に復元。PR #174 の昇格マージで evidence ファイル分の hunk が脱落し、`release-preflight.sh` の cursor adapter candidate smoke が FAIL していたのを修正（README / onboarding / テストは既に `internal-compatible` で整合済みだった）。
-
-#### 配布される codex/AGENTS.md の「Hooks 未対応」記述が事実誤りに
-
-**今まで**: `setup-codex.sh --project` はリポジトリの `codex/AGENTS.md` をユーザーのプロジェクト root に `AGENTS.md` としてコピーします。その記述に「Hooks は未対応」とありましたが、Codex CLI は現在 hooks（`PreToolUse` などで `permissionDecision:"deny"` / exit 2 による事前ブロック）に対応済みで、事実と食い違っていました。古い記述が各ユーザーのプロジェクトへ配布され続けていました。
-
-**今後**: 該当 3 箇所を現状ベースに訂正しました。「Codex は hooks 対応済み。Harness は現状 hook 未配線で、暫定ガードは `.codex/rules/`」という記述に統一。配布ファイルのため、内部の設計メモへの参照やロードマップは含めていません。
-
-#### fresh プロジェクトで `harness sync` が hooks.json 欠如により失敗する問題
-
-**今まで**: Setup hook / `harness init` でブートストラップした新規プロジェクトには `hooks/` ディレクトリが存在しないため、続く `harness sync` が「hooks.json sync: read hooks/hooks.json: no such file or directory」で exit 1 していました。plugin.json / settings.json は書き込まれるものの、sync 全体が失敗扱いになり auto-bootstrap が完走しませんでした。
-
-**今後**: `hooks/hooks.json` が存在しないプロジェクトでは hooks.json の同期をスキップし（「skipped hooks.json sync」と表示）、sync は正常終了します。一方、`.claude-plugin/hooks.json` が既に存在するのに source（`hooks/hooks.json`）が消えている場合は、SSOT 消失として従来どおりエラーで停止します（plugin 開発リポジトリでの誤削除検知を維持）。`harness doctor` の hooks/hooks.json チェックも同じ 3 状態（not-configured / valid / orphaned・invalid）に揃え、fresh プロジェクトで sync → doctor のブートストラップフローが最後まで通るようになりました。
-
-#### P35 footer が i18n.language を無視して日本語固定だった問題（#208）
-
-**今まで**: `harness-review` / `harness-release` の結論時 footer（「止まったように見える」UX 対策の instruction line）が日本語 literal のハードコードで、`i18n.language` / `CLAUDE_CODE_HARNESS_LANG` を `ko` 等に設定しても必ず日本語が出力されていました。同じ SKILL.md の Output Contract（user-facing prose は explicit session / project language に従い、未設定なら English）とも矛盾していました。
-
-**今後**: footer は本文（user-facing prose）と同じ言語で出力されます。言語解決は既存の言語ルール（explicit session / project language、未設定なら English）に一本化され、footer 契約が言語を再定義することはありません。ja / en の canonical literal を SKILL.md に定義し、その他の言語では同義の 1 行を本文と同じ言語で出力します。governance テストには en literal の回帰ゲートを追加しました。
-
-#### Windows で `harness mem status` / `harness mem doctor` が失敗する問題（#207）
-
-**今まで**: Windows では harness-mem CLI の実体（`harness-mem.js`）を直接 `fork/exec` しようとして「%1 is not a valid Win32 application」で失敗していました。Windows は shebang（`#!/usr/bin/env node`）を解釈しないため、`.js` をプロセスとして起動できません。
-
-**今後**: Windows では runtime ディレクトリの `harness-mem.js`（node エントリ）を優先して解決し、JS runtime を前置して起動します。解決したパスが `.js` / `.mjs` / `.cjs` の場合は他 OS でも JS runtime を前置します（通常は `node`、shebang が `bun` を指す場合は bun を優先）。Windows の拡張子なしファイルは shebang が node / bun を指す場合のみ wrap し、bash スクリプト等には手を付けません。`harness-mem.cmd` shim と、Unix の標準レイアウト（拡張子なしラッパーの直接実行）の挙動は変わりません。
-
-#### Setup hook の auto-bootstrap が harness.toml を生成しない問題（#201）
-
-**今まで**: 初回セッションの Setup hook は CLAUDE.md / Plans.md / config.yaml を生成するものの `harness.toml` を作らないため、続く `harness sync` が「harness.toml not found」で失敗していました。CC エージェントが `harness --help` から `harness init` を自力発見してリカバリーするまで auto-bootstrap が止まる状態でした。
-
-**今後**: Setup hook が `harness init` と同一のテンプレート（`go/internal/scaffold` で共有）から `harness.toml` を生成し、auto-bootstrap がそのまま `harness sync` へ繋がります。既存の `harness.toml` は上書きしません。また、自前の `.claude-plugin/` を持つ（harness を SSOT として使っていない plugin / marketplace）リポジトリでは生成をスキップし、後続 `harness sync` による既存マニフェストの上書き事故を防ぎます。
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4160---2026-06-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1393)
 
 ### Added
 
-#### 独立セッション間の自律 relay + cross-agent ハンドオフ（Cross-Session Relay）
+- Optional `HARNESS_SESSION_RELAY=monitor|both` enables addressed cross-session messages; default OFF. Claude Monitor polls every five seconds, Cursor/Codex use companion handoffs. Messages are data, not approval; immediate delivery is Claude-to-Claude only and not combined with harness-loop. Upstream waitingFor guidance helps identify WIP stalled over ten minutes. Messages are stored inside Harness (`.claude/sessions/relay-signals.jsonl`) without extra tools, and harness-mem masking applies to them.
 
-**今まで**: 別 worktree や別セッションで作業する Claude Code 同士は、進捗や衝突を伝え合う手段がなく、人間が手動で内容をコピーして橋渡しする必要がありました。
+### Fixed
 
-**今後**: `HARNESS_SESSION_RELAY=monitor`（または `both`）を設定すると、セッション間で宛先指定のメッセージをやり取りできます。受信側は Monitor tool が 5 秒間隔でポーリングして即時に受け取り（CC↔CC）、Cursor / Codex とのハンドオフは companion 経由で通知されます。外部ツールを入れず Harness 内部実装（`.claude/sessions/relay-signals.jsonl`）で動くため harness-mem の redaction が効き、受信内容は「指示ではなくデータ」として隔離されます。配布デフォルトは OFF（`HARNESS_SESSION_RELAY` opt-in）。即時 push は Monitor tool を持つ CC↔CC 限定で、`harness-loop` とは併用しません。
-
-#### Claude Code 2.1.162 / Codex 0.137 アップデート追従
-
-**CC のアプデ**: `claude agents --json` に各セッションの停止要因を示す `waitingFor` が追加され（2.1.162）、shell 起動ファイルや build-tool 設定への書き込み前に確認が入るようになりました（2.1.160）。
-
-**Harness での活用**: `waitingFor` を `docs/agent-view-policy.md` に反映し、長時間監視で「`cc:WIP` が 10 分超 + `waitingFor` 非空」を stuck 判定に使えるようにしました。shell-config gate は Harness の責務（repo 内 `.claude/hooks` + settings deny）と CC 本体の責務（home shell startup）を照合し、二重化不要を確認。`docs/upstream-update-snapshot-2026-06-04.md` に全項目を A/C/P/Reject 分類（B = 0 件）。
+- Fresh setup creates harness.toml without overwriting an existing file or an unrelated plugin manifest. Sync skips absent hooks only when no destination hook exists; orphaned destinations still fail. Windows memory commands launch JavaScript through its runtime. Footers follow the chosen language. The `AGENTS.md` that `setup-codex.sh --project` copies into your project now says Codex supports hooks while Harness had not yet connected them, with interim protection in `.codex/rules/`. Inference (medium confidence): copies made before this release keep the old "hooks unsupported" text until you copy the file again. Cursor evidence again matches internal-compatible.
 
 ## [4.15.0] - 2026-06-05
 
-### テーマ: settings 自己書換保護を配布物まで届ける
-
-**「エージェントが自分を縛る鎖を外せない」保証を、個人設定だけでなく install したユーザーの手元にも届ける。今までは保護の約束（CLAUDE.md）と配布物の中身がずれていても誰も気づけなかった。**
-
----
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4150---2026-06-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1447)
 
 ### Added
 
-#### 1. settings 自己書換保護の配布物展開
-
-**今まで**: 「settings ファイルへの直接編集を禁止する」という保護は、開発者個人の `~/.claude/settings.json` には入っていても、plugin として install したユーザーが受け取る `.claude-plugin/settings.json` には反映されていないことがありました。CLAUDE.md は保護を約束しているのに、配布物の中身が追いついていなくても検出する仕組みがなく、ドキュメントだけが正しくて実体が伴わない状態を見逃せました。
-
-**今後**: 保護 deny を SSOT（`harness.toml`）に定義し、配布物 `.claude-plugin/settings.json` へ同期します。対象は `.claude/settings*` と `.claude-plugin/settings*` への Edit / Write の 4 パターン。install したユーザーも同じ保護を受け取ります。
-
-#### 2. 配布物 deny の存在を検証する CI ゲート
-
-**今まで**: 保護 deny が配布物から欠けても、リリースまで気づけませんでした。
-
-**今後**: `tests/validate-plugin.sh` が、配布物 `.claude-plugin/settings.json` の `permissions.deny` に 4 パターン全てが実在するかを検証します。CLAUDE.md の約束と配布物の中身がずれた瞬間に CI が落ちます。
-
-#### 3. settings.local.json への hook 注入検知
-
-**今まで**: `.claude/settings.local.json` は通常 gitignore 対象でコードレビューを通らないため、ここに `command` 型 hook を仕込まれると、永続的なコード実行（persistence）の温床になり得ました。
-
-**今後**: self-audit ルールに、`settings.local.json` の `hooks` ブロックを Read で確認し、オーナーが意図しない hook が追記されていないか検知する項目を追加しました。deny で書かせない preventive 層と、後から注入を見つける detective 層の二段構えにします。
+- The promise "agents cannot edit their own settings" now has a single source in `harness.toml` and is copied into the shipped `.claude-plugin/settings.json` as four deny rules: `Edit` and `Write` on `.claude/settings*` and `.claude-plugin/settings*`. An automated CI check fails if any of the four is missing. Later finding (5.7.0): that release records that Claude Code does not read `permissions` from a plugin's `.claude-plugin/settings.json`. This historical runtime has not been re-tested. The [current plugin settings contract](https://code.claude.com/docs/en/plugins-reference#settings) applies only `agent` (default agent) and `subagentStatusLine` (worker status display), so file presence alone does not prove these rules were active. Put the deny rules in your own user or project settings to enforce them.
+- The self-audit checklist used by `/harness-review` and diagnostic sessions now reads the `hooks` block of `.claude/settings.local.json` and flags `command` hooks the owner did not intend. That file is usually git-ignored and skips code review. This is a check performed when the audit runs, not continuous monitoring.
 
 ### Changed
 
-#### ガードレールの保護パス分類
-
-**今まで**: `.claude-plugin/settings.json` / `settings.local.json` への書き込みはガードレールの保護パス分類の対象外でした。
-
-**今後**: これらを protected path の warn に分類します（`.claude-plugin/plugin.json` と同じ扱い）。deny を擦り抜ける残余経路に対する警告層になります。
+- Writes to `.claude-plugin/settings.json` and `.claude/settings.local.json` now produce a protected-path warning, the same level as `.claude-plugin/plugin.json`. It covers routes that slip past the deny rules, such as shell redirection.
 
 ### Fixed
 
-#### オーケストレーション累計の mid-session 取りこぼし
-
-**今まで**: 累計（`orchestration-totals.json`）への roll up はセッション ID 単位で冪等でしたが、セッション途中で一度 roll up が走ると、そのセッションのカウントが最初の値で固定され、以降の同一セッション内の委譲が累計に反映されませんでした。実際に、セッションでは Cursor 144 件なのに累計は 117 件で止まる（117 で一度 roll up され、その後も委譲が続いた）ずれが観測されました。
-
-**今後**: roll up はセッションごとの計上済みスナップショット（`session_counts`）を持ち、再 roll up 時は「現在の台帳カウント − 計上済み」の差分だけを累計へ足します。新しい委譲がなければ no-op（二重カウントなし）、台帳が増えていれば増分だけ加算、の両立を保ちます。旧フォーマット（`session_counts` 無し）の累計ファイルもエラーなく読め、既に計上済みのセッションは二重計上されません。
+- Orchestration totals include delegation records created mid-session rather than only at session boundaries.
 
 ## [4.14.0] - 2026-06-04
 
-### テーマ: オーケストレーション可視化（どの backend をどれだけ使ったか）
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4140---2026-06-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1491)
 
-**作業中・完了時に「このセッション/プロジェクトで Claude / Codex / Cursor をどれだけ活用したか」を見える化する。委譲は実行時に不可視で「本当に Codex/Cursor を使ったのか、全部 Claude に落ちたのか」が分からなかった問題を、記録 → 集計 → スコアカードの一連で解消する。**
+### Added
 
----
-
-#### 1. backend 委譲の記録（ledger）
-
-**今まで**: codex / cursor への委譲は実行されるだけで痕跡が残らず、後から「今回どの backend をどれだけ使ったか」を知る方法がありませんでした。telemetry は role 次元のみで backend 次元が一切ありませんでした。
-
-**今後**: companion（codex / cursor）が委譲ごとに `.claude/state/orchestration-ledger.jsonl` へ 1 行記録します。記録するのは backend / サブコマンド / write / 終了コード / 所要時間 / セッション ID / 計上フラグの固定項目のみで、プロンプト本文や秘密は一切含めません。`status` / `setup` などのポーリングは計上対象から除外され、スコアが水増しされません。
-
-#### 2. 累計の蓄積（lifetime accumulator）
-
-**今まで**: 仮に 1 回分を数えても、セッションをまたいだ通算は残りませんでした。
-
-**今後**: 全タスク完了時とセッション終了時に、その回の委譲を累計（`orchestration-totals.json`、プロジェクト単位）へ無言で roll up します。セッション ID 単位で冪等なので、2 経路で走っても二重カウントしません。累計は「人に見せる主役の数字」です。
-
-#### 3. スコアカード（HTML + ターミナル）
-
-**今まで**: backend 活用度を一覧する画面はありませんでした。
-
-**今後**: `harness-orchestration` スキルで、累計を主役にした単一 HTML スコアカード（共有可能・JS 不要）を on-demand 生成できます。各 backend は tri-state（使用中 / 設定済み未使用 / 未設定）で表示し、「未設定」は中立表記で壊れ扱いしません。全タスク完了時にはターミナルへ 1 回だけサマリが出ます（毎タスクでは出しません）。委譲ゼロなら "no delegations observed" に退化します。
+- Codex and Cursor delegations are now recorded, one line each, in `.claude/state/orchestration-ledger.jsonl`: backend, subcommand, write or not, exit code, duration, session ID. Prompt text and secrets are not recorded. Status and setup polling are not counted. Totals per project are kept in `orchestration-totals.json`. The `harness-orchestration` skill builds a shareable HTML scorecard on request; each backend shows used, configured but unused, or not configured (not configured is not an error). A one-time terminal summary appears when all tasks finish. These numbers measure activity, not quality or successful completion.
 
 ## [4.13.3] - 2026-06-01
 
-### テーマ: Cursor 初回利用の摩擦解消 + breezing 起動ナレーション緩和 + セッション協調復活
-
-**`/cursor:do` 初回実タスクで観測された 4 つの落とし穴 (Composer 無 commit / scripts 見失い / worktree パス衝突) を埋め、v4.13.2 で振り切れすぎた起動ナレーション禁止を「計画明示型」に緩和。同 PC 上の複数セッションが同じファイルを黙って上書きする事故を file lease + continueOnBlock feedback で防ぐ。**
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4133---2026-06-01) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1517)
 
 ### Fixed
 
-- **`/cursor:ask` / `/cursor:do` 初回利用の摩擦 4 点 (Issue #193)**: `cursor-do` を初めて実タスクに通したときに観測された 4 つの落とし穴を埋める。
-
-  #### 1. Composer 無 commit による Step 7 空振り
-
-  **今まで**: `cursor-companion.sh task --write` は exit 0 + 結果 text を返すが、worktree には commit が無く未コミット変更だけが残り、Step 6 の `git log BASE_REF..HEAD` が空、Step 7 の cherry-pick が対象 0 で no-op になり、ユーザーから見て「完了したのに main に何も入らない」状態になりました。
-
-  **今後**: Step 6 冒頭で worktree が dirty なら Lead 側で `git add -A && git commit --no-verify` を 1 commit にまとめます。Lead が `TASK_SUMMARY` を事前に export しておけば commit message に反映、未設定なら fallback `cursor: cursor-do delegated change`。cherry-pick 後の main 側 commit で R01-R13 と pre-commit hook を正規通過します。
-
-  #### 2. `HARNESS_PLUGIN_ROOT` 未設定時の scripts 見失い
-
-  **今まで**: `bash "${HARNESS_PLUGIN_ROOT:-.}/scripts/cursor-companion.sh"` の `:-.` フォールバックが consumer repo の cwd に解決し、`scripts/cursor-companion.sh` が見えず exit していました。
-
-  **今後**: `cursor-do` Step 3 と `cursor-ask` Step 2 で、`.claude-plugin/hooks.json` と同じ `valid_root` パターンを inline 化します。`CLAUDE_PLUGIN_ROOT` → `HARNESS_PLUGIN_ROOT` → `CLAUDE_PROJECT_DIR` → `$PWD` → `~/.claude/plugins/marketplaces/...` → `~/.claude/plugins/cache/...` の順に scripts/cursor-companion.sh が見える dir を探索し、解決できなければ exit 2 で早期失敗します。
-
-  #### 3. worktree 相対パス + companion 絶対パス要求の衝突
-
-  **今まで**: Step 4 が `WT_DIR=".claude/worktrees/cursor-do-${ID}"` (相対) で worktree を切り、agent shell の cwd が repo root でないと別階層にネスト生成され、Step 5 の `--workspace` が companion の `is not a directory` ガードで exit 2 になることがありました。
-
-  **今後**: Step 4 冒頭で `REPO_ROOT="$(git rev-parse --show-toplevel)"` → `cd "$REPO_ROOT"` してから `WT_DIR="$REPO_ROOT/.claude/worktrees/cursor-do-${ID}"` を絶対パスで組みます。
+- Cursor first-use paths repair helper discovery, prerequisites, worktree integration, and failure visibility. Same-PC file leases, session registration, edit-collision feedback, and Go/Markdown/shell broadcasts resume. They are coordination hints, not hard locks; separate clones/PCs do not share them and broadcasts remain append-only. Inbox content is sanitized and treated as data.
+- If Cursor leaves changes uncommitted, the lead commits them in the worktree as one commit (using `--no-verify` to skip hooks there) before integration; the normal guards and pre-commit hooks run on the main-side commit. Export `TASK_SUMMARY` to set that commit message; otherwise it is `cursor: cursor-do delegated change`. Helper scripts are searched in `CLAUDE_PLUGIN_ROOT`, `HARNESS_PLUGIN_ROOT`, `CLAUDE_PROJECT_DIR`, the current folder, then the installed plugin folders; if none has them, the command stops with exit 2. Worktree paths are absolute from the Git root. Leases are shared across worktrees of one repository and expire only after 60 minutes and when the owning session is no longer registered; registrations older than 24 hours are pruned. Outside a Git repository, or when the lease store cannot be reached, editing proceeds with no lease and no warning. Inbox forwards only path, sender, and age, capped at 4,096 bytes, discarding broadcast text.
 
 ### Changed
 
-- **`/breezing` / `/cursor:ask` / `/cursor:do` の起動ナレーションを「計画明示型」に緩和**: v4.13.2 で導入した Narration Rules が「最初の text は 1 行のみ・中間ナレーション一切禁止」と振り切れすぎ、起動後に何も表示されず「今から何をするのか分からない」状態だった。3 skill の Narration Rules を「**起動時に banner + 実行計画 (2-4 step、合計 5 行以内) を明示してから実行開始**」に書き換え、見やすい進捗報告 (各ステップの 1 行ステータス・判断に必要な中間結果・1 行の経緯) を明示的に許可。禁止対象は **冗長さ** (同じ事実の 2 回言い換え / 中身のない前置き / 3 行以上の経緯振り返り / 起動シーケンス中の ★ Insight ブロック) のみに限定。
-
-  - 今まで: `🚀 cursor / composer-2.5-fast / ask` の 1 行だけ出して即委譲。ユーザーは進行中の処理が見えず不安。
-  - 今後: banner の直後に「これから: backend resolve → composer に diff レビュー委譲 → verdict 要約」のような実行計画を添え、各ステップ完了を 1 行で報告する。冗長な繰り返しだけを避ける。
-
----
-
-### テーマ: セッション協調 (file lease + register + broadcast 復活)
-
-**同一 PC 上の複数 Claude Code セッションが、同じ repo の同じファイルを黙って上書きし合う事故を、ファイル単位 lease と continueOnBlock feedback で防ぐ。harness-mem に依存せずローカル完結。**
-
----
-
-#### 1. ファイル単位 lease
-
-**今まで**: 複数セッションが同じファイルを同時編集すると、片方が他方の変更を黙って上書きしていました。発生しても気づくのは後日、git log を読み返したときでした。
-
-**今後**: `git rev-parse --git-common-dir` 配下に sha256 hex で命名した lock file を作り、`os.Link` の create-only セマンティクスでアトミックに取得します。worktree からも同じ lease store を共有するため、breezing で worktree を切っているセッション同士でも整合します。
-
-stale 判定は「TTL 60 分超過」AND「`active.json` 上で session_id が見つからない」の AND 条件。`active.json` が空のときは TTL-only fallback で「生きている扱い」に倒し、healthy peer の lock を誤って奪わないようにしています。
-
-#### 2. SessionStart/Stop での auto-register
-
-**今まで**: `active.json` の運用は手動で、停止したセッションの entry が古いまま残り続け、stale 判定が機能しませんでした。
-
-**今後**: SessionStart hook で session_id + pid + last_seen を `.claude/sessions/active.json` に記名、Stop hook で解除します。24h 超過した entry は同じ書き込みで自動 prune。tri-state (not-configured / unreachable / corrupted / healthy) で Monitor が「mem を opt-in していないユーザー」を誤警告しません。
-
-#### 3. PreToolUse/PostToolUse 衝突 feedback
-
-**今まで**: 他セッションがあるファイルを編集中でも、Claude は知らずに上書きしていました。
-
-**今後**: PreToolUse(Write|Edit) で現セッション向けに silent acquire、PostToolUse(Write|Edit) で他セッション保有を検出すると以下を返します:
-
-```json
-{
-  "hookSpecificOutput": {
-    "hookEventName": "PostToolUse",
-    "permissionDecision": "deny",
-    "permissionDecisionReason": "session 9f5a3d3a が `go/internal/foo.go` を編集中。完了を待つか別ファイルへ"
-  },
-  "continueOnBlock": true
-}
-```
-
-`continueOnBlock:true` は diagnostic feedback (guard rail でない) として CC 2.1.139+ `hooks-2.1.139-plus.md` §3 と整合させています。lease 機構不達時は fail-open (allow、警告なし) なので、git 管理外の作業領域では普段どおり動きます。
-
-#### 4. broadcast 復活 (.go / .md / .sh)
-
-**今まで**: auto-broadcast の発火条件が `src/api/`, `schema.prisma`, `openapi`, `swagger` 等の API/schema パターン substring 限定でした。claude-code-harness 自身のような Go + Markdown 中心の repo では 2026-02 以降ずっと沈黙し、broadcast.md が更新されないので inbox-check も連鎖死状態でした。
-
-**今後**: `.go` / `.md` / `.sh` の extension match を追加します。filepath.Ext 評価なので `docs/go-tooling.txt` のような substring 偽陽性は出ません。普段の `.go` / Plans.md / scripts/*.sh 編集でも broadcast.md が更新され、peer session の inbox-check が Phase 89.1.2 サニタイザ経由で structured fields を additionalContext に注入します。
-
-```
-## 2026-05-30T08:00:00Z [peer-A12345]
-📁 `go/internal/lease.go` が変更されました: パターン '*.go' にマッチ
-```
-
-#### 5. inbox-check の prompt injection 対策
-
-**今まで**: 他セッションの broadcast.md 本文を verbatim で additionalContext に注入していました。攻撃者は prompt injection / ANSI escape / NUL flood で peer のモデルを操作できる構造でした。
-
-**今後**: structured fields (sanitized path + 8-12 char sender prefix + age-seconds) のみを注入し、本文は捨てます。disclaimer wrap + 制御文字除去 + 4096B cap。`TestInboxInject_NeutralizesUntrustedContent` で ANSI escape / NUL / prompt injection / flood 文字列がモデルに命令として通らないことを検証しています。
-
-#### 制約と残るリスク
-
-- **同一 PC 限定**: harness-mem に依存しないため、別 clone 間や別 PC 間では非共有です
-- **coordination hint であり hard lock ではない**: PreToolUse 失敗時の fail-open のため、極小確率で peer の overwrite は残ります。`continueOnBlock` の informational feedback で「次は別ファイルへ」と nudge します
-- **broadcast.md は append-only**: 1 セッションで `.go` を大量編集すると broadcast.md が肥大化します。size 制限と rate limit は Phase 89 範囲外、Phase 89.2 候補
+- Breezing and Cursor delegation show a startup banner plus two to four steps (at most five lines) and concise intermediate results, replacing the one-line-only silence.
 
 ## [4.13.2] - 2026-05-30
 
-### テーマ: Cursor (Composer) 委譲経路の整備 + breezing UX 軽量化
-
-**Cursor backend に 3 つの軽量経路 (`/cursor:ask` / `/cursor:do` / `--cursor` second-opinion) を追加し、`/breezing` 起動から委譲開始までの体感を baseline 15-35s → target 3-7s に短縮。read = lean / write = full の対称分割を product contract として `.claude/rules/cursor-cli-only.md` に固定。Cursor support tier は `internal-compatible` のまま不変、正式機能としてはまだ実験段階のため patch bump。**
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4132---2026-05-30) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1616)
 
 ### Added
 
-- **`/cursor:ask` — Cursor (Composer) への読み取り専用デリゲート**: 質問・調査・設計相談・敵対的レビューを cursor-agent (composer-2.5-fast) に read-only で投げる軽量スキル。`cursor-companion.sh task` は引数なしで default `--mode ask` (hard read-only stop) になるため、`--write` 未指定で **worktree 隔離・cherry-pick・Lead diff review がすべて不要**。3 秒以内に応答開始、結果を host (Claude) が 3-5 行で要約。用途: 「この設計の弱点は？」「セカンドオピニオンが欲しい」「敵対的視点で見て」等。`.cursorignore` で secret 遮断、`*.cursor.sh` egress allowlist + `~/.cursor` filesystem allowlist が前提条件。
-- **`/cursor:do` — 1 件の write タスクを Cursor Composer に委譲**: 専用 worktree (`.claude/worktrees/cursor-do-<id>`) を切って `cursor-companion.sh task --write --workspace <wt>` で実装委譲し、Lead が diff レビュー → SHA 直接 cherry-pick → Plans.md `cc:done [hash]` 自動更新まで 8 ステップで完走。breezing の team フローを起こさず 1 タスク 1 cherry-pick の最短経路。Worker agent 介在なし (`cursor-cli-only.md` Topology 節準拠)。封じ込めは Cursor 側にはなく、専用 `.git` worktree + Lead diff review + cherry-pick (R01-R13) の 3 点が実効的境界。
+- `/cursor:ask` sends a read-only question, research, or design review to Cursor (composer-2.5-fast); Claude summarizes the answer in 3 to 5 lines. `/cursor:do` gives one write task to Cursor in its own worktree (`.claude/worktrees/cursor-do-<id>`); the lead reviews the diff, cherry-picks it (copies the approved commit), and marks the Plans.md task `cc:done [hash]`. Both need: a `.cursorignore` that hides `.env`, `*.pem`, `*.key`, `.ssh`, `.aws`, `.git`; `*.cursor.sh` in `sandbox.network.allowedDomains`; and `~/.cursor` in `sandbox.filesystem.allowWrite` in `~/.claude/settings.json`. Cursor itself cannot keep file writes inside a folder. Write safety comes from the separate worktree, the lead's diff review, and the cherry-pick that passes Harness guardrails.
 
 ### Changed
 
-- **`/harness-review --cursor` — Cursor second-opinion レーン追加**: cursor (composer-2.5-fast) を harness-review の **second-opinion only** として並走させる lean モード。primary verdict は Opus reviewer が必ず取り、cursor 出力は `dual_review.cursor_verdict` に **advisory** として格納 (optional field、既存 consumer 互換)。cursor を primary reviewer に昇格させない不変ルール (`harness-work`「実装したバックエンドが自分の出力をレビューしてはならない」と整合)。新規 `references/cursor-review.md` で 4 点 trust boundary (.cursorignore + permissions.json best-effort + egress `*.cursor.sh` + filesystem `~/.cursor`) と verdict 統合ルール (Opus REQUEST_CHANGES は即 REQUEST、Opus APPROVE + cursor REQUEST_CHANGES は divergence_notes に記録) を文書化。`--dual --cursor` で triple review (Claude + Codex + Cursor)。
-- **`/breezing --cursor --reviewer-only` — read = lean に最適化**: Reviewer のみ Composer に逃がす既存 lean path から `--workspace <wt>` 引数を削除 (read mode では companion guard が `--write` 時のみ発火するため optional)。`bash scripts/cursor-companion.sh task "<review prompt>"` だけで worktree 不要・cherry-pick 不要・Lead diff review 不要の最短 path に。primary verdict は Opus reviewer 必須併走、cursor は advisory として `dual_review.cursor_verdict` に格納。
-- **`.claude/rules/cursor-cli-only.md` に Read mode delegation (lean path) section 追加**: cursor-companion 引数なしで default `--mode ask` (hard read-only stop) になる仕様、read mode で省略できる重い containment 5 種 (worktree / Lead diff review / cherry-pick / worker-report.v1 / --workspace) と、read mode でも保持必須の 4 点軽い trust boundary (`.cursorignore` / egress allowlist / filesystem allowlist / permissions.json best-effort)、適切ケース / 不適切ケース表、Topology 図を 35 行で明示。`cursor-ask` / `cursor-do` / `harness-review --cursor` の 3 経路を cross-ref。
-
-- **`/breezing` UX 軽量化 (Narration Rules + Cursor Backend Fast Path)**: 起動 → 委譲開始の体感を改善。`skills/breezing/SKILL.md` に「Narration Rules (UX Hard Contract)」セクションを追加し、過去経緯の振り返り / 事前宣言 / 同じ事実の 2 回言い換え / 中間ステータスラベル / 起動シーケンス中の ★ Insight ブロックを禁止する hard contract を明示。最初の text は `🚀 <backend> / <model> / <branch> / <task>` の 1 行 echo に固定（first text として 1 秒以内）。さらに `--cursor` lean path セクションで、Worker agent spawn (5-30s) / self_review 5 件ゲート (10-60s × retry) / sprint-contract 3 段チェーン (2-5s × N) / Phase 0 Q1-Q3 interactive (15-30s) / Effort スコアリング / Plans.md re-parse の削除根拠と節約秒数を表で固定し、合計 baseline 15-35s → target 3-7s の短縮目標を product contract に組み込んだ。`--cursor --reviewer-only` で Worker 完了済み・Reviewer のみ Composer に逃がす lean path も追加（Anthropic rate limit や Codex review 認証失敗時の fallback 用途）。mirror (codex/.codex/skills/, opencode/skills/) 同期済み。Cursor support tier は `internal-compatible` のまま不変。
-
-- **Opus 4.8 向けプロンプトチューニング**: Claude Code が Opus 4.8 で harness を動かす際の挙動ずれを、Anthropic の prompting best practices に沿って解消。worker/reviewer/scaffolder は Sonnet 4.6 のまま（tiered routing 維持）、VERSION は据え置き。
-  - **effort スコアリングを「ultrathink 注入」から「effort tier 選択」に統一**（`harness-work`）。
-    - 今まで: 複雑度スコア ≥3 で Worker spawn prompt 冒頭に `ultrathink` 文字列を注入していた。Opus 4.8 は free-text marker でなく `effort` で推論深度を制御する設計で、harness 内の `model-routing-policy.md` / `opus-4-7-prompt-audit.md` とも矛盾していた。
-    - 今後: スコアから effort tier（≥3 で `high`、code-risk を含む ≥3 で `xhigh`）を選び、`/effort` / frontmatter override で適用する。marker 文字列は注入しない。
-  - **code review を coverage 優先に明示**（`harness-review`）。Opus 4.8 は「low-severity は報告するな」を忠実に守り recall を落とすため、finding 段階は全件を severity + 確信度つきで記録し、gate は verdict 段階だけで行うことを明記。
-  - **subagent spawn を明示トリガー化**（`team-composition`）。Opus 4.8 は subagent を少なく spawn する傾向のため、worker 数条件（独立書込グループ数）を明示的な spawn トリガーとして扱うことを追記。
-  - **Opus model 参照を 4.8 へ更新**。`advisor.md`（`claude-opus-4-6` → `claude-opus-4-8`。4.7 化されず drift していたものを是正）、`model-routing-policy.md` の deep/review/advisor tier、`effort-level-policy.md` の thinking 概念（既定 off + adaptive thinking、`budget_tokens` deprecated）。
-  - **`opus-4-7-prompt-audit.md` に Opus 4.8 追補**。literal instruction following 向けに scope 明示条項と effort tier 指定条項を追加。
+- `/harness-review --cursor` adds Cursor as an advisory second opinion. The main reviewer's verdict decides: its REQUEST_CHANGES rejects; its APPROVE stands even if Cursor disagrees, and the disagreement is recorded. `--dual --cursor` runs Claude, Codex, and Cursor reviews. `/breezing --cursor --reviewer-only` sends only the review step to Cursor, for use when Anthropic rate limits or Codex review authentication fail.
+- Prompt tuning for Opus 4.8: deeper reasoning is requested through effort level (complexity score 3 or more gives `high`; with code risk, `xhigh`) instead of inserting the word "ultrathink"; reviews record every finding with severity and confidence before deciding; spawn conditions for parallel workers are explicit. The advisor agent moves to Opus 4.8. Worker and reviewer agents stay on Sonnet 4.6. Startup narration was shortened, then relaxed in 4.13.3.
+- Each host gets its own package with internal skill paths and without other hosts' metadata. Install Cursor with `scripts/setup-cursor.sh`, which copies a real folder (symlinks into `~/.cursor/plugins/local` are rejected by Cursor); `scripts/setup-cursor.sh --check` builds and validates the package without installing it. Harness workflow skills are shown in Cursor as skills rather than hidden. Cursor becomes internal-compatible, not publicly supported. `scripts/diagnose-harness-skill-duplication.sh` lists duplicate Harness skill copies without deleting them; `docs/local-harness-environment-cleanup.md` describes cleanup.
 
 ### Removed
 
-- **未配線の Scaffolder エージェントを削除 (#170)**: `agents/scaffolder.md` は `analyze` / `scaffolder` / `update-state` の 3 モードを定義していたが、どの skill / hook からも `subagent_type="claude-code-harness:scaffolder"` で spawn される経路が存在せず（worker / reviewer は spawn 経路あり）、登録だけされて使われない dead agent だった。足場生成は `harness-setup` が、状態同期は `harness-plan` が Lead inline で実行しており、setup/plan は対話的フローのため worktree 隔離はむしろ不向き。混乱を避けるためエージェント定義を削除し、hooks の SubagentStart/Stop matcher・docs（team-composition / agent-frontmatter-policy / distribution-scope）・関連テスト・skill mirror の参照を整理。worker / reviewer / advisor の 3 エージェント構成に変更なし。
+- Remove an unconnected scaffolding agent; setup and planning continue to perform its intended work inline.
 
 ### Fixed
 
-- **`--no-verify` / `--no-gpg-sign` ガードレールのバイパス修正 (#171)**: R10 ガードレールの検出正規表現が `\s`（空白）のみを境界としていたため、`git commit --no-verify&&echo done` のようにシェルメタ文字（`&&` / `;` / `|` など）を空白なしで続けると検出をすり抜け、pre-commit フックや署名検証を迂回できてしまう問題を修正。境界判定にシェルのトークン区切り文字（`[\s;&|()<>]`）を含めるよう `go/internal/guardrail/helpers.go` を更新し、バイパス系・誤検出防止の回帰テストを追加。
-- **`harness.toml` のバージョン同期ずれを修正 (#178)**: v4.13.1 リリースで `VERSION` と `.claude-plugin/plugin.json` は `4.13.1` に bump されたが `harness.toml` が `4.13.0` のまま残っていた。`harness sync`（`scripts/sync-plugin-cache.sh`）は `harness.toml` から `plugin.json` のバージョンを再生成するため、sync 実行のたびに `plugin.json` が `4.13.0` へ巻き戻り、CI の `validate` ジョブ（`check-consistency.sh` のバージョン一致ゲート）が失敗していた。`harness.toml` を `4.13.1` に揃え、3 点（VERSION / plugin.json / harness.toml）同期を回復。
-
-### Changed
-
-| Before | After |
-| --- | --- |
-| Claude archive could include Cursor adapter metadata. | `.cursor-plugin/` is excluded from Claude distribution archive. |
-| Codex/Cursor adapter manifests used sibling `..` paths in source repo only. | `scripts/build-host-plugin-dist.sh` generates host packages with in-package `./skills/` paths. |
-| Duplicate Harness skill origins had no dry-run diagnostic. | `scripts/diagnose-harness-skill-duplication.sh` and Clean/Compatibility profiles document safe cleanup. |
-| Cursor dropped Harness workflow skills (`user-invocable: true`) so `/breezing`, `/harness-plan` never appeared. | Cursor package normalizes those skills to `user-invocable: false`; Claude package keeps the slash contract. |
-| Cursor local plugin registered via symlink was rejected (target outside `~/.cursor/plugins/local`). | Documented real-directory copy install; symlink route no longer recommended. |
-| Cursor adapter tier remained `candidate` despite observed Desktop skill loading. | Cursor promoted to `internal-compatible` with `scripts/setup-cursor.sh`, runtime evidence doc, and tier gates; public `supported` claim still blocked. |
-
-- **Phase 86 Harness Duplication Cleanup**: Added host-specific dist builder
-  (`scripts/build-host-plugin-dist.sh`), duplication dry-run diagnostic
-  (`scripts/diagnose-harness-skill-duplication.sh`), local cleanup guide
-  (`docs/local-harness-environment-cleanup.md`), archive contamination fix for
-  `.cursor-plugin/`, and `tests/test-host-plugin-dist.sh` with generated-package
-  adapter smoke updates. (Renumbered from Phase 82 to avoid collision with the
-  archived Phase 80-84 numbering space; see Plans.md.)
-
-- **Phase 87 Cursor Internal-Compatible Promotion**: Added `scripts/setup-cursor.sh`
-  (real-directory install + `--check`), promoted Cursor tier to
-  `internal-compatible` in `spec.md` and capability matrix, recorded 2026-05-29
-  Desktop skill-loading evidence, and extended adapter/preflight gates.
-  (Renumbered from Phase 83 to avoid collision with the archived Phase 80-84
-  numbering space; see Plans.md.)
+- Git skip-hook/signing flags are caught even beside shell separators. Version sync no longer rolls plugin.json back from stale harness.toml.
 
 ## [4.13.1] - 2026-05-29
 
-### Documentation
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4131---2026-05-29) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1679)
 
-- **非 claude backend のトポロジー SSOT 化**: `HARNESS_IMPL_BACKEND=cursor` / `=codex` のとき、Lead は Worker agent (`claude-code-harness:worker`) を spawn せず、`scripts/cursor-companion.sh` / `scripts/codex-companion.sh` を直接呼ぶ運用を skill 正本と shareable rule に明記。Worker 層介在は backend=`claude` のときだけ（agent 契約 `worker-report.v1` / `self_review` が非 claude では生成されないため）。
-- **Lead の cherry-pick 前ゲートに contract-grep 必須を明記**: 非 claude backend の出力を main に取り込む前に、目視 diff だけでなく `test-support-claim-wording.sh` / `check-consistency.sh` / `validate-plugin.sh` の固定文字列契約チェックを必ず通す運用を `skills/harness-work/SKILL.md` に追記。composer の表面的 dedup 傾向と docs/locale/matrix の固定句契約 (`5動詞ワークフロー` 等) の衝突を防ぐ。
+### Changed
+
+- Non-Claude implementation calls the Codex/Cursor companion directly rather than spawning an extra Claude worker. Before cherry-picking, leads run public-claim, consistency, and plugin contract checks as well as reviewing the diff.
 
 ## [4.13.0] - 2026-05-29
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4130---2026-05-29) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1686)
+
 ### Added
 
-- **実装バックエンド選択（Cursor candidate / 脳 Opus・体 composer）**: 実装の手を `claude`(既定) / `codex` / `cursor`(composer-2.5-fast) から選べる実行バックエンドを追加。`scripts/set-impl-backend.sh [--user] <claude|codex|cursor>` で一度設定すれば、`/breezing`・`/harness-work` の worker（実装）ロールが選択バックエンドに委譲し、review/advisor は Opus 固定（自作レビュー防止）。precedence は flag > `HARNESS_IMPL_BACKEND` env > project `env.local` > user `~/.config/claude-harness/impl-backend.env` > `claude`。
-  - 安全境界は専用 `.git` worktree + Lead の diff レビュー + cherry-pick（R01-R13）。Cursor の allowlist は公式に best-effort のため依存せず、cursor 出力は untrusted 扱い。読取委譲は `--mode ask`、`--force`/Run Everything は不使用。
-  - Cursor は `candidate` のまま（consumer 配布・公開 support claim なし、ローカル opt-in）。
-  - 新規: `scripts/resolve-impl-backend.sh`, `scripts/cursor-companion.sh`, `.claude/rules/cursor-cli-only.md`、spec.md「Execution Backend Contract」。`harness-work`/`breezing`/`worker.md` に 3-way backend スイッチを配線。
-- **`cursor-companion.sh --debug` 観測経路（デバッグ用）**: `--debug` フラグ または `HARNESS_CURSOR_DEBUG=1` 環境変数で、(a) `model-routing.sh` の stderr、(b) 実行直前の cmd 配列（`--api-key` / `--auth-token` / `Authorization:` 値を `[REDACTED]` にマスク）、(c) cursor-agent の stderr を `[cursor-companion DEBUG]` prefix で stderr に出す。既定挙動（DEBUG=0）は不変・後方互換。
+- Choose who writes code with `scripts/set-impl-backend.sh [--user] <claude|codex|cursor>`. `/breezing` and `/harness-work` then send implementation to that backend. Order of precedence: command flag, `HARNESS_IMPL_BACKEND`, project `env.local`, user file `~/.config/claude-harness/impl-backend.env`, then Claude. Review and advice always stay on Claude, never on the chosen backend, so a backend never reviews its own work (the skill text says Opus; the reviewer agent file at this release set Sonnet 4.6). Cursor is a local opt-in candidate: its output is untrusted and enters only through a separate worktree, the lead's diff review, and cherry-pick. Read-only delegation uses ask mode, and Cursor's run-everything mode (`--force`) is never used. `--debug` or `HARNESS_CURSOR_DEBUG=1` prints the command and errors to stderr with `--api-key`, `--auth-token`, and `Authorization:` values masked.
 
 ### Changed
 
-- **`scripts/resolve-impl-backend.sh` / `scripts/set-impl-backend.sh`**: shellcheck SC2295 / SC2005 を解消（内部 hygiene、挙動不変）。
-
-### Documentation
-
-- **Cursor ACP（Agent Client Protocol）= 不採用**を `docs/research/cursor-adapter-candidate.md` に判断と再評価条件付きで記録。ACP は双方向 streaming プロトコルで harness の whole-task 委譲には過剰。streaming UX / 非 Cursor IDE への埋込 / per-action permission gating のいずれかが要件化したら再評価。Cursor は `candidate` のまま。
+- Cursor ACP streaming integration is not adopted for whole-task delegation; reassess only if streaming, external IDE embedding, or per-action permissions become requirements. Shell hygiene changes do not alter behavior.
 
 ## [4.12.11] - 2026-05-28
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#41211---2026-05-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1704)
+
 ### Changed
 
-| Before | After |
-| --- | --- |
-| Cursor had no adapter candidate route. | Cursor has a `candidate` adapter skeleton, evidence doc, and static smoke. |
-| Cursor support claims were intentionally absent. | Cursor remains `candidate`; public support claims still wait for workflow smoke. |
-| Bootstrap and capability contracts did not describe Cursor. | `spec.md`, capability matrix, and bootstrap routing contract define Cursor boundaries. |
-| Breezing and model routing had no Cursor mapping. | Breezing docs and `scripts/model-routing.sh --host cursor` define candidate routing. |
-
-- **Phase 81 Cursor CCH Adapter (candidate)**: Added Cursor adapter evidence
-  (`docs/research/cursor-adapter-candidate.md`), contract updates in
-  `spec.md`, capability matrix, and bootstrap routing contract, adapter skeleton
-  (`.cursor-plugin/`, `.cursor/AGENTS.md`, agents, hooks, MCP config shape),
-  Breezing Cursor mapping docs, `scripts/model-routing.sh --host cursor`, advisor
-  model alignment to Opus 4.7, and `tests/test-cursor-adapter-candidate.sh`.
-  Cursor remains `candidate`; no public supported Cursor adapter claim until
-  workflow smoke passes.
+- Add Cursor candidate packaging/routing evidence and static smoke. Public support still requires observed workflow checks; this release does not claim enforcement parity.
 
 ## [4.12.10] - 2026-05-28
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#41210---2026-05-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1724)
+
 ### Fixed
 
-- Updated `harness-release` so a release is only complete after the release work is merged to the default branch and tags/GitHub Release are created from that branch-reachable commit.
+- A release is complete only when its work is merged to the default branch and tags/publication point to a commit reachable from that branch.
 
 ## [4.12.9] - 2026-05-28
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4129---2026-05-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1730)
+
 ### Changed
 
-- **Phase 80 upstream refresh (Claude Code 2.1.143-2.1.152 + Codex 0.131-0.134)**: Added dated snapshot and adoption plan, Claude `disallowed-tools` / `/reload-skills` / `MessageDisplay` policies, Codex `--profile` primary guidance, and integration tests. Upstream Auto mode consent removal does not change Harness `--auto-mode` or `autoMode.hard_deny` defaults.
+- Refresh Claude 2.1.143–152 and Codex 0.131–134 guidance for disallowed tools, skill reload, message display, and Codex profiles. Native Auto-mode consent changes do not change Harness opt-in or hard-deny defaults.
 
 ## [4.12.8] - 2026-05-27
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4128---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1736)
+
 ### Changed
 
-- Strengthened `harness-plan` so non-trivial planning requires team/sub-agent
-  validation, spec/Plans alignment, memory reuse checks, and product, security,
-  and works-in-practice gates before tasks are marked implementation-ready.
-  Lightweight planning remains allowed through an explicit lightweight mode, and
-  secret values must not be read as part of planning validation.
-- Updated the English and Japanese READMEs to describe the new non-trivial
-  `harness-plan` validation gate and lightweight fast path.
+- Nontrivial plans now require independent team/subagent consultation before finalization, with explicit lightweight exceptions and evidence in the plan; bilingual guides describe the requirement.
+- Planning checks spec/task alignment, prior memory, product value, security, and practical feasibility without reading secret values.
 
 ## [4.12.7] - 2026-05-27
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4127---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1748)
+
 ### Fixed
 
-- Added a CCH branch-protection release preflight guard so repository review
-  settings cannot silently drift from the intended CCH review gate.
+- Harness's own release preflight checks its repository branch protection so its review gate cannot drift silently.
 
 ## [4.12.6] - 2026-05-27
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4126---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1755)
+
 ### Changed
 
-- Expanded CodeQL to run on every `main` push and every `main` pull request so
-  Scorecard can detect SAST coverage across release/documentation commits.
+- CodeQL scans every main push and pull request.
 
 ### Fixed
 
-- Added a Go fuzz seed for `harness.toml` parsing so parser robustness is
-  exercised and detected by Scorecard's fuzzing check.
-- Required all shipped platform hook binaries in the distribution archive check,
-  documenting why Scorecard binary-artifact findings are handled as intentional
-  plugin payload rather than deleted files.
+- TOML parser fuzz checks run regularly, and distribution checks require every shipped platform hook binary.
 
 ### Security
 
-- Removed mutable global npm install/update fallbacks from quick install and
-  Codex update guidance; optional development tools now use Homebrew or manual
-  versioned package-manager installation.
-- Added Scorecard maintainer annotations for intentionally shipped plugin
-  binaries and the decision not to pursue the external CII badge for this
-  release line.
-- Recorded the Scorecard alert disposition and branch-protection state in
-  `docs/evidence/scorecard-alerts-2026-05-27.md`.
+- Quick install and Codex update guidance remove automatic fallbacks that installed or updated optional tools globally with an unpinned `npm install -g`. Install optional development tools with Homebrew or with a version-pinned package-manager command instead. Scorecard exceptions document intentionally shipped binaries and restricted security-reporting and branch-protection decisions.
 
 ## [4.12.5] - 2026-05-27
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4125---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1781)
+
 ### Fixed
 
-- Closed the remaining Dependabot alerts in the Breezing benchmark `agent-eval`
-  lockfile by updating `@vercel/agent-eval`, applying scoped npm overrides for
-  patched `undici`, `minimatch`, and `uuid` ranges, and aligning benchmark dry
-  run task references with the tracked eval fixtures.
+- Patch the Breezing agent-eval dependency tree to close remaining Dependabot advisories.
+- Benchmark overrides patch undici, minimatch, and uuid, and dry-run tasks now point at tracked evaluation fixtures.
 
 ### Security
 
-- Added a scoped Dependabot npm update entry and CI audit gate for
-  `benchmarks/breezing-bench/agent-eval` so benchmark-tooling lockfile
-  advisories are checked before future releases.
+- Scoped npm updates and an audit gate monitor that benchmark without adding noisy update entries for disposable fixtures.
 
 ## [4.12.4] - 2026-05-27
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4124---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1796)
+
 ### Added
 
-- Added `SECURITY.md` with a private vulnerability reporting route and public issue guidance for security reports.
+- SECURITY.md provides private vulnerability reporting and guidance for public issues.
 
 ### Fixed
 
-- Restored the English-default language contract in root `CLAUDE.md` and `AGENTS.md`, keeping Japanese output as an explicit opt-in through user language, `i18n.language: ja`, or `CLAUDE_CODE_HARNESS_LANG=ja`.
+- Restore English by default, with Japanese selected by request, `i18n.language: ja`, or `CLAUDE_CODE_HARNESS_LANG=ja`.
 
 ### Security
 
-- Hardened `harness evidence collect --label` against path traversal by rejecting absolute, parent-relative, nested, and non-slug evidence labels.
-- Removed shell interpretation from the Go auto test runner so related test file paths are passed as process arguments instead of through `bash -c`.
-- Changed YAML config validation to pass the config path through `sys.argv` instead of interpolating it into Python source.
+- Evidence labels reject absolute, parent-relative, nested, and non-slug paths. Test paths are passed as process arguments instead of shell code; YAML paths enter Python as arguments rather than source interpolation.
 
 ## [4.12.3] - 2026-05-25
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4123---2026-05-25) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1812)
+
 ### Changed
 
-- Standardized new and updated Plans status markers on the English family (`pm:requested`, `cc:todo`, `cc:wip`, `cc:done`, `pm:approved`) while keeping existing Japanese markers readable.
-- Updated Plans templates, watcher notifications, session summaries, progress snapshots, and worker prompts so completed work now writes `cc:done` instead of generating new `cc:完了` markers.
-
-| Before | After |
-|--------|-------|
-| New rows and reminders could emit Japanese markers such as `cc:完了` while other writers used English aliases. | New and updated writer output now emits `pm:requested`, `cc:todo`, `cc:wip`, `cc:done`, and `pm:approved`. |
-| Legacy Plans files with `cc:TODO`, `cc:WIP`, `cc:完了`, `pm:依頼中`, and `pm:確認済` remained common in active projects. | Legacy markers remain read-compatible; Harness does not bulk-migrate existing Plans files without an explicit migration action. |
+- New task rows use `pm:requested`, `cc:todo`, `cc:wip`, `cc:done`, `pm:approved`. Existing Japanese/uppercase markers remain readable; no bulk migration happens without explicit action.
 
 ### Fixed
 
-- Added the Codex plugin manifest to release version sync so direct Codex installs stay aligned with `VERSION` during releases.
-- Verified guardrail/runtime reason strings stay English by default with Japanese output preserved through `CLAUDE_CODE_HARNESS_LANG=ja`.
-- Rechecked protected-path `.env` break-glass behavior and codex-loop orphan active-job recovery against current tests, with public issue closeout evidence recorded.
+- Release version sync includes the Codex manifest. Guardrail reasons remain English with Japanese opt-in; protected environment-file exceptions and orphan-loop recovery retain their tested behavior.
 
 ## [4.12.2] - 2026-05-24
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4122---2026-05-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1830)
+
 ### Fixed
 
-- Restored README claim anchors for Cursor docs, 5 verb skills, the Go-native guardrail engine, and Japanese opt-in language guidance so main CI matches the refreshed README surface.
+- README checks again match the documented Cursor route, five workflow verbs, Go-based protection, and Japanese opt-in.
 
 ## [4.12.1] - 2026-05-24
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4121---2026-05-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1836)
+
 ### Changed
 
-- README / README_ja now lead with the current Harness operating path: tool-first onboarding, generated `spec.md` / `Plans.md`, command internals, support tiers, migration safety, and deeper docs.
-- Removed top-level README emphasis on internal code names and release-history blocks so new users see the latest product state first.
-- Added approved Pattern A operating-loop README hero images in English and Japanese, with a visual refresh manifest and approval board preserved as evidence.
-- Updated `/harness-plan` from a Plans.md-only generator into co-required planning output for the `spec.md` product contract and Plans.md task contract, requiring Harness-generated `Spec delta` or `Spec skip reason` with every create output while preserving `spec.md > sub-spec > Plans.md` precedence.
+- Bilingual READMEs lead with setup, operating flow, support boundaries, and migration; approved visuals replace internal release names. Planning now creates both spec.md product behavior and Plans.md tasks, recording either a spec delta or a reason to skip; spec takes precedence.
 
 ## [4.12.0] - 2026-05-23
 
-### テーマ: New Harness V2 の tool-first onboarding と配布保証
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4120---2026-05-23) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1845)
 
-**Claude Code Harness を Claude-first のまま、Codex CLI / OpenCode / candidate hosts へ正直に広げるための Phase 73 + 74 release。新規ユーザーは使っている tool から入り、既存ユーザーは report-first migration で影響を確認し、release path は format / lint / adapter smoke / preflight gate で止められるようになりました。**
+### Added
 
----
-
-#### 1. Tool-first onboarding を追加
-
-**今まで**: 導入の入口は Claude Code plugin が中心で、Codex CLI や OpenCode の導線は別文脈になりやすい状態でした。Codex app、Cursor、GitHub Copilot CLI、Antigravity CLI についても「候補」と「対応済み」が混ざりやすく、ユーザー側が妥当性を確認する必要がありました。
-
-**今後**: `docs/onboarding/index.md` / `docs/onboarding/install.md` / README から、最初に使っている tool を選ぶ導線に変更。Claude Code は `supported`、Codex CLI と OpenCode は `internal-compatible`、Codex app / Cursor / GitHub Copilot CLI は `candidate`、Antigravity CLI は `future/unsupported` と明記します。`not_observed != absent` の境界も release wording に固定しました。
-
-#### 2. Codex CLI direct plugin route と OpenCode bootstrap route を追加
-
-**今まで**: Codex は Claude Code から反映させる fallback 導線が中心で、Codex app と Codex CLI の証拠境界も曖昧になりがちでした。OpenCode は mirror/package validation に寄っており、bootstrap plugin と runtime parity の区別が弱い状態でした。
-
-**今後**: `.codex-plugin/plugin.json`、`tests/test-codex-plugin-adapter.sh`、CI-required Codex CLI smoke を追加し、isolated `CODEX_HOME` で direct plugin route を検査します。OpenCode は `opencode/plugins/harness-bootstrap.mjs` と setup/docs/test を追加し、bootstrap injection と skill path registration を検査します。ただし OpenCode real runtime parity は未観測のため `internal-compatible` のまま維持します。
-
-#### 3. 既存ユーザー migration report を追加
-
-**今まで**: 既存ユーザーが移行時に何を壊しうるか、Claude plugin cache、Codex local skills、OpenCode files、harness-mem state を横断して見る非破壊の入口がありませんでした。
-
-**今後**: `bin/harness doctor --migration-report` で stale plugin cache、missing slash entries、duplicate Codex skills、old symlinks、Codex/OpenCode backup path、harness-mem state を inventory します。report は非破壊で、cache、local skills、OpenCode files、symlink、backup、memory DB を削除しません。
-
-#### 4. Spec / Plans 正本と support claim boundary を強化
-
-**今まで**: `Plans.md` の Phase 73 / 74 と root `spec.md` の対象範囲にズレが出ると、AIがその瞬間に見えていない前提を存在するものとして扱う危険がありました。
-
-**今後**: root `spec.md` を Phase 72 through Phase 74 の SSOT とし、Hokage Core / host adapter boundary、support tier、unknown handling、Plans workflow contract を固定しました。`Plans.md` は検証・調査、実装計画確定、TDD実装、レビュー、PR / Release closeout の動線を持ちます。
-
-#### 5. Repo-health / release assurance gates を追加
-
-**今まで**: Go build/test/vet、actionlint、plugin validation、multi-OS smoke、OpenCode mirror validation はありましたが、`gofmt` gate、ShellCheck high-risk subset、tag-triggered release workflow 内の preflight 必須化、Codex CLI required runtime smoke が足りていませんでした。
-
-**今後**: `tests/test-format-lint.sh`、`tests/test-shell-lint.sh`、CI steps、release workflow preflight、Codex CLI runtime smoke required mode を追加しました。`scripts/release-preflight.sh --check-adapters` は release前の clean-tree gate として、adapter smoke、mirror drift、distribution archive、capability matrix、bootstrap routing、CI status をまとめて確認します。
-
-#### 6. Merge / release 判断用 HTML を追加
-
-**今まで**: PR ready と release ready の違いが説明だけに残りやすく、最後の判断で「mergeしたら何が変わるのか」「releaseして問題ないのか」を再確認する必要がありました。
-
-**今後**: `docs/phase-73-merge-release-summary.html` に、merge後のユーザー体験、変わること / 変わらないこと、release go/no-go、support claim boundary をまとめました。Actions / CodeRabbit / clean preflight を分け、公開releaseは main preflight と tag-triggered release workflow 通過後にGOと判断する形にしています。
+- Tool-first onboarding separates Claude, Codex CLI, and OpenCode bootstrap routes and their support limits. Existing users get a read-only migration report before changes. Repo-health, distribution, and release checks verify the promised shipped surface; decision HTML records merge/release evidence. Start at `docs/onboarding/index.md`.
+- At this release Claude is supported, Codex CLI/OpenCode internal-compatible, Codex app/Cursor/Copilot CLI candidates, and Antigravity unsupported. `harness doctor --migration-report` inventories stale caches, missing slash entries, duplicates, symlinks, backups, and memory without deleting them. OpenCode real-runtime parity is unobserved. `release-preflight.sh --check-adapters` combines clean-tree, adapter, mirror, archive, capability, bootstrap, and CI checks.
 
 ## [4.11.4] - 2026-05-21
 
-### テーマ: Sandbox allowlist の運用レシピを harness-side に SSOT 化
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4114---2026-05-21) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1889)
 
-**他プロジェクトで Firecrawl / 外部スクレイプ API が `HTTP/2 403 / x-deny-reason: host_not_allowed` で塞がれる問題に対し、`~/.claude/settings.json` への patch 手順を `docs/sandbox-allowlist-recipe.md` として codify。AI 経由での自動書き換えはできない security boundary なので、ユーザー手動編集の手順を harness が責任を持って提示する設計。**
+### Added
 
----
+- A manual sandbox-network recipe (restrict which hosts isolated processes can contact) is in `docs/sandbox-allowlist-recipe.md`. It explains `HTTP/2 403 / x-deny-reason: host_not_allowed`, 29 allowed domains, 9 denied domains, and 6 excluded commands. `templates/sandbox-settings.json.template` now matches it; its previous 8 domains could cause `git clone`, `pip`, `go mod`, or `cargo` to fail.
+- Copy the whole template only if `~/.claude/settings.json` has no `sandbox` key; check with `jq 'has("sandbox")' ~/.claude/settings.json`. Otherwise merge it, preserving `filesystem` (file-access policy) and `failIfUnavailable` (stop if isolation is unavailable). Back up settings, combine arrays, preserve file permissions, validate exact hosts, and fully restart Claude. New settings have exactly 29 allowed and 9 denied domains; merged settings may exceed those counts. Firecrawl still needs `FIRECRAWL_API_KEY`. Agents do not edit this operator setting themselves.
+- The 9 denied domains (cloud metadata endpoints and paste sites) block SSRF (requests to internal cloud services) and data-exfiltration paths. `deniedDomains` takes precedence even when a domain is in `allowedDomains`.
 
-#### 1. `docs/sandbox-allowlist-recipe.md` を新規追加
-
-**今まで**: claude-code-harness を install した他プロジェクトで Firecrawl が動かない時、ユーザーは「sandbox 設定をどう変えればいいか」を毎回手探りで調査する必要がありました。CC sandbox が allowlist default で全 deny という挙動を知らないと、`HTTP/2 403 / x-deny-reason: host_not_allowed` を見ても何をすればいいか分からない状態でした。
-
-**今後**: `docs/sandbox-allowlist-recipe.md` に以下を codify:
-
-- 症状 (`HTTP/2 403 / x-deny-reason: host_not_allowed`) と原因 (CC sandbox が allowlist 空 = 全 deny)
-- `~/.claude/settings.json` に追加する patch JSON 完成形 (29 ドメイン allowlist + 9 ドメイン denylist)
-- 3 階層構成 (開発コア 14 / Firecrawl 本体 2 / スクレイプ対象 13) と各階層の意図
-- 検証コマンド (`jq -e '.sandbox.network.allowedDomains | length' ~/.claude/settings.json` で件数チェック)
-- なぜ AI が自動で編集しないのか (self-audit guard の責任境界)
-- トラブルシューティング (JSON syntax error / CC 完全再起動の必要性 / `FIRECRAWL_API_KEY` 設定)
-
-他プロジェクトで同じ問題に遭遇した時、`@docs/sandbox-allowlist-recipe.md` で一発参照して自己解決できます。
-
-#### 2. Self-audit guard と AI の責任境界を明確化
-
-**今まで**: `~/.claude/settings.json` の編集は AI から見ると「deny される作業」とだけ理解され、なぜ deny されるか・代わりに何をすべきかの SSOT がありませんでした。Bash + jq による迂回も CC auto mode classifier が「User Deny Rules circumvention」として deny する設計ですが、この挙動と意図は docs 化されていませんでした。
-
-**今後**: 「AI 側は patch 提示まで、ユーザー側が手動編集」という責任境界を docs の `## なぜ AI が自動で編集しないのか` セクションで codify。将来 sandbox 周りの問題に他セッションが遭遇した時、「`Edit/Write(.claude/settings*)` deny + Bash 迂回も classifier deny + ユーザー手動編集が正規ルート」と一発で把握できます。
-
-#### 3. `templates/sandbox-settings.json.template` を 29 ドメイン構成に同期 + 導線追加
-
-**今まで**: `templates/sandbox-settings.json.template` の `allowedDomains` は 8 個 (github / npmjs / anthropic / pypi / rubygems / crates のみ) で、docs の 29 個推奨と乖離。新規プロジェクトで template を流用しても `codeload.github.com` / `objects.githubusercontent.com` / `files.pythonhosted.org` / `proxy.golang.org` / `sum.golang.org` / `static.crates.io` 不在で git clone / pip / go mod / cargo が落ちる可能性がありました。また `CLAUDE.md` / 既存 docs から新 doc への inbound link がゼロで、「`@docs/sandbox-allowlist-recipe.md` で一発参照」の約束が機能していませんでした。
-
-**今後**:
-
-- `templates/sandbox-settings.json.template` を recipe と完全同期 (29 ドメイン allowlist + 9 ドメイン denylist + 6 excludedCommands)。`_notes.sync_with` フィールドで「recipe と数値・項目を完全一致させること」を明示し drift 再発を防止
-- `CLAUDE.md` Permission Boundaries セクションに 1 行ポインタ追加: `外部 API への sandbox allowlist 設定 (Firecrawl / web スクレイプ等): docs/sandbox-allowlist-recipe.md`
-- docs の patch JSON 例を「先頭 comma append 形式」から「top-level 同階層に 1 ブロック追加」+ 完成形 JSON 構造図に変更。コピペ手順 (`cp backup` → エディタ編集 → `jq -e` 検証 → CC 再起動) を追加して手動編集ミスを防止
-
-#### 4. 推奨 allowedDomains を 29 個に拡張 (Firecrawl + 日本テックブログ群)
-
-**今まで**: `templates/sandbox-settings.json.template` には開発コア 8 ドメイン (github / npm / anthropic / pypi / rubygems / crates) のみ列挙されており、Firecrawl の API host (`api.firecrawl.dev`) や代表的なテックブログ (`techblog.zozo.com` / `note.com` / `zenn.dev` 等) は含まれていませんでした。
-
-**今後**: docs の patch では 29 ドメインを 3 階層で列挙:
-
-- **開発コア (14)**: github 系 5 + npm + anthropic + pypi 系 2 + go 系 2 + crates 系 2 + rubygems
-- **Firecrawl (2)**: `api.firecrawl.dev` / `firecrawl.dev`
-- **スクレイプ対象 (13)**: `techblog.zozo.com` / `note.com` / `assets.st-note.com` / `zenn.dev` / `qiita.com` / `dev.to` / `medium.com` / `cdn-ak.f.st-hatena.com` / `engineering.dena.com` / `developers.cyberagent.co.jp` / `tech.uzabase.com` / `engineer.crowdworks.jp` / `tech.smarthr.jp`
-
-#### 5. Case A / Case B merge pattern と jq one-liner を追加 (Codex review 対応)
-
-**今まで**: 当初 recipe は「`~/.claude/settings.json` の最後の `}` 直前に sandbox ブロックを追加」という単一手順のみで、既に `sandbox` キーがある環境 (例: `failIfUnavailable` / `filesystem.denyRead` / `network.deniedDomains` を既存設定済) では JSON key 重複でどちらかの sandbox ブロックが消える危険がありました。また template から流用する説明で `4 行目-65 行目` という固定 line range を書いていたため、template 拡張で line がずれた後は無効な範囲を user が copy する事故リスクがありました。
-
-**今後**: Codex review (P2 + P3 指摘) を反映し、recipe を以下に書き直し:
-
-- **Step 0**: `jq 'has("sandbox")' ~/.claude/settings.json` で既存有無を判定し Case A / B に分岐
-- **Case A** (sandbox 既存無し): top-level に sandbox ブロックを新規追加
-- **Case B** (sandbox 既存あり): 内側を merge ルール表 (enabled / autoAllowBashIfSandboxed は set、failIfUnavailable / filesystem は touch 禁止、配列は union 化)
-- **jq one-liner** で Case A / B 両対応の安全 merge (既存 `filesystem` / `failIfUnavailable` を破壊しない、配列は `unique` で重複排除)
-- template 流用説明から固定 line range を削除し、「`sandbox` セクション全体をコピー」と書く形に変更 (template 拡張で line がずれても安全)
-- `templates/sandbox-settings.json.template` 丸ごとコピーは Case A 限定と明示 (Case B では既存 `filesystem` を破壊する)
-
-#### 6. jq merge コマンドの file permission 保持 + 検証セクションの Case 別化 (Codex review 2 回目対応)
-
-**今まで**: jq merge コマンドが `jq ... > settings.json.tmp && mv settings.json.tmp settings.json` の典型パターンで、tmp ファイルが user の umask (一般に 644) で作られていました。元の `~/.claude/settings.json` が `600` (token / secret を含むため強い permission で保護) だった場合、merge 後に **read access が 644 に広がる security regression** が起きていました。また「## 検証」セクションが 2 箇所で重複 (`### 検証` 内は「→ 29 以上」だが、独立 `## 検証` 内は固定 `→ 29`) で、Case B (既存 sandbox あり) の user が成功した merge を「件数違う、失敗した」と誤判定する状況がありました。
-
-**今後**: Codex review 2 回目 (P2 + P3 指摘) を反映:
-
-- jq merge コマンドに **file mode 保持** を追加:
-  - `MODE=$(stat -f '%Mp%Lp' "$SETTINGS" 2>/dev/null || stat -c '%a' "$SETTINGS")` で macOS / Linux 両対応
-  - `cp -p` で backup の mode 保持
-  - `chmod "$MODE" "${SETTINGS}.tmp"` で merge 後の tmp に元 mode を復元してから `mv`
-  - 末尾に mode 確認の `stat` 1 行を追加
-- 重複していた「## 検証」セクション (固定 `→ 29` を含む方) を削除し、「外向き通信のスモークテスト」セクションに置換 (Firecrawl scrape の動作確認専用)
-- 残った「### 検証」を **Case A / B 別の期待値** に書き直し:
-  - allowedDomains length: Case A = ちょうど 29 / Case B = 29 以上
-  - deniedDomains length: Case A = ちょうど 9 / Case B = 9 以上
-  - 必須ホスト (`api.firecrawl.dev` / `169.254.169.254` 等) の `contains` チェックを追加 (Case A / B 共通の最低条件)
-  - filesystem セクションの破壊チェックを Case B 限定として明示
-
-#### 7. `stat` 順序の Linux 互換性 + jq exact match 化 (Codex review 3 回目対応)
-
-**今まで**: 直前 commit で追加した cross-platform `stat` コマンドが `stat -f '%Mp%Lp' ... || stat -c '%a' ...` の順序で、**BSD `stat -f` を先に試す**設計でした。Linux GNU stat では `-f` は **filesystem-status flag** として認識され、format option ではないため、Linux 上では filesystem の multiline 情報を `MODE` 変数に代入してしまい、後続の `chmod "$MODE"` が失敗する不具合がありました。また検証セクションの `jq array contains` は **string substring matching** で再帰的に動くため、`"www.firecrawl.dev"` のような部分一致が `"firecrawl.dev"` の必須ホストチェックを満たしてしまう false positive がありました。
-
-**今後**: Codex review 3 回目 (P2 + P3 指摘) を反映:
-
-- `stat` の試行順序を **Linux GNU `-c` 優先 → macOS BSD `-f` fallback** に修正:
-  - `MODE=$(stat -c '%a' "$SETTINGS" 2>/dev/null || stat -f '%Lp' "$SETTINGS")`
-  - 順序が逆だと Linux で BSD `-f` を最初に試して filesystem-status 出力で MODE が壊れる
-  - macOS では GNU `-c` が即 fail → BSD `-f` で `%Lp` (lower octal) が返る
-  - 動作確認: macOS で `600` が正しく返ることを検証済
-- `jq array contains` から `any(. == "...")` に書き換え:
-  - 部分一致誤判定を防ぐ exact match
-  - `index() != null` ではなく `any(. == "")` を選択した理由は `!` が zsh history expansion と衝突する可能性を避けるため (`!=` がエスケープされる)
-  - semantic test: `["www.firecrawl.dev"]` が `"firecrawl.dev"` 必須チェックで正しく **false** を返すことを確認済
-
-#### 8. mode 検証用 stat も GNU-first に統一 (Codex review 4 回目対応)
-
-**今まで**: 直前 commit で `MODE=...` 取得側の `stat` は Linux GNU 優先に修正したものの、merge 後の検証用 `stat` コマンド (jq merge ブロック末尾の「mode が保持されたか確認」行) は旧 BSD 優先の順序のまま残っていました。Linux user が recipe をコピペした場合、検証ステップだけ `stat -f` が filesystem-status output を返して exit 0 になり、permission preservation 修正の効果を確認できない不整合がありました。
-
-**今後**: 検証用 `stat` も MODE 取得側と同じ順序 (`stat -c '%a' || stat -f '%Lp'`) に統一。recipe 全体で Linux / macOS どちらでも mode 確認が機能するようになりました。
-
-`deniedDomains` 9 個 (クラウド metadata endpoint + pastebin 系) は SSRF + 流出経路の遮断として維持。`allowedDomains` で許可されていても `deniedDomains` が優先で deny される設計を明示。
 
 ## [4.11.3] - 2026-05-19
 
-### テーマ: Slash command 出力の「止まったように見える」UX 改善 (2 層対策)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4113---2026-05-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1993)
 
-**`/harness-release` や `/harness-review` のような slash command が text を返すと `<local-command-stdout>` で input box に prefilled され、ユーザーには「止まった」ように見えていた問題に、CLAUDE.md の host 要約契約 (Layer 1) + skill 側の instruction line literal (Layer 2) で対応。**
+### Changed
 
----
-
-#### 1. CLAUDE.md (project) に Slash command 出力の要約契約を追加
-
-**今まで**: `/コマンド` の `<local-command-stdout>` が長文で host Claude に渡された時、ユーザーは「ターミナル内のテキストが入力欄に貼り付いて止まった」と感じていました。host Claude が要約せず、何をすればいいか不明確でした。
-
-**今後**: `CLAUDE.md` Notes セクションに**「Slash command 出力の要約契約」**を追加。host Claude は長文 (10 行以上) の `<local-command-stdout>` を受け取ったら必ず assistant message として 1-3 行で要約し、次のアクション (待機 / 終了 / ユーザー判断要請) を明示します。**全 slash command に自動適用**されます。
-
-#### 2. `harness-release` / `harness-review` SKILL.md に Output Contract literal を追加
-
-**今まで**: skill 出力の最後に「ユーザーが次に何をすればいいか」のガイドが無く、Enter を押すべきか新規 prompt を入力すべきか判断できませんでした。
-
-**今後**: 両 skill の AUTO-START Contract の直後に **Output Contract セクション** (P35) を追加。skill 結論時の output の最後に次の literal を含める契約:
-
-`↑この結果は Claude が要約します。Enter キーで次へ進むか、新規 prompt で別の指示を出してください。`
-
-SSOT + codex mirror + opencode mirror の 6 files を同時更新。
-
-#### 3. governance test に instruction literal の check を追加 (CI gate)
-
-**今まで**: `tests/test-harness-release-governance.sh` と `tests/test-harness-review-governance.sh` は AUTO-START literal は check していましたが、instruction line literal は未 check でした。将来の literal drift で UX が再悪化するリスクがありました。
-
-**今後**: 両 test の `required_terms` / `required_skill_terms` 配列に `↑この結果は Claude が要約します` を追加。SKILL.md から instruction line が剥がれた場合は `validate-plugin.sh` で fail します。
-
-#### 4. `patterns.md` P35 として SSOT 化
-
-**今まで**: 「Slash command が止まったように見える」問題は対症療法レベルで、後続セッションが同じ問題に遭遇した時の reference point が無かった。
-
-**今後**: `patterns.md` に **P35: Slash command 出力の「止まったように見える」UX への 2 層対策** を codify。Layer 1 (host が要約) + Layer 2 (skill が instruction を明示) の責任分担を明示。今回未対応の `harness-work` / `ci` skill にも将来同じ pattern を適用可能 (grep で発見できる reference table 付き)。
-
-#### 5. Scope 限定の理由
-
-**今回**: `harness-release` + `harness-review` の 2 skill のみ Layer 2 対応。
-**理由**: A 案 (CLAUDE.md / patterns.md) で全 skill に Layer 1 を自動適用。B 案 (Layer 2 instruction) は最も頻出する 2 skill から開始。
-**将来**: `harness-work` / `ci` への適用は P35 SSOT で grep 可能、次の minor release で対処予定。
+- `/harness-release` and `/harness-review` now end with one fixed line telling you that Claude will summarize the result and that you can press Enter to continue or type a new instruction. This addresses slash-command output that looked like a stop. At this release the line is always Japanese (`↑この結果は Claude が要約します。Enter キーで次へ進むか、新規 prompt で別の指示を出してください。`); 4.16.0 makes it follow your language setting. Other skills are unchanged.
 
 ## [4.11.2] - 2026-05-19
 
-### テーマ: `/harness-release` 沈黙不具合の修正 + AUTO-START Contract literal を governance test で必須化
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4112---2026-05-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2035)
 
-**v4.11.1 の harness-review/ci 沈黙修正と同じ家系の不具合を `harness-release` でも修正。さらに今後の同種事故再発を CI で検知するため governance test を強化。**
+### Fixed
 
----
-
-#### 1. `/harness-release` skill の沈黙不具合
-
-**今まで**: `/harness-release` を引数なしで起動すると、`AskUserQuestion` も呼ばれず "バックシェル" 表示のまま停止していました。原因は `harness-review` と異なり `disable-model-invocation` ではなく、SKILL.md に **P27 解法 3 点セット (AUTO-START Contract literal) が欠落**していたため。`context: fork` で起動した fork context が host session-start rules を継承し、「タスクが不明確」と解釈して停止していました。
-
-**今後**: SKILL.md `## Bare invocation contract` 直下に literal 3 点を追加:
-
-- 機械可読条件 `if $ARGUMENTS == "":`
-- AUTOSTART marker `RELEASE_AUTOSTART: target=..., base_ref=..., mode=...`
-- 禁止行動 literal「タスクが不明確」「指示を待ちます」「タスクがありません」「追加の指示をお待ちします」
-
-これで bare `/release` 起動時に fork context 内モデルが自動進行し、Review Gate / Work Commit Gate を経由してリリースまで完走します。codex mirror も同期更新。
-
-#### 2. CI gate: `RELEASE_AUTOSTART` literal を必須 term に追加
-
-**今まで**: `tests/test-harness-release-governance.sh` は「Bare invocation contract」「AskUserQuestion」等の **散文** 文言は check していましたが、P27 解法 3 点セット (機械可読条件 + AUTOSTART marker + 禁止行動 literal) の literal 存在を check していませんでした。そのため今回のような literal 欠落を CI で検知できませんでした。
-
-**今後**: `required_terms` 配列に以下を追加:
-
-- `RELEASE_AUTOSTART:`
-- `if $ARGUMENTS == ""`
-- `タスクが不明確`
-
-今後 SKILL.md から literal が剥がれた場合は `validate-plugin.sh` の harness-release governance gate で fail します。
-
-#### 3. `.claude/memory/patterns.md` P27 に事故事例を追記
-
-**今まで**: P27 の例セクションは `skills/harness-review/SKILL.md` だけをリファレンス実装として挙げており、P27 の適用漏れがどう事故化したかの track record が SSOT に無く、後続セッションが「P27 を真面目に実装する重みづけ」を判断できませんでした。
-
-**今後**: P27 例セクションに `harness-release` をリファレンス実装として追加、別途「事故事例」テーブルを設けて 2026-05-18 の `/harness-release` 沈黙事故を記録。同様の症状が再発した時の reference point として機能。
+- Calling release without arguments starts the default release target and announces it instead of waiting for another instruction; safety checks and approval requirements remain.
 
 ## [4.11.1] - 2026-05-18
 
-### テーマ: Skill 沈黙不具合の修正 + Anti-Pattern の SSOT 化
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4111---2026-05-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2073)
 
-**`/harness-review` / `/ci` が "バックシェル" 表示のまま無音停止する不具合を修正し、同種事故の 4 度目の再発を防ぐため根本ルールを `.claude/memory/patterns.md` P27 に codify。**
+### Fixed
 
----
-
-#### 1. `/harness-review` skill の沈黙不具合
-
-**今まで**: `/harness-review` を引数なしで起動すると、CC が「バックシェル」通知を出した後に進捗が流れず、fork context 内で silent に停止していました。SKILL.md frontmatter の `disable-model-invocation: true` が Skill tool 経由の起動を全部ブロックしており、available 一覧からも消えていたのが原因。
-
-**今後**: `disable-model-invocation: true` を削除。`user-invocable: true` だけで「user の slash command 起動のみ許可」の意図は維持。`/harness-review` が available 一覧に復帰し、bare 起動で `REVIEW_AUTOSTART:` handshake が画面に流れます。SSOT と codex mirror を同時更新（OpenCode mirror は frontmatter 形式が異なり影響なし）。
-
-#### 2. `/ci` skill の同種不具合
-
-**今まで**: `/ci` も `/harness-review` と完全に同じ frontmatter パターン (`user-invocable: true` + `disable-model-invocation: true` + `context: fork`) で available 一覧から消えていました。
-
-**今後**: `skills/ci/SKILL.md` と codex mirror から `disable-model-invocation: true` を削除。2026-02-04 (`387c5568`) に `release` skill が経験した症状の **3 度目の再発**。
-
-#### 3. `.claude/memory/patterns.md` P27 への Anti-Pattern codify
-
-**今まで**: P27 (`context: fork` skill の auto-start 3 点セット) の適用条件に「`disable-model-invocation: true` との組み合わせで model 自身の裁量を縛りたい場合」と書かれており、フラグの誤適用を後続セッションが繰り返す温床になっていました。
-
-**今後**: 適用条件から該当行を削除し、非適用条件 (Anti-Pattern) に移動:
-
-> **`user-invocable: true` の read-only skill に `disable-model-invocation: true` を併用してはならない**。フラグの本来の目的は dangerous side-effect skill (`deploy` / `generate-video` 等) の Claude 自動 trigger 防止 (`efcd097a`, 2026-02-01)。read-only / 判定 skill に付けると、意図した裁量制約は実現されない一方で Skill tool 経由の起動を全部ブロックする副作用だけが残る。`release` (2026-02-04 `387c5568`) → `harness-review` / `ci` (2026-05-18) の 3 連続再発。auto-start contract と併用してはならない。
-
-#### 4. CLAUDE.md に運用 cheatsheet を追加
-
-**今まで**: 同種事故が起きても、過去の commit (`387c5568`) や memory ファイルを能動的に grep しないと根本ルールに到達できませんでした。
-
-**今後**: `CLAUDE.md` (project + user global) に以下を追加:
-- Skill 沈黙時の診断 3 ステップ
-- `disable-model-invocation: true` の正しい適用判定
-- 過去判断を引く 1 行コマンド (`grep` / `git log -S`)
-- `harness-integrity: last-audit` を 2026-05-18 に更新
+- `/harness-review` and `/ci` reappear in the skill list and no longer stop silently after launch. A setting meant only for skills with dangerous side effects had blocked them. Bare `/harness-review` prints a `REVIEW_AUTOSTART:` line and starts. Project guidance explains when that setting is appropriate and how to diagnose a silent skill.
 
 ## [4.11.0] - 2026-05-18
 
-### Phase 71: Project-scoped R03 protected path break-glass
-
-#### Before / After
-
-| 観点 | Before | After |
-|------|--------|-------|
-| `.env` deploy edits | R03 shell writes to `.env` / `.env.*` were always denied, even for local developer-only deploy workflows | Project-local `harness.toml` can opt exact `.env` / `.env.*` shell writes down to `ask` with a required reason |
-| Guardrail blast radius | A broad R02/R03 opt-out would also relax `.git/`, secrets, keys, hooks, and shell profile protection | R02 remains deny, hard-deny paths remain deny, and R03 break-glass is ask-only with audit context |
-| Mirror drift detection | Local `.agents/skills` drift could pass the normal skill validation path | `tests/validate-skills.sh` now checks local-only `.agents` mirrors when present |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4110---2026-05-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2111)
 
 ### Added
 
-- Added a project-scoped R03 protected path break-glass ask-list via `[[safety.guardrail.protectedPathAskList]]` in `harness.toml`. It supports exact `.env` / `.env.*` shell-write paths with a non-empty reason and emits rule/path/source/reason audit context without echoing secret values.
-- Added local-only `.agents/skills` mirror validation to catch Claude-agent mirror drift when that mirror exists on a developer machine.
-
-### Fixed
-
-- Kept R02 Write/Edit/MultiEdit, `.git/`, `secrets/`, key files, SSH trust files, shell profile files, `.claude/hooks`, `.husky`, project-external paths, and mixed hard-deny shell writes denied even when an R03 ask-list entry is configured.
-- Documented and tested that R03 target extraction remains redirection / `tee` scoped; in-place writes such as `sed -i .env` are outside this v1 break-glass scope.
-
-### Phase 70: Hokage Core extraction positioning (docs-only)
-
-#### Before / After
-
-| 観点 | Before | After |
-|------|--------|-------|
-| Public positioning | v4 "Hokage" runtime wording could be mistaken for a cross-host product claim | README / README_ja now state that Claude Code Harness remains Claude-first and that Hokage Core extraction is underway only |
-| Spin-off readiness | No single public-readiness checklist explained why `Hokage Harness` is not yet a product claim | `docs/hokage-spin-off-readiness.md` records Claude/Codex/OpenCode gate status, unsupported host reasons, next adapter candidates, and the conclusion `No public spin-off yet` |
-| Unsupported hosts | Cursor/Gemini/Copilot risked being read as cross-host support targets | They are documented as not part of the public spin-off claim until the Claude/Codex/OpenCode gates are green |
-
-### Before / After
-
-| 観点 | Before | After |
-|------|--------|-------|
-| 配信先 OS 検証 | Linux 単一系のみ | Linux / macOS / Windows の 3 OS マトリクスで毎 PR スモーク（build → version → validate → doctor → manifest 整合性） |
-| アクション参照 | `@v6` 等のミュータブルなタグ（書き換え可能） | 全アクションを 40 桁 commit SHA に固定（2026 年 Trivy-action 攻撃パターンを無効化） |
-| 依存性自動更新 | 手動で漏れがち | Dependabot 週次 PR（github-actions / gomod / composite action）+ 7 日 cooldown |
-| ワークフロー権限 | `opencode-compat` は無宣言（過剰） | 全ワークフロー workflow-level `permissions: contents: read`、release のみ job-level `contents: write` に escalate |
-| トークン保持 | デフォルトで checkout token 残留 | 全 checkout に `persist-credentials: false` を追加 |
-| 連続 push 時 CI | 古い実行が走り続けて Actions 利用時間を浪費 | `concurrency` で PR 起源の古い run を自動キャンセル（release / benchmark は完走保護） |
-| 配信元の整合性 | Go セットアップが 3 箇所重複 | `.github/actions/setup-go-harness` composite に集約 |
-| ワークフロー YAML 検証 | 実行時まで発覚せず | `actionlint` ジョブが PR ごとにシェル文 + 構文を検査（shellcheck 統合） |
-| コード脆弱性スキャン | なし | CodeQL（Go）を push / PR / 週次で Security タブにレポート |
-| サプライチェーンスコア | なし | OSSF Scorecard を週次で公開（ブランチ保護・署名済みリリース等を継続的に評価） |
-
-### Added
-
-- **GitHub Actions サプライチェーン強化**: 全ワークフローのアクションを SHA ピン化し、Dependabot による週次自動更新（7日 cooldown 付き）を追加。2026年3月の Trivy-action タグ書き換え攻撃のような事例から保護されます。
-- **CodeQL ワークフロー** (`.github/workflows/codeql.yml`): Go バイナリ向けの自動脆弱性スキャンを追加。push / pull_request / 週次スケジュールで Security タブにレポート。
-- **OSSF Scorecard ワークフロー** (`.github/workflows/scorecard.yml`): リポジトリのサプライチェーン健全度を週次でスコアリング・公開。
-- **Smoke install ワークフロー** (`.github/workflows/smoke-install.yml`): Linux / macOS / Windows の3 OS マトリクスで harness バイナリのビルド・version・validate(skills/agents/all)・doctor・plugin.json/VERSION 同期を毎 PR で検証。配信先 OS 全てで動くことを担保します。
-- **actionlint ジョブ**: `validate-plugin.yml` に追加し、ワークフロー YAML 文法ミスを PR で即検出。
-- **Composite action** (`.github/actions/setup-go-harness`): Go セットアップの重複を集約し、release / validate / test-go / codeql / smoke-install から共通利用。
-- **`.github/dependabot.yml`**: github-actions / gomod / composite action ディレクトリの週次更新エントリ。
+- Project TOML `[[safety.guardrail.protectedPathAskList]]` permits exact environment-file shell writes to ask, with a nonempty reason and audit context. It is not allow: direct Write/Edit, secrets/keys, Git internals, hooks, shell profiles, external paths, and mixed hard-deny writes stay denied. Detection covers redirection/tee, not in-place sed. Optional local skill mirrors are validated.
+- CI smoke builds and checks Linux/macOS/Windows; workflow actions are commit-pinned with weekly updates and seven-day cooldown. CodeQL, Scorecard, and workflow syntax checks add release evidence without claiming a public cross-host spin-off.
+- Optional terminal notifications for background sessions: `HARNESS_TERMINAL_NOTIFY=1` or `bell` (bell), `title` (window title), `osc9` (macOS or iTerm popup), `notify` (Linux desktop notification); unset or `0` is silent. It works without `HARNESS_WEBHOOK_URL`. Native `/goal` stays a short continuation note; acceptance criteria stay in Plans.md. The Harness security template `templates/claude/settings.security.json.template` adds two baselines you must copy into your own settings to use: `worktree.baseRef: "fresh"` (new worktrees start from `origin/<default branch>` so unpushed commits are not carried in; choose `head` in project settings to carry them), and `autoMode.hard_deny` with 7 entries that stay blocked even in Auto mode: `Bash(sudo:*)`, `Bash(rm -rf:*)`, `Bash(rm -fr:*)`, `Bash(git push -f:*)`, `Bash(git push --force:*)`, `Bash(git reset --hard:*)`, `mcp__codex__*`. Policy also forbids `claude agents --dangerously-skip-permissions` on protected branches, with credentials, or for production deployment.
 
 ### Changed
 
-- 全ワークフロー (`validate-plugin` / `release` / `benchmark` / `opencode-compat`) に `concurrency` ブロックを追加。PR を連続 push しても古い実行は自動キャンセルされ、Actions 利用時間を約 30〜50% 削減。
-- 全ワークフローに workflow-level `permissions: contents: read` を明示。`opencode-compat` は無宣言で過剰権限だった状態を最小権限に矯正し、release は job-level `contents: write` に絞り込み。
-- すべてのチェックアウトに `persist-credentials: false` を追加してトークン窃取リスクを低減し、`filter: blob:none` で部分クローン高速化。
-- `opencode-compat` の push トリガーを `branches: [main]` に制限してフォーク push の余計な実行を防止。
-- Refactored `harness-review` into a progressive-disclosure dispatcher with lightweight `--quick` / `--codex-closeout` review paths, split governance details into reference files, and made review read-only by default so commit / push / release remain owned by work or release flows.
-
-#### Refactored: harness-review
-
-| Before | After |
-|--------|-------|
-| `harness-review` kept target detection, governance, TeamAgent debate, plan/scope review, security, UI, Codex second opinion, and fix-loop guidance in one 878-line `SKILL.md` | `SKILL.md` is a sub-350-line dispatcher that loads only the needed reference for `quick`, `codex-closeout`, `code`, `plan`, `scope`, `security`, `ui-rubric`, or `full` |
-| Lightweight closeout and full release-grade review used the same heavy path | `--quick` / `--codex-closeout` fix the target first, treat Codex findings as advisory, classify accepted/rejected findings, and stop on clean results |
-| `APPROVE` guidance could be read as default auto-commit behavior | Review is read-only by default; commit / push / release stay in `harness-work`, `harness-release`, or explicit user instructions |
+- Review is read-only by default, with lightweight `--quick` and `--codex-closeout` modes; commits, pushes, and releases stay in execution or release flows. Workflows use least privilege and avoid retaining checkout tokens; obsolete PR runs cancel while release/benchmark runs finish.
 
 ### Fixed
 
-- Tightened the Claude plugin archive gate so repo-local context, CI/test fixtures, alternative-client mirrors, and sandbox examples are excluded from `git archive` distribution payloads.
-- Added a local plugin inventory gate so ignored private/dev-only skills cannot sit under public `skills/` surfaces and appear via `claude --plugin-dir .`.
-- Updated OpenCode mirror generation and validation so OpenCode skills use lowercase kebab-case names and only supported skill frontmatter fields.
-
-### Phase 69: Claude Code 2.1.133-2.1.142 後続活用 (10 バージョン分の A/C/P 完全分類)
-
-**Claude Code `2.1.133`-`2.1.142` (Phase 62 完了点 `2.1.132` 以降の 10 バージョン分) を Phase 69 として `docs/upstream-update-snapshot-2026-05-15.md` に snapshot し、Tier 1 5 件 (実装) + Tier 2 5 件 (policy / docs / agent contract) に分解しました。`B: 書いただけ` は 0 件です。**
-
-#### Before / After
-
-| 項目 | Before | After |
-|------|--------|-------|
-| worktree 起点 | `EnterWorktree` / `--worktree` / agent-isolation worktree の起点が CC 2.1.128 で local `HEAD` 既定に変わり、unpushed commits が無自覚に持ち込まれていた | `templates/claude/settings.security.json.template` に `worktree.baseRef: "fresh"` を baseline として明示し、`origin/<default>` 起点を SSOT 化。`head` を選びたい team は project-level で opt-in できる。Plugin 本体 `.claude-plugin/settings.json` への反映は release operator の手動マージ作業 (self-write deny) |
-| Auto Mode の deny 強度 | Auto Mode 利用時に classifier が「許可意図優先」で deny を緩める余地があった | `settings.autoMode.hard_deny` baseline 7 件 (`Bash(sudo:*)` / `rm -rf` / `git push -f` / `git reset --hard` / `mcp__codex__*` 等) を template に追加し、Auto Mode 中も無条件 deny を維持。Plugin 本体 `.claude-plugin/settings.json` への反映は release operator の手動マージ作業 |
-| hook が effort を見られない | hook handler は現在の effort を知らずに同一挙動を返していた | hook stdin の `effort.level` と `$CLAUDE_EFFORT` env を「観測のみ可、guard rail の effort 緩和は禁止」として `.claude/rules/hooks-2.1.139-plus.md` に rule 化 |
-| hook の shell injection 余地 | path placeholder を含む hook で quoting 漏れがあった場合 shell injection の余地があった | `args: string[]` exec form (CC 2.1.139) の利用条件を rule 化。path placeholder のみのケースは exec form を優先、shell 制御が必要な箇所のみ既存 `command` を維持 |
-| PostToolUse の deny フィードバック | hook が deny した時に Claude が修正リトライできず turn が終了していた | `continueOnBlock` (CC 2.1.139) の利用条件を rule 化。diagnostic feedback には `true`、R01-R13 / secret / protected config では `false` を必須化 |
-| Background での通知不能 | `--bg` / `claude agents` で起動した session は controlling terminal なしで desktop 通知を出せなかった | `terminalSequence` (CC 2.1.141) を `webhook-notify.sh` / `notification-handler.sh` に opt-in 実装。`HARNESS_TERMINAL_NOTIFY=osc9` 等で BEL / window title / OSC 9 popup / OSC 777 desktop notification を選択 |
-| background permission mode | CC 2.1.140 以前は `/bg` から復帰時に default に戻る挙動が紛れていた | CC 2.1.141 で permission mode が保持されるようになったため、Worker / breezing teammate は再注入不要であることを `agents/worker.md` / `docs/team-composition.md` で明文化 |
-| `claude agents` 9 flag の Harness 安全運用 | `--add-dir`, `--settings`, `--mcp-config`, `--plugin-dir`, `--permission-mode`, `--model`, `--effort`, `--dangerously-skip-permissions`, `--cwd` の利用ルールが不明確だった | `docs/agent-view-policy.md` を新設し、各 flag の許可条件と禁止条件、teammate spawn workflow との分離、protected branch 上での `--dangerously-skip-permissions` 禁止を明文化 |
-| CC native `/goal` と Plans.md SSOT | `/goal` を持続性のある goal として誤用すると Plans.md と二重管理になる懸念があった | Codex `/goal` policy (`docs/codex-plugin-workflows-policy.md`) を拡張し、CC native `/goal` も「session continuation memo 限定」「acceptance criteria を `/goal` だけに置かない」「completion condition を Plans.md DoD と矛盾させない」の 3 規則を統合 |
-| SessionStart 等で LLM 型 hook 設定誤り | CC 2.1.142 で bootstrap hook (SessionStart / Setup / SubagentStart) に prompt / agent 型 hook を設定するとエラー化される仕様変更 | `.claude/rules/hooks-2.1.139-plus.md` に「SessionStart / Setup / SubagentStart は `type: "command"` 限定」を grep-able に明示し、Harness hooks.json 編集時の checklist 項目に追加 |
-
----
-
-#### 1. `worktree.baseRef` を baseline で明示 (Phase 69.1.1)
-
-**CC のアプデ**: CC 2.1.133 で `worktree.baseRef` 設定 (`fresh` | `head`) が追加され、`--worktree` / `EnterWorktree` / agent-isolation worktree の起点を選べるようになった。default は `fresh` で `origin/<default>` 起点。
-
-**Harness での活用**: `templates/claude/settings.security.json.template` に `"worktree": {"baseRef": "fresh"}` を baseline 追加し、Harness の breezing / Worker isolation worktree が常に `origin/<default>` から枝分かれする SSOT を確立。unpushed commits を意図的に持ち込みたい team は project-level の `.claude/settings.local.json` で `head` を opt-in する。Plugin 本体 `.claude-plugin/settings.json` への反映は self-write guardrail のため release operator が手動でマージする (snapshot doc の "Operator action item" 参照)。
-
-#### 2. hook が `$CLAUDE_EFFORT` / `effort.level` を観測できるルール化 (Phase 69.1.2)
-
-**CC のアプデ**: CC 2.1.133 で hook stdin JSON に `effort: { level }` が追加され、hook subprocess と Bash 子プロセスに `$CLAUDE_EFFORT` 環境変数が exported される。
-
-**Harness での活用**: `.claude/rules/hooks-2.1.139-plus.md` (Phase 69 で新設) に「観測のみ可」「effort で deny → ask に降格する hook は禁止」「空文字列 fallback は別 effort と扱わない」を rule 化。任意の hook handler が effort をログに含められるが、guard rail (R01-R13) の判断軸を effort で緩めることは不可。
-
-#### 3. `autoMode.hard_deny` baseline 7 件 (Phase 69.1.3)
-
-**CC のアプデ**: CC 2.1.136 で `settings.autoMode.hard_deny` 配列が追加され、Auto Mode classifier に「許可意図に関わらず無条件 deny」を渡せるようになった。
-
-**Harness での活用**: `templates/claude/settings.security.json.template` に baseline 7 件 (`Bash(sudo:*)` / `Bash(rm -rf:*)` / `Bash(rm -fr:*)` / `Bash(git push -f:*)` / `Bash(git push --force:*)` / `Bash(git reset --hard:*)` / `mcp__codex__*`) を追加。既存 `permissions.deny` の super-set ではなく **必須コア 7 件のみ**にして、Auto Mode 未使用 project では参照されず影響ゼロを保つ。Plugin 本体 `.claude-plugin/settings.json` への反映は self-write guardrail のため release operator が手動でマージする。
-
-#### 4. hook `args` exec form + `continueOnBlock` + SessionStart command-only (Phase 69.1.4)
-
-**CC のアプデ**: CC 2.1.139 で hook 定義に `args: string[]` (exec form, shell を介さず直接 spawn) と `continueOnBlock` (PostToolUse の deny を Claude に feedback して turn 継続) が追加。CC 2.1.142 で SessionStart / Setup / SubagentStart に prompt / agent 型 hook を設定するとエラー化される仕様変更が入った。
-
-**Harness での活用**: `.claude/rules/hooks-2.1.139-plus.md` に 3 ルールを集約。
-
-- **exec form**: path placeholder (`${CLAUDE_PROJECT_DIR}/...`) のみのケースは exec form を優先、shell 制御 (`&&` / pipe / heredoc) が必要な箇所のみ既存 `command` を維持。
-- **`continueOnBlock`**: diagnostic feedback (lint hint 等) には `true`、guard rail (R01-R13) / secret detection / protected config (`.eslintrc*` 等) では **`false` 必須**。
-- **SessionStart / Setup / SubagentStart**: `type: "command"` 限定。LLM 判断が必要な箇所は `PreToolUse` で受ける。
-
-#### 5. hook `terminalSequence` の opt-in 実装 (Phase 69.1.5)
-
-**CC のアプデ**: CC 2.1.141 で hook stdout JSON に `terminalSequence` フィールドが追加され、controlling terminal なしで desktop 通知 / window title / bell を発火できるようになった。
-
-**Harness での活用**: ランタイム (Go バイナリ) とシェル両方に実装:
-- `go/internal/hookhandler/terminal_notify.go` (`BuildTerminalSequence` / `AugmentWithTerminalSequence`) を新設
-- `go/internal/hookhandler/notification_handler.go` の Notification hook で既知 4 種 (`permission_prompt` / `elicitation_dialog` / `idle_prompt` / `auth_success`) に terminalSequence を付与
-- `go/internal/hookhandler/task_completed.go` の全応答 path (停止 / 全完了 / プログレス / 通常承認) に terminalSequence を augment
-- シェル参照実装: 新規 `scripts/lib/terminal-notify.sh` + `webhook-notify.sh` / `notification-handler.sh` 拡張
-
-`HARNESS_TERMINAL_NOTIFY` env で opt-in:
-
-- `unset` / `0`: 出力しない (default)
-- `1` / `bell`: BEL (\x07)
-- `title`: OSC 0 window title
-- `osc9`: OSC 9 macOS / iTerm 通知 popup
-- `notify`: OSC 777 KDE/GNOME desktop notification
-
-secret 流出防止のため payload は ASCII + 印字可能文字に限定 (`tr -d` で制御文字除去)。既存 `HARNESS_WEBHOOK_URL` と独立に動作するため、外部 webhook なしでも local 通知だけ受け取る運用が可能。
-
-#### 6. CC native `/goal` を Plans.md SSOT に従わせる (Phase 69.2.1)
-
-**CC のアプデ**: CC 2.1.139 で `/goal` command が追加され、completion condition を turn 超えで保持できるようになった。interactive / `-p` / Remote Control で動作し、elapsed / turns / tokens を overlay 表示する。
-
-**Harness での活用**: `docs/codex-plugin-workflows-policy.md` を拡張し、CC native `/goal` も Codex `/goal` と同じ運用に統合。
-
-- **使ってよい**: 次の 1 turn の sub-goal、`-p` の 1 ターン完了条件、Remote Control の operator hand-off メモ
-- **禁止**: Plans.md `cc:WIP` を `/goal` 側で書き換える、Plans.md と独立した DoD を `/goal` だけに置く、Plans.md acceptance criteria と矛盾した `/goal` で turn 継続する
-
-#### 7. `claude agents` agent-view + 9 flag 利用条件 (Phase 69.2.2)
-
-**CC のアプデ**: CC 2.1.139 で `claude agents` (agent view, Research Preview) が追加。CC 2.1.141 で `--cwd <path>`、CC 2.1.142 で `--add-dir`, `--settings`, `--mcp-config`, `--plugin-dir`, `--permission-mode`, `--model`, `--effort`, `--dangerously-skip-permissions` の 8 flag が追加され、dispatched background session を宣言的に構成できる。
-
-**Harness での活用**: `docs/agent-view-policy.md` を新設し、`claude agents` を Lead (operator) が複数 session を一覧監視する **独立 entrypoint** として位置付け。Harness 内の teammate spawn workflow (breezing skill / Agent tool) と分離。各 flag に許可条件・禁止条件を明示 (例: `--dangerously-skip-permissions` は protected branch / credentials 読込 / production deployment では禁止)。
-
-#### 8. Background agent の permission mode 保持 (Phase 69.2.3)
-
-**CC のアプデ**: CC 2.1.141 で `/bg` / `←←` / `claude agents` で background 化した agent が起動時の permission mode を保持するようになった (従来は default に戻ることがあった)。
-
-**Harness での活用**: `agents/worker.md` と `docs/team-composition.md` に「Worker は permission mode を再注入しない」「`bypassPermissions` で起動した teammate も `permissions.deny` と `autoMode.hard_deny` を override しない (多層防御は維持)」期待値を明文化。breezing teammate の起動契約はそのまま使える。
-
-#### 9. `claude plugin details` の CI 補助情報化 (Phase 69.2.4)
-
-**CC のアプデ**: CC 2.1.139 で `claude plugin details <name>` command が追加され、plugin の component 内訳と projected per-session token cost が見える。CC 2.1.142 で LSP servers も表示されるようになった。
-
-**Harness での活用**: `docs/agent-view-policy.md` および snapshot doc に「`claude plugin details` は plugin が session 予算閾値を越えた時の対応 step に使う補助情報」として位置付け。CI で自動 enforce はしないが、`scripts/ci/check-consistency.sh` および `bin/harness doctor` ユーザー向けに参照情報として記録。
-
-#### 10. Phase 69 rule SSOT の新設 (Phase 69.2.5)
-
-**CC のアプデ**: 2.1.133-2.1.142 で hook / setting / agent surface に変更が複数入ったため、横断 SSOT が必要になった。
-
-**Harness での活用**: `.claude/rules/hooks-2.1.139-plus.md` を新設し、`$CLAUDE_EFFORT` / `args` exec form / `continueOnBlock` / `terminalSequence` / SessionStart command-only の 5 ルールを集約。既存 `opus-4-7-prompt-audit.md` / `skill-editing.md` / `commit-safety.md` と直交 (orthogonal addition) で衝突なし。`docs/agent-view-policy.md` と合わせて Phase 69 SSOT を 2 ファイルに整理。
+- Release archives exclude local context, private development skills, other-client mirrors, fixtures, and sandbox examples. OpenCode names/frontmatter are normalized to supported forms.
 
 ## [4.10.0] - 2026-05-12
 
-- Phase 68 local trial: TDD enforcement L1+L2+L3+L4 introduced as an opt-in workflow surface; global enforcement remains disabled by default.
-- Added the project spec SSOT workflow to `harness-plan`, `harness-work`, Worker, Scaffolder, and Reviewer so Plans.md stays the task ledger while product-level behavior is fixed in a stable spec when needed.
-- Fixed `codex-loop` orphan-job handling (#131): runner loss with an active job now reports `runner_lost_job_running`, `stop` cancels the recorded job, and unexpected runner exits cancel active companion/local jobs before leaving terminal state.
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4100---2026-05-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2292)
 
-### Phase 67: Codex 0.130.0 stable upstream snapshot
+### Added
 
-**Codex `0.130.0` stable (`rust-v0.130.0`, prerelease `false`, published `2026-05-08T23:09:55Z`) を Phase 67 として snapshot / Feature Table / CHANGELOG / upstream integration test に接続しました。**
+- Named plans: list them in `plans/manifest.json` with a `default` entry plus any others, pick one with `--plan NAME`; the last choice is kept in `.claude/state/active-plan.json`. Repositories with a single `Plans.md` (or `plans.md`, `PLANS.md`) need no change. Manifest paths must be relative to the project root; absolute paths, `..`, and symlinks leaving the repository are rejected. Long runs, CI, and issue bridging should pass `--plan NAME` instead of relying on the saved choice. Test-first enforcement remains a local opt-in trial, not a global default. Product specifications remain separate from the task ledger.
 
-#### 1. `0.130.0` release metadata と A/C/P 分類を固定 (Phase 67.1.1)
+### Fixed
 
-**Codex のアプデ**: `codex remote-control` が top-level command になり、plugin details show bundled hooks、plugin sharing exposes link metadata/discoverability controls、app-server Thread pagination APIs、Bedrock `aws login` profile credentials、selected-environment `view_image`、live threads from latest config snapshot、`apply_patch` 後の turn diffs、ThreadStore summaries/resume/fork improvements、remote compaction `response.processed`、Windows sandbox runtime bin cache、`cargo install --locked` docs、configurable OTel trace metadata、built-in MCPs first-class runtime servers、`CODEX_HOME` environments TOML provider、remove skills list extra roots が入った。
-
-**Harness での活用**: `docs/upstream-update-snapshot-2026-05-10.md` に release URL / compare URL / published_at / A/C/P 判定を保存。plugin / app-server / Bedrock / `view_image` / OTel / MCP / environments TOML は Phase 67.1.2-67.1.3 に Plans 化し、turn diff accuracy・ThreadStore・remote compaction・Windows sandbox・skills list cleanup は `C: 自動継承` として二重 workaround を作らない。`B: 書いただけ 0 件` を明記し、説明だけで終わる項目を残さない。
-
-### Phase 66: Open GitHub Issue closeout (#128, #123, #126, #124, #67)
-
-#### SemVer 判定根拠 (next minor: 4.9.0 → 4.10.0)
-
-5 件の open Issue を 1 本にまとめる場合、#128/#123/#126/#124 は patch 相当の bug fix ですが、#67 はユーザーが複数の Plans.md を named plan として扱える新機能です。
-そのため次の公開 release では minor bump が妥当です。version file は tag/release 実行時に `scripts/sync-version.sh` で同期する前提で、現 branch では Unreleased に記録します。
-
-#### Before / After
-
-| Issue | Before | After |
-|-------|--------|-------|
-| #128 WorktreeCreate JSON cwd | hook decision JSON が worktree path と誤解され、`{"decision":...}` という directory を作る余地があった | shell hook が JSON-like cwd を approve/no-op として扱い、real cwd だけ `.claude/state/worktree-info.json` を作る |
-| #123 codex-loop startup false success | `harness codex-loop start` が runner 即死後も成功表示し、あとで `state_stale` だけが残った | bounded startup health check で即死を `startup_failed` として non-zero にし、runner log tail を状態と status に残す |
-| #126 stale broadcast inbox | 新規 session が数か月前の `broadcast.md` entry を毎回「今日の通知」のように再表示した | 表示 entry の最大 timestamp で last-read を自動更新し、日付付き表示と stale cwd skip を追加 |
-| #124 release mirror drift | tag 後の CI で `opencode/` mirror drift が見つかり、release 作業が後追いで割れた | release preflight が build/validate/sync/diff gate を tag 前に実行し、Actions は current v6 系に更新 |
-| #67 multiple Plans | `Plans.md` は 1 repo 1 file 前提で、roadmap/team/backlog を安全に切り替える公式経路がなかった | `plans/manifest.json` + `.claude/state/active-plan.json` + explicit `--plan NAME` で named Plans を選択できる |
-
-#### Migration notes
-
-- 既存の `Plans.md` だけを使う repo は変更不要です。manifest がなければ従来通り `Plans.md` / `plans.md` / `PLANS.md` を探します。
-- 複数 plan を使う repo は `plans/manifest.json` に `default` と追加 plan を登録してください。
-- long-running run、CI、issue bridge では active pointer に頼らず `--plan NAME` を明示してください。
-- Manifest path は project root 相対のみです。絶対パス、`..`、repo 外 symlink は拒否されます。
-- Release 前は `bash scripts/release-preflight.sh` が mirror drift を fail gate にするため、tag 作成前に `node scripts/build-opencode.js` と `bash scripts/sync-skill-mirrors.sh --check` を通してください。
+- `harness codex-loop start` now fails with `startup_failed` (non-zero exit, last runner log lines saved) when the runner dies immediately, reports `runner_lost_job_running` for orphaned jobs, and cancels them on stop or unexpected exit. Worktree hooks reject JSON-shaped cwd values. Broadcasts mark displayed entries read with dates and skip stale cwd; release preflight catches mirror drift before tags. Codex 0.130.0 guidance is version-backed.
 
 ## [4.9.0] - 2026-05-10
 
-### SemVer 判定根拠 (minor bump: 4.8.1 → 4.9.0)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#490---2026-05-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2333)
 
-`.claude/rules/versioning.md` の「ユーザーが新しいことをできるようになる → minor」を満たすため。
+### Added
 
-| 変更要素 | 数量 | 影響 |
-|---------|------|------|
-| 新規 skill | 3 個 (`harness-plan-brief`, `harness-accept`, `harness-progress`) | minor 確定 |
-| 新規 yaml SSOT | 2 個 (`cross-project-groups.yaml`, `client-redaction.yaml`) | minor |
-| 新規 PostToolUse hook | 1 個 (`posttool-progress-regen.sh` + dual hooks.json sync) | minor |
-| 新規 schema | 9 個 (`personal-preference.v1` / `acceptance-context.v1` / `plan-brief-context.v1` / `acceptance-decision.v1` / `progress-snapshot.v1` / `progress-alert.v1` / `cross-project-audit.v1` / `cross-project-group.v1` / `client-redaction.v1`) | minor (新機能、既存破壊なし) |
-| 新規 docs | 3 個 (`cognitive-load-surfaces.md`, `cross-project-safety.md`, `cross-project-groups-schema.md`) | patch 相当だが minor に同梱 |
-| 破壊的変更 | 0 件 | major bump 不要 |
-| 既存挙動の変更 | 0 件 (cross-project / redaction 全て opt-in) | 既存ユーザー影響なし |
-
-### テーマ: 認知負荷を下げる 3 surface HTML for non-engineer vibecoder (Phase 65)
-
-**Plans.md (200 行) と git log を読み込まないと判断できなかった AI 開発の進行を、エンジニアじゃない発注者でもブラウザで開ける 3 枚の HTML で 3 秒で把握できるようにしました。**
-
-#### Before / After
-
-| Before | After |
-|--------|-------|
-| Plans.md を 200 行スクロールしないと進捗が見えない | `harness-progress` で進捗 % + WIP/TODO/完了 一覧 + drift alert を 1 枚 HTML で表示 |
-| Claude の理解と選択肢が会話 buffer にしか残らない | `harness-plan-brief` が着工前の Claude 理解・選択肢・受け入れ条件・確信度を HTML 化、ユーザー判断を sha256 hash 付きで記録 |
-| 引き渡し時の判断根拠が散らばる | `harness-accept` が ship/wait/reject 判定 + 受け入れ条件検証 + 過去問題パターン表示を HTML 1 枚で集約 |
-| Plan Brief と Acceptance が連携しない | 同 user_request_hash (sha256 64 chars) で `mcp__harness__harness_mem_search` から graph join 可能 |
-| 横断検索を opt-in しても他プロジェクトの固有名詞が漏れる | 3 層 redaction (Layer 2a 辞書 + 2b NER + 3 final scan) で fail-safe (final scan 検出時は HTML 生成せず exit 1) |
-| 監査経路が不明 | 3 HTML 全てに「🔍 この artifact の根拠」セクション (検索範囲 / 参照 ID / redact 件数 / log link) + JSON Lines 監査ログ |
-
----
-
-#### 1. Plan Brief: 着工前の説明会 (Phase 65.1)
-
-**今まで**: Claude が「何を作る予定か」を会話で説明するだけで、エンジニアじゃない発注者は決定の根拠を後から追えませんでした。修正したい点があっても、どの選択肢があったか、Claude がどう理解したかが残らないため、議論が空中分解しがちでした。
-
-**今後**: `/harness-plan-brief` で Claude が着工前に 1 枚 HTML を生成します。
-
-```
-ユーザー要求の Claude 側理解 / 選択肢 (option A/B/C) / リスク /
-受け入れ条件 (acceptance_criteria) / 確信度 (0-100、根拠付き)
-```
-
-判断は `personal-preference.v1` schema で sha256 hash 付き記録。同じハッシュで Acceptance Demo と graph join できます。
-
-#### 2. Acceptance Demo: 引き渡し時の検収 (Phase 65.2)
-
-**今まで**: 「もう ship していい?」を判断するための情報が、コミットログ、テスト結果、Plan Brief 時点の合意の 3 箇所に分散していました。
-
-**今後**: `/harness-accept` で 1 枚 HTML を生成。
-
-```
-判定 (ship / wait / reject の 3 択) /
-受け入れ条件の検証 (Plan Brief の各項目に「✓ 確認済み」「未確認」マーク) /
-未検証の留保事項 / 過去の問題パターン履歴
-```
-
-判断ロジックは検証済 ÷ 全条件 で機械的: ≥80% → ship, ≥50% → wait, <50% → reject, 0 件 → reject (安全側)。
-
-#### 3. Progress Tracker: 工事中ボード (Phase 65.4)
-
-**今まで**: 「今どこまで進んでる?」を確認するには Plans.md を grep するしかなかった。長時間セッションでコストがいくら掛かったかも見えませんでした。
-
-**今後**: `/harness-progress` または PostToolUse hook が Edit/Write/Bash 発火時に **60 秒に 1 回** 自動再生成。
-
-```
-progress_pct (cc:完了 / 総タスク × 100) /
-現在の WIP タスク / 直近完了 5 件 / 未着手 5 件 /
-drift alert 5 種 (scope-creep / time-overrun / repeated-failure /
-                   cost-warning / high-risk-file) を severity 色分け
-                   (赤=critical / 黄=warn / 青=info)
-```
-
-過去 alert への user 判断は `progress-past-judgments.sh` で集計し「過去 N 件中 M 件で同様の提案を断っています」を表示。
-
-#### 4. 3 層 Redaction: 横断検索の安全網 (Phase 65.3)
-
-**今まで**: 別プロジェクトの過去判断を引き出したいけれど、クライアント名や人名が混ざる懸念で横断検索を有効化できませんでした。
-
-**今後**: `--cross-project-group <name>` flag を opt-in 指定すると、3 層で固有名詞を redact:
-
-- **Layer 1** (server 側): `<private>` strip + project scope (harness-mem 既存)
-- **Layer 2a** (client 側): `client-redaction.yaml` の辞書ベース redaction (PiiRule 互換 schema)
-- **Layer 2b** (client 側): NER (fugashi tokenizer) で固有名詞 → `[Entity]`
-- **Layer 3** (client 側): HTML 生成直前の最終 scan (カタカナ 5+ 文字連続を検出 → fail-safe exit 1)
-
-監査ログ: `.claude/state/audit/cross-project-search.jsonl` に 1 行 JSON で記録 (privacy: query_hash のみ、生クエリ未記録)。
-
-#### 5. 関連ファイル / schema
-
-- 3 skills: `skills/harness-plan-brief/`, `skills/harness-accept/`, `skills/harness-progress/`
-- 9 schema: `personal-preference.v1` / `acceptance-decision.v1` / `progress-snapshot.v1` / `progress-alert.v1` / `cross-project-audit.v1` / `cross-project-group.v1` / `client-redaction.v1` / `acceptance-context.v1` / `plan-brief-context.v1`
-- 詳細: [docs/cognitive-load-surfaces.md](docs/cognitive-load-surfaces.md), [docs/cross-project-safety.md](docs/cross-project-safety.md), [docs/cross-project-groups-schema.md](docs/cross-project-groups-schema.md)
-
-#### 6. 進化的決定記録 (local SSOT、decisions.md は gitignored)
-
-- D42: Cross-repo Handoff Workflow + 3 層 Redaction の owner 境界 (Phase 65 着手時)
-- D43: Phase 65.3 着手前 mem 側 coordination 結果の 4 判断パッケージ
-  (Option α MCP N-call / 注記方針 / PiiRule 互換 schema / DoD g/h 追加)
-
-mem 側 closure ack: §110 内 S110-006 (commit `8b34ecb` / `ad4ba56`) で受領、Cross-Contract 変更 0 件で完結。
+- Three single-page HTML views for non-engineers. `/harness-plan-brief` shows, before work starts, Claude's understanding, options, risks, acceptance criteria, and a 0 to 100 confidence with reasons; your decision is recorded with a SHA-256 hash (a fingerprint calculated from the request). `/harness-accept` shows ship, wait, or reject: ship when 80% or more of the criteria are verified, wait at 50% or more, reject below 50% or when no criteria are verified. `/harness-progress` shows progress %, current work, last 5 done, next 5 to do, and five warning types (scope creep, time overrun, repeated failure, cost warning, high-risk file). The progress page also regenerates automatically, at most once per 60 seconds, after Write, Edit, MultiEdit, or Bash; this hook is on by default in the plugin. Brief and acceptance pages share the request hash so they can be linked. Each page ends with a "basis for this artifact" section.
+- Searching other projects' memory is opt-in per run with `--cross-project-group <name>`. Groups are defined in `.claude/rules/cross-project-groups.yaml`, and your own redaction dictionary in `.claude/rules/client-redaction.yaml`. Masking runs in layers: memory-server removal of `<private>` content and project scope, then your dictionary, then Japanese named-entity masking, then a final scan before HTML is written. The final scan stops HTML generation (exit 1) when it finds 5 or more consecutive katakana characters. Each search is logged to `.claude/state/audit/cross-project-search.jsonl` with a hash of the query, not the query text. These are fixed patterns, not a general privacy guarantee. Names in other scripts or spelled in ways the dictionary does not cover can pass.
 
 ## [4.8.1] - 2026-05-09
 
-### Phase 64.1: Plans.md archive 運用の SSOT 化と CI archive-aware 化
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#481---2026-05-09) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2436)
 
-**Plans.md の Phase が archive されると `tests/test-claude-upstream-integration.sh` の文字列参照が落ちて CI が割れる古い問題を、helper の library 化と archive を git track 対象に格上げすることで構造的に解消しました。**
+### Fixed
 
-#### 1. test を archive-aware に拡張 (Phase 64.1.1)
+- Plan checks understand tracked archives without requiring completed work in the active plan. Network deniedDomains now comes from harness.toml; sync warns about generated-settings drift instead of treating output as the source.
 
-**今まで**: `tests/test-claude-upstream-integration.sh` は Plans.md だけを grep していたため、Phase が `.claude/memory/archive/Plans-*.md` に移されると CI が `Phase 56 文字列が見つからない` で fail していました。archive 操作のたびに test を手動で書き換える運用が暗黙に発生していました。
+### Security
 
-**今後**: `grep_plans_or_archive` helper を導入し、Plans.md → archive ディレクトリの順に文字列を探します。Plans.md と archive のどちらに置かれていても test が PASS。これで maintainer が archive 操作 (`/maintenance` 等) をしても CI が割れません。
-
-#### 2. helper の library 化と 4 状態 unit test (Phase 64.1.3)
-
-**今まで**: helper は test スクリプト内に inline 定義されており、別 test から再利用できませんでした。挙動も「Plans.md にだけある / archive にだけある / 両方にある / どこにもない」の 4 状態が固定 fixture でカバーされていませんでした。
-
-**今後**: `tests/lib/grep_plans_or_archive.sh` として共有 library 化 (`GPOA_PLANS_FILE` / `GPOA_ARCHIVE_DIR` 環境変数で test override 可)。`tests/test-grep-plans-or-archive.sh` で 4 状態 (PlansHit / ArchiveHit / BothHit / Miss) を fixture + assert で固定。これで helper を将来再利用しても挙動が崩れません。
-
-#### 3. archive を git track 対象に格上げ (Phase 64.1.2)
-
-**今まで**: `.claude/memory/archive/` は全てが gitignore されており、Plans.md の archive list link は GitHub 上では dead link でした。CI 上でも archive ファイルが見えないため archive-aware test が機能しませんでした。
-
-**今後**: `.gitignore` に `!.claude/memory/archive/Plans-*.md` exception を追加。`Plans-*.md` 限定で track 対象に変更 (session-log や codex-learnings は引き続き ignore)。これで archive list link が GitHub 上で機能し、CI でも archive を grep できます。`docs/plans-archive-pattern.md` に archive 運用 SSOT (命名規則、操作手順、helper 仕様、retroactive validation、git track 設定) をまとめ、将来の archive 操作で同じ問題が再発しないようにしました。
-
-### Phase 64.2: deniedDomains SSOT inversion 事故の根治 (be2a1781 follow-up)
-
-**Phase 62.1.4 で「settings.json は user 手動同期」と割り切った設計が、be2a1781 commit 後に sync 経路で paste-site 6 件が毎セッション削除される事故を起こしました。SSOT を `harness.toml` に統一し、再発防止の二層ガードを追加しました。**
-
-#### 1. deniedDomains の SSOT を harness.toml に格上げ
-
-**今まで**: `templates/claude/settings.security.json.template` の canonical baseline は 9 件 (paste-site 6 件含む) でしたが、SSOT である `harness.toml` の `[safety.sandbox.network].deniedDomains` には 3 件 (cloud metadata) しか書いていませんでした。`.claude-plugin/settings.json` だけ手動編集して 9 件にした状態で `bin/harness sync` が走ると、harness.toml 起点で settings.json が再生成されるため 6 件が**毎セッション消える**現象が起きていました (be2a1781 commit から本セッションで 3 回観測)。発火経路は `scripts/session-init.sh` (SessionStart hook) → `sync-plugin-cache.sh` → `bin/harness sync`。
-
-**今後**: `harness.toml` に paste-site 6 件 (`pastebin.com` / `transfer.sh` / `0x0.st` / `paste.ee` / `termbin.com` / `ix.io`) を追記し、template と同じ canonical 9 件に揃えました。これで sync が冪等になり、SessionStart hook 経由の自動 sync が走っても settings.json から deniedDomains が消えません。これは過去 4 回起きた skills/monitors/agents block strip 事故 (CHANGELOG v4.0.4 / v3.10.x) と同型の「片肺 sync」事故の 5 回目で、構造的な再発防止策を 2 件追加しました (下記 2, 3)。
-
-#### 2. `bin/harness sync` に settings drift warning 追加
-
-**今まで**: `harness sync` は `.claude-plugin/settings.json` を harness.toml から完全上書きで書き出すため、手動編集された差分が**サイレントに削除**されていました。skills/monitors/agents block の事故も全て同じパターンで起きていました。
-
-**今後**: `go/cmd/harness/sync.go::reportSettingsDrift()` を追加。書き込み前に既存ファイルと内容を比較し、内容が変わるときだけ stderr に詳細 warning を出します。新規生成や idempotent run では何も出ません。例:
-
-```
-[WARN] .claude-plugin/settings.json drift detected — sync rewrote the file.
-  sandbox.network.deniedDomains: 9 -> 3 entries
-  entries were REMOVED — was settings.json edited directly without updating harness.toml?
-  SSOT is harness.toml. Mirror the change there and re-run 'bin/harness sync'.
-  Review with: git diff .claude-plugin/settings.json
-```
-
-これで「設定がいつの間にか消えた」事故が起きても、その瞬間に warning が出てユーザーが気付けます。`go/cmd/harness/sync_test.go` に 5 件の unit test (新規/idempotent/件数減/件数増/JSON parse) を追加して挙動を固定。
-
-#### 3. `tests/test-settings-baseline.sh` に SSOT alignment 検証 (観点 7)
-
-**今まで**: baseline test は template と settings.json の比較のみで、件数差は WARN 扱いでした (FAIL ではなかった)。harness.toml が SSOT として参照されていなかったため、`be2a1781` 状況 (settings.json と harness.toml が乖離) が CI を素通りしていました。
-
-**今後**: 観点 (7) として `harness.toml ↔ settings.json` の deniedDomains 件数一致と、paste-site 6 件全てが harness.toml にも書かれていることを FAIL レベルで assert。観点 (5) も WARN → FAIL に格上げし、settings.json が template baseline と件数一致することを必須化。これで CI gate (`tests/validate-plugin.sh` Section 9 経由) で SSOT drift を merge 前に検知できます。
+- Fix session-start sync silently removing six paste-site network blocks after `be2a1781`. Blocks for `pastebin.com`, `transfer.sh`, `0x0.st`, `paste.ee`, `termbin.com`, and `ix.io` now live in `harness.toml` and survive synchronization.
 
 ## [4.8.0] - 2026-05-08
 
-### Phase 62: Claude Code 2.1.112-2.1.132 後続活用 + Opus 4.7 follow-up
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#480---2026-05-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2492)
 
-**Phase 56 / Phase 58 で追従済みの 2.1.119-2.1.126 以外の 13 バージョンを A/C 分類し、Tier 1 5 件 + Tier 2 5 件を実装と test 込みで追加しました。**
+### Changed
 
-#### 1. Worker stall 2 層防御 (CC 2.1.113 統合 / Phase 62.1.1)
+- Follow-up for Claude Code 2.1.112 to 2.1.132. MCP-tool hooks (hooks that call an external tool directly, `type: "mcp_tool"`) are not adopted for now; Harness keeps its shell-wrapper hooks and will reassess when the memory MCP is generally available, wrapper delay is measured, or Claude Code publishes hook auth guidance. Effort level seen by hooks cannot relax any guardrail. Hooks keep reading the session ID from their JSON input; Bash commands may use Claude Code's `CLAUDE_CODE_SESSION_ID`. Force-push, hard-reset, and protected-branch push checks are confirmed to catch `env`, `sudo`, and `watch` wrappers.
 
-**CC のアプデ**: Claude Code が長時間 stream 中に止まったサブエージェントを 10 分 (600 秒) で自動的に fail 扱いにするようになった。今までは止まった Worker を Lead が手動で気付くしかなかった。
+### Added
 
-**Harness での活用**: `agents/worker.md` に「Stall 検出 — 2 層防御」section を追加。受動層 (CC 600s timeout) + 能動層 (`scripts/hook-handlers/elicitation-handler.sh`) の組み合わせで、Worker フリーズを未然に防ぎつつ事後検出も保証。Lead は `cc:WIP` 状態が 10 分超 または stall log 観測時に最大 1 回だけ再 spawn する条件を `docs/team-composition.md` に数値で固定。
-
-#### 2. ENABLE_PROMPT_CACHING_1H opt-in を long-running skill で活用 (CC 2.1.108 統合 / Phase 62.1.2)
-
-**CC のアプデ**: Claude Code 2.1.108 で `ENABLE_PROMPT_CACHING_1H=1` 環境変数による 1 時間 prompt cache が opt-in 可能に。5 分 TTL の既定では cache miss が累積し、長時間セッションで input token を最大 12 倍に膨らませる問題があった。
-
-**Harness での活用**: `skills/breezing/SKILL.md` に明示的な env var 例とコスト理由を追記。`docs/long-running-harness.md` に Codex CLI 子プロセスへの env 継承表を追加し、`scripts/codex-companion.sh task --write` 系 long task でも 1h cache が使われる経路を docs 化。30 分超セッションでの opt-in 推奨を全 long-running skill で統一。
-
-#### 3. hooks `type: "mcp_tool"` 採用判断 (CC 2.1.118 統合 / Phase 62.1.3)
-
-**CC のアプデ**: Claude Code 2.1.118 で hook が `type: "mcp_tool"` を介して MCP ツールを直接呼び出せるようになった。shell wrapper を介さずに hook → MCP 直結が可能に。
-
-**Harness での活用**: 採用判断 doc (`docs/hooks-mcp-tool-evaluation.md`) を新設し、結論を **保留** に確定。理由は (a) 現行の `scripts/hook-handlers/*.sh` ラッパー経由で運用上の問題が出ていない、(b) auth scope と fallback 設計の追加検討コストが大きい、(c) Phase 61 ローカル ledger との整合検討が必要。再評価トリガー 3 項目 (harness-mem MCP GA / wrapper 遅延 telemetry / CC 公式 hook auth ガイド) を docs に固定。
-
-#### 4. sandbox deniedDomains baseline 拡張 (CC 2.1.113 統合 / Phase 62.1.4)
-
-**CC のアプデ**: Claude Code 2.1.113 で `sandbox.network.deniedDomains` 設定が追加され、session レベルで outbound network deny が可能に。
-
-**Harness での活用**: `templates/claude/settings.security.json.template` の deniedDomains baseline を 3 件 (cloud metadata) から 9 件に拡張。paste-site 系 6 件 (`pastebin.com`, `transfer.sh`, `0x0.st`, `paste.ee`, `termbin.com`, `ix.io`) を data exfil 防御として追加。`tests/test-settings-baseline.sh` (新規) で baseline 漏れを CI で検出。`.claude-plugin/settings.json` 自身は self-protection guardrail で edit 不可のため user 手動同期が必要 (test は WARN として記録)。
-
-#### 5. R06/R11/R12 wrapper bypass test (CC 2.1.113 統合 / Phase 62.1.5)
-
-**CC のアプデ**: Claude Code 2.1.113 で deny ルールが `env`/`sudo`/`watch` wrapper bypass を matching するように強化された。
-
-**Harness での活用**: 既存の `hasForcePush` / `hasProtectedBranchResetHard` / `hasDirectPushToProtectedBranch` (Go guardrail) は regex/token scan で wrapper を暗黙的に貫通済み。`go/internal/guardrail/rules_test.go` に R06/R11/R12 × env/sudo/watch wrapper の 9 ケーステストを追加し、CC 2.1.113 と同等の防御 posture を test で固定。今後の rules.go 変更で wrapper bypass が再発した場合に CI で検出する。
-
-#### 6. PostToolUse.updatedToolOutput governance 実装 (CC 2.1.121 統合 / Phase 62.2.1)
-
-**CC のアプデ**: Claude Code 2.1.121 で `PostToolUse` hook が `hookSpecificOutput.updatedToolOutput` を返せるように。tool 出力の redaction / compaction / normalization を hook 層で扱える幅が広がった。
-
-**Harness での活用**: Phase 58.2.2 設計方針 (opt-in / allowlist / audit) に従って `scripts/hook-handlers/posttool-output-normalize.sh` を実装。`HARNESS_OUTPUT_GOVERNANCE_ENABLE=1` での明示 opt-in、API key redaction を allowlist 方式で、`.claude/state/output-audit.jsonl` に before/after を append-only 記録。JSON 契約 tool (Read/Grep/Bash/TodoWrite) は skip して人間向け説明の混入を防ぐ。`tests/test-output-governance.sh` 6 ケースで「redaction 用途は許可、tampering 用途はソース検査で禁止」を機械検証。
-
-#### 7. agent permissionMode reaffirmation (CC 2.1.119 統合 / Phase 62.2.2)
-
-**CC のアプデ**: Claude Code 2.1.119 で `--agent <name>` が agent frontmatter の `permissionMode` を確実に尊重する fix が入った。
-
-**Harness での活用**: Phase 59.2.3 で「Plugin subagent frontmatter には `permissionMode` を置かない」方針が確定済み (silently ignored の歴史的経緯 + tools/disallowedTools での代替表現)。`tests/test-agent-permission-mode.sh` 5 観点で worker/reviewer/scaffolder/advisor frontmatter に permissionMode が存在しないことを固定。Reviewer の Read-only enforcement が `tools: [Read, Grep, Glob]` + `disallowedTools: [Write, Edit, Bash, Agent]` で担保されていることを test で固定。CC 2.1.119+ で permissionMode が再活性化した場合の policy review gate として機能。
-
-#### 8. skill_activated.invocation_trigger telemetry (CC 2.1.126 統合 / Phase 62.2.3)
-
-**CC のアプデ**: Claude Code 2.1.126 で `claude_code.skill_activated` OTel event が `invocation_trigger` (human / model / skill-chain) を含むようになった。
-
-**Harness での活用**: `docs/skill-telemetry-policy.md` で privacy-first sink 設計を確定 (local-only JSON Lines、session_id 12 文字 truncate、外部送信なし、HARNESS_SKILL_TELEMETRY_DISABLE で opt-out)。`scripts/skill-trigger-telemetry.sh` で `.claude/state/skill-trigger-stats.jsonl` に append-only 記録。`tests/test-skill-trigger-telemetry.sh` 5 観点 (3 trigger 区別 / opt-out / exclude / append-only / session_id truncation) で挙動固定。Phase 58.2.3 の「telemetry sink 設計が先」判断を実装に落とした形。
-
-#### 9. CLAUDE_CODE_SESSION_ID env policy (CC 2.1.132 統合 / Phase 62.2.4)
-
-**CC のアプデ**: Claude Code 2.1.132 で Bash subprocess に `CLAUDE_CODE_SESSION_ID` 環境変数が渡るようになった。Bash 子プロセスから session ID を直接取得できる。
-
-**Harness での活用**: `docs/session-id-env-policy.md` で 4 経路の使い分けを固定。(1) hook handler は stdin JSON `.session_id` が SSOT、(2) Bash 子プロセスは env var (CC 2.1.132+)、(3) long-running watcher は state file、(4) `CLAUDE_TRANSCRIPT_PATH` regex は使わない (legacy)。`tests/test-hook-handler-session-id.sh` 6 観点で hook handlers が stdin JSON 経由のままであることを固定し、env var への誤った依存を CI で検出。
-
-#### 10. skillOverrides 3 mode governance (CC 2.1.129 統合 / Phase 62.2.5)
-
-**CC のアプデ**: Claude Code 2.1.129 で `skillOverrides` 設定が `off` / `user-invocable-only` / `name-only` の 3 mode をサポート。skill governance の選択肢が広がった。
-
-**Harness での活用**: `docs/skill-overrides-policy.md` で 3 mode の使い分けを固定。個人開発は未設定 (CC default 尊重)、enterprise は `name-only` 推奨、education は `user-invocable-only` 推奨。`harness-init` は default を入れない方針を明記。Phase 59.1.2 skill manifest との関係 (name-only mode では description 自動 trigger が効かないため skill 名は明示的であるべき) を docs 化。
-
-### User 手動操作 follow-up
-
-`.claude-plugin/settings.json` の `sandbox.network.deniedDomains` を template に合わせて 6 件追加してください (Harness self-protection guardrail で agent edit 不可):
-
-```diff
- "deniedDomains": [
-   "169.254.169.254",
-   "metadata.google.internal",
--  "metadata.azure.com"
-+  "metadata.azure.com",
-+  "pastebin.com",
-+  "transfer.sh",
-+  "0x0.st",
-+  "paste.ee",
-+  "termbin.com",
-+  "ix.io"
- ]
-```
+- A stalled worker may be restarted at most once, after its task stays in progress for more than 10 minutes or a stall log appears. For sessions over 30 minutes, start Claude Code with `ENABLE_PROMPT_CACHING_1H=1` (a Claude Code option) to use the one-hour prompt cache.
+- Optional output redaction, off unless `HARNESS_OUTPUT_GOVERNANCE_ENABLE=1`. It only replaces keys matching `sk-` followed by 20 or more letters or digits, or `sk-ant-` followed by 20 or more letters, digits, or hyphens. It does not touch output from Read, Grep, Glob, TodoWrite, or Bash, so keys printed by commands or found in files are not redacted. Its audit file `.claude/state/output-audit.jsonl` keeps the original text as well as the redacted text, so that file itself contains the key and must be protected or deleted.
+- Skill-trigger telemetry is stored only locally in `.claude/state/skill-trigger-stats.jsonl`, keeps the first 12 characters of the session ID, and stops with `HARNESS_SKILL_TELEMETRY_DISABLE=1`.
+- The network-deny template `templates/claude/settings.security.json.template` grows from 3 to 9 hosts by adding paste and upload sites: `pastebin.com`, `transfer.sh`, `0x0.st`, `paste.ee`, `termbin.com`, `ix.io`. This is a template; nothing changes until you copy the entries into `sandbox.network.deniedDomains` yourself. The original asked users to add them to `.claude-plugin/settings.json`. The later 5.7.0 record says Claude Code does not read that file's `permissions`. This historical runtime has not been re-tested. The [current plugin settings contract](https://code.claude.com/docs/en/plugins-reference#settings) applies only `agent` (default agent) and `subagentStatusLine` (worker status display), not `sandbox`; put the network-deny entries in your user or project settings to apply them. `skillOverrides` stays unset by default; `name-only` is suggested for companies and `user-invocable-only` for education.
 
 ## [4.7.0] - 2026-05-06
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#470---2026-05-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2577)
+
 ### Added
 
-- Added managed companion controls for harness-mem: `harness mem status|setup|update|doctor|off|purge`, plus a companion contract doc that fixes ownership, paths, doctor JSON fields, and safe purge behavior.
-- Added a sandbagging-aware weak-supervision harness: `weak-supervision-report.v1`, `elicitation-event.v1`, local append-only elicitation ledger, privacy tags, and reviewer fixtures for hollow test passes, skipped tests, missing evidence, and bugfixes without reproduction.
+- Manage harness-mem with `harness mem status|setup|update|doctor|off|purge`, including ownership and safe-purge rules. Weak-supervision reports record missing evidence, hollow passes, skipped tests, and unreproduced bugs with privacy tags in a local append-only ledger.
 
 ### Changed
 
-- Plugin `Setup:init` now attempts one non-blocking harness-mem setup for Claude Code + Codex by default. `SessionStart` never runs setup, and `CLAUDE_CODE_HARNESS_MEM_AUTO_SETUP=0` disables the automatic attempt.
-- Advisor consultation can now include compact weak-supervision cues from prior elicitation events while preserving the `PLAN` / `CORRECTION` / `STOP` contract. Elicitation events are recorded locally first and best-effort forwarded to harness-mem without reading harness-mem internals.
+- By default, plugin `Setup:init` tries once to set up harness-mem for Claude Code and Codex, without blocking. SessionStart never installs it. Set `CLAUDE_CODE_HARNESS_MEM_AUTO_SETUP=0` to turn the attempt off. Advisors may read compact cues from past weak-evidence events. Those events are written locally first and forwarded to harness-mem when possible, without reading memory internals. PLAN (plan), CORRECTION (correction), and STOP (stop) stay the advisor's only answers.
 
 ## [4.6.1] - 2026-05-05
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#461---2026-05-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2589)
+
 ### Fixed
 
-- OpenCode generation now includes the supported `breezing` skill, keeping generated OpenCode bundles aligned with skill mirror sync and CI.
+- OpenCode generation includes Breezing and matches its skill mirror.
 
 ## [4.6.0] - 2026-05-05
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#460---2026-05-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2595)
+
 ### Added
 
-- Release pre-gate version sync now checks `VERSION`, `package.json` when present, `.claude-plugin/plugin.json`, and `.claude-plugin/marketplace.json` `metadata.version` / `plugins[].version` with a structured parser before tag or release work proceeds.
-- Added output governance, Claude Code setup/MCP/telemetry/provider, Codex plugin workflow, and memory policy docs for the Phase 58 and Phase 51 follow-ups.
-- Added a Skill orchestration design contract, machine-readable design metadata, and a CI gate for core Claude/Codex/OpenCode skill surfaces.
-- Added `IMPLEMENTATION_GUIDE.md` as a Go-first implementation map for contributors and plugin validators.
+- Release checks parse version files/manifests before tagging. Contributors get a Go-first implementation guide and machine-readable skill design metadata checked across Claude/Codex/OpenCode.
 
 ### Changed
 
-- Codex Breezing / harness-work guidance now uses native `spawn_agent`, `send_input`, `wait_agent`, and `close_agent` contracts instead of Claude Code Agent / SendMessage pseudo-code.
-- Media and announcement skills are now explicitly internal/manual workflows, with Claude `AskUserQuestion` versus Codex input handling documented instead of relying on automatic user-prompt activation.
-- Skill mirrors for `.agents`, Codex, and OpenCode are synchronized for the updated harness-loop, release, review, setup, media, and session-memory surfaces.
-- Core workflow skills now expose `purpose`, `trigger`, `shape`, `role`, `base`, and `pair` metadata so Claude and Codex can inventory wrappers, evaluators, and execution skills consistently.
-- `harness-work` now points heavy execution, review loop, completion report, and failure reticketing details to `references/` docs while keeping the entry path and stop conditions visible in `SKILL.md`.
+- Codex guides use its native agent APIs. Media/announcement workflows require explicit manual invocation. Heavy work details move to references while entry and stop conditions stay visible; updated skill mirrors stay aligned.
 
 ### Fixed
 
-- `harness-loop` now resolves helper scripts through the plugin bundle root instead of the caller project's `scripts/` directory, preventing cross-repo loop startup failures.
-- `harness-review` mirror docs no longer rely on broken `../../docs/ultrareview-policy.md` links.
-- `.claude-plugin/marketplace.json` now carries version metadata aligned with `VERSION` and `.claude-plugin/plugin.json`.
-- `review-ai-residuals.sh --include-untracked` now scans untracked source/config files through the same JSON contract as tracked diffs, removing the manual grep path from Claude and Codex review docs.
-- Plugin agent frontmatter no longer carries ignored `permissionMode` or agent-local `hooks`; write safety is documented as plugin hooks plus Go guardrails plus Worker preflight.
-- Team composition guidance now lives under `docs/` instead of the plugin agent directory, keeping Claude plugin validation warning-free.
-- `validate-plugin.sh` now distinguishes executable entrypoints from source-only shell libraries and keeps the plugin validation summary at zero warnings.
-- Template registry coverage now includes locale, rule, and sandbox templates without false duplicate-output failures.
+- Loops find helpers in the plugin rather than the user's project. Broken review links, marketplace version drift, untracked-file residual scans, unsupported agent fields, misplaced team docs, executable/library checks, and template duplicate-output false positives are corrected. Agent safety depends on plugin hooks, Go checks, and worker preflight, not ignored frontmatter.
 
 ## [4.5.4] - 2026-05-04
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#454---2026-05-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2623)
+
 ### Fixed
 
-- CI i18n and skill-manifest regression tests now use the tracked public payload as their baseline, so clean checkouts no longer expect local-only private skills to be present.
+- Clean-checkout language/manifest tests use only tracked public files and no longer require private local skills.
 
 ## [4.5.3] - 2026-05-04
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#453---2026-05-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2629)
+
 ### Fixed
 
-- Plugin cache sync now copies manifest-declared directories from tracked files only and removes stale private doc/skill paths, preventing ignored local-only skills, private notes, and OS metadata from entering the installed plugin cache.
-- The release safety-net workflow now builds binaries outside the tracked `bin/` directory and avoids clobbering existing release assets, preserving manually verified binary metadata.
-- Local-only `claude-codex-upstream-update`, `x-announce`, and `x-article` skill surfaces plus `docs/private/` notes are no longer tracked in the public distribution set.
+- Cache sync copies tracked declared directories only and removes stale private content/OS metadata. Release safety-net builds outside tracked bin and preserves existing release assets. Local upstream/media notes no longer ship publicly.
 
 ## [4.5.2] - 2026-05-04
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#452---2026-05-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2637)
+
 ### Changed
 
-- Skill invocation governance now keeps core Harness workflow skills visible while suppressing broad helper/internal skills from model auto-invocation. This reduces accidental skill context loading without removing explicit access.
-- Skill mirror consistency now runs the full `sync-skill-mirrors.sh --check` gate during consistency checks, covering non-core skill drift as well as core `harness-*` mirrors.
+- Core workflow skills remain discoverable; broad internal helpers stop auto-loading but remain explicitly accessible. Full mirror checks include non-core skills.
 
 ### Fixed
 
-- UserPromptSubmit no longer wires both `scripts/userprompt-inject-policy.sh` and Go `hook inject-policy`, preventing duplicate policy context injection on semantic prompts.
-- Worker agents no longer preload `harness-review`; implementation workers keep `harness-work`, while review context stays scoped to reviewer agents.
-- Plugin cache sync now keeps declared `skills/` and `output-styles/` directories in the active install cache, preventing enabled Harness plugins from failing to load after cache repair.
+- Remove duplicate prompt-policy injection and worker preload of review context. Cache repair retains declared skills and output styles so enabled plugins load.
 
 ## [4.5.1] - 2026-05-03
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#451---2026-05-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2650)
+
 ### Changed
 
-- Phase 58 protected-write guardrails now classify sensitive paths as deny / ask / warn instead of treating every `.claude/` path the same. Claude capability paths, editor automation settings, shell profiles, hook entrypoints, secrets, and setup metadata now have focused coverage.
-- Codex package guidance now documents Codex `0.125.0` / `0.128.0` permission profiles, managed network policy, `codex exec --json` telemetry boundaries, rollout tracing, `codex update`, and legacy-only `--full-auto` handling.
+- Sensitive paths now distinguish deny, ask, and warn for behavior-changing config, secrets, hooks, and setup metadata. Codex guidance covers 0.125/0.128 permission profiles, network policy, telemetry limits, updating, and legacy-only full-auto.
 
 ## [4.5.0] - 2026-05-03
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#450---2026-05-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2657)
+
 ### Changed
 
-- Direct push to `main` / `master` now defaults to a user confirmation prompt instead of a hard block. Users can tune the guard with `safety.protected_branch_push` in `.claude-code-harness.config.yaml` or `protectedBranchPush` in `harness.toml` (`ask` / `deny` / `allow`).
+- Direct push to `main` or `master` now asks for confirmation instead of being blocked. Set `safety.protected_branch_push` in `.claude-code-harness.config.yaml`, or `protectedBranchPush` in `harness.toml`, to `ask` (confirm), `deny` (block), or `allow` (permit).
 
 ### Fixed
 
-- Windows Git Bash/MSYS/Cygwin sessions now resolve `bin/harness-windows-amd64.exe` through the `bin/harness` shim, and `WorktreeCreate` uses platform path joining while rejecting hook decision JSON mistakenly supplied as a cwd. Windows builds also avoid Unix-only `syscall.Flock` calls by falling back to mkdir/no-lock behavior where appropriate. This keeps Breezing worktree isolation from falling back to Solo mode because the Windows hook binary or worktree state path cannot be resolved.
+- Windows Git Bash/MSYS/Cygwin resolves its .exe through the shim and builds worktree paths correctly, rejecting JSON-shaped cwd. Windows locking uses mkdir/no-lock fallbacks where Unix flock is unavailable. Breezing on Windows no longer falls back to Solo mode because the hook binary or worktree path could not be found.
 
 ### Added
 
-- Phase 58 upstream tracking now covers Claude Code `2.1.120`-`2.1.126` and Codex `0.125.0` / `0.128.0` with a new snapshot and follow-up plan.
-
-#### Phase 58: Claude Code 2.1.120-2.1.126 / Codex 0.125.0-0.128.0 upstream snapshot
-
-**Snapshot**: `docs/upstream-update-snapshot-2026-05-03.md` に、2026-05-03 確認の Claude Code `2.1.120`, `2.1.121`, `2.1.122`, `2.1.123`, `2.1.126` と Codex `0.125.0` stable、`0.128.0` stable、`0.129.0-alpha.2` pre-release の一次情報 URL、version-by-version 分解表、A/C/P 判定、no-op adaptation の理由を保存した。
-
-**今まで**: Harness の upstream snapshot は Phase 56 の Claude Code `2.1.119` / Codex `0.124.0` までで止まっており、Claude Code の `--dangerously-skip-permissions` protected write 範囲拡大、`PostToolUse.updatedToolOutput`、Codex permission profiles / plugin-bundled hooks / MultiAgentV2 をまだ Phase 化していなかった。
-
-**今後**: Phase 58 は `docs/upstream-followups-phase58-2026-05-03.md` と Plans `58.2.1`-`58.3.2` に、protected path taxonomy、output governance、Claude setup / MCP / telemetry refresh、Codex permission profile migration、Codex plugin hooks / `/goal` / MultiAgentV2 follow-up を切り出す。Codex `0.129.0-alpha.2` は watch に留め、alpha compare から runtime を推測実装しない。
-
-| Before | After |
-|--------|-------|
-| Phase 56 以降の upstream 差分が Feature Table / Plans / tests に接続されていなかった | Phase 58 snapshot と follow-up doc を追加し、Claude Code 2.1.126 / Codex 0.128.0 の高価値差分を guarded implementation candidates として Plans 化 |
-
-- Windows Breezing worktree support now has regression coverage for shim platform mapping, `windows/amd64` build output, and the WorktreeCreate path contract.
+- Document Claude 2.1.120–126 and Codex 0.125/0.128 changes with Windows worktree regression checks.
 
 ## [4.4.0] - 2026-04-26
 
-### Fixed
-
-- `harness codex-loop start` now accepts heading-style Plans tasks such as `6G-6` and human line references such as `Plans.md:546`. Hyphenated task IDs are resolved as exact IDs before range parsing, so Codex `harness-loop` no longer requires users to rewrite heading tasks into table rows before starting a loop.
-- `codex-setup-local.sh` now treats existing skill symlinks as links instead of recursing into their targets. User-level Codex setup can safely preserve a symlink that already points at the current Harness source, or replace a stale symlink without moving files out of the source tree. Backup names also get a collision-safe suffix so repeated basenames such as `SKILL.md` are not overwritten within one run.
-- Claude Code hook command resolution now falls back safely when `CLAUDE_PLUGIN_ROOT` is missing or invalid. Hook commands validate the resolved `claude-code-harness` plugin root before executing `bin/harness`, preventing empty plugin roots from becoming `/bin/harness` and producing `hook exited with code 127`.
-- `sync-plugin-cache.sh` now validates the plugin root and updates an installed local marketplace copy when present, so stale marketplace hook definitions do not keep using raw `${CLAUDE_PLUGIN_ROOT}` commands after the versioned cache is fixed.
-- Sprint-contract generation now omits inactive pointer fields such as `review.rubric_target`, preventing release preflight from rejecting non-UI contracts that previously serialized those fields as `null`.
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#440---2026-04-26) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2685)
 
 ### Added
 
-#### Phase 56: Claude Code 2.1.119 / Codex 0.124.0 upstream snapshot
-
-**Snapshot**: `docs/upstream-update-snapshot-2026-04-25.md` に、2026-04-25 確認の Claude Code `2.1.119`、Codex `0.124.0` stable、Codex `0.125.0-alpha.2` pre-release の一次情報 URL、version-by-version 分解表、A/C/P 判定、no-op adaptation の理由を保存した。
-
-**今まで**: Phase 53 の snapshot は Claude Code `2.1.118` / Codex `0.123.0` までで止まっていた。PR #112 / #113 の i18n 差分が大きいため、upstream 追従を同じ branch に混ぜるとレビューしづらい状態だった。
-
-**今後**: Phase 56 は fresh main から分離し、Claude Code `2.1.119` の `PostToolUse.duration_ms`、status line `effort.level` / `thinking.enabled`、`prUrlTemplate`、multi-host `--from-pr`、Codex `0.124.0` stable hooks / multi-environment app-server を、即時実装ではなく `A: 検証強化`, `C: 自動継承`, `P: 将来タスク` に分類して追跡する。Codex `0.125.0-alpha.2` は tag 存在のみ記録し、compare から推測実装しない。
-
-**Follow-up closeout**: `docs/upstream-followups-phase56-2026-04-25.md` に 56.2.1-56.2.4 の判断を追加した。`scripts/statusline-harness.sh` は `effort.level` / `thinking.enabled` を表示・記録する一方、`PostToolUse.duration_ms` は per-tool telemetry sink が無いため no-op に留める。Codex stable hooks は parity review のみで shipped `codex/.codex/config.toml` は no-op、`prUrlTemplate` multi-host support は docs-only、multi-environment app-server は one primary environment per write turn を safe default とし、`scripts/codex-primary-environment-guard.sh` で non-primary write を既定停止にした。
-
-| Before | After |
-|--------|-------|
-| Upstream snapshot は Phase 53 の Claude Code `2.1.118` / Codex `0.123.0` までで、i18n 大差分と混ぜるとレビューしづらかった | Phase 56 を fresh main から分離し、Claude Code `2.1.119` / Codex `0.124.0` / `0.125.0-alpha.2` を A/C/P 分類と follow-up task で固定 |
-
-#### Phase 55: Issue #105 English default no-regression tests
-
-**I18n regression coverage**: Added shell tests for English default config/schema surfaces, shipped skill frontmatter, temp-copy `ja -> en` locale roundtrip, and setup-facing language rendering. `scripts/i18n/check-translations.sh` now checks `skills/`, `skills-codex/`, `codex/.codex/skills/`, and `opencode/skills/`, requiring shipped `description` to match `description-en` while preserving `description-ja`.
-
-**Japanese UX preservation**: Added a regression pass for Japanese opt-in surfaces: `set-locale.sh ja` skill descriptions, `README_ja.md`, Japanese setup templates, Japanese hook messages, `templates/modes/harness--ja.json`, and the English-default boundary for Japanese creative skills such as `x-announce` and `x-article`.
-
-**Distribution gate closeout**: Added the i18n regression suite to `scripts/ci/check-consistency.sh` and the `validate-plugin` GitHub Actions workflow. `docs/issue-105-response-draft.md` captures the Issue #105 reply, Japanese UX preservation statement, verification commands, migration invariants, rollback notes, and abort conditions for pre-release review.
-
-#### Phase 54: Codex Breezing defaults + loop batch execution
-
-**Codex harness-loop docs**: Codex 用 `harness-loop` guidance を、旧来の「1 cycle = 1 task」から「1 cycle = ready batch を Breezing で実行」に更新した。`--max-workers N|max` で batch 内の並列数を制御し、問題切り分けや危険な直列作業では `--executor task` で従来の one-task-per-cycle local worker path に逃がせることを明記した。
-
-**Silence policy compatibility**: `harness-loop` の silence policy は「1 ready batch cycle につき最終報告 1 回」を基本に更新し、Breezing Lead の task-level progress feed は batch 内の完了数が動いた時だけ出す扱いにした。advisor / reviewer drift、plateau、contract readiness failure は引き続き silence 対象にしない。
-
-#### Phase 53: Claude Code 2.1.117-2.1.118 / Codex 0.123.0 upstream snapshot
-
-**Snapshot**: `docs/upstream-update-snapshot-2026-04-23.md` に、2026-04-23 確認の Claude Code `2.1.117` / `2.1.118` と Codex `0.123.0` の一次情報 URL、version-by-version 分解表、A/C/P 判定、`B: 書いただけ` が 0 件である理由を保存した。
-
-**公式確認**: Claude Code docs / GitHub changelog で `2.1.117-2.1.118` を確認し、OpenAI Codex releases で stable `0.123.0` と `rust-v0.123.0` tag を確認した。
-
-**Version-by-version 分解**:
-
-| Version | Harness 判定 | Action |
-|---------|--------------|--------|
-| Claude Code 2.1.118 | `type: "mcp_tool"` hooks、Auto Mode `"$defaults"`、`claude plugin tag`、update controls は `A`、plugin themes / WSL managed settings は `P`、MCP OAuth・credential・fork・keyboard・Remote Control fixes は `C` | 53.1.2-53.1.5 で実装 / docs 化し、本体修正は自動継承 |
-| Claude Code 2.1.117 | plugin dependency auto-resolve と managed marketplace settings は `A`、main-thread `--agent` の `mcpServers` と external forked subagent は `P`、stale large session summary、native `bfs` / `ugrep`、高 effort default、runtime fixes は `C` | 53.1.5-53.1.6 で guidance と後続候補に整理。wrapper は追加しない |
-| Codex 0.123.0 | built-in `amazon-bedrock` provider、`/mcp verbose`、`.mcp.json` loading、realtime handoff silence、`remote_sandbox_config`、`codex exec` shared flags は `A`、bug fixes は `C` | 53.2.1-53.2.5 で setup / long-running / sandbox guidance に落とす |
-
-**B 判定の扱い**: Phase 53 では `B: 書いただけ` を分類として使わず、全項目を `A: 実装`, `C: 自動継承`, `P: 将来タスク` のいずれかへ固定した。`A` は具体的な Phase 53 task に接続し、`C` は Harness が wrapper を重ねない理由を記録している。
-
-**MCP tool hook safety**: Claude Code `type: "mcp_tool"` hooks は、読み取り専用の MCP health / resource list 診断候補として評価した。2026-04-23 時点では必須 field 仕様と常設 read-only diagnostic tool を配布 plugin 側で固定できないため、`hooks/hooks.json` / `.claude-plugin/hooks.json` は no-op とし、書き込み系 MCP tool を hook から呼ばない方針を snapshot と upstream integration test で固定した。
-
-**Plugin tag release flow**: `harness-release` に Claude plugin project 用の `claude plugin tag` 導線を追加した。`VERSION` と `.claude-plugin/plugin.json` の version が不一致なら tag に進まず、`--dry-run` / preflight で `claude plugin tag .claude-plugin --dry-run` を表示する。release commit 後は `claude plugin tag .claude-plugin --push --remote origin` で plugin version validation 付きの `{plugin-name}--v{version}` tag を作れる。
-
-**Auto Mode `$defaults` policy**: Auto Mode の `autoMode.allow` / `autoMode.soft_deny` / `autoMode.environment` は built-in default を置換せず、`"$defaults"` に project-specific entry を足す方針として整理した。`.claude-plugin/settings.json` の deny / ask / sandbox guardrails は緩めず、R05 guardrail と `sandbox.network.deniedDomains` が Auto Mode と二重責務にならない理由を snapshot と template note に記録し、upstream integration test で固定した。
-
-**Plugin managed settings policy**: `docs/plugin-managed-settings-policy.md` を追加し、plugin `themes/` directory、`DISABLE_UPDATES` と `DISABLE_AUTOUPDATER` の違い、`blockedMarketplaces` / `strictKnownMarketplaces` の managed settings 専用運用、plugin dependency auto-resolve / missing dependency hints を setup guidance として整理した。通常ユーザー向け default に企業向け marketplace restriction を過剰適用せず、dependency resolution は Harness 独自 resolver を重ねず Claude Code 本体に任せる。
-
-**Codex provider setup policy**: `docs/codex-provider-setup-policy.md` を追加し、Codex `0.123.0` の built-in `amazon-bedrock` provider、`model_providers.amazon-bedrock.aws.profile`、current `gpt-5.4` default metadata の扱いを setup guidance として整理した。Harness 配布 config では `model` / `model_provider` を固定せず、Bedrock 利用者だけが user / project config に追加する方針にした。古い `gpt-5.2-codex` 推奨 sample は削除した。
-
-**Codex MCP diagnostics / plugin loading**: `docs/codex-mcp-diagnostics.md` を追加し、Codex `0.123.0` の `/mcp verbose` と plugin `.mcp.json` loading 改善を setup guidance として整理した。普段は軽量な `/mcp`、困った時だけ `/mcp verbose` で diagnostics / resources / resource templates を見る手順にし、plugin `.mcp.json` は `mcpServers` 形式と top-level server map 形式の両方を許す前提へ更新した。Claude Code 側の `claude mcp` / `.claude/mcp.json` / hook `type: "mcp_tool"` guidance とは別 surface として扱う。
-
-**Codex realtime handoff silence policy**: Codex `0.123.0` の background agent transcript delta / explicit silence 改善を、`harness-loop` と `breezing` の長時間実行 guidance に反映した。`harness-loop` は原則 1 cycle につき最終報告 1 回、`breezing` は task 完了ごとに progress feed 1 回を基本にし、細かな stdout や delta は status / log 側へ寄せる。advisor / reviewer drift、plateau、contract readiness failure は silence 対象にせず、品質判定の役割分離を維持する。
-
-**Codex sandbox / exec policy**: `docs/codex-sandbox-execution-policy.md` を追加し、Codex `0.123.0` の `remote_sandbox_config` を `requirements.toml` の host-specific sandbox policy として整理した。remote devbox / ephemeral CI runner / shared host ごとの `allowed_sandbox_modes` 比較表を置き、`codex exec` の root-level shared flags 継承は Codex 本体の自動継承として扱う方針を固定した。Harness wrapper は重複した `--approval-policy` / `--sandbox` pairs を追加せず、`task --write` の `workspace-write` 変換のような Harness workflow intent だけを exec-local flag として残す。
-
-**Codex automatic bug fix inheritance**: Codex `0.123.0` の `/copy` rollback、manual shell follow-up queue、Unicode / dead-key input、stale proxy env、VS Code WSL keyboard、review prompt leak は、長時間作業 UX に効く `C: 自動継承` として snapshot に整理した。Harness は copy wrapper、manual shell queue shim、proxy snapshot scrubber を追加せず、本体修正をそのまま受け取る。
-
-**Phase 53 closeout**: Phase 53 の upstream 追従は `docs/upstream-update-snapshot-2026-04-23.md`、Feature Table、CHANGELOG、upstream integration test、validate-plugin で整合を確認した。Codex-native skill audit の広い mirror / path drift は Phase 51.2 の既存 TODO に残し、今回の `0.123.0` 追従とは分離した。
-
-#### Phase 52: upstream update skill merge hardening + 2026-04-21 snapshot
-
-| Before | After |
-|--------|-------|
-| `cc-update-review` が diff 未提供でも進行し、`B: 書いただけ 0 件` を推定で断言する余地があった | diff source が呼び出し元提供または read-only git inspection で確定しているかを前提チェックで強制 |
-| `claude-codex-upstream-update` は必ず `A` を作る前提で、C/P 中心の回でも無理な wrapper を書きがちだった | 公式差分が妥当に `C` / `P` だけなら no-op adaptation で完了できる契約に変更 |
-| upstream 分類の見出しが `3 カテゴリ` / `A/B/C` / `A/B/C/P` で揺れていた | `A/B/C/P` に統一し、integration test で grep 固定 |
-| upstream skill 2 種の `skills/` / `codex/.codex/skills/` / `.agents/skills/` mirror drift が test で検出されなかった | `tests/test-claude-upstream-integration.sh` に mirror drift + snapshot 参照整合 check を追加 |
-| upstream cycle の判断経緯が CHANGELOG / Feature Table に要約するだけで、一次情報と version-by-version の根拠が残らなかった | `docs/upstream-update-snapshot-2026-04-21.md` に URL・分解表・no-op 根拠・follow-up を恒久化 |
-
-**公式確認**: Claude Code docs / GitHub changelog で `2.1.116` を確認し、Codex releases で stable `0.122.0` と pre-release `0.123.0-alpha.2` を確認した。
-
-**Version-by-version 分解**:
-
-| Version | Harness 判定 | Action |
-|---------|--------------|--------|
-| Claude Code 2.1.116 | `/resume` 高速化、MCP startup deferred loading、plugin dependency auto-install、dangerous-path safety、Agent frontmatter hooks、`gh` rate-limit hint は主に `C/P` | 本体改善は自動継承し、plugin dependency policy / agent hooks / `gh` backoff guidance は後続候補 |
-| Codex 0.122.0 | `/side`、fresh-context Plan Mode、plugin workflows、deny-read glob、tool discovery / image default-on は `P` | Phase 51.2 の Codex-native skill audit / plugin mirror policy と一緒に扱う |
-| Codex 0.123.0-alpha.2 | release body が薄い pre-release のため `P` | stable 化または release notes 充実後に再確認。compare から推測実装しない |
-
-**Harness での活用**: `cc-update-review` を diff-aware review として強化し、呼び出し元 diff が無い場合は read-only git inspection（`git status`, `git diff -- docs/CLAUDE-feature-table.md`, `git diff --name-only` 等）で確認するよう明記した。あわせて分類見出しを `A/B/C/P` に統一し、`B: 書いただけ 0 件` を diff 未確認のまま推定しないようにした。
-
-**No-op adaptation 対応**: `claude-codex-upstream-update` は「必ず `A` を作る」運用をやめ、公式差分が妥当に `C` / `P` だけなら no-op adaptation として完了できるようにした。これにより、Claude 2.1.116 のように本体 UX 改善が中心の回でも、無理な wrapper 実装や二重責務を作らずに済む。
-
-**検証 hardening**: `tests/test-claude-upstream-integration.sh` に upstream skill 2 種の mirror drift check を追加し、`skills/` / `codex/.codex/skills/` / `.agents/skills/` の同期崩れを検出するようにした。さらに diff-aware guidance、A/B/C/P 見出し、no-op adaptation、Claude 2.1.116+ / Codex 0.122.0+ watchlist を grep で固定した。
-
-**Snapshot**: `docs/upstream-update-snapshot-2026-04-21.md` に、今回の一次情報 URL、version-by-version 分解表、直接実装しない理由、follow-up candidates を保存した。
-
-#### Phase 51: Claude Code / Codex upstream 追従 — AskUserQuestion `updatedInput.answers` bridge
-
-**CC のアプデ**: Claude Code hooks docs で `AskUserQuestion` の `tool_input` schema が `questions` + optional `answers` と明文化され、`PreToolUse` hook が `permissionDecision: "allow"` + `updatedInput` を返すことで headless / SDK UI 側の回答を注入できるようになっている。あわせて 2.1.113 / 2.1.114 では permission / sandbox / Agent Teams permission dialog 周りの hardening が進んだ。
-
-**Codex のアプデ**: Codex 0.121.0 では marketplace add、MCP Apps tool calls、memory reset / cleanup、sandbox-state metadata、secure devcontainer などが入り、Harness の Codex workflow 比較軸として残す価値が高い。
-
-**Harness での活用**: `PreToolUse` の `AskUserQuestion` 専用 handler `ask-user-question-normalize` を追加し、明示的な answer source（`tool_input.answers` または `HARNESS_ASK_USER_QUESTION_ANSWERS`）がある場合だけ `updatedInput.answers` を返すようにした。`solo/team`、`scripted/exploratory`、`patch/minor/major` など既知の選択肢だけを option label に正規化し、選択肢にない値・自由入力・承認 yes/no は自動変換しない。
-
-**今まで**: `updatedInput + AskUserQuestion` は Feature Table 上では将来活用予定のままで、hooks から `AskUserQuestion` が発火せず、headless UI が集めた回答を Harness 側で安全に注入する導線がなかった。
-
-**今後**: `hooks/hooks.json` / `.claude-plugin/hooks.json` の `PreToolUse` に `AskUserQuestion` wiring が入り、Go handler + unit test + upstream integration test で「明示 answer source がある時だけ allow + updatedInput」「不明値は no-output fail-open」を固定。Feature Table の Phase 51 追補でも `B: 書いただけ 0 件` として分類済み。
-
-**追加の 2.1.113 hardening**: `.claude-plugin/settings.json` に `sandbox.network.deniedDomains` を追加し、metadata endpoint 系のネットワーク到達を denied domain として明示した。さらに `go/internal/guardrail` で `find -delete` / `find -exec rm ...` と macOS の `/private/etc`, `/private/var`, `/private/tmp`, `/private/home`, `~/Library` 系危険削除パスを R05 の確認対象に追加し、wrapper 経由 `sudo` と合わせて unit test で固定した。
-
-**Skill gate の修正**: `claude-codex-upstream-update` は「実装前に version-by-version 分解表を作る」ことを必須化し、2.1.113 hardening / Codex 0.121.0 / 0.122.0-alpha の確認項目を明文化した。`cc-update-review` は Claude/Codex upstream update review として再定義し、A/C/P 判定、permission / sandbox の安易な C 判定禁止、mirror drift 検出を追加した。PR 対象の `skills/` と `codex/.codex/skills/` を同期し、local-only の `.agents/skills/` も作業環境上では同内容へ更新した。
-
-**検証 hardening**: `validate-plugin` の migration residue check が、配布対象外のローカル `.agents/` スキルミラーまでスキャンして false positive を出していたため、`scripts/check-residue.sh` で `.agents` を除外するようにした。配布対象の `skills/` / `agents/` / `codex/` は従来どおり検査対象。
-
-**Skills 総点検**: 全 `SKILL.md` を点検し、`.agents/skills` の Claude/Codex 置換 drift、Codex native tool model と Claude Code 擬似コードの混在、memory/session path、media generation skill metadata の不整合を `docs/skills-audit-2026-04-20.md` と `Plans.md` Phase 51.2 に切り出した。
+- Codex Breezing defaults and loop batch execution accompany upstream guidance for Claude 2.1.116–119 and Codex 0.123–124. User answers can bridge through updatedInput.answers; unsupported or prerelease capabilities remain proposals rather than guessed implementations.
 
 ### Fixed
 
-- `harness codex-loop` の background runner / local worker 再入実行を、呼び出し時の `$0` ではなく実スクリプトの絶対パスで起動するようにし、起動直後に落ちた場合も `runner.log` / job log に原因が残るようにした。
-- local worker が `codex exec` の失敗終了コードを 0 として扱い、失敗ジョブを成功扱いにし得る問題を修正。`codex exec` を子プロセスとして追跡し、`stop` 時に子プロセスまで終了させて orphan を残しにくくした。
-- Codex 用 `harness-loop` skill mirror に、`START..END` / 英字付き task ID 範囲指定と local worker 既定動作の説明を反映した。
+- Loop startup accepts heading IDs like `6G-6`, `Plans.md:546`, and ranges. It launches by absolute script path, retains real worker failure codes/logs, and terminates child jobs on stop. Setup preserves current symlinks, backs up stale ones without moving their source files, and avoids backup-name collisions.
+- Hooks validate plugin roots when the environment is missing, cache sync repairs marketplace paths, and non-UI contracts omit inactive fields instead of null values that fail release checks.
+
+### Security
+
+- Add cloud metadata endpoints (addresses that can return service credentials) to `sandbox.network.deniedDomains`, the network block list. R05 dangerous-deletion checks now include `find -delete`, `find -exec rm`, and macOS paths `/private/etc`, `/private/var`, `/private/tmp`, `/private/home`, and `~/Library`.
 
 ## [4.3.3] - 2026-04-20
 
-### テーマ: harness-mem 未使用ユーザーへの誤警告 regression を hotfix
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#433---2026-04-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2815)
 
-**v4.3.1 で導入した `session-monitor` の harness-mem ヘルスチェックが、harness-mem 未インストール環境 (= `~/.claude-mem/` が存在しないユーザー) に対しても `⚠️ harness-mem unhealthy: not-initialized` を毎セッション表示していた regression を修正。opt-in 未使用は「壊れている」ではなく「監視対象外」として扱う。**
+### Fixed
 
----
-
-#### 1. `bin/harness mem health` の not-configured ケースを healthy 扱いに変更
-
-**今まで**: `session-monitor` は v4.3.1 (Phase 48.1.1) から harness-mem の daemon 健全性を能動監視していました。ところが `~/.claude-mem/` ディレクトリが存在しない = harness-mem をそもそもインストールしていないユーザーに対しても `{healthy: false, reason: "not-initialized"}` を返してしまい、セッションを起動するたびに:
-
-```text
-Project: my-app
-Git: clean (main)
-Plans: 3 WIP / 12 TODO
-⚠️ harness-mem unhealthy: not-initialized
-```
-
-と警告が出ていました。harness-mem は opt-in 機能 (claude-code-harness plugin と別リポ) なので、使っていない多数のユーザーに「壊れています」と誤メッセージを出す形になり、UX ノイズとなっていました。
-
-**今後**: `runMemHealthCheck()` の判定ロジックを tri-state 化:
-
-| 状態 | Healthy | Reason | Exit | Monitor 警告 |
-|------|---------|--------|------|------------|
-| `~/.claude-mem/` 不在 (未インストール) | **true** | `not-configured` | **0** | **出さない** |
-| ファイル揃ってるが daemon 停止 | false | `daemon-unreachable` | 1 | 出す |
-| ファイル破損 | false | `corrupted` | 1 | 出す |
-| 正常 | true | `""` | 0 | 出さない |
-
-harness-mem を**使っている**ユーザー (= `~/.claude-mem/` あり) の daemon 停止検出という Phase 48.1.1 の本来目的はそのまま機能し続けます。使っていない opt-in 未使用ユーザーの画面からは警告が消えます。
-
-#### 2. 回帰テスト追加 (監視対象外の契約を固定)
-
-- `TestRunMemHealth_NotConfigured` — `~/.claude-mem/` 不在時に `(healthy=true, reason="not-configured", exit=0)` が返ることを検証
-- `TestMonitorHandler_HarnessMemNotConfigured` — 上記 tuple が渡された Monitor が `⚠️ harness-mem unhealthy` を**出さない**こと、`session.json` の `harness_mem.healthy=true` / `last_error=""` を記録することを検証
-- 既存 `TestMonitorHandler_HarnessMemUnhealthy` の fixture reason は `not-initialized` → `daemon-unreachable` に更新（現実に返る値へ合わせる）
-
-#### 3. residue allowlist の最小追加
-
-回帰テスト導入に伴い、`deleted-concepts.yaml` allowlist に以下 2 entry を追加:
-
-- `go/internal/session/monitor_test.go` — コメント内で `~/.claude-mem/` パスを参照（既存 `mem_test.go` と同理由）
-- `go/.claude/state/` — gitignored な session state snapshot（ルート `.claude/state/` と同扱い、サブディレクトリ配下のため別 prefix が必要）
-
----
-
-### Summary
-
-| 項目 | 内容 |
-|------|------|
-| 影響範囲 | harness-mem 未使用ユーザーのセッション起動体験 |
-| ユーザー影響 | 誤警告 `⚠️ harness-mem unhealthy: not-initialized` が消える |
-| harness-mem 使用ユーザーへの影響 | なし (daemon 停止検出はそのまま機能) |
-| VERSION sync | VERSION / `.claude-plugin/plugin.json` / `harness.toml` 全て 4.3.2 → 4.3.3 |
+- Users without harness-mem (no `~/.claude-mem/` folder) no longer see `harness-mem unhealthy` at every session start; unconfigured exits 0. Installed-but-unreachable or corrupt memory still exits 1 and warns.
 
 ## [4.3.2] - 2026-04-20
 
-### テーマ: PR #93 nitpick follow-up + Phase 49.1.2 cross-repo no-op close
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#432---2026-04-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2871)
 
-**v4.3.1 レビューで deferred していた 4 件の小粒な堅牢化 (residue allowlist 絞り込み・markdownlint MD040・drift 検出の `container/ring` 化・jq null-safe) と、harness-mem 側 S90-002 landing に伴う Phase 49.1.2 の no-op close を同梱する patch。ユーザー体験の変化はゼロで、すべて内部品質改善。**
+### Fixed
 
----
-
-#### 1. `deleted-concepts.yaml` allowlist の対象を絞り込み
-
-**今まで**: `bin/` ディレクトリ全体が allowlist 対象でした。このままだと `bin/claude-mem` のような過去の旧 binary が混入しても residue scanner が素通りして検知できず、Migration residue policy の目的 (「削除したものが残っていないか」の逆方向検証) を無効化してしまう状態でした。
-
-**今後**: allowlist を `bin/harness` のみに narrow し、現行の Go binary だけを除外対象としました。`bin/claude-mem` 等の旧 binary が混入した場合は `scripts/check-residue.sh` が検出できます。
-
-#### 2. markdownlint MD040 対応 (CHANGELOG 4 箇所)
-
-**今まで**: CHANGELOG の 4 箇所で fenced code block (``` ```) が言語タグなしで書かれており、markdownlint の MD040 ルール (code block must specify language) で警告が出ていました。
-
-**今後**: 該当 4 箇所に `text` タグを付与し、markdownlint クリーンの状態に戻しました。例示ブロック表示の装飾が正しく効くようになります。
-
-#### 3. `collectDrift` の走査を `container/ring` 化 (Phase 48 follow-up)
-
-**今まで**: `go/internal/session/monitor.go:collectDrift` は `session.events.jsonl` を `bufio.Scanner` で全行読み、最後に `lines[len(lines)-200:]` として末尾 200 行を切り出していました。10,000 行規模のログでも全行を slice に積み上げる設計で、(i) メモリ確保が O(N)、(ii) `scanner.Err()` を確認していないため I/O 障害時に partial 読込が成功扱いになる、という 2 つの痛点がありました。
-
-**今後**: `container/ring` (`size=driftTailWindow=200`) を使った O(1) メモリ構造に置換し、末尾 200 行のみを保持する設計に切り替えました。合わせて `scanner.Err()` で I/O エラーを明示的にハンドリングします。回帰テスト `TestCollectDrift_TailWindowBoundary` (500 行、window 内外の advisor-request を切り分けるアサーション) と `BenchmarkCollectDrift_200Lines` / `BenchmarkCollectDrift_10000Lines` を追加し、`go test -bench -benchmem` で per-op allocation が ringsize に比例して bounded であることを継続監視できます。
-
-#### 4. jq の null-safe 化 (`tests/test-memory-hook-wiring.sh`)
-
-**今まで**: `map(.command)` で `hooks[].command` を射影していましたが、`type: agent` のような `command` キーを持たない hook entry が混ざると `null cannot be matched` で jq が即死していました。agent-type hook が `.claude-plugin/hooks.json` に混在する構成で、テストが偶発的に壊れる潜在リスクを抱えた状態でした。
-
-**今後**: `map(.command // "")` に変更して null を空文字で吸収するようにし、agent-type fixture をテストに追加しました。混在構成を明示的にカバーするため、null-command path を通す新 fixture block も同テストファイルに追加しています。
-
-#### 5. Phase 49.1.2 no-op close — harness-mem#70 cross-repo handoff
-
-**今まで**: Plans.md Phase 49.1.2 は「`memory-session-start.sh` / `userprompt-inject-policy.sh` の jq パイプラインを短縮」という DoD で `cc:TODO` (Depends: S90-002) として blocked 状態でした。harness-mem 側 S90-002 (`summary_only=true` mode for `/v1/resume-pack`) の merge 待ちで進捗が止まっていました。
-
-**今後**: harness-mem v0.14.0-rc.1 に S90-002 が landed (`0572746`) + follow-up helpers `hook_extract_meta_summary` / `hook_fetch_resume_pack_summary_only` (`4a7cb36`) が同梱されたことで解除判定を実施。実地調査の結果、`scripts/hook-handlers/memory-session-start.sh` は 7 行の薄いラッパーで harness-mem の同名スクリプトを `exec` 丸投げするのみ、`scripts/userprompt-inject-policy.sh` は `memory-resume-context.md` を読むだけで `/v1/resume-pack` を直接呼ばない構造でした。plugin 側には短縮対象となる jq パイプラインが存在せず、**実短縮は harness-mem 側 `hook-common.sh` の helper 2 本が担い、plugin は wrapper delegate 経由で自動継承**する分業が確立していたため、Plans.md を **`cc:完了 [no-op, harness-mem#70]`** でクローズしました。コード変更ゼロで恩恵を受けられます。
-
-- cross-repo handoff: [harness-mem#70](https://github.com/Chachamaru127/harness-mem/issues/70) (AC 全項目 ✅ で解除判定 YES を両 repo 合意)
-
----
-
-### Summary
-
-| 項目 | 内容 |
-|------|------|
-| 対象 Issue | [#94](https://github.com/Chachamaru127/claude-code-harness/issues/94) + Phase 49.1.2 close |
-| ユーザー影響 | なし (内部堅牢化のみ) |
-| テスト追加 | `TestCollectDrift_TailWindowBoundary` / `BenchmarkCollectDrift_200Lines` / `BenchmarkCollectDrift_10000Lines` / agent-type hook fixture |
-| VERSION sync | VERSION / `.claude-plugin/plugin.json` / `harness.toml` 全て 4.3.1 → 4.3.2 |
+- Session drift scans use a bounded tail buffer; null-safe memory-hook tests and narrower migration exceptions improve internal checks. No user workflow changes.
 
 ## [4.3.1] - 2026-04-19
 
-### テーマ: Session Monitor 能動監視化 + XR-003 / Phase 49 hooks wiring 修正
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#431---2026-04-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2922)
 
-**v4.3.0 "Arcana" 直後に見つかった「`monitors.json` の description 通りに能動監視できていない」「harness-mem の resume-pack 注入 shell scripts が hooks.json から一度も呼ばれていなかった」という 2 つの沈黙バグを一括解消する patch。**
+### Added
 
----
+- The session monitor now warns, one line each, about three things. Memory health: checks `~/.claude-mem/` and connects to the memory daemon at `HARNESS_MEM_HOST:HARNESS_MEM_PORT` (default `127.0.0.1:37888`). Unanswered advisor or reviewer requests older than 600 seconds by default, set by `orchestration.advisor_ttl_seconds`. Plans drift when 5 or more tasks are in progress or Plans.md has not changed for 24 hours, set by `monitor.plans_drift.wip_threshold` and `monitor.plans_drift.stale_hours`. All three keys go in `.claude-code-harness.config.yaml`. The health check runs the `harness` program from the plugin or PATH, never from the project's own `bin/`, so a planted binary in a repository cannot replace it.
 
-### テーマ: Session Monitor の能動監視化 — manifest と実装の description 乖離を解消
+### Fixed
 
-**`monitors/monitors.json` が掲げる 3 要素（harness-mem health / advisor-reviewer drift / Plans.md drift）のうち、これまでは Plans.md の件数カウントと git 状態しか見られていなかった。残り 2 要素を `go/internal/session/monitor.go` に実装し、出力を `⚠️ {category}: {detail}` 1 行形式に統一することで、Claude 側が重要度判定して PushNotification を発火できるようにした。**
-
----
-
-#### 1. harness-mem health の能動監視 (Phase 48.1.1)
-
-**今まで**: `monitors.json` の description には「harness-mem health を監視する」と書かれていましたが、実装側にはそれに対応するコードが無く、daemon が unhealthy でも session-monitor は黙って素通りしていました。新 session 起動時に resume_pack が取れないままワークフローが始まる事故（XR-003 の遠因）が発生する状態でした。
-
-**今後**: `bin/harness mem health` サブコマンドを新設し、`MonitorHandler.Handle` から timeout 2 秒で起動します。ヘルスチェックは 2 段階で、(i) `~/.claude-mem/` 配下のファイル整合性、(ii) daemon への TCP probe（`HARNESS_MEM_HOST:HARNESS_MEM_PORT` 既定 `127.0.0.1:37888`、500ms timeout）、の両方が通った場合のみ healthy 判定。daemon 停止中は `⚠️ harness-mem unhealthy: daemon-unreachable` を stdout に出し、session.json に `harness_mem: { healthy, last_checked, last_error }` を記録。timeout や exec 失敗は healthy=unknown で握り潰して monitor 全体は止めません。なお `defaultMemHealthCheck` が exec する harness binary は `os.Executable()` → `CLAUDE_PLUGIN_ROOT/bin/harness` → `PATH` の順で解決し、`projectRoot/bin/harness` は信頼境界外として除外します（repo 内に悪意ある binary が混入しても guardrail を bypass されない）。
-
-```text
-⚠️ harness-mem unhealthy: connection refused (127.0.0.1:37888)
-```
-
-#### 2. advisor / reviewer drift の検知 (Phase 48.1.2)
-
-**今まで**: `advisor-request.v1` を投げたあとで Advisor が返答せずに stall しても、Lead が気づく手段が「明らかに進捗が止まった」と感じるタイミングまで存在しませんでした。Reviewer についても同様に、`review-result.v1` 未応答が session 終端まで放置されるケースがありました。
-
-**今後**: `.claude/state/session.events.jsonl` の末尾 200 行を読み、TTL（既定 600 秒）を超えて response がない request を検出。最古 1 件だけを `⚠️ advisor drift: request_id={id}, waiting {elapsed}s` / `⚠️ reviewer drift: ...` で報告します。TTL は `.claude-code-harness.config.yaml` の `orchestration.advisor_ttl_seconds` で project 単位で上書き可能。
-
-#### 3. Plans.md の閾値判定 (Phase 48.1.3)
-
-**今まで**: WIP 件数や Plans.md の最終更新時刻は session.json に記録されていましたが、閾値判定がないため「放置されている WIP がある」「Plans.md が丸 1 日以上動いていない」といった drift を能動的に指摘する仕組みがありませんでした。
-
-**今後**: `collectPlansState` に閾値判定を追加し、`WIP ≥ wip_threshold`（既定 5）または `stale_for ≥ stale_hours`（既定 24）のいずれか 1 つが真になると `⚠️ plans drift: WIP={n}, stale_for={hours}h` を出力します。両閾値とも `.claude-code-harness.config.yaml` の `monitor.plans_drift.wip_threshold` / `monitor.plans_drift.stale_hours` で上書きできます。
-
-#### 4. Reviewer minor 3 件の follow-up（Phase 48.2.1）
-
-Phase 48 の Reviewer 判定は `APPROVE` (critical=0 / major=0 / minor=3) でしたが、以下 3 件を本セッション内で即クローズしました。
-
-- `go/internal/session/monitor.go:747-752` — `checkPlansDrift` の `if staleHit` 分岐で同一 `fmt.Sprintf` を 2 箇所で呼ぶ dead-code を削除し、単一 return に統合
-- `go/internal/session/monitor.go:691,763` — `readAdvisorTTL` / `readPlansDriftConfig` の `configPath` に `filepath.Clean` を適用してパス構築の定石を揃えた（projectRoot は内部由来のため symlink チェックは過剰防御として省略）
-- `go/internal/session/monitor_test.go` — `TestMonitorHandler_ReviewerDrift_Hit` / `_Miss` / `_ConfigOverride` の 3 ケースを追加。reviewer drift が advisor と同 TTL (`orchestration.advisor_ttl_seconds`) 配下で動くこと・`review-result.v1` 到着後は検出されないこと・config override が reviewer 側でも効くことを固定
-
----
-
-### テーマ: SessionStart resume-pack injection の配線欠損を修正 (XR-003 / Phase 49)
-
-**harness-mem は「記憶・検索・再開ランタイム」として daemon / resume-pack API / shell hook scripts まで整備されていたのに、新 session 起動時に直前セッションの summary が `additionalContext` に注入されない状態が放置されていた。2026-04-19 のメタ確認で、真因は「plugin に同梱されている `memory-session-start.sh` と `userprompt-inject-policy.sh` が `.claude-plugin/hooks.json` から一度も呼ばれていなかった」こと、と特定。hooks.json への wiring 追加だけで解決する。**
-
-#### SessionStart に `memory-session-start.sh` の呼び出しを追加 (Phase 49.1.1)
-
-**今まで**: `SessionStart` の hooks 配列には `harness hook session-start` と `harness hook memory-bridge`（いずれも Go 実装）しか登録されておらず、どちらも `additionalContext` を返さない設計のため、session 開始時点で harness-mem の記憶は何も挿入されていませんでした。一方で plugin には shell 実装の `scripts/hook-handlers/memory-session-start.sh` が bundle されており、これは `/v1/resume-pack` を叩いて `.claude/state/memory-resume-context.md` を書き出し `.memory-resume-pending` flag を立てるところまで完走する実装でした。つまり**スクリプトはあるが配線されていない**状態でした。このマシンでは `memory-resume-pack.json` が 12 日前のタイムスタンプのまま固まっていたことで判明しました。
-
-**今後**: `.claude-plugin/hooks.json` の `SessionStart[matcher="startup|resume"].hooks` 配列末尾に `bash "${CLAUDE_PLUGIN_ROOT}/scripts/hook-handlers/memory-session-start.sh"` を追加しました。timeout 30 秒、`once: true`。既存の `harness hook session-start` / `memory-bridge` はそのまま残置し並走します (session 記録と memory-bridge health check は従来どおり)。
-
-#### UserPromptSubmit に `userprompt-inject-policy.sh` の呼び出しを追加 (Phase 49.1.1)
-
-**今まで**: 同じく shell 実装の `scripts/userprompt-inject-policy.sh` は `.memory-resume-pending` flag を読んで `memory-resume-context.md` を `additionalContext` として載せ直す設計でしたが、`UserPromptSubmit.hooks` 配列に含まれていませんでした。既存の `harness hook inject-policy` (Go) は `{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit"}}` を返すだけで resume-pack 注入は実装されていないため、shell 版が呼ばれない限り記憶が届きません。
-
-**今後**: `UserPromptSubmit[matcher="*"].hooks` の `memory-bridge` と `inject-policy` の間に `bash "${CLAUDE_PLUGIN_ROOT}/scripts/userprompt-inject-policy.sh"` を挿入しました。timeout 15 秒。先に shell 側で `.memory-resume-pending` flag を処理し、続けて Go 側の `harness hook inject-policy` を走らせる構成です。Claude Code は複数 hook の `additionalContext` をマージする仕様なので、どちらか片方だけ出しても、両方出しても安全に動作します。
-
-**検証**: この PR を merge し、harness-mem が healthy な状態で Claude Code を新 session で起動すると、1 回目の `UserPromptSubmit` から直前 claude session の `# Session Handoff` summary が `additionalContext` に載ります。daemon 不達 / `curl` / `jq` 欠損時は shell script 側で silent skip し、既存の Go hooks と governance bootstrap は壊れません。
-
-#### dual sync 修正と機械検証の追加 (Phase 49.1.1 release hardening)
-
-**今まで**: 先行 PR (`2c60972b`) では `.claude-plugin/hooks.json` だけに Phase 49 エントリを追加し、`hooks/hooks.json` (source file for development) が置き去りになっていました。`.claude/rules/hooks-editing.md` が必須としている dual sync が破れた状態で、後続の `sync-plugin-cache.sh` 実行で `.claude-plugin/` 側が `hooks/` 側から上書きされ Phase 49 が**静かに消える**リスクがありました。さらに既存の `tests/test-memory-hook-wiring.sh` は `memory-bridge` の有無しか見ておらず、この欠落を検出できませんでした。
-
-**今後**: release 直前に両 `hooks.json` を揃え、`tests/test-memory-hook-wiring.sh` を次の 3 点で拡張しました。
-- 両 `hooks.json` の `SessionStart[startup|resume]` に `memory-session-start.sh` が存在する (DoD a 配線)
-- 両 `hooks.json` の `UserPromptSubmit[*]` に `userprompt-inject-policy.sh` が存在する (DoD a 配線)
-- `UserPromptSubmit` の hook 順序が `memory-bridge` → `userprompt-inject-policy.sh` → `inject-policy` であることを jq で assert (DoD d: `additionalContext` merge が壊れない配列順)
-- `userprompt-inject-policy.sh` を空 stdin / harness-mem 不達状態で実行して valid な `{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit"}}` JSON を返すことを確認 (DoD c: silent skip)
-
-これで次回以降の dual sync 忘れは CI (`validate-plugin.sh` セクション 8) で即ブロックされます。
-
----
+- New and resumed sessions now receive the previous session's summary from harness-mem on the first prompt; the scripts existed but were never connected. This needs harness-mem to be running and `curl` and `jq` to be installed. When memory is not set up or not reachable, the step is skipped silently and other hooks continue.
 
 ## [4.3.0] - 2026-04-19
 
-### テーマ: Worker 3層防御 + harness-review fork 起動安定化 — "Arcana" 完成
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#430---2026-04-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3000)
 
-**v4.2.0 リリース後に観測された 4 つの issue (#84-#87) を一括解消するパッチリリース。Worker の自律的な品質ゲート、Reviewer 同期学習、`context: fork` skill の即時自動開始という「`/breezing` 完走時の信頼性」を大きく引き上げる 4 本柱を導入。**
+### Fixed
 
----
-
-#### 1. `/harness-review` の bare-start 硬直を解消 (#84)
-
-**今まで**: `/harness-review` を引数なしで呼ぶと `context: fork` で isolated context に入るはずが、host project の session-start rules が漏れ込み「タスクが明確ではないので指示をお待ちします」で停止することが通算 6 回観測されていました。Reviewer を起動したつもりが何も動かないまま放置される事故が起きていました。
-
-**今後**: `skills/harness-review/SKILL.md` Step 0 を再設計し、機械可読な条件分岐と禁止行動を冒頭 3 行以内に literal に配置。引数なし呼び出しでは `REVIEW_AUTOSTART: base_ref=... type=...` marker を必ず出力する契約に変更しました。同じパターンを `.claude/rules/skill-editing.md` の「`context: fork` + `disable-model-invocation: true` 時の auto-start pattern」セクションに教訓として記録し、他の fork skill でも同じ事故が再発しないようにしています。
-
-#### 2. Worker の Plans.md 書き換え事故を構造的に防止 (#85)
-
-**今まで**: Worker が「タスク完了したので cc:TODO → cc:完了 に変えておきます」という判断で Plans.md の `cc:*` マーカーを自分で書き換える事故が発生していました。Plans.md の状態管理は Lead の専権事項ですが、Worker 契約に明文化されていなかったため Opus 4.7 の literal instruction following のもとで守られなくなりました。また、`~/.claude/plugins/` のような別リポジトリを Worker worktree 内にチェックアウトして embedded git repo を作ってしまうケースも観測されていました。
-
-**今後**: `agents/worker.md` に 3 つの NG rule を明示的に追加しました。
-- **NG-1**: `Plans.md` の `cc:*` status column を書き換えない
-- **NG-2**: worktree 内に別 git repo を clone しない（embedded repo 禁止）
-- **NG-3**: nested spawn を行わない（Advisor を直接呼ばず `advisor-request.v1` で Lead 経由）
-
-違反検知を `hooks/pre-tool-use.sh` に実装し、Write/Edit 系ツール呼び出しの段階で regex が `cc:(TODO|WIP|完了|不要)` を検出したら即 deny、embedded repo 検知は `git rev-parse --show-toplevel` と worktree path の一致確認で行います。これにより「うっかり書き換え」が技術的に不可能になります。
-
-#### 3. Worker の `ready_for_review` に Reviewer 品質の self-check を義務化 (#86)
-
-**今まで**: Worker が `ready_for_review` を返した時点で Reviewer に投げていましたが、Worker が「やった気」で投げた低品質な提出物が Reviewer を無駄に消費するパターンが多発していました。`REQUEST_CHANGES` の 50% 以上が「DoD 未確認」「宣言した関数が未使用」のような Worker が事前に機械的に検知できる指摘でした。
-
-**今後**: `agents/worker.md` に `worker-report.v1` schema を導入し、完了報告時に 5 つの self-review rule (`dry-violation-none` / `plans-cc-markers-untouched` / `all-declared-symbols-called` / `dod-items-verified-with-evidence` / `no-existing-test-regression`) の `verified: boolean` と `evidence` (grep 実行結果、test log パス等) を必須フィールドに。`skills/harness-work/SKILL.md` の Phase B-3.5 に Lead 側の機械検証ゲートを追加し、未記入または `verified: false` の rule があれば Reviewer に渡さず最大 2 回まで Worker に amend を指示します。`harness.toml` の `[worker.self_review]` で default_rules / extra_rules / max_retries_before_escalate を project 単位で上書き可能。
-
-#### 4. 同一セッション内の universal 違反を Reviewer → 次 Worker に同期 (#87)
-
-**今まで**: Reviewer が検出した NG-1 違反のような「同じ `/breezing` セッション内で他の Worker にも再発しそうな」パターンでも、次 Worker には何も伝わらず、同じ違反が複数 Worker で連続発生することがありました。session-memory に書くのは過剰（セッション終了後に残す価値がない）、何もしないと同じ指摘を Reviewer が 3-4 回繰り返すという中間的な解決が欠けていました。
-
-**今後**: `agents/reviewer.md` の `memory_updates[]` を `{text: string, scope: "universal" | "task-specific"}` 形式に拡張しました（旧文字列配列は後方互換で `task-specific` 扱い）。`scope: "universal"` で返されたものだけを Lead プロセスの in-memory 配列 `universal_violations` に蓄積し、次 Worker を spawn する際に briefing 冒頭に「🚨 同一セッションで既に検出された universal 違反（再発禁止）」セクションとして自動注入します。永続化は行わず、`/breezing` セッション終了と同時に破棄されます（`session-memory` や `decisions.md` には書かない）。
-
----
-
-#### 5. Plans.md / 運用ルール / CI
-
-- **Plans.md v2 format**: `Status` column が 5 列目（最後）に固定され、`cc:完了 [hash — note]` のような suffix を許可するパターンに統一。`hooks/pre-tool-use.sh` の regex が 8 種類の Plans.md format（cc:完了 + date、cc:不要、hash+note、DoD false positive 除外、自然文除外）を literal に通ることを retroactive validation で確認済み。
-- **opus-4-7-prompt-audit.md**: `self_review[].rule` の 5 default 列挙値と `memory_updates[].scope` の 2 列挙値を schema enum として追記。audit checklist の「output JSON の schema 名と列挙値が固定されている」条件に追加しました。
-- **MAX_REVIEWS**: 3 → 10 に拡張し、`read_contract(contract_path, ".review.max_iterations")` で project 単位の override を尊重。
-- **Role inversion**: Codex review が zombie 化または非 APPROVE を繰り返した場合、Lead (Claude) が Reviewer 役を引き継ぎ、独立検証後に cherry-pick する運用を breezing / harness-work に正式採用。
+- Bare `/harness-review` starts automatically and prints a `REVIEW_AUTOSTART:` line. Workers cannot change Plans.md status markers (a hook denies Write or Edit that rewrites `cc:` markers), clone other repositories inside a worktree, or call the advisor directly; leads relay advice. Workers must submit 5 self-checks with evidence; the lead sends incomplete reports back at most 2 times before escalating. Configure the rules in `[worker.self_review]` of `harness.toml`. Universal findings from one worker are passed to the next worker in the same `/breezing` run and discarded when it ends. Review rounds rise from 3 to 10, overridable per project. Leads may take over review when Codex review stalls.
 
 ## [4.2.0] - 2026-04-18
 
-### テーマ: Claude Code 2.1.99-110 + Opus 4.7 完全追従、plugin manifest 公式準拠移行 — "Arcana"
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#420---2026-04-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3046)
 
-**Anthropic Claude Opus 4.7 と Claude Code 2.1.99-2.1.110 の機能群に Harness を完璧に追従させ、あわせて plugin manifest を公式 plugins-reference に準拠させた大型リリース。長時間タスクの保護、guardrails の最新仕様再適合、agent/skill prompt の literal 化、リリースパス全体の堅牢化を実施。**
+### Added
 
----
+- Compaction (summarizing conversation history) is blocked while a long-running worker is active or `Plans.md` has uncommitted changes. Reviewer/advisor sessions are not blocked. This works from repository subdirectories and honors `plansDirectory` (a custom plan location).
+- `harness-session-monitor` starts automatically when the plugin is enabled. It records branch and last commit correctly inside worktrees (isolated working checkouts).
+- Prompt caching (reuse previously processed input) is opt-in via `ENABLE_PROMPT_CACHING_1H=1 claude`: retention rises from 5 minutes to 1 hour. Use 1 hour for sessions over 30 minutes, otherwise 5 minutes. `scripts/enable-1h-cache.sh` writes `export ENABLE_PROMPT_CACHING_1H=1` to `env.local`; `source env.local` passes it to Claude subprocesses.
+- Reviewer/advisor use `xhigh` (reasoning effort between `high` and `max`; `/effort xhigh` selects it). On models other than Opus 4.7, it falls back to `high`. The `harness-review` skill stays at `high` unless its caller overrides it.
+- High-resolution visual review targets up to 2576px on the short edge (3.75 MP, million pixels). Resize larger images first. Task Budgets (API spending/token limits, public beta) are not adopted in this release. Re-entry tools output JSON (structured data) only.
 
-#### 1. Claude Code 2.1.99-110 統合
+### Changed
 
-##### 1-1. PreCompact hook で長時間 Worker を保護 (v2.1.105)
+- Agents use directory discovery and monitors use `monitors/monitors.json` rather than invalid plugin manifest fields.
+- Plugin agents silently ignore frontmatter (the definition's configuration header) `permissionMode` and `hooks:`. Those agent-level settings may not have applied. This release documents the limitation in `docs/agent-frontmatter-policy.md`; it does not fix that behavior. The unsupported settings were removed in 4.6.0.
+- Opus 4.7 follows instructions literally. Harness rewrote prompts for 4 agents and 7 skills with explicit limits; custom prompts may need the same adjustment.
+- `/undo` is not used autonomously. `/ultrareview` (Claude Code's built-in review) complements Harness review and does not replace its acceptance decision.
 
-**CC のアプデ**: Claude Code に PreCompact hook が追加されました。コンテキスト圧縮が走る直前に hook が呼ばれ、`{"decision":"block"}` を返せば圧縮を止められます。長時間タスクの途中で勝手に履歴が要約されて context が壊れる事故を防ぐ仕組みです。
+### Removed
 
-**Harness での活用**: `go/cmd/harness/pre_compact.go` を新設し、(a) 長時間 Worker セッション実行中、(b) Plans.md に未コミット変更がある状態の 2 ケースで圧縮を block。Reviewer/Advisor セッションは許可。CC を repo の subdirectory から起動した場合でも `git rev-parse --show-toplevel` でリポジトリルートを正しく解決し、`plansDirectory` カスタム設定も尊重します。
-
-##### 1-2. monitors manifest を公式形式で導入 (v2.1.105)
-
-**CC のアプデ**: プラグインに `monitors/monitors.json` を置くと、セッション開始時に自動で background monitor が立ち上がるようになりました。スキーマは `name` / `command` / `description` / `when` (オプション) です。
-
-**Harness での活用**: `monitors/monitors.json` を公式形式で新設し、`harness-session-monitor` が plugin enable で auto-arm。`session.json` の git 状態取得を `git rev-parse` 経由に変更し、worktree 内 (`.git` が file の場合) でも branch / last_commit が正しく記録されます。
-
-##### 1-3. 1 時間 prompt cache を opt-in (v2.1.108)
-
-**CC のアプデ**: `ENABLE_PROMPT_CACHING_1H=1` を環境変数で渡すと、prompt cache の TTL が 5 分から 1 時間に延長され、長時間セッションのコストが大きく削減されます。
-
-**Harness での活用**: `scripts/enable-1h-cache.sh` を新設し、リポジトリの `env.local` に `export ENABLE_PROMPT_CACHING_1H=1` を冪等に追記。`source env.local` で `claude` subprocess にも継承されます。`docs/long-running-harness.md` に「セッション長 30 分超なら 1h、それ未満なら 5 分」の選択基準を明記。
-
-##### 1-4. Guardrails R01-R13 を CC 2.1.110 仕様に再適合
-
-**CC のアプデ**: v2.1.110 で `PermissionRequest` hook が `updatedInput` を返した場合に `permissions.deny` ルールが再評価されるよう修正、`PreToolUse` hook の `additionalContext` がツール失敗後も保持されるよう修正、Bash の backslash-escape / compound command / env-var prefix 経由の bypass が閉じられました。
-
-**Harness での活用**: `go/internal/guardrail/cc2110_regression_test.go` を新設し、上記 3 シナリオを 17 + 17 件のテストで回帰固定。`tests/test-guardrails-r01-r13.sh` から呼び出されます。
-
-##### 1-5. v2.1.99-110 の小機能を取り込み
-
-**CC のアプデ**: `EnterWorktree` の `path` 引数 (v2.1.105 で既存 worktree 再入)、`/recap` (v2.1.108 で away summary)、`/undo` (v2.1.108 で `/rewind` alias)、Skill tool 経由の built-in slash command 呼び出し、`disable-model-invocation: true` の skill mid-message 修正、など。
-
-**Harness での活用**:
-- `scripts/reenter-worktree.sh` を新設し、Worker spawn 自動化で既存 worktree への再入経路を提供 (stdout は JSON 単体、guidance は stderr)
-- `skills/session-memory/SKILL.md` に `/recap` の活用ガイドを追加
-- `.claude/rules/commit-safety.md` を新設し、`/undo` を agent が自律使用しない方針を明記
-- `tests/test-skill-mid-message.sh` で `disable-model-invocation: true` の skill mid-message 発火を smoke test
-
-#### 2. Opus 4.7 統合
-
-##### 2-1. Literal instruction following 対応の prompt re-tune
-
-**Opus 4.7 のアプデ**: Opus 4.6 までは「いい感じに」「必要に応じて」のような曖昧表現を暗黙に補完してくれましたが、Opus 4.7 では書かれたとおりにしか動かなくなりました。Anthropic 自身が "users need to re-tune prompts and harnesses" と明言しています。
-
-**Harness での活用**: `.claude/rules/opus-4-7-prompt-audit.md` を新設し、agents/worker.md など 4 agent + 7 skill から曖昧表現をすべて除去。リトライ上限・出力 schema・コマンド名・ファイルパスを literal に書き直し、judgment が要る箇所も具体的な閾値や対象 field で記述。
-
-##### 2-2. xhigh effort を Reviewer / Advisor で採用 (v2.1.111)
-
-**Opus 4.7 のアプデ**: `xhigh` effort が `high` と `max` の中間に追加され、`/effort xhigh` で指定できます。CC frontmatter にも書け、Opus 4.7 以外のモデルでは `high` にフォールバックします。
-
-**Harness での活用**: `agents/reviewer.md` / `agents/advisor.md` の `effort` を `xhigh` に引き上げ。`docs/effort-level-policy.md` に CC frontmatter (`low/medium/high/xhigh`) と API effort の対応マトリクスを明記。`skills/harness-review/SKILL.md` の effort は呼び出し側上書き前提のため `high` で維持。
-
-##### 2-3. Vision 2576px 高解像度フロー
-
-**Opus 4.7 のアプデ**: Vision の解像度上限が約 3 倍 (短辺 2576px / 3.75MP) に拡大されました。
-
-**Harness での活用**: `skills/harness-review/references/vision-high-res-flow.md` を新設し、PDF page review / 設計図 review / UI screenshot review の 3 シナリオを documented。`docs/opus-4-7-vision-usage.md` で「2576px 上限」「事前 sips/ImageMagick リサイズ」「PDF DPI と実効解像度の対応表」「token 消費目安」を整理。
-
-##### 2-4. /ultrareview との連携方針確定
-
-**Opus 4.7 のアプデ**: built-in `/ultrareview` (single-turn dedicated review session) が追加。
-
-**Harness での活用**: `docs/ultrareview-policy.md` を新設し、`/harness-review` (Plans.md 連動 + Codex adversarial + sprint contract 検証) との差分を表で整理。**方針 (B): `/ultrareview` は CC built-in operator entrypoint として Harness flow 外で使用、内部は `review-result.v1` 契約を維持**を確定。
-
-##### 2-5. Task Budgets (public beta) は採用見送り
-
-**Opus 4.7 のアプデ**: API に `max_input_tokens` / `max_output_tokens` / `max_cost_usd` の budget 上限指定が追加 (public beta)。
-
-**Harness での活用**: `docs/task-budgets-research.md` を新設し、既存 `max_consults` / `effort` / `maxTurns` / `/usage` の cost tab（当時の `/cost` 表記）/ plateau 検知との競合関係を整理。**本リリースでは見送り** (beta 不安定 + 既存機構で 80% カバー)。GA 昇格・実コスト超過・harness-mem 設計確定の 4 条件を再評価トリガーとして記録。
-
-#### 3. Plugin Manifest 公式準拠への移行 (Phase 45)
-
-**今まで**: `monitors` と `agents` を `.claude-plugin/plugin.json` に直接書いていましたが、公式 plugins-reference のスキーマには定義されておらず、`claude plugin validate` が `Invalid input` エラーを返していました。さらに `harness sync` を実行すると `pluginJSON` 構造体に該当 field が無いため両 block が毎回ストリップされ、過去 4 回事故が起きていました。
-
-**今後**:
-- `monitors` の SSOT は `monitors/monitors.json` (公式 schema、`name` / `command` / `description` / `when`)
-- `agents` は `agents/` ディレクトリ auto-discovery (v2.1.68+ 公式)
-- `plugin.json` から両 field を削除し、`harness sync` のリグレッション再発を `tests/test-sync-idempotent.sh` (3 回連続 sync で checksum 安定性検証 + drift 検知 + phantom field 不在確認) と `go/cmd/harness/sync_no_phantom_fields_test.go` の二段で固定
-- `claude plugin validate` の `monitors: Invalid input` / `agents: Invalid input` エラーが完全に消え、validate-plugin.sh が 40 PASS / 0 FAIL を達成
-
-#### 4. Dead config 整理
-
-**今まで**: `harness.toml` の `[telemetry]` セクション (`otel_endpoint` / `webhook_url`) を Go の `TelemetryConfig` 構造体がパースしていましたが、本体コードからは一度も参照されていませんでした。`webhook_url` は実際には env 変数 `HARNESS_WEBHOOK_URL` 経由でしか読まれず、toml に書いても何も起きないため「toml に書けば動くはず」という誤解の温床になっていました。
-
-**今後**: `[telemetry]` セクション、`TelemetryConfig` 構造体、scaffold template、関連テストすべて削除。`docs/long-running-harness.md` に「`HARNESS_WEBHOOK_URL` は env 変数として設定する」を明記。
-
-#### 5. Agent frontmatter 制限の調査記録 (Phase 46 候補)
-
-**今まで**: `agents/worker.md` などで `permissionMode: bypassPermissions` や `hooks:` を frontmatter に書いていましたが、公式 plugins-reference は plugin agent では これらを **silently ignored** すると明記しています。指定したつもりの設定が動いていなかった可能性があります。
-
-**今後**: `docs/agent-frontmatter-policy.md` を新設し、各 agent の frontmatter 監査表 + 影響範囲分析 + 修正案 3 つを記録。本リリースでは実装変更せず、Phase 46 で実機検証 → 修正の方針を確定。
-
-#### 6. Feature Table 更新
-
-`docs/CLAUDE-feature-table.md` に **v2.1.99-v2.1.110 の主要エントリ 6 件** + **Opus 4.7 詳細セクション 8 項目** を追加。各エントリに `A: 実装あり` / `C: CC 自動継承` の付加価値分類を明記し、`B: 書いただけ` は **0 件**を達成。
-
-#### 7. リリースパス強化
-
-- **PreCompact subdirectory 対応**: CC を repo subdirectory から起動した場合でも `.claude/state/locks/` と `Plans.md` をリポジトリルートで探索
-- **PreCompact plansDirectory 対応**: `.claude-code-harness.config.yaml` の `plansDirectory` 設定を尊重
-- **codex-loop phase-prefix range 復活**: `harness codex-loop start 41.1-41.4` のような phase prefix range が strict resolve で動かなくなっていたのを `resolve_range_endpoint` で復元
-- **bin/harness cross-platform shim 復元**: 配布対象の POSIX shell shim が誤って arm64 binary に上書きされていた問題を修正
-- **test-sync-idempotent 強化**: drift 検知 (pre-sync vs post-sync checksum) + cwd 独立化 + sha256 portability (shasum/sha256sum 動的検出) + sync 実行確認 (silent no-op 防止)
-- **reenter-worktree.sh stdout JSON-only**: guidance を stderr に分離し、jq などの自動化対応
-- **claude-longrun consumer 対応**: `skills/harness-plan/SKILL.md` から repo-local script の推奨を外し、`ENABLE_PROMPT_CACHING_1H=1 claude` の 1 行コマンドに変更
-- **enable-1h-cache export propagation**: `KEY=VALUE` を `export KEY=VALUE` に変更し、`source env.local` で claude subprocess にも継承
-- **release-preflight 初回 push branch 対応**: 未 push branch で `gh run list` が `[]` を返すケースを fail から warning にダウングレード
-- **Mirror sync**: harness-loop の 1h cache ブロックと harness-review の vision-high-res-flow を opencode/codex mirrors に同期
-
-#### 8. Smoke test 結果の記録
-
-`docs/smoke-test-v4.2.0.md` を新設し、validate-plugin / consistency / migration residue / Go guardrail (119 tests) / R01-R13 regression (CC2110_* 34 件) / 1h cache opt-in (9 tests) の 6 件自動テスト全 PASS を記録。手動チェックリスト 6 項目を Lead/User フォローアップとして整理。
+- `harness.toml`'s `[telemetry]` settings, `otel_endpoint` and `webhook_url`, were never used by runtime code and are removed. Set the notification destination with the environment variable `HARNESS_WEBHOOK_URL`.
 
 ### Fixed
 
-- `harness codex-loop` が sibling install から helper script を正しく見つけられない問題を修正し、resume 時に古い `cycle_error` 状態が残ったまま再開されるケースと、同じ run への二重再入で state が混線するケースを防止
-- advisor consult が timeout したときに `run-advisor-consultation.sh` が `TypeError: can't concat str to bytes` で落ち、さらに `codex-loop.sh` がその失敗を即 `task_blocked` / `cycle_error` に昇格させて loop 全体を止めていた問題を修正。timeout の partial output を bytes→str に正規化し、high-risk preflight と retry-threshold の advisor 相談は失敗しても guidance を空にして task 実行を継続する fallback を追加
+- Sync no longer restores invalid fields. `claude plugin validate` no longer reports `monitors: Invalid input` or `agents: Invalid input`. Ranges such as `harness codex-loop start 41.1-41.4` work again. The POSIX `bin/harness` shell entry point, overwritten by an arm64 binary, is restored.
+- Helper discovery from a sibling install, stale failure state on resume, and duplicate re-entry into the same run are repaired. Advisor timeouts preserve partial text. If high-risk preflight or retry-threshold consultation fails, task execution continues without advice. Missing CI results before the first push are a warning.
+
+### Security
+
+- Claude Code 2.1.110 itself re-evaluates `permissions.deny` (refusal rules) after `PermissionRequest` (the permission-request hook) returns rewritten `updatedInput`. It retains `PreToolUse`'s `additionalContext` (extra model context) after a tool fails and closes Bash bypasses using backslash escapes, compound commands, or environment-variable prefixes. Harness re-verifies its R01–R13 guardrails against these upstream changes with 34 regression checks.
+
 
 ## [4.1.1] - 2026-04-16
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#411---2026-04-16) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3170)
+
 ### Added
 
-- Advisor consult 用の設定項目（有効化、mode、相談回数上限、retry threshold、モデル指定）を `.claude-code-harness.config.yaml` / template から読めるようにし、loop / work が使う `.claude/state/advisor/` の state ファイルを自動初期化する helper と回帰テストを追加
+- Advisor settings (on or off, mode, consultation limit, retry threshold, model) are read from `.claude-code-harness.config.yaml` or the template; advisor state in `.claude/state/advisor/` is created automatically.
 
 ### Fixed
 
-- `bin/harness` がシンボリックリンク経由で起動されたときに実バイナリの配置場所を誤判定し、`harness codex-loop ...` などのサブコマンドが PATH 配置後に失敗する問題を修正
+- Symlinked command entrypoints locate their real binaries so PATH-installed loop commands work.
 
 ## [4.1.0] - 2026-04-16
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#410---2026-04-16) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3180)
+
 ### Added
 
-#### `/maintenance` スキルを復活
-
-**今まで**: `auto-cleanup-hook` が Plans.md や session-log.md の肥大化を検知すると
-「`/maintenance` で古いタスクをアーカイブすることを推奨します」と案内を出していましたが、
-`/maintenance` 本体は v3 で `harness-setup` に統合された際に削除され、ユーザーが実行しようとすると
-「存在しない」と言われる状態でした。警告を受けても対処コマンドが無い不整合が続いていました。
-
-**今後**: `skills/maintenance/SKILL.md` を再導入します。サブコマンドは
-`plans` / `session-log` / `logs` / `state` / `all` の 5 種類で、
-auto-cleanup-hook の警告メッセージに書かれた動作（Plans.md 完了タスクのアーカイブ移動、
-session-log.md の月別分割、`.claude/logs/` の古いファイル削除、`agent-trace.jsonl` のトリム）を
-単一スキル内で完結できます。自由記述の追加指示（閾値変更、除外ファイル指定、`--dry-run`）にも対応。
-
-```text
-/maintenance plans          # Plans.md のアーカイブ
-/maintenance session-log    # session-log.md を月別に分割
-/maintenance all            # 4対象を順に実行
-/maintenance plans --dry-run  # 実行せず対象だけ列挙
-```
-
-詳細な実行手順・閾値・アーカイブ先は [skills/maintenance/references/cleanup.md](skills/maintenance/references/cleanup.md) を参照。
-`harness-setup` の「Maintenance — ファイル整理」セクションは引き続き残しますが、
-実行はこのスキルに委譲されます。
-
-#### Codex ネイティブの長時間ループ実行を追加
-
-**今まで**: Codex で `$harness-loop` を使っても、Claude Code の `/loop` 体験に相当する
-「裏で長時間走り続ける実体」はありませんでした。説明や運用案内はあっても、
-Codex 側では wake-up ベースの仕組みをそのまま使えず、ユーザーは手動で再実行したり、
-別の作業メモを見ながら companion 呼び出しをつなぐ必要がありました。
-
-**今後**: `harness codex-loop` を新設し、`start` / `status` / `stop` を持つ
-Codex 専用のバックグラウンドランナーを追加します。`.claude/state/codex-loop/` に
-状態を保存しながら、未完了タスクの取得、Codex companion への委譲、レビュー、
-checkpoint 記録、plateau 判定までを 1 サイクルずつ自動で回せます。
-Codex 向けの `$harness-loop` スキルもこの実体へつながる導線に更新され、
-「案内だけある」状態から「本当に回る」状態になります。
-
-```bash
-harness codex-loop start all --max-cycles 3
-harness codex-loop status
-harness codex-loop stop
-```
+- `/maintenance` is back, answering the cleanup warnings that pointed to it. `plans` moves finished tasks to an archive, `session-log` splits session-log.md by month, `logs` deletes old files in `.claude/logs/`, `state` trims `agent-trace.jsonl`, and `all` runs these four in order. Add `--dry-run` to list targets without changing anything; thresholds and exclusions can be given in words. `harness codex-loop start all --max-cycles 3`, `status`, and `stop` run Codex task, review, and checkpoint cycles in the background, saving state in `.claude/state/codex-loop/`.
 
 ### Changed
 
-#### Codex 専用スキルの正本を `skills-codex/` で持てるように統一
-
-**今まで**: Codex だけ内容を変えたいスキルでも、整合性チェックの一部が `skills/` を
-唯一の正本として決め打ちしていました。そのため `breezing` や `harness-loop` のように
-Codex ネイティブ API 向けへ最適化した mirror を置くと、意図した差分でも
-「不一致」と判定され、release preflight の足を引っ張る状態でした。
-
-**今後**: `sync-skill-mirrors.sh` と `check-consistency.sh` の両方で、
-Codex mirror は必要に応じて `skills-codex/` を正本として解決するように揃えました。
-これにより、Claude Code 向けと Codex 向けで役割や API が違うスキルを、
-無理に 1 ファイルへ押し込まずに安全に運用できます。今回の変更では
-`harness-loop` に加えて、意図的に Codex 版を持つ `breezing` の扱いもこのルールに合わせています。
-
-#### 本体 release フローで minor / major bump を扱えるように修正
-
-**今まで**: `harness-release-internal` の説明では bump level を判定して release できる前提でしたが、
-実際の `scripts/sync-version.sh bump` は patch しか上げられませんでした。`### Added` を含む
-`[Unreleased]` でも内部スクリプト側が patch に固定されるため、minor release を切るときに
-人手の介入が必要でした。
-
-**今後**: `scripts/sync-version.sh bump [patch|minor|major]` をサポートし、
-3 点 version sync（`VERSION` / `.claude-plugin/plugin.json` / `harness.toml`）と
-CHANGELOG compare link 更新を、release の意図した上げ幅に合わせて実行できるようにしました。
+- Codex-specific skill sources remain separate from shared skills; release tooling handles major/minor bumps.
 
 ### Fixed
 
-#### Codex 配布物で `harness-review` と workflow surface を継続検証
-
-**今まで**: `codex/.codex/skills/` 側の surface は mirror やセットアップで壊れても、
-「配布ユーザーが実際に使う場所まで入っているか」を十分に自動検証できない箇所がありました。
-ローカル開発環境では見えていても、配布された Codex パッケージで
-`$harness-review` や関連 workflow が抜け落ちると、ユーザー環境で初めて気づくリスクがありました。
-
-**今後**: Codex パッケージ向けの検証を強化し、`harness-review` を含む
-主要 workflow surface が配布物として存在すること、説明 frontmatter が揃っていること、
-mirror が同期していることを release 前に機械的に確認できるようにしました。
-今回の確認でも `tests/test-codex-package.sh` と `tests/validate-plugin.sh --quick` を通して、
-配布ユーザー向けの導線が維持されることを再確認しています。
-
-#### mirror / package チェックを Codex SSOT ルールに追従
-
-**今まで**: GitHub Actions の mirror compatibility check と一部の package 検証が、
-`skills/` を唯一の正本とみなす古い前提や、削除済みスキルの残骸前提を引きずっていました。
-そのため実際の運用では正しい状態でも、CI が Codex mirror や package surface を
-誤って「不一致」と判定する場面がありました。
-
-**今後**: mirror compatibility check は repo 内の整合性ロジックへ寄せ、
-Codex 向けの `skills-codex/` 正本ルールに合わせて判定するように修正しました。
-加えて package テストも、削除したスキルを必須対象として扱わないよう整理し、
-release 前の確認が実態に沿うようになりました。
+- Package/mirror checks verify Codex review and workflow surfaces against their actual sources.
 
 ### Removed
 
-#### `allow1` スキルを削除
-
-**今まで**: `allow1` は配布対象の mirror や検証ルールの周辺に断片的に残っており、
-本体の release / package / mirror check から見ると「存在しているのか、開発用なのか」が
-分かりにくい状態でした。今回の Codex / package まわりの整理でも、
-この中途半端な残り方が CI の誤判定原因になっていました。
-
-**今後**: `skills/allow1` と `codex/.codex/skills/allow1` を削除し、
-関連する ignore / mirror / package テストの特例も取り除きました。
-これにより、配布物と検証ルールの両方から `allow1` が完全に消え、
-今後の release で不要な分岐を抱えずに済みます。
+- The `allow1` skill is removed from distribution and checks.
 
 ## [4.0.4] - 2026-04-14
 
-### テーマ: marketplace 配布でプラットフォームバイナリが届かない致命的バグを修正
-
-**`/plugin marketplace add` で harness を入れた linux-amd64 / darwin-arm64 ユーザーで、Go 製の hook エンジン本体が配布物に含まれておらず `platform not supported` エラーが発火していた問題を解消。v4.0.4 からは `bin/harness-{darwin-arm64,darwin-amd64,linux-amd64}` を git tracked として同梱する。**
-
----
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#404---2026-04-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3295)
 
 ### Fixed
 
-#### プラットフォームバイナリが marketplace 配布に含まれていなかった問題
-
-**今まで**: `bin/harness-{darwin-arm64,darwin-amd64,linux-amd64}` は `bin/.gitignore` で untrack されており、
-GitHub Release の assets にだけ上がっていました。しかし Claude Code の marketplace 配布は
-**git clone ベース**（`/plugin marketplace add <owner>/<repo>` が裏で git clone する）のため、
-Release assets は届きません。結果として linux-amd64 (WSL2) や darwin-arm64 (Apple Silicon) で
-harness を入れたユーザーは Go 製の hook エンジン本体が存在せず、
-全ての PostToolUse / PreToolUse hook が `platform not supported: <os>-<arch>` で空振りしていました
-（[#75](https://github.com/Chachamaru127/claude-code-harness/issues/75), [#76](https://github.com/Chachamaru127/claude-code-harness/issues/76)）。
-shim 側のフェイル挙動は直前の fix（df1780f3）でエラー出力こそ止めましたが、ガードレール本体は依然として
-動いていない状態でした。
-
-**今後**: `bin/.gitignore` からプラットフォームバイナシを除外し、3 プラットフォーム分のバイナリを
-git tracked として同梱します（合計 ~32MB）。marketplace 配布、git clone、plugin update のいずれの経路でも
-harness のガードレールエンジンが即座に稼働します。バイナリは `-ldflags="-s -w"` で strip 済み・
-modernc.org/sqlite (pure Go) 使用で CGO 不要のため、サイズは最小化されています。
-開発者がバイナリを更新する場合は `cd go && bash scripts/build-all.sh` を実行して commit してください。
-
-#### 配布物の正常化 — hook shim のフェイル挙動修正と未参照画像の untrack
-
-**今まで**: `bin/harness` shim がプラットフォーム非対応時に `{"decision":"approve","reason":"..."}` を stderr に出して `exit 1` していました。CC のフック契約では JSON は stdout に出すべきで、stderr + exit 1 は「失敗かつ出力は診断扱い」と解釈されるため、対応バイナリのない環境では hook が壊れる扱いになっていました。加えて、shim が stdout に固定 JSON を返す設計は、`hook permission` / `hook session-start` / `doctor` / `sync` 等の呼び出しで**プロトコル不一致の偽成功**を起こすリスクがありました。
-
-さらに `docs/images/` には README から参照されない画像（`hokage-back.jpg` 2.0MB、`hokage-silhouette.jpg` 1.7MB）が tracked のまま配布されていて、git clone で全ユーザーに届く状態でした。
-
-**今後**:
-
-- `bin/harness` shim を **stdout 無出力 + stderr 診断 + exit 0** に変更。未対応プラットフォームでは stdout が空のため、どの hook スキーマでも「decision 未指定」として扱われ、CC の通常フローを壊しません。`doctor` 等の非 hook コマンドも無音で no-op になります。
-- `docs/images/` に allowlist 形式の `.gitignore` を導入し、README が参照する `claude-harness-logo-with-text.png` と `hokage/hokage-hero.jpg` のみ tracked に残しました。残り 2 ファイル（合計 3.7MB）は `git rm --cached` で untrack し、git clone での配布から外れます。ファイル自体は開発者のローカルには残ります。
+- Marketplace installs now include the hook engine for macOS Apple Silicon, macOS Intel, and Linux amd64 (about 32 MB in total). Before 4.0.4, installs from `/plugin marketplace add` had no engine, so on Linux amd64 (including WSL2) and Apple Silicon no guardrail ran at all. If you used 4.0.0 to 4.0.3 from the marketplace, update. Windows was not included in this release. Inference (high confidence): on a platform without a binary, hooks keep doing nothing. A missing or unsupported binary now writes a diagnostic to stderr and exits 0 with empty stdout, for hook and non-hook commands alike, so the session continues but no protection is active. `harness sync` keeps `./skills/`.
 
 ### Added
 
-#### `.gitattributes` による release tarball のスリム化
-
-**今まで**: `.gitattributes` が未導入のため、`git archive` で作る release tarball には `tests/` `benchmarks/` `go/` `codex/` `opencode/` `Plans.md` `CONTRIBUTING.md` などの dev-only コンテンツが全部含まれていました。
-
-**今後**: `.gitattributes` を新規作成し、dev-only パスに `export-ignore` を設定しました。`git archive` で作る tarball から以下が除外されます:
-
-- 開発管理系: `Plans.md`, `CONTRIBUTING.md`, `AGENTS.md`, `claude-code-harness.config.{example.json,schema.json,yaml}`
-- CI/開発ツール: `.github/`, `.githooks/`
-- テスト/ベンチ/ソース: `tests/`, `benchmarks/`, `go/`
-- 他 IDE 向けスキルミラー: `codex/`, `opencode/`, `skills-codex/`
-- 開発スクリプト: `scripts/ci/`, `scripts/release/`, `scripts/evidence/`
-- 開発 docs サブツリー: `docs/slides/`, `docs/presentation/`, `docs/design/`, `docs/research/`, `docs/notebooklm/`, `docs/social/`
-
-`docs/images/` 全体は **除外しません**（README 参照の `hokage/hokage-hero.jpg` と `claude-harness-logo-with-text.png` を保護するため）。改行コード正規化ルール（`* text=auto eol=lf`）も併せて設定。
-
-> `git clone` 配布には `.gitattributes` は効きません（これは `git archive` 専用）。clone サイズの削減は上記「未参照画像の untrack」で対応しています。
+- Lean release archives exclude development content; plugin validation checks skill paths, and version bumps add comparison links.
 
 ### Changed
 
-#### harness-release を汎用化、本体専用は harness-release-internal へ分離
-
-**今まで**: `harness-release` スキル 1 本に、汎用リリース自動化（CHANGELOG 昇格・タグ・GitHub Release）と、本体 claude-code-harness 固有の処理（`sync-version.sh` による 3 点同期、codex/opencode への mirror 同期、migration residue check、i18n ロケール切替）が混在していました。他プロジェクトに配布しても、これら本体固有のロジックが障害になったり、単に動かなかったりしていました。
-
-**今後**: スキルを 2 本に分割しました:
-
-- **`harness-release`**（汎用、配布対象）: Keep a Changelog を守るあらゆるプロジェクトで動作。単一確認ゲート UX を採用し、承認後は Pre-Gate の準備 → ファイル書き換え → commit → tag → GitHub Release publish まで中断なく自動実行。version file は `VERSION` / `package.json` / `pyproject.toml` / `Cargo.toml` の 4 エコシステムを自動検出。bump level は `[Unreleased]` の見出し（Added/Fixed/Breaking Changes 等）から推定し、ユーザー override も可能。
-- **`harness-release-internal`**（本体専用、`.gitignore` で配布除外）: 汎用スキルを薄くラップし、本体固有の preflight（residue / mirror check / validate-plugin）と finalization（mirror 同期 / 完了マーカーコミット / optional `/x-announce`）を足す。
-
-### Fixed
-
-#### harness sync が plugin.json の skills パスを ["./"] に書き戻す回帰バグを修正
-
-**今まで**: Go 製の `harness sync` コマンド（`go/cmd/harness/sync.go`）の `pluginJSON` 構造体 Skills フィールドに
-`[]string{"./"}` がハードコードされており、`sync` を実行するたびに
-`.claude-plugin/plugin.json` の `skills` フィールドを `["./"]` に書き戻していました。
-これは v4.0.3 で修正した「配布時 skill 0 件ロード問題」の修正値（`"./skills/"`）を
-静かに破壊する動作で、`sync-skill-mirrors.sh` や `harness-release` の Phase 4 が走るたびに
-v4.0.3 の fix が undo されてしまう回帰の温床でした。
-
-**今後**: ハードコード値を `[]string{"./skills/"}` に修正し、`sync_test.go` の expectation も同期。
-`harness sync` 実行後も plugin.json の skills パスが `"./skills/"` 相当を保持します。
-合わせて、plugin.json の skills フィールドは `harness sync` の出力に合わせて
-配列形式 `["./skills/"]` に正規化しました（CC 2.1.94+ は string / array 両方を受理するため動作は等価）。
-
-### Added
-
-#### 単一確認ゲートフロー
-
-**今まで**: リリース手順は Phase 0-10 の手順書で、ユーザーが phase ごとに追いかけたり、Claude が途中で判断を仰いだりする作りでした。mini-confirmation が複数あり、最後にはラバースタンプ化して確認が形骸化する問題がありました。
-
-**今後**: リリース計画（新バージョン、bump 判定理由、CHANGELOG 差分、Release notes draft、変更対象ファイル、最終アクション）を**Pre-Gate ですべてメモリ上にドラフト**し、**ユーザーに 1 回だけ提示**。承認後は中断なく全自動実行します。判断ポイントが 1 つに集約されるため、確認がラバースタンプ化せず、内容を本当に見てから yes を出せる UX になりました。
-
-#### validate-plugin.sh に plugin.json の skills パス検証を追加
-
-**今まで**: `.claude-plugin/plugin.json` の `skills` フィールドに誤ったパス（例: `["./"]`）を書いても、
-CI の `validate-plugin.sh` はそれを検出できませんでした。実際 v4.0.2 以前ではこのミスが混入しており、
-配布経路で skill が 0 件ロードされる事故をサイレントに許していました。
-
-**今後**: `validate-plugin.sh` のセクション 3 が `plugin.json` の `skills` フィールドを解析し、
-各パスの配下に `SKILL.md` が実在するかを走査します。パスが存在しない、あるいは SKILL.md が 1 件も
-見つからない場合は `fail_test` で CI を落とします。今回のような「書いただけで動かない設定」を
-PR 段階でブロックできるようになりました。
-
-#### sync-version.sh bump に CHANGELOG compare link 自動挿入を追加
-
-**今まで**: `./scripts/sync-version.sh bump` で patch バージョンを上げた後、CHANGELOG.md の
-compare link セクション（末尾の `[Unreleased]: ...` と `[x.y.z]: ...` 行）を手動で更新する必要がありました。
-更新を忘れると `scripts/ci/check-version-bump.sh` が落ちます（実際 v4.0.3 のリリース時に踏みました）。
-
-**今後**: `bump` サブコマンドが自動で `[Unreleased]` 行の比較元を新バージョンに書き換え、
-`[新バージョン]: .../compare/v<旧>...v<新>` 行を直後に挿入します。CI の release metadata check に
-一発で通るリリース手順になります。
+- Generic release supports VERSION/package.json/pyproject.toml/Cargo.toml and one reviewable confirmation before execution. Harness-specific preflight/finalization moves to its internal wrapper.
 
 ## [4.0.3] - 2026-04-13
 
-### テーマ: プラグイン配布時の skill ロード失敗を修正
-
-**`claude plugin install` や `--plugin-dir` 経由で harness を読み込んだ際、skill が 1 件もロードされない致命的なバグを修正。開発環境ではフォールバックが効いていて見逃されていた。**
-
----
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#403---2026-04-13) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3409)
 
 ### Fixed
 
-#### plugin.json の skills パス誤りでプラグイン配布時に skill が 0 件ロードされる問題
-
-**今まで**: `.claude-plugin/plugin.json` の `skills` フィールドが `["./"]` と誤って設定されており、
-プラグインルート直下を skills ディレクトリとして扱っていました。実際の `SKILL.md` は
-`skills/` サブディレクトリ配下にあるため、`claude plugin install` や
-`claude --plugin-dir /path/to/claude-code-harness` で読み込んだ場合に**プラグインの skill が 1 件も検出されない**状態でした。
-開発環境（リポジトリ直下で `claude` を起動）では `.claude/skills/` 経由のプロジェクト skill 自動検出が
-フォールバックとして働いていたため、サイレントに見逃されていました。
-
-**今後**: `skills` フィールドを `"./skills/"` に修正し、配布経路でも `/claude-code-harness:harness-work` などが
-正しく呼び出せるようになります。既にインストール済みのユーザーは `claude plugin update claude-code-harness` で
-修正版に切り替えてください。
+- Installed plugins loaded zero skills because the manifest pointed at the wrong folder. Development checkouts hid the problem. Run `claude plugin update claude-code-harness` to get the fix. A later sync could undo it until 4.0.4, so update to 4.0.4 or newer.
 
 ## [4.0.2] - 2026-04-12
 
-### テーマ: 大規模移行後の「見えない残骸」を自動検出する仕組み
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#402---2026-04-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3432)
 
-**v4.0.0 の TS→Go 全面移行後、テスト・ドキュメント・スキル定義に残った 13 件の「旧世界の参照」が偶然発見されるまで気づけなかった。今後はこの種の問題を Harness が自動的に発見し、リリース前にブロックします。**
+### Added
 
----
+- `harness doctor --residue`, PR validation, and release preflight detect known migration leftovers; historical exceptions retain old evidence without allowing active obsolete references.
 
-#### 1. Migration Residue Scanner の導入
+### Removed
 
-**今まで**: 大きな migration (v3→v4 など) の後、「削除したはずのファイルやコンセプトへの参照」がコードのあちこちに残ります。テストスクリプトが消えたファイルを grep し続ける、README が「Node.js 18+ が必要」と書いたまま、スキルの見出しに `(v3)` が残る — これらは**テストを通過し、レビューをすり抜け、ユーザーの目に触れて初めて気づく**種類のバグでした。v4.0.0 リリース後の 2 日間で 13 件がこのパターンで偶然発見されました。
-
-**今後**: `.claude/rules/deleted-concepts.yaml` に「削除済みのパスと概念」を登録し、`scripts/check-residue.sh` がリポジトリ全体をスキャンして残骸を検出します。歴史記述 (CHANGELOG 等) は allowlist で除外されるので、false positive はゼロです。
-
-3 つの検証ポイントで自動実行されます:
-- **開発中**: `bin/harness doctor --residue` で手動チェック
-- **PR ごと**: `validate-plugin.sh` のセクション 9 で自動チェック
-- **リリース前**: `harness-release` の preflight で自動ブロック
-
-```text
-$ bin/harness doctor --residue
-✓ No migration residue detected
-```
-
-#### 2. v3 残骸の最終クリーンアップ
-
-**今まで**: Scanner 導入時に発見された追加の v3 残骸 5 件 — `harness-release` SKILL.md のガードレール参照が旧 TypeScript パスのまま (3 mirror)、TS↔Go クロスバリデーションテストが TS 削除後も存続 (374 行)、Codex スキルの H1 に `(v3)` サフィックスが残存。
-
-**今後**: Scanner が検出した全件を修正。`tests/cross-validate-guardrails.sh` (TS engine 必須の dead test) を完全削除。Scanner clean state (0 件) を達成し、今後の残骸混入を自動ブロックする体制が整いました。
-
-#### 3. 運用ルールの文書化 (migration-policy.md)
-
-次回の major migration で同じ失敗を繰り返さないための 5 つのルール:
-1. 削除 PR と deleted-concepts.yaml 更新を同時に出す (遅延禁止)
-2. allowlist は歴史記述・移行ガイド・個別文脈の 3 原則で運用
-3. retroactive validation (過去 commit に遡って検出力を検証)
-4. HEAD での false positive は常にゼロを保つ
-5. CI + release preflight で merge 前に 0 件を保証
-
----
+- Remove remaining 3.x active references and document migration ownership.
 
 ## [4.0.1] - 2026-04-11
 
-### テーマ: CC 2.1.89-2.1.100 追従 — Go v4 セキュリティハードニング
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#401---2026-04-11) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3473)
 
-**CC 2.1.98 で本体が塞いだ 2 つの Bash permission bypass 脆弱性 (backslash-escape, env-var prefix) を Harness 二層目ガードレール (`go/internal/guardrail/`) にも反映。加えて CC 2.1.89 DecisionDefer ワイヤリング、CC 2.1.89 symlink 解決、CC 2.1.90 .husky 保護、CC 2.1.98 wildcard whitespace 正規化、CC 2.1.94 plugin skills field 明示化、CC 2.1.98 Monitor ツール取込を統合。24 本のセキュリティテスト追加、Go v4.0.0 リリース前の品質ゲート完了。**
+### Security
 
----
+- Harness's own permission checks now repeat fixes Claude Code made in 2.1.89 to 2.1.98, as a second layer. Commands with backslash-escaped spaces or flags are never treated as safe. Only `LANG`, `LANGUAGE`, `TZ`, `NO_COLOR`, `FORCE_COLOR`, and `LC_*` may prefix a command that is otherwise safe; any other variable makes it unsafe. Repeated spaces and tabs are normalized before checks. Protected-path checks follow symlinks; a broken or looping link is denied, a path that does not exist yet is allowed so new files can be created. `.husky/` git hooks are protected. A "defer" decision now reaches Claude Code.
 
-#### 1. Claude Code 2.1.98 統合 — セキュリティ脆弱性追従 (permission.go)
+### Changed
 
-CC 2.1.98 で本体が塞いだ 2 つの Bash permission bypass 脆弱性を Harness 二層目ガードレールにも反映。Harness は CC 本体のチェックをすり抜けた場合のセーフティネットとして動作するため、上流が塞いだ穴を Harness でも塞ぐことで defense-in-depth を保つ。
+- Review reports lead with verdict, reasons, actions, and severity, with technical data separated; at this release review output was required to be Japanese (the English default was restored in 4.12.4). Bare review chooses the last tag, then `main`, then the last 10 commits as base, and caps at 10 commits. Skill names return to `harness-*` (for example `harness-review`) after a brief `HAR:*` naming. Long-process monitor guidance is added.
 
-##### 1-1. Backslash-escaped フラグ bypass の緩和
+### Fixed
 
-**CC のアプデ**: `git\ push\ --force` のようにバックスラッシュでスペースやフラグをエスケープされたコマンドが、auto-allow 経路で read-only コマンドと誤認されて任意コード実行につながる bypass を CC 2.1.98 が修正。
-
-**Harness での活用**: `permission.go` に `hasBackslashEscape()` 関数を追加し、正規表現 `\\[\-\s]` でエスケープパターンを検出。`isSafeCommand()` の先頭で呼び出し、検出時は即 reject。`git\ status`, `git\ push\ --force`, `rm\ -rf\ /` の 3 攻撃ベクタをテストで捕捉。
-
-##### 1-2. 環境変数 prefix の allowlist
-
-**CC のアプデ**: `EVIL=x git status` のように未知の環境変数を前置して read-only コマンドを auto-allow させる bypass を CC 2.1.98 が修正。`LANG`, `TZ`, `NO_COLOR` 等のみ許可。
-
-**Harness での活用**: `permission.go` に `knownSafeEnvVars` map (LANG, LANGUAGE, TZ, NO_COLOR, FORCE_COLOR) と `stripSafeEnvPrefix()` 関数を追加。`LC_*` prefix は locale 系変数として許可。未知の変数を 1 つでも含むコマンドは safe 判定から除外。`LANG=C git status` は通し、`EVIL=x git status` や `LANG=C EVIL=x git status` は reject。
-
----
-
-#### 2. Claude Code 2.1.89 統合 — hook 機能とパス解決
-
-##### 2-1. DecisionDefer の正しいワイヤリング
-
-**CC のアプデ**: CC 2.1.89 で PreToolUse hook に `"defer"` permission decision が追加。ヘッドレスセッションで判断困難な操作に遭遇した時、セッションを保留して `-p --resume` で再評価する escape hatch。
-
-**Harness での活用**: `go/pkg/hookproto/types.go` には `DecisionDefer` 定数が定義されていたが、`go/internal/guardrail/pre_tool.go` の `PreToolToOutput()` switch case で拾われておらず、返しても CC に伝わらない既知ギャップがあった。`case hookproto.DecisionDefer:` を追加し、`PermissionDecision: "defer"` と `Reason` を出力するよう修正。Breezing ヘッドレスモードでの安全性が向上。
-
-##### 2-2. Symlink target の解決
-
-**CC のアプデ**: CC 2.1.89 で許可ルールが symlink の target を解決してチェックするよう修正。`.env` を指す symlink 経由でのアクセス bypass を塞ぐ。
-
-**Harness での活用**: `helpers.go` の `isProtectedPath()` 内部で `filepath.EvalSymlinks()` を呼び、解決後の実パスに対しても protected patterns をチェック。symlink loop や broken link で `EvalSymlinks` がエラーを返した場合は fail-safe として deny、ただし `os.IsNotExist` での「存在しないパス」は例外扱いで approve (新規ファイル作成を妨げないため)。`link-env → .env`、`link1 → link2 → .env` の 2 段 chain、symlink loop の 3 パターンをテスト。
-
----
-
-#### 3. Claude Code 2.1.90 統合 — .husky 保護
-
-##### 3-1. .husky/ protected path 追加
-
-**CC のアプデ**: CC 2.1.90 で `.husky/` ディレクトリが acceptEdits モードの protected directories に追加。git hooks の書き換えを防ぐ。
-
-**Harness での活用**: `helpers.go` の `protectedPathPatterns` に `(?:^|/)\.husky(?:/|$)` パターンを追加。Worker が bypassPermissions で動く場合も Harness 二層目で `.husky/pre-commit` 等の書き換えをブロック。
-
----
-
-#### 4. Claude Code 2.1.98 統合 — wildcard whitespace 正規化
-
-##### 4-1. 連続 whitespace の単一スペース化 (defense-in-depth)
-
-**CC のアプデ**: CC 2.1.98 で `Bash(git push -f:*)` のような wildcard 許可ルールが、実行コマンドに複数スペースやタブが含まれる場合にマッチしない問題を修正。
-
-**Harness での活用**: `helpers.go` に `normalizeCommand()` 関数を追加し、`\s+` を単一スペースに正規化 + TrimSpace。`hasForcePush`, `hasDangerousRmRf`, `hasSudo`, `hasDangerousGitBypassFlag`, `hasProtectedBranchResetHard`, `hasDirectPushToProtectedBranch` の 6 ルールヘルパー全てで呼び出し、仕様より厚い defense-in-depth を実現。`git  push  --force` (複数スペース) と `git\tpush\t-f` (タブ) も確実にブロック。
-
----
-
-#### 5. Claude Code 2.1.94 統合 — plugin skills field 明示化
-
-##### 5-1. plugin.json の skills field 宣言
-
-**CC のアプデ**: CC 2.1.94 で plugin skill の invocation name が frontmatter `name` 基準になる仕様変更。`"skills": ["./"]` で宣言することで、インストール方法を跨いで安定した名前を持つ。
-
-**Harness での活用**: `.claude-plugin/plugin.json` に `"skills": ["./"]` フィールドを追加。CC は以前から skills ディレクトリを auto-discover していたが、この明示宣言により CC 2.1.94 以降の spec に完全準拠。既存 32 スキル全ての invocation 名は変わらず後方互換。
-
----
-
-#### 6. Claude Code 2.1.98 統合 — Monitor ツール取込
-
-##### 6-1. 長時間プロセスの stdout ストリーミング監視
-
-**CC のアプデ**: CC 2.1.98 で Monitor ツールが追加。バックグラウンド実行中のシェルプロセスの stdout 各行を逐次通知として Claude に届ける仕組み。ポーリング型より低レイテンシ・低トークン消費。
-
-**Harness での活用**: `breezing`, `harness-work`, `ci`, `deploy`, `harness-review` の 5 スキルの `allowed-tools` に `Monitor` を追加。`breezing` SKILL.md に「Monitor ツール活用ガイド」節を新設し、Worker 監視 (Agent 層が完了通知するため不要) vs シェルプロセス監視 (Monitor 推奨) の使い分けを明記。具体例として `gh run watch`, `go test ./... -v`, `codex-companion.sh watch <job-id>` を列挙。`docs/CLAUDE-feature-table.md` に Monitor 行を追加し付加価値列に "A: 実装あり" と記載 (`.claude/rules/cc-update-policy.md` の「書いただけ検出」対象外)。mirror スキル (codex/.codex/skills/, opencode/skills/) も同期。
-
----
-
-#### 7. セキュリティテスト強化 + R12 test assertion 同期
-
-**今まで**: ガードレールテストは R01-R13 の基本ケース中心で、backslash escape や env-var prefix のような attack vector を具体的に表現するテストは無かった。また `c101efc8` で R12 を warn → deny にアップグレードした際、Go 側のテスト assertion が warn を期待したまま残存しており、Phase 38 開始時点でベースラインが既に 2 件 failing。
-
-**今後**: Phase 38 で以下の 24 本のテストを追加し、R12 test assertion も同期:
-- `permission_test.go`: 8 本 (backslash escape 3 + env-var allowlist 5)
-- `pre_tool_test.go`: 8 本 (DecisionDefer 出力検証、新規ファイル)
-- `helpers_test.go`: 13 本 (.husky + symlink 解決 + loop fail-safe、新規ファイル)
-- `rules_test.go`: 3 本 (whitespace 変種での force-push) + R12 assertion 3 件更新
-
-攻撃者視点のテスト (実際に試されうる入力) を表現することで、将来的なリファクタリングで退行を即座に検知可能に。`go test ./...` 全 12 パッケージ PASS。
-
----
-
-### テーマ: Phase 39 — レビュー体験改善 + インフラ根本修正
-
-**Phase 38 完了後の独立レビューで発見した改善機会を全て解消。`/harness-review` の出力を非専門家にも読めるよう再設計、`harness sync` の plugin.json auto-revert を根本修正、v3 時代のテスト参照を v4 Go 実装に同期、v3 cleanup 残骸を除去。12 件の改善が事後的に追加され、v4.0.1 リリース前の品質ゲートを完遂。**
-
----
-
-#### 8. `/harness-review` を非専門家にも読めるレビュー体験に再設計
-
-**今まで**: `/harness-review` の出力は英語混じりの JSON 中心で、結論や主要指摘が JSON の奥深くに埋もれていました。非専門家が読むと「APPROVE って何?」「結局どうすればいいの?」で止まってしまい、技術者向けのツールという印象でした。引数なしの `/harness-review` bare 呼び出しも「タスクが不明です、指示を待ちます」で止まっていました。
-
-**今後**: レビュー出力を **情報粒度 MID / 認知負荷 MIN** を軸に全面再設計しました。
-
-- **判定を冒頭に 1 行で**: `✅ 合格 (APPROVE) — 10 commits 全てがテストを通過し、リリース可能な品質です` のように、判定+理由を最上段に配置
-- **「✨ 良かったところ」セクション必須化**: 2-3 件の具体的な評価点を平易な日本語で。非専門家への安心材料として機能(技術者レビューにはない観点)
-- **「⚠️ 気になったところ」は 4 段構造**: 日本語タイトル → 問題(平易な説明) → 対応(具体的なアクション) → 重要度(🔴 致命的 / 🟠 重要 / 🟡 軽微 / 🟢 推奨、日本語+絵文字) → 技術的位置(開発者向け、隔離)
-- **JSON は「📦 詳細データ」セクションに降格**: 「非専門家は読み飛ばし可」と明記
-- **bare 呼び出し対応**: 引数なし `/harness-review` で自動的に Code Review が開始する Step 0 を追加。`git describe --tags` → `main` → `HEAD~10` の fallback chain で BASE_REF を自動決定
-- **スコープ上限フォールバック**: 最後のタグから 10 commits 超えている場合、自動で HEAD~10 に絞り込み(bare レビューが暴走しない)
-- **日本語出力必須化**: `context: fork` サブエージェントは親セッションの言語文脈を継承しないため、SKILL.md で明示的に CLAUDE.md ルールを引用して徹底
-
-```text
-レビュー実行例:
-/harness-review    ← 引数なしで OK
-  ↓
-結果: ✅ 合格 (APPROVE) — ...
-  ↓
-✨ 良かったところ:
-  - プラグイン設定の auto-revert バグが根本解決した
-  - ...
-⚠️ 気になったところ (1 件):
-  1. 変更履歴が未記載
-    → 対応: CHANGELOG を更新する
-    → 重要度: 🟡 軽微
-  ...
-```
-
-#### 9. `harness sync` の plugin.json 自動上書きバグを根本修正
-
-**今まで**: `.claude-plugin/plugin.json` に手動で `"skills": ["./"]` を追加しても、次に `harness sync` が実行されるたびに消える謎の現象がありました。現象を追跡すると、`harness sync` コマンド (Go 実装) が plugin.json を harness.toml から再生成する際に、`pluginJSON` 構造体に `Skills` フィールド自体が存在せず、skills field が毎回 silently drop されていたのが原因でした。Phase 38.2.1 で手動追加した設定が、その後のセッションで `harness sync` が呼ばれた瞬間に消えるので、設定が揮発する状態が続いていました。
-
-**今後**: `go/cmd/harness/sync.go` の `pluginJSON` 構造体に `Skills []string` フィールドを追加し、`generatePluginJSON()` で常に `[]string{"./"}` を出力するようハードコード。これにより `harness sync` が何度実行されても skills 設定が保持されます。`TestSync_GeneratesPluginJSON` に `skills == ["./"]` のアサーションを追加して、将来の regression を防ぎます。CC 2.1.94+ の「frontmatter name 駆動」機能が安定動作するインフラ基盤が整いました。
-
-#### 10. テスト assertion の厳密化 — 偽陽性 pass を防ぐ pipe-token 正規表現
-
-**今まで**: `tests/test-memory-hook-wiring.sh` の SessionStart matcher チェックが `contains("startup")` という **ゆるい substring 判定**に緩和されていました。現在の hooks.json (`matcher: "startup|resume"`) ではたまたま機能していましたが、将来誰かが `matcher: "startup-only"` のようなタイポを書いても「startup が含まれている」として silently pass してしまう偽陽性リスクを抱えていました。
-
-**今後**: jq クエリを pipe-token 正規表現 `test("(^|\\|)startup($|\\|)")` に厳格化。「パイプ区切りで独立したトークンとして startup が存在する」ことを要求します。6 エッジケースで検証済み:
-- `startup`, `startup|resume`, `resume|startup` → マッチ ✅
-- `startup-only`, `startup_special`, `resume|startup-only` → reject ✗
-
-これで将来のタイポが即座に test 失敗として浮上します。
-
-#### 11. 名前整合性の回復 — `HAR:*` → `harness-*` revert
-
-**今まで**: 一度 frontmatter `name` を `HAR:plan`, `HAR:review` 等の短い形式に変更しましたが、directory 名(`harness-plan/`, `harness-review/`)との不一致が原因で、レビュー出力の内部テキストが "harness-review" のまま残ったり、`skill-editing.md` の SSOT ルール (「name はディレクトリ名と一致させる」) 違反が発生する 3-way split 状態になっていました。
-
-**今後**: 18 ファイル (6 skills × 3 mirror locations) の frontmatter `name:` を `harness-*` に revert し、directory 名と一致させました。description 先頭の `HAR:` ブランド表記は維持(54 箇所、3 description fields × 18 files)しているので、スラッシュパレットで視覚的な識別性は失われません。呼び出し名・内部テキスト・ファイルパス・palette 表示が全て `harness-review` のように統一された状態に戻りました。
-
-#### 12. v3 cleanup 残骸の最終除去 + テストスクリプトの v4 migration
-
-**今まで**: v4.0.0 リリース時に削除された `core/src/guardrails/rules.ts` や README の "TypeScript guardrail engine" 記述への参照が、複数のテストスクリプトや検証ツールに残ったままでした。`validate-plugin.sh` は deleted 対象を grep してエラー、`check-consistency.sh` は README の旧文字列を期待して失敗、テストスクリプトは v3 時代の shell 呼び出しパターン (`hook-handlers/memory-bridge`) を厳密一致で検証していて v4 の Go バイナリ呼び出し (`bin/harness hook memory-bridge`) を認識できず、合計 **8 件の false negative 失敗**を抱えていました。またルート直下に Agent tool の isolation エラーの副産物である 2 つの JSON 名 ghost directory、`core/` の掃除残り (node_modules + package-lock.json)、`infographic-check.png` (debug screenshot)、`.orphaned_at` (旧 session marker) が残存していました。
-
-**今後**: 以下を一括で対応:
-
-- `validate-plugin.sh`: RULES_FILE パスを `core/src/guardrails/rules.ts` から `go/internal/guardrail/rules.go` に変更、R12 expected pattern を `warn-direct-push-protected-branch` から `deny-direct-push-protected-branch` に同期 (c101efc8 で R12 が deny に格上げされた際の取り込み漏れを解消)
-- `check-consistency.sh`: README 期待文字列を `"TypeScript guardrail engine"` → `"Go-native guardrail engine"` に同期 (README 本文は v4 で既に更新済みだが、checker が古いまま)
-- `test-memory-hook-wiring.sh`: jq クエリを v3 shell パス厳密一致から v4 Go binary 形式の contains match に migrate、agent-type hook の null `.command` 対応も追加
-- `test-claude-upstream-integration.sh`: PermissionDenied wiring check を `permission-denied-handler` から `permission-denied` に同期 (v4 Go binary は `bin/harness hook permission-denied` 形式)
-- ルート直下から 5 件の ghost file / directory を削除
-
-結果: `validate-plugin.sh` は **36 合格 / 6 失敗 → 42 合格 / 0 失敗** に改善、`check-consistency.sh` は **2 問題 → 0 問題** に改善、ルート直下がクリーンな状態に整理されました。
-
----
+- Sync stops overwriting valid manifest settings, startup matchers reject near-miss event names, and validation/memory wiring uses the Go runtime names.
 
 ## [4.0.0] - 2026-04-09
 
-### テーマ: "Hokage" — Go ネイティブフックエンジンへの全面移行
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#400---2026-04-09) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3643)
 
-**フック実行パスを bash → Node.js → TypeScript の3段ロケットから Go バイナリ直接呼び出しに統一。Node.js ランタイム依存を完全排除し、コールドスタートを ~300ms → ~10ms に短縮。全37シェルハンドラを Go に移植完了。**
+### Breaking Changes
 
----
+- Hooks now call a bundled Go program (`bin/harness hook ...`) instead of shell and Node scripts. Run `harness sync` to regenerate hook files; the old `run-hook.sh` wrapper is gone. Node is no longer required for hooks. Direct push to protected branches changes from a warning to a block (later relaxed to a confirmation in 4.5.0). Custom hooks that called the old shell scripts must be pointed at the new commands.
 
-#### 1. Go ネイティブフックエンジン
+### Added
 
-**今まで**: フック実行は `bash shim → node → TypeScript guardrail engine` の3段階で動作していた。
-各フック呼び出しごとに Node.js プロセスが起動し、コールドスタートに ~300ms かかっていた。
-`better-sqlite3` の Node.js バージョン依存問題（Node 24 で壊れる等）もあり、
-`optionalDependencies` で逃げる必要があった。
-
-**今後**: Go バイナリ `bin/harness` がフックエントリーポイントになり、
-`hooks.json` から直接 Go バイナリを呼び出す。コールドスタートは ~10ms。
-Node.js ランタイムは不要になり、pure-Go SQLite (`modernc.org/sqlite`) で状態管理。
-
-```bash
-# hooks.json の変更例
-# Before: "command": "bash hooks/pre-tool-use.sh"
-# After:  "command": "bin/harness hook pre-tool-use"
-
-# 移行状態の確認
-bin/harness doctor --migration
-```
-
-#### 2. 全37シェルハンドラの Go 移植
-
-**今まで**: 37本のシェルスクリプト（`hooks/*.sh`、`scripts/*.sh`）がフック処理を担当していた。
-各スクリプトが独自に `jq`、`curl`、`git` を呼び出し、エラーハンドリングが不統一。
-Windows 環境ではパス区切りやプロセスチェックで問題が頻発していた。
-
-**今後**: 全37ハンドラを `go/internal/hookhandler/` に Go で再実装。
-共通ユーティリティ（`helpers.go`）でプロジェクトルート解決、JSON I/O、Plans.md パース等を集約。
-Windows/macOS/Linux のクロスプラットフォーム対応を組み込み済み。
-
-移植されたハンドラ（主要なもの）:
-- `guardrail.go` — R01-R13 ルールエンジン（TypeScript からの移植）
-- `task_completed.go` — タスク完了時の自動レビュー・Plans.md 更新
-- `auto_test_runner.go` — テスト自動実行・結果解析
-- `ci_status_checker.go` — CI ステータス監視・ポーリング
-- `session_auto_broadcast.go` — セッション間メッセージブロードキャスト
-- `pre_compact_save.go` — コンテキスト圧縮前の状態保存
-- `tdd_order_check.go` — TDD 順序検証
-- `breezing_signal_injector.go` — Breezing モード信号注入
-
-#### 3. harness.toml による設定統一
-
-**今まで**: プラグイン設定が `plugin.json`、`hooks.json`、`settings.json`、`.mcp.json` 等の
-5-6ファイルに分散しており、手動で同期する必要があった。
-設定の不整合（hooks.json のパスが古い、settings.json の deny が欠落等）が頻発していた。
-
-**今後**: `harness.toml` を SSOT として、`harness sync` コマンドで
-全 CC プラグインファイルを自動生成する。TOML は人間が読み書きしやすく、
-コメント付きで設定意図を記録できる。
-
-```bash
-# harness.toml を編集した後
-bin/harness sync
-
-# 自動生成されるファイル:
-#   .claude-plugin/plugin.json
-#   .claude-plugin/settings.json
-#   hooks/hooks.json
-```
-
-#### 4. SQLite 状態レイヤー
-
-**今まで**: セッション状態やエージェントライフサイクルは JSON ファイルと環境変数で管理。
-複数エージェントの並行実行時にファイルロック競合やデータ消失が発生していた。
-
-**今後**: pure-Go SQLite (`modernc.org/sqlite`) による状態管理。
-WAL モードで並行読み書きに対応し、Breezing の複数 Worker が同時にステータス更新しても安全。
-`state/harness.db` にセッション・エージェント・タスク状態を一元管理。
-
-#### 5. エージェントライフサイクル管理
-
-**今まで**: Worker や Reviewer のライフサイクルは暗黙的で、
-障害時のリカバリーは手動介入が必要だった。
-
-**今後**: 10状態14遷移のステートマシンでエージェントライフサイクルを管理。
-4段階リカバリー（SelfHeal → PeerHeal → Lead → Abort）を自動実行。
-SubagentStart/Stop イベントを追跡し、`harness status` でリアルタイム監視。
-
-#### 6. クロスコンパイル・バイナリ配布
-
-**今まで**: TypeScript エンジンの実行には Node.js のインストールが前提だった。
-
-**今後**: darwin-arm64、darwin-amd64、linux-amd64 向けにクロスコンパイル。
-GitHub Release にバイナリを添付し、`npm postinstall` でプラットフォーム別バイナリを自動セットアップ。
-Node.js なしでフックが動作する。
-
-#### 7. ガードレールエンジンの Go 移植
-
-**今まで**: ガードレールルール（R01-R13）は TypeScript (`core/src/guardrails/rules.ts`) で実装。
-Go 側とのルール定義の乖離リスクがあった。
-
-**今後**: Go (`go/internal/guardrail/rules.go`) にも同等のルールを実装し、
-`tests/cross-validate-guardrails.sh` でTypeScript と Go の宣言的ルールテーブルが
-一致していることを自動検証。R12 は warn → deny に格上げ（保護ブランチへの直接 push を完全ブロック）。
-
-#### 8. harness doctor による移行ダッシュボード
-
-**今まで**: 移行状態を確認する手段がなかった。
-
-**今後**: `bin/harness doctor --migration` で、どのハンドラが Go に移行済みか、
-残存するシェルスクリプトはあるか、バイナリの整合性は正常かを一覧表示。
-初回実行時にはバイナリキャッシュの検証も行う。
-
-#### 9. harness validate による構造検証
-
-**今まで**: スキルやエージェントの frontmatter 不備は実行時まで気づけなかった。
-
-**今後**: `bin/harness validate` でスキル SKILL.md とエージェント .md の
-YAML frontmatter を静的検証。必須フィールド（name、description）の欠落、
-description のトリガーフレーズ不足を検出してレポート。
-
----
-
-### 破壊的変更
-
-| Before | After | 移行方法 |
-|--------|-------|---------|
-| `bash hooks/pre-tool-use.sh` | `bin/harness hook pre-tool-use` | `harness sync` で自動更新 |
-| Node.js ランタイム必須 | Go バイナリのみ | バイナリは GitHub Release に添付 |
-| `core/` TypeScript エンジン | `go/` Go エンジン | TypeScript は参照実装として残存 |
-| `run-hook.sh` シム | 廃止 | `hooks.json` が直接 Go を呼ぶ |
-| R12: warn (direct push) | R12: deny (direct push) | 保護ブランチへの直接 push が完全ブロックに |
+- The 37 hook handlers and the protection rules now run in Go, settings files are generated from `harness.toml` with `bin/harness sync`, and state is kept in SQLite (`state/harness.db`). New commands: `bin/harness doctor --migration` (migration status), `bin/harness validate` (skill and agent definition check), and `harness status` (agent state). Binaries were built for macOS Apple Silicon, macOS Intel, and Linux amd64 and attached to the GitHub Release. Inference (high confidence, from 4.0.4): marketplace installs did not receive these binaries until 4.0.4, so their guardrails were not running.
 
 ## [3.17.1] - 2026-04-06
 
-### テーマ: harness-mem 接続修復
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3171---2026-04-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3774)
 
-**標準インストール環境で harness-mem が見つからず、SessionStart 時の resume pack 生成が動かなかった問題を修正。**
+### Fixed
 
----
+- With harness-mem installed in its standard location `~/.harness-mem/runtime/harness-mem`, the memory bridge could not find it and exited silently, so resume context was not restored at session start. It now checks that location first, after an explicit `HARNESS_MEM_ROOT` override.
 
-#### 1. harness-mem-bridge.sh の探索パス修正
+### Changed
 
-**今まで**: `harness-mem` を標準セットアップ（`~/.harness-mem/runtime/harness-mem`）でインストールした環境で、
-`harness-mem-bridge.sh` がリポジトリを発見できなかった。
-探索パスに標準インストール先が含まれておらず、`memory-bridge.sh` → `harness-mem-bridge.sh` が
-`exit 0` で無言終了していた。その結果、SessionStart 時の resume pack 生成が動作せず、
-セッション再開時にコンテキストが復元されない状態になっていた。
-
-**今後**: 探索パスの最優先位置に `~/.harness-mem/runtime/harness-mem` を追加。
-標準インストール環境で harness-mem が正しく検出され、resume pack が生成される。
-
-探索順序:
-1. `$HARNESS_MEM_ROOT`（明示的オーバーライド）
-2. `~/.harness-mem/runtime/harness-mem`（標準インストール）← **追加**
-3. `../harness-mem`（開発用 sibling repo）
-4. `~/LocalWork/Code/CC-harness/harness-mem`（レガシー開発パス）
-5. `~/Desktop/Code/CC-harness/harness-mem`（レガシー開発パス）
-
----
-
-#### 2. CC 2.1.91-2.1.92 Feature Table 追加
-
-- Feature Table に CC 2.1.91〜2.1.92 の 9 エントリを追加（`disableSkillShellExecution`、Plugin `bin/`、MCP `maxResultSizeChars` 500K、subagent spawning 修正 等）
-- 全て A（ドキュメント/将来活用）または C（CC 自動継承）。B（書いただけ）は 0 件
+- Document Claude Code 2.1.91–92 features (not Harness implementations): `disableSkillShellExecution`, plugin `bin/` directories, MCP `maxResultSizeChars` up to 500K, and subagent-spawning fixes.
 
 ## [3.17.0] - 2026-04-04
 
-### テーマ: Feature Table 整合性回復 + upstream 統合 + Claude/Codex parity 強化
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3170---2026-04-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3807)
 
-**Feature Table の「書いてあるが動かない」を全て解消し、CC 2.1.87-2.1.90 の新機能を取り込み、Claude/Codex 両文脈で Harness の信頼性と活用度を引き上げたリリース。**
+### Added
 
----
+- `harness-review --dual` runs Claude and Codex reviewers in parallel and merges their verdicts; if either requests changes, the result requests changes. The `dual_review` output field shows each model's verdict and why they disagreed. If Codex is unavailable, the review runs with Claude alone. Plain `harness-review` and `harness-review code` are unchanged.
+- `harness-review --security` focuses on the OWASP Top 10, authentication/authorization, and data exposure, with stricter-than-usual verdict criteria.
+- On Claude Code 2.1.89+, when auto mode's classifier refuses a command, Harness logs it to `permission-denied.jsonl` and notifies the lead if a Breezing worker was refused. A guide documents Claude Code's `defer` decision; no Harness defer rules ship yet.
+- After compaction, saved WIP task state is restored. Task-completion notifications go to Slack, Discord, or any URL only when `HARNESS_WEBHOOK_URL` is set; otherwise nothing is sent. OTel spans are sent by HTTP POST only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set; otherwise local JSONL remains. Codex workers receive effort calculated from files, dependencies, keywords, and completion criteria instead of always medium.
 
-### harness-review に --dual フラグを追加
+### Changed
 
-**Claude Reviewer と Codex Reviewer を並行実行し、異なるモデル視点でレビュー品質を向上させる `--dual` フラグを追加した。**
-
-#### 1. --dual フラグによる dual review
-
-**今まで**: `/harness-review` は Claude の Reviewer エージェントのみで実行しており、
-単一モデルの視点に限られていた。Codex のセカンドオピニオンが欲しい場合は手動で
-`scripts/codex-companion.sh review` を別途実行する必要があった。
-
-**今後**: `harness-review --dual` を実行すると、Claude Reviewer と Codex Reviewer が並行して動き、
-両方の verdict を自動マージした結果が返る。どちらかが REQUEST_CHANGES を出せば全体が REQUEST_CHANGES になる。
-Codex が利用不可の環境では Claude 単独実行に自動フォールバックするため、
-Codex のセットアップがないプロジェクトでも安全に使える。
-
-```bash
-# Claude + Codex 並行レビュー
-harness-review --dual
-
-# 既存の single-model フローは変わらない
-harness-review
-harness-review code
-```
-
-出力の `dual_review` フィールドで各モデルの判定と、判定が分かれた場合の理由を確認できる。
-
----
-
-### Claude Code 2.1.87-2.1.90 / Codex 0.118 統合
-
-（auto mode 拒否追跡と Breezing 安全弁の追加。CC 側のフック修正を活かしてガードレール信頼性を向上）
-
-#### 1. PermissionDenied hook による auto mode 拒否追跡
-
-**CC のアプデ**: auto mode classifier がコマンドを拒否した際に `PermissionDenied` フックが発火するようになった（v2.1.89）。
-`{retry: true}` を返すとモデルにリトライ可能であることを伝えられる。
-
-**Harness での活用**: `permission-denied-handler.sh` を新規実装し、拒否イベントを `permission-denied.jsonl` に telemetry 記録。
-Breezing Worker が拒否された場合は Lead に `systemMessage` で通知し、代替アプローチの検討を促す。
-`agent_id` / `agent_type` を活用して「どのエージェントが何を拒否されたか」を追跡できる。
-
-#### 2. defer permission decision のドキュメント整備
-
-**CC のアプデ**: PreToolUse フックから `"defer"` を返すとヘッドレスセッションが一時停止し、
-`claude -p --resume` で再開時にフックが再評価される（v2.1.89）。
-
-**Harness での活用**: hooks-editing.md に defer decision の設計指針を追記。
-Breezing Worker が判断困難な操作に遭遇した際の安全弁として文書化。
-具体的な defer ルール（本番 DB 書込、destructive git 等）は運用パターン蓄積後に設計予定。
-
-#### 3. PreToolUse exit 2 修正による guardrail 信頼性向上
-
-**CC のアプデ**: PreToolUse フックが JSON stdout + exit code 2 でブロックを返す際の動作が修正された（v2.1.90）。
-以前はこのパターンでブロックが正しく機能しないバグがあった。
-
-**Harness での活用**: `pre-tool.sh` は deny 時にこのパターンを使用しており、v2.1.90 以降でガードレールの deny がより確実に動作する。
-追加の実装変更は不要（CC 自動継承＋既存コードがそのまま恩恵を受ける）。
-
-#### 4. CC 自動継承の主要修正
-
-- `--resume` prompt-cache miss 修正（v2.1.90）: セッション resume 高速化
-- autocompact thrash loop 修正（v2.1.89）: 3 回連続で停止→actionable error
-- Nested CLAUDE.md 再注入修正（v2.1.89）: コンテキスト効率向上
-- SSE/transcript パフォーマンス（v2.1.90）: O(n²)→O(n) 高速化
-- PostToolUse format-on-save 修正（v2.1.90）: フック後の Edit/Write 失敗解消
-- Cowork Dispatch 修正（v2.1.87）: チーム通信安定化
-
----
-
-### Feature Table 整合性回復 + 未活用機能の実装
-
-#### 5. Feature Table の誇張修正（7 件）
-
-Feature Table で「実装済み」と誤読される記載を実態に合わせて修正。HTTP hooks→テンプレートのみ、OTel→独自 JSONL、Analytics Dashboard→計画中、LSP→CC native、Auto Mode→RP Phase 1、Slack→将来対応、Desktop Scheduled Tasks→CC native。
-
-#### 6. PostCompact WIP 復元
-
-**今まで**: コンテキスト圧縮の前に「WIP タスクがあります」と警告するが、圧縮後に復元しない。警告だけで助けない状態。
-
-**今後**: PostCompact が PreCompact で保存した WIP 情報を `systemMessage` として復元し、圧縮後もタスク状態を保持する。
-
-#### 7. Webhook 通知（TaskCompleted HTTP hook）
-
-**今まで**: Feature Table に「HTTP hooks 実装済み」と書いてあるが、hooks.json に `type: "http"` が 0 件。
-
-**今後**: `HARNESS_WEBHOOK_URL` を設定するとタスク完了時に Slack / Discord / 任意 URL に通知が飛ぶ。未設定ならサイレントスキップ（opt-in）。
-
-#### 8. セキュリティレビュー（--security）
-
-**今まで**: `/security-review` が Feature Table に記載されているが独立機能がない。
-
-**今後**: `harness-review --security` で OWASP Top 10 + 認証/認可 + データ露出に特化したレビューが起動。security-specific な verdict 判定基準で通常より厳格にチェック。
-
-#### 9. Codex Worker への effort 伝播
-
-**今まで**: Claude 側では Lead がタスク複雑度を計算して ultrathink を自動注入するが、Codex Worker は常に medium effort。
-
-**今後**: `calculate-effort.sh` がファイル数・依存関係・キーワード・DoD 条件からスコアを計算し、Codex Worker に effort を伝播。複雑なタスクで自動的に高 effort が適用される。
-
-#### 10. OTel Span 送信
-
-**今まで**: `emit-agent-trace.js` は独自 JSONL 形式。Datadog や Grafana に直接送れない。
-
-**今後**: `OTEL_EXPORTER_OTLP_ENDPOINT` を設定すると OTel Span JSON 形式で HTTP POST 送信。未設定なら既存 JSONL にフォールバック。
-
-#### 11. harness-release スキル全面改訂
-
-デグレチェックリスト、NPM 非配布の明示、日本語 i18n 対応、mirror 同期フロー、SemVer 判定基準統合、`--dry-run` / `--complete` / `--announce` モード詳細化を含む全面リライト。
+- Harness blocks commands by returning JSON with exit code 2. Claude Code before 2.1.90 did not reliably honor that block; use Claude Code 2.1.90 or later for dependable guardrail denials. Other Claude Code 2.1.87–90 fixes are inherited without extra wrappers.
+- Correct seven overstated feature claims: HTTP hooks were templates only, OTel was custom JSONL, the analytics dashboard and Slack integration were planned, LSP and desktop scheduled tasks are Claude Code native, and Auto Mode was only in its first rollout phase, not the default.
+- Release guidance covers `--dry-run`, `--complete`, and `--announce`, mirrors, semantic-version selection, a regression checklist, and states that Harness is not distributed via npm.
 
 ## [3.16.0] - 2026-04-01
 
-### テーマ: Long-running harness hardening + team/release planning surfaces
-
-**長時間実行の review / handoff / browser 検証を本線へ寄せつつ、team mode の issue bridge と release preflight で「作る前・出す前」の不確実さを減らしたリリース。**
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3160---2026-04-01) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3924)
 
 ### Added
 
-- opt-in の team mode と `scripts/plans-issue-bridge.sh` を追加し、`Plans.md` を正本のまま tracking issue / sub-issue の dry-run payload を生成できるようにした
-- `scripts/release-preflight.sh` と release preflight docs / tests を追加し、`/harness-release --dry-run` でも vendor-neutral な公開前チェックを通せるようにした
-- `harness-plan create` の optional brief ルールと `scripts/generate-skill-manifest.sh` を追加し、UI/API brief と skill surface の machine-readable manifest を生成できるようにした
+- Optional team mode: `scripts/plans-issue-bridge.sh` builds draft tracking-issue and sub-issue content for an issue tracker from Plans.md without creating issues; Plans.md stays the source of truth.
+- `/harness-release --dry-run` runs a vendor-neutral pre-release check (`scripts/release-preflight.sh`) covering working tree, changelog, environment parity, health checks, CI, and leftovers in shipped files.
+- `harness-plan create` can add optional design (UI) or contract (API) briefs; `scripts/generate-skill-manifest.sh` writes a machine-readable skill list (`skill-manifest.v1`).
 
 ### Changed
 
-- `skills-v3` の planning / release skill を更新し、team mode, pre-release verification, brief/manifest の導線を既存ワークフローへ統合した
-- 公開 skill mirror を同期し、Claude / Codex / OpenCode の各配布面で同じ planning / release surface を使える状態にそろえた
-
-#### Before/After
-
-| Before | After |
-|--------|-------|
-| `Plans.md` のタスクをチームで共有したいときも、Issue 化のルールや payload を毎回その場で考える必要があった | opt-in の team mode で、`Plans.md` から tracking issue / sub-issue の dry-run payload を安定生成できるようになった |
-| `/harness-release --dry-run` は公開前に何を確認すべきかが人依存で、repo ごとの healthcheck や CI 状態も統一的に見づらかった | vendor-neutral な preflight script が working tree, CHANGELOG, env parity, healthcheck, CI, shipped surface residual をまとめて確認するようになった |
-| UI/API タスクの brief や skill surface 一覧を機械可読で出す導線がなく、比較・監査・自動 docs 生成の入力を毎回手で作っていた | `design brief` / `contract brief` のルールと `skill-manifest.v1` の生成導線を追加し、軽量な補助資料と manifest を再利用できるようになった |
+- Planning and release guides, and the Claude/Codex/OpenCode mirrors, include these entry points.
 
 ## [3.15.0] - 2026-03-28
 
-### テーマ: Claude 2.1.80-2.1.86 統合 + Codex/OpenCode mirror 整合
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3150---2026-03-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3949)
 
-**Claude からは「軽さ」と「安全性」が一段上がり、Codex からは重いワークフローの初動品質と配布 mirror の整合性が安定。アップデート追従を、そのままではなく実運用の強さに変えたリリース。**
+The runtime effect in this historical release has not been re-tested. The [current plugin settings contract](https://code.claude.com/docs/en/plugins-reference#settings) applies only `agent` and `subagentStatusLine`; plugin-file presence alone does not prove protection was active.
 
----
+### Added
 
-#### 1. Claude の reactive hooks で、前提の変化を見失いにくくした
+- With Claude Code's TaskCreated, FileChanged, and CwdChanged hooks, Harness reminds you to re-read state after a task is created, Plans.md or rules change, or you switch worktree.
+- Heavy workflows and worker/reviewer/scaffolder agents start from completion criteria and a verification plan (`effort` and `initialPrompt` settings).
 
-**今まで**: `Plans.md` を更新したあとや、別 worktree に移ったあとでも、前の前提のまま作業を続けやすい状態でした。background task が作られても、その記録や再確認のきっかけは弱く、長い作業ほど文脈ずれが起きやすくなっていました。
+### Changed
 
-**今後**: Claude Code の `TaskCreated` / `FileChanged` / `CwdChanged` hooks を Harness に取り込み、`runtime-reactive.sh` が task 作成、Plans 更新、ルール変更、worktree 切替を拾って補助文脈を返します。作業の途中で前提が変わっても、次の一手で気づきやすくなります。
-
-```json
-{"hook_event_name":"FileChanged","file_path":"Plans.md"}
-→ "Plans.md が更新されました。次の実装やレビュー前に最新のタスク状態を読み直してください。"
-```
-
-#### 2. Claude 側の権限フローを、速さを落とさず安全寄りに調整した
-
-**今まで**: `PermissionRequest` は広めに hook が走りやすく、最終的には問題ない Bash でも毎回評価コストやノイズが乗りやすい状態でした。さらに sandbox 起動失敗時の継続や、subprocess への認証情報伝播は利用者が意識しないと見落としやすいポイントでした。
-
-**今後**: Claude Code 2.1.85 の conditional `if` field を使い、`git status`、`git diff`、`pytest`、`npm run lint` など安全寄りの Bash だけに permission hook を限定しました。あわせて `Edit|Write|MultiEdit` をそろえ、`.claude-plugin/settings.json` へ `sandbox.failIfUnavailable: true` と `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1` を追加し、軽さと安全性を両立しています。
-
-```text
-Bash(git status*) | Bash(pytest*) | Bash(npm run lint*)
-→ permission hook 対象
-
-Bash(危険コマンド)
-→ 無条件に広く hook を起こさず、既存ガードレール側で扱う
-```
-
-#### 3. Codex / Claude の重いフローで、最初から深く考えやすくした
-
-**今まで**: `harness-work`、`harness-review`、`harness-release` のような重い作業でも、最初の 1 ターンで何を優先すべきかがぶれやすく、毎回の指示の書き方によって品質が揺れやすい面がありました。
-
-**今後**: `skills-v3/`、Codex native mirror、OpenCode mirror に `effort` frontmatter を加え、`agents-v3/worker.md`、`reviewer.md`、`scaffolder.md` に `initialPrompt` を追加しました。これにより、レビューは verdict 基準から入り、実装は DoD と検証方針から入り、setup は既存資産を壊さない前提から始めやすくなります。
-
-```yaml
-effort: high
-initialPrompt: |
-  最初に対象タスク・DoD・変更候補ファイル・検証方針を短く整理し…
-```
-
-#### 4. ルール適用範囲と配布 mirror を、壊れにくく保ちやすくした
-
-**今まで**: rules の `paths:` が 1 行文字列ベースで読みにくく、複数 glob の追加時に壊れやすい形でした。また Codex/OpenCode mirror は source とずれていても、修正時の判断基準が部分的に食い違い、CI が落ちたあとに原因を追い直す必要がありました。
-
-**今後**: rules template と `scripts/localize-rules.sh` を YAML list 形式に移し、複数 glob を構造化して扱えるようにしました。さらに OpenCode build と Codex package チェックの公開スキル方針をそろえ、内部専用スキルを distribution mirror に混ぜない形で CI が green になるよう整えています。
-
-```yaml
-paths:
-  - "**/*.{test,spec}.{ts,tsx,js,jsx}"
-  - "**/tests/**/*.*"
-```
+- Using Claude Code 2.1.85's conditional `if`, the permission hook runs only for low-risk Bash such as `git status`, `git diff`, `pytest`, and `npm run lint`; existing guardrails handle dangerous commands.
+- Harness added `sandbox.failIfUnavailable: true` and `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB=1` to its plugin settings file. Claude Code does not apply sandbox or permission settings from that file, so to fail closed when the sandbox is unavailable and to scrub credentials from subprocesses, set them in your own Claude Code settings.
+- Rule path lists use structured YAML; public mirrors exclude internal-only skills.
 
 ## [3.14.0] - 2026-03-25
 
-### テーマ: クロスランタイム品質強化 + Marketplace 修正
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3140---2026-03-25) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4006)
 
-**Claude Code と Codex の品質ガードレールを統一し、Marketplace インストール時のメモリフック欠損を修正。**
+### Changed
 
----
-
-#### 1. クロスランタイム品質ガードレール統一
-
-**今まで**: Claude Code 側のガードレール（`--no-verify` 検出、保護ブランチの `reset --hard` 警告等）が Codex 側には存在せず、ランタイムによって品質基準にばらつきがありました。
-
-**今後**: `docs/hardening-parity.md` でポリシーマトリクスを定義し、Claude Code hooks と Codex CLI quality gate の両方で同じルールを適用。`validate-plugin.sh` / `validate-plugin-v3.sh` でクロスランタイムの検証を自動化。
-
-- Guardrails: `--no-verify` / `--no-gpg-sign`、保護ブランチ `git reset --hard`、`main`/`master` への直接 push 警告、保護ファイル編集警告
-- Codex parity: `codex exec` フローにランタイム契約を注入し、bypass フラグ・保護ファイル編集・シークレット混入をマージ前に検証
-
-#### 2. Codex AGENTS.md ルール詳細追加
-
-**今まで**: Codex 側の `AGENTS.md` に `.claude/rules/` の詳細が記載されておらず、CC アプデポリシーや v3 アーキテクチャへの参照が欠けていました。
-
-**今後**: `cc-update-policy.md`、`v3-architecture.md`、`versioning.md` の内容を Codex AGENTS.md に統合。Codex ユーザーもルール詳細を直接参照可能に。
+- Claude Code and Codex apply the same guardrails: skipping hooks or signing (`--no-verify`, `--no-gpg-sign`), `git reset --hard` on protected branches, direct pushes to `main`/`master`, and edits to protected files are detected and warned about; this release does not say any of them is blocked. Codex runs receive these rules and are checked for bypass flags, protected-file edits, and leaked secrets before merge. Codex's AGENTS.md now includes the Harness rule details.
 
 ### Fixed
 
-- Marketplace インストール時に `scripts/hook-handlers/memory-*.sh` が欠損し、SessionStart / UserPromptSubmit / PostToolUse / Stop フックがエラーになる問題を修正
-- メモリライフサイクルフックを単一 `memory-bridge.sh` エントリポイントに統合し、個別ラッパーパスへの依存を解消
-- `sync-plugin-cache.sh` のソース検出で `CLAUDE_PLUGIN_ROOT` がプラグインルート自体を指す場合のパス解決を修正
-- メモリフック配線と Marketplace キャッシュ同期の回帰テストを追加
+- Marketplace installs lacked the memory hook scripts, so SessionStart, UserPromptSubmit, PostToolUse, and Stop hooks errored. Memory hooks now go through one bridge script. Cache sync also resolves the plugin root correctly.
 
 ## [3.13.0] - 2026-03-25
 
-### テーマ: Codex ネイティブ対応 + レビュー品質強化 + メモリ永続化
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3130---2026-03-25) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4036)
 
-**Codex CLI からも Harness のチーム実行（breezing）が使えるようになり、AI 残骸の自動検出でレビュー品質を向上。セッション間の記憶が harness-mem に永続化され、再開時に前回の文脈を自動復元。**
+### Added
 
----
-
-#### 1. Codex ネイティブ版スキル（skills-v3-codex/）
-
-**今まで**: Codex CLI で `/harness-work` や `/breezing` を使うと、Claude Code 固有の API（`Agent()`, `SendMessage()`）が擬似コードに含まれており、Codex の LLM が正しく解釈できませんでした。「Codex では読み替えてね」という注釈があるだけで、実行時にエラーになるリスクがありました。
-
-**今後**: `skills-v3-codex/` に Codex ネイティブ版を新設。`spawn_agent` / `wait_agent` / `send_input` / `close_agent` の正しい API シグネチャで書き直し、`git worktree add` による Worker 分離、`codex exec -C/-o` による作業ディレクトリ指定と verdict 取得を実装。Codex 自身によるレビュー5ラウンドで APPROVE を取得済み。
-
-ユーザースコープ（`~/.codex/skills/`）に展開することで、どのプロジェクトからでも利用可能です。
-
-```
-~/.codex/skills/
-├── harness-work → skills-v3-codex/  [CODEX NATIVE]
-├── breezing     → skills-v3-codex/  [CODEX NATIVE]
-├── harness-plan → skills-v3/        [shared]
-└── ...他5件     → skills-v3/        [shared]
-```
-
-**Claude Code 版との主な差分**:
-
-| 項目 | Claude Code | Codex ネイティブ |
-|------|-------------|-----------------|
-| Worker spawn | `Agent(subagent_type="worker")` | `spawn_agent({message, fork_context})` |
-| 修正指示 | `SendMessage(to: agentId)` | `send_input({id, message})` |
-| Worktree 分離 | `isolation="worktree"` 自動 | `git worktree add` 手動 |
-| レビュー | Codex exec → Reviewer agent fallback | `codex exec -o <file>` のみ |
-| モード昇格 | タスク4件以上で自動 | `--breezing` 明示のみ |
-
-#### 2. AI Residuals レビューゲート（Phase 29.0）
-
-**今まで**: AI が生成した mockData, dummy, localhost, TODO などの残骸がレビューをすり抜け、「動くが出荷できない」状態のコードがマージされることがありました。
-
-**今後**: `harness-review` に 5つ目の観点「AI Residuals」を追加。`scripts/review-ai-residuals.sh` が差分を静的走査し、残骸を severity（minor/major）で分類します。テスト fixture も追加済み。
-
-```bash
-# 検出対象の例
-mockData, dummyUser, localhost:3000, TODO:, FIXME,
-test.skip, describe.skip, hardcoded API keys
-```
-
-#### 3. harness-mem セッション記憶の永続化（Phase 27.1.4-5）
-
-**今まで**: Claude のセッションを閉じると、そのセッションで学んだ文脈や決定事項が失われ、次のセッションでは一からやり直しでした。
-
-**今後**: Claude の SessionStart / UserPromptSubmit / Stop フックを harness-mem runtime に接続。セッション開始時に前回の記憶から「Continuity Briefing」を自動表示し、停止時に記憶を永続化します。
-
-- `scripts/lib/harness-mem-bridge.sh` で harness-mem API 呼び出しを抽象化
-- `session-init.sh` / `session-resume.sh` に continuity briefing 統合
-- memory lifecycle 回帰テスト（wiring, bridge, integration）を追加
+- Codex-native versions of `harness-work` and `breezing` use Codex's own agent APIs (spawn/send/wait/close); other workflows are shared with Claude. Installed in `~/.codex/skills/`, they work from any project. Differences from Claude Code: worktrees are created explicitly with `git worktree add`, review uses Codex alone with no reviewer-agent fallback, and team mode starts only with an explicit `--breezing`, never automatically.
+- `harness-review` adds a fifth perspective, AI residuals: it scans the diff for leftovers such as mock data, dummy users, `localhost` URLs, `TODO`/`FIXME`, skipped tests, and hard-coded API keys, rated minor or major.
+- With harness-mem installed, SessionStart, UserPromptSubmit, and Stop hooks save session memory and show a Continuity Briefing from the previous session at the next start.
 
 ## [3.12.0] - 2026-03-21
 
-### テーマ: work/Breezing 一連フロー自動化
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3120---2026-03-21) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4092)
 
-**スキル発動からコミット・報告まで、人手を介さず一気通貫で完走する自動化フローを実現。Codex exec によるレビューループと閾値基準付き判定で、品質と収束性を両立。**
+### Added
 
----
+- If Plans.md is missing, work creates it (`harness-plan create --ci`). Requests in the conversation such as "add" or "fix" that are not in Plans.md are appended automatically.
+- Every mode reviews after implementation: Codex first, the internal reviewer as fallback. On REQUEST_CHANGES it fixes and re-reviews up to 3 times. Only critical/major findings block approval; minor, recommendation, and out-of-scope findings do not.
+- After commit, a completion report shows what was done, before/after, changed files, and remaining Plans.md work; Breezing reports once after all tasks.
 
-#### 1. Plans.md 自動登録（Phase A）
+### Changed
 
-**今まで**: Plans.md が存在しない場合、harness-work はエラーで停止していました。
-また、会話で伝えた要件が Plans.md に載っていなくても検出されず、手動で追記する必要がありました。
-
-**今後**: Plans.md がなければ `harness-plan create --ci` を自動呼び出しして生成。
-会話からアクション動詞（「追加して」「修正して」等）を検出し、未記載タスクを v2 フォーマットで自動追記します。
-
-#### 2. Codex exec レビューループ（Phase B）
-
-**今まで**: Solo/Parallel モードにはレビューステージがなく、Worker のセルフレビューのみでした。
-Breezing モードでは Reviewer agent が独立レビューしましたが、修正ループは手動承認が必要でした。
-
-**今後**: 全モード共通で実装完了後に自動レビューを実行します。
-Codex exec（優先）→ 内部 Reviewer agent（フォールバック）の 2 段構成。
-REQUEST_CHANGES 時は自動修正→再レビュー（最大 3 回）。
-
-#### 3. レビュー閾値基準（Phase B 追加）
-
-**今まで**: 自由レビューのため、minor な改善提案でも REQUEST_CHANGES が返り、レビューループが収束しませんでした。
-
-**今後**: レビュープロンプトに 4 段階の閾値基準（critical/major/minor/recommendation）を明示的に渡します。
-critical/major のみ REQUEST_CHANGES、minor/recommendation は APPROVE。
-スコープ外の指摘（外部ツールの制約等）も verdict に影響しない設計です。
-
-#### 4. リッチ完了報告（Phase C）
-
-**今まで**: タスク完了後の報告は簡素なテキスト（Progress: Task N/M 完了）のみでした。
-
-**今後**: コミット後に視覚的サマリを自動出力します。
-「何をしたか」「何が変わるか（Before/After）」「変更ファイル」「残りの課題（Plans.md 連動）」をボックス形式で表示。
-Breezing モードでは全タスク完了後にまとめ報告。
-
-#### 5. codex exec フラグ統一
-
-**今まで**: 全スキル・スクリプトが旧フラグ `-a never`（codex-cli 0.115.0 で廃止）を使用しており、codex exec が即エラー終了していました。
-
-**今後**: 全箇所を `--full-auto` に統一。`$TIMEOUT` 展開も `${TIMEOUT:+$TIMEOUT N}` の安全パターンに修正。
-レビュー用 codex exec は `--sandbox read-only` で write 権限なし。
-
-#### 6. platform copy 完全同期
-
-**今まで**: primary の `skills/` と platform copy（`codex/.codex/skills/`, `opencode/skills/`, `skills-v3/`）が手動同期のため乖離していました。
-
-**今後**: 今回の変更で全 platform copy を primary と完全同期。
-`harness-review` の BASE_REF 対応、`breezing` の Review Policy も全 copy に反映済み。
-
-#### 7. Breezing レビューループ実装（Phase F）
-
-**今まで**: Breezing モードでは Worker が main に直接コミットしてから Reviewer がレビューしていました。
-REQUEST_CHANGES が出ても既にコミット済みで、修正ループが構造的に成立しませんでした。
-
-**今後**: Worker は worktree 内でコミットし、Lead がレビュー後に main へ cherry-pick する方式に変更。
-- Worker: `mode: breezing` で worktree 内 commit → Lead に `{commit, worktreePath}` を返す
-- Lead: Codex exec / Reviewer agent でレビュー → APPROVE なら `git cherry-pick`
-- REQUEST_CHANGES: Lead が SendMessage で Worker に修正指示 → Worker が amend → 再レビュー（最大 3 回）
-- Phase C: Lead が `git log` + Plans.md から Breezing まとめ報告を生成
-
-Worker の出力 JSON に `worktreePath` / `summary` フィールドを追加。
-Plans.md 更新は Lead が一元管理（Worker は breezing 時に Plans.md を編集しない）。
+- Breezing workers commit inside their worktree; the lead reviews, sends fixes (up to 3 rounds), and cherry-picks only approved commits. Only the lead edits Plans.md.
+- codex-cli 0.115.0 removed the `-a never` flag, so earlier Harness versions fail on every Codex call with that CLI; upgrade. Codex calls now use `--full-auto`, and review calls use a read-only sandbox. These flags match the CLI at that time and are not current permission guidance.
 
 ## [3.11.0] - 2026-03-20
 
-### テーマ: Claude Code v2.1.77〜v2.1.79 統合 + 「書いただけ禁止」品質革命
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3110---2026-03-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4161)
 
-**CC 最新版を統合し、セルフレビューで判明した「書いただけ問題」を構造的に解決。StopFailure ログ記録・通知の仕組みを追加し、Effort 動的注入・Sandbox 自動設定の設計方針を SKILL.md・エージェント定義に追加。**
-
----
-
-#### 1. Claude Code v2.1.77〜v2.1.79 統合
-
-21 件の新機能・修正を Feature Table に追加し、Harness での活用方法を文書化。
-
-##### 1-1. `StopFailure` フックイベント対応
-
-**CC のアプデ**: v2.1.78 で API エラー（レート制限 429、認証失敗 401 等）によるセッション停止失敗を捕捉する `StopFailure` イベントが追加された。
-
-**Harness での活用**: `stop-failure.sh` ハンドラーを新設し、エラー情報をログに記録（`${CLAUDE_PLUGIN_DATA}` 設定時はプロジェクト別スコープ、未設定時は `.claude/state/stop-failures.jsonl`）。Breezing Worker のレート制限による停止失敗の事後分析に活用可能。
-
-##### 1-2. PreToolUse `allow` / `deny` 優先順位の明文化
-
-**CC のアプデ**: v2.1.77 で PreToolUse フックが `allow` を返しても settings.json の `deny` ルールが優先されるセキュリティ修正が入った。
-
-**Harness での活用**: hooks-editing.md にバージョン注記を追加し、guardrail 設計時の優先順位を明文化。`deny: ["mcp__*"]` パターンが推奨に。
-
-##### 1-3. Feature Table v2.1.77〜v2.1.79 追加（21 項目）
-
-**CC のアプデ**: Output token 64k/128k 拡大、`allowRead` sandbox、Agent `resume` 廃止 → `SendMessage`、`/branch` リネーム、`${CLAUDE_PLUGIN_DATA}` 変数、Agent `effort` frontmatter 等。
-
-**Harness での活用**: CLAUDE.md Feature Table と docs/CLAUDE-feature-table.md の両方に全項目を追加。各機能の Harness での活用方法・影響を詳細記載。
-
-### Changed
-
-- session-control スキルの description を `/fork` → `/branch` に更新（v2.1.77 リネーム対応）
-- hooks-editing.md のイベント型一覧に `StopFailure`, `ConfigChange` を追加
-- hooks-editing.md に v2.1.77+ PreToolUse 優先順位と v2.1.78+ StopFailure の注記を追加
-- core/src/types.ts の `SignalType` に `stop_failure` を追加
-- `.claude-plugin/settings.json` に `mcp__codex__*` の deny ルールを追加（v2.1.78 推奨パターン）
-- `codex-cli-only.md` に settings.json deny パターンの推奨セクションを追加
-- `stop-failure.sh`, `notification-handler.sh` のステート保存パスを `${CLAUDE_PLUGIN_DATA}` 対応（フォールバック付き）
-- Worker/Reviewer エージェント定義に `effort: medium` フィールドを追加（v2.1.78 公式対応）
-- `harness-setup/SKILL.md` に環境変数リファレンス（`CLAUDE_PLUGIN_DATA`, `ANTHROPIC_CUSTOM_MODEL_OPTION` 等）を追加
+The runtime effect in this historical release has not been re-tested. The [current plugin settings contract](https://code.claude.com/docs/en/plugins-reference#settings) applies only `agent` and `subagentStatusLine`; plugin-file presence alone does not prove protection was active.
 
 ### Added
 
-#### Phase 28.0: 「書いただけ禁止」ガードレールスキル
+- On Claude Code 2.1.78+, the StopFailure hook logs sessions that fail to stop because of API errors such as rate limit 429 or authentication 401. Logs go to `${CLAUDE_PLUGIN_DATA}` when set, otherwise `.claude/state/stop-failures.jsonl`; on 429 the lead is notified. Run `scripts/show-failures.sh` for a summary by error code and time. Automatic recovery (backoff and restart) and dynamic effort are designs only, not implemented.
+- A sandbox `allowRead` example (`.env.example`, `docs/**`) was added to the plugin settings file; Claude Code does not apply sandbox settings from that file, so copy it into your own settings to use it.
 
-**今まで**: CC のアプデがあると Feature Table に転記するだけで「Harness の付加価値」にならないことがあった。3エージェント並列レビューで21項目中14項目が「書いただけ」と判明。
+### Changed
 
-**今後**: `skills/cc-update-review/`（非配布・内部専用スキル）が CC アプデ統合時に全 Feature Table 項目を A/B/C に自動分類。カテゴリ B（書いただけ）が検出されると、実装案の提示を強制する。`.claude/rules/cc-update-policy.md` でルール化。
-
-#### Phase 28.1: StopFailure 自動復旧の設計追加
-
-**今まで**: Breezing で Worker がレート制限（429）で死ぬと、ログに記録されるだけ。Lead も人間も気づかず、Worker が静かに消えていた。
-
-**今後**: `breezing/SKILL.md` に StopFailure 自動復旧フローの設計を追加。429 → 指数バックオフ（30s/60s/120s）+ `SendMessage` で Worker 自動再開。401 → ユーザー通知。500 → Plans.md にブロッカー記録。`stop-failure.sh` が 429 検出時に `systemMessage` で Lead に通知する仕組みを実装済み。
-
-#### Phase 28.2: Effort 動的注入の設計追加
-
-**今まで**: Worker/Reviewer の `effort: medium` は固定値。harness-work のスコアリング（≥3 で ultrathink）と Agent frontmatter の `effort` フィールドが接続されていなかった。
-
-**今後**: `harness-work/SKILL.md` にスコアリング → effort 注入のフロー設計を追記。`agents-v3/worker.md` に動的 effort 受け取りと事後記録の手順を追加。Worker はタスク完了時に `effort_applied`, `effort_sufficient`, `turns_used` を agent memory に記録し、次回のスコアリング精度向上に活用する方針。
-
-#### Phase 28.3: ログ可視化 + Sandbox テンプレート追加
-
-**今まで**: `stop-failures.jsonl` にログが溜まるが見る手段がない。Reviewer の sandbox 設定がなく、`.env.example` すら読めない環境もあった。
-
-**今後**: `scripts/show-failures.sh` でエラーコード別・時間帯別のサマリーを表示可能に（実装済み）。`.claude-plugin/settings.json` に `sandbox.allowRead` テンプレートを追加済み（`.env.example`, `docs/**` 等）。`harness-setup init` でプロジェクト種別に応じた sandbox 自動生成の手順を SKILL.md に追記。
-
----
-
-- `scripts/hook-handlers/stop-failure.sh` — StopFailure フックハンドラー（429 時の systemMessage 通知付き）
-- `skills/cc-update-review/SKILL.md` — CC アプデ統合の品質ガードレールスキル（非配布）
-- `.claude/rules/cc-update-policy.md` — Feature Table 追加時の品質ポリシー
-- hooks.json (両ファイル) に `StopFailure` イベント定義
-- `tests/validate-plugin.sh` に `claude plugin validate` ステップ（v2.1.77+ 利用可能時のみ実行）
-- `.claude-plugin/settings.json` に `sandbox.allowRead` テンプレート
+- Since Claude Code 2.1.77, a settings `deny` rule wins even when a hook returns `allow`; hook guidance reflects this. Claude Code renamed `/fork` to `/branch`.
+- A deny rule for legacy Codex MCP tools (`mcp__codex__*`) was added to the plugin settings file. Claude Code does not read permission rules from that file; add the rule to your own settings to block them.
+- Setup documents `CLAUDE_PLUGIN_DATA` and `ANTHROPIC_CUSTOM_MODEL_OPTION`. Worker and reviewer agents use effort `medium`.
 
 ## [3.10.6] - 2026-03-19
 
-### テーマ: プラグイン利用者向け品質改善
-
-**`claude plugin install` 後に発生する致命的エラーと UX 問題を修正。Issue #64, #65 対応。**
-
----
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3106---2026-03-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4238)
 
 ### Fixed
 
-#### 0-1. プラグインインストール後にフックが MODULE_NOT_FOUND で全滅する問題を修正（Issue #64）
-
-**今まで**: `core/dist/` が `.gitignore` で除外されていたため、`claude plugin install` した環境にコンパイル済み JavaScript が存在せず、全フック（PreToolUse / PostToolUse / PermissionRequest）が `MODULE_NOT_FOUND` で即座に失敗していた。ガードレールエンジン（R01-R09）が完全に無効化される致命的な問題。
-
-**今後**: `.gitignore` から `/core/dist/` の除外を解除し、ビルド済み JS をリポジトリに含めるように変更。プラグインインストール後すぐにフックが動作する。
-
-#### 0-2. PostToolUse HTTP hook がデフォルトでエラーを出す問題を修正（Issue #65）
-
-**今まで**: `hooks.json` に `localhost:9090` 宛のメトリクス HTTP hook がデフォルトで有効になっていた。メトリクスサーバーを立てていないユーザーは `Write`/`Edit`/`Bash`/`Task` のたびに connection refused エラーが発生し、最大5秒の遅延も生じていた。CHANGELOG では「テンプレート」と説明されていたが、実際にはアクティブだった。
-
-**今後**: HTTP hook エントリを `hooks.json` から削除し、`docs/examples/hooks-metrics-http.json` にテンプレートとして移動。デフォルト状態ではエラーが出ない。メトリクス連携を使いたいユーザーはテンプレートを参照して自分の hooks.json に追加する運用に変更。
-
-#### 0-3. 壊れたシンボリックリンク `codex-review` を削除
-
-**今まで**: `skills-v3/extensions/codex-review` が `../../skills/codex-review` を指していたが、リンク先の `skills/codex-review/` ディレクトリが存在せず、broken symlink になっていた。
-
-**今後**: 壊れたシンボリックリンクを削除。`codex-review` 機能が実装された段階で改めて追加する。
-
-#### 0-4. `plugin.json` と `marketplace.json` のライセンス不整合を修正
-
-**今まで**: `plugin.json` では `"license": "MIT"` だが、`marketplace.json` では `"license": "Proprietary"` と矛盾していた。
-
-**今後**: `marketplace.json` のライセンスを `"MIT"` に統一。
+- Plugin installs (`claude plugin install`) lacked the compiled engine, so every PreToolUse, PostToolUse, and PermissionRequest hook failed with MODULE_NOT_FOUND and the R01–R09 guardrails did not run at all. The compiled engine now ships with the plugin. If you installed the plugin on 3.0.0–3.10.5, your guardrails were not active; upgrade.
+- A metrics HTTP hook to `localhost:9090` was enabled by default, not just offered as a template. Without a metrics server, every Write, Edit, Bash, and Task call produced a connection-refused error and up to a 5-second delay. It is removed from the defaults; to use it, copy `docs/examples/hooks-metrics-http.json` into your own hooks configuration.
+- Remove a broken `codex-review` link. The license is MIT in both plugin and marketplace metadata (marketplace previously said Proprietary).
 
 ### Changed
 
-#### 1. エージェント `disallowedTools` を公式名称に統一
-
-**今まで**: Worker / Reviewer / Scaffolder の `disallowedTools` に旧名称 `[Task]` を使用していた。CC v2.1.63 で Task ツールは Agent にリネーム済みで、`Task` はエイリアスとして動作するものの、公式ドキュメントは一貫して `Agent` を使用している。
-
-**今後**: 全エージェント定義の `disallowedTools` を `[Agent]` に更新。公式ドキュメントとの一貫性を確保し、将来のエイリアス廃止に備える。
+- Agent tool restrictions use the official name `Agent` instead of the older `Task` alias.
 
 ### Added
 
-#### 2. Notification ハンドラーに `elicitation_dialog` 対応を追加
-
-**今まで**: CC v2.1.76 で追加された MCP Elicitation の通知タイプ `elicitation_dialog` が Notification ハンドラーで個別検出されていなかった。`Elicitation` フックで自動スキップは実装済みだが、Notification 側のログ検出が不足していた。
-
-**今後**: `notification-handler.sh` に `elicitation_dialog` の検出を追加。Breezing のバックグラウンド Worker で MCP Elicitation が発生した場合、`permission_prompt` と同様にログ記録される。事後分析での Elicitation 発生状況の追跡が可能になった。
-
-#### 3. `harness-ops` Output Style をプラグインコンポーネントとして追加
-
-**今まで**: Feature Table で `harness-ops` 出力スタイルに言及していたが、実際のスタイルファイルが存在しなかった。また plugin.json に `outputStyles` フィールドが未設定で、プラグイン経由での配布ができなかった。
-
-**今後**: `output-styles/harness-ops.md` を作成し、Plan/Work/Review フェーズに応じた構造化出力スタイルを定義。plugin.json に `outputStyles: "./output-styles/"` を追加し、プラグインインストール時に自動配布される。ユーザーは `/config` → Output style から `Harness Ops` を選択可能。
+- MCP question dialogs (`elicitation_dialog`) raised in background Breezing workers are logged like permission prompts.
+- The Harness Ops output style ships with the plugin. Select it with `/config` → Output style → `Harness Ops`.
 
 ## [3.10.5] - 2026-03-15
 
-### テーマ: set-locale.sh の skills-v3 対応
-
-**`set-locale.sh` が `skills-v3/` ディレクトリを処理対象外としていた不具合を修正。**
-
----
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3105---2026-03-15) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4294)
 
 ### Fixed
 
-#### 1. `set-locale.sh` が `skills-v3/` を処理しない問題
-
-**今まで**: `scripts/i18n/set-locale.sh ja` を実行しても、`skills-v3/` ディレクトリ内の SKILL.md は `description` フィールドが英語のまま残っていた。`skills/`、`codex/.codex/skills/`、`opencode/skills/` は処理されるが、v3 アーキテクチャで導入された `skills-v3/` が処理対象リストから漏れていた。
-
-**今後**: `process_skill_dir` の呼び出しに `skills-v3/` を追加。4 ディレクトリすべてが一括で切り替わるようになった。
+- `scripts/i18n/set-locale.sh ja` now also switches skill descriptions in the redesigned skill directory, which previously stayed in English.
 
 ### Changed
 
-- `.gitignore`: `.superset/`、`skills/x-announce/` を追跡対象外に追加
+- Local Superset state and announcement-development skills are excluded from tracking.
 
 ## [3.10.4] - 2026-03-15
 
-### テーマ: エージェント安全制限と Notification フック実装
-
-**エージェントの暴走を防止する `maxTurns` 安全弁を全サブエージェントに導入し、ドキュメントのみだった Notification フックの実装を完了。**
-
----
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3104---2026-03-15) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4314)
 
 ### Added
 
-#### 1. エージェント暴走防止の `maxTurns` 安全制限
-
-**今まで**: Worker / Reviewer / Scaffolder の 3 エージェントにターン上限が設定されていなかった。エージェントが無限ループや過剰な探索に陥った場合、コンテキスト窓を使い切るまで停止せず、トークンコストが制御不能になる恐れがあった。
-
-**今後**: CC 公式ドキュメントで推奨されている `maxTurns` フィールドを全エージェントの frontmatter に追加。Worker: 100（複雑な実装タスク向け）、Reviewer: 50（Read-only 分析に特化）、Scaffolder: 75（中間的な複雑度）。上限到達時は Lead が途中結果を回収して判断できる。`bypassPermissions` と組み合わせることで、暴走時の安全弁として機能する。
-
-#### 2. `Notification` フックハンドラの実装
-
-**今まで**: hooks-editing.md と Feature Table に `Notification` イベントが記載されていたが、hooks.json にハンドラが登録されていなかった。26 フックイベント中、唯一の「ドキュメントあり・実装なし」の乖離状態だった。
-
-**今後**: `notification-handler.sh` を新規作成し、hooks.json の両ファイル（source + distribution）に登録。`permission_prompt` / `idle_prompt` / `auth_success` 等の通知イベントを `.claude/state/notification-events.jsonl` にログ記録。特に Breezing のバックグラウンド Worker で発生した permission_prompt の事後分析が可能に。
-
-#### 3. `/context` コマンドを Feature Table に追加
-
-**今まで**: CC v2.1.74 で追加された `/context` コマンド（コンテキスト消費の可視化と最適化提案）が Feature Table に未記載だった。
-
-**今後**: CLAUDE.md の概要テーブルと docs/CLAUDE-feature-table.md の詳細セクションに追加。長時間 Breezing セッションでのコンパクション頻発の原因特定に有用。
+- Agent turn limits: worker 100, reviewer 50, scaffolder 75. At the limit the lead collects partial results, which caps runaway loops and token cost.
+- Notification events (`permission_prompt`, `idle_prompt`, `auth_success`) are logged to `.claude/state/notification-events.jsonl` for later diagnosis, including background Breezing permission prompts.
+- Feature docs list Claude Code 2.1.74's `/context` command, which shows context usage and helps diagnose frequent compaction.
 
 ## [3.10.3] - 2026-03-14
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3103---2026-03-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4342)
+
 ### Changed
 
-- release metadata updates are now release-only: normal PRs should leave `VERSION` and `.claude-plugin/plugin.json` untouched and record changes under `[Unreleased]`
-- pre-commit and CI now validate release metadata consistency without auto-bumping patch versions on ordinary code changes
-- README and README_ja now use the GitHub latest release badge instead of hardcoded per-version badge URLs
-- `.claude/rules/hooks-editing.md` now documents `SessionEnd` timeout guidance and `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS` so the PR61 docs fix can be merged without carrying release metadata drift
-- Codex workflow docs now standardize on `$harness-plan`, `$harness-sync`, `$harness-work`, `$breezing`, and `$harness-review`, and setup scripts archive removed legacy Harness skills from `~/.codex/skills`
+- Codex commands are `$harness-plan`, `$harness-sync`, `$harness-work`, `$breezing`, and `$harness-review`; older names such as `$work`, `$plan-with-agent`, and `$verify` are gone. `scripts/setup-codex.sh` and `scripts/codex-setup-local.sh` move Harness skills that no longer ship out of `~/.codex/skills` into a backup.
+- Hook guidance covers the SessionEnd timeout setting `CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS`.
+- For contributors: ordinary changes leave version files untouched and record entries under Unreleased; pre-commit and CI check consistency without automatic patch bumps.
 
 ### Added
 
-#### 1. Feature Table に公式ドキュメント由来の 9 機能を追加
+- In cloud sessions (`--remote`), Harness records `HARNESS_IS_REMOTE` in `CLAUDE_ENV_FILE` so other hooks can tell cloud from local.
+- Background Breezing workers skip MCP question forms they cannot answer; ordinary sessions still ask you, and results are logged. After compaction, WIP/TODO task state is restored.
+- Claude Code 2.1.76 features documented for use (not Harness implementations): `worktree.sparsePaths` for large repositories and stale-worktree cleanup, `-n`/`--name` session names, `/effort` (low/medium/high), partial results kept when a background agent is killed, and auto-compaction stopping after 3 consecutive failures.
 
-**今まで**: Claude Code 公式ドキュメント（60+ ページ）に記載されている `--remote` / Cloud Sessions、`/teleport`、`CLAUDE_CODE_REMOTE`、`CLAUDE_ENV_FILE`、Slack Integration、Server-managed settings、Microsoft Foundry、`PreCompact` hook、`Notification` hook event が Feature Table に未登録だった。
+### Breaking Changes
 
-**今後**: `docs/CLAUDE-feature-table.md` に 9 エントリを追加（概要テーブル + 機能詳細セクション）。`CLAUDE.md` にも高インパクトな 4 項目を反映。各機能の Harness での活用方法、コード例、前提条件を詳細に記述。
-
-#### 2. session-env-setup.sh にクラウドセッション検出を追加
-
-**今まで**: `session-env-setup.sh` はローカル環境前提で、クラウドセッション（`--remote` 実行時）かどうかを判定する手段がなかった。
-
-**今後**: `CLAUDE_CODE_REMOTE` 環境変数を `HARNESS_IS_REMOTE` として `CLAUDE_ENV_FILE` に永続化。他のフックハンドラがクラウド vs ローカルの条件分岐を行えるようになった。
-
-#### 3. hooks-editing.md に PreCompact / Notification イベントを追加
-
-**今まで**: hooks-editing.md の Event Types 一覧に `PreCompact` と `Notification` が記載されておらず、開発者が新しいフックを追加する際に参照できなかった。
-
-**今後**: Event Types JSON ブロックに `PreCompact`（コンテキスト圧縮前の状態保存）と `Notification`（通知発火時のカスタムハンドラ）を追加。Harness では `PreCompact` はすでに実装済み（command + agent の 2 層構成）。
-
-#### 4. Codex command surface 整理 + stale skill cleanup
-
-**今まで**: Codex 側では `$work` / `$plan-with-agent` / `$verify` など旧 command surface が文書上に残り、`~/.codex/skills` にも update 後の legacy Harness skill が残留して一覧を汚すことがあった。
-
-**今後**:
-
-- **Codex docs**: 主導線を `$harness-plan`, `$harness-sync`, `$harness-work`, `$breezing`, `$harness-review` に統一
-- **setup scripts**: `scripts/setup-codex.sh` / `scripts/codex-setup-local.sh` が、現在 ship されていない legacy Harness skill を backup へ退避
-- **test coverage**: `tests/test-codex-package.sh` と `validate-plugin-v3.sh` で `harness-sync` surface、native multi-agent 文言、legacy skill cleanup の回帰を追加
-
-#### 5. Claude Code 2.1.76 統合
-
-Claude Code 2.1.76 の新機能を Harness に統合。Feature Table のバージョン表記を `2.1.74+` → `2.1.76+` に更新。
-
-##### 5-1. MCP Elicitation への自動対応
-
-**CC のアプデ**: MCP サーバー（GitHub, Slack 等の外部ツール接続）が、タスク実行中にユーザーへ「質問」できるようになった（Elicitation）。例えば「どのリポジトリに push しますか？」のようなフォーム入力を求められる。あわせて `Elicitation`（質問前）と `ElicitationResult`（回答後）の 2 つのフックイベントが追加された。
-
-**Harness での活用**: Breezing の Worker はバックグラウンド実行のため、MCP からの質問フォームに応答できない。放置すると Worker がフリーズする。そこで `elicitation-handler.sh` を新規作成し、Breezing セッション中は elicitation を自動スキップ、通常セッションではそのまま通過してユーザーが回答する仕組みを実装。`elicitation-result.sh` で結果をログ記録。
-
-##### 5-2. PostCompact によるコンテキスト再注入
-
-**CC のアプデ**: コンテキスト圧縮（コンパクション）の**完了後**に発火する `PostCompact` フックが追加された。既存の `PreCompact`（圧縮前）と対になる。
-
-**Harness での活用**: 長時間セッションで圧縮が起きると「今どのタスクをやっているか」が薄まる問題があった。`post-compact.sh` を新規作成し、圧縮後に Plans.md の WIP/TODO タスク状態を自動で再注入。PreCompact（状態保存）→ PostCompact（状態復元）の対称構造で、作業文脈の継続性を確保。
-
-##### 5-3. Worktree の高速化と安定化
-
-**CC のアプデ**: 3 つの改善が入った。(1) `worktree.sparsePaths` 設定で巨大リポジトリの worktree 作成時に必要ディレクトリだけをチェックアウト、(2) git refs 直接読取による `--worktree` 起動高速化、(3) 中断された並列実行で残った stale worktree の自動クリーンアップ。
-
-**Harness での活用**: Breezing で複数 Worker を同時起動する際の起動時間が短縮。stale worktree の手動削除も不要に。breezing/SKILL.md と harness-work/SKILL.md にそれぞれ活用ガイドを追記。
-
-##### 5-4. セッション命名と Effort 動的制御
-
-**CC のアプデ**: `-n`/`--name` フラグでセッションに表示名を設定可能に。`/effort` コマンドでセッション中に思考の深さ（low/medium/high）を切替可能に。
-
-**Harness での活用**: Breezing セッションに `breezing-{timestamp}` 形式の名前を設定してセッション識別を容易に。harness-work の多要素スコアリング（タスク複雑度に応じた自動 effort 調整）と `/effort` 手動切替の併用が可能に。
-
-##### 5-5. バックグラウンドエージェント部分結果保持
-
-**CC のアプデ**: バックグラウンドエージェントが kill（タイムアウトや手動停止）された場合にも、途中の作業結果がコンテキストに残るようになった。以前は全損だった。
-
-**Harness での活用**: Breezing の Worker が途中停止しても、Lead が途中成果を引き継いで別 Worker に再割り当て可能に。「やり直し」コストが削減。
-
-##### 5-6. 自動コンパクション circuit breaker
-
-**CC のアプデ**: 自動コンパクションが 3 回連続失敗すると停止するサーキットブレーカーが導入。無限リトライによるトークン浪費を防止。
-
-**Harness での活用**: Harness の「3 回ルール」（CI 失敗時の 3 回制限）と同じ設計思想。長時間 Breezing での予期せぬコスト増加を防止。
-
-##### 5-7. `--plugin-dir` 破壊的変更
-
-**CC のアプデ**: `--plugin-dir` が 1 パスのみ受付に変更。複数ディレクトリは `--plugin-dir path1 --plugin-dir path2` と繰り返し指定する方式に。
-
-**Harness への影響**: Harness プラグイン単体使用では影響なし。複数プラグイン同時使用時のみ構文変更が必要。
-
----
+- With Claude 2.1.76, each `--plugin-dir` accepts one path. For several plugins repeat the flag: `--plugin-dir path1 --plugin-dir path2`. A single Harness plugin needs no change.
 
 ## [3.10.2] - 2026-03-12
 
-### テーマ: TaskCompleted finalize hardening + Claude Code 2.1.74 docs/README 整合
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3102---2026-03-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4430)
 
-**全タスク完了時点で `harness-mem` finalize を前倒しする安全化を実装し、Claude Code 2.1.74 に合わせた feature docs / README / 互換性スナップショットを release metadata まで同期。version bump 欠落で落ちていた validate-plugin も、正しい patch release として回収しました。**
+### Fixed
 
----
+- When completed tasks reach the total, TaskCompleted finalizes harness-mem once with work_completed rather than waiting for Stop. A success marker prevents duplicate finalization; unresolved session identity or unreachable API skips silently. Claude 2.1.74 documentation and release metadata are aligned.
 
-#### 1. TaskCompleted ベースの finalize を安全化
-
-**今まで**: セッションの締め処理は Stop 時点に寄っており、「最後のタスクは終わったが Stop 前に落ちた」ケースで `harness-mem` 側の完了記録が取りこぼされる余地があった。
-
-**今後**: `task-completed.sh` が「完了数 >= 総タスク数」を検出した瞬間に `work_completed` で `/v1/sessions/finalize` を一度だけ実行。`session.json` からの `session_id` / `project_name` fallback、成功 marker による idempotency、`HARNESS_MEM_BASE_URL` によるテスト可能性、API 不達時の silent skip を追加。
-
-#### 2. finalize 回帰テストを追加
-
-**今まで**: fix proposal 系テストはあっても、「最後のタスクだけ finalize」「重複 finalize しない」「session_id 未解決時は skip」を直接検証する fixture がなかった。
-
-**今後**: `tests/test-task-completed-finalize.sh` を追加し、TaskCompleted フックからの finalize 発火条件と安全条件を独立して検証。既存の `tests/test-fix-proposal-flow.sh` と合わせて、進捗制御と完了確定の両方を回帰確認できる。
-
-#### 3. Claude Code 2.1.74 docs / README / compatibility を同期
-
-**今まで**: `docs/CLAUDE-feature-table.md` は 2.1.74 機能を取り込み始めていた一方、README の機能サマリーは `2.1.71+`、互換性ドキュメントの latest verified snapshot は `2.1.69` / plugin `3.6.0` のままだった。
-
-**今後**: feature table を `2.1.74+` に統一し、README 英日と `docs/CLAUDE_CODE_COMPATIBILITY.md` を現行実測に合わせて更新。`modelOverrides`、`autoMemoryDirectory`、`CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS`、full model ID 対応など、2.1.73〜2.1.74 の主要項目をサマリーに反映。
-
-#### 4. Release metadata を 3.10.2 へ昇格
-
-**今まで**: `4239d542` はコード変更を含むのに `VERSION` / `plugin.json` / README badge / CHANGELOG が `3.10.1` のままで、GitHub Actions `validate-plugin` が version bump missing で失敗していた。
-
-**今後**: `VERSION`、`.claude-plugin/plugin.json`、README 英日の version badge、CHANGELOG compare links を `3.10.2` に揃え、patch release として publish 可能な状態に修正。
-
----
 ## [3.10.1] - 2026-03-12
 
-### テーマ: Claude Code 公式ドキュメント深層統合 — 12 機能追加 + Auto Mode rollout 整理 + SubagentStart/Stop matcher 強化
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3101---2026-03-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4463)
 
-**公式ドキュメント 60 ページの精査により発見した未追跡機能 12 項目を Feature Table に追加。Auto Mode は shipped default と rollout target を分けて整理し、SubagentStart/SubagentStop hooks には agent type 別 matcher を追加して Worker/Reviewer/Scaffolder/Video Generator の起動・停止を個別にトラッキング可能に。**
+### Added
 
----
+- SubagentStart/SubagentStop hooks match `worker`, `reviewer`, `scaffolder`, and `video-scene-generator` separately, so each role's start and stop is tracked.
+- Document Claude Code features (not Harness implementations): Chrome integration (`--chrome`, beta), language servers (`.lsp.json`), agent-team task dependencies, `--teammate-mode`, `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS`, `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`, `cleanupPeriodDays`, `/btw`, plugin CLI commands, Remote Control, and the agent `skills` field.
 
-#### 1. SubagentStart/SubagentStop matcher 強化
+### Changed
 
-**今まで**: `SubagentStart`/`SubagentStop` hooks は全エージェント一律で `subagent-tracker` を起動。team-composition.md では「SubagentStart: 未実装」と誤記載。
-
-**今後**: agent type 別の matcher（`worker`, `reviewer`, `scaffolder`, `video-scene-generator`）を追加。各エージェントの起動・停止を個別にトラッキングし、ロール別のメトリクス収集を可能に。team-composition.md の Quality Gate Hooks テーブルも実態に合わせて更新。
-
-#### 2. Feature Table に 12 機能追加
-
-**今まで**: Chrome Integration, LSP サーバー統合, Task Dependencies, `/btw`, Plugin CLI コマンド群等の公式ドキュメント記載機能が Feature Table に未登録。
-
-**今後**: 以下を Feature Table（概要テーブル + 機能詳細セクション）に追加:
-- Chrome Integration (`--chrome`, beta)
-- LSP サーバー統合 (`.lsp.json`)
-- SubagentStart/SubagentStop matcher
-- Agent Teams: Task Dependencies
-- `--teammate-mode` CLI フラグ
-- `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS`
-- `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE`
-- `cleanupPeriodDays` 設定
-- `/btw` サイドクエスチョン
-- Plugin CLI コマンド群
-- Remote Control 強化
-- `skills` フィールド in agent frontmatter
-
-#### 3. CLAUDE.md Feature Table サマリー更新
-
-**今まで**: CLAUDE.md の要約テーブルに Chrome Integration, LSP, matcher, Task Dependencies 等が含まれていなかった。
-
-**今後**: 最もインパクトの大きい 6 機能を CLAUDE.md の要約テーブルに追加。
-
-#### 4. Breezing の Auto Mode rollout を整理
-
-**今まで**: Auto Mode の説明が実装より先行し、Breezing で既定化済みのように読める状態だった。
-
-**今後**: shipped default は `bypassPermissions` のまま維持し、`--auto-mode` は互換な親セッションでのみ試す opt-in rollout として文書化する。project template / frontmatter には公式 docs に載っている `bypassPermissions` を残す。
-
----
+- The shipped default for Breezing workers remains `bypassPermissions`, which skips every permission prompt. `--auto-mode` is opt-in and only for compatible parent sessions; templates and agent definitions keep `bypassPermissions`. Documentation alone does not switch the default.
 
 ## [3.10.0] - 2026-03-11
 
-### テーマ: Claude Code ドキュメント機能 10 項目の Harness 統合 + Status Line 実装
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3100---2026-03-11) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4509)
 
-**Claude Code の公式ドキュメントに記載された新機能（Sandboxing, Model Configuration, Checkpointing, Code Review, Status Line 等）を Feature Table に統合し、Harness 専用ステータスラインスクリプトを新規追加。**
+### Added
 
----
+- Enable the two-line Harness status display with `/statusline use scripts/statusline-harness.sh`. Line 1 shows model, branch, staged/modified file counts (files selected for commit versus edited files), and agent/worktree (an isolated working checkout). Line 2 shows context usage (the model's input capacity used; yellow at 70%, red at 90%), session cost, elapsed time, and output style.
+- Guides cover Claude Code features, not Harness defaults: `/sandbox` isolates processes at the operating-system level using macOS Seatbelt or Linux bubblewrap. Introduce it in stages as a complement to `bypassPermissions` (skip permission prompts).
+- Model guidance covers `opusplan` (Opus for planning, Sonnet for execution), `CLAUDE_CODE_SUBAGENT_MODEL` (override the subagent model), and `availableModels` (restrict which models users can select).
+- Rewind with `Esc+Esc` or `/rewind`. Managed Code Review (Teams/Enterprise research preview) uses instructions in `REVIEW.md` and complements local `harness-review`.
+- Long-context guidance covers `sonnet[1m]` (Sonnet's one-million-token input window), per-model prompt caching (reuse previously processed input), and `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING` (disable automatic adjustment of reasoning effort).
 
-#### 1. Sandboxing (`/sandbox`) 統合
-
-**今まで**: Worker の Bash コマンドは `bypassPermissions` + hooks で制御していた。OS レベルのファイルシステム/ネットワーク隔離は Harness の運用ガイドに含まれていなかった。
-
-**今後**: Claude Code のネイティブ Sandboxing（macOS Seatbelt / Linux bubblewrap）を `bypassPermissions` の**補完レイヤー**として位置づけ。段階導入計画（Phase 0→1→2）を `team-composition.md` に追加。Worker の Bash に OS レベルの安全境界を段階的に導入する方針。
-
-#### 2. Model Configuration 3 機能
-
-**今まで**: Worker/Reviewer のモデルはエージェント定義の `model: sonnet` で固定。Lead も単一モデルで Plan と Execute を実行していた。
-
-**今後**:
-- **`opusplan` エイリアス**: Lead セッションで Plan 時に Opus、Execute 時に Sonnet を自動切替
-- **`CLAUDE_CODE_SUBAGENT_MODEL`**: 全サブエージェントのモデルを環境変数で一括指定（CI でのコスト削減に有用）
-- **`availableModels`**: エンタープライズ環境でのモデルガバナンス
-
-#### 3. Checkpointing (`/rewind`) 対応
-
-**今まで**: セッション中にファイル編集が期待通りでなかった場合、手動で git revert するか、最初からやり直す必要があった。
-
-**今後**: `Esc+Esc` または `/rewind` でセッション内の任意のポイントに巻き戻し可能。「ここから要約」で冗長なデバッグセッションのコンテキスト窓を選択的に回収。`harness-work` のセルフレビューフェーズでの安全な探索に活用。
-
-#### 4. Code Review (managed service) 対応
-
-**今まで**: Harness の `harness-review` はローカルエージェントによるコードレビューのみ。
-
-**今後**: Anthropic インフラ上のマルチエージェント PR レビュー（Teams/Enterprise 向け Research Preview）を Feature Table に追加。`REVIEW.md` によるレビュー固有ガイダンスの仕組みを文書化。ローカルレビュー（`harness-review`）と managed レビューは補完的な二重検査として位置づけ。
-
-#### 5. Harness Status Line スクリプト新規追加
-
-**今まで**: Claude Code の `/statusline` 機能は存在していたが、Harness 固有のステータス表示がなかった。
-
-**今後**: `scripts/statusline-harness.sh` を新規追加。以下を 2 行で常時表示:
-- Line 1: モデル名 + git ブランチ + staged/modified ファイル数 + エージェント名/ワークツリー名
-- Line 2: コンテキスト使用率バー（70% 黄、90% 赤）+ セッションコスト + 経過時間 + 出力スタイル名
-
-```bash
-# 設定方法
-/statusline use scripts/statusline-harness.sh
-```
-
-#### 6. Feature Table 拡充（10 項目追加）
-
-`docs/CLAUDE-feature-table.md` と `CLAUDE.md` サマリーに以下を追加:
-- Sandboxing (`/sandbox`)
-- `opusplan` モデルエイリアス
-- `CLAUDE_CODE_SUBAGENT_MODEL` 環境変数
-- `availableModels` 設定
-- Checkpointing (`/rewind`)
-- Code Review (managed service)
-- Status Line (`/statusline`)
-- 1M Context Window (`sonnet[1m]`)
-- Per-model Prompt Caching Control
-- `CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING`
-
----
 
 ## [3.9.0] - 2026-03-11
 
-### テーマ: Output Styles 統合 + Agent 定義強化 + Agent Teams 公式ベストプラクティス整合
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#390---2026-03-11) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4573)
 
-**Claude Code 公式ドキュメントの Output Styles / Agent Teams / エージェント frontmatter の最新仕様を Harness に反映し、運用体験を向上。**
+### Added
 
-> **Release note**: 下書きとして積み上がっていた `v3.7.3` / `v3.8.0` 相当の変更は、この `v3.9.0` 正式リリースに統合した。
+- Enable `/output-style harness-ops` to structure progress, check results, review, escalation, and at most three decision choices, with the recommendation first.
+- Agent Teams (the team execution used by `breezing`) require `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`. `teammateMode` (how teammates appear) is `auto`, `in-process`, or `tmux`. Guidance recommends 5–6 tasks per teammate and 3–5 teammates (Harness: 1–3 workers plus 1 reviewer), and requiring workers to submit a plan for approval. `TeammateIdle` (teammate idle) and `TaskCompleted` (task completed) hooks can return exit code 2 to send feedback and require further work.
 
----
+### Changed
 
-#### 1. Harness Output Style 新規追加
+- Draft v3.7.3 and v3.8.0 changes ship in this release; neither was released separately.
+- Claude Code 2.1.72 integration documents `ExitWorktree` (explicitly leave a working checkout), restored per-call Agent `model` selection, `/clear` keeping background agents, `/plan` accepting a description, and more Bash auto-approvals. Reasoning effort becomes `low`, `medium`, or `high`; `max` was removed in Claude Code 2.1.72.
+- Agent definitions declared `permissionMode: bypassPermissions` (skip permission prompts). This was a historical configuration error: 4.2.0 found plugin agents silently ignore it, and 4.6.0 removed it.
+- Claude Code 2.1.71+ documentation covers `/agents` (interactive agent management), `--agents` (define agents at launch), subagent `background` (run in the background) and `local` memory (project-local storage), `CronCreate`/`CronList`/`CronDelete` (create/list/delete scheduled tasks), `CLAUDE_CODE_DISABLE_CRON` (disable scheduling), and Desktop Scheduled Tasks.
+- Auto Mode default changes remain planned, not active in this release; its research preview was scheduled to begin on 2026-03-12.
 
-**今まで**: Plan/Work/Review の進捗報告や Quality Gate 結果のフォーマットが統一されておらず、各スキル・エージェントが独自の出力形式で報告していた。
-
-**今後**: `.claude/output-styles/harness-ops.md` を新設。`/output-style harness-ops` で有効化すると、以下が構造化されて出力される:
-- 進捗報告（実施/現在地/次アクション形式）
-- Quality Gate 結果（Build/Test/Lint の表形式）
-- Review 判定（APPROVE/REQUEST_CHANGES の構造化フォーマット）
-- エスカレーション（3回ルール違反時の標準出力形式）
-- 判断ポイント（最大3選択肢、推奨先頭）
-
-```bash
-/output-style harness-ops
-```
-
-#### 2. エージェント定義に `permissionMode` を明示追加
-
-**今まで**: Worker/Reviewer/Scaffolder の権限モードは spawn 時に `mode: "bypassPermissions"` として指定。エージェント定義自体には権限情報がなく、Lead の spawn コードに依存していた。
-
-**今後**: Claude Code 公式ドキュメントで `permissionMode` がエージェント frontmatter の正式フィールドとして文書化されたことを受け、3エージェント全ての frontmatter に `permissionMode: bypassPermissions` を追加。定義レベルでの宣言的権限管理を実現。
-
-```yaml
-# agents-v3/worker.md
-permissionMode: bypassPermissions  # 新規追加
-```
-
-#### 3. Agent Teams 公式ベストプラクティス整合
-
-**今まで**: Harness のチーム運用は独自のパターンに基づいていた。Claude Code の Agent Teams は「実験的」というステータスのみで、公式ガイダンスが限定的だった。
-
-**今後**: `agent-teams.md` が独立した公式ドキュメントに昇格。`agents-v3/team-composition.md` に以下を反映:
-- **タスク粒度ガイドライン**: 5-6 tasks/teammate の公式推奨値
-- **`teammateMode` 設定**: `"auto"` / `"in-process"` / `"tmux"` の3モード
-- **Plan Approval パターン**: Worker に plan mode を要求する公式フロー
-- **Quality Gate Hooks**: `TeammateIdle`/`TaskCompleted` の exit 2 フィードバックパターン
-- **チームサイズ**: 3-5 teammates の公式推奨（Harness の Worker 1-3 + Reviewer 1 と整合確認）
-
-#### 4. Feature Table 拡充（3項目追加）
-
-`docs/CLAUDE-feature-table.md` に以下を追加:
-- Output Styles 統合
-- `permissionMode` in agent frontmatter
-- Agent Teams 公式ベストプラクティス整合
-
-#### 5. Pre-merge 整合修正
-
-**今まで**: README のバージョンバッジ、compare link、Auto Mode の段階表記、`validate-plugin` の core dependency step、opencode mirror が一部不整合で、required checks を安定して通せない状態だった。
-
-**今後**: 版表記と compare link を同期し、Auto Mode は「staged rollout / RP 開始後に検証」へ表現を是正。`validate-plugin` は `core/package.json` をキャッシュキーにして `npm install` を使う構成へ修正し、opencode mirror も再生成前提で整える。
-
----
-
-### Included: Claude Code v2.1.72 互換対応
-
-**Claude Code v2.1.72 の全新機能・修正を Harness に反映。Effort レベル簡素化、ExitWorktree ツール、Agent tool model パラメータ復活、並列ツール呼び出し修正など、12 項目の機能を Feature Table とエージェント定義に追記。**
-
----
-
-#### 1. ExitWorktree ツール対応
-
-**今まで**: worktree セッションからの離脱はセッション終了時のプロンプトに依存。Worker エージェントが実装完了後にプログラム的に worktree を閉じる手段がなかった。
-
-**今後**: CC v2.1.72 の `ExitWorktree` ツールにより、Worker が実装完了後に明示的に worktree を離脱可能。`agents-v3/worker.md` に「Worktree 操作」セクションを追加し、`ExitWorktree` の活用方法を文書化。
-
-#### 2. Effort レベル簡素化（`max` 廃止）
-
-**今まで**: effort レベルに `max` が存在していたが、Harness のドキュメントでは `ultrathink` → high effort の対応のみ使用。
-
-**今後**: CC v2.1.72 で `max` が廃止、3段階 `low(○)/medium(◐)/high(●)` に統一。Harness のドキュメントをシンボル付きで更新。影響ファイル:
-- `skills-v3/harness-work/SKILL.md` + 3 ミラー
-- `agents-v3/worker.md`
-- `agents-v3/reviewer.md`
-- `agents-v3/team-composition.md`
-
-#### 3. Agent tool `model` パラメータ復活
-
-**今まで**: per-invocation model override が利用不可だった期間があり、エージェント定義の `model` フィールドのみで運用。
-
-**今後**: CC v2.1.72 で Agent tool の `model` パラメータが復活。タスク特性に応じた動的モデル選択が再び可能に。`agents-v3/team-composition.md` に Phase 2 検討項目として記載。
-
-#### 4. Feature Table 拡充（12 項目追加）
-
-`CLAUDE.md` と `docs/CLAUDE-feature-table.md` に以下を追加:
-- `ExitWorktree` ツール
-- Effort levels 簡素化
-- Agent tool `model` パラメータ復活
-- `/plan` description 引数
-- 並列ツール呼び出し修正
-- Worktree isolation 修正
-- `/clear` バックグラウンドエージェント保持
-- Hooks 修正群（4 件）
-- HTML コメント非表示
-- Bash auto-approval 追加
-- プロンプトキャッシュ修正
-
-各機能の詳細セクションも `docs/CLAUDE-feature-table.md` に追記。
-
-#### 5. バージョンヘッダー更新
-
-`CLAUDE.md` と `docs/CLAUDE-feature-table.md` のヘッダーを `2.1.71+` → `2.1.72+` に更新。
-
----
-
-### Included: Claude Code 公式ドキュメント整合
-
-**Claude Code v2.1.71+ の公式ドキュメントに追加された新機能・フィールドを Harness のドキュメントに反映し、Auto Mode Phase 1 移行マーカーを更新。**
-
----
-
-#### 1. Feature Table 拡充（9 項目追加）
-
-**今まで**: v2.1.71 リリース時点の機能のみ記載。公式ドキュメントで追加されたサブエージェントの新フィールドや Agent Teams の実験フラグが未反映。
-
-**今後**: 以下の機能を Feature Table に追加:
-- Subagent `background` フィールド
-- Subagent `local` メモリスコープ
-- Agent Teams 実験フラグ (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS`)
-- `/agents` コマンド（対話的管理 UI）
-- Desktop Scheduled Tasks
-- `CronCreate/CronList/CronDelete` ツール
-- `CLAUDE_CODE_DISABLE_CRON` 環境変数
-- `--agents` CLI フラグ
-
-各機能の詳細セクションも `docs/CLAUDE-feature-table.md` に追記。
-
-#### 2. Auto Mode Phase 1 開始予定表記へ更新
-
-**今まで**: 「Phase 0 (現在)」「Phase 1 (RP 開始)」と記載。RP 開始日 2026-03-12 以前の表記。
-
-**今後**: 「Phase 0 (pre-RP)」「Phase 1 (RP 開始後)」に更新。影響ファイル:
-- `docs/CLAUDE-feature-table.md`
-- `CLAUDE.md` Feature Table
-- `agents-v3/team-composition.md`
-
-#### 3. Agent Teams 公式ドキュメント対応
-
-**今まで**: Harness の breezing が Agent Teams を使用しているが、公式の有効化手順が未記載。
-
-**今後**: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` 環境変数の設定方法と `teammateMode` 設定を `agents-v3/team-composition.md` に追記。
-
----
 
 ## [3.7.2] - 2026-03-10
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#372---2026-03-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4725)
+
 ### Fixed
-- **Hook stdout purity**: `session-init` and usage tracking hooks now discard telemetry output so hook consumers receive the JSON payload only.
-- **Quiet session summary output**: `session-init` / `session-resume` no longer leak standalone `0` lines when Plans counts are zero matches.
+
+- Hook stdout stays JSON-only by discarding telemetry chatter; empty task counts no longer leak standalone zero lines.
 
 ### Changed
-- **Regression coverage**: Added direct-execution tests for snapshot summary output and quiet usage tracking hooks to keep hook output stable.
 
----
+- Direct-execution tests check quiet session summaries and usage hooks.
 
 ## [3.7.1] - 2026-03-09
 
-### テーマ: チーム実行の安全性向上
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#371---2026-03-09) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4736)
 
-**Breezing（Agent Teams）の実行基盤を3つの観点から強化: エージェント型名の統一、Auto Mode への段階的移行準備、Worker の Worktree 隔離。**
+### Changed
 
----
-
-#### 1. エージェント定義の統一
-
-**今まで**: Worker や Reviewer のエージェント型名がファイルごとにバラバラでした。`breezing/SKILL.md` では `general-purpose`、`team-composition.md` では `claude-code-harness:worker` と書かれており、per-agent hooks（エージェント種別ごとのガードレール）が正しく発火しない問題がありました。
-
-**今後**: 全ファイルで `claude-code-harness:worker` / `claude-code-harness:reviewer` に統一。Worker 専用の PreToolUse ガード（Write/Edit 時のチェック）と Reviewer 専用の Stop ログ（完了時の記録）が確実に適用されます。
-
-#### 2. Auto Mode への準備（`--auto-mode`）
-
-**今まで**: Breezing では Worker がバックグラウンド実行のため許可プロンプトを表示できず、`bypassPermissions`（全権限スキップ）を使っていました。動くけれど「全権限をスキップ」するため、意図しないファイル書き換えや危険なコマンドも素通りするリスクがありました。
-
-**今後**: Claude Code 2.1.71+ の Auto Mode に対応する `--auto-mode` フラグを追加。Auto Mode は許可リスト方式で「定義済みの安全な操作だけを自動承認」し、危険な操作（`rm -rf`、`git push --force` 等）はブロックします。3段階で移行します:
-
-- Phase 0（現在）: `--auto-mode` はオプトイン
-- Phase 1（検証後）: `--auto-mode` をデフォルトに
-- Phase 2（安定後）: `bypassPermissions` を廃止
-
-```bash
-/breezing --auto-mode              # Auto Mode で実行
-/harness-work --breezing --auto-mode
-```
-
-#### 3. Worker の Worktree 隔離
-
-**今まで**: 複数の Worker を並列実行したとき、同じファイルを2つの Worker が同時に編集すると競合が発生していました。Lead が「同じファイルを触るタスクは同じ Worker に割り当てる」ルールで回避していましたが、完璧ではありませんでした。
-
-**今後**: Worker エージェント定義に `isolation: worktree` を追加。各 Worker は自動的に git worktree（独立した作業ディレクトリ）で動作するため、同じファイルを編集しても物理的に別ディレクトリなので衝突しません。完了後に Lead がマージします。
-
----
+- Worker and reviewer agent type names are unified as `claude-code-harness:worker` and `claude-code-harness:reviewer`. Before this, the names differed between files, so the worker's pre-write guard and the reviewer's completion log did not reliably run; they now apply.
+- Breezing workers run in the background and cannot show permission prompts, so they use `bypassPermissions`, which skips all permission checks; unintended file rewrites or dangerous commands can pass. On Claude Code 2.1.71+, opt in to Auto Mode with `/breezing --auto-mode` or `/harness-work --breezing --auto-mode`: it auto-approves only predefined safe operations and blocks commands such as `rm -rf` and `git push --force`. Planned stages: opt-in now, default after validation, then removal of `bypassPermissions` once stable.
+- Each worker runs in its own git worktree, so parallel workers editing the same file no longer collide; the lead merges after completion.
 
 ## [3.7.0] - 2026-03-08
 
-### テーマ: 状態中心アーキテクチャへの転換
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#370---2026-03-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4773)
 
-**まさお理論（マクロハーネス・ミクロハーネス・Project OS）を適用し、「会話が切れても作業が途切れない」仕組みを5つの機能で構築しました。**
+### Added
 
----
-
-#### 1. 失敗タスクの自動再チケット化
-
-**今まで**: タスク実装後にテスト/CI が失敗すると、最大3回リトライして止まるだけでした。止まった後は「何が原因だったか」を自分で調べ、Plans.md に手動で修正タスクを追加し、再度 `/work` を実行する必要がありました。
-
-**今後**: 3回失敗で止まるとき、Harness が失敗原因を分類（`assertion_error`、`import_error` 等）し、修正タスク案を state に保存します。`approve fix <task_id>` で承認すると Plans.md に `.fix` タスクとして追加されます。
-
-```
-失敗原因分析:
-  カテゴリ: assertion_error
-  修正タスク案: 26.1.1.fix — getByStatus の戻り値を修正
-  DoD: npm test が全パスすること
-
-承認: approve fix 26.1.1
-却下: reject fix 26.1.1
-```
-
-将来的には、提案採用率80%以上で全自動化に昇格する計画です（D30）。
-
-#### 2. セッションスナップショット（`/harness-sync --snapshot`）
-
-**今まで**: セッションが切れた後の再開時、Plans.md を読み、git log を見て、自分で状況を把握する必要がありました。この「状況把握」に毎回時間がかかり、WIP タスクの進捗は Plans.md からは読み取れませんでした。
-
-**今後**: `/harness-sync --snapshot` で、その瞬間の進捗を JSON に保存できます。次の SessionStart または `/resume` で最新スナップショット要約と前回比が自動表示されます。
-
-```
-スナップショット差分:
-
-| 指標       | 前回 (03/08 22:00) | 今回       | 変化     |
-|-----------|-------------------|-----------|---------|
-| 完了タスク  | 8/16              | 13/16     | +5      |
-| WIP タスク  | 2                 | 0         | -2      |
-| TODO タスク | 6                 | 3         | -3      |
-```
-
-作業の「セーブポイント」のようなものです。
-
-#### 3. Artifact Hash（タスクとコミットの紐付け）
-
-**今まで**: Plans.md のタスクが `cc:完了` になっても、どのコミットで完了したか追跡できませんでした。「このタスクで何を変えたか」を知るには git log を手作業でたどる必要がありました。
-
-**今後**: タスク完了時に、直近のコミットハッシュ（7文字短縮形）が Status に自動付与されます。
-
-```markdown
-| Task | 内容              | Status              |
-|------|-------------------|---------------------|
-| 26.1 | snapshot 機能追加  | cc:完了 [a1b2c3d]  |  ← 自動付与
-```
-
-`git show a1b2c3d` で、そのタスクの変更内容をいつでも確認できます。hash なしの `cc:完了` も引き続き有効（後方互換）。
-
-#### 4. Progress Feed（Breezing 中の進捗表示）
-
-**今まで**: `/breezing` で全タスクを並列実行するとき、完了するまでターミナルに進捗が表示されませんでした。10個以上のタスクがある場合、「今何個目が終わったか」がまったく見えず不安でした。
-
-**今後**: Worker がタスクを完了するたびに、Lead が1行のプログレスサマリーを出力します。
-
-```
-📊 Progress: Task 1/16 完了 — "harness-work に失敗再チケット化を追加"
-📊 Progress: Task 2/16 完了 — "harness-sync に --snapshot を追加"
-📊 Progress: Task 3/16 完了 — "breezing にプログレスフィードを追加"
-```
-
-TaskCompleted hook の `systemMessage` も連動して進捗情報を出力します。
-
-#### 5. Plans.md の Purpose 行
-
-**今まで**: Phase ヘッダーには名前とタグだけ。「このフェーズの目的は何か」は本文を読まないと分かりませんでした。
-
-**今後**: Phase ヘッダーの直後に、任意で `Purpose:` 行を1行追加できます。書かなくてもOK（強制ではありません）。ユーザーがフェーズの目的を述べた場合にのみ自動記載されます。
-
-```markdown
-### Phase 26.0: 失敗→再チケット化フロー [P0]
-
-Purpose: 自己修正ループ失敗時に「止まるだけ」から「次の一手を提案」へ転換
-```
-
----
+- When a task fails 3 times, Harness classifies the cause and saves a proposed fix task instead of only stopping. Approve with `approve fix <task_id>` to add it to Plans.md as a `.fix` task, or decline with `reject fix <task_id>`.
+- `/harness-sync --snapshot` saves current progress; the next SessionStart or `/resume` shows the latest summary and the change since the previous snapshot.
+- Completed tasks automatically get the 7-character commit hash in their status (`cc:完了 [a1b2c3d]`); rows without a hash remain valid.
+- Breezing prints a one-line progress update each time a worker finishes a task.
+- Plans.md phases may include an optional `Purpose:` line; it is written only when you state the purpose.
 
 ## [3.6.0] - 2026-03-08
 
-### 🎯 What's Changed for You
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#360---2026-03-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4859)
 
-**Solo mode PM framework: structured self-questioning built into every skill. Impact×Risk planning, DoD/Depends columns, Value-axis reviews, and retrospectives — no new commands, just smarter existing ones.**
+### Breaking Changes
 
-| Before | After |
-|--------|-------|
-| Plans.md had 3 columns (Task, Content, Status) | Plans.md has 5 columns (+DoD, +Depends); v1 format dropped |
-| Priority was 1-axis (Required/Recommended/Optional) | 2-axis Impact×Risk matrix with automatic `[needs-spike]` for high-risk items |
-| Plan Review checked 4 axes (Clarity/Feasibility/Dependencies/Acceptance) | 5 axes (+Value: user problem fit, alternative analysis, Elephant detection) |
-| No retrospective capability | `sync` auto-runs retro when completed tasks exist (`--no-retro` to skip) |
-| Breezing Phase 0 was undefined | Structured 3-question pre-flight check (scope, dependencies, risk flags) |
-| Solo mode jumped straight to implementation | Step 1.5 background confirmation (purpose + impact scope inference) |
-| Task dependencies were implicit in Japanese text | Explicit `Depends` column enables dependency-graph-based task assignment |
-
----
+- Plans now require five columns including completion criteria and dependencies; the three-column format is dropped. Migrate task rows before using sync.
 
 ### Added
-- **Plans.md v2 format**: 5-column table with DoD (Definition of Done) and Depends columns
-- **DoD auto-inference**: `harness-plan create` generates testable completion criteria from task keywords
-- **Depends auto-inference**: Automatic dependency detection (DB→API→UI→Test ordering)
-- **`[needs-spike]` marker**: High Impact × High Risk tasks get auto-generated spike (tech validation) tasks
-- **Plan Review Value axis**: 5th review axis checking user problem fit, alternatives, and Elephant detection
-- **DoD/Depends quality checks**: Empty DoD warnings, untestable DoD suggestions, circular dependency detection
-- **Retrospective (default ON)**: `sync` auto-runs retro when `cc:完了` tasks ≥ 1; `--no-retro` to skip
-- **Breezing Phase 0 structured check**: 3-question pre-flight (scope confirmation, dependency validation, risk flags)
-- **Solo Step 1.5**: 30-second background confirmation inferring task purpose and impact scope
-- **Dependency-graph task assignment**: Breezing assigns Depends=`-` tasks first, chains dependents on completion
 
-### Changed
-- **harness-plan create Step 5**: Upgraded from 1-axis to Impact×Risk 2-axis priority matrix
-- **harness-plan SKILL.md**: Plans.md format specification updated to v2 with DoD/Depends guide
-- **harness-plan sync**: v1 (3-column) format support removed; Plans.md is always 5-column
-- **harness-review Plan Review**: Expanded from 4-axis to 5-axis evaluation
-- **harness-work Solo flow**: Added Step 1.5 between task identification and WIP marking
-- **breezing Flow Summary**: Phase 0 now has concrete check items instead of undefined discussion
-
----
+- `harness-plan create` infers testable completion criteria and dependencies, and ranks tasks by impact and risk; high-impact, high-risk tasks get a `[needs-spike]` marker and a technical-validation task. Plans are checked for empty or untestable criteria and circular dependencies.
+- Plan review adds a fifth axis, user value.
+- Sync runs a retrospective by default when at least one task is complete; skip with `--no-retro`.
+- Breezing checks scope, dependencies, and risk before starting, and assigns tasks with no dependencies first, then dependent tasks as their prerequisites finish. Solo work first confirms purpose and impact.
 
 ## [3.5.0] - 2026-03-07
 
-### 🎯 What's Changed for You
-
-**Claude Code v2.1.70–v2.1.71 features fully integrated: `/loop` scheduling for active monitoring, `PostToolUseFailure` auto-escalation, safe background agents, and Marketplace `@ref` installs.**
-
-| Before | After |
-|--------|-------|
-| Feature Table covered up to v2.1.69 | Feature Table now covers v2.1.70–v2.1.71 (12 new items) |
-| No automatic escalation on repeated tool failures | `PostToolUseFailure` hook escalates after 3 consecutive failures within 60s |
-| Breezing relied solely on passive TeammateIdle monitoring | `/loop 5m /sync-status` enables active polling alongside passive hooks |
-| Background agents risked losing output after compaction | v2.1.71 fix documented; `run_in_background` usage guide added |
-| Plugin install used plain `owner/repo` | `owner/repo@vX.X.X` ref pinning recommended (v2.1.71 parser fix) |
-
----
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#350---2026-03-07) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4899)
 
 ### Added
-- **`PostToolUseFailure` hook handler**: 60秒ウィンドウの連続失敗カウンターと 3 回失敗時の自動エスカレーションを追加
-- **Feature Table v2.1.70–v2.1.71**: `docs/CLAUDE-feature-table.md` に 12 項目を追加
-- **Breezing `/loop` guide**: `TeammateIdle` と `/loop` の役割分担を説明する active monitoring ガイドを追加
-- **Breezing Background Agent guide**: v2.1.71 の出力パス修正を踏まえた `run_in_background` 運用ガイドを追加
-- **Marketplace `@ref` install guidance**: `owner/repo@vX.X.X` を推奨するセットアップ手順を追加
+
+- Three consecutive tool failures within 60 seconds trigger escalation. Guides combine `TeammateIdle` (a hook called when a teammate becomes idle) with active `/loop 5m /sync-status` checks, preserve background-agent results through compaction (summarizing conversation history), and recommend version-pinned plugin installs (`owner/repo@vX.X.X`).
 
 ### Changed
-- **CLAUDE.md Feature Table**: `/loop`、`PostToolUseFailure`、Background Agent 出力修正、Compaction 画像保持を反映
-- **Feature adoption notes**: Plugin hooks 修正、`--print` hang 修正、並列 plugin install 修正、`--resume` スキル再注入廃止を Feature Table に整理
-- **README version badges**: `3.5.0` に同期
-- **Compatibility doc**: plugin version を `3.5.0` に更新
+
+- Claude Code 2.1.70–2.1.71 update notes: `--resume` no longer re-injects skills; compaction keeps images. Hangs with `--print`, plugin-hook bugs, and parallel plugin-install bugs are fixed in Claude Code itself.
 
 ### Fixed
-- Windows checkout with `core.symlinks=false` no longer hides `harness-*` command skills before SessionStart runs
+
+- Windows checkouts without real symlinks (links to another path) expose workflow skills before `SessionStart` (the session-start hook).
 
 ### Security
-- **Symlink-safe failure counter writes**: `post-tool-failure.sh` は `.claude` 親ディレクトリ、`.claude/state`、`tool-failure-counter.txt` の symlink を検出した場合に state 書き込みをスキップ
 
----
+- Failure counters refuse writes through symlinked state directories or files.
+
 
 ## [3.4.2] - 2026-03-06
 
-### 🎯 What's Changed for You
-
-**README now explains Claude Harness as a steadier operating model, not just a feature list, and `/harness-work all` now ships with rerunnable success and failure evidence that matches the real exit status.**
-
-| Before | After |
-|--------|-------|
-| README mixed feature descriptions, comparison copy, and duplicate visual explanations | README now leads with clearer "what changes after install" messaging and SVG-driven comparisons |
-| `/harness-work all` evidence existed, but the full runner could misread a failing test exit code | success / failure evidence runners now record the real command status, so the artifact contract matches what actually happened |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#342---2026-03-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4936)
 
 ### Changed
-- **README refresh (EN/JA)**: Reworked the hero and comparison sections around the default operating path after install, added new SVG cards, and removed duplicated explanation blocks.
-- **Competitive positioning docs**: Added a dated harness comparison matrix, compatibility notes, distribution scope, claims audit, positioning notes, and release checklist docs so public claims stay grounded.
-- **Codex package surface**: Clarified `harness-*` workflow surfaces in Codex docs and aligned setup scripts with path-based skill loading.
+
+- Bilingual READMEs explain installed behavior and grounded comparisons; Codex setup follows path-based skill loading.
 
 ### Added
-- **`/harness-work all` evidence pack**: Added success / failure fixtures, smoke/full runners, replay-aware success artifacts, and public docs for rerunnable verification.
-- **README visual assets**: Added `why-harness-pillars` and default-flow comparison SVGs in both English and Japanese.
+
+- Rerunnable work-all success/failure evidence packs and bilingual flow/safety visuals support verification.
 
 ### Fixed
-- **Evidence runner exit status capture**: Full success / failure runners now preserve the real `claude` and `npm test` exit codes instead of the inverted `!` status.
-- **Claim drift checks**: Expanded `check-consistency.sh` to catch README badge drift, missing docs, stale positioning claims, and distribution-scope mismatches before release.
 
----
+- Evidence runners retain actual Claude/test exit codes instead of inverted statuses; claim/distribution drift checks run before release.
 
 ## [3.4.1] - 2026-03-06
 
-### 🎯 What's Changed for You
-
-**Fixed stale skill labels in the Claude Code 2.1.69+ feature tables (EN/JA), so the docs now match the actual harness skill set.**
-
-| Before | After |
-|--------|-------|
-| `task-worker`, `code-reviewer`, `work`, `all skills` labels remained in README feature tables | Unified to current names: `harness-work`, `harness-review`, `all harness-* skills` |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#341---2026-03-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4962)
 
 ### Changed
-- **README (EN/JA) feature table cleanup**: Updated the "Skills" column under "Claude Code 2.1.69+ Features" to current harness naming.
+
+- Bilingual feature tables use the `harness-work` and `harness-review` names consistently.
 
 ### Fixed
-- **Documentation drift**: Removed legacy skill aliases that could mislead users during `/breezing` and `/harness-work` onboarding.
 
----
+- Feature tables replace legacy names (`task-worker`, `code-reviewer`, `work`, `all skills`) with `harness-work`, `harness-review`, and `all harness-* skills`. This corrects misleading instructions for starting with `/breezing` and `/harness-work`.
+
 
 ## [3.4.0] - 2026-03-06
 
-### 🎯 What's Changed for You
-
-**Claude Code v2.1.69 対応を完了。teammate event 制御、skill reference 解決、開発フロー文書を一気に更新し、チーム実行の停止判定と互換性を強化しました。**
-
-| Before | After |
-|--------|-------|
-| Teammate hooks were session_id-centric and always approve-only | `agent_id`/`agent_type` を活用し、`{"continue": false, "stopReason": "..."}` で停止を返せる |
-| `InstructionsLoaded` event was not handled | Dedicated handler added and wired in both hooks.json files |
-| SKILL references used relative `references/` paths | `${CLAUDE_SKILL_DIR}/references/...` に統一し、実行環境依存を削減 |
-| Docs were centered on 2.1.68+ | Feature docs/README/command docs updated to 2.1.69+ |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#340---2026-03-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4980)
 
 ### Added
-- **InstructionsLoaded handler**: `scripts/hook-handlers/instructions-loaded.sh` を新規追加
-- **Teammate stop response support**: `teammate-idle.sh` / `task-completed.sh` に `continue:false` 応答ロジックを追加
-- **2.1.69 feature docs**: `${CLAUDE_SKILL_DIR}`, `agent_id/agent_type`, `/reload-plugins`, `includeGitInstructions: false`, `git-subdir` 運用方針を明文化
+
+- The InstructionsLoaded event is handled. Teammate idle and task-completion hooks can stop a teammate by returning `{"continue": false, "stopReason": "..."}`.
+- Guides cover Claude Code 2.1.69's `${CLAUDE_SKILL_DIR}` references, agent IDs and types, `/reload-plugins`, `includeGitInstructions: false`, and projects in a git subdirectory.
 
 ### Changed
-- **PreToolUse breezing role guard**: role lookup を `agent_id` 優先・`session_id` fallback に拡張
-- **SKILL reference path policy**: skills/codex/opencode の SKILL.md で references 参照を `${CLAUDE_SKILL_DIR}` ベースへ更新
-- **check-consistency**: project template の `defaultMode` baseline を検証し、未文書化の値を配布しない方針を明記
-- **Feature docs**: CLAUDE.md / README / README_ja / docs/CLAUDE-feature-table.md / docs/CLAUDE-commands.md 更新
+
+- Breezing role checks look up `agent_id` first, then `session_id`. Skill references resolve from the skill's own directory. Project templates ship only documented permission-mode defaults.
 
 ### Fixed
-- **Plans drift**: Phase 17/19 の未同期タスクマーカーを現実状態へ同期
-- **continue:false parsing**: boolean `false` が落ちるケースを修正し、stopReason を確実に反映
 
----
+- A `false` stop response is no longer dropped, so the stop reason is applied.
 
 ## [3.3.1] - 2026-03-05
 
-### 🎯 What's Changed for You
-
-**All README visuals unified to brand-orange palette, logo regenerated with Nano Banana Pro, and duplicate content sections removed for a cleaner reading experience.**
-
-| Before | After |
-|--------|-------|
-| Mixed indigo/blue/teal/purple SVGs | Unified orange palette (#F7931A hierarchy) |
-| Hero comparison shown twice (SVG + table) | Single SVG visualization |
-| /work all flow shown twice (mermaid + SVG) | Single SVG visualization |
-| Review section had no visual | 4-perspective review card SVG added |
-| 47KB logo (old design) | 53KB Nano Banana Pro logo with "Plan → Work → Review" tagline |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#331---2026-03-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5010)
 
 ### Changed
-- **8 SVGs recolored** (EN/JA): Unified orange brand palette across all README visuals
-- **Logo regenerated**: Nano Banana Pro interlocking-loops icon + "Plan → Work → Review" tagline
-- **README cleanup**: Removed duplicate mermaid/SVG and SVG/table sections in both EN/JA
+
+- Bilingual visuals adopt the orange palette, replace the logo, and remove duplicate diagrams/tables.
 
 ### Added
-- **Review perspectives SVG** (EN/JA): 4-angle code review visualization (Security, Performance, Quality, Accessibility)
-- **3 JA generated SVGs**: hero-comparison, core-loop, safety-guardrails (Japanese localized versions)
-- **Alternative logo**: `docs/images/claude-harness-logo-alt.png` (carabiner icon + color-split text)
 
----
+- Four-perspective review graphics and Japanese versions of core flow/safety graphics are added.
 
 ## [3.3.0] - 2026-03-05
 
-### 🎯 What's Changed for You
-
-**Claude Code v2.1.68 introduced effort levels, agent hooks, and more. Harness v3.3.0 puts all of them to work — so you get smarter task execution, LLM-powered code guards, and fully automated worktree lifecycle out of the box.**
-
-> Claude Code got new superpowers. Harness makes sure you actually use them.
-
-| What Claude Code added | How Harness uses it |
-|------------------------|---------------------|
-| **Opus 4.6 medium effort default** — Claude now thinks less deeply by default | Harness auto-detects complex tasks (security, architecture, multi-file changes) and injects `ultrathink` to restore full thinking depth exactly when it matters |
-| **Agent hooks (`type: "agent"`)** — hooks can now use LLM intelligence | 3 smart guards deployed: catches hardcoded secrets before commit, blocks session exit with unfinished tasks, runs lightweight code review after every write |
-| **WorktreeCreate/Remove hooks** — lifecycle events for git worktrees | Breezing parallel workers now auto-initialize their workspace and clean up temp files when done. No more orphaned `/tmp` clutter |
-| **`CLAUDE_ENV_FILE`** — session environment persistence | Harness version, effort defaults, and Breezing session IDs persist across hooks. Workers know who they are |
-| **Prompt hooks expanded to all events** — no longer Stop-only | Every hook event can now use LLM judgment (was incorrectly documented as Stop-only) |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#330---2026-03-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5036)
 
 ### Added
-- **Effort level auto-tuning**: Multi-element scoring system (file count + directory criticality + task keywords + past failure history). Score ≥ 3 triggers `ultrathink` — meaning complex tasks get deep thinking, simple tasks stay fast
-- **Agent hooks (3 deployments)**:
-  - *PreToolUse quality guard*: LLM reviews every Write/Edit for secrets, TODO stubs, and security issues before they land
-  - *Stop WIP guard*: Reads Plans.md and warns you if you're about to close a session with unfinished `cc:WIP` tasks
-  - *PostToolUse code review*: Lightweight haiku-powered review runs after every file write
-- **Worktree lifecycle automation**: `worktree-create.sh` sets up `.claude/state/worktree-info.json` with worker identity; `worktree-remove.sh` cleans Codex temp files and logs
-- **Session environment persistence**: `session-env-setup.sh` writes `HARNESS_VERSION`, `HARNESS_EFFORT_DEFAULT=medium`, and `HARNESS_BREEZING_SESSION_ID` to `CLAUDE_ENV_FILE`
-- **PreCompact agent hook**: Catches WIP tasks before context compaction — so important context isn't lost mid-task
-- **HTTP hook template**: Ready-to-use PostToolUse metrics hook for external dashboards (localhost:9090)
+
+- Complexity scoring (file count, critical directories, task keywords, past failures) injects `ultrathink` at a score of 3 or more, so complex tasks get deeper reasoning and simple tasks stay fast.
+- Three LLM-backed agent hooks run on every relevant action, adding model calls, cost, and latency: before each Write/Edit, a quality guard checks for secrets, TODO stubs, and security issues; after each file write, a lightweight haiku review runs; at Stop, a guard warns about unfinished `cc:WIP` tasks. A PreCompact hook catches WIP tasks before compaction.
+- Worktree creation records worker identity in `.claude/state/worktree-info.json`; removal cleans Codex temporary files and logs. Session setup writes `HARNESS_VERSION`, `HARNESS_EFFORT_DEFAULT=medium`, and `HARNESS_BREEZING_SESSION_ID` to `CLAUDE_ENV_FILE`.
+- A metrics HTTP hook to `localhost:9090` was described as a template, but it was actually enabled by default until 3.10.6 and caused connection errors and delays without a metrics server.
 
 ### Changed
-- **4-type hook system**: Harness now supports all 4 hook types — `command`, `prompt` (all events), `http`, and `agent`
-- **Feature Table**: Updated from v2.1.63+ to v2.1.68+ with 30 tracked features
-- **Worker/Reviewer/Team agents**: Now understand effort levels and when to request deeper thinking
-- **PM templates**: All handoff templates include `ultrathink` with clear intent comments
+
+- Describe command/prompt/http/agent hooks and effort-aware worker/reviewer handoffs against Claude Code 2.1.68 guidance; later upstream constraints supersede broad historical hook claims.
 
 ### Fixed
-- **Prompt hook documentation**: Removed incorrect "Stop/SubagentStop only" restriction (prompt hooks work on all events since v2.1.63)
-- **Dead reference cleanup**: Removed link to deleted `guardrails-inheritance.md` in Feature Table
 
----
+- Prompt hooks are documented as available on all events, not only Stop/SubagentStop; remove a dead documentation link.
 
 ## [3.2.0] - 2026-03-04
 
-### 🎯 What's Changed for You
-
-**TDD is now enabled by default for all tasks, and Windows users get automatic symlink repair on session start.**
-
-| Before | After |
-|--------|-------|
-| TDD only active with `[feature:tdd]` marker (opt-in) | TDD active by default; skip with `[skip:tdd]` (opt-out) |
-| Windows users: v3 skills not recognized (broken symlinks) | Auto-detected and repaired on session start |
-| Worker had no TDD phase in execution flow | TDD phase (Red→Green) integrated into Worker and Solo mode |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#320---2026-03-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5075)
 
 ### Added
-- **TDD-by-default**: TDD is now opt-out (`[skip:tdd]`) instead of opt-in (`[feature:tdd]`). All WIP tasks get TDD reminders unless explicitly skipped
-- **`--no-tdd` option**: Skip TDD phase in `/harness-work` execution
-- **Windows symlink auto-repair**: `fix-symlinks.sh` detects broken symlinks from Windows git clone and replaces them with directory copies
-- **Session-init Step 1.5**: Symlink health check runs automatically before skill discovery
+
+- `/harness-work --no-tdd` skips the TDD phase (write a failing test before implementing the change).
+- On session start, before skills are discovered, broken Windows symlinks (links to skill directories) are detected and replaced with directory copies by `scripts/fix-symlinks.sh`.
 
 ### Changed
-- **tdd-order-check.sh**: `has_tdd_wip_task()` split into `has_active_wip_task()` + `is_tdd_skipped()` for clearer logic
-- **harness-plan create.md**: Step 5.5 inverted from "TDD adoption criteria" to "TDD skip criteria"
-- **worker.md**: Execution flow expanded from 10 to 12 steps with TDD judgment and Red phase
-- **harness-work SKILL.md**: Solo mode expanded from 6 to 7 steps with TDD phase
 
----
+- TDD (test-first development) is now on by default. The old `[feature:tdd]` opt-in marker is no longer needed. Every in-progress task gets TDD reminders unless marked `[skip:tdd]`; workers and solo execution proceed from failing tests to passing tests.
+
 
 ## [3.1.0] - 2026-03-03
 
-### 🎯 What's Changed for You
-
-**Codex CLI 0.107.0 full compatibility, 15 deprecated skill stubs removed (−40,000 lines), and `/harness-work` now auto-selects the best execution mode based on task count.**
-
-| Before | After |
-|--------|-------|
-| 15 deprecated redirect stubs cluttering skill listings | Clean 5-verb structure only |
-| `/harness-work` always defaulted to Solo mode | Auto-detection: 1→Solo, 2-3→Parallel, 4+→Breezing |
-| `--codex` could be confusing for users without Codex CLI | `--codex` is explicit-only, never auto-selected |
-| MCP server references in Codex config | All MCP remnants removed, pure CLI integration |
-| `--approval-policy` (non-official flag) in docs | Correct `-a never -s workspace-write` flags |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#310---2026-03-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5101)
 
 ### Added
-- **Auto Mode Detection**: `/harness-work` auto-selects Solo/Parallel/Breezing based on task count (1/2-3/4+)
-- **Breezing backward-compatible alias**: `/breezing` delegates to `/harness-work --breezing`
-- **Codex 環境フォールバック**: harness-review に Task ツール非対応時の Plans.md 直接操作パターン追加
-- **Codex 環境注記**: team-composition.md, worker.md に Codex CLI 固有の制約と代替手段を記載
-- **config.toml 拡充**: [notify] セクション（after_agent メモリブリッジ）、reviewer Read-only sandbox
-- **.codexignore**: CLAUDE.md ノイズ化防止パターン追加
-- **README visual improvement**: hero-comparison, core-loop, safety-guardrails images
+
+- `/harness-work` picks the mode by task count: 1 task solo, 2–3 parallel, 4 or more Breezing. Codex (`--codex`) is used only when you ask for it. `/breezing` runs `/harness-work --breezing`.
+- Codex `config.toml` adds a `[notify]` after-agent memory bridge and a read-only sandbox for the reviewer; guides cover Codex-specific limits.
 
 ### Changed
-- **MCP 残骸除去**: config.toml, setup-codex.sh, codex-setup-local.sh から MCP サーバー参照を完全削除
-- **codex exec フラグ正規化**: --approval-policy → -a (--ask-for-approval)、--sandbox → -s に統一
-- **プロンプト渡し方式改善**: "$(cat file)" → stdin パイプ (`cat file | codex exec -`) に変更（ARG_MAX 対策）
-- **codex-worker-engine.sh**: mcp-params.json → codex-exec-params.json にリネーム
+
+- Codex integration is CLI-only (MCP server references removed). Flags follow that CLI version, and long prompts are passed on standard input to avoid argument-length limits.
 
 ### Fixed
-- **/tmp/codex-prompt.md 固定パス**: mktemp 一意パスに変更（並列実行時の競合防止）
-- **2>/dev/null エラー握りつぶし**: ログファイルリダイレクトに変更（デバッグ可能に）
-- **Skill description quality**: gogcli-ops YAML fix, session-memory invalid tool removal, session-state non-standard fields cleanup
+
+- Prompt files get unique names so parallel runs do not collide; errors go to log files instead of being discarded. Skill metadata and routing errors are corrected.
 
 ### Removed
-- **15 DEPRECATED redirect stubs**: breezing(old), codex-review, handoff, harness-init, harness-update, impl, maintenance, parallel-workflows, planning, plans-management, release-har, setup, sync-status, troubleshoot, verify, work — all consolidated into 5-verb skills
-- **Old -harness suffix stubs**: plan-harness, release-harness, review-harness, setup-harness, work-harness from skills-v3/
-- **x-release-harness**: consolidated into harness-release
 
----
+- 15 redirect skills and old suffix aliases are removed: `breezing` (old), `codex-review`, `handoff`, `harness-init`, `harness-update`, `impl`, `maintenance`, `parallel-workflows`, `planning`, `plans-management`, `release-har`, `setup`, `sync-status`, `troubleshoot`, `verify`, `work`, the `*-harness` aliases, and `x-release-harness`. By function (from the v3 architecture notes, not this release's text): planning, plans-management, sync-status → `harness-plan` (sync later moved to `harness-sync`); work, impl, parallel-workflows, old breezing → `harness-work`; codex-review, verify, troubleshoot → `harness-review`; release-har, x-release-harness, handoff → `harness-release`; setup, harness-init, harness-update, maintenance → `harness-setup`.
 
 ## [3.0.0] - 2026-03-02
 
-### 🎯 What's Changed for You
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#300---2026-03-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5142)
 
-**Harness v3: Full architectural rewrite — 42 skills unified to 5 verbs, 11 agents consolidated to 3, TypeScript engine replaces Bash guardrails, SQLite replaces scattered JSON state files.**
+### Breaking Changes
 
-| Before | After |
-|--------|-------|
-| 42 skills spread across multiple dirs | 5 verb skills: `plan` / `execute` / `review` / `release` / `setup` |
-| 11 agents with overlapping responsibilities | 3 agents: `worker` / `reviewer` / `scaffolder` |
-| Bash scripts for guardrails (pretooluse-guard.sh etc.) | TypeScript engine in `core/` (strict, ESM, NodeNext) |
-| JSON/JSONL state files scattered across dirs | SQLite single-file state via `better-sqlite3` |
-| rsync-based mirror sync for codex/opencode | Symlink-based mirror (zero sync overhead) |
-| No session lifecycle management | `core/engine/lifecycle.ts` unifies session-init/control/state/memory |
+- The redesigned workflow consolidates 42 skills into five verbs and 11 agents into three. Hooks use a Node-based typed engine and SQLite instead of scattered state files; mirrors become symlinks. Legacy skills/agents remain during this release's transition.
 
 ### Added
 
-- **`core/` TypeScript engine**: Strict ESM module (`exactOptionalPropertyTypes`, `noUncheckedIndexedAccess`, `NodeNext`). Includes guardrails, state, and engine subsystems
-- **`core/src/guardrails/`**: Rules engine (R01-R09), pre-tool/post-tool/permission/tampering detection — all ported from Bash to TypeScript
-- **`core/src/state/`**: SQLite state management via `better-sqlite3` with schema, store, and JSON→SQLite migration
-- **`core/src/engine/lifecycle.ts`**: Session lifecycle — `initSession`, `transitionSession`, `finalizeSession`, `forkSession`, `resumeSession`
-- **`skills-v3/`**: 5 verb skills with unified SKILL.md + references/
-- **`agents-v3/`**: 3 consolidated agent definitions + team-composition.md
-- **`tests/validate-plugin-v3.sh`**: v3 structural validator (6 checks, 34 assertions)
-- **Symlink mirrors**: `codex/.codex/skills/` and `opencode/skills/` 5-verb dirs now symlinks to `skills-v3/`
-- **`skills-v3/routing-rules.md`**: Trigger/exclusion keywords per skill verb
-
-### Changed
-
-- **Skills**: 42 → 5 (plan/execute/review/release/setup). Legacy `skills/` retained for backwards compatibility
-- **Agents**: 11 → 3 (worker/reviewer/scaffolder). Legacy `agents/` retained for backwards compatibility
-- **Hooks shims**: `hooks/pre-tool.sh`, `hooks/post-tool.sh`, `hooks/permission.sh` now delegate to `core/src/index.ts`
-- **PermissionRequest**: Switched from v2 `run-script.js permission-request` to v3 TypeScript core (`hooks/permission.sh`)
-- **`check-consistency.sh`**: Mirror check updated from rsync diff to symlink validation
-- **CLAUDE.md**: Compact v3 version; architecture details moved to `.claude/rules/v3-architecture.md`
-- **README.md / README_ja.md**: Updated for v3 (5 verb skills, 3 agents, TypeScript core, architecture diagram)
+- One session lifecycle handles start, transitions, finish, fork, and resume, with migration of old state into SQLite and a structural validator.
 
 ### Fixed
 
-- **`core/src/state/store.ts`**: Fixed `better-sqlite3` type import — `typeof import("better-sqlite3").default` → `import type DatabaseConstructor from "better-sqlite3"` (ESM/CJS compatibility)
-- **Duplicate `posttooluse-tampering-detector`**: Removed v2 script from PostToolUse `Write|Edit|Task` block (v3 `post-tool.ts` already handles tampering detection)
+- Correct the SQLite module typing, and run the tampering check once per write instead of twice.
 
 ### Removed
 
-- rsync-based mirror sync (replaced by symlinks)
-- Standalone Bash guardrail scripts (replaced by `core/src/guardrails/`)
-- Scattered JSON/JSONL state files (replaced by SQLite)
-- Duplicate `posttooluse-tampering-detector` hook (consolidated into v3 post-tool engine)
-
----
+- rsync mirror sync, standalone Bash guardrail scripts, and scattered state files are replaced by the new engine.
 
 ## [2.26.1] - 2026-03-02
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2261---2026-03-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5193)
+
 ### Added
 
-- **12 section-specific SVG illustrations**: 6 EN + 6 JA hand-crafted visuals embedded in both READMEs (before-after, /work all flow, parallel workers, safety shield, skills ecosystem, breezing agents)
+- Bilingual READMEs gain six section-specific diagrams per language for task flow, parallel work, safety, skills, and teams.
 
 ### Fixed
 
-- **review-loop.md APPROVE flow inconsistency**: Phase 3.5 Auto-Refinement step was missing from the APPROVE judgment table, causing inconsistency with SKILL.md and execution-flow.md
+- The approval table now includes automatic refinement before committing, matching the actual work flow.
 
 ## [2.26.0] - 2026-03-02
 
-### 🎯 What's Changed for You
-
-**Claude Code v2.1.63 integration: `/work` now auto-simplifies code after review, `/breezing` can delegate horizontal tasks to `/batch`, and HTTP hooks enable external service notifications.**
-
-| Before | After |
-|--------|-------|
-| `/work` flow: implement → review → commit | `/work` flow: implement → review → **auto-simplify** → commit |
-| Horizontal migration tasks handled manually | `/breezing` auto-detects and delegates to `/batch` |
-| Feature table covers up to v2.1.51 | Feature table covers up to v2.1.63 (27 features) |
-| Hooks only support `command` and `prompt` types | Hooks now support `http` type (POST to external services) |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2260---2026-03-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5203)
 
 ### Added
 
-- **Phase 3.5 Auto-Refinement in `/work`**: After review APPROVE, `/simplify` runs automatically to clean up code. `--deep-simplify` adds `code-simplifier` plugin. `--no-simplify` skips
-- **`/batch` delegation in `/breezing`**: Horizontal pattern detection (migrate/replace-all/add-to-all) auto-proposes `/batch` delegation for bulk changes
-- **HTTP hooks documentation** (`.claude/rules/hooks-editing.md`): `type: "http"` spec with field reference, response behavior, command-vs-http comparison table, and 3 sample templates (Slack, metrics, dashboard)
-- **7 new feature-table entries** (`docs/CLAUDE-feature-table.md`): `/simplify`, `/batch`, `code-simplifier` plugin, HTTP hooks, auto-memory worktree sharing, `/clear` skill cache reset, `ENABLE_CLAUDEAI_MCP_SERVERS`
+- `/work` runs Claude Code's built-in `/simplify` after review approves and before committing. `--deep-simplify` also uses the `code-simplifier` plugin; `--no-simplify` skips the step. `/simplify` and `/batch` are Claude Code 2.1.63+ features; Harness only invokes or proposes them.
+- `/breezing` detects repeated edits across many files (migrate, replace-all, add-to-all) and proposes handing them to Claude Code's built-in `/batch`.
+- Hook guidance documents Claude Code's `type: "http"` hooks, which POST hook data to a URL you configure, with Slack, metrics, and dashboard samples. Harness configures no endpoint; adding one sends data to that service.
 
 ### Changed
 
-- **Version references**: `2.1.49+` → `2.1.63+` across CLAUDE.md and feature table
-- **Feature count**: 20 → 27 in CLAUDE.md and feature table
-- **`/breezing` guardrails**: Added auto-memory worktree sharing (v2.1.63) to inheritance table
-- **`troubleshoot` skill**: Added `/clear` cache reset to CC v2.1.63+ diagnostics
-- **`work-active.json` schema**: Added `simplify_mode: "default" | "deep" | "skip"` field
+- Version references move from Claude Code 2.1.49+ to 2.1.63+. Guidance adds shared auto memory across worktrees and `/clear` resetting the skill cache. `/work` state records refinement as default, deep, or skipped.
 
 ## [2.25.0] - 2026-02-24
 
-### 🎯 What's Changed for You
-
-**`CLAUDE_CODE_SIMPLE` モード（CC v2.1.50+）の影響を自動検出し、無効化される機能をユーザーに明示。サイレント障害を防止。**
-
-| Before | After |
-|--------|-------|
-| SIMPLE モードで 37 スキル・11 エージェントがサイレントに無効化 | SessionStart/Setup フックが自動検出し、ターミナル + additionalContext で警告表示 |
-| SIMPLE モードの影響範囲が不明（互換性マトリクスに 1 行のみ） | 専用ドキュメント `docs/SIMPLE_MODE_COMPATIBILITY.md` で全影響を網羅（スキル・エージェント・メモリ・ワークフロー） |
-| 防御コード・検出ロジックがゼロ | `scripts/check-simple-mode.sh` ユーティリティで一貫した検出・多言語警告メッセージ |
-| `/work`, `/breezing` 等が理由不明で動作しない | 「スキル無効」「エージェント無効」「フックのみ動作」の 3 分類で即座に状況把握可能 |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2250---2026-02-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5231)
 
 ### Added
 
-- **SIMPLE モード検出ユーティリティ** (`scripts/check-simple-mode.sh`): `is_simple_mode()` 関数と `simple_mode_warning()` 多言語メッセージ生成。全フック・スクリプトから source して使用可能
-- **SessionStart SIMPLE モード警告**: `scripts/session-init.sh` がセッション開始時に `CLAUDE_CODE_SIMPLE` 環境変数を検出し、stderr バナー + additionalContext で詳細警告を出力
-- **Setup hook SIMPLE モード警告**: `scripts/setup-hook.sh` が init/maintenance 時に SIMPLE モードを検出し、出力メッセージに警告を追加
-- **`docs/SIMPLE_MODE_COMPATIBILITY.md`**: SIMPLE モード完全ガイド — 影響サマリ表、動作/非動作の全リスト、37 スキル・11 エージェントの影響度分類、検出方法、ワークアラウンド、開発者向け拡張ガイド
+- `CLAUDE_CODE_SIMPLE` (Claude Code's reduced-feature mode, version 2.1.50+) silently disabled 37 skills, 11 agents, and memory. `SessionStart` and `Setup` now detect it and warn in the terminal's error output (`stderr`) and session context (`additionalContext`, information passed to the model). The impact is classified as skills disabled, agents disabled, or hooks only. A compatibility guide explains limitations and workarounds; detection does not restore disabled features.
 
 ### Changed
 
-- **互換性マトリクス強化** (`docs/CLAUDE_CODE_COMPATIBILITY.md`):
-  - v2.1.50 SIMPLE モード行のステータスを「要注意」→「**対応済み**」に更新
-  - 非互換セクションに SIMPLE モードの詳細影響（37 スキル・11 エージェント・メモリ無効化）と検出方法を追記
-  - `SIMPLE_MODE_COMPATIBILITY.md` へのクロスリファレンスリンク追加
+- The compatibility matrix changes SIMPLE mode from caution to handled and lists its impact. Handled means detection and guidance, not restored features.
 
----
 
 ## [2.24.0] - 2026-02-24
 
-### 🎯 What's Changed for You
-
-**Claude Code v2.1.50〜v2.1.51 の新機能に対応。互換性マトリクス更新、メモリ安定性改善の恩恵、新 CLI コマンド活用。**
-
-| Before | After |
-|--------|-------|
-| 互換性マトリクスが v2.1.49 で止まっていた | v2.1.50〜v2.1.51 の全機能を文書化、推奨バージョンを v2.1.51+ に引き上げ |
-| WorktreeCreate/Remove hook が未知 | Breezing guardrails に将来対応として文書化 |
-| エージェント spawn 失敗時の診断手段が限定的 | `claude agents list` (CC 2.1.50+) を troubleshoot スキルに追加 |
-| バックグラウンドエージェント停止方法が未記載 | `Ctrl+F`（CC 2.1.49+）を breezing guardrails に追記、ESC 非推奨を明記 |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2240---2026-02-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5260)
 
 ### Added
 
-- **CC v2.1.50/v2.1.51 互換性マトリクス**: `docs/CLAUDE_CODE_COMPATIBILITY.md` に 17 項目追加（メモリリーク修正、完了タスク GC、WorktreeCreate/Remove hook、`claude agents` CLI、宣言的 worktree isolation、SIMPLE モード注意、remote-control 等）
-- **`claude agents` CLI 診断**: `skills/troubleshoot/SKILL.md` にエージェント診断セクション追加（CC 2.1.50+）
-- **WorktreeCreate/WorktreeRemove hook**: `skills/breezing/references/guardrails-inheritance.md` に将来対応として追記
-- **Ctrl+F キーバインド**: breezing guardrails にバックグラウンドエージェント停止方法を追記（CC 2.1.49+、ESC 非推奨）
-- **Feature Table 拡張**: `docs/CLAUDE-feature-table.md` に v2.1.50/v2.1.51 の 4 機能追加（メモリリーク修正、claude agents CLI、WorktreeCreate/Remove、remote-control）
+- Compatibility notes cover Claude Code 2.1.50–2.1.51 features: memory-leak fixes, completed-task cleanup, WorktreeCreate/WorktreeRemove hooks, declarative worktree isolation, SIMPLE mode, and remote control. At this release Harness documents the worktree hooks only as future work.
+- Troubleshooting adds `claude agents list` (Claude Code 2.1.50+) to check agents when a spawn fails.
+- Stop background agents with `Ctrl+F` (Claude Code 2.1.49+); `Esc` is not recommended.
 
 ### Changed
 
-- **推奨 CC バージョン**: v2.1.49+ → **v2.1.51+** に引き上げ
-- **Feature Table タイトル**: 2.1.49+ → 2.1.51+ に更新
-
----
+- Recommended Claude Code version rises from 2.1.49+ to 2.1.51+.
 
 ## [2.23.6] - 2026-02-24
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2236---2026-02-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5288)
+
 ### Added
 
-- **Auto-release workflow** (`release.yml`): Safety-net GitHub Release creation on `v*` tag push — prevents orphan tags if `release-har` is interrupted
-- **CHANGELOG format validation in CI**: ISO 8601 date format, `[Unreleased]` section presence, non-standard heading warnings
-- **Codex mirror sync check in CI**: `codex/.codex/skills/` ↔ `skills/` consistency validated in both `check-consistency.sh` and `opencode-compat.yml`
-- **Branch Policy in release-har**: Explicitly documents that main direct push is allowed for solo projects (force push remains prohibited)
+- The `release-har` skill's branch policy allows ordinary direct push to `main` for solo projects; force push stays prohibited. The project template `templates/AGENTS.md.template` drops its ban on direct `main` push for solo projects in the same way, so newly generated project rules allow it.
 
 ### Changed
 
-- **CHANGELOG link definitions repaired**: All version compare links supplemented
-- **CHANGELOG_ja.md translation gaps filled**: 5 versions added (2.20.1, 2.17.6, 2.17.1, 2.17.0, 2.16.21)
-- **README version and count updated**: Badge version, skill count (41), agent count (11) updated to reflect reality
-- **CHANGELOG non-standard headings normalized**: `### Internal` → `### Changed` (Keep a Changelog compliant)
-- **Mirror compat workflow renamed**: `OpenCode Compatibility Check` → `Mirror Compatibility Check` (now covers both opencode and codex mirrors)
-- **AGENTS.md template updated**: Removed `main` direct push prohibition for solo projects; force push remains prohibited
-- **Tamper detection expanded** (`codex-worker-quality-gate.sh`): Python skip patterns, catch-all assertions, config relaxation detection
-
----
+- The Codex worker quality gate also treats Python skip patterns, catch-all assertions, and relaxed test configuration as test tampering.
 
 ## [2.23.5] - 2026-02-23
 
-### 🎯 What's Changed for You
-
-**Phase 13: Breezing quality automation and Codex rule injection — tamper detection, auto-test runner, CI signal handling, AGENTS.md rule sync, and APPROVE fast-path.**
-
-| Before | After |
-|--------|-------|
-| Test tampering detection covered skip patterns and assertion deletion only | 12+ patterns: weakening (`toBe → toBeTruthy`), timeout inflation, catch-all assertions, Python skip decorators |
-| Auto-test runner only recommended tests without running them | `HARNESS_AUTO_TEST=run` actually runs tests and feeds results back via `additionalContext` |
-| CI failures required manual detection | PostToolUse hook detects CI failures after `git push` and injects `ci-cd-fixer` recommendation signals |
-| `.claude/rules/` existed only for Claude Code; Codex had no rule awareness | `sync-rules-to-agents.sh` auto-syncs rules to `codex/AGENTS.md`; Codex reads full project rules on startup |
-| `codex exec` called bare without pre/post processing | `codex-exec-wrapper.sh` handles rule sync, `[HARNESS-LEARNING]` extraction, and secret filtering |
-| Breezing Phase C required manual APPROVE confirmation | `review-result.json` + commit hash check enables instant fast-path to integration tests |
-| Implementer count fixed at `min(独立タスク数, 3)` | Auto-calculated as `max(1, min(独立タスク数, --parallel, planner_max_parallel, 5))` |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2235---2026-02-23) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5309)
 
 ### Added
 
-- **Tamper detection (12+ patterns)**: assertion weakening, timeout inflation, catch-all assertions, Python skip decorators — `scripts/posttooluse-tampering-detector.sh`
-- **`HARNESS_AUTO_TEST=run` mode**: `scripts/auto-test-runner.sh` actually runs tests and returns pass/fail via `additionalContext` JSON
-- **CI signal injection**: `scripts/hook-handlers/ci-status-checker.sh` detects CI failures post-push and writes to `breezing-signals.jsonl`; `scripts/hook-handlers/breezing-signal-injector.sh` injects unconsumed signals via UserPromptSubmit hook
-- **`sync-rules-to-agents.sh`**: Auto-converts `.claude/rules/*.md` to `codex/AGENTS.md` Rules section with hash-based drift detection
-- **`codex-exec-wrapper.sh`**: Pre/post wrapper for `codex exec` — rule sync, `[HARNESS-LEARNING]` marker extraction, secret filtering, atomic write-back to `codex-learnings.md`
-- **APPROVE fast-path (Phase C)**: Checks `.claude/state/review-result.json` + HEAD commit hash; skips manual confirmation when APPROVE is already recorded
-- **`review-result.json` auto-record**: Reviewer reports `review_result_json` in SendMessage; Lead writes `.claude/state/review-result.json` for fast-path reference
-- **Docs reorganization**: `docs/CLAUDE-feature-table.md`, `docs/CLAUDE-skill-catalog.md`, `docs/CLAUDE-commands.md` — detailed references extracted from CLAUDE.md
-- **`harness.rules` — execpolicy guard rules**: `npm test`/`yarn test`/`pnpm test` auto-allowed; `git push --force`, `git reset --hard`, `rm -rf`, `git clean -f`, SQL destructive statements (`DROP TABLE`, `DELETE FROM`) require user confirmation via `codex execpolicy`; 20 patterns verified with `codex execpolicy check`
+- Test-tampering detection covers 12+ patterns, including weakened assertions (`toBe` → `toBeTruthy`), inflated timeouts, catch-all assertions, and Python skip decorators.
+- `HARNESS_AUTO_TEST=run` makes the auto-test hook actually run related tests and return pass/fail. Without it, tests are only recommended.
+- Separately, after `git push` a hook detects CI failures and adds a CI-fix recommendation to your next prompt.
+- `sync-rules-to-agents.sh` copies `.claude/rules/*.md` into the Rules section of `codex/AGENTS.md` so Codex reads project rules. `codex-exec-wrapper.sh` runs that sync before `codex exec`, saves `[HARNESS-LEARNING]` notes to `codex-learnings.md`, and filters secrets.
+- In `/breezing`, when `.claude/state/review-result.json` records APPROVE for the current HEAD commit, the final phase skips the manual APPROVE confirmation.
+- Codex execution policy (`harness.rules`): `npm test`, `yarn test`, and `pnpm test` run without asking. `git push --force`, `git reset --hard`, `rm -rf`, `git clean -f`, `DROP TABLE`, and `DELETE FROM` ask for confirmation.
 
 ### Changed
 
-- **CLAUDE.md compressed to 120 lines**: Feature Table (5 items), skill category table (5 categories); full details moved to `docs/`
-- **Implementer count auto-determination**: `max(1, min(独立タスク数, --parallel N, planner_max_parallel, 5))` — starvation prevention + hard cap at 5
-- **`review-retake-loop.md`**: Added `review-result.json` write spec with JSON format, Reviewer→Lead delegation flow, and file lifecycle
-- **`execution-flow.md` Phase C**: APPROVE fast-path check added as step 2; phase processing renumbered
-- **`team-composition.md`**: Extended configuration (5 Implementers) cost estimate table added
-- **`release-har` skill redesigned (Phase 14)**: Full redesign with Pre-flight checks, structured git log, Conventional Commits classification, Claude diff summarization (Highlights + Before/After), SemVer auto-detection, dry-run preview, 4-section Release Notes, Compare link auto-generation, `--announce` option, and `--dry-run` default gate; `references/release-notes-template.md` and `references/changelog-format.md` added
-
----
+- `/breezing` implementer count is at least 1 and at most the smallest of the independent task count, `--parallel N`, the planner limit, and 5.
+- The `release-har` skill shows a `--dry-run` preview first, infers the semantic-version bump, writes four-section release notes with compare links, and adds an announcement only with `--announce`.
 
 ## [2.23.3] - 2026-02-22
 
-### 🎯 What's Changed for You
-
-**Codex integration is now explicitly CLI-first (`codex exec`) outside breezing, and Codex package parity includes the new `generate-slide` skill.**
-
-| Before | After |
-|--------|-------|
-| `work`/`harness-review`/`codex-review` docs mixed Codex MCP wording with CLI execution examples | Non-breezing Codex flows are documented as CLI-only (`codex exec`) with consistent setup and troubleshooting |
-| `codex-worker-setup.sh` checked MCP registration state | Setup now checks `codex exec` readiness directly (`codex_exec_ready`) |
-| Codex package parity test did not block non-breezing MCP vocabulary regressions | New CLI-only regression checks added to `tests/test-codex-package.sh` |
-| `generate-slide` existed in source/opencode but not in Codex package | `codex/.codex/skills/generate-slide/` is now included and parity tests pass |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2233---2026-02-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5348)
 
 ### Added
 
-- **Codex package skill parity**: Added `generate-slide` skill files to `codex/.codex/skills/`
-- **CLI-only regression guard**: Added non-breezing Codex vocabulary checks to `tests/test-codex-package.sh`
-- **README updates (EN/JA)**: Added `/generate-slide` command docs and slide-generation feature section
+- The Codex package includes the `generate-slide` skill; bilingual READMEs document the `/generate-slide` command.
 
 ### Changed
 
-- **Codex docs (non-breezing)**: Updated `work`, `harness-review`, `codex-review`, routing/setup references to CLI-first terminology and behavior (`codex exec`)
-- **Codex setup reference**: Reworked `codex-mcp-setup.md` content into Codex CLI setup flow (legacy filename retained for compatibility)
-- **README Codex review section (EN/JA)**: Clarified Codex second-opinion execution path as Codex CLI-based
+- Non-Breezing Codex work and second-opinion reviews use `codex exec`, with CLI setup/troubleshooting rather than MCP wording.
 
 ### Fixed
 
-- **Setup behavior mismatch**: Replaced MCP registration check in `scripts/codex-worker-setup.sh` with actual CLI execution readiness check
-- **Codex mirror consistency**: Synced updated non-breezing Codex skill docs between `skills/` and `codex/.codex/skills/`
-
----
+- Setup checks actual Codex CLI readiness; mirrors and regression checks match the CLI-only contract.
 
 ## [2.23.2] - 2026-02-22
 
-### 🎯 What's Changed for You
-
-**Codex skills now use fully native multi-agent vocabulary — CI checks pass, and `--claude` review routing is explicitly documented.**
-
-| Before | After |
-|--------|-------|
-| Codex breezing/work skills contained Claude Code-specific terms (`delegate mode`, `TaskCreate`, `subagent_type`, etc.) | All 82+ occurrences replaced with Codex native API equivalents (`Phase B`, `spawn_agent`, `role`, etc.) |
-| No `review_engine` matrix in Codex breezing/work SKILL.md | `review_engine` comparison table added with `codex` / `claude` columns |
-| `--claude + --codex-review` conflict undocumented | Explicit conflict rule: mutually exclusive, fails before execution |
-| State files referenced `.claude/state/` paths | State files use `${CODEX_HOME:-~/.codex}/state/harness/` paths |
-| `opencode/` contained stale breezing files | Rebuilt `opencode/` — breezing removed (dev-only skill) |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2232---2026-02-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5380)
 
 ### Fixed
 
-- **Codex vocabulary migration**: replaced 82+ legacy Claude Code terms across 13 files in `codex/.codex/skills/breezing/` and `codex/.codex/skills/work/` — `delegate mode` → `Phase B`, `TaskCreate` → `spawn_agent`, `subagent_type` → `role:`/`spawn_agent()`, `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` → `config.toml [features] multi_agent`, `.claude/state/` → `${CODEX_HOME}/state/harness/`
-- **`--claude` review routing**: added `review_engine` matrix table and `--claude + --codex-review` conflict rule to both `breezing/SKILL.md` and `work/SKILL.md`
-- **OpenCode sync**: rebuilt `opencode/` to remove stale breezing files and routing-rules.md
-
----
+- Codex work/team guides use native multi-agent APIs and `${CODEX_HOME:-~/.codex}/state/harness/`. `--claude` delegates review too; `--claude --codex-review` fails before execution. OpenCode drops then-development-only Breezing files.
 
 ## [2.23.1] - 2026-02-22
 
-### 🎯 What's Changed for You
-
-**Codex CLI setup now merges files instead of overwriting, and README setup instructions are clearer with a collapsible quick-start.**
-
-| Before | After |
-|--------|-------|
-| `setup-codex.sh` overwrote all destination files on every sync | Merge strategy: new files added, existing files updated, user-created files preserved |
-| Codex CLI Setup was a top-level README section | Moved to collapsible `<details>` block with step-by-step quick-start |
-| `config.toml` had 4 agent definitions | 9 agents: added `task_worker`, `code_reviewer`, `codex_implementer`, `plan_analyst`, `plan_critic` |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2231---2026-02-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5402)
 
 ### Changed
 
-- **README (EN/JA)**: Codex CLI Setup section moved from top-level to collapsible `<details>` block with prerequisites, 3-step quick-start, and flag reference table
-- **`setup-codex.sh`**: `sync_named_children()` rewritten with 3-way merge strategy — new files are copied, existing files are backed up and updated, destination-only files are preserved; log output now shows `(N new, N updated, N preserved, N skipped)`
-- **`codex-setup-local.sh`**: same merge strategy applied to project-local setup script
+- Codex setup adds new files, backs up/replaces managed existing files, and preserves destination-only user files; project/user setup use the same merge. Guides move into expandable quick-start details.
 
 ### Added
 
-- **`merge_dir_recursive()`** helper in both setup scripts for recursive directory merging with backup
-- **5 new Codex agent definitions** in `setup-codex.sh` `config.toml` generation: `task_worker`, `code_reviewer`, `codex_implementer`, `plan_analyst`, `plan_critic` (Breezing roles)
-- Idempotent agent injection: existing `config.toml` files receive missing agent entries without duplicating existing ones
-
----
+- Setup injects five missing planning/worker/reviewer roles idempotently without duplicating existing roles.
 
 ## [2.23.0] - 2026-02-21
 
-### 🎯 What's Changed for You
-
-**Codex breezing now has its own Phase 0 (Planning Discussion) using Codex's native multi-agent API — Planner and Critic agents analyze your plan before implementation begins.**
-
-| Before | After |
-|--------|-------|
-| Codex breezing Phase 0 was dead code (referenced Claude-only APIs) | Phase 0 uses `spawn_agent`/`send_input`/`wait`/`close_agent` natively |
-| `config.toml` had 4 agent definitions | 9 agents defined including `plan_analyst`, `plan_critic`, `task_worker`, `code_reviewer`, `codex_implementer` |
-| All breezing reference files were identical between Claude and Codex | 3 files now intentionally diverge with platform-native implementations |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2230---2026-02-21) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5428)
 
 ### Added
 
-- **Codex Phase 0 (Planning Discussion)**: ported from Claude Agent Teams to Codex native multi-agent API (`spawn_agent`/`send_input`/`wait`/`close_agent`)
-- **5 new Codex agent definitions** in `config.toml`: `plan_analyst`, `plan_critic`, `task_worker`, `code_reviewer`, `codex_implementer`
-- **Mirror sync divergence management** (D24, P20): 3 breezing files (`planning-discussion.md`, `execution-flow.md`, `team-composition.md`) now excluded from rsync to preserve Codex-native implementations
+- Codex planning discussion uses native agents and lead-relayed analyst/critic dialogue. Five role definitions support planning, implementation, and review.
 
 ### Changed
 
-- **Codex `planning-discussion.md`**: fully rewritten with Codex native API — Planner ↔ Critic dialogue via Lead relay pattern using `send_input` + `wait` loops
-- **Codex `execution-flow.md`**: Phase 0 + Phase A spawn logic updated to `spawn_agent()` format; environment check now references `config.toml [features] multi_agent = true`
-- **Codex `team-composition.md`**: all role definitions updated — `subagent_type` removed, `spawn_agent()` format, `SendMessage` → `send_input()`, `shutdown_request` → `close_agent()`
-
----
+- Three Breezing references keep Codex-specific content and are excluded from the shared copy. Codex team runs require `[features] multi_agent = true` in `config.toml`; Harness's environment check looks for it.
 
 ## [2.22.0] - 2026-02-21
 
-### 🎯 What's Changed for You
-
-**Security guardrails now apply automatically from the moment you install Harness — no `/harness-init` required. Permission policy hardened with least-privilege defaults and privacy-safe session logging.**
-
-| Before | After |
-|--------|-------|
-| Security settings (deny/ask rules) required running `/harness-init` | Plugin settings applied automatically on install (CC 2.1.49+) |
-| Plugin settings had a broad `allow` rule; no DB CLI protection | Least-privilege: removed blanket `allow`; added deny for `psql`/`mysql`/`mongo` |
-| `stop-session-evaluator.sh` always returned `{"ok":true}` without reading input | Hook reads `last_assistant_message`, stores length+hash only (privacy-safe) with atomic writes |
-| No hook for configuration file changes | New `ConfigChange` hook records config changes to breezing timeline when active |
-| `npm install` / `bun install` ran without confirmation | Package manager installs now require user confirmation (`ask` rule) |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2220---2026-02-21) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5454)
 
 ### Added
 
-- **Plugin settings.json** (`.claude-plugin/settings.json`): default security permissions distributed with the plugin — active from install (CC 2.1.49+)
-  - **Deny**: `.env`, secrets, SSH keys (`id_rsa`, `id_ed25519`), `.aws/`, `.ssh/`, `.npmrc`, `sudo`, `rm -rf/-fr`, DB CLIs (`psql`, `mysql`, `mongo`)
-  - **Ask**: destructive git (`push --force`, `reset --hard`, `clean -f`, `rebase`, `merge`), package installs (`npm/bun/pnpm install`), `npx`/`npm exec`
-- **`ConfigChange` hook** (`scripts/hook-handlers/config-change.sh`): records configuration file changes to `breezing-timeline.jsonl` when breezing is active; always non-blocking
-  - Normalizes `file_path` to repo-relative paths in timeline logs
-  - Portable timeout detection (`timeout`/`gtimeout`/`dd` fallback)
-- **`last_assistant_message` support** in `stop-session-evaluator.sh`: reads CC 2.1.47+ Stop payload
-  - Stores message length + SHA-256 hash only (no plaintext — privacy by design)
-  - Atomic writes via `mktemp` (TOCTOU fix)
-  - Portable hash detection (`shasum`/`sha256sum`)
-- **CC 2.1.49 compatibility matrix** (`docs/CLAUDE_CODE_COMPATIBILITY.md`): added v2.1.43-v2.1.49 entries covering Plugin settings.json, Worktree isolation, Background agents, ConfigChange hook, Sonnet 4.6, WASM memory fix
-
-### Changed
-
-- **Breezing: Worktree isolation support** (CC 2.1.49+): documented `isolation: "worktree"` in `guardrails-inheritance.md` — parallel Implementers can now work on the same files without conflicts via git worktree isolation
-- **Breezing: Agent model field fix** (CC 2.1.47+): documented model field behavior change in guardrails for correct agent spawning
-- **Breezing: Background agents** (`background: true`): `video-scene-generator` agent now supports non-blocking background execution
-- **Breezing: opencode mirror full sync**: all 10 breezing reference files (execution-flow, team-composition, review-retake-loop, session-resilience, planning-discussion, plans-to-tasklist, codex-engine, codex-review-integration, guardrails-inheritance, SKILL.md) synced to `opencode/skills/breezing/` for the first time
-- **Breezing: Codex mirror updates**: all breezing reference files in `codex/.codex/skills/breezing/` updated to latest
-- **Work skill**: major Codex mirror updates for auto-commit, auto-iteration, codex-engine, error-handling, execution-flow, parallel-execution, review-loop, scope-dialog, session-management
-- **`quick-install.sh`**: added note that default security permissions apply automatically — no manual configuration needed
-- **`claude-settings.md` skill**: added note that CC 2.1.49+ auto-applies plugin settings; manual `settings.json` generation only needed for project-specific additions
-- **`settings.security.json.template`**: updated `_harness_version` and added `_harness_note` clarifying role separation from plugin settings; unified `rm -rf/-fr` deny variants
-- **Version references**: updated from CC 2.1.38 to 2.1.49 across 16+ skill and agent files
+- This release shipped default security rules in `.claude-plugin/settings.json` and stated that Claude Code 2.1.49+ applies them on install, so `/harness-init` was no longer needed for them. Release 5.7.0 later recorded that Claude Code does not read permission rules from this plugin file. Do not assume these rules were active unless `/permissions` lists them in your session.
+- The `ConfigChange` hook records configuration-file changes to the team timeline only while Breezing is active, and never blocks. The Stop hook reads the final assistant message (Claude Code 2.1.47+) and stores only its length and SHA-256 hash, never the text, using atomic writes.
 
 ### Security
 
-- **Least-privilege enforcement**: removed overly broad `allow` from plugin settings.json; all permissions now explicit deny or ask
-- **DB CLI deny rules**: `psql`, `mysql`, `mongod`, `mongo` blocked by default to prevent accidental data operations
-- **Secret path expansion**: added `id_ed25519`, recursive `.ssh/`, `.aws/`, `.npmrc` to deny patterns
-- **Privacy-safe session logging**: `last_assistant_message` stored as length+hash, not plaintext
-- **Atomic file writes**: `session.json` updates use `mktemp` + `mv` to prevent TOCTOU race conditions
-- All 3 Codex experts (Security/Quality/Architect) scored A on hardening review
+- Rules in that file at this release had no blanket allow. Deny: `.env` and secret files, SSH keys (`id_rsa`, `id_ed25519`, `.ssh/`), `.aws/`, `.npmrc`, `sudo`, `rm -rf` and `rm -fr`, and the database CLIs `psql`, `mysql`, `mongo`, `mongod`. Ask: `git push --force`, `git reset --hard`, `git clean -f`, ordinary `git rebase` and `git merge`, `npm`/`bun`/`pnpm install`, `npx`, and `npm exec`. These were this release's defaults, not current policy.
 
----
+### Changed
+
+- Breezing guides adopt Claude Code 2.1.49+ worktree isolation (`isolation: "worktree"`), so parallel implementers edit separate checkouts of the files, and the 2.1.47+ agent model-field behavior. Conflicting changes can still require resolution when merged. Only the `video-scene-generator` agent gains background execution (`background: true`). Codex and OpenCode team references are synchronized. Version references move from Claude Code 2.1.38 to 2.1.49.
 
 ## [2.21.0] - 2026-02-20
 
-### 🎯 What's Changed for You
-
-**Breezing now reviews your plan before coding starts. Phase 0 (Planning Discussion) runs by default—skip with `--no-discuss`.**
-
-| Before | After |
-|--------|-------|
-| `/breezing` jumps straight into coding | Plan reviewed by Planner + Critic before implementation |
-| No task validation before execution | V1–V5 checks (scope, ambiguity, overlap, deps, TDD) |
-| All tasks registered at once | 8+ tasks auto-split into progressive batches |
-| Implementers communicate only via Lead | Implementers can message each other directly |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2210---2026-02-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5506)
 
 ### Added
 
-- **Breezing Planning Discussion (Phase 0)**: pre-execution plan review with Planner + Critic teammates (default-on, skip with `--no-discuss`)
-- **Task granularity validation (V1–V5)**: validates task scope, ambiguity, owns overlap, dependency consistency, and TDD markers before TaskCreate
-- **Progressive Batch strategy**: automatic batch splitting for 8+ tasks with 60% completion triggers
-- **Implementer peer communication (Pattern D)**: direct Implementer-to-Implementer knowledge sharing via SendMessage
-- **Hook-driven signals**: `task-completed.sh` now generates `partial_review_recommended` and `next_batch_recommended` signals
-- **Spec Driven Development integration**: `[feature:tdd]` markers in Plans.md trigger test-first task generation
-- **New agents**: `plan-analyst` (task analysis) and `plan-critic` (Red Teaming review) for Phase 0
+- `/breezing` reviews the plan before coding: a Planner (`plan-analyst`) and a Critic (`plan-critic`) discuss it first. This is on by default; `--no-discuss` skips it. Tasks are checked for scope, ambiguity, overlapping file ownership, dependency consistency, and test-first markers before they are created.
+- Mark a task with `[feature:tdd]` in Plans.md to generate its tests first.
+- 8 or more tasks are split into batches; the next batch is recommended when 60% of the current one completes. Implementers can message each other directly, and the task-completion hook recommends partial reviews and next batches.
 
 ### Fixed
 
-- **Signal threshold comparison**: Changed `-eq` to `-ge` in `task-completed.sh` to handle simultaneous task completions that skip exact threshold
-- **Signal deduplication**: Added existing signal check before emitting to prevent duplicate signals
-- **Signal generation fallback**: Added `python3` fallback for signal JSON generation when `jq` is unavailable
-- **Completion counting**: Fixed `grep -c` overcounting in batch scope (now counts each task_id once regardless of retakes)
-- **Document consistency**: Resolved contradictions between execution-flow.md, team-composition.md, and planning-discussion.md regarding round counts and V1-V4 skip policy
-- **Signal session scoping**: Signals now include `session_id` and dedup is session-scoped, preventing prior sessions from suppressing signals
-- **grep pattern safety**: Changed `grep -q` to `grep -Fq` (fixed-string match) for task_id lookups, preventing regex meta-character injection
-- **stdin piping safety**: Changed `echo` to `printf '%s'` for JSON piping to jq/python3, preventing edge-case mangling
-- **DRY signal construction**: Extracted `_build_signal_json` helper to eliminate jq/python3 fallback duplication in signal paths
-- **Phase 0 handoff persistence**: Added `handoff` payload to breezing-active.json for Compaction resilience between Phase 0 and Phase A
-- **Resume stale-ID reconciliation**: Added rules for mapping old task IDs to new IDs during session resume, with completion evaluation against active ID set
-
----
+- Signals tolerate simultaneous threshold crossings, deduplicate within sessions, and preserve planning handoffs across compaction. Resume maps stale task IDs; each active task is counted once. Safe fixed-string/JSON handling includes Python fallback without jq.
 
 ## [2.20.13] - 2026-02-19
 
-### What's Changed
-
-**Codex execution is now documented and validated as native multi-agent first, with `--claude` forcing both implementation and review delegation to Claude.**
-
-| Before | After |
-|--------|-------|
-| Codex skill docs still mixed legacy task-team vocabulary and old state paths | Codex skill docs are aligned to native multi-agent tool flow (`spawn_agent`, `wait`, `send_input`, `resume_agent`, `close_agent`) and CODEX_HOME state paths |
-| `--claude` behavior could read as implementation-only delegation in some references | `--claude` is now consistently specified as implementation + review delegation to Claude |
-| Setup could leave `multi_agent` / role defaults implicit | Setup scripts now ensure `features.multi_agent=true` and harness agent role defaults in target `config.toml` |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22013---2026-02-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5545)
 
 ### Changed
 
-- Rewrote Codex distribution docs for `work`/`breezing` to use native multi-agent flow terminology and removed legacy task-team wording.
-- Standardized runtime state references to `${CODEX_HOME:-~/.codex}/state/harness/` across Codex skill docs.
-- Added explicit flag conflict rule: `--claude + --codex-review` fails before execution.
-- Updated Codex setup references and README to reflect native multi-agent defaults and role declarations.
-- Strengthened `tests/test-codex-package.sh` and CI to guard against legacy vocabulary regressions and enforce required multi-agent keywords/config defaults.
+- Codex guides use native spawn/wait/send/resume/close and its own state directory; setup ensures multi_agent and role defaults. `--claude` means implementation plus review, and conflicts with `--codex-review`.
 
 ### Fixed
 
-- Fixed inconsistent review routing by making `--claude` mode explicitly require Claude reviewer routing in both `work` and `breezing`.
+- Claude review routing now matches that explicit delegation in both work and Breezing.
 
----
 ## [2.20.11] - 2026-02-19
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22011---2026-02-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5570)
+
 ### Changed
 
-- **Harness UI moved out of distribution scope**: tracked UI assets/skills/templates/hooks are excluded from release payload
-- **SessionStart hooks simplified**: removed `harness-ui-register` execution from startup/resume
+- The Harness UI dashboard (`/harness-ui`, added in 2.12.0) leaves the distribution. Its assets, skills, templates, and hooks are no longer shipped, and session start no longer registers it.
 
 ### Fixed
 
-- **Issue #50**: removed distribution-path dependency on memory wrapper scripts with hardcoded absolute paths
-  - distribution no longer tracks the 8 wrapper files (`scripts/harness-mem*`, `scripts/hook-handlers/memory-*.sh`)
-  - hooks/config no longer reference those wrapper scripts
-
----
+- Issue #50: the 8 memory wrapper scripts with hardcoded absolute paths (`scripts/harness-mem*`, `scripts/hook-handlers/memory-*.sh`) are no longer shipped, and hooks and config no longer call them.
 
 ## [2.20.10] - 2026-02-18
 
-### What's Changed
-
-**Codex Harness now defaults to user-based installation, and Codex command execution is Codex-first with explicit `--claude` delegation.**
-
-| Before | After |
-|--------|-------|
-| Codex setup copied `.codex` per project by default | Setup defaults to user scope (`${CODEX_HOME:-~/.codex}`), with `--project` as opt-in |
-| `/work --codex` and `/breezing --codex` were primary for Codex execution | Codex is default engine; `--claude` explicitly delegates implementation |
-| Codex setup guidance was mixed between project/user scopes | README + setup references are aligned to user-based rollout (JP/EN) |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22010---2026-02-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5585)
 
 ### Changed
 
-- Updated Codex setup scripts (`scripts/setup-codex.sh`, `scripts/codex-setup-local.sh`) to install skills/rules to `${CODEX_HOME:-~/.codex}` by default.
-- Added explicit fallback mode `--project` for project-local deployment when needed.
-- Updated Codex distribution docs and setup references to user-based defaults in both English and Japanese.
-- Reworked Codex skill routing/docs so implementation intents resolve to Codex-first `/work`, with `--claude` for intentional delegation.
-- Aligned `/breezing` recovery/state docs (`impl_mode`) with Codex-first runtime semantics.
-- Synced release-related references and command docs to avoid setup drift between README, setup skill references, and Codex distribution docs.
+- Codex setup defaults to user scope `${CODEX_HOME:-~/.codex}`; `--project` opts into project scope. Codex work uses Codex by default with explicit `--claude` delegation, and recovery state follows that routing.
 
----
 ## [2.20.9] - 2026-02-15
 
-### 🎯 What's Changed for You
-
-**In Codex mode, `harness-review` guidance is now consistently documented as delegating to Claude CLI (`claude -p`).**
-
-| Before | After |
-|--------|-------|
-| Codex-side review docs mixed Codex/MCP wording and delegation targets | Codex-side docs consistently describe Claude CLI (`claude -p`) delegation flow |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2209---2026-02-15) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5607)
 
 ### Changed
 
-- Updated Codex-side review docs to align review mode wording, integration flow, and detection guidance around `claude -p` delegation.
-- Documentation consistency cleanup for Codex review-mode references.
+- Codex-side second-review documentation consistently describes Claude CLI `claude -p` delegation.
 
----
 ## [2.20.8] - 2026-02-14
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2208---2026-02-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5623)
+
 ### Changed
 
-- **Claude Code 2.1.41/2.1.42 adaptation**: Updated compatibility matrix and recommended version to v2.1.41+
-  - Added v2.1.39〜v2.1.42 entries to `docs/CLAUDE_CODE_COMPATIBILITY.md` (4 new version sections, 30+ feature rows)
-  - Recommended version raised from v2.1.38+ to **v2.1.41+** (Agent Teams Bedrock/Vertex/Foundry model ID fix, Hook stderr visibility fix)
-- **Breezing Bedrock/Vertex/Foundry note**: Added CC 2.1.41+ requirement note to `guardrails-inheritance.md` for non-Anthropic API users
-- **Session `/rename` auto-naming**: Added CC 2.1.41+ auto-generate session name documentation to session skill
-- **Troubleshoot `claude auth` commands**: Added CC 2.1.41+ `claude auth login/status/logout` to diagnostic table
+- Recommended Claude Code version rises from 2.1.38+ to 2.1.41+. If you run Breezing through Bedrock, Vertex, or Foundry, 2.1.41+ is required because it fixes team model IDs there. 2.1.41+ also shows hook error output.
+- Guides add `/rename` automatic session naming and `claude auth login`, `claude auth status`, and `claude auth logout` (Claude Code 2.1.41+). Compatibility notes extend through 2.1.42.
 
----
 ## [2.20.7] - 2026-02-14
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2207---2026-02-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5635)
+
 ### Fixed
 
-- **Stop hook "JSON validation failed" on every turn (#42)**: Replaced unreliable `type: "prompt"` hook with deterministic `type: "command"` hook (`stop-session-evaluator.sh`)
-  - Root cause: prompt-type hook instructed the LLM to respond in JSON, but the model frequently returned natural language, causing repeated JSON parse errors
-  - New command-based evaluator always outputs valid JSON, eliminating validation failures entirely
-  - Both `hooks/hooks.json` and `.claude-plugin/hooks.json` updated in sync
+- Replace the prompt-based Stop evaluator with a deterministic command that returns valid JSON, removing recurring model-output parse failures.
 
----
 ## [2.20.6] - 2026-02-14
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2206---2026-02-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5645)
+
 ### Fixed
 
-- **session-auto-broadcast.sh の hookEventName バリデーションエラー** (#41):
-  - `hookEventName` を `"AutoBroadcast"` → `"PostToolUse"` に修正（4箇所）
-  - `session-broadcast.sh` の `hookEventName` を `"Broadcast"` → `"PostToolUse"` に修正
-  - subprocess の stdout 汚染を防止（`>/dev/null` リダイレクト追加）
-  - `test-hook-event-names.sh` テスト追加（hookEventName 一貫性の回帰テスト）
+- Broadcast hooks use the valid PostToolUse event name and suppress subprocess chatter from hook stdout.
 
----
 ## [2.20.5] - 2026-02-12
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2205---2026-02-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5656)
+
 ### Fixed
 
-- **Breezing `--codex` subagent_type enforcement**: Fixed `--codex` flag being ignored during Implementer spawn
-  - Root cause: `execution-flow.md` Step 3 hardcoded `task-worker` with no `--codex` branch
-  - Added mandatory `impl_mode` branching to SKILL.md, execution-flow.md, and team-composition.md
-  - Added three "absolute prohibition" rules: codex mode must use `codex-implementer`, standard mode must use `task-worker`, codex mode Lead must not Write/Edit source
-  - Added explicit parallel spawn instruction: N Implementers spawned simultaneously (`N = min(independent_tasks, --parallel N, 3)`)
-  - Compaction Recovery now restores correct subagent_type based on `impl_mode`
-
----
+- `/breezing --codex` now spawns Codex implementers; before, the flag was ignored and the standard worker ran. The skill instructions forbid the lead from editing source in Codex mode. Standard mode keeps the standard worker. N implementers start together, where N = min(independent tasks, `--parallel N`, 3). Recovery after compaction restores the selected mode.
 
 ## [2.20.4] - 2026-02-11
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2204---2026-02-11) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5669)
+
 ### Fixed
 
-- **Codex MCP → CLI migration (Phase 7 completion)**:
-  - Replace all `mcp__codex__codex` text references with `codex exec (CLI)` in `pretooluse-guard.sh` (4 messages) and `codex-worker-engine.sh` (1 log message)
-  - Remove MCP legacy note from `codex-review/SKILL.md`
-  - Add `codex-cli-only.md` rule to `.claude/rules/` for prevention
-  - Add PreToolUse hook failsafe: deny `mcp__codex__*` tool calls with localized message via `emit_deny` + `msg()` pattern
-  - Add `.gitignore` patterns for opencode/codex mirror dev-only skills (`test-*`, `x-promo`, `x-release-harness`)
+- Harness messages and the `codex-review` skill refer only to `codex exec` (Codex CLI). Development-only skills are excluded from the Codex and OpenCode copies.
 
 ### Security
 
-- **Codex MCP dual-defense**: Three-layer protection against deprecated MCP usage (text correction + hook block + rule file). Codex review: Security A, Architect B
-
----
+- A PreToolUse hook denies any `mcp__codex__*` tool call with an explanatory message, and the `codex-cli-only` rule forbids it, so the retired Codex MCP server cannot be used by accident. Use the Codex CLI (`codex exec`) instead.
 
 ## [2.20.3] - 2026-02-10
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2203---2026-02-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5686)
+
 ### Fixed
 
-- **Hook handler security hardening** (Codex review Round 1-3):
-  - Replace manual JSON string escaping with `jq -nc --arg` and `python3 json.dumps` for safe JSON construction
-  - Fix Python code injection vulnerability: pass data via `sys.argv`/`stdin` instead of triple-quote interpolation
-  - Fix `grep` failure under `set -euo pipefail` with `|| true`
-  - Use `grep -F` for fixed-string matching (avoid regex metacharacter issues)
-  - Add `chmod 700` on `.claude/state` directory
-  - Add `tostring` guard for description truncation type safety
-  - Add 5-second dedup for TeammateIdle events
-  - Add JSONL rotation (500 → 400 lines) to prevent unbounded growth
-
----
+- Hook JSON uses proper encoding and data arguments instead of source interpolation. State directories use mode 700; idle events deduplicate within five seconds and JSONL rotates from 500 to 400 lines. Safe string matching/type conversion prevents parse and injection errors.
 
 ## [2.20.2] - 2026-02-10
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2202---2026-02-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5702)
+
 ### Added
 
-- **TeammateIdle/TaskCompleted hook handlers**: New `scripts/hook-handlers/teammate-idle.sh` and `task-completed.sh` log agent team events to `.claude/state/breezing-timeline.jsonl`
-- **3-layer memory architecture (D22)**: Documented coexistence design for Claude Code auto memory, Harness SSOT, and Agent Memory in `decisions.md`
-- **Task(agent_type) pattern (P18)**: Documented sub-agent type restriction syntax in `patterns.md`
+- TeammateIdle and TaskCompleted hooks log team events to `.claude/state/breezing-timeline.jsonl`. Memory guidance separates Claude Code auto memory, Harness decisions and patterns, and agent memory; none replaces the others.
 
 ### Changed
 
-- **Claude Code 2.1.38+ adaptation**: Updated Feature Table in CLAUDE.md with 6 new rows (TeammateIdle/TaskCompleted Hook, Agent Memory, Fast mode, Auto Memory, Skill Budget Scaling, Task(agent_type))
-- **Version references**: Updated all "CC 2.1.30+" references to "CC 2.1.38+" across 16+ skill and agent files
-- **Skill budget scaling**: Relaxed 500-line hard rule to recommendation in `skill-editing.md`, noting CC 2.1.32+ 2% context window scaling
-- **Session memory**: Added "Auto Memory Relationship (D22)" section to `session-memory/SKILL.md` and `memory/SKILL.md`
-- **Breezing execution flow**: Updated hook implementation status to "implemented" in `execution-flow.md`
-- **Guardrails inheritance**: Added Task(agent_type) to safety mechanism table
-
----
+- Version references move from Claude Code 2.1.30+ to 2.1.38+. Guidance covers team hooks, agent memory, fast mode, auto memory, skill-budget scaling (2% of the context window, 2.1.32+), and `Task(agent_type)` subagent restriction. The 500-line skill limit becomes a recommendation.
 
 ## [2.20.1] - 2026-02-10
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2201---2026-02-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5721)
+
 ### Fixed
 
-- **PostToolUse hook syntax error**: Fix bash parser error in `posttooluse-tampering-detector.sh` caused by `|| true` after heredoc inside command substitution
-- **python3 fallback in all hooks**: Replace heredoc python3 fallback with `python3 -c` in all 10 hook scripts to fix stdin conflict
-- **POSIX compliance**: Replace `echo` with `printf '%s'` for safe input piping, `echo -e` with `printf '%b'`
-- **Pattern matching**: Replace `echo | grep -qE` with `[[ =~ ]]` for 6 pattern checks (with word boundaries)
-- **Error handling**: Change `set -euo pipefail` to `set +e` to match all other PostToolUse scripts
-- **Bilingual warnings**: Add English + Japanese warning messages to hook scripts
-
----
+- Repair post-write shell parsing and Python fallback stdin conflicts across ten hooks. Portable printf/string matching and bilingual warnings keep advisory hooks from stopping work on incidental errors.
 
 ## [2.20.0] - 2026-02-08
 
-### 🎯 What's Changed for You
-
-**28 skills consolidated to 19. Breezing now runs with Phase A/B/C separation, teammate permissions fixed, and repo cleaned up.**
-
-| Before | After |
-|--------|-------|
-| `memory`, `sync-ssot-from-memory`, `cursor-mem` as 3 skills | Unified `memory` (SSOT promotion + memory search in references) |
-| `setup`, `setup-tools`, `harness-mem`, `codex-setup`, `2agent`, `localize-rules` as 6 skills | Unified `setup` (routing table dispatches to references) |
-| `ci`, `agent-browser`, `x-release-harness` visible as slash commands | Hidden with `user-invocable: false` (auto-load still works) |
-| Delegate mode ON at breezing start → bypass permissions lost | Phase A (prep) maintains bypass → delegate only in Phase B |
-| Delegate mode stays on during completion → commit restricted | Phase C exits delegate → Lead can commit directly |
-| Teammates auto-denied Bash due to "prompts unavailable" | `mode: "bypassPermissions"` + PreToolUse hooks for safety |
-| Build artifacts, dev docs, lock files tracked in git | 33 files untracked, .gitignore updated |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2200---2026-02-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5734)
 
 ### Changed
 
-- **Skill consolidation (28 → 19)**:
-  - `/memory`: Absorbed `sync-ssot-from-memory` and `cursor-mem`
-  - `/setup`: Absorbed `setup-tools`, `harness-mem`, `codex-setup`, `2agent`, `localize-rules`
-  - `/troubleshoot`: Added CI failure triggers to description
-- **Breezing Phase separation**: Restructured execution flow into Phase A (Pre-delegate) / Phase B (Delegate) / Phase C (Post-delegate)
-  - Phase A: Maintain user's permission mode while initializing Team and spawning teammates
-  - Phase B: Delegate mode — Lead uses only TaskCreate/TaskUpdate/SendMessage
-  - Phase C: Exit delegate, then run integration verification, commit, and cleanup
-- **Teammate permission model**: All teammate spawns use `mode: "bypassPermissions"` with PreToolUse hooks as safety layer
-  - PreToolUse hooks fire independently of permission system (official spec)
-  - Safety layers: disallowedTools + spawn prompt constraints + .claude/rules/ + Lead monitoring
-- **English-only releases**: GitHub release notes now written in English. Updated release rules and skills.
-- **All related docs updated**: execution-flow.md, team-composition.md, codex-engine.md, guardrails-inheritance.md, session-resilience.md
+- 28 skills become 19. `/memory` absorbs `/sync-ssot-from-memory` and `/cursor-mem`. `/setup` absorbs `/setup-tools`, `/harness-mem`, `/codex-setup`, `/2agent`, and `/localize-rules`. `/ci`, `/agent-browser`, and `/x-release-harness` no longer appear as slash commands (`user-invocable: false`); Claude can still load them automatically.
+- Breezing runs in three phases: preparation keeps your permission mode, the middle phase limits the lead to task coordination, and the final phase lets the lead verify and commit.
+- Teammates always run with `mode: "bypassPermissions"`, so they get no permission prompts. Protection relies on PreToolUse hooks, disallowed tools, spawn instructions, `.claude/rules/`, and lead monitoring. This fixes background teammates being auto-denied Bash ("prompts unavailable").
+- GitHub release notes are written in English.
 
 ### Added
 
-- `skills/memory/references/cursor-mem-search.md` - Cursor memory search reference
-- `skills/setup/references/harness-mem.md` - Harness-Mem setup reference
-- `skills/setup/references/localize-rules.md` - Rule localization reference
-- **Codex first-use check hook**: Auto-runs `check-codex.sh` on first `/codex-review` use (`once: true`)
-- **timeout/gtimeout detection**: Guides macOS users to `brew install coreutils`
+- The first `/codex-review` run checks Codex readiness once. On macOS without `timeout` or `gtimeout`, guides tell you to run `brew install coreutils`.
 
 ### Fixed
 
-- **Codex review fixes (22 issues)**: pretooluse-guard JSON parse consolidation (5→1 jq call), symlink security guard, session-monitor `eval` removal
-- **macOS compatibility**: All docs `timeout N codex exec` → `$TIMEOUT N codex exec` (GNU coreutils independent)
-- **Teammate Bash auto-deny**: Resolved "prompts unavailable" error for background teammates
+- Guard hooks parse JSON once, check symlinks, and no longer use `eval`. Codex commands use a portable timeout.
 
 ### Removed
 
-- **Untracked 33 files**: `mcp-server/dist/` (24 build artifacts), `docs/design/` (2), `docs/slides/` (1), `docs/claude-mem-japanese-setup.md`, dev-only docs (3), lock files (2)
-- **Archived skills**: `sync-ssot-from-memory`, `cursor-mem`, `setup-tools`, `harness-mem`, `codex-setup`, `2agent`, `localize-rules` → `skills/_archived/`
-
----
+- Merged skills move to `skills/_archived/`. Build output (including `mcp-server/dist/`), development notes, and lock files leave the repository.
 
 ## [2.19.0] - 2026-02-08
 
-### 🎯 What's Changed for You
-
-**5つの実装コマンドを `/work` と `/breezing` の2つに統一。両方 `--codex` 対応。**
-
-| Before | After |
-|--------|-------|
-| `/work`, `/ultrawork`, `/breezing`, `/breezing-codex`, `/codex-worker` の5コマンド | `/work` と `/breezing` の2コマンドに統一 |
-| コマンドの使い分けが複雑 | `/work` = Claude 実装、`/breezing` = チーム完走 |
-| Codex は別コマンド (`/codex-worker`, `/breezing-codex`) | `--codex` フラグで統一切り替え |
-| スコープ指定方法がコマンドごとに異なる | 両コマンド共通の対話式スコープ確認 |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2190---2026-02-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5787)
 
 ### Changed
 
-- **`/work` 全面改修**: 対話式スコープ確認 + タスク数に応じた自動戦略選択
-  - 1タスク → 直接実装、2-3 → 並列、4+ → 自動反復（旧 ultrawork 統合）
-  - `--codex` フラグで Codex MCP 実装委託モード
-  - 新リファレンス: scope-dialog.md, auto-iteration.md, codex-engine.md
-- **`/breezing` 更新**: `--codex` フラグ統合（旧 breezing-codex 吸収）
-  - 対話式スコープ確認の追加
-  - Codex Implementer 連携を codex-engine.md に集約
-- **pretooluse-guard.sh**: `ultrawork-active.json` → `work-active.json` に統一
-  - 後方互換: 旧ファイル名もフォールバックで検出
+- Five implementation commands become two: `/work` (Claude implements) and `/breezing` (team runs to completion). Both accept `--codex`, which at this release delegated implementation through Codex MCP, and both ask the same interactive scope question. `/work` picks a strategy by task count: 1 task directly, 2–3 in parallel, 4 or more iteratively. The state file becomes `work-active.json`; the old `ultrawork-active.json` is still read.
 
 ### Removed
 
-- **ultrawork** スキル → `/work all` で同等機能（`skills/_archived/` に移動）
-- **breezing-codex** スキル → `/breezing --codex` で同等機能（`skills/_archived/` に移動）
-- **codex-worker** スキル → `/work --codex` で同等機能（`skills/_archived/` に移動）
-
----
+- `/ultrawork` → use `/work all`. `/breezing-codex` → use `/breezing --codex`. `/codex-worker` → use `/work --codex`. The old skills move to `skills/_archived/`.
 
 ## [2.18.11] - 2026-02-06
 
-### 🎯 What's Changed for You
-
-**In `--codex` mode, Claude now acts as PM and Edit/Write are automatically blocked**
-
-| Before | After |
-|--------|-------|
-| Claude could edit directly in `--codex` mode | Edit/Write blocked except for Plans.md |
-| Ambiguous role separation | Clear PM (Claude) vs Worker (Codex) separation |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21811---2026-02-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5820)
 
 ### Added
 
-- **breezing skill (v2)**: Full auto task completion using Agent Teams
-  - Lead in delegate mode (coordination only), Implementer for coding, independent Reviewer
-  - `--codex-review` for multi-AI review integration
-  - session_id-based Hook enforcement: Reviewer Read-only, Implementer file ownership (pretooluse-guard.sh)
-  - Flexible flow: Lead-autonomous stages replace rigid Phase 0-4
-  - State simplification: Agent Teams TaskList as SSOT, breezing-active.json metadata-only
-  - Peer-to-peer: Reviewer↔Implementer direct dialogue for lightweight questions
-  - Agent Trace: per-Teammate metrics in completion reports
-- **Codex mode guard**: Added Codex mode detection to `pretooluse-guard.sh`
-  - Claude functions as PM, delegating implementation to Codex Worker
-  - Enabled via `codex_mode: true` in `ultrawork-active.json`
-  - Only Plans.md state marker updates allowed
+- Breezing (team mode) v2 separates a coordinating lead, implementers, and an independent read-only reviewer. Hooks enforce reviewer read-only access and implementer file ownership per session. `--codex-review` adds Codex review. Completion reports include per-teammate metrics.
+- Codex mode (`--codex`, recorded as `codex_mode: true` in `ultrawork-active.json`): Claude acts as manager, and every Edit/Write is blocked except Plans.md status-marker updates.
 
 ### Changed
 
-- **Codex review improvements**: Enhanced parallel review quality
-  - SSOT-aware reviews (considers decisions.md/patterns.md)
-  - Output limit relaxed 1500 → 2500 chars for thorough analysis
-  - Clear termination conditions (APPROVE when Critical/High = 0)
-  - Fixed "nitpicking" issue (Low/Medium only → APPROVE)
-- Minor expert template fixes
-
----
+- Codex review reads `decisions.md` and `patterns.md`, allows 2,500 instead of 1,500 output characters, and approves when critical and high findings are zero; low or medium findings alone no longer block.
 
 ## [2.18.10] - 2026-02-06
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21810---2026-02-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5857)
+
 ### Added
 
-- **Agent persistent memory**: Added `memory: project/user` to all 7 agents
-  - Subagents can now build institutional knowledge across conversations
-  - Security: Read-only agents (code-reviewer, project-analyzer) keep Bash/Write/Edit disabled
-  - Privacy guards: Each agent documents forbidden data (secrets, PII, source code snippets)
-
----
+- Seven agents gain project/user persistent memory. Read-only reviewers/analyzers retain no Bash/Write/Edit; memory excludes secrets, personal data, and source snippets.
 
 ## [2.18.7] - 2026-02-05
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2187---2026-02-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5868)
+
 ### Changed
 
-- **Claude guardrails**: Stop prompting on normal `git push`; prompt only on `git push -f/--force/--force-with-lease`.
-
----
+- Ordinary Git push no longer asks; force/force-with-lease still require confirmation.
 
 ## [2.18.6] - 2026-02-05
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2186---2026-02-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5876)
+
 ### Fixed
 
-- **Codex guardrails**: `harness.rules` now parses reliably and avoids prompting on safe commands (e.g. `git clean -n`, `sudo -n true`).
-- **Claude guardrails**: `templates/claude/settings.security.json.template` now uses valid permission syntax (`:*`) and prompts only on destructive variants.
+- Codex `harness.rules` (rules for command permissions) parse reliably. Safe checks such as `git clean -n` (preview untracked-file deletion) and `sudo -n true` (check sudo without an interactive prompt) no longer trigger needless permission questions. The Claude security template, `templates/claude/settings.security.json.template`, uses valid `:*` permission syntax (match command arguments) and prompts only on destructive variants.
 
-### Changed
-
-- **Codex package test**: Added rule example validation to prevent startup parse errors.
-
----
 
 ## [2.18.5] - 2026-02-05
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2185---2026-02-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5889)
+
 ### Added
 
-- **gogcli-ops skill**: Google Workspace CLI operations (Drive/Sheets/Docs/Slides)
-  - Auth workflow and account selection
-  - URL-to-ID resolution via `gog_parse_url.py`
-  - Read-only by default, write requires confirmation
-
----
+- The `gogcli-ops` skill guides Google Workspace CLI work on Drive, Sheets, Docs, and Slides, including sign-in, account selection, and converting URLs to IDs. It is read-only by default; writes ask for confirmation. This skill was later retired.
 
 ## [2.18.4] - 2026-02-04
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2184---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5900)
+
 ### Added
 
-- **Codex setup command**: Added `/codex-setup` skill and `scripts/codex-setup-local.sh`
-- **Setup tools**: `/setup-tools codex` subcommand for in-session Codex setup
-- **Harness init/update**: Optional Codex CLI sync during `/harness-init` and `/harness-update`
-
----
+- Set up the Codex CLI inside a session with `/codex-setup` or `/setup-tools codex`; `scripts/codex-setup-local.sh` handles project-local setup. `/harness-init` and `/harness-update` can optionally sync Codex CLI files. In 2.20.0, `/codex-setup` and `/setup-tools` were merged into `/setup`.
 
 ## [2.18.2] - 2026-02-04
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2182---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5910)
+
 ### Added
 
-- **Codex CLI distribution**: Added `codex/.codex` with full skills and temporary Rules guardrails
-- **Codex setup**: Added `scripts/setup-codex.sh` and `codex/README.md`
-- **Codex AGENTS**: Added `codex/AGENTS.md` tuned for `$skill` usage
-- **Codex package test**: Added `tests/test-codex-package.sh`
+- Codex CLI distribution includes skills, temporary rule-based guards, setup, and `$skill` instructions (invoke a skill by name), with package checks. Run `scripts/setup-codex.sh`; see `codex/README.md` for the setup steps.
 
 ### Changed
 
-- **Docs**: README now includes Codex CLI setup instructions
+- README includes Codex CLI setup instructions.
 
----
 
 ## [2.18.1] - 2026-02-04
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2181---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5925)
+
 ### Added
 
-- **Aivis/VOICEVOX TTS support**: Added Japanese TTS providers to generate-video skill
-  - `aivis`: Aivis Cloud API (speaker_id, intonation_scale, etc.)
-  - `voicevox`: VOICEVOX (character voices like Zundamon)
-  - Sample character configurations included
+- Video generation adds Japanese speech providers: `aivis` (Aivis Cloud API, an external service; options such as `speaker_id` and `intonation_scale`) and `voicevox` (VOICEVOX character voices such as Zundamon). Sample speaker configurations are included.
 
 ### Changed
 
-- **MCP server optional**: Removed `.mcp.json`, excluded mcp-server from distribution
-  - Users who need it can set up separately
-
----
+- The MCP server becomes optional: the plugin's `.mcp.json` is removed and `mcp-server` is not distributed, so installing the plugin no longer registers it. Set it up separately if you need it.
 
 ## [2.18.0] - 2026-02-04
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2180---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5941)
+
 ### Added
 
-- **Claude Code 2.1.30 compatibility**: Full integration with new features
-  - **AgentTrace v0.3.0**: Task tool metrics (tokenCount, toolUses, duration) in `docs/AGENT_TRACE_SCHEMA.md`
-  - **`/debug` command integration**: troubleshoot skill now routes to `/debug` for complex session issues
-  - **PDF page range reading**: notebookLM and harness-review support `pages` parameter for large documents
-  - **Git log extended flags**: harness-review, CI, harness-release use `--format`, `--raw`, `--cherry-pick`
-  - **OAuth `--client-id/--client-secret`**: codex-mcp-setup.md documents DCR-incompatible MCP setup
-  - **68% memory optimization**: session-memory and session skills document `--resume` benefits
-  - **Subagent MCP access**: task-worker and codex-worker document MCP tool sharing (bugfix in CC 2.1.30)
-  - **Accessibility settings**: harness-ui documents `reducedMotion` setting
-
----
+- Claude Code 2.1.30 compatibility. Harness changes: troubleshooting routes complex session issues to `/debug`; the agent trace schema v0.3.0 records task token count, tool uses, and duration; notebookLM and review read PDFs by page range (`pages`); review, CI, and release use richer `git log` flags.
+- Guidance for upstream Claude Code features: MCP OAuth with `--client-id` and `--client-secret` for servers without dynamic client registration, subagent MCP access (fixed in 2.1.30), about 68% lower memory with `--resume`, and the `reducedMotion` accessibility setting.
 
 ## [2.17.10] - 2026-02-04
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21710---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5957)
+
 ### Added
 
-- **PreCompact/SessionEnd hooks**: Support automatic session state save and cleanup
-- **AgentTrace v0.2.0**: Added Attribution field for plugin attribution tracking
-- **Sandbox settings template**: Added `templates/settings/harness-sandbox.json`
+- PreCompact and SessionEnd hooks save session state before compaction and clean up at session end. Agent trace schema v0.2.0 records which plugin made an edit. A sandbox settings template is provided as `templates/sandbox-settings.json.template`.
 
 ### Changed
 
-- **context: fork added**: deploy/generate-video/memory/verify skills now use isolated context
-- **release → harness-release**: Renamed to avoid conflict with Claude Code built-in command
-
----
+- `deploy`, `generate-video`, `memory`, and `verify` run in a forked, isolated context.
+- `/release` is renamed so it no longer clashes with Claude Code's built-in command. The v2.17.10 tag ships it as `/release-harness`; by 2.18.0 it is `/release-har`.
 
 ## [2.17.9] - 2026-02-04
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2179---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5972)
+
 ### Changed
 
-- **Codex mode as default**: New project config template now defaults to `review.mode: codex`
-- **Worktree necessity check**: `/ultrawork --codex` now auto-determines if Worktree is actually needed
-  - Single task, all sequential dependencies, or file overlap → fallback to direct execution mode
-  - Avoids unnecessary Worktree creation overhead
-
----
+- New project config templates set `review.mode: codex`, so reviews in newly set-up projects go to Codex (OpenAI) by default; change `review.mode` to use another reviewer.
+- `/ultrawork --codex` creates worktrees only when useful. A single task, fully sequential dependencies, or overlapping files run directly instead.
 
 ## [2.17.8] - 2026-02-04
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2178---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5983)
+
 ### Fixed
 
-- **release skill**: Fix `/release` not launching via Skill tool
-  - Removed `disable-model-invocation: true`
-
----
+- `/release` launches from the Skill tool again. Removing `disable-model-invocation: true` also means Claude can start the release skill on its own, not only when you type it.
 
 ## [2.17.6] - 2026-02-04
 
-### 🎯 What's Changed for You
-
-**generate-video スキルが JSON Schema 駆動のハイブリッドアーキテクチャに進化、README も刷新されました**
-
-| Before | After |
-|--------|-------|
-| 動画生成の設定がコードに散在 | JSON Schema でシナリオを一元管理 |
-| README の構成が長大 | TL;DR: Ultrawork セクションで即座に始められる |
-| スキル説明が英語のみ | 28個のスキル description が日本語化 + ユーモア表現 |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2176---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5992)
 
 ### Added
 
-- **generate-video JSON Schema Architecture** (#37)
-  - `scenario-schema.json` でシナリオ構造を厳密定義
-  - `validate-scenario.js` でセマンティック検証
-  - `template-registry.js` でテンプレート管理
-  - パストラバーサル攻撃対策を実装
-
-- **TL;DR: Ultrawork セクション**: README に「説明が長い？これだけ」セクション追加
-  - 日本語版にも「🪄 説明が長い？ならこれ: Ultrawork」として追加
+- Video scenarios use a JSON schema, semantic checks, and a template registry with path-traversal protection. Bilingual READMEs gain a short starting path.
 
 ### Changed
 
-- **スキル description 日本語化**: 28個のスキルに日本語の説明とユーモア表現を追加
-- **README 構成整理**: Install → TL;DR → Core Loop の流れに最適化
-- **スキル数更新**: 42 → 45 スキル
+- Japanese descriptions are added to 28 skills and README organization is simplified.
 
 ### Fixed
 
-- `validate-scenario.js`: セマンティックエラーフィルタリングのバグ修正
-- `TransitionWrapper.tsx`: `slideIn` → `slide_in` でスキーマ命名規則に統一
-
----
+- Scenario error filtering and slide_in transition names match the schema.
 
 ## [2.17.3] - 2026-02-03
 
-### 🎯 What's Changed for You
-
-**Ultrawork がレビュー後に自動で自己修正ループに入るようになりました**
-
-| Before | After |
-|--------|-------|
-| レビュー後に手動でプロンプト入力が必要 | APPROVE まで自動修正ループ |
-| Codex 有無を手動で指定 | Codex MCP 自動検出 + フォールバック |
-| 改善方法が不明確 | 「🎯 How to Achieve A」で改善指針を明示 |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2173---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6028)
 
 ### Added
 
-- **自己修正ループ**: `/harness-review` 実行後、APPROVE になるまで自動で修正を繰り返す
-  - リトライ状態管理（`ultrawork-retry.json`）で進捗追跡
-  - REJECT/STOP は即停止して手動介入を促す
-  - 最大3回のリトライ後に STOP
-
-- **検証全実行規則**: 存在する検証スクリプトを優先順で全て実行し、失敗で即停止
-
-- **改善指針テンプレート**: 「🎯 How to Achieve A」セクションで A 評価達成方法を明示
-  - Decision 別統一フォーマット（APPROVE/REQUEST CHANGES/REJECT/STOP）
+- After `/harness-review`, `/ultrawork` repairs automatically until it approves, up to 3 retries, tracked in `ultrawork-retry.json`. REJECT or STOP halts immediately for manual action; after 3 retries it stops.
+- All existing verification scripts run in priority order and stop at the first failure. Review reports include "How to Achieve A" guidance.
 
 ### Changed
 
-- **Codex 自動検出**: Codex MCP が利用可能な場合は自動で Codex モードに切り替え
-  - 利用不可の場合はサブエージェント並列にフォールバック
-  - `timeout_ms`（ミリ秒単位）でタイムアウト設定可能
-
-- **差分計算改善**: `merge-base` 基準で変更ファイル数を算出
-  - staged/unstaged 差分も含む
-  - 初回コミット/マージにも対応
-
-- **review_aspects 検出**: パスベースの正規表現で決定的に判定
-
----
+- At this historical release, review switched to Codex automatically whenever Codex MCP was available, and otherwise fell back to parallel subagents. Set the timeout with `timeout_ms` (milliseconds).
+- Changed-file counts use the merge base plus staged and unstaged changes; review aspects are chosen from file paths.
 
 ## [2.17.2] - 2026-02-03
 
-### 🎯 What's Changed for You
-
-**Codex Worker 完了時に Plans.md が自動更新されるようになりました**
-
-| Before | After |
-|--------|-------|
-| 作業完了後に手動で Plans.md を更新 | スキルが自動で `cc:done` に更新 |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2172---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6066)
 
 ### Added
 
-- **Plans.md 自動更新**: Codex Worker スキル完了時に必ずタスク完了処理を実行
-  - 該当タスクを自動特定
-  - `[ ]` → `[x]`, `cc:WIP` → `cc:done` に更新
-  - タスクが見つからない場合はユーザーに確認
+- Codex worker completion finds and marks the matching task done; it asks if no task matches instead of silently dropping the update.
 
 ### Changed
 
-- Codex Worker スクリプト品質改善（共通ライブラリ化、セキュリティ強化）
-
----
+- Worker scripts share common helpers and safer data handling.
 
 ## [2.17.1] - 2026-02-03
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2171---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6089)
+
 ### Added
 
-- **Agent Trace**: Track AI-generated code edits for session context visibility
-  - `emit-agent-trace.js`: PostToolUse hook records Edit/Write operations to `.claude/state/agent-trace.jsonl`
-  - `agent-trace-schema.json`: JSON Schema (v0.1.0) for trace records
-  - Stop hook now shows project name, current task, and recent edits at session end
-  - `sync-status` skill now includes Agent Trace data for progress verification
-  - `session-memory` skill now reads Agent Trace for cross-session context
+- Agent trace (an edit log) records edits made with `Edit`/`Write` in `.claude/state/agent-trace.jsonl`. The records feed session summaries, progress checks, and memory across sessions.
 
 ### Changed
 
-- Stop hook (`session-summary.sh`) enhanced with Agent Trace information display
-- VCS info retrieval optimized: single `git status --porcelain=2 -b -uno` call with 5s TTL cache
-- Repo root detection no longer spawns git process (walks up directory tree)
+- The session-end summary shows the project name, current task, and recent edits. Git status uses a five-second cache (reuse a saved result for five seconds).
 
 ### Fixed
 
-- Security hardening for trace file operations (symlink checks, permission enforcement)
-- Rotation concurrency protection with lock file (O_CREAT|O_EXCL pattern)
+- Trace writes enforce file permissions and check symlinks (links to another path). Log rotation is locked so concurrent updates do not lose records.
 
----
 
 ## [2.17.0] - 2026-02-03
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2170---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6113)
+
 ### Added
 
-- **Codex Worker**: Delegate implementation tasks to OpenAI Codex as parallel workers
-  - `codex-worker` skill for single task delegation
-  - `ultrawork --codex` for parallel worker execution with git worktrees
-  - Quality gates: evidence verification, lint/type-check, test, tampering detection
-  - File locking mechanism with TTL and heartbeat
-  - Automatic Plans.md update on task completion
+- Codex Worker delegates implementation to OpenAI Codex: the `codex-worker` skill for one task, and `/ultrawork --codex` for parallel workers in git worktrees. Quality gates check evidence, lint and type-check, tests, and test tampering. File locks use TTL and heartbeat, and Plans.md is updated when a task completes.
 
 ### Changed
 
-- Skills `codex-worker` and `codex-review` now have explicit routing rules (Do NOT Load For sections)
-- Improved skill description for better auto-loading accuracy
-- Added 5 shell scripts: `codex-worker-setup.sh`, `codex-worker-engine.sh`, `codex-worker-lock.sh`, `codex-worker-quality-gate.sh`, `codex-worker-merge.sh`
-- Added integration test: `tests/test-codex-worker.sh`
-- Added reference documentation: `skills/codex-worker/references/*.md`
+- Worker/reviewer routing uses explicit inclusion/exclusion rules to reduce accidental loading.
 
 ### Fixed
 
-- Shell script security improvements (jq injection, git option injection, value validation)
-- POSIX compatibility for grep patterns (`\s` to `[[:space:]]`)
-- Arithmetic operation in `set -e` context
-
----
+- Validate shell/Git/JSON inputs and portable whitespace patterns; arithmetic no longer exits unexpectedly under strict shell mode.
 
 ## [2.16.21] - 2026-02-03
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21621---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6140)
+
 ### Changed
 
-- `ultrawork` Codex Mode options (`--codex`, `--parallel`, `--worktree-base`) moved to Design Draft
-  - These features are planned but not yet implemented
-  - Documentation now clearly marks them as "(Design Draft / 未実装)"
-- Added `skills/ultrawork/references/codex-mode.md` as design draft documentation
-- Added Codex Worker scripts and references (untracked, for future implementation)
-
----
+- The `/ultrawork` Codex options `--codex`, `--parallel`, and `--worktree-base` are marked as a design draft and do not work in this release. Related scripts and references are untracked drafts, not shipped features. 2.17.0 implemented `/ultrawork --codex`.
 
 ## [2.16.20] - 2026-02-03
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21620---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6152)
+
 ### Changed
 
-- Centralized skill routing rules to `skills/routing-rules.md` (SSOT pattern)
-- Made `codex-review` and `codex-worker` routing deterministic (removed context judgment)
-
----
+- Routing rules become one source, with deterministic Codex worker/reviewer selection.
 
 ## [2.16.19] - 2026-02-03
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21619---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6161)
+
 ### Fixed
 
-- Reduced duplicate display of Stop hook reason (now outputs keywords only)
-
----
+- Stop feedback emits concise keywords instead of duplicating the full reason.
 
 ## [2.16.17] - 2026-02-03
 
-### 🎯 What's Changed for You
-
-**Skills now show usage hints in autocomplete**
-
-| Before | After |
-|--------|-------|
-| `/harness-review` | `/harness-review [code|plan|scope]` |
-| `/troubleshoot` | `/troubleshoot [build|test|runtime]` |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21617---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6169)
 
 ### Added
 
-- Usage hints (`argument-hint`) added to 17 skills
-- Inter-session notifications (useful for multi-session workflows)
+- Seventeen skills show argument hints in autocomplete, such as `/harness-review [code|plan|scope]` and `/troubleshoot [build|test|runtime]`. Hints only change what autocomplete shows. Sessions can notify each other.
 
 ### Changed
 
-- Updated CI/tests/docs for Skills-only architecture
-
----
+- Tests and guides follow the skills-only architecture.
 
 ## [2.16.14] - 2026-02-02
 
-### 🎯 What's Changed for You
-
-**Implementation requests are now automatically registered in Plans.md**
-
-| Before | After |
-|--------|-------|
-| Ad-hoc requests not tracked | All tasks recorded in Plans.md |
-| Hard to track progress | `/sync-status` shows full picture |
-
----
-
-## [2.16.11] - 2026-02-02
-
-### 🎯 What's Changed for You
-
-**Commands have been unified into Skills (usage unchanged)**
-
-| Before | After |
-|--------|-------|
-| `/work`, `/harness-review` as commands | Same names, now powered by skills |
-| Internal skills (impl, verify) in menu | Hidden (less noise) |
-| `dev-browser`, `docs`, `video` | Renamed to `agent-browser`, `notebookLM`, `generate-video` |
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21614---2026-02-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6191)
 
 ### Changed
 
-- README rewritten for VibeCoders (added troubleshooting, uninstall)
-- CI scripts updated for Skills structure
+- Implementation requests register in Plans.md automatically so progress includes ad-hoc work.
 
----
+## [2.16.11] - 2026-02-02
+
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21611---2026-02-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6204)
+
+### Changed
+
+- Commands become skills; `/work`, `/harness-review`, and other names are unchanged. Internal skills such as `impl` and `verify` are hidden from the menu. Renamed: `dev-browser` → `agent-browser`, `docs` → `notebookLM`, `video` → `generate-video`. READMEs add troubleshooting and uninstall steps.
 
 ## [2.16.5] - 2026-01-31
 
-### 🎯 What's Changed for You
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2165---2026-01-31) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6223)
 
-**`/generate-video` now supports AI images, BGM, subtitles, and visual effects**
+### Added
 
-| Before | After |
-|--------|-------|
-| Manual image preparation | AI auto-generates (Nano Banana Pro) |
-| No BGM/subtitles | Royalty-free BGM, Japanese subtitles |
-| Basic transitions only | GlitchText, Particles, and more |
-
----
+- `/generate-video` adds AI-generated images (Nano Banana Pro, an external image service), royalty-free background music, Japanese subtitles, and effects such as GlitchText and Particles.
 
 ## [2.16.0] - 2026-01-31
 
-### 🎯 What's Changed for You
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2160---2026-01-31) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6237)
 
-**`/ultrawork` now requires fewer confirmations for rm -rf and git push (experimental)**
+### Changed
 
-| Before | After |
-|--------|-------|
-| rm -rf always asks | Only paths approved in plan auto-approved |
-| git push always asks | Auto-approved during ultrawork (except force) |
-
----
+- Experimental: `/ultrawork` asks less often. `rm -rf` runs without a prompt only on paths approved in the plan; other paths still ask. Ordinary `git push` runs without a prompt during the run; force push still asks.
 
 ## [2.15.0] - 2026-01-26
 
-### 🎯 What's Changed for You
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2150---2026-01-26) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6250)
 
-**Full OpenCode compatibility mode added**
+### Added
 
-| Before | After |
-|--------|-------|
-| Separate setup needed for OpenCode | `/setup-opencode` auto-configures |
-| Different skills/ structure | Same skills work in both environments |
-
----
+- `/setup-opencode` configures OpenCode compatibility automatically, and the same skills work in both. This describes the historical compatibility mode, not current support parity.
 
 ## [2.14.0] - 2026-01-16
 
-### 🎯 What's Changed for You
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2140---2026-01-16) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6263)
 
-**`/work --full` enables parallel task execution**
+### Added
 
-| Before | After |
-|--------|-------|
-| Tasks run one at a time | `--parallel 3` runs up to 3 concurrently |
-| Manual completion checks | Each worker self-reviews autonomously |
-
----
+- `/work --full` can run tasks in parallel. `--parallel N` sets how many run at once; `--parallel 3` runs up to 3. Each worker reviews its own result.
 
 ## [2.13.0] - 2026-01-14
 
-### 🎯 What's Changed for You
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2130---2026-01-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6276)
 
-**Codex MCP parallel review added**
+### Added
 
-| Before | After |
-|--------|-------|
-| Claude reviews alone | 4 Codex experts review in parallel |
-| One perspective at a time | Security/Quality/Performance/a11y simultaneously |
-
----
+- Codex MCP review uses four parallel perspectives: security, quality, performance, and accessibility.
 
 ## [2.12.0] - 2026-01-10
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2120---2026-01-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6289)
+
 ### Added
 
-- **Harness UI Dashboard** (`/harness-ui`) - Track progress in browser
-- **Browser Automation** (`agent-browser`) - Page interactions & screenshots
-
----
+- `/harness-ui` opens a browser dashboard for progress; it was removed from the distribution in 2.20.11. Browser automation handles page actions and screenshots; it shipped as `dev-browser` and was renamed `agent-browser` in 2.16.11.
 
 ## [2.11.0] - 2026-01-08
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2110---2026-01-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6298)
+
 ### Added
 
-- **Inter-session Messaging** - Send/receive messages between Claude Code sessions
-- **CRUD Auto-generation** (`crud` skill) - Generate endpoints with Zod validation
-
----
+- Sessions can send and receive messages to each other. The `crud` command generates endpoints with Zod input validation.
 
 ## [2.10.0] - 2026-01-04
 
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2100---2026-01-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6307)
+
 ### Added
 
-- **LSP Integration** - Go-to-definition, Find-references for accurate code understanding
-- **AST-Grep Integration** - Structural code pattern search
-
----
+- Language-server definition/reference lookup and syntax-structure search support accurate code investigation.
 
 ## Earlier Versions
 
-For v2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
+For 2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
 [Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.15.0...HEAD
 [5.15.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.14.1...v5.15.0
