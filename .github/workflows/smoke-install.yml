@@ -74,6 +74,11 @@ jobs:
           if [ "${RUNNER_OS}" = "Windows" ]; then
             EXT=".exe"
           fi
+          # The repo ships bin/harness as a shell shim that dispatches to the
+          # platform binary. Go 1.26 refuses to overwrite a file it did not
+          # produce ("build output already exists and is not an object file"),
+          # so remove the shim before the smoke build replaces it.
+          rm -f "../bin/harness${EXT}"
           go build -o "../bin/harness${EXT}" ./cmd/harness/
           # Expose bin/ so `harness` is invocable bare and `harness doctor`'s
           # "bin/harness in PATH" check passes — this exercises the same
