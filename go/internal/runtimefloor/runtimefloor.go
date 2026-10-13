@@ -80,9 +80,25 @@ var (
 	remoteHostPattern = regexp.MustCompile(`(?i)(?:^|\s)(?:[\w.-]+@)?([a-z0-9][\w.-]*\.[a-z]{2,})(?::|/|\s|$)`)
 	// schemelessHostAuthority matches curl/wget args like example.com/path without a URL scheme.
 	// The match alone is not enough to call something a host: the final label
-	// must also be a registered TLD (see isRegisteredTLD). Otherwise a plain
-	// filename such as notes.txt or config.json looks exactly like a host.
+	// must also be a registered TLD or a special-use name (see isHostLabel).
+	// Otherwise a plain filename such as notes.txt or config.json looks
+	// exactly like a host.
 	schemelessHostAuthority = regexp.MustCompile(`(?i)^(?:[\w.-]+@)?([a-z0-9][\w.-]*\.[a-z]{2,})(?::\d+)?$`)
+
+	// hostPinFlags make curl treat an arbitrary name as the destination by
+	// pinning it to an address.
+	hostPinFlags = map[string]bool{"--resolve": true, "--connect-to": true}
+
+	// specialUseLabels are names that resolve without being in the IANA root
+	// zone. The TLD list alone would clear them, so they are held as hosts
+	// explicitly: RFC 6761/6762/7686 (.test .example .invalid .onion .local),
+	// ICANN's .internal, and the private LAN and container suffixes that are
+	// not delegated at all.
+	specialUseLabels = map[string]struct{}{
+		"alt": {}, "corp": {}, "example": {}, "home": {}, "internal": {},
+		"intranet": {}, "invalid": {}, "lan": {}, "local": {}, "localdomain": {},
+		"localhost": {}, "onion": {}, "private": {}, "test": {},
+	}
 )
 
 func CheckCommand(cmd string, ctx Context) Decision {
@@ -183,6 +199,14 @@ func egressFloorExempted() bool {
 
 func checkCurlWgetSchemelessHosts(cmd string) Decision {
 	fields := strings.Fields(cmd)
+	// A --resolve or --connect-to argument pins a name to an address, which
+	// makes that name a real destination however its final label looks. It is
+	// checked first because the pinned name is not shaped like a URL token and
+	// would otherwise slip past the scan below.
+	if host := pinnedHost(fields); host != "" {
+		return stop(CategoryEgress, host,
+			"external network egress requires human approval")
+	}
 	for i, field := range fields {
 		if !strings.EqualFold(field, "curl") && !strings.EqualFold(field, "wget") {
 			continue
@@ -196,13 +220,38 @@ func checkCurlWgetSchemelessHosts(cmd string) Decision {
 			if authority == "" || isAllowlistedHost(authority) {
 				continue
 			}
-			if schemelessHostAuthority.MatchString(authority) && isRegisteredTLD(authorityTLD(authority)) {
+			if schemelessHostAuthority.MatchString(authority) && isHostLabel(authorityTLD(authority)) {
 				return stop(CategoryEgress, token,
 					"external network egress requires human approval")
 			}
 		}
 	}
 	return Decision{}
+}
+
+// pinnedHost returns the hostname named by a --resolve or --connect-to
+// argument (host:port:address), or "" when neither appears.
+func pinnedHost(fields []string) string {
+	for i, field := range fields {
+		name, value := field, ""
+		if eq := strings.Index(field, "="); eq >= 0 {
+			name, value = field[:eq], field[eq+1:]
+		}
+		if !hostPinFlags[strings.ToLower(name)] {
+			continue
+		}
+		if value == "" && i+1 < len(fields) {
+			value = fields[i+1]
+		}
+		value = strings.Trim(value, `"'`)
+		if colon := strings.Index(value, ":"); colon >= 0 {
+			value = value[:colon]
+		}
+		if value != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 // authorityTLD returns the final label of a schemeless authority, ignoring a
@@ -218,19 +267,24 @@ func authorityTLD(authority string) string {
 	return ""
 }
 
-// isRegisteredTLD reports whether label is a top-level domain in the IANA
-// root zone.
+// isHostLabel reports whether label is one that names a host: either a
+// top-level domain in the IANA root zone, or a special-use name that resolves
+// without being delegated.
 //
-// This is what separates a host from a filename. late.txt, config.json, and
-// http.server all match the host shape but end in labels that are not TLDs,
-// so they are not hosts. evil.sh ends in a real ccTLD and stays denied, which
-// is the case that matters: a schemeless curl defaults to http, so a host
-// that reaches this check would be contacted for real.
-func isRegisteredTLD(label string) bool {
+// This is what separates a host from a filename. late.txt, config.json and
+// http.server match the host shape but end in labels that are neither, so they
+// are not hosts. evil.sh ends in a real ccTLD, and internal names like
+// metadata.google.internal or printer.local resolve on their networks, so both
+// stay denied. That matters because a schemeless curl defaults to http.
+func isHostLabel(label string) bool {
 	if label == "" {
 		return false
 	}
-	_, ok := registeredTLDs[strings.ToLower(label)]
+	label = strings.ToLower(label)
+	if _, ok := specialUseLabels[label]; ok {
+		return true
+	}
+	_, ok := registeredTLDs[label]
 	return ok
 }
 
