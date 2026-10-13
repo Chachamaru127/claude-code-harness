@@ -26,9 +26,9 @@ Lead
 | Role | subagent_type | 数 | 使うツール | 返すもの |
 |------|---------------|----|------------|----------|
 | Lead | Execute skill 内部 | 1 | Agent, SendMessage, Bash | task 分解、review 判定、main 反映 |
-| Worker | `claude-code-harness:worker` | 1..3 | Read, Write, Edit, Bash, Grep, Glob | 実装結果または `advisor-request.v1` |
-| Advisor | `claude-code-harness:advisor` | 0..1 | Read, Grep, Glob | `advisor-response.v1` |
-| Reviewer | `claude-code-harness:reviewer` | 1 | Read, Grep, Glob | `review-result.v1` |
+| Worker | `harness:worker` | 1..3 | Read, Write, Edit, Bash, Grep, Glob | 実装結果または `advisor-request.v1` |
+| Advisor | `harness:advisor` | 0..1 | Read, Grep, Glob | `advisor-response.v1` |
+| Reviewer | `harness:reviewer` | 1 | Read, Grep, Glob | `review-result.v1` |
 
 ## worker 数の決め方
 

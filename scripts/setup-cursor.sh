@@ -6,7 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${HARNESS_PROJECT_ROOT:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 BUILD_SCRIPT="${ROOT_DIR}/scripts/build-host-plugin-dist.sh"
-PLUGIN_NAME="claude-code-harness"
+PLUGIN_NAME="harness"
 CURSOR_PLUGINS_LOCAL="${HOME}/.cursor/plugins/local"
 INSTALL_DIR="${CURSOR_PLUGINS_LOCAL}/${PLUGIN_NAME}"
 DIST_DIR="${HARNESS_CURSOR_DIST:-${HOME}/.local/share/claude-code-harness/cursor}"
@@ -17,7 +17,7 @@ usage() {
 Usage: setup-cursor.sh [--check]
 
 Install Claude Code Harness for Cursor into:
-  ~/.cursor/plugins/local/claude-code-harness
+  ~/.cursor/plugins/local/harness
 
 Environment:
   HARNESS_PROJECT_ROOT  Repo root (default: parent of scripts/)

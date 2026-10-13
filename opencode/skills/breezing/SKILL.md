@@ -239,9 +239,9 @@ Breezing run 開始時は、Lead が `harness-work` と同じ preapproval prefli
 | Role | Agent Type | Mode | 責務 |
 |------|-----------|------|------|
 | Lead | (self) | - | 調整・指揮・タスク分配 |
-| Worker ×N | `claude-code-harness:worker` | `bypassPermissions`（現行） / Auto Mode（follow-up）* | 実装 |
-| Advisor | `claude-code-harness:advisor` | 読み取り専用 | 方針助言 (`PLAN` / `CORRECTION` / `STOP`) |
-| Reviewer | `claude-code-harness:reviewer` | `bypassPermissions`（現行） / Auto Mode（follow-up）* | 独立レビュー |
+| Worker ×N | `harness:worker` | `bypassPermissions`（現行） / Auto Mode（follow-up）* | 実装 |
+| Advisor | `harness:advisor` | 読み取り専用 | 方針助言 (`PLAN` / `CORRECTION` / `STOP`) |
+| Reviewer | `harness:reviewer` | `bypassPermissions`（現行） / Auto Mode（follow-up）* | 独立レビュー |
 
 > *親セッションまたは frontmatter が `bypassPermissions` の場合はそちらが優先される。配布テンプレートは現在も `bypassPermissions` を使うため、Auto Mode は follow-up の rollout 対象であり、既定挙動ではない。
 

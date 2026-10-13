@@ -432,9 +432,32 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 |----|------|-----|---------|--------|
 | 148.1 | `[lane:fast]` `[tdd:skip:docs-only]` 実仕様と履歴を確認し日英文書を再作成 | AC1-4を満たす文章。過去原文保存 | - | cc:done [日英4文書、SVG/GIF/静止版を作成。159版の原文条件を全件照合して復元。原文SHAと149比較リンクを保持。独立判定APPROVE] |
 | 148.2 | `[lane:gate]` `[tdd:skip:validation-review]` 文書検証と独立判定 | AC5。試験コマンドの終了コードと判定を記録 | 148.1 | cc:done [README/SVG R3、CHANGELOG R3ともClaude Opus 5.5 APPROVE。c43e49f18ba1ac10ddba9d050b7e1d8e8e20a79dでclean同一SHAの実試験exit0。実効性の未検証条件も日英に明記] |
-| 148.3 | `[lane:release]` `[tdd:skip:release-preparation]` リリース準備 | AC6。preflight、変更履歴昇格案、公開文面を揃える | 148.2 | cc:done [patch5.15.1の日英公開文面と公開手順をローカル準備。VERSIONは未変更。Claude2.1.296のmanifest検証とtag dry-runは予約名拒否でexit1。公開準備の成果物はroute-job 20261013-202516-ep3tに保存] |
+| 148.3 | `[lane:release]` `[tdd:skip:release-preparation]` リリース準備 | AC6。preflight、変更履歴昇格案、公開文面を揃える | 148.2 | cc:done [patch5.15.1の日英公開文面と公開手順をローカル準備。VERSIONは未変更。Claude2.1.296のmanifest検証とtag dry-runは予約名拒否でexit1。公開準備の成果物は別記のroute-jobに保存] |
 | 148.4 | `[lane:release]` `[tdd:skip:release-verification]` 承認後に反映と公開を確認 | main到達可能なtag、GitHub Release、配布物の読戻し | 148.3 | cc:TODO [停止中: 配布名の変更は新しい製品判断。push/merge/tag/Releaseは未実施。manifest検証の成功と本人の公開確認後に進む] |
 
 **停止条件**: 公開承認前はpush、merge、tag、公開をしない。preflightや独立判定の失敗を成功に置き換えない。新しい製品判断が必要な変更は今回の編集へ混ぜない。
 
-**公開準備の現在地**: Claude Code 2.1.296はmanifest名 `claude-code-harness` を予約名として拒否する。`claude plugin validate .claude-plugin/plugin.json` と `claude plugin tag .claude-plugin --dry-run` はexit1。版番号の変更、push、merge、tag、公開は未実施。名前変更や検査回避は今回の文書編集に混ぜない。
+**文書公開準備の記録**: route-job `20261013-202516-ep3t`。
+
+**改名前の公開準備**: Claude Code 2.1.296はmanifest名 `claude-code-harness` を予約名として拒否する。`claude plugin validate .claude-plugin/plugin.json` と `claude plugin tag .claude-plugin --dry-run` はexit1。版番号の変更、push、merge、tag、公開は未実施。名前変更や検査回避は今回の文書編集に混ぜない。
+
+
+## Phase 149: 配布IDをharnessへ変更 (2026-10-14)
+
+**承認元**: 配布IDをharnessへ変更し既存利用者の更新手順を整える提案に対する本人の「いいよ」。
+**基準版**: docs/user-first-bilingual `3e1fdb2c279e8a82c5cbc2107c891135b2cdcb68`。文書の受入は完了済み。
+**目的**: Claude Codeの予約名拒否を解消し、新しいIDでも設定生成とフックの起動を正しく保つ。
+**非対象**: GitHubリポジトリ名、marketplace名、内部設定と記憶の保存先、保護規則、モデル、既存の個人設定の変更。公開、旧版履歴の書換えはしない。
+**触るパス**: 全4実行先の配布manifest、scripts/build-host-plugin-dist.shとsetup-cursor.sh/setup-grok.sh、harness.toml、.claude-plugin/plugin.jsonとmarketplace.json、両hooks.json、go/internal/hostgen/hostgen.go、scripts/sync-plugin-cache.sh、配布IDを参照する導入/検査/生成元、README日英、現行onboarding日英、CHANGELOG日英のUnreleased、bin/harness-*（Go差分の再生成）、対応する検査、Plans.md/spec.md。追加調査で共有marketplaceと全manifestのID一致が必要と判明したため、配布IDを全実行先で揃える。go/cmd/harness/migration_report.go、scripts/userprompt-track-command.sh、go/internal/hookhandler/userprompt_track_command.go、quick-install/codex-setup-local/opencode-setup-localと関連検査も対象。旧名前空間は移行の入力としてだけ認識する。共有skills/Codex差分/templatesと追跡されたCodex/OpenCode/Cursorの鏡像、docs/team-composition.mdにある実行用名前空間も揃える。tests/validate-plugin.shとCursor/Grokの隔離検査は、一時HOMEでも実際のNode本体を使う。モデルと期待する動作は変えない。
+**AC1**: 正本と生成manifest、marketplace entryがharnessを示し、Claude2.1.296でmanifest検証成功。VERSIONは5.15.0を保つ。
+**AC2**: 設定生成で旧IDへ戻らず、環境指定と新IDのcacheからフックが起動する。設定生成元と配布フックは一致。
+**AC3**: 同じ版でも旧IDのmarketplace cloneへ新IDフックを上書きしない。既存cacheを勝手に作らず、実際のHOMEへ同期や導入を実行しない。
+**AC4**: 日英でrenamesによる設定キー移行、scope別の新ID導入、旧版のkeep-data手動経路、再読込、旧設定の確認を説明し、二重フックを避ける。名前に結び付く保存領域の引継ぎは未確認なら明記。
+**AC5**: 回帰検査と4環境バイナリの整合、独立レビューが成功。ローカル成果物のみ。公開は別の単一確認。
+
+| ID | Task | DoD | Depends | Status |
+|----|------|-----|---------|--------|
+| 149.1 | Astra/Fableの変更範囲確認 | 名前、パス、既存利用者への影響を特定 | - | cc:done [両相談完了。正本と68フック、cache同版別ID、共有marketplace、専用DBの移動条件を特定] |
+| 149.2 | 正本、生成、起動とcache同期を変更 | AC1-3、REDからGREENへの回帰証拠 | 149.1 | cc:WIP [旧IDと名前空間のREDを観測後、設定/フック/生成/入力正規化を修正。manifestと起動、cache同期、新名前空間の回帰はGREEN] |
+| 149.3 | 日英の更新手順とバイナリを揃える | AC4-5の対象検査 | 149.2 | cc:WIP [4環境を再生成。旧データの自動転送なしと手動keep-data条件を日英へ明記。対象19検査と全体検査の最終結果を確認中] |
+| 149.4 | 独立判定と公開計画の更新 | APPROVEと同一SHAの試験。公開未実施のまま単一確認へ | 149.3 | cc:WIP [範囲判定を受領。日英の支援範囲注記を復元。品質判定と実行記録を揃える] |

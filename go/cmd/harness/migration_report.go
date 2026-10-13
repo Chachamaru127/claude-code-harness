@@ -208,7 +208,7 @@ func findClaudeHarnessPluginCaches(cacheRoot string) []pluginCacheHit {
 		if json.Unmarshal(data, &manifest) != nil {
 			return nil
 		}
-		if manifest.Name != "claude-code-harness" && !strings.Contains(path, "claude-code-harness") {
+		if manifest.Name != "harness" && manifest.Name != "claude-code-harness" {
 			return nil
 		}
 		hits = append(hits, pluginCacheHit{
@@ -277,7 +277,7 @@ func reportClaudePluginCache(cacheRoot, currentVersion string, hits []pluginCach
 			Area:             "Claude plugin cache",
 			Status:           "not_observed",
 			Path:             cacheRoot,
-			Evidence:         "No claude-code-harness plugin.json was found under the cache path",
+			Evidence:         "No harness or legacy claude-code-harness plugin.json was found under the cache path",
 			Impact:           "Claude cache status is unknown, not clean.",
 			BackupLocation:   "Claude Code plugin manager cache",
 			RollbackProposal: "Run /plugin list and /plugin update inside Claude Code to confirm the installed plugin.",
@@ -298,7 +298,7 @@ func reportClaudePluginCache(cacheRoot, currentVersion string, hits []pluginCach
 			Evidence:         "stale plugin cache observed: " + strings.Join(stale, "; "),
 			Impact:           "Claude Code may keep loading an older Harness plugin until the plugin manager updates it.",
 			BackupLocation:   "Claude Code plugin manager cache",
-			RollbackProposal: "Use /plugin update claude-code-harness or uninstall/reinstall through the plugin manager.",
+			RollbackProposal: "For harness, use /plugin update harness. For the old claude-code-harness ID, follow docs/onboarding/plugin-rename.md; update does not rename an installed plugin.",
 			SupportBoundary:  "Report only; this command does not delete plugin cache entries.",
 		}
 	}
@@ -306,7 +306,7 @@ func reportClaudePluginCache(cacheRoot, currentVersion string, hits []pluginCach
 		Area:             "Claude plugin cache",
 		Status:           "ok",
 		Path:             cacheRoot,
-		Evidence:         fmt.Sprintf("%d claude-code-harness cache manifest(s) observed without version drift", len(hits)),
+		Evidence:         fmt.Sprintf("%d Harness cache manifest(s) observed without version drift", len(hits)),
 		Impact:           "No stale cache evidence was observed.",
 		BackupLocation:   "Claude Code plugin manager cache",
 		RollbackProposal: "Keep using /plugin update for managed changes.",

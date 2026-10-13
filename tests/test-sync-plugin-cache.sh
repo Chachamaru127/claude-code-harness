@@ -18,7 +18,7 @@ mkdir -p "${PRIVATE_SYNC_TEST_DIR}"
 printf '%s\n' '---' 'name: test-private-sync' 'description: local-only sync test' '---' > "${PRIVATE_SYNC_TEST_DIR}/SKILL.md"
 
 SOURCE_VERSION="$(tr -d '[:space:]' < "${ROOT_DIR}/VERSION")"
-CACHE_REL="plugins/cache/claude-code-harness-marketplace/claude-code-harness/${SOURCE_VERSION}"
+CACHE_REL="plugins/cache/claude-code-harness-marketplace/harness/${SOURCE_VERSION}"
 MARKETPLACE_REL="plugins/marketplaces/claude-code-harness-marketplace"
 CACHE_DIR="${TMP_HOME}/.claude/${CACHE_REL}"
 MARKETPLACE_DIR="${TMP_HOME}/.claude/${MARKETPLACE_REL}"
@@ -26,7 +26,7 @@ MARKETPLACE_DIR="${TMP_HOME}/.claude/${MARKETPLACE_REL}"
 # Fixture plugin.json for the marketplace clone. Its version matches the
 # source (same release), but the content is a marker so we can prove the
 # script never rewrites the clone's version-bearing files.
-MARKETPLACE_PLUGIN_JSON_FIXTURE="{\"name\": \"claude-code-harness\", \"version\": \"${SOURCE_VERSION}\", \"fixture\": \"clone-owned\"}"
+MARKETPLACE_PLUGIN_JSON_FIXTURE="{\"name\": \"harness\", \"version\": \"${SOURCE_VERSION}\", \"fixture\": \"clone-owned\"}"
 
 mkdir -p "${CACHE_DIR}" "${MARKETPLACE_DIR}/.claude-plugin"
 mkdir -p \
@@ -206,6 +206,20 @@ after="$(snapshot_tree "${MISMATCH_DIR}")"
 if [[ "${before}" != "${after}" ]]; then
   echo "sync-plugin-cache modified a marketplace clone that is on another release (0.0.0-other vs ${SOURCE_VERSION})"
   diff <(printf '%s\n' "${before}") <(printf '%s\n' "${after}") || true
+  exit 1
+fi
+
+# A same-version marketplace clone with the old ID must not receive new hooks.
+printf '%s\n' "${SOURCE_VERSION}" > "${MISMATCH_DIR}/VERSION"
+printf '{"name":"claude-code-harness","version":"%s"}\n' "${SOURCE_VERSION}" > "${MISMATCH_DIR}/.claude-plugin/plugin.json"
+LEGACY_CACHE="${TMP_HOME_MISMATCH}/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/${SOURCE_VERSION}"
+mkdir -p "${LEGACY_CACHE}"
+printf 'legacy-owned\n' > "${LEGACY_CACHE}/marker"
+before="$(snapshot_tree "${TMP_HOME_MISMATCH}")"
+HOME="${TMP_HOME_MISMATCH}" CLAUDE_PLUGIN_ROOT="${ROOT_DIR}" bash "${SYNC_SCRIPT}" >/dev/null 2>&1
+after="$(snapshot_tree "${TMP_HOME_MISMATCH}")"
+if [[ "${before}" != "${after}" ]]; then
+  echo "sync-plugin-cache changed an old-ID marketplace or legacy cache on the same version"
   exit 1
 fi
 

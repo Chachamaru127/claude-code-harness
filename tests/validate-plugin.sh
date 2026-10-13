@@ -140,6 +140,12 @@ if [ "${QUICK_MODE}" -eq 1 ]; then
     fi
 fi
 
+# Keep isolated-HOME tests on the actual Node runtime, not a user-configured shim.
+if command -v node >/dev/null 2>&1; then
+    NODE_RUNTIME="$(node -p 'process.execPath')"
+    export PATH="$(dirname "$NODE_RUNTIME"):$PATH"
+fi
+
 echo "=========================================="
 echo "Claude harness - プラグイン検証テスト"
 echo "=========================================="
@@ -433,6 +439,22 @@ if bash "$PLUGIN_ROOT/tests/test-memory-hook-wiring.sh" >/dev/null 2>&1; then
     pass_test "memory hook wiring が有効です"
 else
     fail_test "memory hook wiring の整合が崩れています"
+fi
+
+if command -v claude >/dev/null 2>&1; then
+    if python3 "$PLUGIN_ROOT/tests/test-claude-plugin-install-smoke.py"; then
+        pass_test "harness isolated Claude plugin install"
+    else
+        fail_test "harness isolated Claude plugin install failed"
+    fi
+else
+    echo "  SKIP: Claude CLI unavailable; isolated install not observed"
+fi
+
+if python3 "$PLUGIN_ROOT/tests/test-claude-plugin-identity.py"; then
+    pass_test "harness plugin identity and isolated hook root/cache resolution"
+else
+    fail_test "harness plugin identity or hook root/cache resolution failed"
 fi
 
 if bash "$PLUGIN_ROOT/tests/test-sync-plugin-cache.sh" >/dev/null 2>&1; then

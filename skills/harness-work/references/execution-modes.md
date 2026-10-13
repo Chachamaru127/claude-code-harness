@@ -135,7 +135,7 @@ Contract」for the full field list.
 ```
 Lead (this agent)
 ├── Worker (task-worker agent) — implementation
-├── Advisor (claude-code-harness:advisor) — guidance
+├── Advisor (harness:advisor) — guidance
 └── Reviewer (code-reviewer agent) — review
 ```
 
@@ -158,7 +158,7 @@ for task in execution_order:
 
     Plans.md: task.status = "cc:WIP"
     worker_result = Agent(
-        subagent_type="claude-code-harness:worker",
+        subagent_type="harness:worker",
         prompt=briefing_header + task_request + "\ncontract_path: {contract_path}\nmode: breezing",
         isolation="worktree",
         run_in_background=false

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Isolated HOME must not make a runtime-manager shim load an untrusted user config.
+NODE_RUNTIME="$(node -p 'process.execPath')"
+export PATH="$(dirname "$NODE_RUNTIME"):$PATH"
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST="${ROOT_DIR}/.cursor-plugin/plugin.json"
 AGENTS="${ROOT_DIR}/.cursor/AGENTS.md"
@@ -52,7 +56,7 @@ function assert(cond, msg) {
     process.exit(1);
   }
 }
-assert(manifest.name === "claude-code-harness", "manifest name mismatch");
+assert(manifest.name === "harness", "manifest name mismatch");
 assert(manifest.version === version, "manifest version mismatch");
 assert(manifest.skills === "../skills/", "manifest skills path must target core skills relative to .cursor-plugin");
 assert(manifest.agents === "../.cursor/agents/", "manifest agents path must target .cursor/agents");
@@ -147,8 +151,8 @@ HOME="$SETUP_TMP_HOME" HARNESS_CURSOR_DIST="$SETUP_DIST" bash "$SETUP_SCRIPT" >/
   || { cat /tmp/cursor-setup-install.$$ >&2; fail "setup-cursor.sh install failed"; }
 rm -f /tmp/cursor-setup-install.$$
 
-INSTALLED="${SETUP_TMP_HOME}/.cursor/plugins/local/claude-code-harness"
-[ -d "$INSTALLED" ] || fail "setup-cursor must install to ~/.cursor/plugins/local/claude-code-harness"
+INSTALLED="${SETUP_TMP_HOME}/.cursor/plugins/local/harness"
+[ -d "$INSTALLED" ] || fail "setup-cursor must install to ~/.cursor/plugins/local/harness"
 if [ -L "$INSTALLED" ]; then
   fail "setup-cursor install must be a real directory, not a symlink"
 fi

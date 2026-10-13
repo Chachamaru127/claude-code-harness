@@ -96,7 +96,7 @@ func (h *TrackCommandHandler) Handle(r io.Reader, w io.Writer) error {
 	// コマンド名を正規化（プラグインプレフィックスを除去）
 	// claude-code-harness:xxx:yyy → yyy（最後のセグメント）
 	commandName := rawCommand
-	if strings.HasPrefix(commandName, "claude-code-harness:") || strings.HasPrefix(commandName, "claude-code-harness/") {
+	if strings.HasPrefix(commandName, "harness:") || strings.HasPrefix(commandName, "harness/") || strings.HasPrefix(commandName, "claude-code-harness:") || strings.HasPrefix(commandName, "claude-code-harness/") {
 		// 最後のセグメントを取り出す（: または / の後）
 		parts := regexp.MustCompile(`[:/]`).Split(commandName, -1)
 		commandName = parts[len(parts)-1]

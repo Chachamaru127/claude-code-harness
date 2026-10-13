@@ -6,7 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="${HARNESS_PROJECT_ROOT:-$(cd "$SCRIPT_DIR/.." && pwd)}"
 BUILD_SCRIPT="${ROOT_DIR}/scripts/build-host-plugin-dist.sh"
-PLUGIN_NAME="claude-code-harness"
+PLUGIN_NAME="harness"
 DIST_DIR="${HARNESS_GROK_DIST:-${HOME}/.local/share/claude-code-harness/grok}"
 CHECK_ONLY=0
 SKIP_CLI_INSTALL=0
@@ -26,7 +26,7 @@ Environment:
 Options:
   --check            Build and validate the grok package only; do not install.
   --no-cli-install   After build, copy the package into
-                     $HOME/.grok/plugins/claude-code-harness instead of
+                     $HOME/.grok/plugins/harness instead of
                      calling `grok plugin install` (fallback for tests/CI).
   -h, --help
 EOF

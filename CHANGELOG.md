@@ -15,6 +15,8 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ### Changed
 
+- Rename the distribution plugin ID to `harness` in the shared marketplace and all host manifests; repository and marketplace names and project config paths stay unchanged. Claude Code follows the marketplace rename map on supported builds; refresh the marketplace, install the new ID in the original scope, and check that only one copy is active. Plugin-owned databases are not automatically transferred. See [the switching guide](https://github.com/Chachamaru127/claude-code-harness/blob/main/docs/onboarding/plugin-rename.md).
+
 - Rewrite the English and Japanese READMEs and every changelog release in plain language, retaining upgrade conditions and linking the complete original history. A short animated hero shows the work path; a static version is provided for reduced motion.
 - Source builders now need Go 1.26.0 for the module and workspace. All four bundled platform binaries use that toolchain; users of those binaries do not need to install Go.
 - Update `golang.org/x/sys` 0.47.0 to 0.49.0 and `modernc.org/sqlite` 1.56.0 to 1.60.1, with libc 1.77.1 and memory 1.12.1.

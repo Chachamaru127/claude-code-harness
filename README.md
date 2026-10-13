@@ -30,7 +30,7 @@ Then enter these commands **inside Claude Code**, one at a time:
 
 ```text
 /plugin marketplace add Chachamaru127/claude-code-harness
-/plugin install claude-code-harness@claude-code-harness-marketplace
+/plugin install harness@claude-code-harness-marketplace
 /harness-setup
 ```
 
@@ -38,13 +38,11 @@ Then enter these commands **inside Claude Code**, one at a time:
 proposed project changes before accepting them. Installation time depends on
 your existing setup and connection.
 
-**Current Claude Code limitation:** newer builds can reject the name
-`claude-code-harness` as reserved for Anthropic. If installation reports that
-error, this route is blocked on that build. Our local check reproduced it with
-Claude Code 2.1.296 on 2026-10-13. Keep the exact error and
-[report it](https://github.com/Chachamaru127/claude-code-harness/issues); repeating
-setup does not resolve the reserved-name rejection. The tool table describes verified paths, not every future
-assistant version.
+The Claude plugin ID is now `harness`; the repository and marketplace names
+stay the same. If you installed the old `claude-code-harness` plugin, follow
+[Switch an existing Claude installation](docs/onboarding/plugin-rename.md).
+Updating the old ID alone does not rename it.
+The tool table describes verified paths, not every future assistant version.
 
 For other tools, choose the route in [Install by tool](#install-by-tool).
 The [onboarding guide](docs/onboarding/index.md) covers the same starting point
@@ -234,7 +232,7 @@ check. It is off by default and does not skip approval prompts.
 For Claude Code, run these inside the assistant:
 
 ```text
-/plugin update claude-code-harness
+/plugin update harness
 /harness-setup
 ```
 

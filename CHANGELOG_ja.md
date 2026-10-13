@@ -22,6 +22,13 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ### Changed
 
+- 共有marketplaceと全実行先の配布プラグインIDを`harness`へ揃えます。
+  リポジトリ名、marketplace名、プロジェクトの設定パスは同じです。
+  対応するClaude Codeはmarketplaceの改名マップに従います。
+  配布元を更新して同じscopeへ新IDを導入し、有効なコピーが1つだけか確認します。
+  プラグイン専用データの自動転送は保証しません。
+  [切替手順](https://github.com/Chachamaru127/claude-code-harness/blob/main/docs/onboarding/plugin-rename_ja.md)を参照してください。
+
 - 英語版と日本語版のREADME、全版の変更履歴を書き直しました。
   更新判断に必要な条件を残し、元の履歴全文へリンクしました。
   冒頭の短いアニメーションで仕事の流れを示し、動きを減らす設定向けに静止版も用意しました。

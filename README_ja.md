@@ -29,7 +29,7 @@ claude
 
 ```text
 /plugin marketplace add Chachamaru127/claude-code-harness
-/plugin install claude-code-harness@claude-code-harness-marketplace
+/plugin install harness@claude-code-harness-marketplace
 /harness-setup
 ```
 
@@ -37,11 +37,10 @@ claude
 提案された変更内容を確認してから受け入れます。
 導入時間は、既存の設定と通信環境によって変わります。
 
-**現在のClaude Codeの制限**：新しい版では、`claude-code-harness`という名前をAnthropic用の予約名として拒否する場合があります。
-このエラーが出る版では、この導入経路は使えません。
-2026年10月13日の手元の検査では、Claude Code 2.1.296でこの拒否を確認しました。
-エラーの全文を残し、[問題を報告](https://github.com/Chachamaru127/claude-code-harness/issues)してください。
-設定を繰り返しても、予約名による拒否は解消しません。
+Claude用のプラグインIDを`harness`に変更しました。
+リポジトリ名と配布元のmarketplace名は同じです。
+旧IDの`claude-code-harness`を導入済みなら、[既存のClaude環境の切替手順](docs/onboarding/plugin-rename_ja.md)を使います。
+旧IDに更新コマンドを実行するだけでは、名前は切り替わりません。
 ツールの一覧は確認済みの経路を示し、将来のすべての版を保証するものではありません。
 
 別のAIを使う場合は、[ツール別の導入](#ツール別の導入)から選べます。
@@ -230,7 +229,7 @@ Codexの`--user`導入は、利用者共通のスキル、規則、管理対象�
 Claude Codeでは、会話内で実行します。
 
 ```text
-/plugin update claude-code-harness
+/plugin update harness
 /harness-setup
 ```
 

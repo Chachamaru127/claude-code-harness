@@ -2,7 +2,7 @@
 # Edit this file, then run `harness sync` to generate CC plugin files.
 
 [project]
-name = "claude-code-harness"
+name = "harness"
 version = "5.15.0"
 description = "Claude harness - A harness for solo developers (Vibecoders) to handle full-cycle contract development."
 homepage = "https://github.com/Chachamaru127/claude-code-harness"

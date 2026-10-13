@@ -1,5 +1,5 @@
 {
-  "name": "claude-code-harness",
+  "name": "harness",
   "version": "5.15.0",
   "description": "Plan, work, review, and release workflows for Codex CLI users of Claude Code Harness.",
   "author": {

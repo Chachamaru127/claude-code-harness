@@ -56,7 +56,7 @@ resolve_plugin_dir() {
   repo_root="$(cd "$SCRIPT_DIR/.." && pwd)"
 
   local marketplace_dir="$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace"
-  local cache_root="$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness"
+  local cache_root="$HOME/.claude/plugins/cache/claude-code-harness-marketplace/harness"
   local cache_dir
   cache_dir="$(pick_latest_version_dir "$cache_root" || true)"
 

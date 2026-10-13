@@ -24,7 +24,7 @@ file when you need the full rationale.
 
 | Step | 削除理由 | 節約秒数 |
 |---|---|---|
-| `claude-code-harness:worker` agent spawn | cursor backend は Worker 介在なし | 5-30s |
+| `harness:worker` agent spawn | cursor backend は Worker 介在なし | 5-30s |
 | self_review 5 件ゲート | `worker-report.v1` が cursor では生成されないため不要 | 10-60s × retry |
 | sprint-contract 3 段チェーン (generate→enrich→ensure) | Worker 契約不要なら contract 不要 | 2-5s × N |
 | Phase 0 Q1-Q3 interactive | `--no-discuss all` 既定 (Plans/Depends は Lead が直読み) | 15-30s |
