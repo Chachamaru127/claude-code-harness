@@ -250,10 +250,10 @@ func TestHookStatePaths_Setup(t *testing.T) {
 func TestHookStatePaths_EnvironmentPriority(t *testing.T) {
 	root, inputCWD, processCWD := statePathFixture(t, false)
 	harnessRoot, projectRoot, claudeRoot := t.TempDir(), t.TempDir(), t.TempDir()
-	cases := []struct{ name, harness, project, claude, want string }{
-		{"harness wins", harnessRoot, projectRoot, claudeRoot, harnessRoot},
-		{"project wins over claude", "", projectRoot, claudeRoot, projectRoot},
-		{"claude wins over input and process git", "", "", claudeRoot, claudeRoot},
+	cases := []struct{ name, harness, project, claude, input, want string }{
+		{"harness wins", harnessRoot, projectRoot, claudeRoot, inputCWD, harnessRoot},
+		{"project wins over claude and input", "", projectRoot, claudeRoot, inputCWD, projectRoot},
+		{"claude used when input cwd is absent", "", "", claudeRoot, "", claudeRoot},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -261,7 +261,7 @@ func TestHookStatePaths_EnvironmentPriority(t *testing.T) {
 			t.Setenv("PROJECT_ROOT", tc.project)
 			t.Setenv("CLAUDE_PROJECT_DIR", tc.claude)
 			var out bytes.Buffer
-			if err := HandleTrackChanges(strings.NewReader(statePathPayload(t, inputCWD, "main.go")), &out); err != nil {
+			if err := HandleTrackChanges(strings.NewReader(statePathPayload(t, tc.input, "main.go")), &out); err != nil {
 				t.Fatal(err)
 			}
 			if _, err := os.Stat(filepath.Join(tc.want, changedFilesPath)); err != nil {
@@ -273,6 +273,31 @@ func TestHookStatePaths_EnvironmentPriority(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestHookStatePaths_InputCWCOutranksClaudeProjectDir pins the order between the
+// two roots a host can supply. The hook input's cwd says which checkout the call
+// belongs to, so it wins: per-worktree locks and Plans.md monitoring must follow
+// the input rather than collapse onto whatever root the environment exports.
+// Before the order was fixed, CLAUDE_PROJECT_DIR won and this expectation was
+// the other way round.
+func TestHookStatePaths_InputCWCOutranksClaudeProjectDir(t *testing.T) {
+	root, inputCWD, _ := statePathFixture(t, false)
+	claudeRoot := t.TempDir()
+	t.Setenv("HARNESS_PROJECT_ROOT", "")
+	t.Setenv("PROJECT_ROOT", "")
+	t.Setenv("CLAUDE_PROJECT_DIR", claudeRoot)
+
+	var out bytes.Buffer
+	if err := HandleTrackChanges(strings.NewReader(statePathPayload(t, inputCWD, "main.go")), &out); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(root, changedFilesPath)); err != nil {
+		t.Fatalf("input cwd did not select its own root: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(claudeRoot, ".claude/state")); !os.IsNotExist(err) {
+		t.Fatalf("state leaked to CLAUDE_PROJECT_DIR: %v", err)
 	}
 }
 

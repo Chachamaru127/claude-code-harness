@@ -89,15 +89,20 @@ func writeJSON(w io.Writer, v interface{}) error {
 // 解決優先順:
 //  1. HARNESS_PROJECT_ROOT 環境変数（Harness の明示 override）
 //  2. PROJECT_ROOT 環境変数（既存の明示 override）
-//  3. CLAUDE_PROJECT_DIR 環境変数（ホストが指定するプロジェクトルート）
-//  4. 存在する入力 JSON の cwd で git rev-parse --show-toplevel、非 Git ならその cwd
+//  3. 存在する入力 JSON の cwd で git rev-parse --show-toplevel、非 Git ならその cwd
+//  4. CLAUDE_PROJECT_DIR 環境変数（ホストが指定するプロジェクトルート）
 //  5. process cwd で git rev-parse --show-toplevel、非 Git なら process cwd
 //
+// 入力 cwd は CLAUDE_PROJECT_DIR より優先する。worktree ごとに独立した
+// lock と Plans.md 監視を行う設計で、入力 cwd がどの checkout の呼び出しかを
+// 示すため。CLAUDE_PROJECT_DIR が別のルートを指していても、入力 cwd が
+// あればそちらを採る。
+//
 // 有効な入力 cwd がある場合は process cwd の別リポジトリにフォールバックしない。
-// 入力 cwd が欠損または存在しないディレクトリなら process cwd を使う。
+// 入力 cwd が欠損または存在しないディレクトリなら環境変数、次に process cwd を使う。
 // 引数なしの呼び出しは環境変数と process cwd から解決する。
 func resolveProjectRoot(inputCWD ...string) string {
-	for _, name := range []string{"HARNESS_PROJECT_ROOT", "PROJECT_ROOT", "CLAUDE_PROJECT_DIR"} {
+	for _, name := range []string{"HARNESS_PROJECT_ROOT", "PROJECT_ROOT"} {
 		if v := os.Getenv(name); v != "" {
 			return v
 		}
@@ -112,6 +117,9 @@ func resolveProjectRoot(inputCWD ...string) string {
 		}
 	}
 	if cwd == "" {
+		if v := os.Getenv("CLAUDE_PROJECT_DIR"); v != "" {
+			return v
+		}
 		cwd, _ = os.Getwd()
 	}
 	if out, err := gitport.Output(cwd, "rev-parse", "--show-toplevel"); err == nil {
