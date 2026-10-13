@@ -250,7 +250,8 @@ func pinnedHost(fields []string) string {
 		// host, and curl then connects to HOST2, so HOST2 is the destination
 		// and is what has to be named here. Verified against curl 8.7.1:
 		// `--connect-to ::<name>:<port>` resolves <name> and sends the request
-		// there. For --resolve an empty host is rejected by curl itself.
+		// there. For --resolve an empty host is accepted but matches nothing,
+		// so curl connects to no one and there is nothing to catch.
 		if key == "--connect-to" && parts[0] == "" && len(parts) > 2 && parts[2] != "" {
 			return parts[2]
 		}
