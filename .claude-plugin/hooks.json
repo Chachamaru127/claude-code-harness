@@ -38,7 +38,7 @@
           {
             "type": "agent",
             "prompt": "Review the following code change for quality issues. Check if the change: (1) introduces hardcoded secrets or credentials, (2) leaves TODO/FIXME stubs without implementation, (3) has obvious security vulnerabilities (SQL injection, XSS, command injection). If any issue is found, return JSON with permissionDecision: 'deny' and permissionDecisionReason explaining the issue. If the change looks acceptable, return nothing (exit 0). Input: $ARGUMENTS",
-            "model": "haiku",
+            "model": "claude-haiku-5-5",
             "timeout": 30
           }
         ]
@@ -265,7 +265,7 @@
           {
             "type": "agent",
             "prompt": "IMPORTANT: Parse the hook input JSON from $ARGUMENTS and extract the session_id field. Then check if '.claude/state/locks/loop-session.lock.d' exists as a DIRECTORY (test -d). If the lock directory EXISTS, read its session_id field (jq -r '.session_id' .claude/state/locks/loop-session.lock.d/meta.json) and compare with the current hook's session_id from $ARGUMENTS. If the session_ids MATCH, harness-loop owns this session — return nothing immediately (suppress all WIP warnings). If they DO NOT match (a different session owns the lock), proceed normally to check Plans.md. If the lock directory does NOT exist, also proceed normally. In either 'proceed normally' case: check Plans.md for tasks with status 'cc:WIP'. If any WIP tasks exist, include a warning in systemMessage: 'Warning: Compacting context with WIP tasks in progress: [list task IDs and titles]. Key context about these tasks may be lost after compaction. Consider completing or checkpointing them first.' If no WIP tasks, return nothing. Input: $ARGUMENTS",
-            "model": "haiku",
+            "model": "claude-haiku-5-5",
             "timeout": 30
           }
         ]
@@ -382,7 +382,7 @@
           {
             "type": "agent",
             "prompt": "Perform a lightweight code review on the file that was just written/edited. Check for: (1) hardcoded secrets or API keys, (2) TODO/FIXME stubs left without implementation, (3) obvious security issues. This is a non-blocking advisory check. If issues found, include them in systemMessage. Input: $ARGUMENTS",
-            "model": "haiku",
+            "model": "claude-haiku-5-5",
             "timeout": 30
           }
         ]

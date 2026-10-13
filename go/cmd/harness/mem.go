@@ -82,7 +82,7 @@ func runMemCommand(args []string, stdout, stderr io.Writer) int {
 }
 
 // runMemHealth は `harness mem health` サブコマンドを実行する。
-// ~/.claude-mem/ のファイルチェック後に daemon への TCP probe を行い、
+// harness-mem の設定を検出した後に daemon への TCP probe を行い、
 // いずれかの段階で失敗したら unhealthy を返す。
 // exit 0: healthy, exit 1: unhealthy
 func runMemHealth(_ []string) {
@@ -99,7 +99,7 @@ func writeMemHealth(stdout io.Writer) int {
 // runMemHealthCheck はヘルスチェックロジックを実行し、結果と exit code を返す。
 // テストからも直接呼び出せるよう os.Exit を含まない形で分離する。
 //
-// harness-mem が未設定のケース (`~/.claude-mem/` が存在しない) は、
+// harness-mem が未設定のケース (別製品 claude-mem のみの環境を含む) は、
 // 「壊れている」ではなく「監視対象外」として扱う。
 // healthy=true + reason="not-configured" を返すことで、
 // MonitorHandler 側の `⚠️ harness-mem unhealthy` 警告を抑止する。
@@ -123,6 +123,10 @@ func runMemHealthCheck() (memHealthOutput, int) {
 	// 監視対象外として healthy 扱いにして exit 0 を返す。
 	if _, err := os.Stat(harnessMemHome); os.IsNotExist(err) {
 		if _, legacyErr := os.Stat(claudeMem); os.IsNotExist(legacyErr) {
+			return memHealthOutput{Healthy: true, Reason: "not-configured"}, 0
+		}
+		// 自動検出では harness-mem 固有の印を要求し、別製品 claude-mem を除外する。
+		if os.Getenv("HARNESS_MEM_HOME") == "" && !looksConfiguredHarnessMem(claudeMem) {
 			return memHealthOutput{Healthy: true, Reason: "not-configured"}, 0
 		}
 		harnessMemHome = claudeMem

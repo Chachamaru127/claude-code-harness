@@ -8,11 +8,35 @@ Change history for claude-code-harness.
 
 ### Fixed
 
+- Stop `go/internal/integrate`'s tests from racing `t.TempDir()` cleanup.
+  Git's auto-gc and auto-maintenance can leave a process writing under
+  `.git` after the test body returns, which fails teardown with "unlinkat
+  .../.git: directory not empty" and took down a CI run for an unrelated
+  change. The fixture now disables both and no longer reads the host's
+  global git configuration.
 - Pin the breezing benchmark dependency overrides to patched ranges so the
   `test-breezing-agent-eval-deps.sh` audit gate stops failing on newly
   published advisories and blocking every pull request: `undici` to
   `^7.30.0`, `brace-expansion` to `^5.0.12`, and a new `@grpc/grpc-js`
   override at `^1.14.6`.
+- Require harness-mem markers before automatically treating `~/.claude-mem/`
+  as a legacy home, preventing false SessionStart health warnings for users
+  of the separate claude-mem product (#363).
+- Stop reading dotted filenames as schemeless hosts in the egress floor. A
+  token like `late.txt` or `config.json` matches the host shape, but its
+  final label is not a top-level domain, so `echo curl late.txt` is no longer
+  refused as external network egress (#362). Hosts on registered TLDs, such
+  as `evil.sh`, stay denied.
+- Use a resolvable model id in the agent-type hooks. The bare alias
+  `"haiku"` is not resolved on the hook path, so Claude Code logged
+  `[claude-code:unrecognized_model]` for the PreToolUse quality gate, the
+  post-write advisory review, and the PreCompact WIP check. Both
+  `hooks/hooks.json` and its synced copy now name `claude-haiku-5-5`.
+- Anchor hook state paths to the project root instead of the process working
+  directory, so `.claude/state/` no longer scatters when a hook runs from
+  outside the project, and the writer and reader agree on one root (#338).
+  The hook input's cwd outranks `CLAUDE_PROJECT_DIR` so per-worktree locks
+  and `Plans.md` monitoring stay independent.
 
 ## [5.15.0] - 2026-09-06
 

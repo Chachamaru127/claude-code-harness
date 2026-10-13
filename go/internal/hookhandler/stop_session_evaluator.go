@@ -18,6 +18,7 @@ import (
 // stopSessionInput は Stop フックの stdin JSON ペイロード。
 // CC 2.1.47+ で last_assistant_message が含まれる。
 type stopSessionInput struct {
+	CWD                  string `json:"cwd"`
 	StopHookActive       bool   `json:"stop_hook_active"`
 	TranscriptPath       string `json:"transcript_path"`
 	LastAssistantMessage string `json:"last_assistant_message"`
@@ -45,26 +46,19 @@ type StopSessionEvaluatorHandler struct {
 
 // Handle は Stop フックを処理する。
 func (h *StopSessionEvaluatorHandler) Handle(in io.Reader, out io.Writer) error {
-	// プロジェクトルート解決
+	// stdin を読み取る（サイズ上限: 64 KiB）。入力 cwd をルート解決に使う。
+	var input stopSessionInput
+	payload, _ := io.ReadAll(io.LimitReader(in, 65536))
+	if err := json.Unmarshal(payload, &input); err != nil {
+		input = stopSessionInput{}
+	}
 	projectRoot := h.ProjectRoot
 	if projectRoot == "" {
-		projectRoot = resolveProjectRoot()
+		projectRoot = resolveProjectRoot(input.CWD)
 	}
-	stateFile := projectRoot + "/.claude/state/session.json"
-
-	// stdin を読み取る（サイズ上限: 64 KiB）
-	var payload []byte
-	limited := io.LimitReader(in, 65536)
-	payload, _ = io.ReadAll(limited)
-
-	// last_assistant_message のメタデータを session.json に記録
-	var input stopSessionInput
-	if len(payload) > 0 {
-		if jsonErr := json.Unmarshal(payload, &input); jsonErr == nil {
-			if input.LastAssistantMessage != "" {
-				h.recordLastMessage(stateFile, input.LastAssistantMessage)
-			}
-		}
+	stateFile := filepath.Join(projectRoot, ".claude", "state", "session.json")
+	if input.LastAssistantMessage != "" {
+		h.recordLastMessage(stateFile, input.LastAssistantMessage)
 	}
 
 	// WIP タスクチェック: Plans.md を探して canonical WIP status を数える。
