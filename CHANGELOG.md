@@ -27,6 +27,11 @@ Change history for claude-code-harness.
   `[claude-code:unrecognized_model]` for the PreToolUse quality gate, the
   post-write advisory review, and the PreCompact WIP check. Both
   `hooks/hooks.json` and its synced copy now name `claude-haiku-5-5`.
+- Anchor hook state paths to the project root instead of the process working
+  directory, so `.claude/state/` no longer scatters when a hook runs from
+  outside the project, and the writer and reader agree on one root (#338).
+  The hook input's cwd outranks `CLAUDE_PROJECT_DIR` so per-worktree locks
+  and `Plans.md` monitoring stay independent.
 
 ## [5.15.0] - 2026-09-06
 

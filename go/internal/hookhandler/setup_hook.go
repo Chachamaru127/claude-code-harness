@@ -16,6 +16,7 @@ import (
 
 // setupInput は Setup フックの stdin JSON ペイロード。
 type setupInput struct {
+	CWD           string `json:"cwd"`
 	HookEventName string `json:"hook_event_name"`
 	SessionID     string `json:"session_id"`
 	Mode          string `json:"mode"` // "init" または "maintenance"
@@ -56,8 +57,7 @@ func runSyncPluginCache(scriptDir string) {
 // getPlansFilePath は設定から Plans.md のパスを取得する。
 // helpers.go の resolvePlansPath() を使った Go ネイティブ実装。
 // bash (config-utils.sh) への依存を排除している。
-func getPlansFilePath(_ string) string {
-	projectRoot := resolveProjectRoot()
+func getPlansFilePath(projectRoot string) string {
 	if path := resolvePlansPath(projectRoot); path != "" {
 		return path
 	}
@@ -119,12 +119,14 @@ func handleSetupHook(in io.Reader, out io.Writer, mode string) error {
 	// stdin から JSON を読み取る（エラーは無視）
 	data, _ := io.ReadAll(in)
 
+	var input setupInput
+	if len(data) > 0 {
+		_ = json.Unmarshal(data, &input)
+	}
+	projectRoot := resolveProjectRoot(input.CWD)
+
 	// ペイロードからモードを決定（引数が優先）
 	if mode == "" {
-		var input setupInput
-		if len(data) > 0 {
-			_ = json.Unmarshal(data, &input)
-		}
 		if input.Mode != "" {
 			mode = input.Mode
 		} else {
@@ -134,13 +136,13 @@ func handleSetupHook(in io.Reader, out io.Writer, mode string) error {
 
 	// スクリプトディレクトリを推定（実行バイナリ基準。テスト時は cwd）
 	scriptDir := resolveSetupScriptDir()
-	locale := resolveHarnessLocale(resolveProjectRoot())
+	locale := resolveHarnessLocale(projectRoot)
 
 	switch mode {
 	case "init":
-		return runSetupInit(out, scriptDir, simpleMode, locale)
+		return runSetupInit(out, projectRoot, scriptDir, simpleMode, locale)
 	case "maintenance":
-		return runSetupMaintenance(out, scriptDir, simpleMode, locale)
+		return runSetupMaintenance(out, projectRoot, scriptDir, simpleMode, locale)
 	default:
 		return writeSetupOutput(out, setupUnknownModeMessage(mode, locale))
 	}
@@ -172,7 +174,7 @@ func resolveSetupScriptDir() string {
 }
 
 // runSetupInit は init モードの処理を実行する。
-func runSetupInit(out io.Writer, scriptDir string, simpleMode bool, locale string) error {
+func runSetupInit(out io.Writer, projectRoot, scriptDir string, simpleMode bool, locale string) error {
 	var messages []string
 
 	// 1. プラグインキャッシュの同期
@@ -185,13 +187,13 @@ func runSetupInit(out io.Writer, scriptDir string, simpleMode bool, locale strin
 	}
 
 	// 2. 状態ディレクトリの初期化
-	stateDir := ".claude/state"
+	stateDir := filepath.Join(projectRoot, ".claude", "state")
 	if err := os.MkdirAll(stateDir, 0o755); err == nil {
 		// 初期化成功（既存でも OK）
 	}
 
 	// 3. デフォルト設定ファイルの生成
-	configFile := ".claude-code-harness.config.yaml"
+	configFile := filepath.Join(projectRoot, harnessConfigFileName)
 	if !fileExists(configFile) {
 		templatePath := filepath.Join(scriptDir, "..", "templates", ".claude-code-harness.config.yaml.template")
 		if _, err := os.Stat(templatePath); err == nil {
@@ -202,24 +204,26 @@ func runSetupInit(out io.Writer, scriptDir string, simpleMode bool, locale strin
 	}
 
 	// 3.5. harness.toml の生成
-	if !fileExists("harness.toml") {
-		if err := os.WriteFile("harness.toml", []byte(scaffold.HarnessTomlTemplate), 0o644); err == nil {
+	harnessTomlPath := filepath.Join(projectRoot, "harness.toml")
+	if !fileExists(harnessTomlPath) {
+		if err := os.WriteFile(harnessTomlPath, []byte(scaffold.HarnessTomlTemplate), 0o644); err == nil {
 			messages = append(messages, localizedHarnessMessage(locale, "harness.toml created", "harness.toml 生成完了"))
 		}
 	}
 
 	// 4. CLAUDE.md の生成
-	if !fileExists("CLAUDE.md") {
+	claudeMDPath := filepath.Join(projectRoot, "CLAUDE.md")
+	if !fileExists(claudeMDPath) {
 		templatePath := filepath.Join(scriptDir, "..", "templates", "CLAUDE.md.template")
 		if _, err := os.Stat(templatePath); err == nil {
-			if err := copyFile(templatePath, "CLAUDE.md"); err == nil {
+			if err := copyFile(templatePath, claudeMDPath); err == nil {
 				messages = append(messages, localizedHarnessMessage(locale, "CLAUDE.md created", "CLAUDE.md 生成完了"))
 			}
 		}
 	}
 
 	// 5. Plans.md の生成（plansDirectory 設定を考慮）
-	plansPath := getPlansFilePath(scriptDir)
+	plansPath := getPlansFilePath(projectRoot)
 	if !fileExists(plansPath) {
 		plansDir := filepath.Dir(plansPath)
 		if plansDir != "." {
@@ -238,7 +242,7 @@ func runSetupInit(out io.Writer, scriptDir string, simpleMode bool, locale strin
 
 	// 7. harness-mem managed companion の自動セットアップ。
 	// 失敗しても Harness 本体の Setup hook は止めない。
-	if result := harnessmem.AutoSetupFromSetupHook(harnessMemAutoSetupMarkerPath()); result.Attempted {
+	if result := harnessmem.AutoSetupFromSetupHook(harnessMemAutoSetupMarkerPath(projectRoot)); result.Attempted {
 		if result.Ready {
 			messages = append(messages, "harness-mem companion setup complete")
 		} else {
@@ -261,13 +265,12 @@ func runSetupInit(out io.Writer, scriptDir string, simpleMode bool, locale strin
 	return writeSetupOutput(out, "[Setup:init] "+strings.Join(messages, ", "))
 }
 
-func harnessMemAutoSetupMarkerPath() string {
-	projectRoot := resolveProjectRoot()
+func harnessMemAutoSetupMarkerPath(projectRoot string) string {
 	return filepath.Join(projectRoot, ".claude", "state", "harness-mem-companion-setup.json")
 }
 
 // runSetupMaintenance は maintenance モードの処理を実行する。
-func runSetupMaintenance(out io.Writer, scriptDir string, simpleMode bool, locale string) error {
+func runSetupMaintenance(out io.Writer, projectRoot, scriptDir string, simpleMode bool, locale string) error {
 	var messages []string
 
 	// 1. プラグインキャッシュの同期
@@ -280,7 +283,7 @@ func runSetupMaintenance(out io.Writer, scriptDir string, simpleMode bool, local
 	}
 
 	// 2. 古いセッションファイルのクリーンアップ（7日以上）
-	stateDir := ".claude/state"
+	stateDir := filepath.Join(projectRoot, ".claude", "state")
 	archiveDir := filepath.Join(stateDir, "sessions")
 	if _, err := os.Stat(archiveDir); err == nil {
 		cutoff := time.Now().AddDate(0, 0, -7)
@@ -330,7 +333,7 @@ func runSetupMaintenance(out io.Writer, scriptDir string, simpleMode bool, local
 	}
 
 	// 6. 設定ファイルの YAML 構文チェック（python3 が利用可能な場合）
-	configFile := ".claude-code-harness.config.yaml"
+	configFile := filepath.Join(projectRoot, harnessConfigFileName)
 	if fileExists(configFile) {
 		if err := validateYAMLConfig(configFile); err != nil {
 			messages = append(messages, localizedHarnessMessage(locale,
