@@ -8,6 +8,10 @@ Change history for claude-code-harness.
 
 ### Changed
 
+- Tell Dependabot to skip major and minor updates of `@vercel/agent-eval` in
+  the breezing benchmark. `tests/test-breezing-agent-eval-deps.sh` pins the
+  package to the `1.4.x` line on purpose, so those bumps arrived red every
+  week (#377). Patch releases are still proposed.
 - Raise the Go toolchain requirement to 1.26.0 in both `go/go.mod` and
   `go.work`. Dependency updates that need Go 1.26 (such as
   `golang.org/x/sys` v0.49.0) previously failed during the build because the
