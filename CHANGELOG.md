@@ -6,6 +6,13 @@ Change history for claude-code-harness.
 
 ## [Unreleased]
 
+### Changed
+
+- Tell Dependabot to skip major and minor updates of `@vercel/agent-eval` in
+  the breezing benchmark. `tests/test-breezing-agent-eval-deps.sh` pins the
+  package to the `1.4.x` line on purpose, so those bumps arrived red every
+  week (#377). Patch releases are still proposed.
+
 ### Fixed
 
 - Stop `go/internal/integrate`'s tests from racing `t.TempDir()` cleanup.
