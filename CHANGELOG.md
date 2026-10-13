@@ -13,6 +13,11 @@ Change history for claude-code-harness.
   `golang.org/x/sys` v0.49.0) previously failed during the build because the
   workspace still declared 1.25.0, which blocked their pull requests. The
   four bundled platform binaries are rebuilt with the same toolchain.
+- Update the Go dependencies that were waiting on that toolchain:
+  `golang.org/x/sys` 0.47.0 → 0.49.0 (#376) and `modernc.org/sqlite`
+  1.56.0 → 1.60.1 with its `modernc.org/libc` 1.77.1 and `modernc.org/memory`
+  1.12.1 companions (#369). Both Dependabot pull requests are superseded by
+  this change.
 
 ### Fixed
 
