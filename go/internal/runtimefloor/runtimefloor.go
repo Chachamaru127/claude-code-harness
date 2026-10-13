@@ -79,6 +79,9 @@ var (
 	urlPattern        = regexp.MustCompile(`(?i)(?:https?|ftp)://([^\s/]+)`)
 	remoteHostPattern = regexp.MustCompile(`(?i)(?:^|\s)(?:[\w.-]+@)?([a-z0-9][\w.-]*\.[a-z]{2,})(?::|/|\s|$)`)
 	// schemelessHostAuthority matches curl/wget args like example.com/path without a URL scheme.
+	// The match alone is not enough to call something a host: the final label
+	// must also be a registered TLD (see isRegisteredTLD). Otherwise a plain
+	// filename such as notes.txt or config.json looks exactly like a host.
 	schemelessHostAuthority = regexp.MustCompile(`(?i)^(?:[\w.-]+@)?([a-z0-9][\w.-]*\.[a-z]{2,})(?::\d+)?$`)
 )
 
@@ -193,13 +196,42 @@ func checkCurlWgetSchemelessHosts(cmd string) Decision {
 			if authority == "" || isAllowlistedHost(authority) {
 				continue
 			}
-			if schemelessHostAuthority.MatchString(authority) {
+			if schemelessHostAuthority.MatchString(authority) && isRegisteredTLD(authorityTLD(authority)) {
 				return stop(CategoryEgress, token,
 					"external network egress requires human approval")
 			}
 		}
 	}
 	return Decision{}
+}
+
+// authorityTLD returns the final label of a schemeless authority, ignoring a
+// trailing port, or "" when there is no label to test.
+func authorityTLD(authority string) string {
+	host := authority
+	if colon := strings.LastIndex(host, ":"); colon >= 0 {
+		host = host[:colon]
+	}
+	if dot := strings.LastIndex(host, "."); dot >= 0 {
+		return host[dot+1:]
+	}
+	return ""
+}
+
+// isRegisteredTLD reports whether label is a top-level domain in the IANA
+// root zone.
+//
+// This is what separates a host from a filename. late.txt, config.json, and
+// http.server all match the host shape but end in labels that are not TLDs,
+// so they are not hosts. evil.sh ends in a real ccTLD and stays denied, which
+// is the case that matters: a schemeless curl defaults to http, so a host
+// that reaches this check would be contacted for real.
+func isRegisteredTLD(label string) bool {
+	if label == "" {
+		return false
+	}
+	_, ok := registeredTLDs[strings.ToLower(label)]
+	return ok
 }
 
 func extractHostAuthority(token string) string {
