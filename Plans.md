@@ -448,7 +448,7 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 **基準版**: docs/user-first-bilingual `3e1fdb2c279e8a82c5cbc2107c891135b2cdcb68`。文書の受入は完了済み。
 **目的**: Claude Codeの予約名拒否を解消し、新しいIDでも設定生成とフックの起動を正しく保つ。
 **非対象**: GitHubリポジトリ名、marketplace名、内部設定と記憶の保存先、保護規則、モデル、既存の個人設定の変更。公開、旧版履歴の書換えはしない。
-**触るパス**: 全4実行先の配布manifest、scripts/build-host-plugin-dist.shとsetup-cursor.sh/setup-grok.sh、harness.toml、.claude-plugin/plugin.jsonとmarketplace.json、両hooks.json、go/internal/hostgen/hostgen.go、scripts/sync-plugin-cache.sh、配布IDを参照する導入/検査/生成元、README日英、現行onboarding日英、CHANGELOG日英のUnreleased、bin/harness-*（Go差分の再生成）、対応する検査、Plans.md/spec.md。追加調査で共有marketplaceと全manifestのID一致が必要と判明したため、配布IDを全実行先で揃える。go/cmd/harness/migration_report.go、scripts/userprompt-track-command.sh、go/internal/hookhandler/userprompt_track_command.go、quick-install/codex-setup-local/opencode-setup-localと関連検査も対象。旧名前空間は移行の入力としてだけ認識する。共有skills/Codex差分/templatesと追跡されたCodex/OpenCode/Cursorの鏡像、docs/team-composition.mdにある実行用名前空間も揃える。tests/validate-plugin.shとCursor/Grokの隔離検査は、一時HOMEでも実際のNode本体を使う。モデルと期待する動作は変えない。
+**触るパス**: 全4実行先の配布manifest、scripts/build-host-plugin-dist.shとsetup-cursor.sh/setup-grok.sh、harness.toml、.claude-plugin/plugin.jsonとmarketplace.json、両hooks.json、go/internal/hostgen/hostgen.go、scripts/sync-plugin-cache.sh、配布IDを参照する導入/検査/生成元、README日英、現行onboarding日英、CHANGELOG日英のUnreleased、bin/harness-*（Go差分の再生成）、対応する検査、Plans.md/spec.md、診断スクリプトが案内するdocs/local-harness-environment-cleanup.md。追加調査で共有marketplaceと全manifestのID一致が必要と判明したため、配布IDを全実行先で揃える。go/cmd/harness/migration_report.go、scripts/userprompt-track-command.sh、go/internal/hookhandler/userprompt_track_command.go、quick-install/codex-setup-local/opencode-setup-localと関連検査も対象。旧名前空間は移行の入力としてだけ認識する。共有skills/Codex差分/templatesと追跡されたCodex/OpenCode/Cursorの鏡像、docs/team-composition.mdにある実行用名前空間も揃える。tests/validate-plugin.shとCursor/Grokの隔離検査は、一時HOMEでも実際のNode本体を使う。モデルと期待する動作は変えない。
 **AC1**: 正本と生成manifest、marketplace entryがharnessを示し、Claude2.1.296でmanifest検証成功。VERSIONは5.15.0を保つ。
 **AC2**: 設定生成で旧IDへ戻らず、環境指定と新IDのcacheからフックが起動する。設定生成元と配布フックは一致。
 **AC3**: 同じ版でも旧IDのmarketplace cloneへ新IDフックを上書きしない。既存cacheを勝手に作らず、実際のHOMEへ同期や導入を実行しない。
@@ -458,6 +458,8 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 | ID | Task | DoD | Depends | Status |
 |----|------|-----|---------|--------|
 | 149.1 | Astra/Fableの変更範囲確認 | 名前、パス、既存利用者への影響を特定 | - | cc:done [両相談完了。正本と68フック、cache同版別ID、共有marketplace、専用DBの移動条件を特定] |
-| 149.2 | 正本、生成、起動とcache同期を変更 | AC1-3、REDからGREENへの回帰証拠 | 149.1 | cc:WIP [旧IDと名前空間のREDを観測後、設定/フック/生成/入力正規化を修正。manifestと起動、cache同期、新名前空間の回帰はGREEN] |
-| 149.3 | 日英の更新手順とバイナリを揃える | AC4-5の対象検査 | 149.2 | cc:WIP [4環境を再生成。旧データの自動転送なしと手動keep-data条件を日英へ明記。対象19検査と全体検査の最終結果を確認中] |
-| 149.4 | 独立判定と公開計画の更新 | APPROVEと同一SHAの試験。公開未実施のまま単一確認へ | 149.3 | cc:WIP [範囲判定を受領。日英の支援範囲注記を復元。品質判定と実行記録を揃える] |
+| 149.2 | 正本、生成、起動とcache同期を変更 | AC1-3、REDからGREENへの回帰証拠 | 149.1 | cc:done [正本/生成/起動/cacheを変更。旧IDと新名前空間のREDからGREEN。全体154項目と対象19検査成功] |
+| 149.3 | 日英の更新手順とバイナリを揃える | AC4-5の対象検査 | 149.2 | cc:done [4環境再生成。移行手順日英とデータ制約を明記。検査前後cleanの同一SHAで検証0] |
+| 149.4 | 独立判定と公開計画の更新 | APPROVEと同一SHAの試験。公開未実施のまま単一確認へ | 149.3 | cc:done [製品差分17718b96をOpus5.5がPASS。同一SHAで検証0を記録。公開前検査24成功/5警告。現行cleanup導線を補正し、隔離user範囲の設定キー移行も成功。公開候補5.16.0の計画と日英文面はローカル準備済み。公開は未承認] |
+
+**Phase149の公開境界**: mainへのmergeでmarketplace更新利用者に改名が届くため、pushとmergeの前に公開承認を得る。VERSION5.15.0のまま改名だけをmainへ出さない。公開時は5.16.0への同期と4バイナリ再生成をまとめる。製品の独立判定で残った他marketplaceの同名harnessを報告が拾う条件と、隔離検査のNodeディレクトリ優先は公開計画へ記録した。

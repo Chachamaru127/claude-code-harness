@@ -1,6 +1,6 @@
 # Local Harness Environment Cleanup
 
-Last updated: 2026-05-28
+Last updated: 2026-10-14
 
 Scope: reduce duplicate Harness skills/plugins across Claude Code, Codex CLI,
 and Cursor without destructive cleanup by default.
@@ -27,14 +27,14 @@ cross-host mirrors after user confirmation.
 | Profile | When to use | Harness behavior |
 |---------|-------------|------------------|
 | `clean` (default) | You want one Harness per tool and fewer duplicate entries | Diagnose all origins; recommend archive/disable of non-primary routes |
-| `compatibility` | You intentionally share Claude/Codex skills inside Cursor | Warn about duplicates; recommend explicit invocation (`$harness-plan`, `/claude-code-harness:harness-plan`) |
+| `compatibility` | You intentionally share Claude/Codex skills inside Cursor | Warn about duplicates; recommend explicit invocation (`$harness-plan`, `/harness:harness-plan`) |
 
 ## Recommended Primary Routes
 
 | Host | Primary route | Avoid mixing with |
 |------|---------------|-------------------|
-| Claude Code | `claude-code-harness@claude-code-harness-marketplace` plugin | `--plugin-dir .` while marketplace plugin is also enabled |
-| Codex CLI | `claude-code-harness@claude-code-harness-marketplace` plugin **or** curated `~/.codex/skills` mirror, not both | duplicate `harness-*` in global skills and plugin cache |
+| Claude Code | `harness@claude-code-harness-marketplace` plugin | `--plugin-dir .` while marketplace plugin is also enabled |
+| Codex CLI | `harness@claude-code-harness-marketplace` plugin **or** curated `~/.codex/skills` mirror, not both | duplicate `harness-*` in global skills and plugin cache |
 | Cursor | generated Cursor package / `.cursor-plugin` route | full `~/.codex/skills` Harness mirror + Claude plugin cache when Clean Mode is desired |
 
 ## Dry-Run Diagnosis
@@ -49,12 +49,19 @@ bash scripts/diagnose-harness-skill-duplication.sh --json
 
 The script is **dry-run only**. It never deletes files or edits config.
 
+## Existing installations before the rename
+
+Follow [the plugin switching guide](onboarding/plugin-rename.md) before cleaning an old installation. The old ID is `claude-code-harness`; the new ID is `harness`. Check every scope and keep only one active route. The rename map moves settings keys, not plugin-owned databases.
+
+For Cursor, disable the old local plugin using its manager before installing the new package. `setup-cursor.sh` installs to `~/.cursor/plugins/local/harness` and does not remove the old `local/claude-code-harness` copy. Archive an old copy only after confirming its origin and that it is inactive.
+
 ## Manual Cleanup Checklist (after diagnosis)
 
 1. **Inventory**: note every `harness-*`, `breezing`, and `memory` skill path.
-2. **Claude cache**: keep one installed version; archive old
-   `~/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/*`
-   directories that are not your active version.
+2. **Claude cache**: use the plugin manager to keep one active ID and version.
+   The new cache is `~/.claude/plugins/cache/claude-code-harness-marketplace/harness/*`.
+   The old ID has a separate cache. Do not delete either cache or plugin data
+   to perform the rename; follow the switching guide first.
 3. **Codex route**: choose plugin **or** global skills, then disable the other
    path (`[[skills.config]] enabled = false` or plugin `enabled = false`).
 4. **Cursor Clean Mode**: archive Harness mirrors under `~/.codex/skills` and
@@ -82,8 +89,7 @@ Two Cursor-specific constraints break naive installs:
    ```bash
    DIST="$HOME/.local/share/claude-code-harness/cursor"
    bash scripts/build-host-plugin-dist.sh --host cursor --out "$DIST"
-   rm -rf "$HOME/.cursor/plugins/local/claude-code-harness"
-   cp -R "$DIST" "$HOME/.cursor/plugins/local/claude-code-harness"
+   bash scripts/setup-cursor.sh
    ```
 
 2. **`user-invocable: true` skills are dropped.** Cursor does not surface skills
@@ -96,6 +102,8 @@ Two Cursor-specific constraints break naive installs:
 After installing, run **Developer: Reload Window** in Cursor.
 
 ## Rollback
+
+Restore only an intentionally disabled route after checking the active ID. Do not enable both old and new copies. New Claude builds may reject the old name, so restoring an old directory does not guarantee that route can run.
 
 Before any manual archive:
 
