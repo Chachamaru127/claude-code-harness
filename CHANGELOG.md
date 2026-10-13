@@ -12,6 +12,16 @@ Change history for claude-code-harness.
   the breezing benchmark. `tests/test-breezing-agent-eval-deps.sh` pins the
   package to the `1.4.x` line on purpose, so those bumps arrived red every
   week (#377). Patch releases are still proposed.
+- Raise the Go toolchain requirement to 1.26.0 in both `go/go.mod` and
+  `go.work`. Dependency updates that need Go 1.26 (such as
+  `golang.org/x/sys` v0.49.0) previously failed during the build because the
+  workspace still declared 1.25.0, which blocked their pull requests. The
+  four bundled platform binaries are rebuilt with the same toolchain.
+- Update the Go dependencies that were waiting on that toolchain:
+  `golang.org/x/sys` 0.47.0 → 0.49.0 (#376) and `modernc.org/sqlite`
+  1.56.0 → 1.60.1 with its `modernc.org/libc` 1.77.1 and `modernc.org/memory`
+  1.12.1 companions (#369). Both Dependabot pull requests are superseded by
+  this change.
 
 ### Fixed
 
