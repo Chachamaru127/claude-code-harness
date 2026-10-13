@@ -59,3 +59,11 @@ updates:
       - "dependencies"
     commit-message:
       prefix: "chore(deps)"
+    # tests/test-breezing-agent-eval-deps.sh pins @vercel/agent-eval to ~1.4.0
+    # so the benchmark numbers stay comparable across runs. Major and minor
+    # bumps would arrive red every week (#377); patch releases still come.
+    ignore:
+      - dependency-name: "@vercel/agent-eval"
+        update-types:
+          - "version-update:semver-major"
+          - "version-update:semver-minor"
