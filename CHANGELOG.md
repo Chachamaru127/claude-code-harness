@@ -31,7 +31,7 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [5.15.0] - 2026-09-06
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5150---2026-09-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L62)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5150---2026-09-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L62)
 
 ### Added
 
@@ -58,7 +58,7 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [5.14.1] - 2026-08-31
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5141---2026-08-31) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L113)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5141---2026-08-31) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L113)
 
 ### Fixed
 
@@ -67,7 +67,7 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [5.14.0] - 2026-08-31
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5140---2026-08-31) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L131)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5140---2026-08-31) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L131)
 
 ### Added
 
@@ -78,7 +78,7 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [5.13.2] - 2026-08-29
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5132---2026-08-29) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L168)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5132---2026-08-29) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L168)
 
 ### Fixed
 
@@ -91,7 +91,7 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [5.13.1] - 2026-08-26
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5131---2026-08-26) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L187)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5131---2026-08-26) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L187)
 
 ### Changed
 
@@ -99,7 +99,7 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [5.13.0] - 2026-08-25
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5130---2026-08-25) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L193)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5130---2026-08-25) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L193)
 
 ### Added
 
@@ -115,7 +115,7 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [5.12.0] - 2026-08-24
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5120---2026-08-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L225)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5120---2026-08-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L225)
 
 ### Added
 
@@ -130,7 +130,7 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [5.11.0] - 2026-08-22
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5110---2026-08-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L242)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5110---2026-08-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L242)
 
 ### Changed
 
@@ -139,7 +139,7 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [5.10.0] - 2026-08-22
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5100---2026-08-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L248)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5100---2026-08-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L248)
 
 ### Added
 
@@ -151,7 +151,7 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [5.9.0] - 2026-08-17
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#590---2026-08-17) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L259)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#590---2026-08-17) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L259)
 
 ### Added
 
@@ -175,7 +175,7 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [5.8.0] - 2026-08-14
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#580---2026-08-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L401)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#580---2026-08-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L401)
 
 ### Added
 
@@ -195,7 +195,7 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [5.7.0] - 2026-08-12
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#570---2026-08-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L427)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#570---2026-08-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L427)
 
 This release also records that Claude Code did not read permission rules in `.claude-plugin/settings.json`. A shipped rule is not evidence that the session applied it; verify active rules in `/permissions`.
 
@@ -225,7 +225,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [5.6.0] - 2026-08-01
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#560---2026-08-01) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L618)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#560---2026-08-01) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L618)
 
 ### Security
 
@@ -244,7 +244,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [5.5.0] - 2026-07-29
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#550---2026-07-29) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L732)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#550---2026-07-29) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L732)
 
 ### Fixed
 
@@ -259,7 +259,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [5.4.0] - 2026-07-26
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#540---2026-07-26) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L810)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#540---2026-07-26) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L810)
 
 ### Added
 
@@ -283,7 +283,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [5.3.1] - 2026-07-20
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#531---2026-07-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L912)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#531---2026-07-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L912)
 
 ### Fixed
 
@@ -291,7 +291,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [5.3.0] - 2026-07-19
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#530---2026-07-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L926)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#530---2026-07-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L926)
 
 ### Changed
 
@@ -307,7 +307,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [5.2.0] - 2026-07-17
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#520---2026-07-17) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L949)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#520---2026-07-17) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L949)
 
 ### Added
 
@@ -324,7 +324,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [5.1.0] - 2026-07-16
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#510---2026-07-16) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1013)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#510---2026-07-16) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1013)
 
 ### Added
 
@@ -341,7 +341,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [5.0.0] - 2026-07-08
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#500---2026-07-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1129)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#500---2026-07-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1129)
 
 ### Breaking Changes
 
@@ -370,7 +370,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.16.4] - 2026-06-28
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4164---2026-06-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1241)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4164---2026-06-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1241)
 
 ### Changed
 
@@ -378,7 +378,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.16.3] - 2026-06-24
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4163---2026-06-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1267)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4163---2026-06-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1267)
 
 ### Fixed
 
@@ -386,7 +386,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.16.2] - 2026-06-24
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4162---2026-06-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1291)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4162---2026-06-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1291)
 
 ### Fixed
 
@@ -397,7 +397,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.16.1] - 2026-06-19
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4161---2026-06-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1355)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4161---2026-06-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1355)
 
 ### Fixed
 
@@ -406,7 +406,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.16.0] - 2026-06-18
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4160---2026-06-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1393)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4160---2026-06-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1393)
 
 ### Added
 
@@ -418,7 +418,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.15.0] - 2026-06-05
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4150---2026-06-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1447)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4150---2026-06-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1447)
 
 ### Added
 
@@ -435,7 +435,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.14.0] - 2026-06-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4140---2026-06-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1491)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4140---2026-06-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1491)
 
 ### Added
 
@@ -443,7 +443,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.13.3] - 2026-06-01
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4133---2026-06-01) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1517)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4133---2026-06-01) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1517)
 
 ### Fixed
 
@@ -456,7 +456,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.13.2] - 2026-05-30
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4132---2026-05-30) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1616)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4132---2026-05-30) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1616)
 
 ### Added
 
@@ -478,7 +478,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.13.1] - 2026-05-29
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4131---2026-05-29) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1679)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4131---2026-05-29) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1679)
 
 ### Changed
 
@@ -486,7 +486,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.13.0] - 2026-05-29
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4130---2026-05-29) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1686)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4130---2026-05-29) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1686)
 
 ### Added
 
@@ -498,7 +498,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.12.11] - 2026-05-28
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#41211---2026-05-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1704)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#41211---2026-05-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1704)
 
 ### Changed
 
@@ -506,7 +506,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.12.10] - 2026-05-28
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#41210---2026-05-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1724)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#41210---2026-05-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1724)
 
 ### Fixed
 
@@ -514,7 +514,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.12.9] - 2026-05-28
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4129---2026-05-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1730)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4129---2026-05-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1730)
 
 ### Changed
 
@@ -522,7 +522,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.12.8] - 2026-05-27
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4128---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1736)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4128---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1736)
 
 ### Changed
 
@@ -531,7 +531,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.12.7] - 2026-05-27
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4127---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1748)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4127---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1748)
 
 ### Fixed
 
@@ -539,7 +539,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.12.6] - 2026-05-27
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4126---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1755)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4126---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1755)
 
 ### Changed
 
@@ -555,7 +555,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.12.5] - 2026-05-27
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4125---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1781)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4125---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1781)
 
 ### Fixed
 
@@ -568,7 +568,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.12.4] - 2026-05-27
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4124---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1796)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4124---2026-05-27) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1796)
 
 ### Added
 
@@ -584,7 +584,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.12.3] - 2026-05-25
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4123---2026-05-25) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1812)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4123---2026-05-25) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1812)
 
 ### Changed
 
@@ -596,7 +596,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.12.2] - 2026-05-24
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4122---2026-05-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1830)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4122---2026-05-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1830)
 
 ### Fixed
 
@@ -604,7 +604,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.12.1] - 2026-05-24
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4121---2026-05-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1836)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4121---2026-05-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1836)
 
 ### Changed
 
@@ -612,7 +612,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.12.0] - 2026-05-23
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4120---2026-05-23) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1845)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4120---2026-05-23) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1845)
 
 ### Added
 
@@ -621,7 +621,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.11.4] - 2026-05-21
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4114---2026-05-21) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1889)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4114---2026-05-21) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1889)
 
 ### Added
 
@@ -632,7 +632,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.11.3] - 2026-05-19
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4113---2026-05-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1993)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4113---2026-05-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1993)
 
 ### Changed
 
@@ -640,7 +640,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.11.2] - 2026-05-19
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4112---2026-05-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2035)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4112---2026-05-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2035)
 
 ### Fixed
 
@@ -648,7 +648,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.11.1] - 2026-05-18
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4111---2026-05-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2073)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4111---2026-05-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2073)
 
 ### Fixed
 
@@ -656,7 +656,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.11.0] - 2026-05-18
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4110---2026-05-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2111)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4110---2026-05-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2111)
 
 ### Added
 
@@ -674,7 +674,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.10.0] - 2026-05-12
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4100---2026-05-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2292)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4100---2026-05-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2292)
 
 ### Added
 
@@ -686,7 +686,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.9.0] - 2026-05-10
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#490---2026-05-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2333)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#490---2026-05-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2333)
 
 ### Added
 
@@ -695,7 +695,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.8.1] - 2026-05-09
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#481---2026-05-09) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2436)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#481---2026-05-09) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2436)
 
 ### Fixed
 
@@ -705,9 +705,11 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 - Fix session-start sync silently removing six paste-site network blocks after `be2a1781`. Blocks for `pastebin.com`, `transfer.sh`, `0x0.st`, `paste.ee`, `termbin.com`, and `ix.io` now live in `harness.toml` and survive synchronization.
 
+This network list was generated from `harness.toml` into the plugin settings; its runtime effect at that time has not been re-tested. The [current official contract](https://code.claude.com/docs/en/plugins-reference#settings) applies only `agent` and `subagentStatusLine` from plugin settings, so copy network blocks into your own user or project settings.
+
 ## [4.8.0] - 2026-05-08
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#480---2026-05-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2492)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#480---2026-05-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2492)
 
 ### Changed
 
@@ -722,7 +724,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.7.0] - 2026-05-06
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#470---2026-05-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2577)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#470---2026-05-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2577)
 
 ### Added
 
@@ -734,7 +736,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.6.1] - 2026-05-05
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#461---2026-05-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2589)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#461---2026-05-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2589)
 
 ### Fixed
 
@@ -742,7 +744,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.6.0] - 2026-05-05
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#460---2026-05-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2595)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#460---2026-05-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2595)
 
 ### Added
 
@@ -758,7 +760,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.5.4] - 2026-05-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#454---2026-05-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2623)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#454---2026-05-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2623)
 
 ### Fixed
 
@@ -766,7 +768,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.5.3] - 2026-05-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#453---2026-05-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2629)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#453---2026-05-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2629)
 
 ### Fixed
 
@@ -774,7 +776,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.5.2] - 2026-05-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#452---2026-05-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2637)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#452---2026-05-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2637)
 
 ### Changed
 
@@ -786,7 +788,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.5.1] - 2026-05-03
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#451---2026-05-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2650)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#451---2026-05-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2650)
 
 ### Changed
 
@@ -794,7 +796,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.5.0] - 2026-05-03
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#450---2026-05-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2657)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#450---2026-05-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2657)
 
 ### Changed
 
@@ -810,7 +812,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.4.0] - 2026-04-26
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#440---2026-04-26) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2685)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#440---2026-04-26) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2685)
 
 ### Added
 
@@ -825,9 +827,11 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 - Add cloud metadata endpoints (addresses that can return service credentials) to `sandbox.network.deniedDomains`, the network block list. R05 dangerous-deletion checks now include `find -delete`, `find -exec rm`, and macOS paths `/private/etc`, `/private/var`, `/private/tmp`, `/private/home`, and `~/Library`.
 
+This network list was generated from `harness.toml` into the plugin settings; its runtime effect at that time has not been re-tested. The [current official contract](https://code.claude.com/docs/en/plugins-reference#settings) applies only `agent` and `subagentStatusLine` from plugin settings, so copy network blocks into your own user or project settings.
+
 ## [4.3.3] - 2026-04-20
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#433---2026-04-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2815)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#433---2026-04-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2815)
 
 ### Fixed
 
@@ -835,7 +839,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.3.2] - 2026-04-20
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#432---2026-04-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2871)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#432---2026-04-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2871)
 
 ### Fixed
 
@@ -843,7 +847,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.3.1] - 2026-04-19
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#431---2026-04-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2922)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#431---2026-04-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2922)
 
 ### Added
 
@@ -855,7 +859,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.3.0] - 2026-04-19
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#430---2026-04-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3000)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#430---2026-04-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3000)
 
 ### Fixed
 
@@ -863,7 +867,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.2.0] - 2026-04-18
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#420---2026-04-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3046)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#420---2026-04-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3046)
 
 ### Added
 
@@ -896,7 +900,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.1.1] - 2026-04-16
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#411---2026-04-16) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3170)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#411---2026-04-16) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3170)
 
 ### Added
 
@@ -908,7 +912,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.1.0] - 2026-04-16
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#410---2026-04-16) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3180)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#410---2026-04-16) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3180)
 
 ### Added
 
@@ -928,7 +932,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.0.4] - 2026-04-14
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#404---2026-04-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3295)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#404---2026-04-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3295)
 
 ### Fixed
 
@@ -944,7 +948,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.0.3] - 2026-04-13
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#403---2026-04-13) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3409)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#403---2026-04-13) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3409)
 
 ### Fixed
 
@@ -952,7 +956,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.0.2] - 2026-04-12
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#402---2026-04-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3432)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#402---2026-04-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3432)
 
 ### Added
 
@@ -964,7 +968,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.0.1] - 2026-04-11
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#401---2026-04-11) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3473)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#401---2026-04-11) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3473)
 
 ### Security
 
@@ -980,7 +984,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [4.0.0] - 2026-04-09
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#400---2026-04-09) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3643)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#400---2026-04-09) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3643)
 
 ### Breaking Changes
 
@@ -992,7 +996,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [3.17.1] - 2026-04-06
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3171---2026-04-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3774)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3171---2026-04-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3774)
 
 ### Fixed
 
@@ -1004,7 +1008,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [3.17.0] - 2026-04-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3170---2026-04-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3807)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3170---2026-04-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3807)
 
 ### Added
 
@@ -1021,7 +1025,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [3.16.0] - 2026-04-01
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3160---2026-04-01) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3924)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3160---2026-04-01) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3924)
 
 ### Added
 
@@ -1035,7 +1039,7 @@ This release also records that Claude Code did not read permission rules in `.cl
 
 ## [3.15.0] - 2026-03-28
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3150---2026-03-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3949)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3150---2026-03-28) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3949)
 
 The runtime effect in this historical release has not been re-tested. The [current plugin settings contract](https://code.claude.com/docs/en/plugins-reference#settings) applies only `agent` and `subagentStatusLine`; plugin-file presence alone does not prove protection was active.
 
@@ -1052,7 +1056,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.14.0] - 2026-03-25
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3140---2026-03-25) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4006)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3140---2026-03-25) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4006)
 
 ### Changed
 
@@ -1064,7 +1068,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.13.0] - 2026-03-25
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3130---2026-03-25) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4036)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3130---2026-03-25) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4036)
 
 ### Added
 
@@ -1074,7 +1078,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.12.0] - 2026-03-21
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3120---2026-03-21) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4092)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3120---2026-03-21) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4092)
 
 ### Added
 
@@ -1089,14 +1093,14 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.11.0] - 2026-03-20
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3110---2026-03-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4161)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3110---2026-03-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4161)
 
 The runtime effect in this historical release has not been re-tested. The [current plugin settings contract](https://code.claude.com/docs/en/plugins-reference#settings) applies only `agent` and `subagentStatusLine`; plugin-file presence alone does not prove protection was active.
 
 ### Added
 
 - On Claude Code 2.1.78+, the StopFailure hook logs sessions that fail to stop because of API errors such as rate limit 429 or authentication 401. Logs go to `${CLAUDE_PLUGIN_DATA}` when set, otherwise `.claude/state/stop-failures.jsonl`; on 429 the lead is notified. Run `scripts/show-failures.sh` for a summary by error code and time. Automatic recovery (backoff and restart) and dynamic effort are designs only, not implemented.
-- A sandbox `allowRead` example (`.env.example`, `docs/**`) was added to the plugin settings file; Claude Code does not apply sandbox settings from that file, so copy it into your own settings to use it.
+- A sandbox `allowRead` example (`.env.example`, `docs/**`) was added to the plugin settings file; To use this example under the current official contract, copy it into your own user or project settings; its historical runtime effect has not been re-tested.
 
 ### Changed
 
@@ -1106,7 +1110,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.10.6] - 2026-03-19
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3106---2026-03-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4238)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3106---2026-03-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4238)
 
 ### Fixed
 
@@ -1125,7 +1129,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.10.5] - 2026-03-15
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3105---2026-03-15) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4294)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3105---2026-03-15) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4294)
 
 ### Fixed
 
@@ -1137,7 +1141,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.10.4] - 2026-03-15
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3104---2026-03-15) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4314)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3104---2026-03-15) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4314)
 
 ### Added
 
@@ -1147,7 +1151,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.10.3] - 2026-03-14
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3103---2026-03-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4342)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3103---2026-03-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4342)
 
 ### Changed
 
@@ -1167,7 +1171,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.10.2] - 2026-03-12
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3102---2026-03-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4430)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3102---2026-03-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4430)
 
 ### Fixed
 
@@ -1175,7 +1179,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.10.1] - 2026-03-12
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3101---2026-03-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4463)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3101---2026-03-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4463)
 
 ### Added
 
@@ -1188,7 +1192,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.10.0] - 2026-03-11
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3100---2026-03-11) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4509)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3100---2026-03-11) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4509)
 
 ### Added
 
@@ -1201,7 +1205,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.9.0] - 2026-03-11
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#390---2026-03-11) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4573)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#390---2026-03-11) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4573)
 
 ### Added
 
@@ -1219,7 +1223,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.7.2] - 2026-03-10
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#372---2026-03-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4725)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#372---2026-03-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4725)
 
 ### Fixed
 
@@ -1231,7 +1235,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.7.1] - 2026-03-09
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#371---2026-03-09) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4736)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#371---2026-03-09) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4736)
 
 ### Changed
 
@@ -1241,7 +1245,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.7.0] - 2026-03-08
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#370---2026-03-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4773)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#370---2026-03-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4773)
 
 ### Added
 
@@ -1253,7 +1257,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.6.0] - 2026-03-08
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#360---2026-03-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4859)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#360---2026-03-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4859)
 
 ### Breaking Changes
 
@@ -1268,7 +1272,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.5.0] - 2026-03-07
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#350---2026-03-07) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4899)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#350---2026-03-07) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4899)
 
 ### Added
 
@@ -1289,7 +1293,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.4.2] - 2026-03-06
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#342---2026-03-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4936)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#342---2026-03-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4936)
 
 ### Changed
 
@@ -1305,7 +1309,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.4.1] - 2026-03-06
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#341---2026-03-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4962)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#341---2026-03-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4962)
 
 ### Changed
 
@@ -1318,7 +1322,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.4.0] - 2026-03-06
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#340---2026-03-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4980)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#340---2026-03-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4980)
 
 ### Added
 
@@ -1335,7 +1339,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.3.1] - 2026-03-05
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#331---2026-03-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5010)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#331---2026-03-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5010)
 
 ### Changed
 
@@ -1347,7 +1351,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.3.0] - 2026-03-05
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#330---2026-03-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5036)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#330---2026-03-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5036)
 
 ### Added
 
@@ -1366,7 +1370,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.2.0] - 2026-03-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#320---2026-03-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5075)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#320---2026-03-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5075)
 
 ### Added
 
@@ -1380,7 +1384,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.1.0] - 2026-03-03
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#310---2026-03-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5101)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#310---2026-03-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5101)
 
 ### Added
 
@@ -1401,7 +1405,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [3.0.0] - 2026-03-02
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#300---2026-03-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5142)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#300---2026-03-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5142)
 
 ### Breaking Changes
 
@@ -1421,7 +1425,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.26.1] - 2026-03-02
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2261---2026-03-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5193)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2261---2026-03-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5193)
 
 ### Added
 
@@ -1433,7 +1437,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.26.0] - 2026-03-02
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2260---2026-03-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5203)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2260---2026-03-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5203)
 
 ### Added
 
@@ -1447,7 +1451,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.25.0] - 2026-02-24
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2250---2026-02-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5231)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2250---2026-02-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5231)
 
 ### Added
 
@@ -1460,7 +1464,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.24.0] - 2026-02-24
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2240---2026-02-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5260)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2240---2026-02-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5260)
 
 ### Added
 
@@ -1474,7 +1478,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.23.6] - 2026-02-24
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2236---2026-02-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5288)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2236---2026-02-24) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5288)
 
 ### Added
 
@@ -1486,7 +1490,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.23.5] - 2026-02-23
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2235---2026-02-23) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5309)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2235---2026-02-23) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5309)
 
 ### Added
 
@@ -1504,7 +1508,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.23.3] - 2026-02-22
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2233---2026-02-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5348)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2233---2026-02-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5348)
 
 ### Added
 
@@ -1520,7 +1524,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.23.2] - 2026-02-22
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2232---2026-02-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5380)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2232---2026-02-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5380)
 
 ### Fixed
 
@@ -1528,7 +1532,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.23.1] - 2026-02-22
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2231---2026-02-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5402)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2231---2026-02-22) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5402)
 
 ### Changed
 
@@ -1540,7 +1544,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.23.0] - 2026-02-21
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2230---2026-02-21) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5428)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2230---2026-02-21) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5428)
 
 ### Added
 
@@ -1552,7 +1556,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.22.0] - 2026-02-21
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2220---2026-02-21) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5454)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2220---2026-02-21) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5454)
 
 ### Added
 
@@ -1569,7 +1573,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.21.0] - 2026-02-20
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2210---2026-02-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5506)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2210---2026-02-20) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5506)
 
 ### Added
 
@@ -1583,7 +1587,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.20.13] - 2026-02-19
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22013---2026-02-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5545)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22013---2026-02-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5545)
 
 ### Changed
 
@@ -1595,7 +1599,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.20.11] - 2026-02-19
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22011---2026-02-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5570)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22011---2026-02-19) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5570)
 
 ### Changed
 
@@ -1607,7 +1611,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.20.10] - 2026-02-18
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22010---2026-02-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5585)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22010---2026-02-18) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5585)
 
 ### Changed
 
@@ -1615,7 +1619,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.20.9] - 2026-02-15
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2209---2026-02-15) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5607)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2209---2026-02-15) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5607)
 
 ### Changed
 
@@ -1623,7 +1627,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.20.8] - 2026-02-14
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2208---2026-02-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5623)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2208---2026-02-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5623)
 
 ### Changed
 
@@ -1632,7 +1636,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.20.7] - 2026-02-14
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2207---2026-02-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5635)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2207---2026-02-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5635)
 
 ### Fixed
 
@@ -1640,7 +1644,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.20.6] - 2026-02-14
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2206---2026-02-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5645)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2206---2026-02-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5645)
 
 ### Fixed
 
@@ -1648,7 +1652,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.20.5] - 2026-02-12
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2205---2026-02-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5656)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2205---2026-02-12) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5656)
 
 ### Fixed
 
@@ -1656,7 +1660,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.20.4] - 2026-02-11
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2204---2026-02-11) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5669)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2204---2026-02-11) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5669)
 
 ### Fixed
 
@@ -1668,7 +1672,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.20.3] - 2026-02-10
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2203---2026-02-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5686)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2203---2026-02-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5686)
 
 ### Fixed
 
@@ -1676,7 +1680,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.20.2] - 2026-02-10
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2202---2026-02-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5702)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2202---2026-02-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5702)
 
 ### Added
 
@@ -1688,7 +1692,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.20.1] - 2026-02-10
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2201---2026-02-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5721)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2201---2026-02-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5721)
 
 ### Fixed
 
@@ -1696,7 +1700,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.20.0] - 2026-02-08
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2200---2026-02-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5734)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2200---2026-02-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5734)
 
 ### Changed
 
@@ -1719,7 +1723,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.19.0] - 2026-02-08
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2190---2026-02-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5787)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2190---2026-02-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5787)
 
 ### Changed
 
@@ -1731,7 +1735,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.18.11] - 2026-02-06
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21811---2026-02-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5820)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21811---2026-02-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5820)
 
 ### Added
 
@@ -1744,7 +1748,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.18.10] - 2026-02-06
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21810---2026-02-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5857)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21810---2026-02-06) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5857)
 
 ### Added
 
@@ -1752,7 +1756,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.18.7] - 2026-02-05
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2187---2026-02-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5868)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2187---2026-02-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5868)
 
 ### Changed
 
@@ -1760,7 +1764,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.18.6] - 2026-02-05
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2186---2026-02-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5876)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2186---2026-02-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5876)
 
 ### Fixed
 
@@ -1769,7 +1773,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.18.5] - 2026-02-05
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2185---2026-02-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5889)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2185---2026-02-05) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5889)
 
 ### Added
 
@@ -1777,7 +1781,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.18.4] - 2026-02-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2184---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5900)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2184---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5900)
 
 ### Added
 
@@ -1785,7 +1789,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.18.2] - 2026-02-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2182---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5910)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2182---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5910)
 
 ### Added
 
@@ -1798,7 +1802,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.18.1] - 2026-02-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2181---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5925)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2181---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5925)
 
 ### Added
 
@@ -1810,7 +1814,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.18.0] - 2026-02-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2180---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5941)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2180---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5941)
 
 ### Added
 
@@ -1819,7 +1823,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.17.10] - 2026-02-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21710---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5957)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21710---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5957)
 
 ### Added
 
@@ -1832,7 +1836,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.17.9] - 2026-02-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2179---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5972)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2179---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5972)
 
 ### Changed
 
@@ -1841,7 +1845,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.17.8] - 2026-02-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2178---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5983)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2178---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5983)
 
 ### Fixed
 
@@ -1849,7 +1853,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.17.6] - 2026-02-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2176---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5992)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2176---2026-02-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5992)
 
 ### Added
 
@@ -1865,7 +1869,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.17.3] - 2026-02-03
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2173---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6028)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2173---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6028)
 
 ### Added
 
@@ -1879,7 +1883,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.17.2] - 2026-02-03
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2172---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6066)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2172---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6066)
 
 ### Added
 
@@ -1891,7 +1895,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.17.1] - 2026-02-03
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2171---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6089)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2171---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6089)
 
 ### Added
 
@@ -1908,7 +1912,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.17.0] - 2026-02-03
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2170---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6113)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2170---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6113)
 
 ### Added
 
@@ -1924,7 +1928,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.16.21] - 2026-02-03
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21621---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6140)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21621---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6140)
 
 ### Changed
 
@@ -1932,7 +1936,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.16.20] - 2026-02-03
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21620---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6152)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21620---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6152)
 
 ### Changed
 
@@ -1940,7 +1944,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.16.19] - 2026-02-03
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21619---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6161)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21619---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6161)
 
 ### Fixed
 
@@ -1948,7 +1952,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.16.17] - 2026-02-03
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21617---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6169)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21617---2026-02-03) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6169)
 
 ### Added
 
@@ -1960,7 +1964,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.16.14] - 2026-02-02
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21614---2026-02-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6191)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21614---2026-02-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6191)
 
 ### Changed
 
@@ -1968,7 +1972,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.16.11] - 2026-02-02
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21611---2026-02-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6204)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21611---2026-02-02) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6204)
 
 ### Changed
 
@@ -1976,7 +1980,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.16.5] - 2026-01-31
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2165---2026-01-31) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6223)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2165---2026-01-31) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6223)
 
 ### Added
 
@@ -1984,7 +1988,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.16.0] - 2026-01-31
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2160---2026-01-31) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6237)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2160---2026-01-31) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6237)
 
 ### Changed
 
@@ -1992,7 +1996,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.15.0] - 2026-01-26
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2150---2026-01-26) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6250)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2150---2026-01-26) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6250)
 
 ### Added
 
@@ -2000,7 +2004,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.14.0] - 2026-01-16
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2140---2026-01-16) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6263)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2140---2026-01-16) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6263)
 
 ### Added
 
@@ -2008,7 +2012,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.13.0] - 2026-01-14
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2130---2026-01-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6276)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2130---2026-01-14) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6276)
 
 ### Added
 
@@ -2016,7 +2020,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.12.0] - 2026-01-10
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2120---2026-01-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6289)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2120---2026-01-10) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6289)
 
 ### Added
 
@@ -2024,7 +2028,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.11.0] - 2026-01-08
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2110---2026-01-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6298)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2110---2026-01-08) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6298)
 
 ### Added
 
@@ -2032,7 +2036,7 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 ## [2.10.0] - 2026-01-04
 
-[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2100---2026-01-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6307)
+[Original technical record](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2100---2026-01-04) | [Source at original commit](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6307)
 
 ### Added
 

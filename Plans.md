@@ -431,7 +431,7 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 | ID | Task | DoD | Depends | Status |
 |----|------|-----|---------|--------|
 | 148.1 | `[lane:fast]` `[tdd:skip:docs-only]` 実仕様と履歴を確認し日英文書を再作成 | AC1-4を満たす文章。過去原文保存 | - | cc:WIP [日英README/SVGと159版の履歴を作成。原文全件照合で条件を復元。159版/149比較リンク/原文SHA一致。README独立APPROVE、CHANGELOG最終判定待ち] |
-| 148.2 | `[lane:gate]` `[tdd:skip:validation-review]` 文書検証と独立判定 | AC5。試験コマンドの終了コードと判定を記録 | 148.1 | cc:WIP [対象検査10本exit0、範囲検査PASS。独立R1で動く点の文字重なりと4.4.0/4.8.1の安全対策欠落を検出して修正。README/SVG R3独立APPROVE（critical0/major0）。旧版11件の条件復元と履歴/リンク/日本語検査exit0。2.x残り53版、3.x残り24版を全件照合し、35版/20版の日英条件を復元。履歴/リンク/日本語検査exit0。4.x残り49版も全件照合済み。26版の条件復元と4版の補足を反映し対象検査exit0。ローカル記録後、同一SHAで最終試験と履歴再判定] |
+| 148.2 | `[lane:gate]` `[tdd:skip:validation-review]` 文書検証と独立判定 | AC5。試験コマンドの終了コードと判定を記録 | 148.1 | cc:WIP [対象検査10本exit0、範囲検査PASS。独立R1で動く点の文字重なりと4.4.0/4.8.1の安全対策欠落を検出して修正。README/SVG R3独立APPROVE（critical0/major0）。旧版11件の条件復元と履歴/リンク/日本語検査exit0。2.x残り53版、3.x残り24版を全件照合し、35版/20版の日英条件を復元。履歴/リンク/日本語検査exit0。4.x残り49版も全件照合済み。26版の条件復元と4版の補足を反映し対象検査exit0。ae2a895eでclean同一SHAの実試験exit0。履歴R2で4.4.0/4.8.1の実効性注記を指摘され追記。3.11.0の言い切り、日英2語、原文行リンクも修正してR3判定へ] |
 | 148.3 | `[lane:release]` `[tdd:skip:release-preparation]` リリース準備 | AC6。preflight、変更履歴昇格案、公開文面を揃える | 148.2 | cc:WIP [patch5.15.1の日英公開文面をローカル準備。Claude2.1.296の予約名拒否で公開検査は停止中] |
 | 148.4 | `[lane:release]` `[tdd:skip:release-verification]` 承認後に反映と公開を確認 | main到達可能なtag、GitHub Release、配布物の読戻し | 148.3 | cc:TODO |
 

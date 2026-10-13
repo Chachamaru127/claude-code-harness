@@ -51,7 +51,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.15.0] - 2026-09-06
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5150---2026-09-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L62)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5150---2026-09-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L62)
 
 ### Added
 
@@ -96,7 +96,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.14.1] - 2026-08-31
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5141---2026-08-31) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L113)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5141---2026-08-31) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L113)
 
 ### Fixed
 
@@ -110,12 +110,12 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.14.0] - 2026-08-31
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5140---2026-08-31) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L131)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5140---2026-08-31) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L131)
 
 ### Added
 
 - 任意設定`destructive_delete: defer`を追加しました。
-  対象が不確かな削除を拒否して待ち一覧へ保存し、無人実行は続けます。
+  対象が不確かな削除を拒否して待ち一覧`.claude/state/deferred-ops.jsonl`へ保存し、無人実行は続けます。
   再試行は拒否したまま重複登録しません。
   既定は`warn`のままで、警告付きで許可する場面も変えません。
 - 設定場所は`harness.toml [safety.permissions] destructiveDelete`、プロジェクトYAMLの`safety.destructive_delete`、`HARNESS_DESTRUCTIVE_DELETE_POLICY`です。
@@ -132,7 +132,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.13.2] - 2026-08-29
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5132---2026-08-29) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L168)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5132---2026-08-29) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L168)
 
 ### Fixed
 
@@ -150,7 +150,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.13.1] - 2026-08-26
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5131---2026-08-26) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L187)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5131---2026-08-26) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L187)
 
 ### Changed
 
@@ -160,7 +160,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.13.0] - 2026-08-25
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5130---2026-08-25) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L193)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5130---2026-08-25) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L193)
 
 ### Added
 
@@ -192,7 +192,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.12.0] - 2026-08-24
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5120---2026-08-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L225)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5120---2026-08-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L225)
 
 ### Added
 
@@ -219,7 +219,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.11.0] - 2026-08-22
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5110---2026-08-22) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L242)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5110---2026-08-22) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L242)
 
 ### Changed
 
@@ -233,14 +233,14 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.10.0] - 2026-08-22
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5100---2026-08-22) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L248)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#5100---2026-08-22) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L248)
 
 ### Added
 
 - `destructive_delete = ask | warn`を追加しました。
   設定場所はYAMLの`safety.destructive_delete`、TOMLの`[safety.permissions] destructiveDelete`、`HARNESS_DESTRUCTIVE_DELETE_POLICY`です。
   この版の既定はaskです。
-  warnでは不確かなプロジェクト相対パスや自セッションの一時領域の削除を警告付きで許可し、記録します。
+  warnでは不確かなプロジェクト相対パスや自セッションの一時領域の削除を`R05_WARN`の警告付きで許可し、記録します。
   外部パス、`..`、未解決変数、glob、単独の`.`と`/`は確認します。
   後続の拒否、確認規則を優先します。
   シンボリックリンクには既知の検査限界が残ります。
@@ -254,7 +254,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.9.0] - 2026-08-17
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#590---2026-08-17) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L259)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#590---2026-08-17) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L259)
 
 ### Added
 
@@ -312,7 +312,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.8.0] - 2026-08-14
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#580---2026-08-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L401)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#580---2026-08-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L401)
 
 ### Added
 
@@ -350,7 +350,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.7.0] - 2026-08-12
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#570---2026-08-12) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L427)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#570---2026-08-12) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L427)
 
 この版では、Claude Codeが`.claude-plugin/settings.json`の権限規則を読まない欠陥も記録しました。
 規則を配布しただけでは、会話で効いている証拠になりません。
@@ -409,7 +409,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.6.0] - 2026-08-01
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#560---2026-08-01) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L618)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#560---2026-08-01) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L618)
 
 ### Security
 
@@ -440,7 +440,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.5.0] - 2026-07-29
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#550---2026-07-29) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L732)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#550---2026-07-29) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L732)
 
 ### Fixed
 
@@ -466,7 +466,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.4.0] - 2026-07-26
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#540---2026-07-26) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L810)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#540---2026-07-26) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L810)
 
 ### Added
 
@@ -512,7 +512,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.3.1] - 2026-07-20
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#531---2026-07-20) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L912)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#531---2026-07-20) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L912)
 
 ### Fixed
 
@@ -521,7 +521,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.3.0] - 2026-07-19
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#530---2026-07-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L926)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#530---2026-07-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L926)
 
 ### Changed
 
@@ -545,7 +545,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.2.0] - 2026-07-17
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#520---2026-07-17) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L949)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#520---2026-07-17) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L949)
 
 ### Added
 
@@ -571,7 +571,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.1.0] - 2026-07-16
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#510---2026-07-16) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1013)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#510---2026-07-16) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1013)
 
 ### Added
 
@@ -605,7 +605,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [5.0.0] - 2026-07-08
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#500---2026-07-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1129)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#500---2026-07-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1129)
 
 ### Breaking Changes
 
@@ -670,7 +670,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.16.4] - 2026-06-28
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4164---2026-06-28) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1241)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4164---2026-06-28) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1241)
 
 ### Changed
 
@@ -684,7 +684,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.16.3] - 2026-06-24
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4163---2026-06-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1267)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4163---2026-06-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1267)
 
 ### Fixed
 
@@ -695,7 +695,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.16.2] - 2026-06-24
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4162---2026-06-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1291)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4162---2026-06-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1291)
 
 ### Fixed
 
@@ -731,7 +731,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.16.1] - 2026-06-19
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4161---2026-06-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1355)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4161---2026-06-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1355)
 
 ### Fixed
 
@@ -753,7 +753,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.16.0] - 2026-06-18
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4160---2026-06-18) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1393)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4160---2026-06-18) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1393)
 
 ### Added
 
@@ -779,7 +779,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.15.0] - 2026-06-05
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4150---2026-06-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1447)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4150---2026-06-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1447)
 
 ### Added
 
@@ -809,7 +809,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.14.0] - 2026-06-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4140---2026-06-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1491)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4140---2026-06-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1491)
 
 ### Added
 
@@ -825,7 +825,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.13.3] - 2026-06-01
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4133---2026-06-01) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1517)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4133---2026-06-01) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1517)
 
 ### Fixed
 
@@ -852,7 +852,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.13.2] - 2026-05-30
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4132---2026-05-30) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1616)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4132---2026-05-30) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1616)
 
 ### Added
 
@@ -904,7 +904,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.13.1] - 2026-05-29
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4131---2026-05-29) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1679)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4131---2026-05-29) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1679)
 
 ### Changed
 
@@ -913,7 +913,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.13.0] - 2026-05-29
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4130---2026-05-29) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1686)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4130---2026-05-29) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1686)
 
 ### Added
 
@@ -937,7 +937,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.12.11] - 2026-05-28
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#41211---2026-05-28) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1704)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#41211---2026-05-28) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1704)
 
 ### Changed
 
@@ -946,7 +946,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.12.10] - 2026-05-28
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#41210---2026-05-28) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1724)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#41210---2026-05-28) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1724)
 
 ### Fixed
 
@@ -954,7 +954,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.12.9] - 2026-05-28
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4129---2026-05-28) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1730)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4129---2026-05-28) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1730)
 
 ### Changed
 
@@ -963,7 +963,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.12.8] - 2026-05-27
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4128---2026-05-27) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1736)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4128---2026-05-27) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1736)
 
 ### Changed
 
@@ -974,7 +974,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.12.7] - 2026-05-27
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4127---2026-05-27) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1748)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4127---2026-05-27) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1748)
 
 ### Fixed
 
@@ -982,7 +982,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.12.6] - 2026-05-27
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4126---2026-05-27) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1755)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4126---2026-05-27) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1755)
 
 ### Changed
 
@@ -1001,7 +1001,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.12.5] - 2026-05-27
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4125---2026-05-27) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1781)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4125---2026-05-27) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1781)
 
 ### Fixed
 
@@ -1015,7 +1015,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.12.4] - 2026-05-27
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4124---2026-05-27) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1796)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4124---2026-05-27) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1796)
 
 ### Added
 
@@ -1034,7 +1034,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.12.3] - 2026-05-25
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4123---2026-05-25) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1812)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4123---2026-05-25) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1812)
 
 ### Changed
 
@@ -1049,7 +1049,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.12.2] - 2026-05-24
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4122---2026-05-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1830)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4122---2026-05-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1830)
 
 ### Fixed
 
@@ -1057,7 +1057,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.12.1] - 2026-05-24
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4121---2026-05-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1836)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4121---2026-05-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1836)
 
 ### Changed
 
@@ -1067,7 +1067,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.12.0] - 2026-05-23
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4120---2026-05-23) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1845)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4120---2026-05-23) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1845)
 
 ### Added
 
@@ -1083,7 +1083,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.11.4] - 2026-05-21
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4114---2026-05-21) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1889)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4114---2026-05-21) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1889)
 
 ### Added
 
@@ -1107,7 +1107,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.11.3] - 2026-05-19
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4113---2026-05-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L1993)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4113---2026-05-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L1993)
 
 ### Changed
 
@@ -1119,7 +1119,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.11.2] - 2026-05-19
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4112---2026-05-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2035)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4112---2026-05-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2035)
 
 ### Fixed
 
@@ -1129,7 +1129,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.11.1] - 2026-05-18
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4111---2026-05-18) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2073)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4111---2026-05-18) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2073)
 
 ### Fixed
 
@@ -1140,7 +1140,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.11.0] - 2026-05-18
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4110---2026-05-18) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2111)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4110---2026-05-18) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2111)
 
 ### Added
 
@@ -1181,7 +1181,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.10.0] - 2026-05-12
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4100---2026-05-12) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2292)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#4100---2026-05-12) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2292)
 
 ### Added
 
@@ -1206,7 +1206,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.9.0] - 2026-05-10
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#490---2026-05-10) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2333)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#490---2026-05-10) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2333)
 
 ### Added
 
@@ -1231,7 +1231,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.8.1] - 2026-05-09
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#481---2026-05-09) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2436)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#481---2026-05-09) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2436)
 
 ### Fixed
 
@@ -1244,9 +1244,12 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 - `be2a1781`以降、会話開始時の同期が6件の投稿サイトへの通信拒否を設定から消していた不具合を修正しました。
   `pastebin.com`、`transfer.sh`、`0x0.st`、`paste.ee`、`termbin.com`、`ix.io`の拒否を`harness.toml`に揃え、同期しても維持します。
 
+このネットワーク設定は当時`harness.toml`からプラグイン設定へ出力したもので、当時の本体での実効性は再検証していません。
+  [現在の公式仕様](https://code.claude.com/docs/en/plugins-reference#settings)でプラグイン設定に効くのは`agent`と`subagentStatusLine`だけなので、通信拒否一覧は本人の利用者設定かプロジェクト設定へ写してください。
+
 ## [4.8.0] - 2026-05-08
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#480---2026-05-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2492)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#480---2026-05-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2492)
 
 ### Changed
 
@@ -1286,7 +1289,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.7.0] - 2026-05-06
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#470---2026-05-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2577)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#470---2026-05-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2577)
 
 ### Added
 
@@ -1307,7 +1310,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.6.1] - 2026-05-05
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#461---2026-05-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2589)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#461---2026-05-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2589)
 
 ### Fixed
 
@@ -1315,7 +1318,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.6.0] - 2026-05-05
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#460---2026-05-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2595)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#460---2026-05-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2595)
 
 ### Added
 
@@ -1337,7 +1340,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.5.4] - 2026-05-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#454---2026-05-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2623)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#454---2026-05-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2623)
 
 ### Fixed
 
@@ -1345,7 +1348,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.5.3] - 2026-05-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#453---2026-05-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2629)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#453---2026-05-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2629)
 
 ### Fixed
 
@@ -1355,7 +1358,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.5.2] - 2026-05-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#452---2026-05-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2637)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#452---2026-05-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2637)
 
 ### Changed
 
@@ -1370,7 +1373,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.5.1] - 2026-05-03
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#451---2026-05-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2650)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#451---2026-05-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2650)
 
 ### Changed
 
@@ -1379,7 +1382,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.5.0] - 2026-05-03
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#450---2026-05-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2657)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#450---2026-05-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2657)
 
 ### Changed
 
@@ -1399,7 +1402,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.4.0] - 2026-04-26
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#440---2026-04-26) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2685)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#440---2026-04-26) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2685)
 
 ### Added
 
@@ -1420,9 +1423,12 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 - 通信拒否一覧`sandbox.network.deniedDomains`にクラウドのmetadata endpoint（サービスの認証情報などを返す宛先）を加えました。
   危険な削除を確認するR05は、`find -delete`、`find -exec rm`、macOSの`/private/etc`、`/private/var`、`/private/tmp`、`/private/home`、`~/Library`も対象にします。
 
+このネットワーク設定は当時`harness.toml`からプラグイン設定へ出力したもので、当時の本体での実効性は再検証していません。
+  [現在の公式仕様](https://code.claude.com/docs/en/plugins-reference#settings)でプラグイン設定に効くのは`agent`と`subagentStatusLine`だけなので、通信拒否一覧は本人の利用者設定かプロジェクト設定へ写してください。
+
 ## [4.3.3] - 2026-04-20
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#433---2026-04-20) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2815)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#433---2026-04-20) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2815)
 
 ### Fixed
 
@@ -1431,7 +1437,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.3.2] - 2026-04-20
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#432---2026-04-20) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2871)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#432---2026-04-20) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2871)
 
 ### Fixed
 
@@ -1441,7 +1447,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.3.1] - 2026-04-19
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#431---2026-04-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L2922)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#431---2026-04-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L2922)
 
 ### Added
 
@@ -1464,7 +1470,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.3.0] - 2026-04-19
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#430---2026-04-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3000)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#430---2026-04-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3000)
 
 ### Fixed
 
@@ -1481,7 +1487,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.2.0] - 2026-04-18
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#420---2026-04-18) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3046)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#420---2026-04-18) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3046)
 
 ### Added
 
@@ -1541,7 +1547,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.1.1] - 2026-04-16
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#411---2026-04-16) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3170)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#411---2026-04-16) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3170)
 
 ### Added
 
@@ -1554,7 +1560,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.1.0] - 2026-04-16
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#410---2026-04-16) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3180)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#410---2026-04-16) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3180)
 
 ### Added
 
@@ -1581,7 +1587,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.0.4] - 2026-04-14
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#404---2026-04-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3295)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#404---2026-04-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3295)
 
 ### Fixed
 
@@ -1607,7 +1613,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.0.3] - 2026-04-13
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#403---2026-04-13) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3409)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#403---2026-04-13) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3409)
 
 ### Fixed
 
@@ -1618,7 +1624,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.0.2] - 2026-04-12
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#402---2026-04-12) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3432)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#402---2026-04-12) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3432)
 
 ### Added
 
@@ -1631,7 +1637,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.0.1] - 2026-04-11
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#401---2026-04-11) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3473)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#401---2026-04-11) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3473)
 
 ### Security
 
@@ -1661,7 +1667,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [4.0.0] - 2026-04-09
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#400---2026-04-09) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3643)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#400---2026-04-09) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3643)
 
 ### Breaking Changes
 
@@ -1683,7 +1689,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.17.1] - 2026-04-06
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3171---2026-04-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3774)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3171---2026-04-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3774)
 
 ### Fixed
 
@@ -1699,7 +1705,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.17.0] - 2026-04-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3170---2026-04-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3807)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3170---2026-04-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3807)
 
 ### Added
 
@@ -1730,7 +1736,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.16.0] - 2026-04-01
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3160---2026-04-01) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3924)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3160---2026-04-01) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3924)
 
 ### Added
 
@@ -1749,7 +1755,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.15.0] - 2026-03-28
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3150---2026-03-28) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L3949)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3150---2026-03-28) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L3949)
 
 当時の本体での実効性は再検証していません。
 [現在の公式仕様](https://code.claude.com/docs/en/plugins-reference#settings)では、プラグイン設定で有効なのは`agent`と`subagentStatusLine`だけです。
@@ -1771,7 +1777,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.14.0] - 2026-03-25
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3140---2026-03-25) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4006)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3140---2026-03-25) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4006)
 
 ### Changed
 
@@ -1789,7 +1795,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.13.0] - 2026-03-25
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3130---2026-03-25) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4036)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3130---2026-03-25) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4036)
 
 ### Added
 
@@ -1804,7 +1810,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.12.0] - 2026-03-21
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3120---2026-03-21) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4092)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3120---2026-03-21) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4092)
 
 ### Added
 
@@ -1828,7 +1834,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.11.0] - 2026-03-20
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3110---2026-03-20) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4161)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3110---2026-03-20) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4161)
 
 当時の本体での実効性は再検証していません。
 [現在の公式仕様](https://code.claude.com/docs/en/plugins-reference#settings)では、プラグイン設定で有効なのは`agent`と`subagentStatusLine`だけです。
@@ -1842,7 +1848,8 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
   `scripts/show-failures.sh`でエラーコード別、時間帯別の要約を見られます。
   自動復旧（待ってからの再開）と推論量の自動変更は設計だけで、未実装です。
 - 隔離設定の`allowRead`の例（`.env.example`、`docs/**`）をプラグインの設定ファイルに加えました。
-  Claude Codeはこのファイルの隔離設定を読まないため、使う場合は自分の設定へ写してください。
+  この例を現在の公式仕様で使う場合は、自分の利用者設定かプロジェクト設定へ写してください。
+  当時の本体での実効性は再検証していません。
 
 ### Changed
 
@@ -1857,7 +1864,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.10.6] - 2026-03-19
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3106---2026-03-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4238)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3106---2026-03-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4238)
 
 ### Fixed
 
@@ -1884,7 +1891,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.10.5] - 2026-03-15
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3105---2026-03-15) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4294)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3105---2026-03-15) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4294)
 
 ### Fixed
 
@@ -1897,7 +1904,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.10.4] - 2026-03-15
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3104---2026-03-15) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4314)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3104---2026-03-15) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4314)
 
 ### Added
 
@@ -1910,7 +1917,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.10.3] - 2026-03-14
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3103---2026-03-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4342)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3103---2026-03-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4342)
 
 ### Changed
 
@@ -1938,7 +1945,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.10.2] - 2026-03-12
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3102---2026-03-12) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4430)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3102---2026-03-12) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4430)
 
 ### Fixed
 
@@ -1949,7 +1956,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.10.1] - 2026-03-12
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3101---2026-03-12) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4463)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3101---2026-03-12) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4463)
 
 ### Added
 
@@ -1966,7 +1973,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.10.0] - 2026-03-11
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3100---2026-03-11) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4509)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#3100---2026-03-11) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4509)
 
 ### Added
 
@@ -1985,7 +1992,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.9.0] - 2026-03-11
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#390---2026-03-11) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4573)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#390---2026-03-11) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4573)
 
 ### Added
 
@@ -2015,7 +2022,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.7.2] - 2026-03-10
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#372---2026-03-10) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4725)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#372---2026-03-10) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4725)
 
 ### Fixed
 
@@ -2028,7 +2035,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.7.1] - 2026-03-09
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#371---2026-03-09) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4736)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#371---2026-03-09) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4736)
 
 ### Changed
 
@@ -2046,7 +2053,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.7.0] - 2026-03-08
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#370---2026-03-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4773)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#370---2026-03-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4773)
 
 ### Added
 
@@ -2062,7 +2069,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.6.0] - 2026-03-08
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#360---2026-03-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4859)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#360---2026-03-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4859)
 
 ### Breaking Changes
 
@@ -2083,7 +2090,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.5.0] - 2026-03-07
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#350---2026-03-07) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4899)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#350---2026-03-07) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4899)
 
 ### Added
 
@@ -2110,7 +2117,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.4.2] - 2026-03-06
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#342---2026-03-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4936)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#342---2026-03-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4936)
 
 ### Changed
 
@@ -2127,7 +2134,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.4.1] - 2026-03-06
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#341---2026-03-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4962)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#341---2026-03-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4962)
 
 ### Changed
 
@@ -2141,7 +2148,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.4.0] - 2026-03-06
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#340---2026-03-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L4980)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#340---2026-03-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L4980)
 
 ### Added
 
@@ -2161,7 +2168,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.3.1] - 2026-03-05
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#331---2026-03-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5010)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#331---2026-03-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5010)
 
 ### Changed
 
@@ -2173,7 +2180,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.3.0] - 2026-03-05
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#330---2026-03-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5036)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#330---2026-03-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5036)
 
 ### Added
 
@@ -2201,7 +2208,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.2.0] - 2026-03-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#320---2026-03-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5075)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#320---2026-03-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5075)
 
 ### Added
 
@@ -2219,7 +2226,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.1.0] - 2026-03-03
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#310---2026-03-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5101)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#310---2026-03-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5101)
 
 ### Added
 
@@ -2254,7 +2261,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [3.0.0] - 2026-03-02
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#300---2026-03-02) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5142)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#300---2026-03-02) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5142)
 
 ### Breaking Changes
 
@@ -2276,7 +2283,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.26.1] - 2026-03-02
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2261---2026-03-02) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5193)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2261---2026-03-02) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5193)
 
 ### Added
 
@@ -2288,7 +2295,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.26.0] - 2026-03-02
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2260---2026-03-02) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5203)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2260---2026-03-02) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5203)
 
 ### Added
 
@@ -2308,7 +2315,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.25.0] - 2026-02-24
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2250---2026-02-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5231)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2250---2026-02-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5231)
 
 ### Added
 
@@ -2327,7 +2334,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.24.0] - 2026-02-24
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2240---2026-02-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5260)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2240---2026-02-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5260)
 
 ### Added
 
@@ -2344,7 +2351,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.23.6] - 2026-02-24
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2236---2026-02-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5288)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2236---2026-02-24) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5288)
 
 ### Added
 
@@ -2359,7 +2366,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.23.5] - 2026-02-23
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2235---2026-02-23) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5309)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2235---2026-02-23) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5309)
 
 ### Added
 
@@ -2385,7 +2392,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.23.3] - 2026-02-22
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2233---2026-02-22) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5348)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2233---2026-02-22) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5348)
 
 ### Added
 
@@ -2401,7 +2408,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.23.2] - 2026-02-22
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2232---2026-02-22) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5380)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2232---2026-02-22) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5380)
 
 ### Fixed
 
@@ -2411,7 +2418,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.23.1] - 2026-02-22
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2231---2026-02-22) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5402)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2231---2026-02-22) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5402)
 
 ### Changed
 
@@ -2424,7 +2431,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.23.0] - 2026-02-21
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2230---2026-02-21) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5428)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2230---2026-02-21) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5428)
 
 ### Added
 
@@ -2439,7 +2446,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.22.0] - 2026-02-21
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2220---2026-02-21) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5454)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2220---2026-02-21) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5454)
 
 ### Added
 
@@ -2470,7 +2477,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.21.0] - 2026-02-20
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2210---2026-02-20) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5506)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2210---2026-02-20) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5506)
 
 ### Added
 
@@ -2490,7 +2497,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.20.13] - 2026-02-19
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22013---2026-02-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5545)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22013---2026-02-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5545)
 
 ### Changed
 
@@ -2504,7 +2511,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.20.11] - 2026-02-19
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22011---2026-02-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5570)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22011---2026-02-19) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5570)
 
 ### Changed
 
@@ -2518,7 +2525,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.20.10] - 2026-02-18
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22010---2026-02-18) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5585)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#22010---2026-02-18) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5585)
 
 ### Changed
 
@@ -2529,7 +2536,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.20.9] - 2026-02-15
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2209---2026-02-15) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5607)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2209---2026-02-15) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5607)
 
 ### Changed
 
@@ -2537,7 +2544,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.20.8] - 2026-02-14
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2208---2026-02-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5623)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2208---2026-02-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5623)
 
 ### Changed
 
@@ -2550,7 +2557,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.20.7] - 2026-02-14
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2207---2026-02-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5635)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2207---2026-02-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5635)
 
 ### Fixed
 
@@ -2559,7 +2566,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.20.6] - 2026-02-14
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2206---2026-02-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5645)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2206---2026-02-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5645)
 
 ### Fixed
 
@@ -2567,7 +2574,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.20.5] - 2026-02-12
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2205---2026-02-12) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5656)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2205---2026-02-12) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5656)
 
 ### Fixed
 
@@ -2580,7 +2587,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.20.4] - 2026-02-11
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2204---2026-02-11) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5669)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2204---2026-02-11) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5669)
 
 ### Fixed
 
@@ -2595,7 +2602,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.20.3] - 2026-02-10
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2203---2026-02-10) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5686)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2203---2026-02-10) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5686)
 
 ### Fixed
 
@@ -2605,7 +2612,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.20.2] - 2026-02-10
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2202---2026-02-10) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5702)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2202---2026-02-10) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5702)
 
 ### Added
 
@@ -2621,7 +2628,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.20.1] - 2026-02-10
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2201---2026-02-10) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5721)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2201---2026-02-10) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5721)
 
 ### Fixed
 
@@ -2630,7 +2637,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.20.0] - 2026-02-08
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2200---2026-02-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5734)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2200---2026-02-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5734)
 
 ### Changed
 
@@ -2663,7 +2670,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.19.0] - 2026-02-08
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2190---2026-02-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5787)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2190---2026-02-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5787)
 
 ### Changed
 
@@ -2683,7 +2690,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.18.11] - 2026-02-06
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21811---2026-02-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5820)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21811---2026-02-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5820)
 
 ### Added
 
@@ -2701,7 +2708,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.18.10] - 2026-02-06
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21810---2026-02-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5857)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21810---2026-02-06) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5857)
 
 ### Added
 
@@ -2711,7 +2718,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.18.7] - 2026-02-05
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2187---2026-02-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5868)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2187---2026-02-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5868)
 
 ### Changed
 
@@ -2720,7 +2727,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.18.6] - 2026-02-05
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2186---2026-02-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5876)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2186---2026-02-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5876)
 
 ### Fixed
 
@@ -2732,7 +2739,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.18.5] - 2026-02-05
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2185---2026-02-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5889)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2185---2026-02-05) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5889)
 
 ### Added
 
@@ -2743,7 +2750,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.18.4] - 2026-02-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2184---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5900)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2184---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5900)
 
 ### Added
 
@@ -2754,7 +2761,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.18.2] - 2026-02-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2182---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5910)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2182---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5910)
 
 ### Added
 
@@ -2768,7 +2775,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.18.1] - 2026-02-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2181---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5925)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2181---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5925)
 
 ### Added
 
@@ -2785,7 +2792,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.18.0] - 2026-02-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2180---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5941)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2180---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5941)
 
 ### Added
 
@@ -2800,7 +2807,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.17.10] - 2026-02-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21710---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5957)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21710---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5957)
 
 ### Added
 
@@ -2816,7 +2823,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.17.9] - 2026-02-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2179---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5972)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2179---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5972)
 
 ### Changed
 
@@ -2828,7 +2835,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.17.8] - 2026-02-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2178---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5983)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2178---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5983)
 
 ### Fixed
 
@@ -2837,7 +2844,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.17.6] - 2026-02-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2176---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L5992)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2176---2026-02-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L5992)
 
 ### Added
 
@@ -2854,7 +2861,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.17.3] - 2026-02-03
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2173---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6028)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2173---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6028)
 
 ### Added
 
@@ -2875,7 +2882,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.17.2] - 2026-02-03
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2172---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6066)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2172---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6066)
 
 ### Added
 
@@ -2888,7 +2895,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.17.1] - 2026-02-03
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2171---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6089)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2171---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6089)
 
 ### Added
 
@@ -2908,7 +2915,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.17.0] - 2026-02-03
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2170---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6113)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2170---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6113)
 
 ### Added
 
@@ -2927,7 +2934,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.16.21] - 2026-02-03
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21621---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6140)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21621---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6140)
 
 ### Changed
 
@@ -2938,7 +2945,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.16.20] - 2026-02-03
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21620---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6152)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21620---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6152)
 
 ### Changed
 
@@ -2946,7 +2953,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.16.19] - 2026-02-03
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21619---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6161)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21619---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6161)
 
 ### Fixed
 
@@ -2954,7 +2961,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.16.17] - 2026-02-03
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21617---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6169)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21617---2026-02-03) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6169)
 
 ### Added
 
@@ -2969,7 +2976,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.16.14] - 2026-02-02
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21614---2026-02-02) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6191)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21614---2026-02-02) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6191)
 
 ### Changed
 
@@ -2977,7 +2984,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.16.11] - 2026-02-02
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21611---2026-02-02) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6204)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#21611---2026-02-02) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6204)
 
 ### Changed
 
@@ -2989,7 +2996,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.16.5] - 2026-01-31
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2165---2026-01-31) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6223)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2165---2026-01-31) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6223)
 
 ### Added
 
@@ -2997,7 +3004,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.16.0] - 2026-01-31
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2160---2026-01-31) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6237)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2160---2026-01-31) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6237)
 
 ### Changed
 
@@ -3008,7 +3015,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.15.0] - 2026-01-26
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2150---2026-01-26) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6250)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2150---2026-01-26) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6250)
 
 ### Added
 
@@ -3017,7 +3024,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.14.0] - 2026-01-16
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2140---2026-01-16) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6263)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2140---2026-01-16) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6263)
 
 ### Added
 
@@ -3027,7 +3034,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.13.0] - 2026-01-14
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2130---2026-01-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6276)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2130---2026-01-14) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6276)
 
 ### Added
 
@@ -3035,7 +3042,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.12.0] - 2026-01-10
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2120---2026-01-10) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6289)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2120---2026-01-10) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6289)
 
 ### Added
 
@@ -3046,7 +3053,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.11.0] - 2026-01-08
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2110---2026-01-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6298)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2110---2026-01-08) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6298)
 
 ### Added
 
@@ -3055,7 +3062,7 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [2.10.0] - 2026-01-04
 
-[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2100---2026-01-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#L6307)
+[当時の技術記録](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md#2100---2026-01-04) | [元コミットの原文](https://github.com/Chachamaru127/claude-code-harness/blob/6c198b4c76f983d82a93048d67807b45551a6dc6/CHANGELOG.md?plain=1#L6307)
 
 ### Added
 
