@@ -14,6 +14,10 @@ Change history for claude-code-harness.
   .../.git: directory not empty" and took down a CI run for an unrelated
   change. The fixture now disables both and no longer reads the host's
   global git configuration.
+- Give the same teardown race a way to be diagnosed. If it recurs, the
+  `go/internal/integrate` fixture now waits briefly for the writer and
+  logs its command line, so the next occurrence produces evidence rather
+  than another guess.
 - Pin the breezing benchmark dependency overrides to patched ranges so the
   `test-breezing-agent-eval-deps.sh` audit gate stops failing on newly
   published advisories and blocking every pull request: `undici` to
