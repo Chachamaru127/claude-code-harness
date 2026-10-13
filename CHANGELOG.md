@@ -8,6 +8,12 @@ Change history for claude-code-harness.
 
 ### Fixed
 
+- Stop `go/internal/integrate`'s tests from racing `t.TempDir()` cleanup.
+  Git's auto-gc and auto-maintenance can leave a process writing under
+  `.git` after the test body returns, which fails teardown with "unlinkat
+  .../.git: directory not empty" and took down a CI run for an unrelated
+  change. The fixture now disables both and no longer reads the host's
+  global git configuration.
 - Pin the breezing benchmark dependency overrides to patched ranges so the
   `test-breezing-agent-eval-deps.sh` audit gate stops failing on newly
   published advisories and blocking every pull request: `undici` to
@@ -26,6 +32,11 @@ Change history for claude-code-harness.
   `[claude-code:unrecognized_model]` for the PreToolUse quality gate, the
   post-write advisory review, and the PreCompact WIP check. Both
   `hooks/hooks.json` and its synced copy now name `claude-haiku-5-5`.
+- Anchor hook state paths to the project root instead of the process working
+  directory, so `.claude/state/` no longer scatters when a hook runs from
+  outside the project, and the writer and reader agree on one root (#338).
+  The hook input's cwd outranks `CLAUDE_PROJECT_DIR` so per-worktree locks
+  and `Plans.md` monitoring stay independent.
 
 ## [5.15.0] - 2026-09-06
 

@@ -13,6 +13,7 @@ import (
 
 // tddCheckInput は tdd-order-check.sh に渡される stdin JSON。
 type tddCheckInput struct {
+	CWD       string `json:"cwd"`
 	ToolName  string `json:"tool_name"`
 	ToolInput struct {
 		FilePath string `json:"file_path"`
@@ -101,7 +102,7 @@ func HandleTDDOrderCheck(in io.Reader, out io.Writer) error {
 	}
 
 	// cc:WIP タスクが存在しなければスキップ
-	projectRoot := resolveProjectRoot()
+	projectRoot := resolveProjectRoot(input.CWD)
 	if !hasActiveWIPTask(projectRoot) {
 		return writeTDDApprove(out, "")
 	}
@@ -112,7 +113,7 @@ func HandleTDDOrderCheck(in io.Reader, out io.Writer) error {
 	}
 
 	// セッション中にテストファイルが編集済みならスキップ
-	if testEditedThisSession() {
+	if testEditedThisSession(projectRoot) {
 		return writeTDDApprove(out, "")
 	}
 
@@ -207,11 +208,11 @@ func isTDDSkipped(projectRoot string) bool {
 
 // testEditedThisSession はセッション中にテストファイルが編集されたかどうかを確認する。
 // .claude/state/session-changes.json を参照する（存在しない場合は false）。
-func testEditedThisSession() bool {
-	data, err := os.ReadFile(sessionChangesFile)
+func testEditedThisSession(projectRoot string) bool {
+	data, err := os.ReadFile(filepath.Join(projectRoot, sessionChangesFile))
 	if err != nil {
 		// session-changes.json がなければ changed-files.jsonl もチェック
-		return testEditedInChangedFiles()
+		return testEditedInChangedFiles(projectRoot)
 	}
 	content := string(data)
 	return strings.Contains(content, ".test.") ||
@@ -223,8 +224,8 @@ func testEditedThisSession() bool {
 
 // testEditedInChangedFiles は .claude/state/changed-files.jsonl を参照して
 // セッション中にテストファイルが編集されたかを確認する。
-func testEditedInChangedFiles() bool {
-	data, err := os.ReadFile(changedFilesPath)
+func testEditedInChangedFiles(projectRoot string) bool {
+	data, err := os.ReadFile(filepath.Join(projectRoot, changedFilesPath))
 	if err != nil {
 		return false
 	}
