@@ -13,9 +13,19 @@ Change history for claude-code-harness.
   published advisories and blocking every pull request: `undici` to
   `^7.30.0`, `brace-expansion` to `^5.0.12`, and a new `@grpc/grpc-js`
   override at `^1.14.6`.
+- Require harness-mem markers before automatically treating `~/.claude-mem/`
+  as a legacy home, preventing false SessionStart health warnings for users
+  of the separate claude-mem product (#363).
+- Use a resolvable model id in the agent-type hooks. The bare alias
+  `"haiku"` is not resolved on the hook path, so Claude Code logged
+  `[claude-code:unrecognized_model]` for the PreToolUse quality gate, the
+  post-write advisory review, and the PreCompact WIP check. Both
+  `hooks/hooks.json` and its synced copy now name `claude-haiku-5-5`.
 - Anchor hook state paths to the project root instead of the process working
   directory, so `.claude/state/` no longer scatters when a hook runs from
   outside the project, and the writer and reader agree on one root (#338).
+  The hook input's cwd outranks `CLAUDE_PROJECT_DIR` so per-worktree locks
+  and `Plans.md` monitoring stay independent.
 
 ## [5.15.0] - 2026-09-06
 
