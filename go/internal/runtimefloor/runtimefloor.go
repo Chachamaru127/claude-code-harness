@@ -79,7 +79,26 @@ var (
 	urlPattern        = regexp.MustCompile(`(?i)(?:https?|ftp)://([^\s/]+)`)
 	remoteHostPattern = regexp.MustCompile(`(?i)(?:^|\s)(?:[\w.-]+@)?([a-z0-9][\w.-]*\.[a-z]{2,})(?::|/|\s|$)`)
 	// schemelessHostAuthority matches curl/wget args like example.com/path without a URL scheme.
+	// The match alone is not enough to call something a host: the final label
+	// must also be a registered TLD or a special-use name (see isHostLabel).
+	// Otherwise a plain filename such as notes.txt or config.json looks
+	// exactly like a host.
 	schemelessHostAuthority = regexp.MustCompile(`(?i)^(?:[\w.-]+@)?([a-z0-9][\w.-]*\.[a-z]{2,})(?::\d+)?$`)
+
+	// hostPinFlags make curl treat an arbitrary name as the destination by
+	// pinning it to an address.
+	hostPinFlags = map[string]bool{"--resolve": true, "--connect-to": true}
+
+	// specialUseLabels are names that resolve without being in the IANA root
+	// zone. The TLD list alone would clear them, so they are held as hosts
+	// explicitly: RFC 6761/6762/7686 (.test .example .invalid .onion .local),
+	// ICANN's .internal, and the private LAN and container suffixes that are
+	// not delegated at all.
+	specialUseLabels = map[string]struct{}{
+		"alt": {}, "corp": {}, "example": {}, "home": {}, "internal": {},
+		"intranet": {}, "invalid": {}, "lan": {}, "local": {}, "localdomain": {},
+		"localhost": {}, "onion": {}, "private": {}, "test": {},
+	}
 )
 
 func CheckCommand(cmd string, ctx Context) Decision {
@@ -180,6 +199,14 @@ func egressFloorExempted() bool {
 
 func checkCurlWgetSchemelessHosts(cmd string) Decision {
 	fields := strings.Fields(cmd)
+	// A --resolve or --connect-to argument pins a name to an address, which
+	// makes that name a real destination however its final label looks. It is
+	// checked first because the pinned name is not shaped like a URL token and
+	// would otherwise slip past the scan below.
+	if host := pinnedHost(fields); host != "" {
+		return stop(CategoryEgress, host,
+			"external network egress requires human approval")
+	}
 	for i, field := range fields {
 		if !strings.EqualFold(field, "curl") && !strings.EqualFold(field, "wget") {
 			continue
@@ -193,13 +220,80 @@ func checkCurlWgetSchemelessHosts(cmd string) Decision {
 			if authority == "" || isAllowlistedHost(authority) {
 				continue
 			}
-			if schemelessHostAuthority.MatchString(authority) {
+			if schemelessHostAuthority.MatchString(authority) && isHostLabel(authorityTLD(authority)) {
 				return stop(CategoryEgress, token,
 					"external network egress requires human approval")
 			}
 		}
 	}
 	return Decision{}
+}
+
+// pinnedHost returns the hostname named by a --resolve or --connect-to
+// argument, or "" when neither appears.
+func pinnedHost(fields []string) string {
+	for i, field := range fields {
+		name, value := field, ""
+		if eq := strings.Index(field, "="); eq >= 0 {
+			name, value = field[:eq], field[eq+1:]
+		}
+		key := strings.ToLower(name)
+		if !hostPinFlags[key] {
+			continue
+		}
+		if value == "" && i+1 < len(fields) {
+			value = fields[i+1]
+		}
+		value = strings.Trim(value, `"'`)
+		parts := strings.Split(value, ":")
+		// --connect-to HOST1:PORT1:HOST2:PORT2. An empty HOST1 matches every
+		// host, and curl then connects to HOST2, so HOST2 is the destination
+		// and is what has to be named here. Verified against curl 8.7.1:
+		// `--connect-to ::<name>:<port>` resolves <name> and sends the request
+		// there. For --resolve an empty host is accepted but matches nothing,
+		// so curl connects to no one and there is nothing to catch.
+		if key == "--connect-to" && parts[0] == "" && len(parts) > 2 && parts[2] != "" {
+			return parts[2]
+		}
+		if parts[0] != "" {
+			return parts[0]
+		}
+	}
+	return ""
+}
+
+// authorityTLD returns the final label of a schemeless authority, ignoring a
+// trailing port, or "" when there is no label to test.
+func authorityTLD(authority string) string {
+	host := authority
+	if colon := strings.LastIndex(host, ":"); colon >= 0 {
+		host = host[:colon]
+	}
+	if dot := strings.LastIndex(host, "."); dot >= 0 {
+		return host[dot+1:]
+	}
+	return ""
+}
+
+// isHostLabel reports whether label is one that names a host: either a
+// top-level domain in the IANA root zone, or a special-use name that resolves
+// without being delegated.
+//
+// This is what separates a host from a filename. late.txt, config.json and
+// http.server match the host shape but end in labels that are neither, so they
+// are not hosts. evil.sh ends in a real ccTLD, and internal names like
+// metadata.google.internal or printer.local resolve on their networks, so both
+// stay denied. That matters because a schemeless curl defaults to http.
+func isHostLabel(label string) bool {
+	if label == "" {
+		return false
+	}
+	label = strings.ToLower(label)
+	if _, ok := specialUseLabels[label]; ok {
+		return true
+	}
+	_, ok := registeredTLDs[label]
+	return ok
 }
 
 func extractHostAuthority(token string) string {

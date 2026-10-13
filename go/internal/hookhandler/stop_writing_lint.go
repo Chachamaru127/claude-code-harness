@@ -29,6 +29,7 @@ const writingLintMajorSeverity = "error"
 
 // stopWritingLintInput is the Stop hook stdin JSON payload this handler reads.
 type stopWritingLintInput struct {
+	CWD            string `json:"cwd"`
 	StopHookActive bool   `json:"stop_hook_active"`
 	SessionID      string `json:"session_id"`
 }
@@ -43,15 +44,14 @@ type StopWritingLintHandler struct {
 // Handle processes the Stop event: re-scan touched .md files for major
 // (severity: error) writing-lint hits and block once on first Stop.
 func (h *StopWritingLintHandler) Handle(in io.Reader, out io.Writer) error {
-	projectRoot := h.ProjectRoot
-	if projectRoot == "" {
-		projectRoot = resolveProjectRoot()
-	}
-
 	var input stopWritingLintInput
 	limited := io.LimitReader(in, 65536)
 	if payload, _ := io.ReadAll(limited); len(payload) > 0 {
 		_ = json.Unmarshal(payload, &input)
+	}
+	projectRoot := h.ProjectRoot
+	if projectRoot == "" {
+		projectRoot = resolveProjectRoot(input.CWD)
 	}
 
 	cfg := readWritingLintConfig(filepath.Join(projectRoot, harnessConfigFileName))
