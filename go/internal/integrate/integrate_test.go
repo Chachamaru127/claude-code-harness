@@ -48,12 +48,35 @@ func runGitAllowFail(dir string, args ...string) (string, error) {
 
 func initRepo(t *testing.T) string {
 	t.Helper()
+	// Keep the test independent of whatever git configuration the host or the
+	// CI runner carries. A global gc.auto or maintenance setting can leave a
+	// detached git process still writing under .git after the test body
+	// returns, which then races t.TempDir()'s cleanup and fails the test with
+	// "unlinkat .../.git: directory not empty". That is a teardown failure,
+	// not a failure of the behaviour under test, and it took down a CI run for
+	// an unrelated change.
+	cfgDir := t.TempDir()
+	emptyCfg := filepath.Join(cfgDir, "gitconfig")
+	if err := os.WriteFile(emptyCfg, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("GIT_CONFIG_GLOBAL", emptyCfg)
+	t.Setenv("GIT_CONFIG_SYSTEM", emptyCfg)
+
 	dir := t.TempDir()
 	runGit(t, dir, "init", "-b", "trunk")
 	runGit(t, dir, "config", "user.email", "test@example.com")
 	runGit(t, dir, "config", "user.name", "Test User")
 	runGit(t, dir, "config", "rerere.enabled", "true")
 	runGit(t, dir, "config", "rerere.autoupdate", "true")
+	// git can detach `gc --auto`, and auto-maintenance can run on a schedule.
+	// Either one leaves a process writing under .git after these tests finish,
+	// which then races t.TempDir()'s cleanup and fails the test with
+	// "unlinkat .../.git: directory not empty" — the failure is in the
+	// teardown, not in the behaviour under test. These repos are tiny and
+	// short-lived, so neither is worth the race.
+	runGit(t, dir, "config", "gc.auto", "0")
+	runGit(t, dir, "config", "maintenance.auto", "false")
 	if err := os.WriteFile(filepath.Join(dir, "README.md"), []byte("root\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
