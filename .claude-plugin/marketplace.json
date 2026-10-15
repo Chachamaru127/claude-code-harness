@@ -1,16 +1,16 @@
 {
   "name": "claude-code-harness-marketplace",
   "metadata": {
-    "version": "5.15.0",
-    "description": "Marketplace entry for distributing and installing claude-code-harness as a single plugin."
+    "version": "5.16.0",
+    "description": "Marketplace entry for distributing and installing Harness as a single plugin."
   },
   "owner": {
     "name": "Chachamaru"
   },
   "plugins": [
     {
-      "name": "claude-code-harness",
-      "version": "5.15.0",
+      "name": "harness",
+      "version": "5.16.0",
       "source": "./",
       "description": "A harness for solo developers (Vibecoders) to handle full-cycle contract development.",
       "author": {
@@ -30,5 +30,8 @@
       "category": "productivity",
       "strict": true
     }
-  ]
+  ],
+  "renames": {
+    "claude-code-harness": "harness"
+  }
 }

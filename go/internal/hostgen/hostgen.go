@@ -53,10 +53,10 @@ const claudeBinary = "bin/harness"
 
 // ClaudePreToolCommand mirrors the valid_root bootstrap wrapper used by the
 // tracked .claude-plugin/hooks.json PreToolUse entry (resolve the plugin root,
-// verify it owns claude-code-harness, then exec the binary with the hook args).
+// verify it owns harness, then exec the binary with the hook args).
 // It is reused verbatim so a regenerated Claude config at the Phase 91.8 cutover
 // keeps the exact same launch semantics. The live file is not overwritten now.
-const ClaudePreToolCommand = `/bin/bash -c 'valid_root(){ local r="${1:-}"; [ -n "$r" ] && [ -x "$r/bin/harness" ] && [ -f "$r/.claude-plugin/plugin.json" ] && /usr/bin/grep -q "\"name\"[[:space:]]*:[[:space:]]*\"claude-code-harness\"" "$r/.claude-plugin/plugin.json"; }; root="${CLAUDE_PLUGIN_ROOT:-}"; if ! valid_root "$root"; then root=""; for c in "${CLAUDE_PROJECT_DIR:-}" "$PWD" "$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace" "$HOME/.claude/plugins/cache/claude-code-harness-marketplace/claude-code-harness/"*; do if valid_root "$c"; then root="$c"; break; fi; done; fi; if ! valid_root "$root"; then echo "[claude-code-harness] plugin root not found; hook skipped" >&2; exit 0; fi; exec "$root/bin/harness" "$@"' _ ` + preToolCommand
+const ClaudePreToolCommand = `/bin/bash -c 'valid_root(){ local r="${1:-}"; [ -n "$r" ] && [ -x "$r/bin/harness" ] && [ -f "$r/.claude-plugin/plugin.json" ] && /usr/bin/grep -q "\"name\"[[:space:]]*:[[:space:]]*\"harness\"" "$r/.claude-plugin/plugin.json"; }; root="${CLAUDE_PLUGIN_ROOT:-}"; if ! valid_root "$root"; then root=""; for c in "${CLAUDE_PROJECT_DIR:-}" "$PWD" "$HOME/.claude/plugins/marketplaces/claude-code-harness-marketplace" "$HOME/.claude/plugins/cache/claude-code-harness-marketplace/harness/"*; do if valid_root "$c"; then root="$c"; break; fi; done; fi; if ! valid_root "$root"; then echo "[harness] plugin root not found; hook skipped" >&2; exit 0; fi; exec "$root/bin/harness" "$@"' _ ` + preToolCommand
 
 // Host describes one host's pre-action hook capabilities, parsed from a [host]
 // table in hosts.toml.

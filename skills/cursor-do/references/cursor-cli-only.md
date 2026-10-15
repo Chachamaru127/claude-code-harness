@@ -205,7 +205,7 @@ primary verdict (`APPROVE | REQUEST_CHANGES`) は brain のみが出す。
 
 ## Topology (非 claude backend では Worker 介在なし)
 
-backend が `cursor` (または `codex`) のとき、Lead は Worker agent (`claude-code-harness:worker`) を spawn しない。**Lead が直接 `cursor-companion.sh task --write --workspace <isolated-wt>` を呼ぶ**。Worker 層介在は backend=`claude` のときだけ。
+backend が `cursor` (または `codex`) のとき、Lead は Worker agent (`harness:worker`) を spawn しない。**Lead が直接 `cursor-companion.sh task --write --workspace <isolated-wt>` を呼ぶ**。Worker 層介在は backend=`claude` のときだけ。
 
 理由: 非 claude backend では `worker-report.v1` も `self_review` 配列も生成されないため、Worker を間に挟むと agent 契約 (self_review 5 件) のゲートが空回りする。Lead が直接 companion を呼んで diff レビュー → cherry-pick が正しい配線。
 

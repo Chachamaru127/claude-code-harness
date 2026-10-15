@@ -58,7 +58,7 @@ description: Claude Codeの作業をレビューし、承認/修正指示をハ�
 承認 → コミット指示 → **ここで終了**。次タスクへの自動遷移は行いません。
 
 ~~~markdown
-/claude-code-harness:core:work
+/harness:core:work
 <!-- ultrathink: PM からの依頼は原則重要タスクのため、常に high effort を指定 -->
 ultrathink
 
@@ -83,7 +83,7 @@ ultrathink
 @Plans.md から次の `cc:TODO` または `pm:依頼中` タスクを分析し、以下を生成：
 
 ~~~markdown
-/claude-code-harness:core:work
+/harness:core:work
 ultrathink
 
 ## 依頼
@@ -119,7 +119,7 @@ ultrathink
 修正指示を含むハンドオフを生成：
 
 ~~~markdown
-/claude-code-harness:core:work
+/harness:core:work
 ultrathink
 
 ## 修正依頼

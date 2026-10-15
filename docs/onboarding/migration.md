@@ -19,7 +19,7 @@ OpenCode files, symlinks, project state, or harness-mem data.
 
 | Area | Impact | Compatibility rule | Rollback / backup |
 |---|---|---|---|
-| Claude plugin cache | Stale cached plugin versions can keep Claude Code on older Harness behavior. | Use Claude Code plugin manager commands; do not hand-delete cache entries as part of the report. | `/plugin update claude-code-harness` or uninstall/reinstall through the plugin manager. |
+| Claude plugin cache | Stale cached plugin versions can keep Claude Code on older Harness behavior. | Use Claude Code plugin manager commands; do not hand-delete cache entries as part of the report. | `/plugin update harness` or uninstall/reinstall through the plugin manager. |
 | Claude slash entries | Missing `harness-*` skill entries can make `/harness-plan` or `/harness-work` unavailable. | Missing entries are evidence of install drift, not proof that the host is unsupported. | Update or reinstall the plugin, then run `/harness-setup`. |
 | Codex local skills | Duplicate frontmatter names or old aliases can route Codex to stale skills. | `scripts/setup-codex.sh --user` remains the safe fallback even after direct plugin smoke exists. | Backups live under `${CODEX_HOME:-$HOME/.codex}/backups/setup-codex`. |
 | Codex symlinks | Old symlink installs can break when the source checkout moves or on Windows. | Current setup prefers copied skill directories. | Re-run `scripts/setup-codex.sh --user`; restore inspected backups only if needed. |
@@ -48,3 +48,5 @@ OpenCode files, symlinks, project state, or harness-mem data.
    migration.
 
 No destructive cleanup is part of Phase 73.1.9.
+
+For the old Claude plugin ID, follow [the rename guide](plugin-rename.md). Updating the old ID does not switch its name.

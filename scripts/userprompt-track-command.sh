@@ -58,7 +58,7 @@ if [[ "$FIRST_LINE" =~ ^/([a-zA-Z0-9_:/-]+) ]]; then
   # /work → work
   COMMAND_NAME="$RAW_COMMAND"
   # claude-code-harness:xxx:yyy → yyy（最後のセグメント）
-  if [[ "$COMMAND_NAME" =~ ^claude-code-harness[:/] ]]; then
+  if [[ "$COMMAND_NAME" =~ ^(harness|claude-code-harness)[:/] ]]; then
     COMMAND_NAME=$(echo "$COMMAND_NAME" | sed 's|.*[:/]||')
   fi
 

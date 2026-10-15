@@ -140,7 +140,7 @@ Go の `HARNESS_TEAM_HIERARCHY=sublead` は CLI mini-plan 入口未実装、`HAR
 |------|---------|------|------|
 | Lead | (self) | 現セッション継承 | 調整・指揮・タスク分配・cherry-pick |
 | Worker ×N | resolver result: `spawn_agent` / `codex-companion.sh` / `cursor-companion.sh task --write --workspace <worktree>` | セッション権限継承 | 実装（git worktree 分離） |
-| Advisor | `claude-code-harness:advisor` | 読み取り専用 | 方針助言 (`PLAN` / `CORRECTION` / `STOP`) |
+| Advisor | `harness:advisor` | 読み取り専用 | 方針助言 (`PLAN` / `CORRECTION` / `STOP`) |
 | Reviewer | companion `review --base` | read-only | 独立レビュー |
 
 ## Flow Summary

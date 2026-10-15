@@ -22,6 +22,8 @@ assert_not_contains() {
   fi
 }
 
+# Presentation expectations follow the user-facing rewrite; host, permission,
+# verification and model-choice facts remain required.
 for file in "$ROOT_DIR/README.md" "$ROOT_DIR/README_ja.md"; do
   [ -f "$file" ] || fail "missing $file"
   assert_contains "$file" "docs/onboarding/index.md"
@@ -44,53 +46,53 @@ for file in "$ROOT_DIR/README.md" "$ROOT_DIR/README_ja.md"; do
   assert_not_contains "$file" "only setup"
 done
 
-assert_contains "$ROOT_DIR/README.md" "## The problem"
-assert_contains "$ROOT_DIR/README.md" "## Install in 30 seconds"
-assert_contains "$ROOT_DIR/README.md" "## The loop"
-assert_contains "$ROOT_DIR/README.md" "## The safety layer"
-assert_contains "$ROOT_DIR/README.md" "## Decision surfaces for non-engineers"
+assert_contains "$ROOT_DIR/README.md" "## What you can delegate"
+assert_contains "$ROOT_DIR/README.md" "## Install and start"
+assert_contains "$ROOT_DIR/README.md" "## The work steps"
+assert_contains "$ROOT_DIR/README.md" "## Permissions and limits"
+assert_contains "$ROOT_DIR/README.md" "## What you can see during work"
 assert_contains "$ROOT_DIR/README.md" "## Install by tool"
 assert_contains "$ROOT_DIR/README.md" "## Requirements"
 assert_contains "$ROOT_DIR/README.md" "## Documentation"
 assert_contains "$ROOT_DIR/README.md" "## Contributing"
 assert_contains "$ROOT_DIR/README.md" "## Acknowledgments"
 assert_contains "$ROOT_DIR/README.md" "## License"
-assert_contains "$ROOT_DIR/README.md" "Your job is not to write the"
-assert_contains "$ROOT_DIR/README.md" "it is to approve or correct it"
+assert_contains "$ROOT_DIR/README.md" "You decide the outcome, the completion criteria"
+assert_contains "$ROOT_DIR/README.md" "Approve the plan or correct it before work starts."
 assert_contains "$ROOT_DIR/README.md" "Harness drafts \`spec.md\` and \`Plans.md\` for you"
 assert_contains "$ROOT_DIR/README.md" "Runtime floor"
 assert_contains "$ROOT_DIR/README.md" "Guardrails"
 assert_contains "$ROOT_DIR/README.md" "Codex Breezing role routing"
-assert_contains "$ROOT_DIR/README.md" 'Both implementation Workers use'
-assert_contains "$ROOT_DIR/README.md" '`gpt-5.6-luna` / `max`'
-assert_contains "$ROOT_DIR/README.md" 'the routed Codex review route uses'
-assert_contains "$ROOT_DIR/README.md" '`gpt-6-astra` /'
-assert_contains "$ROOT_DIR/README.md" "main Codex session model stays unpinned"
+assert_contains "$ROOT_DIR/README.md" 'Your explicit model and reasoning-effort choices take priority'
+assert_contains "$ROOT_DIR/README.md" 'docs/model-routing-policy.md'
+assert_contains "$ROOT_DIR/README.md" 'Changing the main conversation does not change every child agent'
+assert_contains "$ROOT_DIR/README.md" 'read-only execution'
+assert_contains "$ROOT_DIR/README.md" "changing defaults."
 
-assert_contains "$ROOT_DIR/README_ja.md" "## 何を解決するか"
-assert_contains "$ROOT_DIR/README_ja.md" "## 30 秒で導入"
-assert_contains "$ROOT_DIR/README_ja.md" "## 5 動詞のワークフロー"
-assert_contains "$ROOT_DIR/README_ja.md" "## 安全の仕組み"
-assert_contains "$ROOT_DIR/README_ja.md" "## 非エンジニアが判断するための画面"
+assert_contains "$ROOT_DIR/README_ja.md" "## 何を任せられるか"
+assert_contains "$ROOT_DIR/README_ja.md" "## 導入して始める"
+assert_contains "$ROOT_DIR/README_ja.md" "## 作業の進め方"
+assert_contains "$ROOT_DIR/README_ja.md" "## 許可と制限"
+assert_contains "$ROOT_DIR/README_ja.md" "## 進み具合と再開"
 assert_contains "$ROOT_DIR/README_ja.md" "## ツール別の導入"
 assert_contains "$ROOT_DIR/README_ja.md" "## 動作要件"
 assert_contains "$ROOT_DIR/README_ja.md" "## ドキュメント"
 assert_contains "$ROOT_DIR/README_ja.md" "## コントリビュート"
 assert_contains "$ROOT_DIR/README_ja.md" "## 謝辞"
 assert_contains "$ROOT_DIR/README_ja.md" "## ライセンス"
-assert_contains "$ROOT_DIR/README_ja.md" "あなたの仕事は計画を書くことではありません"
-assert_contains "$ROOT_DIR/README_ja.md" "実行が進む前に、出てきた内容を承認するか直すことです"
+assert_contains "$ROOT_DIR/README_ja.md" "利用者が決めるのは、作りたい結果、完成条件、許可する操作です"
+assert_contains "$ROOT_DIR/README_ja.md" "作業が始まる前に計画を承認するか、意図と違う部分を直します"
 assert_contains "$ROOT_DIR/README_ja.md" "実行時フロア"
 assert_contains "$ROOT_DIR/README_ja.md" "ガードレール"
-assert_contains "$ROOT_DIR/README_ja.md" "Codex Breezing の役割別ルーティング"
-assert_contains "$ROOT_DIR/README_ja.md" 'どちらの実装 Worker も'
-assert_contains "$ROOT_DIR/README_ja.md" '`gpt-5.6-luna` / `max`'
-assert_contains "$ROOT_DIR/README_ja.md" 'Codex review route は'
-assert_contains "$ROOT_DIR/README_ja.md" '`gpt-6-astra` /'
-assert_contains "$ROOT_DIR/README_ja.md" "メイン Codex セッションのモデルは固定しません"
-assert_not_contains "$ROOT_DIR/README_ja.md" "## The loop"
+assert_contains "$ROOT_DIR/README_ja.md" "Codex Breezingの担当設定"
+assert_contains "$ROOT_DIR/README_ja.md" '利用者が明示したモデルと推論量は'
+assert_contains "$ROOT_DIR/README_ja.md" 'docs/model-routing-policy.md'
+assert_contains "$ROOT_DIR/README_ja.md" '主会話の設定を変えても、すべての子エージェントの設定が変わるわけではありません'
+assert_contains "$ROOT_DIR/README_ja.md" 'companion review'
+assert_contains "$ROOT_DIR/README_ja.md" "読み取り専用の実行を明示します"
+assert_not_contains "$ROOT_DIR/README_ja.md" "## The work steps"
 assert_not_contains "$ROOT_DIR/README_ja.md" "## Install by tool"
-assert_not_contains "$ROOT_DIR/README_ja.md" "## The safety layer"
-assert_not_contains "$ROOT_DIR/README_ja.md" "## Decision surfaces for non-engineers"
+assert_not_contains "$ROOT_DIR/README_ja.md" "## Permissions and limits"
+assert_not_contains "$ROOT_DIR/README_ja.md" "## What you can see during work"
 
 echo "test-readme-product-surface: ok"

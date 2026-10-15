@@ -1,7 +1,7 @@
 # Claude Code Harness V2 Spec
 
 Status: SSOT through the Phase 145/146 frontier model and prompt update
-Last updated: 2026-09-06
+Last updated: 2026-10-13
 
 This file is the root product contract for Claude Code Harness V2.
 Plans.md is the task ledger. `spec.md` is the product contract.
@@ -156,6 +156,24 @@ game its own grader.
 
 ## Users And Workflows
 
+### User documentation (2026-10-13)
+
+The README hero presents the user problem in a large short statement and
+three scannable outcomes before explanatory prose. Details follow the first
+action rather than preceding it. The hero animation is a conceptual work path,
+not live progress: self-contained SVG, a 12-second GIF for image-only renderers,
+and a static poster for reduced motion. Local acceptance does not claim GitHub
+image-proxy or cross-OS font verification.
+The English and Japanese READMEs explain outcomes, installation, a first
+request, human decisions, costs and data boundaries, restart, and updates in
+plain language. Technical names are retained when a user must act on them,
+with their meaning explained at first use. An analogy supplements a concrete
+explanation; it never replaces a condition or proves a safety guarantee.
+English and Japanese changelogs retain release versions, dates, comparison
+links, and upgrade-relevant conditions. Historical source remains available
+when entries are rewritten for readers. These are editorial changes, not a
+change to host support, permissions, runtime behavior, or model defaults.
+
 Primary user:
 
 - An operator who prefers AI to prepare the plan, implementation, comparison,
@@ -287,3 +305,20 @@ actual provider selection must be reported separately from local fixture tests.
 - `Plans.md` — task ledger and phase evidence.
 - `docs/spec/` — detailed sub-specs that remain part of this product contract.
 - `GOD_plans.md` — release and S3-S5 evidence tracking.
+
+
+### Plugin distribution identity (2026-10-14)
+
+The distribution plugin ID is `harness` across the shared marketplace and host manifests. The Claude manifest is generated from `harness.toml [project].name`.
+The repository slug and marketplace ID remain `claude-code-harness` and
+`claude-code-harness-marketplace`. Internal config, environment variables, and
+project memory paths do not change merely because the distribution ID changes.
+Hook root checks and cache lookup use the new plugin ID. Cache synchronization
+requires matching release version and plugin identity before changing a marketplace
+clone; it never creates an uninstalled cache or changes user plugin registrations.
+The marketplace keeps the old-to-new `renames` entry as append-only migration
+history. Supported Claude versions move enabled/config keys to the new ID; users
+install it in the original scope and check that only one copy is active. Older
+builds use the documented keep-data manual route. Migration guidance distinguishes
+shared project configuration from personal user/local configuration and does not
+promise automatic transfer of name-scoped plugin data without evidence.

@@ -144,3 +144,14 @@ Claude Harness らしい orange / black / soft green。未サポート parity cl
 
 Satisfied for Pattern A on 2026-05-24. Future secondary visuals still require a
 separate approval if they change claim boundaries or add text-bearing images.
+
+## 2026-10-13 motion hero candidate
+
+- Authorization: user requested SVG motion graphics in the README hero after asking for a visual problem-first opening. Candidate is locally integrated, not publicly released.
+- Direction and timeline: `specs/2026-10-readme-motion/design.md`. One persistent paper-object world settles scattered work into a visible path; the final call stays with the user.
+- Source/build: `specs/2026-10-readme-motion/build-assets.py`; 720 × 390 SVG in EN/JA; 12-second loop. Uses system fonts, no external runtime or API.
+- Asset paths: `docs/images/readme/hero-motion-{en,ja}.svg`, `hero-motion-{en,ja}.gif`, `hero-motion-{en,ja}-poster.svg`.
+- README alt text describes the conceptual work path, not live project progress. No actual test results are claimed in the artwork.
+- Motion reduction: SVG displays an unanimated settled scene; README picture selects the poster for reduced-motion preference. GIF is the default README display because GitHub documents SVG animation limitations: https://docs.github.com/en/repositories/working-with-files/using-files/working-with-non-code-files .
+- Raster export uses librsvg/Pango through `rsvg-convert` for Japanese glyph shaping and Pillow for GIF encoding. It shares the SVG timeline, rather than editing hand-drawn raster frames. No source logo was redrawn.
+- Verification: browser-native SVG transforms differ between 0s and 4s; 8s holds the settled layout. Both GIFs decode to 120 distinct frames and exactly 12,000ms after duplicate-frame optimization. Japanese glyphs verified through librsvg/Pango; 360px/720px preview checked. Independent verdict is pending. Actual published GitHub readback is not observed.

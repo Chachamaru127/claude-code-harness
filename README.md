@@ -1,324 +1,295 @@
-# Claude Code Harness
+<p align="center"><img src="docs/images/claude-harness-logo-with-text.png" alt="Claude Harness" width="220"></p>
 
-<p align="center">
-  <img src="docs/images/claude-harness-logo-with-text.png" alt="Claude Harness" width="400">
-</p>
 
-<p align="center">
-  <strong>Plan. Work. Review. Ship.</strong><br>
-  <em>A disciplined delivery loop for Claude Code, Codex CLI, Cursor, and Grok.</em>
-</p>
 
-<p align="center">
-  <a href="https://github.com/Chachamaru127/claude-code-harness/releases/latest"><img src="https://img.shields.io/github/v/release/Chachamaru127/claude-code-harness?display_name=tag&sort=semver" alt="Latest Release"></a>
-  <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
-  <a href="docs/CLAUDE_CODE_COMPATIBILITY.md"><img src="https://img.shields.io/badge/Claude_Code-v2.1+-purple.svg" alt="Claude Code"></a>
-  <img src="https://img.shields.io/badge/Skills-5_core_%2F_23_total-orange.svg" alt="Skills: 5 core verbs / 23 total">
-  <img src="https://img.shields.io/badge/Guardrails-R01%E2%80%93R16_%2B_5_floors-B5462F.svg" alt="Guardrails: R01-R16 plus 5 runtime floor categories">
-  <img src="https://img.shields.io/badge/Core-Go_Native-00ADD8.svg" alt="Go Core">
-</p>
+<h1 align="center">The AI writes the code.<br>You still manage the work.</h1>
 
-<p align="center">
-  English | <a href="README_ja.md">日本語</a>
-</p>
+<p align="center"><a href="docs/images/readme/hero-motion-en.svg"><picture><source media="(prefers-reduced-motion: reduce)" srcset="docs/images/readme/hero-motion-en-poster.svg"><img src="docs/images/readme/hero-motion-en.gif" alt="Scattered work becomes a plan, implementation and tests, and a separate review before your final decision" width="880"></picture></a></p>
 
-<p align="center">
-  <img src="docs/images/readme/loop-en.svg" alt="Operating loop: Plan, Work, Review, Release — with every command checked before it runs" width="880">
-</p>
+<p align="center"><strong>Delegate the plan, checks, and review.<br>Judge the result.</strong></p>
 
-## The problem
+Use your existing Claude Code, Codex CLI, Cursor, or Grok account.
+[Choose your tool](#install-by-tool) · [Try one small request](#your-first-request)
 
-Claude Code Harness (CCH) is a development plugin for delegating planning,
-implementation, validation, and review to Claude Code or Codex. Provide the
-intended outcome and completion criteria; the assigned agents inspect the
-existing code and organize the work.
+English | [日本語](README_ja.md)
+[![Latest release](https://img.shields.io/github/v/release/Chachamaru127/claude-code-harness?display_name=tag&sort=semver)](https://github.com/Chachamaru127/claude-code-harness/releases/latest)
 
-**You decide what to build, what counts as complete, and which actions are
-authorized.** Agents choose the method within that scope and continue the
-necessary fixes and checks. They return changes, verification results, and
-unknowns so you can judge the result against the criteria.
+## Install and start
 
-## Install in 30 seconds
+You need an installed, signed-in coding assistant and a project folder you can
+write to. For an existing Harness setup, read the [migration guide](docs/onboarding/migration.md)
+before reinstalling or cleaning up files.
+
+For Claude Code, open a terminal (the app where you type system commands) and run:
 
 ```bash
 claude
+```
+
+Then enter these commands **inside Claude Code**, one at a time:
+
+```text
 /plugin marketplace add Chachamaru127/claude-code-harness
-/plugin install claude-code-harness@claude-code-harness-marketplace
+/plugin install harness@claude-code-harness-marketplace
 /harness-setup
 ```
 
-Then hand it something small:
+`/harness-setup` prepares the project's instructions and checks. Review any
+proposed project changes before accepting them. Installation time depends on
+your existing setup and connection.
 
-```bash
-/harness-plan Improve the README onboarding flow
-```
+The Claude plugin ID is now `harness`; the repository and marketplace names
+stay the same. If you installed the old `claude-code-harness` plugin, follow
+[Switch an existing Claude installation](docs/onboarding/plugin-rename.md).
+Updating the old ID alone does not rename it.
+The tool table describes verified paths, not every future assistant version.
 
-Harness drafts `spec.md` and `Plans.md` for you. **Your job is not to write the
-plan — it is to approve or correct it** before execution continues.
+For other tools, choose the route in [Install by tool](#install-by-tool).
+The [onboarding guide](docs/onboarding/index.md) covers the same starting point
+with more detail.
 
-Using a different tool? See [install by tool](#install-by-tool) below.
+## Your first request
 
-## The loop
+You decide the outcome, the completion criteria, and the actions you authorize.
+Review means checking the change separately from its implementation.
 
-The 5 verb skills keep that surface small: plan, work, review, sync, release.
-(`/harness-setup` runs once at install time, above.) Each stage leaves the
-material the next stage needs, and each has its own gate.
 
-| Command | What happens | Gate |
-|---|---|---|
-| `/harness-plan` | Turns intent into `spec.md` + `Plans.md`: scope, acceptance criteria, dependencies, unknowns, stop conditions. | You approve or correct the generated contract. |
-| `/harness-work` | Executes the selected scope, choosing solo or team execution by task count. | Clarifies scope only when it is unresolved; runs required checks and review. |
-| `/harness-work 3` | Implements task 3 only. | TDD required when the task says so. |
-| `/harness-work all` | Runs the whole approved plan. Use once the plan is clear and the repo baseline is known. | Same TDD gate, applied task by task. |
-| `/harness-review` | Reviews the result **separately from implementation**. | Major findings block completion. PR-ready is not release-ready. |
-| `/harness-sync` | Compares the plan against what is actually implemented and reports drift. | Reconciles status using observed evidence. |
-| `/harness-release` | Packages only verified evidence into CHANGELOG, tag, and release. | Release preflight must pass. |
-
-Data the agent has not seen stays `unknown` instead of being quietly invented.
-
-## What happens after a request
-
-For example, an order duplication bug can start with:
+Start with one small change whose result you can check:
 
 ```text
-/harness-plan Fix duplicate orders. The completion criterion is that the same order is stored once.
+/harness-plan Stop the contact form from sending twice. When I click Send twice quickly, only one message should be created. Keep the existing fields and appearance.
 ```
 
-Review and approve the scope and completion criteria, then run
-`/harness-work all`. In Codex, invoke the skills as `$harness-plan` and
-`$harness-work all`.
+Harness drafts `spec.md` and `Plans.md` for you. Read the proposed behavior,
+what it will change, how it will test the result, and anything still unknown.
+Approve the plan or correct it before work starts.
 
-1. **Plan.** Inspect the existing specification and code, then capture reproduction steps, scope, and completion criteria in `spec.md` and `Plans.md`.
-2. **Implement.** Pass the original request, criteria, and observed evidence to the assigned worker. Independent work can run concurrently with separate file ownership.
-3. **Verify and fix.** Run required tests and reproduction steps. Send review findings back to the worker for correction within the configured iteration limit.
-4. **Report.** Return criterion-level results, changed files, checks actually performed, and remaining issues.
+Then run:
 
-Agents first recover missing inputs from the specification and relevant code.
-Reversible work inside the authorized scope continues with stated assumptions.
-A new authorization or material specification decision blocks the dependent
-action; independent authorized work can continue. Major findings or an
-exhausted correction limit produce an incomplete result with evidence for
-the next decision.
+```text
+/harness-work all
+/harness-review
+```
 
-## Model roles and your choices
+The first command works through the approved tasks. The second requests a
+separate review. On Codex, use `$harness-plan`, `$harness-work all`, and
+`$harness-review` instead of the slash form.
 
-CCH assigns models by role. Reasoning effort controls how much processing a
-model allocates to thinking. These are role defaults; the main conversation
-also uses its session selection and the active skill's settings.
+At the end, check the actual result: try the form, read which tests passed,
+and look for unresolved problems. A review-ready change can still need a
+real service connection or your acceptance before it is ready to publish.
 
-| Role | Model | Effort |
+## What you can delegate
+
+| Re-explaining the work | Tracking what is done | Checking “it works” |
 |---|---|---|
-| Claude difficult decisions and advice (`deep` / `advisor`) | Fable 5.1 (`claude-fable-5-1`) | `high` |
-| Ordinary Claude implementation | Sonnet 5 (`claude-sonnet-5`) | `medium` |
-| Dedicated independent Claude Reviewer | Sonnet 5 (`claude-sonnet-5`) | `xhigh` |
-| Codex standard work, difficult decisions, review, and advice | GPT-6 astra (`gpt-6-astra`) | `xhigh` |
-| Codex Breezing implementation Worker | GPT-5.6 luna (`gpt-5.6-luna`) | `max` |
+| Keep the specification and plan in files | See task status and pending decisions | Get actual test results and a separate review |
 
-The general Claude review route uses Fable 5.1 / `high`; the dedicated
-Reviewer above uses a separate Sonnet 5 definition. Lightweight research has
-its own routes. See the [full role table](docs/model-routing-policy.md).
+## The work steps
 
-**Manual model and effort choices remain authoritative.** Per-call selections
-and role settings apply to their respective execution paths. Changing the
-parent conversation does not retune every child role. Explicit Codex `ultra`
-is preserved; stronger wording in a request does not authorize effort changes.
+<p align="center"><img src="docs/images/readme/loop-en.svg" alt="Plan, work, review, and release" width="880"></p>
 
-## The safety layer
+Harness keeps the specification in `spec.md` and tasks in `Plans.md`.
+Think of them as a shared job sheet and checklist. In practice, the assistant
+writes the drafts and updates the records; you approve the intended result.
 
-Operations connected to CCH's checks are inspected by a Go engine before
-execution. Network sends and deletions also need command-level checks because
-a file diff cannot establish those effects. Coverage depends on the host;
-see [safety differences between hosts](docs/hardening-parity.md).
+A **skill** is a reusable set of instructions for the assistant. The 5 verb skills
+cover planning, work, review, checking status, and release. Setup is separate.
 
-**Two layers, deliberately different in strength.**
-
-| Layer | Decides | Configuration |
+| Request or command | What you receive | Your decision |
 |---|---|---|
-| **Runtime floor** — 5 categories | Allows or denies under category-specific rules | No global disable switch; limited allowlists exist for destinations, read targets, and other defined operations |
-| **Guardrails** — R01–R16 | Deny / confirm / warn | Partly, by project config |
+| `/harness-plan` | A specification, tasks, completion criteria, unknowns, and operations that need permission | Approve or correct the scope and criteria |
+| `/harness-work 3` | Changes and required checks for task 3 | Resolve a new permission or product decision if one is needed |
+| `/harness-work all` | Work on all approved tasks, with checks and corrections | Judge the result against the criteria |
+| `/harness-review` | Findings from a reviewer separate from the implementation | Serious findings block completion; minor suggestions can remain |
+| `/harness-sync` | Differences between the recorded plan and observed project state | Decide what to correct when they disagree |
+| `/harness-release` | A release plan, version changes, and publication checks | Approve the complete publication plan before it runs |
 
-The floor covers billing, network egress, secret reads, production deploys, and
-destruction outside the task worktree. Allowed targets and release-operation
-settings are protected, operator-managed configuration. Agents must not rewrite
-them to make their own work pass.
+When a task requires test-first development, the assistant demonstrates a
+failing test before implementing the fix, then runs it again. Other tasks use
+the checks their plan requires. A wording change need not use the same tests
+as a payment feature.
 
-Guardrails are the layer you tune. Direct pushes to `main`, writes to protected
-paths, forced pushes, history rewrites — each has a defined verdict, and some
-are configurable per project.
+The assistant continues reversible work inside the approved scope. It stops
+the affected operation when a new authorization or material product decision
+is needed. Failed checks and exhausted correction limits are reported as
+unfinished work, with evidence and a next step.
 
-**Known approvals can be collected at plan time.** Operations that support
-preapproval can be scoped and approved with the plan. A newly discovered
-approval requirement is checked before that operation runs. Approvals carry
-an expiry, a task scope, and a use limit.
+## What you can see during work
 
-**Stop reasons are recorded.** Rule identifiers, categories, and verdicts in
-the decision log let you inspect what blocked an operation.
-
-## Sessions that can see each other
-
-When several conversations work on the same repository, CCH's roster shows
-the active agents. A local message path can carry information to agents
-working in other worktrees.
-
-| Piece | What it does |
-|---|---|
-| Roster | `bin/harness session list` shows live sessions registered across worktrees of the same repository. The store resolves from `git --git-common-dir`. Each row carries the `team` and `agent` a sender needs. |
-| Send | `bin/harness inbox send --team <t> --from <a> --to <b> --subject <s> "<body>"`, or the `session-send` skill, which also documents what is worth sending. |
-| Receive | Messages arrive at the receiving session's turn boundary, wrapped as data with an explicit non-instruction envelope. A peer's message is a report to verify, never an order to follow. |
-
-Message content checks are off by default. Setting
-`[livemsg] verification = "on"` checks whether mentioned files and commits
-exist and whether a "clean worktree" claim matches the current state.
-Messages that fail the check are withheld, with the reason returned to the sender.
-
-This is local-only and does not depend on harness-mem. If harness-mem is
-installed alongside, its roster entries are preserved untouched.
-
-## Decision surfaces for non-engineers
-
-Three single-screen HTML views let a non-engineer sponsor judge without reading
-code.
-
-| Surface | When | Shows |
+| View | When to use it | What it tells you |
 |---|---|---|
-| **Plan Brief** | Plan finalized | Understanding, options, risks, acceptance criteria |
-| **Progress** | During work | WIP/TODO/done counts recorded in `Plans.md` and pending decisions |
-| **Acceptance** | Before release | Per-criterion pass/fail with ship / wait / reject |
+| Plan Brief | Before approving a plan | Intended result, choices, risks, and completion criteria |
+| Progress (`/harness-progress`) | During work | Task status and pending decisions recorded in `Plans.md` |
+| Acceptance | Before publication | Which completion criteria passed, failed, or remain unverified |
 
-Use `/harness-progress` to inspect the current state. A status request alone
-does not mark work complete or save a memory. Work handoffs carry completed
-work, unresolved issues, verification results, and the next action to try.
-Claude Code regenerates the page after editing or command execution, at most
-once every 60 seconds. The completion percentage is a task-count ratio, not
-an acceptance pass rate or an automatically detected implementation state.
+The progress percentage counts recorded tasks. It is not the percentage of
+features proven to work. For example, “8 of 10 tasks complete” can coexist
+with a failed end-to-end test. Claude Code refreshes the progress page after
+edits or commands, at most once every 60 seconds; other tools have different
+update behavior.
+
+To continue after an interruption, use:
+
+```text
+/harness-work --resume latest
+```
+
+This recovers the recorded plan, changes, check results, and remaining work.
+Ask the assistant to show what was recovered before relying on it. Optional
+[harness-mem](https://github.com/Chachamaru127/harness-mem) adds memory and search
+across sessions; the basic workflow does not require it.
+
+## Permissions and limits
+
+Harness checks operations connected to its execution hooks (checks run before
+or after an assistant action). The **Go-native guardrail engine** is the bundled
+program that applies those rules; it does not require Node.js to run.
+
+| Check layer | What it checks | What you control |
+|---|---|---|
+| Runtime floor | Billing, external sends, secret reads, production deployment, and destruction outside the task's working copy | Named permissions under the category's rules; there is no global off switch |
+| Guardrails | Protected files, direct pushes to the shared main branch, forced pushes, and changes to recorded history | Some rules are configurable for the project |
+
+Known permissions can be scoped and collected with the plan where the
+operation supports it. The permission details depend on the operation and its configured rules. The assistant must not rewrite protected settings to pass its own check.
+Stop reasons identify the rule and action so you can inspect the cause.
+
+These checks do not guarantee every command is contained. Coverage depends
+on the tool and how the operation is launched. Cursor has no traditional
+filesystem isolation; its restrictions are applied by Harness. Native Codex
+child agents can inherit their parent's permissions. A reviewer role alone
+is not read-only isolation; the companion review route explicitly requests
+read-only execution. Read the [differences between tools](docs/hardening-parity.md)
+and [Cursor limits](docs/CURSOR_INTEGRATION.md) before delegating sensitive work.
+
+## Cost and project data
+
+Harness is free to use and modify under the MIT license. Your coding assistant, model
+provider, and any connected services have their own fees and terms. More
+workers, reviews, and repeated attempts can use more of those services.
+Harness does not provide an account or a universal spending cap.
+
+Project plans and task records are files in your project. Execution state is
+kept under `.claude/state/`. Setup also adds project guidance and check files. Content read by the
+coding assistant is still subject to that assistant's data handling. Installing
+Harness does not make model requests local or prevent the assistant from
+sending project content to its provider. Optional memory and external
+connections have their own configuration and data boundaries.
 
 ## Install by tool
 
-Four install routes are **not** four identical guarantees. A setup script means
-a tool has an *entry path*, not a shared product promise.
+The tier describes the checked Harness integration path. `supported` means a
+verified path; `internal-compatible` means limited integration; `candidate`
+means experimental work; `future/unsupported` means no current user route.
+These labels do not promise identical permissions or features across tools.
 
-| Tool | Tier | Route |
+| Tool | Tier | How to start or what is missing |
 |---|---|---|
-| Claude Code | `supported` | Plugin marketplace, then `/harness-setup` |
-| Codex CLI | `supported` | [`scripts/setup-codex.sh --user`](codex/README.md#option-1-script-recommended-user-based); rerun after Harness updates, then restart Codex |
-| Cursor | `supported` | `scripts/setup-cursor.sh` — containment is harness-side, see [notes](docs/CURSOR_INTEGRATION.md) |
-| Grok | `supported` | `scripts/setup-grok.sh` |
-| Codex app | `candidate` | Candidate smoke only; CLI proof is not reused |
-| OpenCode | `internal-compatible` | `scripts/setup-opencode.sh`; runtime parity not claimed |
-| Hermes Agent | `candidate` | Manual symlink research route. `harness gen` now writes its turn-delivery hook when `~/.hermes` exists; guardrail enforcement is still not wired, so the tier is unchanged |
-| GitHub Copilot CLI | `candidate` | Manual profile research |
-| Antigravity CLI | `future/unsupported` | No end-user install route yet |
+| Claude Code | `supported` | Use the marketplace commands above, then `/harness-setup` |
+| Codex CLI | `supported` | [Run `scripts/setup-codex.sh --user`](codex/README.md#option-1-script-recommended-user-based), then restart Codex |
+| Cursor | `supported` | Run `scripts/setup-cursor.sh`, then reload Cursor; read its permission limits above |
+| Grok | `supported` | Run `scripts/setup-grok.sh`, then start a new session |
+| OpenCode | `internal-compatible` | Run `scripts/setup-opencode.sh` for instructions and skills; the full execution behavior is not verified as equivalent |
+| Codex app | `candidate` | The Codex CLI installation does not establish an app installation path |
+| Hermes Agent | `candidate` | Experimental manual skill loading; automatic guardrail enforcement is not connected |
+| GitHub Copilot CLI | `candidate` | Experimental manual instructions; no verified Harness installation route |
+| Antigravity CLI | `future/unsupported` | No end-user installation route |
 
-<details>
-<summary><strong>What the tiers mean, and why we are strict about them</strong></summary>
-
-<br>
-
-| EN tier | Japanese public wording |
-|---|---|
-| `supported` | 正式対応 |
-| `internal-compatible` | 互換利用可 / 制限付き対応 |
-| `candidate` | 試験対応 / プレビュー |
-| `future/unsupported` | 非対応 / 将来検討 |
-
-Claude Code, Codex CLI, Cursor, and Grok passed H1–H8 on their verified claim
-paths (live H4 2026-07-17; H7 release-preflight fail-closed wiring 2026-07-19).
-Every other row stays at its listed tier until it passes its own H1–H8
-(`docs/spec/planning-and-host-adapter.md`, Phase 111).
-
-Harness does not inherit support claims from Superpowers, Hermes Agent, or any
-other project. A host moves up only when Harness has its own bootstrap, trigger,
-runtime, and release evidence.
-
-`not_observed != absent` — missing local proof means "not proven here". It does
-not mean impossible, and it does not mean supported.
-
-</details>
-
-<details>
-<summary><strong>Already using Harness? Run the migration report first</strong></summary>
-
-<br>
+For setup scripts, first download this repository with Git (the program that
+manages project versions):
 
 ```bash
-bin/harness doctor --migration-report
+git clone https://github.com/Chachamaru127/claude-code-harness.git
+cd claude-code-harness
 ```
 
-It inventories stale Claude plugin caches, duplicate Codex skills, old symlinks,
-OpenCode backup paths, and harness-mem state — **without deleting anything**.
+Then run the script for your tool. The Codex `--user` route writes user-level
+skills, rules, and managed profiles, so it applies across projects. Existing
+`worker.toml` and `reviewer.toml` are backed up and replaced, even if you created
+them yourself. Read the [installation details](docs/onboarding/install.md) for
+project-local alternatives, update steps, and removal.
 
-</details>
+## Larger jobs and model choices
 
-<details>
-<summary><strong>Advanced capabilities</strong></summary>
+`/breezing` divides larger approved work between agents. `/harness-loop`
+repeats work within a limit and can ask an advisor for help. It defaults to
+eight cycles. Reaching the limit is not completion. Use `/harness-loop status`
+to inspect it and `/harness-loop stop` to stop further execution.
 
-<br>
+Your explicit model and reasoning-effort choices take priority in their
+execution path. Reasoning effort is the amount of processing a model uses to
+think. Changing the main conversation does not change every child agent's
+settings. See [model choices](docs/model-routing-policy.md) and
+[Codex Breezing role routing](codex/README.md#codex-breezing-role-routing) before
+changing defaults.
 
-Reach for these after the basic path is working.
+The experimental `HARNESS_AUTO_APPROVE=on` option only records an eligibility
+check. It is off by default and does not skip approval prompts.
 
-| Capability | What it adds | Boundary |
-|---|---|---|
-| **Breezing** | Planner / Critic / Worker team execution for larger task lists | Still gated by plan quality and review |
-| **harness-loop** | Repeats execution within a chosen limit, consulting an advisor when needed and retaining stop reasons and restart information | Reaching the limit or finding no runnable work is distinct from completing every task |
-| **Codex companion review** | Schema-backed second opinion via `scripts/codex-companion.sh` | Raw `codex exec` is not the companion path |
-| **harness-mem** | Project-scoped memory and recall across sessions | Optional; purge stays explicit |
-| **OpenCode bootstrap** | Mirrors guidance into OpenCode-compatible surfaces | Runtime parity not claimed |
-| auto-approve *(experimental)* | `HARNESS_AUTO_APPROVE=on` records the gate result in the orchestration ledger | Default OFF. Approval prompts are **not** skipped yet |
+## Update or troubleshoot
 
-`/harness-loop` defaults to a limit of eight cycles. Claude Code normally
-handles one task per wake-up; Codex runs a batch whose dependencies are met.
-Use `/harness-loop status` to inspect the loop and `/harness-loop stop` to stop further execution.
-Resume work with `/harness-work --resume latest`, recovering the plan, diff,
-verification results, and remaining completion criteria.
+For Claude Code, run these inside the assistant:
 
-**Codex Breezing role routing.** After setup is rerun and Codex is restarted,
-Codex-native `$breezing` selects the managed Worker profile. `$breezing --codex`
-uses the companion Worker route. Both implementation Workers use
-`gpt-5.6-luna` / `max`; the routed Codex review route uses `gpt-6-astra` /
-`xhigh`. The main Codex session model stays unpinned, and explicit backends such
-as Cursor keep their own routing. See [activation and
-boundaries](codex/README.md#codex-breezing-role-routing).
+```text
+/plugin update harness
+/harness-setup
+```
 
-Native Codex children can inherit the parent's execution permissions. The
-Reviewer profile alone is not filesystem isolation. CCH's read-only review
-uses the companion path, which explicitly selects read-only execution.
+For a script installation, update your repository copy with `git pull --ff-only`,
+rerun the same setup script, and restart or reload the assistant.
+Check the [English changelog](CHANGELOG.md) or [Japanese changelog](CHANGELOG_ja.md)
+for behavior changes and required action before updating.
 
-</details>
+If commands are missing, check that installation targeted the tool you are
+using and that you restarted it. The [installation check](docs/onboarding/skill-trigger-acceptance.md)
+shows what a successful first invocation looks like.
+From your Harness repository copy, `bin/harness doctor --migration-report`
+inspects old setup files and memory state without deleting them.
+
+If a check blocks work, keep the exact error and ask the assistant to explain
+the rule, target, and required permission. Do not treat a failed check as a
+completed task. Report reproducible installation or execution problems in
+[GitHub Issues](https://github.com/Chachamaru127/claude-code-harness/issues).
 
 ## Requirements
 
-- **Claude Code v2.1+** for the supported Claude path
-- A repository with write access
-- No Node.js is required for the Go-native guardrail engine
-- Optional: [harness-mem](https://github.com/Chachamaru127/harness-mem) for
-  cross-session memory
+CLI means the edition you run from a terminal. A repository is a project folder
+whose changes are tracked with Git.
+
+
+- An installed coding assistant and access to its account or model provider.
+- Claude Code v2.1+ for the Claude path; check [compatibility notes](docs/CLAUDE_CODE_COMPATIBILITY.md) for dated observations and platform limits.
+- A project repository with write access. Setup scripts require Git and a shell that can run them.
+- No Go installation is needed for bundled binaries. Building the current source requires Go 1.26.0 or later; optional skills can have additional requirements.
 
 ## Documentation
 
-| Resource | Description |
-|---|---|
-| [Tool-first onboarding](docs/onboarding/index.md) | Where to start, by host tool |
-| [Install routes](docs/onboarding/install.md) | Per-tool setup and tier boundaries |
-| [Migration check](docs/onboarding/migration.md) | Existing-user impact and rollback |
-| [Skill trigger gate](docs/onboarding/skill-trigger-acceptance.md) | How install success is verified |
-| [Capability matrix](docs/tool-capability-matrix.md) | Full host claim table |
-| [Distribution scope](docs/distribution-scope.md) | Included vs compatibility vs dev-only |
-| [Hardening parity](docs/hardening-parity.md) | Safety differences between hosts |
-| [Work All evidence pack](docs/evidence/work-all.md) | Verification contract for full-plan runs |
-| [Model roles](docs/model-routing-policy.md) | Role models, reasoning effort, and override priority |
-| [Task requests and handoffs](docs/prompt-calibration.md) | Completion criteria, evidence, correction instructions, and restart context |
-| [Language / i18n](docs/i18n.md) | Switching output language |
-| [Changelog](CHANGELOG.md) | User-facing version history |
+- [Start with your tool](docs/onboarding/index.md), [installation and removal](docs/onboarding/install.md), and [existing-user migration](docs/onboarding/migration.md).
+- [Language settings](docs/i18n.md): English is the default. Ask “Please respond in Japanese” to switch the conversation; project settings and environment variables are also available.
+- [What gets installed](docs/distribution-scope.md) and [checks for a whole plan](docs/evidence/work-all.md).
+- [Product guide in Japanese](docs/reports/2026-09-06-cch-product-guide-v5.15.0.html).
+
+For a project without a pinned language setting, you can also choose Japanese
+when starting Claude Code:
+
+```bash
+CLAUDE_CODE_HARNESS_LANG=ja claude
+```
+
+A project language setting takes priority over this environment variable.
+An explicit instruction in the conversation takes priority over both.
 
 ## Contributing
 
-Issues and PRs welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
+Describe what you expected, what happened, and how to reproduce it in an Issue.
+For changes, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Acknowledgments
 
-- [AI Masao](https://note.com/masa_wunder) — hierarchical skill design
-- [Beagle](https://github.com/beagleworks) — test tampering prevention patterns
+[AI Masao](https://note.com/masa_wunder) contributed ideas on organizing skills;
+[Beagle](https://github.com/beagleworks) contributed test integrity patterns.
 
 ## License
 
-MIT. See [LICENSE.md](LICENSE.md).
+[MIT](LICENSE.md).

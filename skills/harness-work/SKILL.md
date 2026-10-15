@@ -374,7 +374,7 @@ review/cherry-pick の直列責務は core 側に残す（adapter smoke target�
 ```
 Lead (this agent)
 ├── Worker (task-worker agent) — 実装担当
-├── Advisor (claude-code-harness:advisor) — 方針助言
+├── Advisor (harness:advisor) — 方針助言
 └── Reviewer (code-reviewer agent) — レビュー担当
 ```
 

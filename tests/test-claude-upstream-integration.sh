@@ -1,7 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Historical upstream snapshots remain pinned in the immutable pre-rewrite
+# changelog. The current changelog presents the same releases for end users.
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# Protect the historical evidence used below from silent rewriting.
+python3 - "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" <<'PYHASH'
+import hashlib
+import sys
+from pathlib import Path
+expected = "67c2616a55d55bd66597f9bae56bb6c99b1973082e6fc51e0c3620d5b8f28617"
+actual = hashlib.sha256(Path(sys.argv[1]).read_bytes()).hexdigest()
+if actual != expected:
+    raise SystemExit("historical changelog archive has changed")
+PYHASH
 
 # Phase 64.1.1 / 64.1.3: archive-aware Plans.md grep helper を共有 library から source
 # helper 実装と説明は tests/lib/grep_plans_or_archive.sh を参照。
@@ -210,7 +224,7 @@ UPSTREAM_SNAPSHOT_DOC="${ROOT_DIR}/docs/upstream-update-snapshot-2026-04-21.md"
   exit 1
 }
 for referencing_file in \
-  "${ROOT_DIR}/CHANGELOG.md" \
+  "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" \
   "${ROOT_DIR}/docs/CLAUDE-feature-table.md"; do
   grep -q 'upstream-update-snapshot-2026-04-21' "${referencing_file}" || {
     echo "${referencing_file} is missing the expected upstream-update-snapshot-2026-04-21 reference"
@@ -291,7 +305,7 @@ PHASE53_SNAPSHOT_DOC="${ROOT_DIR}/docs/upstream-update-snapshot-2026-04-23.md"
   exit 1
 }
 for referencing_file in \
-  "${ROOT_DIR}/CHANGELOG.md" \
+  "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" \
   "${ROOT_DIR}/docs/CLAUDE-feature-table.md"; do
   grep -q 'upstream-update-snapshot-2026-04-23' "${referencing_file}" || {
     echo "${referencing_file} is missing the expected upstream-update-snapshot-2026-04-23 reference"
@@ -587,7 +601,7 @@ CODEX_MCP_DIAGNOSTICS_DOC="${ROOT_DIR}/docs/codex-mcp-diagnostics.md"
   echo "${CODEX_MCP_DIAGNOSTICS_DOC} does not exist"
   exit 1
 }
-grep -q 'Codex MCP diagnostics / plugin loading' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'Codex MCP diagnostics / plugin loading' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must mention Codex MCP diagnostics / plugin loading"
   exit 1
 }
@@ -717,7 +731,7 @@ grep -q 'Codex 0.123.0 realtime handoff silence.*A: docs 化済み' "${ROOT_DIR}
   echo "Feature Table must mark 53.2.3 realtime handoff silence guidance as done"
   exit 1
 }
-grep -q 'Codex realtime handoff silence policy' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'Codex realtime handoff silence policy' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must mention Codex realtime handoff silence policy"
   exit 1
 }
@@ -740,7 +754,7 @@ grep -q 'Codex 0.123.0 sandbox / exec changes.*A: docs 化済み' "${ROOT_DIR}/d
   echo "Feature Table must mark 53.2.4 sandbox / exec changes as docs done"
   exit 1
 }
-grep -q 'Codex sandbox / exec policy' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'Codex sandbox / exec policy' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must mention Codex sandbox / exec policy"
   exit 1
 }
@@ -834,7 +848,7 @@ grep -q 'Codex 0.123.0 automatic bug fixes.*C: Codex 自動継承' "${ROOT_DIR}/
   echo "Feature Table must mark 53.2.5 automatic bug fixes as Codex automatic inheritance"
   exit 1
 }
-grep -q 'Codex automatic bug fix inheritance' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'Codex automatic bug fix inheritance' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must mention Codex automatic bug fix inheritance"
   exit 1
 }
@@ -877,7 +891,7 @@ PHASE56_FOLLOWUP_DOC="${ROOT_DIR}/docs/upstream-followups-phase56-2026-04-25.md"
   exit 1
 }
 for referencing_file in \
-  "${ROOT_DIR}/CHANGELOG.md" \
+  "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" \
   "${ROOT_DIR}/docs/CLAUDE-feature-table.md"; do
   grep -q 'upstream-update-snapshot-2026-04-25' "${referencing_file}" || {
     echo "${referencing_file} is missing the expected upstream-update-snapshot-2026-04-25 reference"
@@ -968,27 +982,27 @@ grep -q 'Plans `56.1.1`-`56.2.4`' "${ROOT_DIR}/docs/CLAUDE-feature-table.md" || 
   echo "Feature Table must link the Phase 56 row back to Plans 56.1.1-56.2.4"
   exit 1
 }
-grep -q 'Phase 56: Claude Code 2.1.119 / Codex 0.124.0 upstream snapshot' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'Phase 56: Claude Code 2.1.119 / Codex 0.124.0 upstream snapshot' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must include the Phase 56 upstream snapshot"
   exit 1
 }
-grep -q 'docs/upstream-followups-phase56-2026-04-25.md' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'docs/upstream-followups-phase56-2026-04-25.md' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must mention the Phase 56 follow-up decisions doc"
   exit 1
 }
-grep -q 'effort.level` / `thinking.enabled` を表示・記録する' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'effort.level` / `thinking.enabled` を表示・記録する' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must mention the statusline effort/thinking adoption"
   exit 1
 }
-grep -q 'shipped `codex/.codex/config.toml` は no-op' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'shipped `codex/.codex/config.toml` は no-op' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must mention the Codex hooks no-op decision"
   exit 1
 }
-grep -q 'one primary environment per write turn' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'one primary environment per write turn' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must mention the multi-environment safe default"
   exit 1
 }
-grep -q 'codex-primary-environment-guard.sh' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'codex-primary-environment-guard.sh' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must mention the primary-environment write guard"
   exit 1
 }
@@ -1082,7 +1096,7 @@ PHASE58_CODEX_PLUGIN_DOC="${ROOT_DIR}/docs/codex-plugin-workflows-policy.md"
   exit 1
 }
 for referencing_file in \
-  "${ROOT_DIR}/CHANGELOG.md" \
+  "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" \
   "${ROOT_DIR}/docs/CLAUDE-feature-table.md"; do
   grep -q 'upstream-update-snapshot-2026-05-03' "${referencing_file}" || {
     echo "${referencing_file} is missing the expected upstream-update-snapshot-2026-05-03 reference"
@@ -1229,15 +1243,15 @@ grep -q 'Plans `58.1.1`-`58.3.2`' "${ROOT_DIR}/docs/CLAUDE-feature-table.md" || 
   echo "Feature Table must link the Phase 58 row back to Plans 58.1.1-58.3.2"
   exit 1
 }
-grep -q 'Phase 58: Claude Code 2.1.120-2.1.126 / Codex 0.125.0-0.128.0 upstream snapshot' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'Phase 58: Claude Code 2.1.120-2.1.126 / Codex 0.125.0-0.128.0 upstream snapshot' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must include the Phase 58 upstream snapshot"
   exit 1
 }
-grep -q 'docs/upstream-followups-phase58-2026-05-03.md' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'docs/upstream-followups-phase58-2026-05-03.md' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must mention the Phase 58 follow-up decisions doc"
   exit 1
 }
-grep -q 'protected path taxonomy' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'protected path taxonomy' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must mention protected path taxonomy follow-up"
   exit 1
 }
@@ -1407,7 +1421,7 @@ PHASE62_SNAPSHOT_DOC="${ROOT_DIR}/docs/upstream-update-snapshot-2026-05-07.md"
   exit 1
 }
 for referencing_file in \
-  "${ROOT_DIR}/CHANGELOG.md" \
+  "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" \
   "${ROOT_DIR}/docs/CLAUDE-feature-table.md"; do
   grep -q 'Phase 62' "${referencing_file}" || {
     echo "${referencing_file} is missing the expected Phase 62 reference"
@@ -1430,7 +1444,7 @@ PHASE67_SNAPSHOT_DOC="${ROOT_DIR}/docs/upstream-update-snapshot-2026-05-10.md"
   exit 1
 }
 for referencing_file in \
-  "${ROOT_DIR}/CHANGELOG.md" \
+  "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" \
   "${ROOT_DIR}/docs/CLAUDE-feature-table.md"; do
   grep -q 'Phase 67' "${referencing_file}" || {
     echo "${referencing_file} is missing the expected Phase 67 reference"
@@ -1449,7 +1463,7 @@ grep -q 'Phase 67 Codex 0.130.0 stable snapshot' "${ROOT_DIR}/docs/CLAUDE-featur
   echo "Feature Table must include the Phase 67 Codex 0.130.0 stable snapshot row"
   exit 1
 }
-grep -q 'Phase 67: Codex 0.130.0 stable upstream snapshot' "${ROOT_DIR}/CHANGELOG.md" || {
+grep -q 'Phase 67: Codex 0.130.0 stable upstream snapshot' "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" || {
   echo "CHANGELOG must include the Phase 67 Codex 0.130.0 stable upstream snapshot"
   exit 1
 }
@@ -1498,7 +1512,7 @@ PHASE80_ADOPTION_DOC="${ROOT_DIR}/docs/upstream-adoption-plan-2026-05-27.md"
   exit 1
 }
 for referencing_file in \
-  "${ROOT_DIR}/CHANGELOG.md" \
+  "${ROOT_DIR}/CHANGELOG.md.archive-2026-10-13.md" \
   "${ROOT_DIR}/docs/CLAUDE-feature-table.md"; do
   grep -q 'Phase 80' "${referencing_file}" || {
     echo "${referencing_file} is missing the expected Phase 80 reference"

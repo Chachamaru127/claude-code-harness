@@ -16,7 +16,7 @@ description: Claude Codeへの作業依頼プロンプトを生成
 次の Markdown を出力してください：
 
 ```markdown
-/claude-code-harness:core:work
+/harness:core:work
 <!-- ultrathink: PM からの依頼は原則重要タスクのため、常に high effort を指定 -->
 ultrathink
 

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Isolated HOME must not make a runtime-manager shim load an untrusted user config.
+NODE_RUNTIME="$(node -p 'process.execPath')"
+export PATH="$(dirname "$NODE_RUNTIME"):$PATH"
+
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MANIFEST="${ROOT_DIR}/.grok-plugin/plugin.json"
 AGENTS="${ROOT_DIR}/.grok/AGENTS.md"
@@ -53,7 +57,7 @@ function assert(cond, msg) {
     process.exit(1);
   }
 }
-assert(manifest.name === "claude-code-harness", "manifest name mismatch");
+assert(manifest.name === "harness", "manifest name mismatch");
 assert(manifest.version === version, "manifest version mismatch");
 assert(manifest.skills === "../skills/", "manifest skills path must target core skills relative to .grok-plugin");
 assert(/supported/i.test(String(manifest.description || "")), "manifest description must reflect supported tier");
@@ -190,8 +194,8 @@ if ! HOME="$SETUP_TMP_HOME" HARNESS_GROK_DIST="$SETUP_DIST" bash "$SETUP_SCRIPT"
   fail "setup-grok.sh install failed"
 fi
 
-INSTALLED="${SETUP_TMP_HOME}/.grok/plugins/claude-code-harness"
-[ -d "$INSTALLED" ] || fail "setup-grok must install to ~/.grok/plugins/claude-code-harness"
+INSTALLED="${SETUP_TMP_HOME}/.grok/plugins/harness"
+[ -d "$INSTALLED" ] || fail "setup-grok must install to ~/.grok/plugins/harness"
 if [ -L "$INSTALLED" ]; then
   fail "setup-grok install must be a real directory, not a symlink"
 fi

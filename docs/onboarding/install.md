@@ -32,21 +32,21 @@ Then inside Claude Code:
 
 ```text
 /plugin marketplace add Chachamaru127/claude-code-harness
-/plugin install claude-code-harness@claude-code-harness-marketplace
+/plugin install harness@claude-code-harness-marketplace
 /harness-setup
 ```
 
 Update:
 
 ```text
-/plugin update claude-code-harness
+/plugin update harness
 /harness-setup
 ```
 
 Uninstall:
 
 ```text
-/plugin uninstall claude-code-harness
+/plugin uninstall harness
 ```
 
 First prompt:
@@ -248,8 +248,8 @@ Uninstall:
 
 ```bash
 mkdir -p ~/.cursor/backups/manual-cursor-uninstall
-[ -d ~/.cursor/plugins/local/claude-code-harness ] \
-  && mv ~/.cursor/plugins/local/claude-code-harness ~/.cursor/backups/manual-cursor-uninstall/
+[ -d ~/.cursor/plugins/local/harness ] \
+  && mv ~/.cursor/plugins/local/harness ~/.cursor/backups/manual-cursor-uninstall/
 ```
 
 This uninstall path removes only the copied Harness local plugin. It does not
@@ -271,7 +271,7 @@ Verification command:
 
 ```bash
 bash scripts/setup-cursor.sh --check
-test -f ~/.cursor/plugins/local/claude-code-harness/skills/breezing/SKILL.md
+test -f ~/.cursor/plugins/local/harness/skills/breezing/SKILL.md
 ```
 
 Success look: Cursor lists Harness skills (for example `/breezing`,
@@ -296,7 +296,7 @@ cd claude-code-harness
 Then restart Grok or open a new session so the user plugin and skills register
 in any project. Prefer the CLI install path (`grok plugin install` under the
 hood). If the Grok CLI is missing, setup falls back to a real-directory copy
-under `~/.grok/plugins/claude-code-harness`.
+under `~/.grok/plugins/harness`.
 
 Update:
 
@@ -310,12 +310,12 @@ Uninstall:
 
 ```bash
 # When installed via CLI:
-grok plugin uninstall claude-code-harness --confirm
+grok plugin uninstall harness --confirm
 
 # Fallback copy path:
 mkdir -p ~/.grok/backups/manual-grok-uninstall
-[ -d ~/.grok/plugins/claude-code-harness ] \
-  && mv ~/.grok/plugins/claude-code-harness ~/.grok/backups/manual-grok-uninstall/
+[ -d ~/.grok/plugins/harness ] \
+  && mv ~/.grok/plugins/harness ~/.grok/backups/manual-grok-uninstall/
 ```
 
 This uninstall path removes only the Harness Grok plugin install. It does not
@@ -338,7 +338,7 @@ Verification command:
 ```bash
 bash scripts/setup-grok.sh --check
 test -f ~/.local/share/claude-code-harness/grok/skills/breezing/SKILL.md \
-  || test -f ~/.grok/plugins/claude-code-harness/skills/breezing/SKILL.md
+  || test -f ~/.grok/plugins/harness/skills/breezing/SKILL.md
 ```
 
 Success look: Grok lists Harness skills (for example `/breezing`,
@@ -430,3 +430,5 @@ rg -n "Antigravity CLI.*future/unsupported|official or verified adapter route" d
 
 Success look: Antigravity remains `future/unsupported` or `not observed`; the
 public onboarding path does not present it as installable.
+
+For the old Claude plugin ID, follow [the rename guide](plugin-rename.md). Updating the old ID does not switch its name.

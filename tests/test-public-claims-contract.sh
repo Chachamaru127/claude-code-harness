@@ -31,7 +31,7 @@ grep -Fq "Plugin version: \`$version\`" "$COMPAT_DOC" \
   || fail "compatibility doc does not use VERSION=$version"
 grep -Fq "Go-native" "$COMPAT_DOC" \
   || fail "compatibility doc does not describe the Go-native runtime"
-grep -Fq 'TDD required when the task says so.' "$ROOT_DIR/README.md" \
+grep -Fq 'When a task requires test-first development' "$ROOT_DIR/README.md" \
   || fail "README must keep task-scoped TDD wording"
 grep -Fq 'enabled = false' "$ROOT_DIR/harness.toml" \
   || fail "TDD local-trial default must remain disabled"

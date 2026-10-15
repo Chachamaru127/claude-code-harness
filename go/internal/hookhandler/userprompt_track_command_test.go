@@ -299,3 +299,23 @@ func TestTrackCommandHandler_NoSessionIDNoWrite(t *testing.T) {
 		t.Fatalf("must not write a record without session_id (err=%v)", err)
 	}
 }
+
+func TestTrackCommandHandler_HarnessNamespace(t *testing.T) {
+	for _, prompt := range []string{"/harness:harness-review", "/harness/harness-review", "/harness:review:harness-review"} {
+		t.Run(prompt, func(t *testing.T) {
+			dir := t.TempDir()
+			h := &TrackCommandHandler{ProjectRoot: dir}
+			input, err := json.Marshal(map[string]string{"prompt": prompt})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var out bytes.Buffer
+			if err := h.Handle(bytes.NewReader(input), &out); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := os.ReadFile(filepath.Join(dir, ".claude", "state", "pending-skills", "harness-review.pending")); err != nil {
+				t.Fatalf("namespaced command did not require its skill: %v", err)
+			}
+		})
+	}
+}

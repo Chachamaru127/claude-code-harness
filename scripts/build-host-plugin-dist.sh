@@ -212,7 +212,7 @@ write_generated_cursor_manifest() {
 const fs = require("fs");
 const [dstPath, version] = process.argv.slice(2);
 const manifest = {
-  name: "claude-code-harness",
+  name: "harness",
   version,
   description: "Candidate Cursor adapter for Claude Code Harness Plan, Work, Review, and Release workflows.",
   author: {
@@ -314,7 +314,7 @@ write_generated_grok_manifest() {
 const fs = require("fs");
 const [dstPath, version] = process.argv.slice(2);
 const manifest = {
-  name: "claude-code-harness",
+  name: "harness",
   version,
   description: "Internal-compatible Grok adapter for Claude Code Harness Plan, Work, Review, and Release workflows.",
   author: {

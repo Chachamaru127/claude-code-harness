@@ -26,3 +26,11 @@
 !/hokage/
 /hokage/*
 !/hokage/hokage-hero.jpg
+
+# Bilingual SVG motion source, reduced-motion posters and README GIFs.
+!/readme/hero-motion-en.svg
+!/readme/hero-motion-en.gif
+!/readme/hero-motion-en-poster.svg
+!/readme/hero-motion-ja.svg
+!/readme/hero-motion-ja.gif
+!/readme/hero-motion-ja-poster.svg

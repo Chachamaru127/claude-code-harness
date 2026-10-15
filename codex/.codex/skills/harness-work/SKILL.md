@@ -410,7 +410,7 @@ Go opt-in の `HARNESS_TEAM_HIERARCHY=sublead` は CLI mini-plan 入口未実装
 ```
 Lead (this agent)
 ├── Worker (resolver result: Codex native spawn_agent / codex-companion / cursor-companion) — 実装担当
-├── Advisor (claude-code-harness:advisor) — 方針助言
+├── Advisor (harness:advisor) — 方針助言
 └── Reviewer (code-reviewer agent) — レビュー担当
 ```
 

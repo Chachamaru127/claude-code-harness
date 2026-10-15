@@ -88,7 +88,7 @@ claude /plugin marketplace add Chachamaru127/claude-code-harness 2>/dev/null || 
 
 # Install
 echo "  Installing plugin..."
-claude /plugin install claude-code-harness@claude-code-harness-marketplace 2>/dev/null || {
+claude /plugin install harness@claude-code-harness-marketplace 2>/dev/null || {
   echo -e "${YELLOW}Note: Plugin may already be installed or requires manual installation.${NC}"
 }
 

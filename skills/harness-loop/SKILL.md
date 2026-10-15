@@ -143,7 +143,7 @@ wake-up
   ▼
 [Step 5] 1 タスクサイクル実行
   worker_result = Agent(
-      subagent_type="claude-code-harness:worker",  # worker エージェント（harness-work ではない）
+      subagent_type="harness:worker",  # worker エージェント（harness-work ではない）
       prompt="タスク: ${task_id}\n内容と目的: <選択済み Plans.md の内容・理由>\n担当範囲: <owned paths と除外範囲>\nDoD: <Plans.md から抽出>\nplan/spec: <選択済みパス>\ncontract_path: ${CONTRACT_PATH}\n証拠と前回結果: <実行結果・失敗履歴・advisor response>\n原依頼と承認の参照: <適用範囲と参照先>\nmode: breezing\n担当範囲で方法を選び、他担当の変更を戻さず完了してください。判断理由、検証コマンドの実結果と証拠、未確認点を返してください。",
       isolation="worktree",
       run_in_background=false

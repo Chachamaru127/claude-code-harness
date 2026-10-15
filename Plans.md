@@ -415,3 +415,62 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 
 **完了条件**: main、タグ、GitHub Release、4環境の配布物が同じリリースを示し、未解決の critical / major がない。
 **検証記録**: `.claude/state/release-20260906/`。ローカル確認と公開後の確認を別に記録する。
+
+## Phase 148: 利用者向け日英READMEと変更履歴の再構成 (2026-10-13)
+
+**目的**: 非エンジニアが使い道、導入、任せる範囲、更新時の影響を判断できる文章にする。
+**承認元**: READMEとCHANGELOGを0ベースで日英のplain languageに書き直す依頼。harness-releaseの実行を含む。公開操作は完成した成果物とリリース計画の単一確認後。
+**基準版**: origin/main `6c198b4c76f983d82a93048d67807b45551a6dc6`、VERSION 5.15.0。元の作業ツリーは古く、無関係な未保存変更を含むため専用worktreeを使用。
+**仕様影響**: 文書のみ。host tier、モデル、権限、動作は変更しない。
+**触るパス**: docs/images/readme/hero-motion-{en,ja}.*、docs/images/.gitignore、docs/research/readme-visual-asset-manifest.md、specs/2026-10-readme-motion/design.md、specs/2026-10-readme-motion/build-assets.py、README.md、README_ja.md、CHANGELOG.md、CHANGELOG_ja.md、CHANGELOG.md.archive-2026-10-13.md、codex/README.md（導入導線の整合が必要な場合）、spec.md、Plans.md、tests/test-readme-product-surface.sh（編集方針に依存する文面の期待値のみ）、tests/test-claude-upstream-integration.sh（過去原文の確認先と固定SHA検査のみ）、tests/test-public-claims-contract.sh（taskごとのテスト指定という意味を保持した文章の期待値のみ）。
+**AC**: (1)日英のREADMEが利用目的、導入、最初の依頼、判断、制限、費用、データ、再開、更新を説明する。(2)日英変更履歴が全版と日付、比較リンク、更新判断に効く条件を保持する。(3)コマンドと対応範囲が実仕様と一致し、日英で意味が一致する。(4)元の変更履歴を無改変で保持する。(5)既存の対象検査と独立レビューが合格する。(6)公開前に版数、対象ファイル、main反映と公開内容を本人へ提示する。
+**追加指示**: ヒーローと序盤は読む前提にしない。大きい課題提示と3つの視覚的な対応で理解できる構成にし、説明は後ろへ送る。
+**非対象**: 製品動作、保護設定、既存の個人設定、無関係な報告書。履歴の抹消、架空の互換性保証、リリース成功の先取り。
+**team_validation_mode**: subagent。AstraとFableの事前相談、執筆と別家系の判定、図面検査。
+
+| ID | Task | DoD | Depends | Status |
+|----|------|-----|---------|--------|
+| 148.1 | `[lane:fast]` `[tdd:skip:docs-only]` 実仕様と履歴を確認し日英文書を再作成 | AC1-4を満たす文章。過去原文保存 | - | cc:done [日英4文書、SVG/GIF/静止版を作成。159版の原文条件を全件照合して復元。原文SHAと149比較リンクを保持。独立判定APPROVE] |
+| 148.2 | `[lane:gate]` `[tdd:skip:validation-review]` 文書検証と独立判定 | AC5。試験コマンドの終了コードと判定を記録 | 148.1 | cc:done [README/SVG R3、CHANGELOG R3ともClaude Opus 5.5 APPROVE。c43e49f18ba1ac10ddba9d050b7e1d8e8e20a79dでclean同一SHAの実試験exit0。実効性の未検証条件も日英に明記] |
+| 148.3 | `[lane:release]` `[tdd:skip:release-preparation]` リリース準備 | AC6。preflight、変更履歴昇格案、公開文面を揃える | 148.2 | cc:done [patch5.15.1の日英公開文面と公開手順をローカル準備。VERSIONは未変更。Claude2.1.296のmanifest検証とtag dry-runは予約名拒否でexit1。公開準備の成果物は別記のroute-jobに保存] |
+| 148.4 | `[lane:release]` `[tdd:skip:release-verification]` 承認後に反映と公開を確認 | main到達可能なtag、GitHub Release、配布物の読戻し | 148.3 | cc:TODO [停止中: 配布名の変更は新しい製品判断。push/merge/tag/Releaseは未実施。manifest検証の成功と本人の公開確認後に進む] |
+
+**停止条件**: 公開承認前はpush、merge、tag、公開をしない。preflightや独立判定の失敗を成功に置き換えない。新しい製品判断が必要な変更は今回の編集へ混ぜない。
+
+**文書公開準備の記録**: route-job `20261013-202516-ep3t`。
+
+**改名前の公開準備**: Claude Code 2.1.296はmanifest名 `claude-code-harness` を予約名として拒否する。`claude plugin validate .claude-plugin/plugin.json` と `claude plugin tag .claude-plugin --dry-run` はexit1。版番号の変更、push、merge、tag、公開は未実施。名前変更や検査回避は今回の文書編集に混ぜない。
+
+
+## Phase 149: 配布IDをharnessへ変更 (2026-10-14)
+
+**承認元**: 配布IDをharnessへ変更し既存利用者の更新手順を整える提案に対する本人の「いいよ」。
+**基準版**: docs/user-first-bilingual `3e1fdb2c279e8a82c5cbc2107c891135b2cdcb68`。文書の受入は完了済み。
+**目的**: Claude Codeの予約名拒否を解消し、新しいIDでも設定生成とフックの起動を正しく保つ。
+**非対象**: GitHubリポジトリ名、marketplace名、内部設定と記憶の保存先、保護規則、モデル、既存の個人設定の変更。公開、旧版履歴の書換えはしない。
+**触るパス**: 全4実行先の配布manifest、scripts/build-host-plugin-dist.shとsetup-cursor.sh/setup-grok.sh、harness.toml、.claude-plugin/plugin.jsonとmarketplace.json、両hooks.json、go/internal/hostgen/hostgen.go、scripts/sync-plugin-cache.sh、配布IDを参照する導入/検査/生成元、README日英、現行onboarding日英、CHANGELOG日英のUnreleased、bin/harness-*（Go差分の再生成）、対応する検査、Plans.md/spec.md、診断スクリプトが案内するdocs/local-harness-environment-cleanup.md。追加調査で共有marketplaceと全manifestのID一致が必要と判明したため、配布IDを全実行先で揃える。go/cmd/harness/migration_report.go、scripts/userprompt-track-command.sh、go/internal/hookhandler/userprompt_track_command.go、quick-install/codex-setup-local/opencode-setup-localと関連検査も対象。旧名前空間は移行の入力としてだけ認識する。共有skills/Codex差分/templatesと追跡されたCodex/OpenCode/Cursorの鏡像、docs/team-composition.mdにある実行用名前空間も揃える。tests/validate-plugin.shとCursor/Grokの隔離検査は、一時HOMEでも実際のNode本体を使う。モデルと期待する動作は変えない。
+**AC1**: 正本と生成manifest、marketplace entryがharnessを示し、Claude2.1.296でmanifest検証成功。VERSIONは5.15.0を保つ。
+**AC2**: 設定生成で旧IDへ戻らず、環境指定と新IDのcacheからフックが起動する。設定生成元と配布フックは一致。
+**AC3**: 同じ版でも旧IDのmarketplace cloneへ新IDフックを上書きしない。既存cacheを勝手に作らず、実際のHOMEへ同期や導入を実行しない。
+**AC4**: 日英でrenamesによる設定キー移行、scope別の新ID導入、旧版のkeep-data手動経路、再読込、旧設定の確認を説明し、二重フックを避ける。名前に結び付く保存領域の引継ぎは未確認なら明記。
+**AC5**: 回帰検査と4環境バイナリの整合、独立レビューが成功。ローカル成果物のみ。公開は別の単一確認。
+
+| ID | Task | DoD | Depends | Status |
+|----|------|-----|---------|--------|
+| 149.1 | Astra/Fableの変更範囲確認 | 名前、パス、既存利用者への影響を特定 | - | cc:done [両相談完了。正本と68フック、cache同版別ID、共有marketplace、専用DBの移動条件を特定] |
+| 149.2 | 正本、生成、起動とcache同期を変更 | AC1-3、REDからGREENへの回帰証拠 | 149.1 | cc:done [正本/生成/起動/cacheを変更。旧IDと新名前空間のREDからGREEN。全体154項目と対象19検査成功] |
+| 149.3 | 日英の更新手順とバイナリを揃える | AC4-5の対象検査 | 149.2 | cc:done [4環境再生成。移行手順日英とデータ制約を明記。検査前後cleanの同一SHAで検証0] |
+| 149.4 | 独立判定と公開計画の更新 | APPROVEと同一SHAの試験。公開未実施のまま単一確認へ | 149.3 | cc:done [製品差分17718b96をOpus5.5がPASS。同一SHAで検証0を記録。公開前検査24成功/5警告。現行cleanup導線を補正し、隔離user範囲の設定キー移行も成功。公開候補5.16.0の計画と日英文面はローカル準備済み。公開は未承認] |
+
+**Phase149の公開境界**: mainへのmergeでmarketplace更新利用者に改名が届くため、pushとmergeの前に公開承認を得る。VERSION5.15.0のまま改名だけをmainへ出さない。公開時は5.16.0への同期と4バイナリ再生成をまとめる。製品の独立判定で残った他marketplaceの同名harnessを報告が拾う条件と、隔離検査のNodeディレクトリ優先は公開計画へ記録した。
+
+
+## Phase 150: v5.16.0公開 (2026-10-15)
+
+本人がv5.16.0公開を明示承認。版同期、日英Unreleased昇格、4バイナリ再生成、検査、push/PR/CI/mainマージ、到達可能なmain上のタグ、Releaseと配布物検証を行う。製品と文書は0fe2c1c1まで独立PASS済み。
+
+| ID | Task | DoD | Status |
+|----|------|-----|--------|
+| 150.1 | 版同期と4バイナリ | 5.16.0同期、日英同日、検査成功 | cc:WIP |
+| 150.2 | PRとmain反映 | 必須CI成功、承認済み内容をmerge | cc:TODO |
+| 150.3 | タグと公開検証 | main到達タグv5.16.0、Release本文と4配布物を確認 | cc:TODO |

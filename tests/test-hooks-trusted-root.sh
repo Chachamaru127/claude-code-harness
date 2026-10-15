@@ -18,7 +18,7 @@ for hooks in "$ROOT/hooks/hooks.json" "$ROOT/.claude-plugin/hooks.json"; do
       'valid_root(){' \
       '[ -x "$r/bin/harness" ]' \
       '[ -f "$r/.claude-plugin/plugin.json" ]' \
-      'claude-code-harness' \
+      '\"harness\"' \
       'root="${CLAUDE_PLUGIN_ROOT:-}"; if ! valid_root "$root"'
     do
       case "$command" in

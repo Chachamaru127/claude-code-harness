@@ -1,319 +1,288 @@
-# Claude Code Harness
+<p align="center"><img src="docs/images/claude-harness-logo-with-text.png" alt="Claude Harness" width="220"></p>
 
-<p align="center">
-  <img src="docs/images/claude-harness-logo-with-text.png" alt="Claude Harness" width="400">
-</p>
 
-<p align="center">
-  <strong>Plan. Work. Review. Ship.</strong><br>
-  <em>Claude Code / Codex CLI / Cursor / Grok の作業を、計画から出荷まで崩れにくくする。</em>
-</p>
 
-<p align="center">
-  <a href="https://github.com/Chachamaru127/claude-code-harness/releases/latest"><img src="https://img.shields.io/github/v/release/Chachamaru127/claude-code-harness?display_name=tag&sort=semver" alt="Latest Release"></a>
-  <a href="LICENSE.md"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License"></a>
-  <a href="docs/CLAUDE_CODE_COMPATIBILITY.md"><img src="https://img.shields.io/badge/Claude_Code-v2.1+-purple.svg" alt="Claude Code"></a>
-  <img src="https://img.shields.io/badge/Skills-5_core_%2F_23_total-orange.svg" alt="Skills: 5 core verbs / 23 total">
-  <img src="https://img.shields.io/badge/Guardrails-R01%E2%80%93R16_%2B_5_floors-B5462F.svg" alt="Guardrails: R01-R16 plus 5 runtime floor categories">
-  <img src="https://img.shields.io/badge/Core-Go_Native-00ADD8.svg" alt="Go Core">
-</p>
+<h1 align="center">AIはコードを書く。<br>あなたは進捗と品質を追い続ける。</h1>
 
-<p align="center">
-  <a href="README.md">English</a> | 日本語
-</p>
+<p align="center"><a href="docs/images/readme/hero-motion-ja.svg"><picture><source media="(prefers-reduced-motion: reduce)" srcset="docs/images/readme/hero-motion-ja-poster.svg"><img src="docs/images/readme/hero-motion-ja.gif" alt="散らばった仕事が計画、実装と検査、別担当の点検へ整い、最後に利用者へ判断が返る" width="880"></picture></a></p>
 
-<p align="center">
-  <img src="docs/images/readme/loop-ja.svg" alt="運用ループ: 計画、実装、レビュー、リリース。すべてのコマンドは実行直前に検査される" width="880">
-</p>
+<p align="center"><strong>計画、検査、レビューまで任せる。<br>結果を見て、判断する。</strong></p>
 
-## 何を解決するか
+普段のClaude Code、Codex CLI、Cursor、Grokと、そのアカウントを使えます。
+[使っているAIから始める](#ツール別の導入) ／ [小さな仕事を試す](#最初に頼む仕事)
 
-Claude Code Harness（CCH）は、Claude Code や Codex に、計画から実装、検証、レビューまでを任せるための開発プラグインです。
-「何をできるようにしたいか」と「何をもって完成とするか」を渡すと、担当が既存のコードを調べ、作業を組み立てます。
+[English](README.md) | 日本語
+[![最新リリース](https://img.shields.io/github/v/release/Chachamaru127/claude-code-harness?display_name=tag&sort=semver)](https://github.com/Chachamaru127/claude-code-harness/releases/latest)
 
-**利用者が決めるのは、作るもの、完成条件、実行を許可する範囲です。**
-担当はその範囲で方法を選び、必要な修正と確認を続けます。
-結果は変更内容、検証結果、未確認事項として返すため、完成条件を満たしたかを判断できます。
+## 導入して始める
 
-## 30 秒で導入
+コーディング支援AIの導入とログインを済ませ、書き込みできるプロジェクトのフォルダを用意します。
+既にHarnessを使っている場合は、再導入やファイル整理の前に[移行ガイド](docs/onboarding/migration.md)を確認してください。
+
+Claude Codeを使う場合は、ターミナル（システムのコマンドを入力するアプリ）で起動します。
 
 ```bash
 claude
+```
+
+続いて、**Claude Codeの会話内で**一行ずつ入力します。
+
+```text
 /plugin marketplace add Chachamaru127/claude-code-harness
-/plugin install claude-code-harness@claude-code-harness-marketplace
+/plugin install harness@claude-code-harness-marketplace
 /harness-setup
 ```
 
-そのあと、小さめの依頼を 1 つ渡してみてください。
+`/harness-setup`は、プロジェクトで使う作業指示と検査を準備します。
+提案された変更内容を確認してから受け入れます。
+導入時間は、既存の設定と通信環境によって変わります。
 
-```bash
-/harness-plan README の導入手順をわかりやすくして
-```
+Claude用のプラグインIDを`harness`に変更しました。
+リポジトリ名と配布元のmarketplace名は同じです。
+旧IDの`claude-code-harness`を導入済みなら、[既存のClaude環境の切替手順](docs/onboarding/plugin-rename_ja.md)を使います。
+旧IDに更新コマンドを実行するだけでは、名前は切り替わりません。
+ツールの一覧は確認済みの経路を示し、将来のすべての版を保証するものではありません。
 
-Harness が仕様（= 何が正しいかを決めた文書）と作業一覧（= やることを並べた表）
-の下書きを作ります。**あなたの仕事は計画を書くことではありません。**
-実行が進む前に、出てきた内容を承認するか直すことです。
+別のAIを使う場合は、[ツール別の導入](#ツール別の導入)から選べます。
+[導入ガイド](docs/onboarding/index.md)にも、最初の手順があります。
 
-別のツールを使っている場合は、後述の[ツール別の導入](#ツール別の導入)を見てください。
+## 最初に頼む仕事
 
-## 5 動詞のワークフロー
+レビューは、実装とは別の担当による変更内容の点検です。
+利用者が決めるのは、作りたい結果、完成条件、許可する操作です。
 
-覚えるのは plan、work、review、sync、release の 5動詞スキルだけです。
-この 5 つで回すのが 5動詞ワークフローです。
-（`/harness-setup` は導入時に 1 回だけ実行します。）
-各工程は、次の工程が必要とする材料を残し、それぞれに通過条件があります。
 
-| コマンド | 何が起きるか | 通過条件 |
-|---|---|---|
-| `/harness-plan` | 依頼を仕様と作業一覧にする。範囲、完了条件、依存関係、未確定事項、停止条件を書く | あなたが承認するか、直す |
-| `/harness-work` | 対象が決まっていれば、その範囲を実装する。件数に応じて単独実行とチーム実行を選ぶ | 範囲が未確定なら先に確認。指定された検証とレビューを通す |
-| `/harness-work 3` | 作業番号 3 だけを実装する | 作業がそう指定していればテストを先に書く |
-| `/harness-work all` | 承認済みの計画をまとめて実行する。計画が固まり、リポジトリの状態が把握できてから使う | 同じテスト条件を、作業ごとに適用する |
-| `/harness-review` | **実装とは切り離して**結果を見る | 重大な指摘があれば完了できない。PR が出せる状態と、リリースできる状態は別 |
-| `/harness-sync` | 計画と実際の実装を突き合わせて、ずれを報告する | 確認した根拠で状態を照合する |
-| `/harness-release` | 検証済みの根拠だけを、変更履歴とタグとリリースにまとめる | リリース前検査を通る |
-
-AI が実際に見ていない情報は、勝手に埋めずに「未確認」のまま残します。
-
-## 依頼したあとの動き
-
-たとえば、注文が二重登録される不具合なら、次のように頼めます。
+結果を自分で確かめられる、小さな変更から始めます。
 
 ```text
-/harness-plan 注文の二重登録を直したい。完成条件は、同じ注文が1件だけ保存されること。
+/harness-plan お問い合わせフォームの二重送信を直して。送信ボタンを素早く2回押しても、メッセージが1件だけ作られること。既存の入力項目と見た目は変えないで。
 ```
 
-計画の範囲と完成条件を確認し、承認してから `/harness-work all` で実行します。
-Codex では `$harness-plan`、`$harness-work all` のようにスキルを指定します。
+Harnessが`spec.md`と`Plans.md`を下書きします。
+提案された動作、変更範囲、確認方法、未確認事項を読みます。
+作業が始まる前に計画を承認するか、意図と違う部分を直します。
 
-1. **計画する**。既存の仕様とコードを読み、再現方法、変更範囲、完成条件を `spec.md` と `Plans.md` に揃えます。
-2. **実装する**。担当へ元の依頼、完成条件、確認済みの根拠を渡します。独立した作業は担当ファイルを分けて並行できます。
-3. **検証して直す**。必要なテストと再現手順で結果を確認します。レビューの指摘は修正担当へ渡し、決められた回数の範囲で修正します。
-4. **結果を返す**。完成条件ごとの結果、変更箇所、実行した検証、残った問題を報告します。
+続いて入力します。
 
-不足している情報は、まず仕様や該当コードから調べます。
-承認済みの範囲にある可逆な作業は、仮定を明記して続けます。
-新しい承認や重大な仕様判断が必要になった場合は、その操作を止め、独立して進められる作業を続けます。
-重大なレビュー指摘が残っている場合や、再修正の上限に達した場合は、未完了の理由と判断材料を返します。
+```text
+/harness-work all
+/harness-review
+```
 
-## モデルの使い分け
+一つ目は承認済みの作業を進める依頼です。
+二つ目は実装とは別の担当にレビューを頼む依頼です。
+Codexでは、スラッシュの代わりに`$harness-plan`、`$harness-work all`、`$harness-review`を使います。
 
-CCH は担当ごとにモデルを選びます。
-effort（推論量）は、モデルが考える処理に割り当てる量の設定です。
-次の表は担当別設定の既定値です。
-主担当の会話では、そのセッションのモデル選択とスキルの設定も使います。
+最後は、実際にフォームを試し、通った検査と未解決の問題を確かめます。
+レビューできる変更でも、外部サービスとの接続や利用者の受け入れ確認が済むまでは公開できない場合があります。
 
-| 担当 | モデル | 推論量 |
+## 何を任せられるか
+
+| 説明をやり直す | 進み具合を追いかける | 「動いた」を確かめる |
 |---|---|---|
-| Claude の難しい判断と相談（`deep` / `advisor`） | Fable 5.1（`claude-fable-5-1`） | `high` |
-| Claude の通常の実装 | Sonnet 5（`claude-sonnet-5`） | `medium` |
-| Claude の独立した専用 Reviewer（レビュー担当） | Sonnet 5（`claude-sonnet-5`） | `xhigh` |
-| Codex の標準処理、難しい判断、レビュー、相談 | GPT-6 astra（`gpt-6-astra`） | `xhigh` |
-| Codex Breezing の実装 Worker（実装担当） | GPT-5.6 luna（`gpt-5.6-luna`） | `max` |
+| 仕様と計画をファイルに残す | 作業状態と判断待ちを見られる | 検査結果と別担当のレビューが返る |
 
-Claude の一般レビュー用の振り分けは Fable 5.1 / `high` です。
-上表の専用 Reviewer は、別の担当定義として Sonnet 5 を使います。
-軽い調査にも別の設定があります。[担当別の全設定](docs/model-routing-policy.md)を参照してください。
+## 作業の進め方
 
-**利用者によるモデルや推論量の手動変更を尊重します。**
-一回の呼出しで指定した値や担当の設定を、その実行経路で使います。
-親の会話でモデルを変えても、すべての子担当が同じモデルに変わる設定ではありません。
-Codex の `ultra` も明示指定として扱い、依頼文の強さから推論量を選び直しません。
+<p align="center"><img src="docs/images/readme/loop-ja.svg" alt="計画、実装、レビュー、公開の流れ" width="880"></p>
 
-## 安全の仕組み
+Harnessは`spec.md`に仕様を、`Plans.md`に作業項目を残します。
+作業票と確認表を共有する仕組みに近いものです。
+実際には、AIが下書きと記録の更新を行い、利用者が完成像を承認します。
 
-CCH の検査に接続された操作は、実行前に Go 製の判定エンジンで調べます。
-外部への送信や削除はファイル差分だけでは確認できないため、実行する操作も判定対象にします。
-適用範囲は利用するアプリによって異なります。[ホスト間の安全差](docs/hardening-parity.md)を参照してください。
+**スキル**は、AIに渡す繰り返し使える作業手順です。
+計画、実装、レビュー、状態確認、公開の5動詞スキルで進める、5動詞ワークフローです。
+初期設定は別に行います。
 
-**強さの違う 2 層**を重ねています。
-
-| 層 | 決めること | 設定との関係 |
+| 依頼やコマンド | 返ってくるもの | 利用者が決めること |
 |---|---|---|
-| **実行時フロア**（5 分類） | 分類ごとの規則で許可または拒否する | 一括無効化の設定はない。通信先や読取対象などの限定的な許可設定はある |
-| **ガードレール**（R01〜R16） | 拒否 / 確認 / 警告 | 一部はプロジェクト設定で変更できる |
+| `/harness-plan` | 仕様、作業項目、完成条件、未確認事項、許可が必要な操作 | 範囲と完成条件の承認や修正 |
+| `/harness-work 3` | 作業3の変更と必要な検査 | 新しい許可や製品判断が必要になった場合の回答 |
+| `/harness-work all` | 承認済みの全作業と、その検査や修正 | 完成条件を満たしたかの判断 |
+| `/harness-review` | 実装とは別の担当による指摘 | 重大な指摘は完了を止める。軽微な提案は残す場合がある |
+| `/harness-sync` | 計画の記録と、確認したプロジェクトの状態との違い | 食い違いをどう直すか |
+| `/harness-release` | 公開計画、版番号の変更案、公開のための検査 | 実行前に公開計画全体を承認するか |
 
-フロアが見ているのは、課金、外部への送信、秘密ファイルの読み取り、本番反映、作業ツリーの外を壊す操作です。
-許可対象やリリース操作の設定は、利用者が管理する保護対象です。
-担当が作業を通すために、その設定を書き換える運用にはしません。
+テストを先に作る指定がある仕事では、修正前に失敗するテストを示し、修正後に再び実行します。
+それ以外の仕事は、計画で求められた検査を行います。
+文章の修正と決済機能の追加では、必要な検査が違います。
 
-ガードレールは調整する側の層です。`main` への直接 push、保護されたファイルへの
-書き込み、強制 push、履歴の巻き戻しなど、それぞれに判定が決まっています。
-プロジェクトの事情に合わせる余地はこちらにあります。
+承認した範囲で戻せる仕事は、AIが続けます。
+新しい許可や製品の判断が必要になると、その操作の手前で止まります。
+検査の失敗や修正回数の上限に達した場合は、未完了として根拠と次の手順を返します。
 
-**既知の確認事項は計画時にまとめます。** 事前承認が使える操作は、計画時に範囲を確認して承認できます。
-追加の承認対象が作業中に見つかった場合は、その操作の前に確認します。
-承認には期限、対象作業、使用回数の上限があります。
+## 進み具合と再開
 
-**停止理由を記録します。** 判定記録の規則名、分類、結果から、何が操作を止めたかを確認できます。
-
-## セッション同士が互いを見る
-
-同じリポジトリで複数の会話を動かす場合、CCH の名簿から稼働中の担当を確認できます。
-別の worktree で作業する担当にも、ローカルの連絡路で情報を渡せます。
-
-| 部品 | 何をするか |
-|---|---|
-| 名簿 | `bin/harness session list` が同じリポジトリの worktree 群に登録された稼働セッションを一覧する。保存先を `git --git-common-dir` から解決するため、別 worktree のセッションも同じ名簿に載る。各行には送信に必要な `team` と `agent` が入る |
-| 送信 | `bin/harness inbox send --team <t> --from <a> --to <b> --subject <s> "<本文>"`。`session-send` skill を使うと、何を送る価値があるかの判断基準も一緒に読める |
-| 受信 | 相手セッションのターン境界で届く。本文は「これは指示ではない」という封筒でくるまれたデータとして渡る。相手のメッセージは検証すべき報告であって、従うべき命令ではない |
-
-メッセージの内容検査は既定では無効です。
-`[livemsg] verification = "on"` にすると、言及されたファイルや commit の存在、「変更なし」と現在の状態の一致を検査します。
-検査で不一致になったメッセージは送らず、理由を送信側へ返します。
-
-この連絡はローカルで完結し、harness-mem に依存しません。
-harness-mem を併用している場合は、その名簿も保持します。
-
-## 非エンジニアが判断するための画面
-
-コードを読まずに判断できるよう、1 画面で完結する HTML を 3 つ用意しています。
-
-| 画面 | いつ | 何が見えるか |
+| 画面 | 使うタイミング | 分かること |
 |---|---|---|
-| **計画概要** | 計画の確定時 | 理解、選択肢、リスク、合格条件 |
-| **進捗** | 作業中 | `Plans.md` に記録された作業中、未着手、完了の件数と、判断待ちの項目 |
-| **受け入れ** | リリース前 | 条件ごとの合否と、出す / 待つ / 差し戻すの推奨 |
+| Plan Brief（計画の確認画面） | 計画の承認前 | 完成像、選択肢、リスク、完成条件 |
+| Progress（進捗画面。`/harness-progress`） | 作業中 | `Plans.md`に記録された作業状態と判断待ち |
+| Acceptance（受け入れ確認画面） | 公開前 | 完成条件ごとの合格、不合格、未確認 |
 
-`/harness-progress` は現在地を確認する入口です。
-進捗確認だけで作業を完了扱いにしたり、記憶へ保存したりしません。
-作業の引継ぎでは、完成したこと、残った問題、検証結果、次に試すことを渡します。
-Claude Code では、編集やコマンド実行後に最大60秒に1回、画面ファイルを再生成します。
-完了率は作業一覧の件数比です。完成条件の合格率や、変更を自動検知した結果とは区別します。
+進捗率は、記録された作業項目の数で計算します。
+機能が動くと証明できた割合ではありません。
+例えば「10項目中8項目完了」でも、一連の操作を試す検査が失敗している場合があります。
+Claude Codeでは、編集やコマンド実行の後に進捗画面を更新します。
+更新は最大で60秒に1回です。
+ほかのAIでは更新方法が異なります。
+
+中断後は、次の依頼で再開できます。
+
+```text
+/harness-work --resume latest
+```
+
+記録された計画、変更、検査結果、残りの仕事を復元します。
+何が復元されたかをAIに示してもらってから、続きを任せます。
+任意の[harness-mem](https://github.com/Chachamaru127/harness-mem)を追加すると、会話をまたぐ記憶と検索も使えます。
+基本の作業手順にharness-memは必須ではありません。
+
+## 許可と制限
+
+Harnessの実行フック（AIの操作前後に検査する接続口）につながる操作を確認します。
+**Go ネイティブガードレールエンジン**は、その規則を適用する同梱プログラムです。
+これを動かすためにNode.jsを入れる必要はありません。
+
+| 検査の層 | 確認する操作 | 利用者が設定できる範囲 |
+|---|---|---|
+| 実行時フロア | 課金、外部送信、秘密の読み取り、本番への配備、作業コピーの外を壊す操作 | 操作の種類ごとに定めた個別の許可。全体を無効にするスイッチはない |
+| ガードレール | 保護ファイル、共有するmainへの直接反映、強制反映、履歴の書き換え | 一部の規則をプロジェクトごとに設定できる |
+
+事前承認できる操作は、計画と一緒に範囲を決めて許可できます。
+許可できる内容は、操作の種類と設定された規則によって変わります。
+AIが自分の検査を通すために保護設定を書き換えることは認めません。
+止まった理由には規則と操作が記録され、原因を調べられます。
+
+検査は、すべてのコマンドを隔離すると保証するものではありません。
+確認できる範囲は、使うAIと操作の起動方法によって変わります。
+Cursorには従来型のファイル操作の隔離がなく、Harness側で制限します。
+Codexの標準の子エージェントは、親の操作権限を引き継ぐ場合があります。
+Reviewerという役割名だけでは読み取り専用になりません。
+companion reviewという別CLIを呼ぶ経路では、読み取り専用の実行を明示します。
+機密を扱う仕事を任せる前に、[AIごとの検査範囲](docs/hardening-parity.md)と[Cursorの制限](docs/CURSOR_INTEGRATION.md)を確認してください。
+
+## 費用とプロジェクトのデータ
+
+HarnessはMITライセンスで、無償で利用や変更ができます。
+コーディング支援AI、モデル提供会社、接続する外部サービスには、それぞれの料金と利用条件があります。
+担当を増やしたり、レビューや再試行を繰り返したりすると、そのサービスの利用量が増える場合があります。
+Harnessがアカウントや全サービス共通の課金上限を提供するわけではありません。
+
+計画と作業記録は、プロジェクトのファイルに残ります。
+実行状態は`.claude/state/`に保存します。
+初期設定では、作業指示と検査用のファイルも追加します。
+AIが読んだ内容には、そのAIサービスのデータ取り扱いが適用されます。
+Harnessを入れても、モデルへの依頼がローカル処理になるわけではなく、提供会社へのデータ送信もなくなりません。
+任意の記憶機能と外部接続は、別の設定とデータ範囲を持ちます。
 
 ## ツール別の導入
 
-導入経路が 4 つあることと、4 つが同じ品質を保証することは**別です**。
-セットアップ script があるのは「入口がある」という意味であって、
-同じ製品保証がある意味ではありません。
+区分は、確認できたHarnessの連携範囲です。
+`supported`は検証済みの導入経路、`internal-compatible`は制限付きの連携、`candidate`は試験段階です。
+`future/unsupported`には、現在の利用者向け導入経路がありません。
+同じ区分でも、権限や機能がすべて同じとは限りません。
 
-区分の英語表記と日本語の対応は、下の折りたたみにまとめています。
-
-| Tool | Tier | 経路 |
+| ツール | 区分 | 始め方、または不足しているもの |
 |---|---|---|
-| Claude Code | `supported` | プラグイン marketplace のあと `/harness-setup` |
-| Codex CLI | `supported` | [`scripts/setup-codex.sh --user`](codex/README.md#option-1-script-recommended-user-based)。Harness 更新後に再実行し、Codex を再起動 |
-| Cursor | `supported` | `scripts/setup-cursor.sh`。閉じ込めは Harness 側で行う（[詳細](docs/CURSOR_INTEGRATION.md)） |
-| Grok | `supported` | `scripts/setup-grok.sh` |
-| Codex app | `candidate` | 簡易検証のみ。CLI 版の実績は流用しない |
-| OpenCode | `internal-compatible` | `scripts/setup-opencode.sh`。実行時の同等性は主張しない |
-| Hermes Agent | `candidate` | 手動リンクによる調査経路。`~/.hermes` がある環境では `harness gen` が turn delivery の hook を生成するようになったが、ガードレールの enforcement は未配線のため tier は据え置き |
-| GitHub Copilot CLI | `candidate` | 手動プロファイルによる調査のみ |
-| Antigravity CLI | `future/unsupported` | 現段階では導入経路なし |
+| Claude Code | `supported` | 上の配布元登録と導入コマンドを実行し、`/harness-setup`を使う |
+| Codex CLI | `supported` | [`scripts/setup-codex.sh --user`を実行](codex/README.md#option-1-script-recommended-user-based)してCodexを再起動 |
+| Cursor | `supported` | `scripts/setup-cursor.sh`を実行してCursorを再読み込み。上の権限制限を確認 |
+| Grok | `supported` | `scripts/setup-grok.sh`を実行して新しい会話を開始 |
+| OpenCode | `internal-compatible` | `scripts/setup-opencode.sh`で指示とスキルを導入。実行時の動作が全体で同等とは未確認 |
+| Codex app | `candidate` | Codex CLIの導入実績から、アプリ版の導入方法までは確認できない |
+| Hermes Agent | `candidate` | 手動のスキル読み込みを試験中。操作を自動で制限する接続は未実装 |
+| GitHub Copilot CLI | `candidate` | 手動の指示を試験中。Harnessの検証済み導入経路はない |
+| Antigravity CLI | `future/unsupported` | 利用者向けの導入経路はない |
 
-<details>
-<summary><strong>対応の区分と、そこに厳しくしている理由</strong></summary>
-
-<br>
-
-| 英語表記 | 日本語の公式表記 |
-|---|---|
-| `supported` | 正式対応 |
-| `internal-compatible` | 互換利用可 / 制限付き対応 |
-| `candidate` | 試験対応 / プレビュー |
-| `future/unsupported` | 非対応 / 将来検討 |
-
-Claude Code、Codex CLI、Cursor、Grok は、主張している経路で H1〜H8 の検査を
-通っています（H4 実機確認 2026-07-17、H7 リリース前検査の fail-closed 配線
-2026-07-19）。他の行は、それぞれが自分で H1〜H8 を通るまで現在の区分のままです
-（`docs/spec/planning-and-host-adapter.md`、Phase 111）。
-
-Harness は Superpowers や Hermes Agent など他プロジェクトの対応実績を
-引き継ぎません。あるホストが格上げされるのは、Harness 自身の導入、起動、実行、
-リリースの証拠が揃ったときだけです。
-
-`not_observed != absent`（観測していないことは、無いことではない）。手元に証拠が
-無いのは「ここでは証明できていない」という意味です。不可能という意味でも、
-対応済みという意味でもありません。
-
-</details>
-
-<details>
-<summary><strong>すでに使っている方へ: 先に棚卸しを出してください</strong></summary>
-
-<br>
+設定スクリプトを使う場合は、Git（プロジェクトの版を管理するプログラム）で、このリポジトリを取得します。
 
 ```bash
-bin/harness doctor --migration-report
+git clone https://github.com/Chachamaru127/claude-code-harness.git
+cd claude-code-harness
 ```
 
-古いプラグインの残骸、重複した Codex スキル、古いリンク、OpenCode の
-バックアップ、記憶の状態を一覧にします。**何も削除しません。**
+続いて、使うAIの設定スクリプトを実行します。
+Codexの`--user`導入は、利用者共通のスキル、規則、管理対象の設定を書き込みます。
+複数のプロジェクトに適用されます。
+既存の`worker.toml`と`reviewer.toml`は、利用者が作ったものでも控えを取って置き換えます。
+プロジェクト単位の導入、更新、取り外しは[導入の詳細](docs/onboarding/install.md)で確認できます。
 
-</details>
+## 大きい仕事とモデルの選択
 
-<details>
-<summary><strong>応用機能</strong></summary>
+`/breezing`は、大きい承認済みの仕事を複数の担当へ分けます。
+`/harness-loop`は上限回数まで仕事を繰り返し、必要なら相談役を呼びます。
+既定の上限は8回です。
+上限に達することと、仕事の完了は別です。
+`/harness-loop status`で状態を見て、`/harness-loop stop`で次の実行を止められます。
 
-<br>
+利用者が明示したモデルと推論量は、それが指定された実行経路で優先します。
+推論量は、モデルが考えるために使う処理の量です。
+主会話の設定を変えても、すべての子エージェントの設定が変わるわけではありません。
+変更前に[役割別のモデル設定](docs/model-routing-policy.md)と[Codex Breezingの担当設定](codex/README.md#codex-breezing-role-routing)を確認できます。
 
-基本の流れが動くようになってから使ってください。
+試験機能の`HARNESS_AUTO_APPROVE=on`は、利用条件の確認結果を記録するだけです。
+既定では無効です。
+有効にしても承認の質問は省略しません。
 
-| 機能 | 何が増えるか | 境界 |
-|---|---|---|
-| **Breezing** | 計画役、批評役、実装役に分けたチーム実行。作業量が多いときに効く | 計画の質とレビューで縛られる点は変わらない |
-| **harness-loop** | 上限を決めて実行を繰り返す。必要な場合に相談役を呼び、停止理由と再開用の情報を残す | 上限到達や実行できる作業がなくなった状態は、全作業の完成とは区別する |
-| **Codex による第二意見** | `scripts/codex-companion.sh` を通した形式付きのレビュー | 素の `codex exec` は Harness の経路ではない |
-| **harness-mem** | プロジェクト単位の記憶と、セッションをまたいだ想起 | 任意。削除は明示的に行う |
-| **OpenCode 連携** | 案内を OpenCode 互換の形に出力する | 実行時の同等性は主張しない |
-| auto-approve（実験中） | `HARNESS_AUTO_APPROVE=on` で判定結果を台帳に記録する | 既定は無効。確認そのものは**まだ省略されない** |
+## 更新と困ったとき
 
-`/harness-loop` の既定上限は8サイクルです。
-Claude Code は1サイクルにつき原則1タスク、Codex は依存条件を満たす作業をまとめて実行します。
-`/harness-loop status` で状態を確認し、`/harness-loop stop` で継続を止めます。
-作業の再開では `/harness-work --resume latest` を使い、計画、差分、検証結果、残る完成条件を読み直します。
+Claude Codeでは、会話内で実行します。
 
-**Codex Breezing の役割別ルーティング。** setup の再実行後に Codex を
-再起動すると、Codex-native `$breezing` は managed Worker profile（Worker 専用の
-設定ファイル）を選びます。`$breezing --codex` は companion（Harness から Codex CLI を
-呼ぶ仲介経路）の Worker route を使います。どちらの実装 Worker も
-`gpt-5.6-luna` / `max` です。Codex review route は `gpt-6-astra` / `xhigh` です。
-メイン Codex セッションのモデルは固定しません。Cursor など別の実装担当 CLI を
-明示した場合は、その CLI の役割別の振り分けを維持します。
-[有効化条件と境界](codex/README.md#codex-breezing-role-routing) を参照してください。
+```text
+/plugin update harness
+/harness-setup
+```
 
-Codex の子担当は、実行アプリによって親の権限を引き継ぎます。
-専用 Reviewer の設定ファイルだけを、ファイル変更を禁止する仕組みとは扱いません。
-CCH の読み取り専用レビューは、その権限を明示して起動する companion 経由で実行します。
+スクリプトで導入した場合は、取得したリポジトリで`git pull --ff-only`を実行します。
+同じ設定スクリプトを再実行し、AIを再起動または再読み込みします。
+更新前に[日本語の変更履歴](CHANGELOG_ja.md)か[英語の変更履歴](CHANGELOG.md)で、動作の変更と必要な操作を確認してください。
 
-</details>
+コマンドが見つからなければ、使っているAIを対象に導入したか、再起動したかを確認します。
+[導入の確認手順](docs/onboarding/skill-trigger-acceptance.md)で、最初の呼び出しが成功した状態を確かめられます。
+取得したHarnessのリポジトリで`bin/harness doctor --migration-report`を実行すると、古い設定ファイルと記憶機能の状態を調べられます。
+この確認ではファイルを削除しません。
+
+検査で止まった場合は、エラーの全文を残します。
+AIに規則、対象、必要な許可を説明してもらいます。
+検査に失敗した仕事を、完了として扱わないでください。
+再現する導入や実行の問題は、[GitHub Issues](https://github.com/Chachamaru127/claude-code-harness/issues)へ報告できます。
 
 ## 動作要件
 
-- Claude Code の正式対応経路では **v2.1 以降**
-- 書き込み権限のあるリポジトリ
-- 配布時の既定言語は English。日本語 UI を明示する場合は
-  `CLAUDE_CODE_HARNESS_LANG=ja claude` で起動
-- Go ネイティブガードレールエンジンは Node.js 不要
-- 任意: セッションをまたいだ記憶に
-  [harness-mem](https://github.com/Chachamaru127/harness-mem)
+CLIは、ターミナルから使う版を指します。
+リポジトリは、Gitで変更履歴を管理するプロジェクトのフォルダです。
+
+
+- 導入済みのコーディング支援AIと、そのアカウントまたはモデル提供会社へのアクセス。
+- Claude Codeの経路ではv2.1以上。[互換性の記録](docs/CLAUDE_CODE_COMPATIBILITY.md)で、確認した日時と環境ごとの制限を確認できる。
+- 書き込みできるプロジェクトのリポジトリ。設定スクリプトにはGitと、それを実行できるシェルが必要。
+- 同梱の実行ファイルを使う場合、Goの導入は不要。現在のソースから作る場合はGo 1.26.0以上が必要。任意のスキルには追加要件がある場合がある。
 
 ## ドキュメント
 
-| 資料 | 内容 |
-|---|---|
-| [ツール別の入口](docs/onboarding/index.md) | どのツールから始めるか |
-| [導入経路](docs/onboarding/install.md) | ツールごとの設定と対応範囲 |
-| [移行チェック](docs/onboarding/migration.md) | 既存環境への影響と戻し方 |
-| [起動確認](docs/onboarding/skill-trigger-acceptance.md) | 導入成功をどう確認するか |
-| [対応一覧](docs/tool-capability-matrix.md) | ホストごとの主張の全体表 |
-| [配布範囲](docs/distribution-scope.md) | 同梱、互換、開発専用の区別 |
-| [ホスト間の安全差](docs/hardening-parity.md) | ツールによる防御の違い |
-| [全計画実行の根拠](docs/evidence/work-all.md) | 成功と失敗の判定契約 |
-| [モデルの使い分け](docs/model-routing-policy.md) | 担当別のモデルと推論量、手動指定の優先順位 |
-| [担当への依頼と引継ぎ](docs/prompt-calibration.md) | 完成条件、根拠、修正指示、再開情報の渡し方 |
-| [言語設定](docs/i18n.md) | 出力言語の切り替え方 |
-| [変更履歴](CHANGELOG.md) | 版ごとの変更点 |
+- [使っているAIから始める](docs/onboarding/index.md)、[導入と取り外し](docs/onboarding/install.md)、[既存利用者の移行](docs/onboarding/migration.md)。
+- [表示言語の設定](docs/i18n.md)：配布時の既定言語は English（英語）。「以後は日本語で返答して」と依頼すれば会話を切り替えられる。プロジェクト設定と環境変数でも指定できる。
+- [導入されるファイル](docs/distribution-scope.md)と[全作業の検査基準](docs/evidence/work-all.md)。
+- [日本語の製品ガイド](docs/reports/2026-09-06-cch-product-guide-v5.15.0.html)。
+
+プロジェクトで言語を指定していない場合は、起動時にも選べます。
+
+```bash
+CLAUDE_CODE_HARNESS_LANG=ja claude
+```
+
+プロジェクトの言語指定がある場合は、その設定が環境変数より優先します。
+会話内の明示的な言語指定は、両方より優先します。
 
 ## コントリビュート
 
-Issue と PR を歓迎します。[CONTRIBUTING.md](CONTRIBUTING.md) を参照してください。
+期待した動作、実際の動作、再現手順をIssueへ記載してください。
+変更を提案する場合は[CONTRIBUTING.md](CONTRIBUTING.md)を確認できます。
 
 ## 謝辞
 
-- [AI Masao](https://note.com/masa_wunder) さん（階層的なスキル設計）
-- [Beagle](https://github.com/beagleworks) さん（テスト改ざん防止のパターン）
+[AI Masao](https://note.com/masa_wunder)のスキル整理の考え方と、[Beagle](https://github.com/beagleworks)のテスト保護の方法を参考にしています。
 
 ## ライセンス
 
-MIT ライセンス。[LICENSE.md](LICENSE.md) を参照してください。
+[MIT](LICENSE.md)。

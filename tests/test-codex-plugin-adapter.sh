@@ -34,14 +34,14 @@ const [manifestPath, marketplacePath, versionPath] = process.argv.slice(2);
 const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 const marketplace = JSON.parse(fs.readFileSync(marketplacePath, "utf8"));
 const version = fs.readFileSync(versionPath, "utf8").trim();
-const plugin = marketplace.plugins.find((entry) => entry.name === "claude-code-harness");
+const plugin = marketplace.plugins.find((entry) => entry.name === "harness");
 function assert(cond, msg) {
   if (!cond) {
     console.error(msg);
     process.exit(1);
   }
 }
-assert(manifest.name === "claude-code-harness", "manifest name mismatch");
+assert(manifest.name === "harness", "manifest name mismatch");
 assert(manifest.version === version, "manifest version mismatch");
 assert(manifest.skills === "../codex/.codex/skills/", "manifest skills path must target Codex mirror relative to .codex-plugin");
 assert(manifest.hooks && !Array.isArray(manifest.hooks), "Codex manifest hooks must be an inline object override");
@@ -114,7 +114,7 @@ fs.writeFileSync(outPath, JSON.stringify(fixture, null, 2) + "\n");
 NODE
 
   mkdir -p "$TMP_MARKETPLACE/.claude-plugin"
-  cp -R "$DIST_TMP/codex-dist" "$TMP_MARKETPLACE/claude-code-harness"
+  cp -R "$DIST_TMP/codex-dist" "$TMP_MARKETPLACE/harness"
   node - "$DIST_TMP/codex-dist/.codex-plugin/plugin.json" "$TMP_MARKETPLACE/.claude-plugin/marketplace.json" <<'NODE'
 const fs = require("fs");
 const [manifestPath, outPath] = process.argv.slice(2);
@@ -123,9 +123,9 @@ const marketplace = {
   name: "claude-code-harness-marketplace",
   plugins: [
     {
-      name: "claude-code-harness",
+      name: "harness",
       version: manifest.version,
-      source: "./claude-code-harness",
+      source: "./harness",
       description: manifest.description
     }
   ]
@@ -138,16 +138,16 @@ NODE
 
   HOME="$TMP_HOME" CODEX_HOME="$TMP_CODEX_HOME" codex plugin list >/tmp/codex-plugin-list.$$ 2>&1 \
     || { cat /tmp/codex-plugin-list.$$ >&2; fail "codex plugin list failed"; }
-  grep -Fq "claude-code-harness@claude-code-harness-marketplace" /tmp/codex-plugin-list.$$ \
+  grep -Fq "harness@claude-code-harness-marketplace" /tmp/codex-plugin-list.$$ \
     || { cat /tmp/codex-plugin-list.$$ >&2; fail "Codex marketplace did not list Harness plugin"; }
 
-  HOME="$TMP_HOME" CODEX_HOME="$TMP_CODEX_HOME" codex plugin add claude-code-harness@claude-code-harness-marketplace >/tmp/codex-plugin-add.$$ 2>&1 \
+  HOME="$TMP_HOME" CODEX_HOME="$TMP_CODEX_HOME" codex plugin add harness@claude-code-harness-marketplace >/tmp/codex-plugin-add.$$ 2>&1 \
     || { cat /tmp/codex-plugin-add.$$ >&2; fail "codex plugin add failed"; }
 
-  grep -Fq '[plugins."claude-code-harness@claude-code-harness-marketplace"]' "$TMP_CODEX_HOME/config.toml" \
+  grep -Fq '[plugins."harness@claude-code-harness-marketplace"]' "$TMP_CODEX_HOME/config.toml" \
     || fail "installed plugin not recorded in isolated CODEX_HOME config"
 
-  CACHE_ROOT="$TMP_CODEX_HOME/plugins/cache/claude-code-harness-marketplace/claude-code-harness/$MANIFEST_VERSION"
+  CACHE_ROOT="$TMP_CODEX_HOME/plugins/cache/claude-code-harness-marketplace/harness/$MANIFEST_VERSION"
   [ -f "$CACHE_ROOT/.codex-plugin/plugin.json" ] || fail "Codex plugin manifest was not cached"
   [ -f "$CACHE_ROOT/skills/harness-plan/SKILL.md" ] || fail "Codex harness-plan skill was not cached in generated dist layout"
   [ -f "$CACHE_ROOT/hooks/hooks.json" ] || fail "synthetic Claude fallback hooks fixture was not cached"

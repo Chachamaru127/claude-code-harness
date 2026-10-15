@@ -21,12 +21,12 @@ bash "${HARNESS_PLUGIN_ROOT}/scripts/model-routing.sh" --host claude --role advi
 
 ## 非 `claude` バックエンドのトポロジー（Worker 介在なし）
 
-backend が `codex` または `cursor` の場合、**Lead は Worker agent (`claude-code-harness:worker`) を spawn しない**。
+backend が `codex` または `cursor` の場合、**Lead は Worker agent (`harness:worker`) を spawn しない**。
 代わりに Lead 自身が `cursor-companion.sh` / `codex-companion.sh` を直接呼ぶ。Worker 層の介在は backend=`claude` のときだけ。
 
 | backend | 経路 |
 |---------|------|
-| `claude`（既定） | Lead → Worker (`claude-code-harness:worker` agent) → … → Lead review → cherry-pick |
+| `claude`（既定） | Lead → Worker (`harness:worker` agent) → … → Lead review → cherry-pick |
 | `codex` | Lead → `codex-companion.sh task --write` → Lead review → cherry-pick |
 | `cursor` | Lead → `cursor-companion.sh task --write --workspace <isolated-wt>` → Lead review → cherry-pick |
 
