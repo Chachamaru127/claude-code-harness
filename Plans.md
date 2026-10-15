@@ -463,3 +463,14 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 | 149.4 | 独立判定と公開計画の更新 | APPROVEと同一SHAの試験。公開未実施のまま単一確認へ | 149.3 | cc:done [製品差分17718b96をOpus5.5がPASS。同一SHAで検証0を記録。公開前検査24成功/5警告。現行cleanup導線を補正し、隔離user範囲の設定キー移行も成功。公開候補5.16.0の計画と日英文面はローカル準備済み。公開は未承認] |
 
 **Phase149の公開境界**: mainへのmergeでmarketplace更新利用者に改名が届くため、pushとmergeの前に公開承認を得る。VERSION5.15.0のまま改名だけをmainへ出さない。公開時は5.16.0への同期と4バイナリ再生成をまとめる。製品の独立判定で残った他marketplaceの同名harnessを報告が拾う条件と、隔離検査のNodeディレクトリ優先は公開計画へ記録した。
+
+
+## Phase 150: v5.16.0公開 (2026-10-15)
+
+本人がv5.16.0公開を明示承認。版同期、日英Unreleased昇格、4バイナリ再生成、検査、push/PR/CI/mainマージ、到達可能なmain上のタグ、Releaseと配布物検証を行う。製品と文書は0fe2c1c1まで独立PASS済み。
+
+| ID | Task | DoD | Status |
+|----|------|-----|--------|
+| 150.1 | 版同期と4バイナリ | 5.16.0同期、日英同日、検査成功 | cc:WIP |
+| 150.2 | PRとmain反映 | 必須CI成功、承認済み内容をmerge | cc:TODO |
+| 150.3 | タグと公開検証 | main到達タグv5.16.0、Release本文と4配布物を確認 | cc:TODO |

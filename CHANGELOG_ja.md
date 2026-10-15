@@ -20,6 +20,8 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [Unreleased]
 
+## [5.16.0] - 2026-10-15
+
 ### Changed
 
 - 共有marketplaceと全実行先の配布プラグインIDを`harness`へ揃えます。
@@ -3079,7 +3081,8 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 2.9.x以前は[GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases)で確認できます。
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.15.0...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.16.0...HEAD
+[5.16.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.15.0...v5.16.0
 [5.15.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.14.1...v5.15.0
 [5.14.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.14.0...v5.14.1
 [5.14.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.13.2...v5.14.0

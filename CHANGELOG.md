@@ -13,6 +13,8 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [Unreleased]
 
+## [5.16.0] - 2026-10-15
+
 ### Changed
 
 - Rename the distribution plugin ID to `harness` in the shared marketplace and all host manifests; repository and marketplace names and project config paths stay unchanged. Claude Code follows the marketplace rename map on supported builds; refresh the marketplace, install the new ID in the original scope, and check that only one copy is active. Plugin-owned databases are not automatically transferred. See [the switching guide](https://github.com/Chachamaru127/claude-code-harness/blob/main/docs/onboarding/plugin-rename.md).
@@ -2048,7 +2050,8 @@ The runtime effect in this historical release has not been re-tested. The [curre
 
 For 2.9.x and earlier, see [GitHub Releases](https://github.com/Chachamaru127/claude-code-harness/releases).
 
-[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.15.0...HEAD
+[Unreleased]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.16.0...HEAD
+[5.16.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.15.0...v5.16.0
 [5.15.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.14.1...v5.15.0
 [5.14.1]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.14.0...v5.14.1
 [5.14.0]: https://github.com/Chachamaru127/claude-code-harness/compare/v5.13.2...v5.14.0
