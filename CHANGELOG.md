@@ -13,6 +13,12 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [Unreleased]
 
+### Added
+
+- `docs-zh/` directory with Chinese translations of all 108 Japanese-containing `docs/**/*.md` files, plus Chinese versions of `README_ja.md` → `README_zh.md`, `CHANGELOG_ja.md` → `CHANGELOG_zh.md`, and `LICENSE.ja.md` → `LICENSE.zh.md`. Structural parity CI: `scripts/ci/check-doc-zh-parity.sh`.
+- Chinese versions of the six root-level project documents: `CLAUDE_zh.md`, `CONTRIBUTING_zh.md`, `IMPLEMENTATION_GUIDE_zh.md`, `SECURITY_zh.md`, `Plans_zh.md`, and `spec_zh.md`. The structural parity gate now covers them alongside `docs-zh/` (114 checked files). Translation helpers: `scripts/ci/sync-zh-code-blocks.py` restores fenced code blocks byte-for-byte from the source document, and `scripts/ci/reflow-zh-prose.py` re-wraps Chinese prose to the source's visual width so line counts stay comparable.
+- `scripts/ci/fix-doc-zh-links.py` also repoints `docs/` links inside the new root-level Chinese files to `docs-zh/`, and same-level root links to their `_zh` counterparts. The language-specific links in `README_zh.md` and `CHANGELOG_zh.md` keep their existing targets.
+
 ## [5.16.0] - 2026-10-15
 
 ### Changed
