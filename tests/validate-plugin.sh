@@ -1495,6 +1495,16 @@ else
 fi
 
 echo ""
+echo "25. Chinese docs parity (docs-zh/)"
+echo "----------------------------------------"
+
+if bash "$PLUGIN_ROOT/scripts/ci/check-doc-zh-parity.sh" > /dev/null 2>&1; then
+    pass_test "docs-zh/ の中国語訳が原文と構造一致します (コード塊・見出し・表・リンク・行数)"
+else
+    fail_test "Chinese docs parity failed — 'bash scripts/ci/check-doc-zh-parity.sh' で詳細確認"
+fi
+
+echo ""
 echo "=========================================="
 echo "テスト結果サマリー"
 echo "=========================================="
