@@ -2,9 +2,10 @@
 # check-doc-zh-parity.sh
 # 中文翻译结构一致性校验: 保证中文文档是原文的完整翻译，而非摘要或改写
 #
-# 覆盖两类文件对:
+# 覆盖三类文件对:
 #   1. docs/<rel>.md  ->  docs-zh/<rel>.md   (目录结构镜像)
 #   2. <name>.md      ->  <name>_zh.md       (仓库根, 见 ROOT_PAIRS)
+#   3. skills/<name>.md -> skills/<name>_zh.md (skills/ 下的参考文档, 见 SKILL_PAIRS)
 #
 # 逐文件比较结构特征:
 #   - 代码块数量、围栏语言、内容哈希 (代码块必须逐字一致)
@@ -42,6 +43,13 @@ ROOT_PAIRS = [
     ("CONTRIBUTING.md", "CONTRIBUTING_zh.md"),
     ("Plans.md", "Plans_zh.md"),
     ("spec.md", "spec_zh.md"),
+]
+
+# skills/ 下的参考文档对: 同目录, 同名 + _zh 后缀。
+# routing-rules.md 引用的是各技能 description 里的英文关键词,
+# 译文必须逐字保留那些关键词 (它们是匹配字面量), 只翻译周边说明文字。
+SKILL_PAIRS = [
+    ("skills/routing-rules.md", "skills/routing-rules_zh.md"),
 ]
 
 KANA = re.compile(r'[ぁ-んァ-ヶー]')
@@ -254,7 +262,15 @@ for src_name, dst_name in ROOT_PAIRS:
         continue
     check_pair(src_name, src_path, os.path.join(ROOT, dst_name))
 
-total = len(sources) + len(ROOT_PAIRS)
+# ---- skills/ 下的参考文档对 (routing-rules.md 等) ----
+for src_name, dst_name in SKILL_PAIRS:
+    src_path = os.path.join(ROOT, src_name)
+    if not os.path.isfile(src_path):
+        failures.append((src_name, "源文件缺失", ""))
+        continue
+    check_pair(src_name, src_path, os.path.join(ROOT, dst_name))
+
+total = len(sources) + len(ROOT_PAIRS) + len(SKILL_PAIRS)
 
 print("")
 if failures:

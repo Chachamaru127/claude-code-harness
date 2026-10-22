@@ -50,6 +50,7 @@ ROOT_ZH_FILES_NEW = (
     "SECURITY_zh.md",
     "Plans_zh.md",
     "spec_zh.md",
+    "skills/routing-rules_zh.md",
 )
 
 # 根级文件之间的对应关系: 英文版文件名 -> 中文版文件名。
@@ -65,6 +66,7 @@ ROOT_SIBLING_ZH = {
     "Plans.md": "Plans_zh.md",
     "spec.md": "spec_zh.md",
     "LICENSE.md": "LICENSE.zh.md",
+    "skills/routing-rules.md": "skills/routing-rules_zh.md",
 }
 
 
