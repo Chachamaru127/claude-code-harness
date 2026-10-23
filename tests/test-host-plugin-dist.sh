@@ -106,6 +106,7 @@ for dist in "$CLAUDE_OUT" "$CODEX_OUT"; do
     templates/schemas/plan-preapproval.v2.json \
     templates/schemas/brief-card.v1.json \
     templates/html/progress.html.template \
+    templates/html/progress.en.html.template \
     templates/.claude-code-harness.config.yaml.template; do
     assert_present "$dist" "$rel"
     cmp -s "$ROOT_DIR/$rel" "$dist/$rel" || fail "bundled runtime source differs: $rel"
