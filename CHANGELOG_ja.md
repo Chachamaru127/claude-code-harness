@@ -20,6 +20,10 @@ high、xhigh、maxなどの推論量は実行先ごとの設定値で、完了�
 
 ## [Unreleased]
 
+### Fixed
+
+- `i18n.language`が`en`（既定）のとき、`/harness-progress`のHTMLが日本語で出ていた問題を直しました。`render-html.sh`は`<name>.<locale>.html.template`があればそれを使い、なければ従来のテンプレートを使います。英語版は今のところ進捗テンプレートだけです。
+
 ## [5.16.0] - 2026-10-15
 
 ### Changed

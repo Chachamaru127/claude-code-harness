@@ -16,6 +16,7 @@
 # 空文字に展開される (jq の // "" で fallback)。
 #
 # テンプレート格納先: templates/html/<name>.html.template
+# (locale 別: templates/html/<name>.<en|ja>.html.template があれば優先)
 # 出力 HTML は単独で開ける (no server, no JS framework)、CSS は inline 想定。
 # Claude Harness ブランド (off-white #FAFAFA / near-black #0F0F0F / harness-orange #F58A4A)
 # をテンプレート側で利用する。
@@ -76,7 +77,12 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-TEMPLATE_PATH="$PLUGIN_ROOT/templates/html/${TEMPLATE_NAME}.html.template"
+source "$SCRIPT_DIR/config-utils.sh"
+TEMPLATE_LOCALE="$(get_harness_locale)"
+TEMPLATE_PATH="$PLUGIN_ROOT/templates/html/${TEMPLATE_NAME}.${TEMPLATE_LOCALE}.html.template"
+if [[ ! -f "$TEMPLATE_PATH" ]]; then
+  TEMPLATE_PATH="$PLUGIN_ROOT/templates/html/${TEMPLATE_NAME}.html.template"
+fi
 
 if [[ ! -f "$TEMPLATE_PATH" ]]; then
   echo "ERROR: template not found: $TEMPLATE_PATH" >&2
