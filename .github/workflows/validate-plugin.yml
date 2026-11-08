@@ -148,7 +148,9 @@ jobs:
 
       - name: Run Go tests
         working-directory: go
-        run: go test ./...
+        # A hanging test must fail with a stack trace instead of running the
+        # job into its timeout with no log.
+        run: go test -timeout 8m ./...
 
       - name: Run go vet
         working-directory: go
