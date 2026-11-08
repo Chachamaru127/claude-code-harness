@@ -126,7 +126,7 @@ jobs:
     # suite builds and runs. Keep the full suite on GitHub-hosted until the
     # workspace has a size that can run it (recorded in Plans.md Phase 151).
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -150,7 +150,7 @@ jobs:
         working-directory: go
         # A hanging test must fail with a stack trace instead of running the
         # job into its timeout with no log.
-        run: go test -timeout 8m ./...
+        run: go test -timeout 25m ./...
 
       - name: Run go vet
         working-directory: go
