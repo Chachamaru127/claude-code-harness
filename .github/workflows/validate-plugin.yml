@@ -120,7 +120,7 @@ jobs:
 
   test-go:
     runs-on: instabox-medium
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -144,9 +144,9 @@ jobs:
         working-directory: go
         env:
           GOMAXPROCS: "2"
-        # The Instabox box has a low process limit; the default package
-        # parallelism exhausts it (fork/exec: resource temporarily unavailable).
-        run: go test -p 2 ./...
+        # The Instabox free box hits fork/exec EAGAIN under load; serialize
+        # package builds and tests so the suite stays within its resources.
+        run: go test -p 1 -parallel 1 ./...
 
       - name: Run go vet
         working-directory: go
