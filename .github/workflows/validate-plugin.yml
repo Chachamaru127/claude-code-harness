@@ -43,7 +43,10 @@ jobs:
           "$(go env GOPATH)/bin/actionlint" -color
 
   validate:
-    runs-on: instabox-medium
+    # Unmigrated: the Instabox free box exits without a log under this suite's
+    # process load. Keep it on GitHub-hosted until the workspace has a size
+    # that can run it (recorded in Plans.md Phase 151).
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
