@@ -61,14 +61,16 @@ module MergeGate {
     checksPassed' = checksPassed,
     baseCurrent' = baseCurrent,
     merged' = true,
-    cleanMerge' = true,
+    // 検査状態から決める。前提を外す改変を自己確認で検出できるようにする。
+    cleanMerge' = (checksPassed and baseCurrent),
     tagged' = tagged,
     released' = released,
   }
 
-  // 管理者が必須CIを迂回してmergeする。branch protectionのenforce_admins=falseに対応する。
+  // 管理者が未達の必須CIまたは古いbaseのままmergeする。
+  // branch protectionのenforce_admins=falseに対応する。検査済みの通常mergeは迂回ではない。
   action AdminMerge = all {
-    prOpen, not(merged),
+    prOpen, not(merged), not(checksPassed and baseCurrent),
     prOpen' = prOpen,
     checksPassed' = checksPassed,
     baseCurrent' = baseCurrent,
@@ -104,6 +106,8 @@ module MergeGate {
 
   // 必須CIを経ていないmergeを許さない。
   val CleanMerge = not(merged) or cleanMerge
+  // baseが前進した後に再検査せずmergeしない。
+  val NoStaleMerge = not(merged) or baseCurrent
   // mergeされていないcommitにtagを付けない。
   val NoTagWithoutMerge = not(tagged) or merged
   // 検査済みの通常経路でリリースまで到達できるかを見るための否定命題。

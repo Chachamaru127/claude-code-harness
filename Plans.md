@@ -484,7 +484,7 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 
 | ID | Task | DoD | Status |
 |----|------|-----|--------|
-| 151.1 | `[lane:gate]` `[tdd:skip:diagnosis]` 現状の棚卸しと形式診断 | 出典付き条件表、Quint模型、TLC結果、壊した模型の自己確認、ステートチャートHTML | cc:done [formal/baseline/route-setup-2026-11-08/report.json、docs/reports/2026-11-08-claude-code-harness-route-setup.html、C1=管理者迂回の反例、C2=検査済み経路の到達、C3=不変条件pass、自己確認はMergeの前提を外すと違反] |
+| 151.1 | `[lane:gate]` `[tdd:skip:diagnosis]` 現状の棚卸しと形式診断 | 出典付き条件表、Quint模型、TLC結果、壊した模型の自己確認、ステートチャートHTML | cc:done [formal/baseline/route-setup-2026-11-08/report.json、docs/reports/2026-11-08-claude-code-harness-route-setup.html、C1=未検査mergeの反例、C2=検査済み経路の到達、C3=不変条件pass、C4=base前進後の再検査なしmergeの反例、自己確認はMergeの前提を外すとC1違反] |
 | 151.2 | `[lane:docs]` `[tdd:skip:docs-only]` 接続案と未接続の記録 | 受付・担当・実行・監視・CI/CD・配備の現状と未接続を記録 | cc:done [受付=GitHub Issue、主担当=このセッション、CI=validate/test-go/actionlint・smoke linux・opencode-compatをinstabox-mediumへ変更（Appリンク待ち）、macOS/Windows smoke・release・benchmark・CodeQL/ScorecardはGitHub-hostedのまま記録、CD=tag起点release（Instabox起点は未移行）、T3/route-job/Bot/監視=未接続] |
 | 151.3 | `[lane:gate]` `[tdd:required]` 通常Issue #389の修正 | RED/GREEN、`cd go && go test ./...`、対象commit | cc:done [RED: `.local/route-setup-2026-11-08/issue389-red.log` の `slice bounds out of range [:-1]`、GREEN: 同 `issue389-green.log`。`filepath.Dir` と Windows の同一ファイル上書き、回帰試験、4バイナリ再生成。PR #401。2巡目: Windowsのリンク拒否、書き込み失敗時の復元、ローカル`check.py`] |
 | 151.4 | `[lane:gate]` `[tdd:skip:ci-readback]` 対象commitのCIと独立受入 | 必須CI 3件 success、独立受入 PASS | cc:WIP [PR #401 head 03eeb3b1。初回validateはPlansの`20261108`をhashと誤認して失敗。パスを`2026-11-08`へ修正済み、新headで再実行中] |
