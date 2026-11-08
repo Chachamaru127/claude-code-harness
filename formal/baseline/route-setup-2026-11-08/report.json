@@ -14,7 +14,7 @@
       "id": "PLAN",
       "label": "作業台帳",
       "path": "Plans.md",
-      "sha256": "1da887c72983adab7598235aac543e93903853fbef418e3767ef4538a4551a3f",
+      "sha256": "8d478a864f81b8020e19ae3d0654f76692b25bb5a6fa6cb8c86df04c3bcc6725",
       "section": "Phase 150 / status markers"
     },
     {
@@ -302,20 +302,20 @@
       ],
       "checked_sources": {
         "SPEC": "5f4f927b52f0a8bc04a2daf6b712e0a760730005a53a7fcdec01e0d951c84349",
-        "PLAN": "1da887c72983adab7598235aac543e93903853fbef418e3767ef4538a4551a3f",
+        "PLAN": "8d478a864f81b8020e19ae3d0654f76692b25bb5a6fa6cb8c86df04c3bcc6725",
         "PROT": "971fb191ff0f215df16d53957a127e687f2f602cf6ba39c63ff6bc1bf48c007a",
         "CI": "c799f1add4dff6bb3095bf81f2447e441a0336a4451f1de54bf6e0a6bf7a3f98",
         "RELEASE": "8cfcf188239841495e0eb1c6092ef99c12981c779f0248971c5f6a4dde82e94d",
         "CONFIRM": "946ea15c8da74ff9810709024a98f1c8ed4d72a882dde8a7f3a7f0172d91a94a"
       },
-      "result_path": ".local/route-setup-2026-11-08/C1-snap2/result.json",
-      "stdout_path": ".local/route-setup-2026-11-08/C1-snap2/stdout.log",
+      "result_path": ".local/route-setup-2026-11-08/C1-snap3/result.json",
+      "stdout_path": ".local/route-setup-2026-11-08/C1-snap3/stdout.log",
       "trace_edges": [
         "open",
         "admin"
       ],
       "trace_verified": true,
-      "trace_note": "C1-snap2/stdout.log: State1初期→State2 OpenPR→State3 AdminMerge(merged=true, cleanMerge=false)。未検査状態からの迂回。"
+      "trace_note": "C1-snap3/stdout.log: State1初期→State2 OpenPR→State3 AdminMerge(merged=true, cleanMerge=false)。未検査状態からの迂回。"
     },
     {
       "id": "C2",
@@ -339,14 +339,14 @@
       ],
       "checked_sources": {
         "SPEC": "5f4f927b52f0a8bc04a2daf6b712e0a760730005a53a7fcdec01e0d951c84349",
-        "PLAN": "1da887c72983adab7598235aac543e93903853fbef418e3767ef4538a4551a3f",
+        "PLAN": "8d478a864f81b8020e19ae3d0654f76692b25bb5a6fa6cb8c86df04c3bcc6725",
         "PROT": "971fb191ff0f215df16d53957a127e687f2f602cf6ba39c63ff6bc1bf48c007a",
         "CI": "c799f1add4dff6bb3095bf81f2447e441a0336a4451f1de54bf6e0a6bf7a3f98",
         "RELEASE": "8cfcf188239841495e0eb1c6092ef99c12981c779f0248971c5f6a4dde82e94d",
         "CONFIRM": "946ea15c8da74ff9810709024a98f1c8ed4d72a882dde8a7f3a7f0172d91a94a"
       },
-      "result_path": ".local/route-setup-2026-11-08/C2-snap2/result.json",
-      "stdout_path": ".local/route-setup-2026-11-08/C2-snap2/stdout.log",
+      "result_path": ".local/route-setup-2026-11-08/C2-snap3/result.json",
+      "stdout_path": ".local/route-setup-2026-11-08/C2-snap3/stdout.log",
       "trace_edges": [
         "open",
         "checks",
@@ -355,7 +355,7 @@
         "release"
       ],
       "trace_verified": true,
-      "trace_note": "C2-snap2/stdout.log: State2 OpenPR→State3 ChecksPass→State4 Merge→State5 Tag→State6 Release(released=true)。TLC終了12は到達経路の証拠。"
+      "trace_note": "C2-snap3/stdout.log: State2 OpenPR→State3 ChecksPass→State4 Merge→State5 Tag→State6 Release(released=true)。TLC終了12は到達経路の証拠。"
     },
     {
       "id": "C3",
@@ -379,14 +379,14 @@
       ],
       "checked_sources": {
         "SPEC": "5f4f927b52f0a8bc04a2daf6b712e0a760730005a53a7fcdec01e0d951c84349",
-        "PLAN": "1da887c72983adab7598235aac543e93903853fbef418e3767ef4538a4551a3f",
+        "PLAN": "8d478a864f81b8020e19ae3d0654f76692b25bb5a6fa6cb8c86df04c3bcc6725",
         "PROT": "971fb191ff0f215df16d53957a127e687f2f602cf6ba39c63ff6bc1bf48c007a",
         "CI": "c799f1add4dff6bb3095bf81f2447e441a0336a4451f1de54bf6e0a6bf7a3f98",
         "RELEASE": "8cfcf188239841495e0eb1c6092ef99c12981c779f0248971c5f6a4dde82e94d",
         "CONFIRM": "946ea15c8da74ff9810709024a98f1c8ed4d72a882dde8a7f3a7f0172d91a94a"
       },
-      "result_path": ".local/route-setup-2026-11-08/C3-snap2/result.json",
-      "stdout_path": ".local/route-setup-2026-11-08/C3-snap2/stdout.log",
+      "result_path": ".local/route-setup-2026-11-08/C3-snap3/result.json",
+      "stdout_path": ".local/route-setup-2026-11-08/C3-snap3/stdout.log",
       "trace_edges": [],
       "trace_verified": false,
       "trace_note": "反例なし。TLC終了0、全探索でNoTagWithoutMergeの違反なし。"
@@ -413,14 +413,14 @@
       ],
       "checked_sources": {
         "SPEC": "5f4f927b52f0a8bc04a2daf6b712e0a760730005a53a7fcdec01e0d951c84349",
-        "PLAN": "1da887c72983adab7598235aac543e93903853fbef418e3767ef4538a4551a3f",
+        "PLAN": "8d478a864f81b8020e19ae3d0654f76692b25bb5a6fa6cb8c86df04c3bcc6725",
         "PROT": "971fb191ff0f215df16d53957a127e687f2f602cf6ba39c63ff6bc1bf48c007a",
         "CI": "c799f1add4dff6bb3095bf81f2447e441a0336a4451f1de54bf6e0a6bf7a3f98",
         "RELEASE": "8cfcf188239841495e0eb1c6092ef99c12981c779f0248971c5f6a4dde82e94d",
         "CONFIRM": "946ea15c8da74ff9810709024a98f1c8ed4d72a882dde8a7f3a7f0172d91a94a"
       },
-      "result_path": ".local/route-setup-2026-11-08/C4-snap2/result.json",
-      "stdout_path": ".local/route-setup-2026-11-08/C4-snap2/stdout.log",
+      "result_path": ".local/route-setup-2026-11-08/C4-snap3/result.json",
+      "stdout_path": ".local/route-setup-2026-11-08/C4-snap3/stdout.log",
       "trace_edges": [
         "open",
         "checks",
@@ -428,7 +428,7 @@
         "adminStale"
       ],
       "trace_verified": true,
-      "trace_note": "C4-snap2/stdout.log: State2 OpenPR→State3 ChecksPass→State4 BaseMoves(baseCurrent=false)→State5 AdminMerge(merged=true, baseCurrent=false)。"
+      "trace_note": "C4-snap3/stdout.log: State2 OpenPR→State3 ChecksPass→State4 BaseMoves(baseCurrent=false)→State5 AdminMerge(merged=true, baseCurrent=false)。"
     }
   ]
 }
