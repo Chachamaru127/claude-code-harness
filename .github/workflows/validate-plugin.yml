@@ -149,7 +149,7 @@ jobs:
       - name: Run Go tests
         working-directory: go
         # Serialize packages: parallel test binaries exhaust the runner memory.
-        run: go test -p 1 ./...
+        run: go test -p 1 -parallel 1 ./...
 
       - name: Run go vet
         working-directory: go
