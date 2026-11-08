@@ -1,0 +1,50 @@
+{
+  "model": "formal/baseline/route-setup-2026-11-08/MergeGate.qnt",
+  "model_sha256": "0ef1f2ef89951b5031e1dde6397cb4c94908203bd8e42d72676b140072a688f1",
+  "sources": {
+    "SPEC": "5f4f927b52f0a8bc04a2daf6b712e0a760730005a53a7fcdec01e0d951c84349",
+    "PLAN": "f7f4ce0246388a165d0bd023fd2f9b3a37fcc7cbfddcd2c8b1f3dd2e2e148b04",
+    "PROT": "971fb191ff0f215df16d53957a127e687f2f602cf6ba39c63ff6bc1bf48c007a",
+    "CI": "94a56e8df471ae3585b75387515884ab57a9f8238d59006b74a90986a178ad00",
+    "RELEASE": "8cfcf188239841495e0eb1c6092ef99c12981c779f0248971c5f6a4dde82e94d",
+    "CONFIRM": "946ea15c8da74ff9810709024a98f1c8ed4d72a882dde8a7f3a7f0172d91a94a"
+  },
+  "implementation": [
+    {
+      "model_action": "ChecksPass",
+      "implementation": ".github/workflows/validate-plugin.yml jobs actionlint, validate, test-go",
+      "checked": "workflow definition",
+      "not_checked": "実際の実行結果は対象commitごとにCI APIで確認する"
+    },
+    {
+      "model_action": "Merge",
+      "implementation": "GitHub branch protection required_status_checks (strict=true)",
+      "checked": "API読取り 2026-11-08T10:36:44.354272+00:00",
+      "not_checked": "merge操作の履歴"
+    },
+    {
+      "model_action": "BaseMoves",
+      "implementation": "branch protection strict=true",
+      "checked": "API読取り",
+      "not_checked": "base更新の実履歴"
+    },
+    {
+      "model_action": "AdminMerge",
+      "implementation": "branch protection enforce_admins=false",
+      "checked": "API読取り",
+      "not_checked": "管理者mergeの実発生"
+    },
+    {
+      "model_action": "Tag",
+      "implementation": ".github/workflows/release.yml + skills/harness-release/references/github-release.md",
+      "checked": "workflow definition",
+      "not_checked": "tag作成操作の履歴"
+    },
+    {
+      "model_action": "Release",
+      "implementation": ".github/workflows/release.yml + skills/harness-release/references/github-release.md",
+      "checked": "workflow definition",
+      "not_checked": "配布物の実読戻し"
+    }
+  ]
+}
