@@ -142,7 +142,11 @@ jobs:
 
       - name: Run Go tests
         working-directory: go
-        run: go test ./...
+        env:
+          GOMAXPROCS: "2"
+        # The Instabox box has a low process limit; the default package
+        # parallelism exhausts it (fork/exec: resource temporarily unavailable).
+        run: go test -p 2 ./...
 
       - name: Run go vet
         working-directory: go
