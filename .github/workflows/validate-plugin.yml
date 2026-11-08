@@ -119,8 +119,11 @@ jobs:
         # REQUIRED=1 is reserved for nightly/release when CLI secrets/images are stable.
 
   test-go:
-    runs-on: instabox-medium
-    timeout-minutes: 30
+    # Unmigrated: the Instabox free box returns fork/exec EAGAIN while this
+    # suite builds and runs. Keep the full suite on GitHub-hosted until the
+    # workspace has a size that can run it (recorded in Plans.md Phase 151).
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -142,11 +145,7 @@ jobs:
 
       - name: Run Go tests
         working-directory: go
-        env:
-          GOMAXPROCS: "2"
-        # The Instabox free box hits fork/exec EAGAIN under load; serialize
-        # package builds and tests so the suite stays within its resources.
-        run: go test -p 1 -parallel 1 ./...
+        run: go test ./...
 
       - name: Run go vet
         working-directory: go
