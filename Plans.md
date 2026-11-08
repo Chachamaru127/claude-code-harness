@@ -471,6 +471,21 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 
 | ID | Task | DoD | Status |
 |----|------|-----|--------|
-| 150.1 | 版同期と4バイナリ | 5.16.0同期、日英同日、検査成功 | cc:WIP |
-| 150.2 | PRとmain反映 | 必須CI成功、承認済み内容をmerge | cc:TODO |
-| 150.3 | タグと公開検証 | main到達タグv5.16.0、Release本文と4配布物を確認 | cc:TODO |
+| 150.1 | 版同期と4バイナリ | 5.16.0同期、日英同日、検査成功 | cc:done [VERSION 5.16.0、plugin.json 5.16.0、tag v5.16.0 が origin/main の祖先であることを2026-11-08に読戻し] |
+| 150.2 | PRとmain反映 | 必須CI成功、承認済み内容をmerge | cc:done [PR #390 merge commit c2304c32、merged_at 2026-10-15T04:43:45Z] |
+| 150.3 | タグと公開検証 | main到達タグv5.16.0、Release本文と4配布物を確認 | cc:done [GitHub Release v5.16.0 published 2026-10-15T04:46:26Z、harness-darwin-amd64 / darwin-arm64 / linux-amd64 / windows-amd64.exe の4資産を読戻し] |
+
+## Phase 151: RouteCLI接続と形式診断 (2026-11-08)
+
+**承認元**: 本人の `$route-project-setup` 実行（対象: このrepo）。運用接続の診断と通常Issue 1件を範囲とする。
+**目的**: 既存の仕様・台帳・Issue・CI・branch protectionを読み、形式診断と接続案を記録し、通常Issueを同じ経路で通す。
+**非対象**: 製品仕様の変更、公開・release、branch protectionの変更、Instaboxへのrunner切替（接続未確認）、T3プロジェクト・Bot・監視の新設。
+**現在地 (2026-11-08 19:45 JST)**: ローカル main を origin/main v5.16.0 (c2304c32) へ同期。必須CIは actionlint / validate / test-go の3件 (strict)。enforce_admins=false、required_conversation_resolution=false。T3プロジェクト、route-job案件記録、このrepo向けInstabox接続は未作成/未確認。Phase 150の状態を実測（tag v5.16.0、Release 4資産）に合わせて閉じた。
+
+| ID | Task | DoD | Status |
+|----|------|-----|--------|
+| 151.1 | `[lane:gate]` `[tdd:skip:diagnosis]` 現状の棚卸しと形式診断 | 出典付き条件表、Quint模型、TLC結果、壊した模型の自己確認、ステートチャートHTML | cc:done [formal/baseline/route-setup-20261108/report.json、docs/reports/2026-11-08-claude-code-harness-route-setup.html、C1=管理者迂回の反例、C2=検査済み経路の到達、C3=不変条件pass、自己確認はMergeの前提を外すと違反] |
+| 151.2 | `[lane:docs]` `[tdd:skip:docs-only]` 接続案と未接続の記録 | 受付・担当・実行・監視・CI/CD・配備の現状と未接続を記録 | cc:done [受付=GitHub Issue、主担当=このセッション、CI=GitHub Actions（Instabox未接続）、CD=tag起点release（Instabox起点なし）、T3/route-job/Bot/監視=未接続] |
+| 151.3 | `[lane:gate]` `[tdd:required]` 通常Issue #389の修正 | RED/GREEN、`cd go && go test ./...`、対象commit | cc:WIP |
+| 151.4 | `[lane:gate]` `[tdd:skip:ci-readback]` 対象commitのCIと独立受入 | 必須CI 3件 success、独立受入 PASS | cc:TODO |
+| 151.5 | `[lane:release]` `[tdd:skip:merge-and-record]` merge判断と接続結果 | 本人確認後のmerge、結果と残件を記録 | cc:TODO |

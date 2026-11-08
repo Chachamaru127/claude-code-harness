@@ -253,7 +253,9 @@ func (h *StopSessionEvaluatorHandler) recordLastMessage(stateFile, msg string) {
 	}
 
 	// アトミック書き込み: 一時ファイル + rename
-	stateDir := stateFile[:strings.LastIndex(stateFile, "/")]
+	// filepath.Dir は OS の区切り文字に従う。"/" 固定だと Windows の
+	// backslash パスで LastIndex が -1 になり panic する (Issue #389)。
+	stateDir := filepath.Dir(stateFile)
 	tmpFile, err := os.CreateTemp(stateDir, "session.json.*")
 	if err != nil {
 		return

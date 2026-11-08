@@ -403,3 +403,31 @@ func TestStopSessionEvaluator_StopHookActiveProgressPolicy(t *testing.T) {
 	writePlans("cc:done")
 	assertStopOK(t, run(`{"stop_hook_active":true}`), true)
 }
+
+// Issue #389: Windows では filepath.Join が backslash だけのパスを返すため、
+// "/" の位置からディレクトリを切り出すと LastIndex が -1 になり panic する。
+// backslash だけの相対パスで、状態ファイルと同じ場所へ一時ファイルを作れることを確認する。
+func TestStopSessionEvaluator_RecordsLastMessageBackslashStatePath(t *testing.T) {
+	tmp := t.TempDir()
+	t.Chdir(tmp)
+
+	stateDir := `example\.claude\state`
+	if err := os.MkdirAll(stateDir, 0o755); err != nil {
+		t.Fatalf("mkdir state dir: %v", err)
+	}
+	stateFile := stateDir + `\session.json`
+	if err := os.WriteFile(stateFile, []byte(`{"session_id":"s"}`), 0o644); err != nil {
+		t.Fatalf("write state file: %v", err)
+	}
+
+	h := &StopSessionEvaluatorHandler{ProjectRoot: tmp}
+	h.recordLastMessage(stateFile, "hello")
+
+	data, err := os.ReadFile(stateFile)
+	if err != nil {
+		t.Fatalf("read state file: %v", err)
+	}
+	if !strings.Contains(string(data), "last_message_hash") {
+		t.Fatalf("last_message_hash was not recorded: %s", data)
+	}
+}
