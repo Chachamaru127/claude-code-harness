@@ -122,11 +122,11 @@ jobs:
         # REQUIRED=1 is reserved for nightly/release when CLI secrets/images are stable.
 
   test-go:
-    # Unmigrated: the Instabox free box returns fork/exec EAGAIN while this
-    # suite builds and runs. Keep the full suite on GitHub-hosted until the
-    # workspace has a size that can run it (recorded in Plans.md Phase 151).
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Pin 24.04: the ubuntu-latest migration to Ubuntu 26 makes this suite
+    # hang past 30 minutes. Instabox is unmigrated for this job because the
+    # free box returns fork/exec EAGAIN (recorded in Plans.md Phase 151).
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -148,10 +148,7 @@ jobs:
 
       - name: Run Go tests
         working-directory: go
-        # A hanging test must fail with a stack trace instead of running the
-        # job into its timeout with no log.
-        # The default package parallelism runs the runner out of memory.
-        run: go test -p 2 -timeout 25m ./...
+        run: go test ./...
 
       - name: Run go vet
         working-directory: go
