@@ -43,17 +43,17 @@
 
 ## 再実行
 
-案件root、`report.json`、check ID、案件rootの固定toolchain、main `MergeGate` を渡す。Java 21を明示する。
+`check.py` は `report.json` の出典と模型hashを照合し、`q_init` / `q_step` / `q_inv` を設定してTLCを実行する。外部Skillは要らない。Java 21を明示する。
 
 ```
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21
 export PATH="$JAVA_HOME/bin:$PATH"
-python3 <route-project-setup>/scripts/run_check.py \
-  --project . --input formal/baseline/route-setup-2026-11-08/report.json \
-  --check C1 --routecli . --main MergeGate
+python3 formal/baseline/route-setup-2026-11-08/check.py C1 \
+  --result .local/route-setup-2026-11-08/C1/result.json \
+  --stdout .local/route-setup-2026-11-08/C1/stdout.log
 ```
 
-結果の保存先は毎回未使用のパスへ変更する。既存の有効結果を理由なく上書き・反復しない。HTML生成は `build_report.py` へ同じ入力を渡す。生成補助は検査を実行しない。
+結果の保存先は毎回未使用のパスへ変更する。既存の有効結果を理由なく上書き・反復しない。HTML生成は route-project-setup の `build_report.py` を使う場合だけで、検査の再実行には要らない。生成補助は検査を実行しない。
 
 ## 道具
 

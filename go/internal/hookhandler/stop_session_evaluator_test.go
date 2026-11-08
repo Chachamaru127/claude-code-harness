@@ -431,3 +431,46 @@ func TestStopSessionEvaluator_RecordsLastMessageBackslashStatePath(t *testing.T)
 		t.Fatalf("last_message_hash was not recorded: %s", data)
 	}
 }
+
+// リンクをたどって別のファイルを書き換えないことを確認する。
+func TestEnsureRegularFileRejectsSymlink(t *testing.T) {
+	dir := t.TempDir()
+	target := filepath.Join(dir, "target.json")
+	link := filepath.Join(dir, "link.json")
+	if err := os.WriteFile(target, []byte(`{}`), 0o644); err != nil {
+		t.Fatalf("write target: %v", err)
+	}
+	if err := os.Symlink(target, link); err != nil {
+		t.Skipf("symlink unavailable: %v", err)
+	}
+	if err := ensureRegularFile(link); err == nil {
+		t.Fatal("expected symlink to be rejected")
+	}
+	if err := ensureRegularFile(target); err != nil {
+		t.Fatalf("regular file rejected: %v", err)
+	}
+}
+
+// 失敗時に直前の内容へ戻せることを確認する。
+func TestWriteInPlaceKeepsPreviousOnFailure(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "session.json")
+	previous := []byte(`{"keep":"me"}`)
+	if err := os.WriteFile(path, previous, 0o644); err != nil {
+		t.Fatalf("write state: %v", err)
+	}
+	if err := os.Chmod(path, 0o444); err != nil {
+		t.Fatalf("chmod: %v", err)
+	}
+	t.Cleanup(func() { _ = os.Chmod(path, 0o644) })
+	if err := writeInPlace(path, []byte(`{"new":true}`), previous); err == nil {
+		t.Skip("write unexpectedly succeeded (running as a user that ignores read-only)")
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read state: %v", err)
+	}
+	if string(data) != string(previous) {
+		t.Fatalf("previous state was not restored: %s", data)
+	}
+}
