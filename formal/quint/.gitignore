@@ -1,0 +1,6 @@
+node_modules/
+.cache/
+__pycache__/
+# The repository-wide **/package-lock.json ignore is overridden here so the
+# pinned Quint dependency tree is reviewable and reproducible.
+!package-lock.json
