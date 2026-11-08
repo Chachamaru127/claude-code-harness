@@ -126,7 +126,7 @@ jobs:
     # hang past 30 minutes. Instabox is unmigrated for this job because the
     # free box returns fork/exec EAGAIN (recorded in Plans.md Phase 151).
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
