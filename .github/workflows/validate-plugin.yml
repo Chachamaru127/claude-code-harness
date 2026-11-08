@@ -150,7 +150,8 @@ jobs:
         working-directory: go
         # A hanging test must fail with a stack trace instead of running the
         # job into its timeout with no log.
-        run: go test -timeout 25m ./...
+        # The default package parallelism runs the runner out of memory.
+        run: go test -p 2 -timeout 25m ./...
 
       - name: Run go vet
         working-directory: go
