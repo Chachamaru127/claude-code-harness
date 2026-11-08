@@ -26,54 +26,13 @@ if [ ! -d "$HANDLER_DIR" ]; then
   exit 0
 fi
 
-# Count Japanese string-literal lines that are NOT inside a localizedHarnessMessage(...)
-# call span and are not comments. awk tracks paren depth so that ja arguments on
-# their own line inside a multi-line localizer call are correctly excluded.
-count=0
-for f in "$HANDLER_DIR"/*.go; do
-  case "$f" in *_test.go) continue ;; esac
-  [ -f "$f" ] || continue
-  n=$(awk '
-    # Strip a Go line comment (//) only when it is NOT inside a string literal.
-    # A naive sub(/\/\/.*/) would truncate at the // inside a URL such as
-    # "参照: https://example.com", deleting a localizer call closing paren and
-    # leaking paren depth across the rest of the file — silently disabling the
-    # ratchet. Track double-quote and backtick (raw) string state with escapes.
-    function stripComment(s,   i, ch, inD, inB, esc, len) {
-      len = length(s); inD = 0; inB = 0; esc = 0
-      for (i = 1; i <= len; i++) {
-        ch = substr(s, i, 1)
-        if (esc) { esc = 0; continue }
-        if (ch == "\\" && inD) { esc = 1; continue }
-        if (ch == "\"" && !inB) { inD = !inD; continue }
-        if (ch == "`" && !inD) { inB = !inB; continue }
-        if (ch == "/" && !inD && !inB && i < len && substr(s, i + 1, 1) == "/") {
-          return substr(s, 1, i - 1)
-        }
-      }
-      return s
-    }
-    # Maintain paren depth of an active localizedHarnessMessage(...) call.
-    { line = stripComment($0) }
-    {
-      inCall = (depth > 0)
-      # If this line opens a localizer call, everything from here is localized.
-      if (line ~ /localizedHarnessMessage[[:space:]]*\(/) { opensCall = 1 } else { opensCall = 0 }
-      # A Japanese literal outside any localizer call is a bare (unmigrated) string.
-      if (!inCall && !opensCall && line ~ /"[^"]*[ぁ-んァ-ヶ一-龠][^"]*"/) { bare++ }
-      # Update paren depth across the line for multi-line localizer spans.
-      if (opensCall || inCall) {
-        for (i = 1; i <= length(line); i++) {
-          c = substr(line, i, 1)
-          if (c == "(") depth++
-          else if (c == ")") { if (depth > 0) depth-- }
-        }
-      }
-    }
-    END { print bare + 0 }
-  ' "$f")
-  count=$((count + n))
-done
+# Count Japanese string-literal lines outside a localizedHarnessMessage(...)
+# span with an explicit Unicode matcher. The old awk counter treated em dashes
+# and box-drawing characters as Japanese under mawk, failing on Instabox.
+count=$(python3 "$ROOT/scripts/ci/check_i18n_hookhandler_ratchet.py" "$ROOT") || {
+  echo "i18n ratchet: checker failed" >&2
+  exit 1
+}
 
 if [ "$count" -gt "$BASELINE" ]; then
   echo "❌ i18n ratchet: bare Japanese literals rose to $count (baseline $BASELINE)."

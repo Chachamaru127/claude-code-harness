@@ -21,8 +21,12 @@ cd "${BENCH_DIR}"
 # meta-vulnerabilities, so the counts can differ. Known advisories are recorded
 # in audit-baseline.json with an expiry; any new moderate-or-higher advisory
 # fails, and the baseline must be refreshed before it expires.
-npm audit --json >/tmp/breezing-agent-eval-audit.json || true
-npm install --ignore-scripts --prefer-offline >/tmp/breezing-agent-eval-install.log
+AUDIT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/breezing-agent-eval.XXXXXX")"
+trap 'rm -rf "$AUDIT_DIR"' EXIT
+AUDIT_JSON="$AUDIT_DIR/audit.json"
+export AUDIT_JSON
+npm audit --json >"$AUDIT_JSON" || true
+npm install --ignore-scripts --prefer-offline >"$AUDIT_DIR/install.log"
 
 node <<'NODE'
 const fs = require("fs");
@@ -120,7 +124,7 @@ if (missing.length > 0) {
   fail(`experiment references missing eval fixture(s): ${missing.join(", ")}`);
 }
 
-const audit = JSON.parse(fs.readFileSync("/tmp/breezing-agent-eval-audit.json", "utf8"));
+const audit = JSON.parse(fs.readFileSync(process.env.AUDIT_JSON, "utf8"));
 const baseline = JSON.parse(fs.readFileSync("audit-baseline.json", "utf8"));
 if (audit.error || !audit.vulnerabilities || !audit.metadata) {
   fail("npm audit did not return a readable report; cannot verify the baseline");
@@ -154,6 +158,6 @@ if (process.exitCode) {
 }
 NODE
 
-npm run eval:smoke:dry >/tmp/breezing-agent-eval-smoke.log
+npm run eval:smoke:dry >"$AUDIT_DIR/smoke.log"
 
 echo "breezing agent-eval dependency audit: ok"

@@ -479,7 +479,7 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 
 **承認元**: 本人の `$route-project-setup` 実行（対象: このrepo）。運用接続の診断と通常Issue 1件を範囲とする。
 **目的**: 既存の仕様・台帳・Issue・CI・branch protectionを読み、形式診断と接続案を記録し、通常Issueを同じ経路で通す。
-**非対象**: 製品仕様の変更、公開・release、branch protectionの変更、Instaboxへのrunner切替（接続未確認）、T3プロジェクト・Bot・監視の新設。
+**非対象**: 製品仕様の変更、公開・release、branch protectionの変更、T3プロジェクト・Bot・監視の新設。Instaboxへのrunner切替は2026-11-08の本人指示「インスタボックスも使う」で範囲に含め、151.6で実施する。
 **現在地 (2026-11-08 19:45 JST)**: ローカル main を origin/main v5.16.0 (c2304c32) へ同期。必須CIは actionlint / validate / test-go の3件 (strict)。enforce_admins=false、required_conversation_resolution=false。T3プロジェクト、route-job案件記録、このrepo向けInstabox接続は未作成/未確認。Phase 150の状態を実測（tag v5.16.0、Release 4資産）に合わせて閉じた。
 
 | ID | Task | DoD | Status |
@@ -495,5 +495,5 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 - `session.json` の同時更新（stop-evaluator と session-summary）は既存の競合で、このPRでは直していない。必要なら別Issueにする。
 - `formal/quint` の `compile.cjs` と `toolchain.py` は上流RouteCLIの固定版。CodeRabbitの指摘（並行コンパイルの出力分離、timeout時の子プロセス回収、起動ログ）は上流へ戻す。このrepoの `check.py` は検査ごとに出力先を分ける。
 - ベンチマーク監査は2026-11-08時点の既知12件を期限2026-12-08で除外する。期限までに依存更新（undici 7.30.1、agent-eval/zod）を行う。新しい勧告は除外しない。
-- Windows の同一ファイル書き込みは、プロセス内の失敗時に直前の内容へ戻し、戻せない場合はエラーを記録する。電源断などの途中状態までは保証しない。ACL維持とのトレードオフ。`Lstat` と書き込みの間のリンク差し替え（TOCTOU）は残る。状態ディレクトリは利用者本人の領域である。
+- Windows の同一ファイル書き込みは、プロセス内の失敗時に直前の内容へ戻すが、復元はベストエフォートで、書き込みと復元の両方が失敗すると部分的な内容が残り得る。電源断などの途中状態までは保証しない。ACL維持とのトレードオフ。`Lstat` と書き込みの間のリンク差し替え（TOCTOU）は残る。状態ディレクトリは利用者本人の領域である。
 - 診断の生ログは `.local/` に残る。clean checkout には模型・入力・HTMLを置き、再生成手順を `formal/baseline/route-setup-2026-11-08/README.md` に書く。

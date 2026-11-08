@@ -10,6 +10,7 @@ import hashlib
 import json
 import re
 import sys
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -47,7 +48,7 @@ def main():
     stdout_path = Path(args.stdout).resolve()
     if result_path.exists() or stdout_path.exists() or result_path == stdout_path:
         raise SystemExit("new evidence paths required")
-    work = result_path.parent / (args.check + "-compile")
+    work = result_path.parent / (args.check + "-compile-" + str(time.time_ns()))
     if work.exists():
         raise SystemExit("new compilation directory required")
     work.mkdir(parents=True)

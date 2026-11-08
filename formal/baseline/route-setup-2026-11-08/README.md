@@ -73,7 +73,7 @@ python3 formal/baseline/route-setup-2026-11-08/check.py C1 \
   --stdout .local/route-setup-2026-11-08/C1/stdout.log
 ```
 
-結果の保存先は毎回未使用のパスへ変更する。既存の有効結果を理由なく上書き・反復しない。HTML生成は route-project-setup の `build_report.py` を使う場合だけで、検査の再実行には要らない。生成補助は検査を実行しない。
+結果の保存先は毎回未使用のパスへ変更する。コンパイル用ディレクトリは実行ごとに一意になるため、同じ親ディレクトリで別の結果パスを指定すれば再実行できる。既存の有効結果を理由なく上書き・反復しない。HTML生成は route-project-setup の `build_report.py` を使う場合だけで、検査の再実行には要らない。生成補助は検査を実行しない。
 
 ## 道具
 
