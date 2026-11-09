@@ -18,7 +18,7 @@ concurrency:
 jobs:
   actionlint:
     name: actionlint
-    runs-on: ubuntu-latest
+    runs-on: instabox-medium
     timeout-minutes: 5
 
     steps:
@@ -43,8 +43,9 @@ jobs:
           "$(go env GOPATH)/bin/actionlint" -color
 
   validate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Paid Instabox workspace: 8 vCPU / 16 GB.
+    runs-on: instabox-large
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -119,15 +120,21 @@ jobs:
         # REQUIRED=1 is reserved for nightly/release when CLI secrets/images are stable.
 
   test-go:
+    # Bounded suite: the full suite makes the Instabox runner lose
+    # communication (heartbeat starved) and GitHub-hosted runners OOM.
+    # validate runs tests/validate-plugin.sh on the paid instabox-large box
+    # (that script does not run the full Go suite). This job covers the
+    # packages changed by the PR plus core. Full suite: 582 s, exit 0 on an
+    # 8 GB Instabox box (recorded in Plans.md Phase 151).
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 1
+          fetch-depth: 0
           filter: blob:none
 
       - name: Setup Go (harness composite)
@@ -140,9 +147,11 @@ jobs:
         working-directory: go
         run: go build ./cmd/harness/
 
-      - name: Run Go tests
-        working-directory: go
-        run: go test ./...
+      - name: Run Go tests (changed packages + core)
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: bash ./tests/test-go-changed.sh
 
       - name: Run go vet
         working-directory: go

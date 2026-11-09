@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/Chachamaru127/claude-code-harness/go/internal/plans"
@@ -252,25 +253,65 @@ func (h *StopSessionEvaluatorHandler) recordLastMessage(stateFile, msg string) {
 		return
 	}
 
-	// アトミック書き込み: 一時ファイル + rename
-	stateDir := stateFile[:strings.LastIndex(stateFile, "/")]
-	tmpFile, err := os.CreateTemp(stateDir, "session.json.*")
+	// 書き込みは OS ごとに分ける。Windows は置換ではなく同じファイルへ
+	// 上書きし、元のアクセス制御（ACL）と所有者を保つ。
+	if err := writeSessionState(stateFile, append(newData, '\n'), sessionData); err != nil {
+		fmt.Fprintf(os.Stderr, "[StopSession] session state write failed: %v\n", err)
+	}
+}
+
+// writeSessionState は session.json を書き換える。
+//
+// Unix は一時ファイル + rename でアトミックに置換する。Windows の
+// os.CreateTemp はディレクトリの継承ACLを持つ新しいファイルを作るため、
+// 置換すると元のファイルより広いACLになり得る。既存ファイルへ直接書いて
+// ACLと所有者を保つ。filepath.Dir は OS の区切り文字に従う（Issue #389）。
+func writeSessionState(stateFile string, data, previous []byte) error {
+	if runtime.GOOS == "windows" {
+		// リンクをたどって別のファイルを上書きしない。
+		if err := ensureRegularFile(stateFile); err != nil {
+			return err
+		}
+		return writeInPlace(stateFile, data, previous)
+	}
+	tmpFile, err := os.CreateTemp(filepath.Dir(stateFile), "session.json.*")
 	if err != nil {
-		return
+		return err
 	}
 	tmpPath := tmpFile.Name()
-	defer func() {
-		// rename 失敗時のクリーンアップ
-		os.Remove(tmpPath)
-	}()
-
-	if _, err := tmpFile.Write(append(newData, '\n')); err != nil {
+	defer os.Remove(tmpPath)
+	if _, err := tmpFile.Write(data); err != nil {
 		tmpFile.Close()
-		return
+		return err
 	}
-	tmpFile.Close()
+	if err := tmpFile.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmpPath, stateFile)
+}
 
-	_ = os.Rename(tmpPath, stateFile)
+// ensureRegularFile はリンクや特殊ファイルを拒否する。
+func ensureRegularFile(path string) error {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return err
+	}
+	if !info.Mode().IsRegular() {
+		return fmt.Errorf("refusing to write non-regular state file: %s", path)
+	}
+	return nil
+}
+
+// writeInPlace は既存ファイルへ書き、失敗時は直前の内容へ戻す。
+// ファイルを作り直さないので ACL と所有者は変わらない。
+func writeInPlace(path string, data, previous []byte) error {
+	if err := os.WriteFile(path, data, 0o600); err != nil {
+		if restoreErr := os.WriteFile(path, previous, 0o600); restoreErr != nil {
+			return fmt.Errorf("write failed: %v; restore failed: %v", err, restoreErr)
+		}
+		return err
+	}
+	return nil
 }
 
 // countWIPTasks は projectRoot 配下の Plans.md を探し、table と heading task の

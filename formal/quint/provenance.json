@@ -1,0 +1,12 @@
+{
+  "source": "routecli",
+  "commit": "b28a73c70076253e0a88d9b0ae2edfda06d8d2fc",
+  "files": {
+    "prepare.py": "ac5244505995b193f8081a0660f4612f1afec6f5d607ad766ac498d560148151",
+    "compile.cjs": "cc7623f2795550355c3e2300a4b36a5623baf2b479fc25cd8666a2cb09d33f3a",
+    "toolchain.py": "10536180a9bb79b953dcdaee4ccb9a2e16dddf21a9ec71d72e13ce8dc9fd4f27",
+    "package.json": "1117290497f4a943c43a8014377ab5451bf642afd07b04208d9a4a3e5284106c",
+    "package-lock.json": "2f3d2c7f8d7567aa5bb7adaf6b1eaa7f4d34c84f3efcbca153af707aaa457c49",
+    "versions.json": "8eeca21291c9343a10572228a07151692a497570a5fc784da92cb2ea4ac0aafa"
+  }
+}

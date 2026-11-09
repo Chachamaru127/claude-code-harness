@@ -1,0 +1,25 @@
+{
+  "observed_at": "2026-11-09",
+  "expires_at": "2026-12-08",
+  "note": "Known moderate/high advisories in the dev-only benchmark harness after the undici 7.30.2 update. New advisories fail; refresh or update before the expiry.",
+  "advisories": [
+    {
+      "package": "glob",
+      "url": "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4",
+      "severity": "moderate",
+      "title": "Glob: AbortSignal cancellation bypass allows post-timeout filesystem traversal"
+    },
+    {
+      "package": "minimatch",
+      "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
+      "severity": "moderate",
+      "title": "minimatch has potential denial of service via globparts amplification"
+    },
+    {
+      "package": "zod",
+      "url": "https://github.com/advisories/GHSA-mrhx-c7xc-m3w5",
+      "severity": "high",
+      "title": "Zod can exhaust memory while validating oversized constrained collections"
+    }
+  ]
+}
