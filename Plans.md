@@ -496,4 +496,5 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 - `formal/quint` の `compile.cjs` と `toolchain.py` は上流RouteCLIの固定版。CodeRabbitの指摘（並行コンパイルの出力分離、timeout時の子プロセス回収、起動ログ）は上流へ戻す。このrepoの `check.py` は検査ごとに出力先を分ける。
 - ベンチマーク監査は2026-11-08時点の既知12件を期限2026-12-08で除外する。期限までに依存更新（undici 7.30.1、agent-eval/zod）を行う。新しい勧告は除外しない。
 - Windows の同一ファイル書き込みは、プロセス内の失敗時に直前の内容へ戻すが、復元はベストエフォートで、書き込みと復元の両方が失敗すると部分的な内容が残り得る。電源断などの途中状態までは保証しない。ACL維持とのトレードオフ。`Lstat` と書き込みの間のリンク差し替え（TOCTOU）は残る。状態ディレクトリは利用者本人の領域である。
+- 必須の `test-go` は、CI ランナーの OOM/SIGTERM でフル suite が完走しないため、変更パッケージ＋core の限定 suite とする。フル suite は Instabox の箱（8GB）で2026-11-08に582秒・終了0を確認した。CI の安定化は別Issue候補。
 - 診断の生ログは `.local/` に残る。clean checkout には模型・入力・HTMLを置き、再生成手順を `formal/baseline/route-setup-2026-11-08/README.md` に書く。
