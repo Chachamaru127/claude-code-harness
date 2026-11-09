@@ -164,6 +164,26 @@ else
 fi
 
 # ============================================================
+# Case 5: locale は cwd ではなく PROJECT_ROOT の config から解決する
+# (この test の cwd は i18n.language: en の repo root)
+# ============================================================
+
+TMP_PROJ_JA="$(mktemp -d "${TMPDIR:-/tmp}/test-progress-regen-ja.XXXXXX")"
+trap "rm -rf '$TMP_PROJ' '$TMP_PROJ_NO_PLANS' '$TMP_PROJ_JA'" EXIT
+cp "$TMP_PROJ/Plans.md" "$TMP_PROJ_JA/Plans.md"
+printf 'i18n:\n  language: ja\n' > "$TMP_PROJ_JA/.claude-code-harness.config.yaml"
+echo "" | env -u CONFIG_FILE -u CLAUDE_CODE_HARNESS_LANG PROJECT_ROOT="$TMP_PROJ_JA" bash "$HANDLER" >/dev/null 2>&1
+for _ in $(seq 1 50); do
+  [[ -s "$TMP_PROJ_JA/out/progress-snapshot.html" ]] && break
+  sleep 0.2
+done
+if grep -q '<html lang="ja">' "$TMP_PROJ_JA/out/progress-snapshot.html" 2>/dev/null; then
+  pass "Case 5: ja project regenerated from an en cwd renders lang=ja"
+else
+  fail "Case 5: locale resolved from cwd instead of PROJECT_ROOT. got: $(grep -o '<html lang="[a-z]*">' "$TMP_PROJ_JA/out/progress-snapshot.html" 2>/dev/null)"
+fi
+
+# ============================================================
 # 共通検証: dual hooks.json sync (P29 規約)
 # ============================================================
 
