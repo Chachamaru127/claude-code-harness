@@ -23,6 +23,10 @@ PASS=0
 FAIL=0
 FAIL_MESSAGES=()
 
+# 既存ケースは日本語テンプレートの文言を検証するため ja に固定する (repo の config は en)
+export CONFIG_FILE="/nonexistent/.claude-code-harness.config.yaml"
+export CLAUDE_CODE_HARNESS_LANG=ja
+
 pass() { PASS=$((PASS + 1)); echo "✓ $1"; }
 fail() { FAIL=$((FAIL + 1)); FAIL_MESSAGES+=("$1"); echo "✗ $1" >&2; }
 
@@ -148,6 +152,15 @@ if grep -q "25%" "$HTML1" && grep -q ">1</strong>件 完了" "$HTML1" && grep -q
   pass "(d) Case 1: HTML contains 25%, '1件 完了', '2件 未着手'"
 else
   fail "(d) Case 1: HTML missing expected count display"
+fi
+
+HTML1_EN="$TMP_DIR/html1-en.html"
+CLAUDE_CODE_HARNESS_LANG=en bash "$RENDER_SCRIPT" --template progress --data "$SNAP1" --out "$HTML1_EN" 2>"$TMP_DIR/r1-en-stderr.txt"
+if grep -q '<html lang="en">' "$HTML1_EN" && grep -q ">1</strong> done" "$HTML1_EN" \
+  && grep -q "Tasks complete" "$HTML1_EN" && ! grep -q "タスク完了率\|現在のタスク\|この artifact の根拠" "$HTML1_EN"; then
+  pass "(d) Case 1: i18n.language=en renders progress.en.html.template"
+else
+  fail "(d) Case 1: English render missing or still Japanese. stderr: $(cat "$TMP_DIR/r1-en-stderr.txt")"
 fi
 
 # Case 2: 全 完了 (100%)

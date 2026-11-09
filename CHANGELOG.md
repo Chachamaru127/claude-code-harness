@@ -13,6 +13,10 @@ Engineering-only phase/task bookkeeping stays in that archive. Existing comparis
 
 ## [Unreleased]
 
+### Fixed
+
+- `/harness-progress` now renders its HTML in English when `i18n.language` is `en` (the default). `render-html.sh` picks a `<name>.<locale>.html.template` when one exists and otherwise falls back to the existing template; only the progress template has an English version so far.
+
 ## [5.16.0] - 2026-10-15
 
 ### Changed
