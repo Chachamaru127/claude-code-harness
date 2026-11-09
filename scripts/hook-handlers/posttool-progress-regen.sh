@@ -27,6 +27,9 @@ else
   PROJECT_ROOT="${PROJECT_ROOT:-$(pwd)}"
 fi
 
+# render-html.sh の locale 解決は CONFIG_FILE (既定は cwd 相対) を読むため、target project の config を渡す
+export CONFIG_FILE="${CONFIG_FILE:-${PROJECT_ROOT}/.claude-code-harness.config.yaml}"
+
 STATE_FILE="${PROJECT_ROOT}/.claude/state/progress-last-regen.txt"
 PLANS_FILE="${PROJECT_ROOT}/Plans.md"
 OUT_HTML="${PROJECT_ROOT}/out/progress-snapshot.html"
