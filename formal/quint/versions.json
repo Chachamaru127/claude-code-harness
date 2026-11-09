@@ -1,0 +1,7 @@
+{
+  "quint": "0.33.1",
+  "apalache": "0.62.4",
+  "archive_url": "https://github.com/apalache-mc/apalache/releases/download/v0.62.4/apalache.tgz",
+  "archive_sha256": "8ac8488422c30d552735bae11b92a2d014d8e02e8608702acc08f9a2d8a9abb2",
+  "jar_sha256": "e5223915507b65cc5f1638bd037ede60f8a4fc1644aff46355779f9b05df9262"
+}

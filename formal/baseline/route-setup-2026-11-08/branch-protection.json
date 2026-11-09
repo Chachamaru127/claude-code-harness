@@ -1,0 +1,19 @@
+{
+  "repository": "Chachamaru127/claude-code-harness",
+  "branch": "main",
+  "observed_at": "2026-11-08T10:36:44.354272+00:00",
+  "required_status_checks": {
+    "strict": true,
+    "contexts": [
+      "actionlint",
+      "validate",
+      "test-go"
+    ]
+  },
+  "enforce_admins": false,
+  "required_conversation_resolution": false,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
+  "required_linear_history": false,
+  "required_signatures": false
+}

@@ -49,7 +49,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: ubuntu-latest
+          - os: instabox-medium
             label: linux-amd64
           - os: macos-latest
             label: darwin-arm64

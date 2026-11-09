@@ -18,10 +18,15 @@ require_cmd node
 cd "${BENCH_DIR}"
 
 # GitHub Dependabot alerts are advisory-level; npm audit reports package-level
-# meta-vulnerabilities, so the counts can differ. This gate only requires that
-# the tracked benchmark lockfile has no moderate-or-higher npm audit findings.
-npm audit --audit-level=moderate >/tmp/breezing-agent-eval-audit.json
-npm install --ignore-scripts --prefer-offline >/tmp/breezing-agent-eval-install.log
+# meta-vulnerabilities, so the counts can differ. Known advisories are recorded
+# in audit-baseline.json with an expiry; any new moderate-or-higher advisory
+# fails, and the baseline must be refreshed before it expires.
+AUDIT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/breezing-agent-eval.XXXXXX")"
+trap 'rm -rf "$AUDIT_DIR"' EXIT
+AUDIT_JSON="$AUDIT_DIR/audit.json"
+export AUDIT_JSON
+npm audit --json >"$AUDIT_JSON" || true
+npm install --ignore-scripts --prefer-offline >"$AUDIT_DIR/install.log"
 
 node <<'NODE'
 const fs = require("fs");
@@ -63,8 +68,8 @@ if (pkg.dependencies?.["@vercel/agent-eval"] !== "~1.4.0") {
   fail("@vercel/agent-eval must stay on the current 1.4.x line");
 }
 
-if (pkg.overrides?.undici !== "^7.30.0") {
-  fail("package.json must pin undici override to a patched range");
+if (pkg.overrides?.undici !== "^7.30.2") {
+  fail("package.json must pin undici override to the patched 7.30.2 range");
 }
 
 if (pkg.overrides?.minimatch !== "^10.2.4") {
@@ -94,7 +99,7 @@ for (const [name, command] of Object.entries(pkg.scripts || {})) {
 }
 
 assertMinVersion("@vercel/agent-eval", versionOf("node_modules/@vercel/agent-eval"), "1.4.0");
-assertMinVersion("undici", versionOf("node_modules/undici"), "7.30.0");
+assertMinVersion("undici", versionOf("node_modules/undici"), "7.30.2");
 assertMinVersion("minimatch", versionOf("node_modules/minimatch"), "10.2.4");
 assertMinVersion("uuid", versionOf("node_modules/uuid"), "11.1.1");
 assertMinVersion("nanoid", versionOf("node_modules/nanoid"), "3.3.17");
@@ -119,11 +124,40 @@ if (missing.length > 0) {
   fail(`experiment references missing eval fixture(s): ${missing.join(", ")}`);
 }
 
+const audit = JSON.parse(fs.readFileSync(process.env.AUDIT_JSON, "utf8"));
+const baseline = JSON.parse(fs.readFileSync("audit-baseline.json", "utf8"));
+if (audit.error || !audit.vulnerabilities || !audit.metadata) {
+  fail("npm audit did not return a readable report; cannot verify the baseline");
+} else {
+  const today = new Date().toISOString().slice(0, 10);
+  if (today > baseline.expires_at) {
+    fail(`npm audit baseline expired on ${baseline.expires_at}: update the dependencies and refresh audit-baseline.json`);
+  }
+  const known = new Set(baseline.advisories.map((entry) => `${entry.package}|${entry.url}`));
+  const seen = new Set();
+  for (const [pkgName, vuln] of Object.entries(audit.vulnerabilities)) {
+    for (const via of vuln.via || []) {
+      if (typeof via !== "object" || !via.url) continue;
+      const key = `${pkgName}|${via.url}`;
+      seen.add(key);
+      if (["low", "info"].includes(via.severity)) continue;
+      if (!known.has(key)) {
+        fail(`new npm advisory outside the baseline: ${pkgName} ${via.url} (${via.severity})`);
+      }
+    }
+  }
+  for (const entry of baseline.advisories) {
+    if (!seen.has(`${entry.package}|${entry.url}`)) {
+      console.log(`note: baseline advisory no longer reported: ${entry.package} ${entry.url}`);
+    }
+  }
+}
+
 if (process.exitCode) {
   process.exit(process.exitCode);
 }
 NODE
 
-npm run eval:smoke:dry >/tmp/breezing-agent-eval-smoke.log
+npm run eval:smoke:dry >"$AUDIT_DIR/smoke.log"
 
 echo "breezing agent-eval dependency audit: ok"
