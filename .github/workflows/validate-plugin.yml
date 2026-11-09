@@ -148,23 +148,10 @@ jobs:
         run: go build ./cmd/harness/
 
       - name: Run Go tests (changed packages + core)
-        working-directory: go
         env:
           BASE_REF: ${{ github.base_ref }}
-        run: |
-          set -euo pipefail
-          packages="./internal/hookhandler ./internal/plans ./internal/policy ./internal/scopeleash ./internal/runtimefloor ./internal/floor ./internal/guardrail ./pkg/config"
-          changed=""
-          if [ -n "${BASE_REF}" ]; then
-            git fetch --no-tags origin "${BASE_REF}"
-            changed=$(git diff --name-only "origin/${BASE_REF}...HEAD" -- . \
-              | grep '\.go$' \
-              | xargs -r -n1 dirname \
-              | sed 's|^go/|./|' \
-              | sort -u || true)
-          fi
-          echo "changed packages: ${changed:-none}"
-          go test -count=1 -p 1 -parallel 1 ${packages} ${changed}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: bash ./tests/test-go-changed.sh
 
       - name: Run go vet
         working-directory: go
