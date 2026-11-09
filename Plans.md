@@ -489,12 +489,12 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 | 151.3 | `[lane:gate]` `[tdd:required]` 通常Issue #389の修正 | RED/GREEN、`cd go && go test ./...`、対象commit | cc:done [RED: `.local/route-setup-2026-11-08/issue389-red.log` の `slice bounds out of range [:-1]`、GREEN: 同 `issue389-green.log`。`filepath.Dir` と Windows の同一ファイル上書き、回帰試験、4バイナリ再生成。PR #401。2巡目: Windowsのリンク拒否、書き込み失敗時の復元、ローカル`check.py`] |
 | 151.4 | `[lane:gate]` `[tdd:skip:ci-readback]` 対象commitのCIと独立受入 | 必須CI 3件 success、独立受入 PASS | cc:done [PR #401 の必須チェック actionlint/validate/test-go と Instabox の Linux smoke で確認。独立受入は C1-C4 PASS、CodeRabbit の指摘はリンク拒否・失敗時復元・check.py・模型のC1/C4へ反映] |
 | 151.5 | `[lane:release]` `[tdd:skip:merge-and-record]` merge判断と接続結果 | 本人確認後のmerge、結果と残件を記録 | cc:done [PR #401 を merge commit で main へ取り込み、Issue #389 を close する] |
-| 151.6 | `[lane:gate]` `[tdd:skip:ci-platform]` Instabox CI接続 | instabox-mediumで必須CIが成功 | cc:done [instabox-medium の gh-job ランナーで actionlint・Linux smoke・mirror が success。validate と test-go は無料枠の資源不足（fork/exec EAGAIN、ログなしで runner 終了）で GitHub-hosted のまま未移行と記録。macOS/Windows smoke・release・benchmark・CodeQL/Scorecard は GitHub-hosted] |
+| 151.6 | `[lane:gate]` `[tdd:skip:ci-platform]` Instabox CI接続 | instabox-mediumで必須CIが成功 | cc:done [Proワークスペース（有料、8 vCPU/16GB）の instabox-large で validate と test-go のフル suite を実行。actionlint・Linux smoke・mirror は instabox-medium。macOS/Windows smoke・release・benchmark・CodeQL/Scorecard は GitHub-hosted] |
 
 **残るリスク (2026-11-08時点)**:
 - `session.json` の同時更新（stop-evaluator と session-summary）は既存の競合で、このPRでは直していない。必要なら別Issueにする。
 - `formal/quint` の `compile.cjs` と `toolchain.py` は上流RouteCLIの固定版。CodeRabbitの指摘（並行コンパイルの出力分離、timeout時の子プロセス回収、起動ログ）は上流へ戻す。このrepoの `check.py` は検査ごとに出力先を分ける。
 - ベンチマーク監査は2026-11-08時点の既知12件を期限2026-12-08で除外する。期限までに依存更新（undici 7.30.1、agent-eval/zod）を行う。新しい勧告は除外しない。
 - Windows の同一ファイル書き込みは、プロセス内の失敗時に直前の内容へ戻すが、復元はベストエフォートで、書き込みと復元の両方が失敗すると部分的な内容が残り得る。電源断などの途中状態までは保証しない。ACL維持とのトレードオフ。`Lstat` と書き込みの間のリンク差し替え（TOCTOU）は残る。状態ディレクトリは利用者本人の領域である。
-- 必須の `test-go` は、CI ランナーの OOM/SIGTERM でフル suite が完走しないため、変更パッケージ＋core の限定 suite とする。フル suite は Instabox の箱（8GB）で2026-11-08に582秒・終了0を確認した。CI の安定化は別Issue候補。
+- 必須の `test-go` は instabox-large（8 vCPU/16GB）でフル suite を実行する。無料枠の 8GB では EAGAIN/OOM で完走しなかったため、有料の Pro ワークスペースを使う（2026-11-09 本人指示）。
 - 診断の生ログは `.local/` に残る。clean checkout には模型・入力・HTMLを置き、再生成手順を `formal/baseline/route-setup-2026-11-08/README.md` に書く。
