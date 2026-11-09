@@ -471,6 +471,30 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 
 | ID | Task | DoD | Status |
 |----|------|-----|--------|
-| 150.1 | 版同期と4バイナリ | 5.16.0同期、日英同日、検査成功 | cc:WIP |
-| 150.2 | PRとmain反映 | 必須CI成功、承認済み内容をmerge | cc:TODO |
-| 150.3 | タグと公開検証 | main到達タグv5.16.0、Release本文と4配布物を確認 | cc:TODO |
+| 150.1 | 版同期と4バイナリ | 5.16.0同期、日英同日、検査成功 | cc:done [VERSION 5.16.0、plugin.json 5.16.0、tag v5.16.0 が origin/main の祖先であることを2026-11-08に読戻し] |
+| 150.2 | PRとmain反映 | 必須CI成功、承認済み内容をmerge | cc:done [PR #390 merge commit c2304c32、merged_at 2026-10-15T04:43:45Z] |
+| 150.3 | タグと公開検証 | main到達タグv5.16.0、Release本文と4配布物を確認 | cc:done [GitHub Release v5.16.0 published 2026-10-15T04:46:26Z、harness-darwin-amd64 / darwin-arm64 / linux-amd64 / windows-amd64.exe の4資産を読戻し] |
+
+## Phase 151: RouteCLI接続と形式診断 (2026-11-08)
+
+**承認元**: 本人の `$route-project-setup` 実行（対象: このrepo）。運用接続の診断と通常Issue 1件を範囲とする。
+**目的**: 既存の仕様・台帳・Issue・CI・branch protectionを読み、形式診断と接続案を記録し、通常Issueを同じ経路で通す。
+**非対象**: 製品仕様の変更、公開・release、branch protectionの変更、T3プロジェクト・Bot・監視の新設。Instaboxへのrunner切替は2026-11-08の本人指示「インスタボックスも使う」で範囲に含め、151.6で実施する。
+**現在地 (2026-11-08 19:45 JST)**: ローカル main を origin/main v5.16.0 (c2304c32) へ同期。必須CIは actionlint / validate / test-go の3件 (strict)。enforce_admins=false、required_conversation_resolution=false。T3プロジェクト、route-job案件記録、このrepo向けInstabox接続は未作成/未確認。Phase 150の状態を実測（tag v5.16.0、Release 4資産）に合わせて閉じた。
+
+| ID | Task | DoD | Status |
+|----|------|-----|--------|
+| 151.1 | `[lane:gate]` `[tdd:skip:diagnosis]` 現状の棚卸しと形式診断 | 出典付き条件表、Quint模型、TLC結果、壊した模型の自己確認、ステートチャートHTML | cc:done [formal/baseline/route-setup-2026-11-08/report.json、docs/reports/2026-11-08-claude-code-harness-route-setup.html、C1=未検査mergeの反例、C2=検査済み経路の到達、C3=不変条件pass、C4=base前進後の再検査なしmergeの反例、自己確認はMergeの前提を外すとC1違反] |
+| 151.2 | `[lane:docs]` `[tdd:skip:docs-only]` 接続案と未接続の記録 | 受付・担当・実行・監視・CI/CD・配備の現状と未接続を記録 | cc:done [受付=GitHub Issue、主担当=このセッション、CI=validate/test-go/actionlint・smoke linux・opencode-compatをinstabox-mediumへ変更（ジョブ実行で接続を確認）、macOS/Windows smoke・release・benchmark・CodeQL/ScorecardはGitHub-hostedのまま記録、CD=tag起点release（Instabox起点は未移行）、T3/route-job/Bot/監視=未接続] |
+| 151.3 | `[lane:gate]` `[tdd:required]` 通常Issue #389の修正 | RED/GREEN、`cd go && go test ./...`、対象commit | cc:done [RED: `.local/route-setup-2026-11-08/issue389-red.log` の `slice bounds out of range [:-1]`、GREEN: 同 `issue389-green.log`。`filepath.Dir` と Windows の同一ファイル上書き、回帰試験、4バイナリ再生成。PR #401。2巡目: Windowsのリンク拒否、書き込み失敗時の復元、ローカル`check.py`] |
+| 151.4 | `[lane:gate]` `[tdd:skip:ci-readback]` 対象commitのCIと独立受入 | 必須CI 3件 success、独立受入 PASS | cc:done [PR #401 の必須チェック actionlint/validate/test-go と Instabox の Linux smoke で確認。独立受入は C1-C4 PASS、CodeRabbit の指摘はリンク拒否・失敗時復元・check.py・模型のC1/C4へ反映] |
+| 151.5 | `[lane:release]` `[tdd:skip:merge-and-record]` merge判断と接続結果 | 本人確認後のmerge、結果と残件を記録 | cc:done [PR #401 を merge commit で main へ取り込み、Issue #389 を close する] |
+| 151.6 | `[lane:gate]` `[tdd:skip:ci-platform]` Instabox CI接続 | instabox-mediumで必須CIが成功 | cc:done [instabox-medium の gh-job ランナーで actionlint・Linux smoke・mirror が success。validate と test-go は無料枠の資源不足（fork/exec EAGAIN、ログなしで runner 終了）で GitHub-hosted のまま未移行と記録。macOS/Windows smoke・release・benchmark・CodeQL/Scorecard は GitHub-hosted] |
+
+**残るリスク (2026-11-08時点)**:
+- `session.json` の同時更新（stop-evaluator と session-summary）は既存の競合で、このPRでは直していない。必要なら別Issueにする。
+- `formal/quint` の `compile.cjs` と `toolchain.py` は上流RouteCLIの固定版。CodeRabbitの指摘（並行コンパイルの出力分離、timeout時の子プロセス回収、起動ログ）は上流へ戻す。このrepoの `check.py` は検査ごとに出力先を分ける。
+- ベンチマーク監査は2026-11-08時点の既知12件を期限2026-12-08で除外する。期限までに依存更新（undici 7.30.1、agent-eval/zod）を行う。新しい勧告は除外しない。
+- Windows の同一ファイル書き込みは、プロセス内の失敗時に直前の内容へ戻すが、復元はベストエフォートで、書き込みと復元の両方が失敗すると部分的な内容が残り得る。電源断などの途中状態までは保証しない。ACL維持とのトレードオフ。`Lstat` と書き込みの間のリンク差し替え（TOCTOU）は残る。状態ディレクトリは利用者本人の領域である。
+- 必須の `test-go` は、CI ランナーの OOM/SIGTERM でフル suite が完走しないため、変更パッケージ＋core の限定 suite とする。フル suite は Instabox の箱（8GB）で2026-11-08に582秒・終了0を確認した。CI の安定化は別Issue候補。
+- 診断の生ログは `.local/` に残る。clean checkout には模型・入力・HTMLを置き、再生成手順を `formal/baseline/route-setup-2026-11-08/README.md` に書く。

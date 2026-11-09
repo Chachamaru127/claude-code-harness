@@ -1,0 +1,8 @@
+{
+  "name": "routecli-formal-quint",
+  "private": true,
+  "version": "0.0.0",
+  "dependencies": {
+    "@informalsystems/quint": "0.33.1"
+  }
+}

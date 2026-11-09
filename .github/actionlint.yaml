@@ -1,0 +1,7 @@
+# Custom runner labels used by Instabox CI (Ubuntu 24.04 boxes).
+# actionlint reads this file to resolve `runs-on: instabox-*` labels.
+self-hosted-runner:
+  labels:
+    - instabox-medium
+    - instabox-small
+    - instabox-large
