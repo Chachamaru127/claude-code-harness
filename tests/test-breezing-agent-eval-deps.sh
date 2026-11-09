@@ -68,8 +68,8 @@ if (pkg.dependencies?.["@vercel/agent-eval"] !== "~1.4.0") {
   fail("@vercel/agent-eval must stay on the current 1.4.x line");
 }
 
-if (pkg.overrides?.undici !== "^7.30.0") {
-  fail("package.json must pin undici override to a patched range");
+if (pkg.overrides?.undici !== "^7.30.2") {
+  fail("package.json must pin undici override to the patched 7.30.2 range");
 }
 
 if (pkg.overrides?.minimatch !== "^10.2.4") {
@@ -99,7 +99,7 @@ for (const [name, command] of Object.entries(pkg.scripts || {})) {
 }
 
 assertMinVersion("@vercel/agent-eval", versionOf("node_modules/@vercel/agent-eval"), "1.4.0");
-assertMinVersion("undici", versionOf("node_modules/undici"), "7.30.0");
+assertMinVersion("undici", versionOf("node_modules/undici"), "7.30.2");
 assertMinVersion("minimatch", versionOf("node_modules/minimatch"), "10.2.4");
 assertMinVersion("uuid", versionOf("node_modules/uuid"), "11.1.1");
 assertMinVersion("nanoid", versionOf("node_modules/nanoid"), "3.3.17");
