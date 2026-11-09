@@ -1,14 +1,8 @@
 {
-  "observed_at": "2026-11-08",
+  "observed_at": "2026-11-09",
   "expires_at": "2026-12-08",
-  "note": "Known moderate/high npm advisories in the dev-only benchmark harness. New advisories fail; this list must be refreshed or the dependencies updated before the expiry.",
+  "note": "Known moderate/high advisories in the dev-only benchmark harness after the undici 7.30.2 update. New advisories fail; refresh or update before the expiry.",
   "advisories": [
-    {
-      "package": "@ai-sdk/provider-utils",
-      "url": "https://github.com/advisories/GHSA-866g-f22w-33x8",
-      "severity": "low",
-      "title": "@ai-sdk/provider-utils has an Uncontrolled Resource Consumption issue"
-    },
     {
       "package": "glob",
       "url": "https://github.com/advisories/GHSA-3g3m-2fjr-6pw4",
@@ -20,54 +14,6 @@
       "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249",
       "severity": "moderate",
       "title": "minimatch has potential denial of service via globparts amplification"
-    },
-    {
-      "package": "undici",
-      "url": "https://github.com/advisories/GHSA-2m5v-pch6-74hx",
-      "severity": "high",
-      "title": "undici vulnerable to TLS certificate validation bypass via dropped tls options in Agent"
-    },
-    {
-      "package": "undici",
-      "url": "https://github.com/advisories/GHSA-4qv8-2p9j-2685",
-      "severity": "moderate",
-      "title": "undici vulnerable to Denial of Service via unbounded memory in the EventSource parser"
-    },
-    {
-      "package": "undici",
-      "url": "https://github.com/advisories/GHSA-4w7w-5xrc-9h26",
-      "severity": "high",
-      "title": "undici vulnerable to cache poisoning and cross-user disclosure via cross-origin redirects"
-    },
-    {
-      "package": "undici",
-      "url": "https://github.com/advisories/GHSA-55wc-3pg8-jfw6",
-      "severity": "moderate",
-      "title": "undici vulnerable to Denial of Service via unhandled exception in the decompress interceptor"
-    },
-    {
-      "package": "undici",
-      "url": "https://github.com/advisories/GHSA-9fm3-97px-rjf6",
-      "severity": "moderate",
-      "title": "undici WebSocket client vulnerable to Denial of Service via unbounded automatic PONG buffering"
-    },
-    {
-      "package": "undici",
-      "url": "https://github.com/advisories/GHSA-f72v-6w45-q472",
-      "severity": "moderate",
-      "title": "undici vulnerable to Subresource Integrity bypass via non-lowercase algorithm tokens"
-    },
-    {
-      "package": "undici",
-      "url": "https://github.com/advisories/GHSA-qrxm-fqhp-jwvm",
-      "severity": "high",
-      "title": "undici vulnerable to Denial of Service via TLS 1.2 certificate-changing renegotiation"
-    },
-    {
-      "package": "undici",
-      "url": "https://github.com/advisories/GHSA-xjj6-f33q-929c",
-      "severity": "high",
-      "title": "undici vulnerable to Denial of Service via unhandled error on excessive content-encodings"
     },
     {
       "package": "zod",
