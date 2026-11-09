@@ -122,8 +122,9 @@ jobs:
   test-go:
     # Bounded suite: the full suite makes the Instabox runner lose
     # communication (heartbeat starved) and GitHub-hosted runners OOM.
-    # validate runs the full suite on the paid instabox-large box; this job
-    # covers the changed package and core. Full suite: 582 s, exit 0 on an
+    # validate runs tests/validate-plugin.sh on the paid instabox-large box
+    # (that script does not run the full Go suite). This job covers the
+    # packages changed by the PR plus core. Full suite: 582 s, exit 0 on an
     # 8 GB Instabox box (recorded in Plans.md Phase 151).
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -133,7 +134,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 1
+          fetch-depth: 0
           filter: blob:none
 
       - name: Setup Go (harness composite)
@@ -148,16 +149,22 @@ jobs:
 
       - name: Run Go tests (changed packages + core)
         working-directory: go
-        run: >-
-          go test -count=1 -p 1 -parallel 1
-          ./internal/hookhandler
-          ./internal/plans
-          ./internal/policy
-          ./internal/scopeleash
-          ./internal/runtimefloor
-          ./internal/floor
-          ./internal/guardrail
-          ./pkg/config
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+          packages="./internal/hookhandler ./internal/plans ./internal/policy ./internal/scopeleash ./internal/runtimefloor ./internal/floor ./internal/guardrail ./pkg/config"
+          changed=""
+          if [ -n "${BASE_REF}" ]; then
+            git fetch --no-tags origin "${BASE_REF}"
+            changed=$(git diff --name-only "origin/${BASE_REF}...HEAD" -- . \
+              | grep '\.go$' \
+              | xargs -r -n1 dirname \
+              | sed 's|^go/|./|' \
+              | sort -u || true)
+          fi
+          echo "changed packages: ${changed:-none}"
+          go test -count=1 -p 1 -parallel 1 ${packages} ${changed}
 
       - name: Run go vet
         working-directory: go
