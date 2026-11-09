@@ -144,7 +144,9 @@ jobs:
 
       - name: Run Go tests
         working-directory: go
-        run: go test ./...
+        # The suite's default parallelism exhausts even the 16 GB box; the
+        # serial run completes in about 10 minutes.
+        run: go test -p 1 -parallel 1 ./...
 
       - name: Run go vet
         working-directory: go
