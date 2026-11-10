@@ -517,3 +517,22 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 - 配分はパッケージ数による2分割（26件と27件）。所要時間の偏りは初回の artifact で確認し、必要なら重いパッケージの寄せ方を変える。
 - 上位プラン（xlarge）と同時実行枠の変更は契約の判断なので対象外。
 - `go test` のハングは `-timeout=10m` で打ち切り、そのパッケージのログを artifact に残す。
+
+## Phase 152: Go全テストのCI分割と必須チェックの扱い (2026-11-10)
+
+**承認元**: 2026-11-10 本人「$team-R 承認します、完走させて」。対象は `docs/reports/2026-11-09-go-ci-research/index.html` の推奨案。
+**目的**: 全53パッケージのGoテストを毎回のPRで実行できる形にし、その結果を必須チェックへつなぐ。
+**結論**: 分割と実行基盤は作れたが、`internal/session` を含む shard が CI の2環境のどちらでも完走しないため、全 suite を必須チェックにはできない。必須チェックは従来の「変更パッケージ＋core」に戻し、全 suite は記録用の非ブロッキングにした。
+
+| ID | Task | DoD | Status |
+|----|------|-----|--------|
+| 152.1 | `[lane:docs]` `[tdd:skip:docs-only]` 調査と提案 | 一次資料と現行 workflow の照合、未確認の分離、推奨案のHTML | cc:done [docs/reports/2026-11-09-go-ci-research/index.html] |
+| 152.2 | `[lane:gate]` `[tdd:required]` 分割の実装 | `tests/go-test-shard.sh` の assign/run/verify、割当の契約テスト、workflow の2分割 | cc:done [ローカルで `bash tests/test-go-test-shard.sh` PASS、shellcheck 終了0、actionlint 終了0] |
+| 152.3 | `[lane:gate]` `[tdd:skip:ci-readback]` 2環境での実測 | Instabox と GitHub の両方で shard の結果と所要時間を記録 | cc:done [Instabox: 84秒と79秒で成功した回がある一方、session を含む shard は `fork/exec /usr/bin/git: resource temporarily unavailable` を同じテスト・同じ秒数で再現。GitHub: shard 2 は97秒で成功、shard 1 は30分を超えて完走せず。artifact にパッケージ単位のログと秒数を保存] |
+| 152.4 | `[lane:release]` `[tdd:skip:ci-gate]` 必須チェックの確定 | 全 suite を非ブロッキングにし、必須チェックを限定 suite へ戻す | cc:done [go-test-full は artifact 付きの記録用、test-go は format・build・vet・変更パッケージ＋core。既存の必須チェック名は維持] |
+
+**残るリスク / 次の作業 (2026-11-10)**:
+- `internal/session` は CI 環境で完走しない。1テストごとに `git init` / `commit` / `checkout` を実行するため、遅い環境で時間とプロセスを消費する。テスト側の改善（リポジトリの共有、git 呼び出しの削減）を別 Issue にする。
+- Instabox のランナーが結果を返さず、ジョブが保留のまま残る事象が 2026-11-10 に複数回あった。ジョブ上限で打ち切り、必須チェックは Instabox に依存させない。
+- 全 suite を必須へ戻す条件: session を含む shard が Instabox と GitHub の両方で5分以内に完走し、artifact が揃うこと。
+- パッケージ単位の外側上限は 480秒。session の実測（8GBの箱で347秒）を下回らない値にしている。

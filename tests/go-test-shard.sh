@@ -106,20 +106,30 @@ run_shard() {
     # Package paths become file names; the log name stays readable in artifacts.
     safe="$(printf '%s' "${pkg}" | sed 's|^\./||; s|/$||; s|/|__|g')"
     start="$(date +%s)"
+    local log="${dir}/${safe}.log"
     rc=0
-    ( cd "${GO_DIR}" && run_package "${pkg}" ) > "${dir}/${safe}.log" 2>&1 || rc=$?
+    ( cd "${GO_DIR}" && run_package "${pkg}" ) > "${log}" 2>&1 || rc=$?
     status="ok"
     if [ "${rc}" -ne 0 ]; then
       if [ "${rc}" -eq 124 ]; then
         status="timeout"
-      elif [ "${GO_TEST_SHARD_RETRY:-1}" != "0" ] && is_environment_error "${dir}/${safe}.log"; then
-        echo "environment error, retrying once: ${pkg}"
-        rc=0
-        ( cd "${GO_DIR}" && run_package "${pkg}" ) > "${dir}/${safe}.retry.log" 2>&1 || rc=$?
-        if [ "${rc}" -eq 0 ]; then
-          status="ok-retry"
+      elif is_environment_error "${log}"; then
+        if [ "${GO_TEST_SHARD_RETRY:-1}" = "0" ]; then
+          status="fail-env"
         else
-          status="fail"
+          echo "environment error, retrying once: ${pkg}"
+          log="${dir}/${safe}.retry.log"
+          rc=0
+          ( cd "${GO_DIR}" && run_package "${pkg}" ) > "${log}" 2>&1 || rc=$?
+          if [ "${rc}" -eq 0 ]; then
+            status="ok-retry"
+          elif [ "${rc}" -eq 124 ]; then
+            status="timeout"
+          elif is_environment_error "${log}"; then
+            status="fail-env"
+          else
+            status="fail"
+          fi
         fi
       else
         status="fail"
@@ -127,7 +137,7 @@ run_shard() {
       if [ "${status}" != "ok-retry" ]; then
         fail=1
         echo "FAILED: ${pkg} (${status})"
-        tail -n 60 "${dir}/${safe}.log" || true
+        tail -n 60 "${log}" || true
       fi
     fi
     duration="$(( $(date +%s) - start ))"
