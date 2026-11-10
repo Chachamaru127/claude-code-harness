@@ -133,6 +133,10 @@ jobs:
     name: go-test-full (${{ matrix.shard }}/2)
     runs-on: instabox-large
     timeout-minutes: 20
+    env:
+      # Keeps the thread count of the compiler and of each test binary low;
+      # the box intermittently refuses to fork under default parallelism.
+      GOMAXPROCS: "2"
     strategy:
       fail-fast: false
       max-parallel: 2

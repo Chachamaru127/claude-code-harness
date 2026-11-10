@@ -28,6 +28,13 @@ die() {
   exit 1
 }
 
+# Instabox boxes intermittently refuse to fork during a test run
+# (`fork/exec ... resource temporarily unavailable`). That is the machine, not
+# the test, so the same package is retried once and the attempt is recorded.
+is_environment_error() {
+  grep -Eq 'resource temporarily unavailable|cannot allocate memory|signal: killed' "$1"
+}
+
 usage() {
   cat <<'USAGE'
 usage: go-test-shard.sh assign <index> <total>
@@ -78,14 +85,25 @@ run_shard() {
     # Package paths become file names; the log name stays readable in artifacts.
     safe="$(printf '%s' "${pkg}" | sed 's|^\./||; s|/$||; s|/|__|g')"
     start="$(date +%s)"
-    if ( cd "${GO_DIR}" && go test -count=1 -timeout=10m -p 1 -parallel 1 "${pkg}" ) \
+    status="ok"
+    if ! ( cd "${GO_DIR}" && go test -count=1 -timeout=10m -p 1 -parallel 1 "${pkg}" ) \
         > "${dir}/${safe}.log" 2>&1; then
-      status="ok"
-    else
-      status="fail"
-      fail=1
-      echo "FAILED: ${pkg}"
-      tail -n 60 "${dir}/${safe}.log" || true
+      if [ "${GO_TEST_SHARD_RETRY:-1}" != "0" ] && is_environment_error "${dir}/${safe}.log"; then
+        echo "environment error, retrying once: ${pkg}"
+        if ( cd "${GO_DIR}" && go test -count=1 -timeout=10m -p 1 -parallel 1 "${pkg}" ) \
+            > "${dir}/${safe}.retry.log" 2>&1; then
+          status="ok-retry"
+        else
+          status="fail"
+        fi
+      else
+        status="fail"
+      fi
+      if [ "${status}" = "fail" ]; then
+        fail=1
+        echo "FAILED: ${pkg}"
+        tail -n 60 "${dir}/${safe}.log" || true
+      fi
     fi
     duration="$(( $(date +%s) - start ))"
     printf '%s\t%s\t%s\n' "${pkg}" "${duration}" "${status}" >> "${dir}/summary.tsv"
