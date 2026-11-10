@@ -1,0 +1,68 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Goの全テストをCIで回し切るには</title><style>
+:root{color-scheme:light dark;--ink:#202c39;--sub:#5b6775;--line:#cbd3dc;--panel:#eef3f8;--blue:#225fa0;--orange:#a55d12;--paper:#fff;--radius:12px}*{box-sizing:border-box}body{margin:0;padding:28px 16px 48px;background:var(--paper);color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif;line-height:1.8}main{max-width:860px;margin:auto}h1{font-size:clamp(26px,5vw,38px);line-height:1.4;margin:16px 0}h2{font-size:23px;margin:36px 0 12px}h3{font-size:17px;margin:0 0 8px}p{margin:10px 0}.small,small{color:var(--sub);font-size:13px}.lead{font-size:19px}.callout{border-left:4px solid var(--blue);padding:12px 18px;background:var(--panel);margin:20px 0}.warn{border-color:var(--orange)}a{color:var(--blue);text-underline-offset:3px}details{border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:14px 0}summary{cursor:pointer;font-weight:650}.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:12px;text-align:left;vertical-align:top;border-bottom:1px solid var(--line);min-width:110px}th{background:var(--panel)}code{font-family:ui-monospace,monospace;font-size:.9em;overflow-wrap:anywhere}li{margin:8px 0}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.card{background:var(--panel);border-radius:var(--radius);padding:18px}.flow{display:grid;grid-template-columns:1fr 28px 1fr 28px 1fr;align-items:center;gap:5px;margin:18px 0}.node{border:1px solid var(--line);padding:14px;border-radius:var(--radius);font-size:14px}.arrow{text-align:center;font-size:22px}.lanes{display:grid;gap:7px}.lane{border-left:4px solid var(--blue);padding:6px 9px;background:var(--panel)}.chart{height:180px;width:100%;display:block}.chart text{fill:var(--ink);font:13px system-ui}.source{font-size:13px}.footer{margin-top:36px;border-top:1px solid var(--line);padding-top:16px}@media(prefers-color-scheme:dark){:root{--ink:#e4eaf2;--sub:#acb7c4;--line:#435165;--panel:#222f3f;--blue:#8fc5ff;--orange:#f5b65b;--paper:#151c25}}@media(max-width:560px){.grid{grid-template-columns:1fr}.flow{grid-template-columns:1fr}.arrow{transform:rotate(90deg)}h2{font-size:21px}th,td{padding:9px}body{padding-top:14px}}
+</style></head><body><main>
+<p class="small">2026年11月9日調査 / Claude Code Harness の Go CI</p>
+<h1>全テストを減らさず、<br>小さく分けて試す</h1>
+<p class="lead">推奨は、契約済みの Instabox を使い続け、通信断の原因確認と全テストの分割を進めること。上位プランへの変更は、メモリ不足などの証拠が出てから判断する。</p>
+<div class="callout warn"><strong>「有料でも回せない」は、まだ結論にできない。</strong><p>確認できたのは、過去のCIで通信断が起きたこと。前の回答にあった「テストの負荷で心拍が途切れた」「ランナー方式が合わない」は原因の断定が強すぎた。通信、プロセス停止、メモリ不足、実行環境の差を分けて調べる必要がある。</p></div>
+<p>今回は調査と提案まで。CI設定、契約、料金、公開状態は変更していない。今すぐの契約判断は不要。</p>
+
+<h2>いま、何が分かっているか</h2>
+<div class="scroll"><table><thead><tr><th>対象</th><th>確認できたこと</th><th>まだ言えないこと</th></tr></thead><tbody>
+<tr><td>手動の全テスト</td><td>Plans.md に「8GBの箱で582秒、終了0」と記録されている。</td><td>CIと同じcommit、Go、OS、キャッシュ状態だったか。生ログは今回未照合。</td></tr>
+<tr><td>InstaboxのCI</td><td>過去の全テストで通信断の記録がある。現在の <code>validate</code> は <code>instabox-large</code>。</td><td>通信断の直接原因。<code>validate</code> の成功は全Goテストの成功を意味しない。</td></tr>
+<tr><td>現在の <code>test-go</code></td><td><code>ubuntu-latest</code> で変更パッケージとcore（毎回検査する固定の8パッケージ）を検査。全体の <code>go vet</code> も実行。</td><td>変更先を利用する、未変更パッケージの全テストの成功。Instabox移行は一部未完了。</td></tr>
+</tbody></table></div>
+<p class="small">ローカルHEAD <code>e557fa4e66275a038ca34dcd0dafca235e341518</code> のファイルを再読。過去の582秒と通信断までの約11分は成功と中断の異なる値なので、性能比較には使わない。</p>
+<details><summary>現在の検査で見逃しうる例</summary><p>共通関数を直し、その関数自身のテストは通っても、利用側のテストが落ちることがある。現在の選択スクリプトは、変更されたディレクトリとcoreを選ぶ。利用側を依存関係から追加する仕組みはない。</p><p><code>go.mod</code> や <code>go.sum</code> だけの変更も、全パッケージのテストへ切り替わらない。<code>go vet ./...</code> はコードの問題を静的に調べるが、利用側のテスト実行の代わりにはならない。</p></details>
+
+<h2>最近の方向は「実測して配分する」</h2>
+<p>公式資料で確認できる設計の方向を整理した。業界全体の採用率を調べた統計ではない。</p>
+<div class="scroll"><table><thead><tr><th>方向</th><th>何が変わるか</th><th>今回の採否</th></tr></thead><tbody>
+<tr><td>実行時間でテストを分割</td><td>ファイル数を均等にするだけでなく、時間の長い処理を別の実行先へ配る。CircleCIは空いた実行先に残りを配る動的分割も提供。<a href="https://circleci.com/docs/guides/test/use-dynamic-test-splitting/">公式資料</a></td><td><strong>考え方を採用。</strong>まず単純な2分割を候補にする。別サービスや動的な配分機構の導入は保留。</td></tr>
+<tr><td>実行環境を毎回作り直す</td><td>前のジョブが残した状態を持ち越さない。Instaboxはジョブごとに新しいマシンを作る。<a href="https://instabox.sh/docs/use-cases/ci">公式資料</a></td><td><strong>現行方式を維持。</strong>消えるマシンの診断ログを残す方法を確認する。</td></tr>
+<tr><td>変更の影響からテストを選ぶ</td><td>変更ファイルだけを見る方法より、利用関係まで調べる方法の方が対象を広く拾える。<a href="https://circleci.com/docs/guides/test/use-dynamic-test-splitting/#next-steps">関連機能の案内</a></td><td><strong>今回は全テストを優先。</strong>この規模で精密な選択機構を作る費用に見合う証拠はない。</td></tr>
+<tr><td>準備の再利用</td><td>依存物とコンパイル結果をキャッシュし、毎回の準備を減らす。<a href="https://github.com/actions/setup-go#caching-dependency-files-and-build-outputs">setup-go公式</a></td><td><strong>既に導入済み。</strong>新設せず、実際のcache hitと準備時間を測る。</td></tr>
+</tbody></table></div>
+
+<h2>今回の第一候補</h2>
+<p>PRを出すと、全パッケージを複数のInstaboxジョブに配る。すべて成功したときだけ既存の必須チェックを成功にする。</p>
+<div class="flow"><div class="node"><strong>同じcommit</strong><br>全パッケージの一覧を作る</div><div class="arrow">→</div><div class="lanes"><div class="lane">Instabox A<br>グループAを検査</div><div class="lane">Instabox B<br>グループBを検査</div></div><div class="arrow">→</div><div class="node"><strong>結果をまとめる</strong><br>欠落なし＋全ジョブ成功<br>→ Goの必須チェックを成功にする</div></div>
+<p>2分割は初期案で、実測後に配分を決める。パッケージ数ではなく所要時間をそろえる。単独で重いパッケージがあるなら、その内部のテストや起動する子プロセスを調べる。</p>
+<div class="card"><h3>速くなる仕組みと限界</h3><svg class="chart" viewBox="0 0 340 180" role="img" aria-label="説明用の仮定。12分の独立処理を2台へ均等に分けると各6分。実測ではなく準備と待ち時間を除く。"><text x="0" y="20">独立した処理が合計12分の場合</text><text x="0" y="57">1台</text><rect x="62" y="36" width="230" height="28" rx="5" fill="#73859b"/><text x="298" y="56">12分</text><text x="0" y="100">2台/A</text><rect x="62" y="78" width="115" height="28" rx="5" fill="#3782bd"/><text x="186" y="99">6分</text><text x="0" y="141">2台/B</text><rect x="62" y="120" width="115" height="28" rx="5" fill="#3782bd"/><text x="186" y="141">6分</text><text x="62" y="174">0</text><text x="169" y="174">6分</text><text x="280" y="174">12分</text></svg><p class="small">実測値ではない。2台が同時に始まり、均等に分割できると仮定した図。実際は起動、コンパイル、待ち時間が加わる。合計の処理量は減らず、費用が半分になる意味でもない。</p></div>
+<p class="source">GitHub Actionsの <code>matrix</code> でジョブを分け、<code>max-parallel</code> で同時数を制限できる。<a href="https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations">GitHub公式</a></p>
+
+<h2>実装するときの順番</h2>
+<ol><li><strong>通信断を記録で切り分ける。</strong>対象commit、Goバージョン、OSイメージ、コマンド、キャッシュ状態をそろえる。ランナーの <code>Runner_</code> / <code>Worker_</code> ログと、マシンのメモリ、CPU、停止時刻を照合する。</li>
+<li><strong>契約済みの範囲で分割を試す。</strong>全一覧と割当一覧を照合し、抜けを検出する。初期案は2ジョブ、同時2。各ジョブ内の同時実行を抑える <code>-p 1 -parallel 1</code> を基準に計測する。サイズと同時実行枠はアカウントの実値で確かめる。</li>
+<li><strong>同じcommitの全結果で合否を決める。</strong>失敗、キャンセル、必要なジョブのskipを成功扱いしない。既存の必須チェックは、同等以上の検査へ移すまで残す。</li>
+<li><strong>遅い箇所だけ直す。</strong>分割しても同じテストで止まるなら、テスト側を調査する。メモリ不足ならサイズ変更を検討。通信やマシン終了が原因ならInstabox側の診断につなぐ。</li></ol>
+<p class="source">GitHubは <code>_diag</code> の診断ログと、使い捨てランナーのログの外部保存を案内している。マシン自体が消えた場合、ジョブ末尾のアップロードだけではログを回収できない。既存の保存経路とInstabox側の取得可否を先に確認する。<a href="https://docs.github.com/en/actions/how-tos/manage-runners/self-hosted-runners/monitor-and-troubleshoot">GitHub公式</a></p>
+
+<h2>他の方法は、いつ選ぶか</h2>
+<div class="scroll"><table><thead><tr><th>案</th><th>普段の使い方と手間</th><th>失敗時の影響</th><th>今回の判断</th></tr></thead><tbody>
+<tr><td><strong>全テストを分割</strong></td><td>PRごとに全範囲を検査。配分と結果の集約を追加する。</td><td>失敗箇所をグループまで絞れる。通信断そのものが直る保証はない。</td><td><strong>推奨。</strong>検査範囲を保ち、既存のGitHub Actionsを使える。</td></tr>
+<tr><td>夜間だけ全テスト</td><td>PRの待ちは短い。失敗後に原因commitを探す。</td><td>不具合をmainへ入れてから検出する。取り込み前の防止にはならない。</td><td>補助には使える。全テストの代わりには推奨しない。</td></tr>
+<tr><td>32GiB以上へ増強</td><td>workflowの変更は小さい。契約や費用の確認が必要。</td><td>ネットワーク断やテストの停止は、増強しても残りうる。</td><td>メモリ不足を確認した場合に再検討。</td></tr>
+<tr><td>CIから <code>instabox run</code></td><td>別のランナーからコマンドを転送。APIキーと片付けの管理が増える。</td><td>呼び出し元のランナーも必要。fork PRにはsecretが渡らない。</td><td>現方式に固有の障害と分かった場合の次候補。</td></tr>
+</tbody></table></div>
+<p class="source">CLI経由もInstaboxの公式対応だが、呼び出し元のCIジョブは残る。完全にランナーを不要にする方式ではない。<a href="https://instabox.sh/docs/use-cases/ci#run-the-cli-from-any-ci">Instabox公式</a></p>
+
+<details><summary>Go特有の注意点と、先の説明の訂正</summary>
+<ul><li><code>-p</code> はビルドやテストバイナリの同時実行数。<code>-parallel</code> は主に <code>t.Parallel</code> を使うテストの同時数。両方を1にしても、テストが自分で起動する子プロセスやgoroutineをすべて1つに制限するわけではない。</li><li><code>-timeout</code> の既定10分はテストバイナリ単位。GitHubジョブ全体の制限とは別。約11分で通信断になったことから、Goの10分制限が原因とは断定できない。</li><li><code>-count=1</code> はテスト結果のキャッシュを使わず再実行する指定。ビルドキャッシュまで全部無効にする指定ではない。</li></ul><p class="source"><a href="https://pkg.go.dev/cmd/go">Go公式コマンド仕様</a></p>
+<p>現在のworkflowのコメントには <code>heartbeat starved</code> と書かれているが、原因を裏付けるログは今回確認できていない。文章の記載と実証を分ける。CI改修時に、このコメントも確認済みの内容へ直す対象となる。今回はコードを変更していない。</p>
+<p>前の「今回には必要ない」という説明も補足が必要。処理済みPRをこの調査だけで不合格とはしない。一方、変更パッケージとcoreだけでは、将来の変更の全範囲を検査できない。夜間検査を置くだけでは、その不足を取り込み前に解消できない。</p>
+</details>
+<details><summary>Instaboxの現行仕様と、未確認の条件</summary><p>公式のサイズはmediumが4 vCPU / 8 GiB、largeが8 vCPU / 16 GiB、xlargeが16 vCPU / 32 GiB。xlargeはBuilderまたはTeam向け。料金そのものと現在の契約枠は今回確認していない。前の月額100ドルを判断根拠として再利用しない。</p><p>手動用の環境とCI用イメージは同一とは限らない。CIはUbuntu 24.04、他の多くのテンプレートはDebian 13。以前の手動成功時の環境は未照合。</p><p>スナップショットからのCI起動は公式にあるが、公開repoやforkのworkflowを実行するrepoでは制限がある。今回の第一候補には入れない。</p><p class="source"><a href="https://instabox.sh/docs/use-cases/ci">CI仕様</a> / <a href="https://instabox.sh/docs/account/limits">制限と実行環境</a></p></details>
+
+<h2>判断の基準</h2>
+<p><strong>全パッケージを実行できたか、通信断の理由を説明できるか、既存の費用と権限で運用できるか。</strong>この3点で比較する。高速化率や完走率は、まだ測っていない。</p>
+<p>推奨への確信度は中程度。公式に支えられた一般的な構成だが、このrepoの最も重いテストと通信断原因が未確定だからだ。固定の観測日数は置かず、同じ条件での実行記録と、失敗時にmergeを止める動作を確認する。</p>
+<p>本人が押さえるのは「全テストの範囲を維持する」「上位契約へ進む条件」の2点。パッケージの配分、ログの収集、既存チェックへの接続は実装側が詰める。workflowの差分は戻せるが、消費済みの実行時間や料金は戻らない。</p>
+<div class="footer"><details><summary>根拠ファイルと調査範囲</summary><ul>
+<li><a href="https://github.com/Chachamaru127/claude-code-harness/blob/e557fa4e66275a038ca34dcd0dafca235e341518/.github/workflows/validate-plugin.yml#L122">validate-plugin.yml: test-goの実行先とコメント</a></li>
+<li><a href="https://github.com/Chachamaru127/claude-code-harness/blob/e557fa4e66275a038ca34dcd0dafca235e341518/tests/test-go-changed.sh">test-go-changed.sh: 対象パッケージの選択</a></li>
+<li><a href="https://github.com/Chachamaru127/claude-code-harness/blob/e557fa4e66275a038ca34dcd0dafca235e341518/.github/actions/setup-go-harness/action.yml">setup-go-harness: 既存キャッシュ設定</a></li>
+<li><a href="https://github.com/Chachamaru127/claude-code-harness/blob/e557fa4e66275a038ca34dcd0dafca235e341518/Plans.md#L478">Plans.md Phase 151: 過去の実行結果</a></li></ul>
+<p>調査日：2026-11-09。公式文書と現行ローカルファイルを確認。CI再実行、契約変更、外部への問い合わせ送信は行っていない。過去の生ログ、アカウントの同時実行枠、分割後の実測時間、最新のリモートHEADは未確認。</p></details></div>
+</main></body></html>
