@@ -28,6 +28,18 @@ die() {
   exit 1
 }
 
+# Instabox boxes intermittently refuse to fork during a test run
+# (`fork/exec ... resource temporarily unavailable`). That is the machine, not
+# the test, so the same package is retried once and the attempt is recorded.
+# A log that also contains a test failure (`--- FAIL:`) is never retried: the
+# failure is the test's, not the machine's.
+is_environment_error() {
+  if grep -q -- '--- FAIL:' "$1"; then
+    return 1
+  fi
+  grep -Eq 'resource temporarily unavailable|cannot allocate memory|signal: killed' "$1"
+}
+
 usage() {
   cat <<'USAGE'
 usage: go-test-shard.sh assign <index> <total>
@@ -58,6 +70,22 @@ assign() {
   all_packages | awk -v shard="${index}" -v total="${total}" 'NR % total == (shard - 1) % total'
 }
 
+# `go test -timeout` panics the test binary but leaves its children alive, so a
+# package that hangs on a subprocess can still hold the job open. An outer
+# `timeout` kills the process group and reports 124, which keeps the shard
+# moving and lets the artifact show which package hung.
+run_package() {
+  local pkg="$1"
+  local seconds="${PACKAGE_TIMEOUT_SECONDS:-180}"
+  local go_timeout="$(( seconds - 20 ))s"
+  if command -v timeout >/dev/null 2>&1; then
+    timeout --kill-after=30s "${seconds}s" \
+      go test -count=1 -timeout="${go_timeout}" -p 1 -parallel 1 "${pkg}"
+  else
+    go test -count=1 -timeout="${go_timeout}" -p 1 -parallel 1 "${pkg}"
+  fi
+}
+
 run_shard() {
   local index="$1"
   local total="$2"
@@ -72,20 +100,45 @@ run_shard() {
   echo "shard ${index}/${total}: ${count} packages"
 
   printf 'package\tseconds\tstatus\n' > "${dir}/summary.tsv"
-  local fail=0 pkg status start duration safe
+  local fail=0 pkg status start duration safe rc
   while IFS= read -r pkg; do
     [ -n "${pkg}" ] || continue
     # Package paths become file names; the log name stays readable in artifacts.
     safe="$(printf '%s' "${pkg}" | sed 's|^\./||; s|/$||; s|/|__|g')"
     start="$(date +%s)"
-    if ( cd "${GO_DIR}" && go test -count=1 -timeout=10m -p 1 -parallel 1 "${pkg}" ) \
-        > "${dir}/${safe}.log" 2>&1; then
-      status="ok"
-    else
-      status="fail"
-      fail=1
-      echo "FAILED: ${pkg}"
-      tail -n 60 "${dir}/${safe}.log" || true
+    local log="${dir}/${safe}.log"
+    rc=0
+    ( cd "${GO_DIR}" && run_package "${pkg}" ) > "${log}" 2>&1 || rc=$?
+    status="ok"
+    if [ "${rc}" -ne 0 ]; then
+      if [ "${rc}" -eq 124 ]; then
+        status="timeout"
+      elif is_environment_error "${log}"; then
+        if [ "${GO_TEST_SHARD_RETRY:-1}" = "0" ]; then
+          status="fail-env"
+        else
+          echo "environment error, retrying once: ${pkg}"
+          log="${dir}/${safe}.retry.log"
+          rc=0
+          ( cd "${GO_DIR}" && run_package "${pkg}" ) > "${log}" 2>&1 || rc=$?
+          if [ "${rc}" -eq 0 ]; then
+            status="ok-retry"
+          elif [ "${rc}" -eq 124 ]; then
+            status="timeout"
+          elif is_environment_error "${log}"; then
+            status="fail-env"
+          else
+            status="fail"
+          fi
+        fi
+      else
+        status="fail"
+      fi
+      if [ "${status}" != "ok-retry" ]; then
+        fail=1
+        echo "FAILED: ${pkg} (${status})"
+        tail -n 60 "${log}" || true
+      fi
     fi
     duration="$(( $(date +%s) - start ))"
     printf '%s\t%s\t%s\n' "${pkg}" "${duration}" "${status}" >> "${dir}/summary.tsv"

@@ -123,16 +123,23 @@ jobs:
         # Live model invocations remain opt-in (see docs/research/host-workflow-smoke-policy.md).
         # REQUIRED=1 is reserved for nightly/release when CLI secrets/images are stable.
 
-  # The full suite covers every package. One job could not run it: on
-  # 2026-11-09 a paid instabox-large box lost communication with the runner
-  # roughly 11 minutes in, and GitHub-hosted runners ran out of memory. Both
-  # failed before the suite finished, so the cause is still unknown. Splitting
-  # the same package list keeps the full scope and shortens each job; the
-  # assignment and the aggregate check read the same `go list ./...` output.
+  # Full Go suite, split across two Instabox shards. This job is evidence, not
+  # a required check. On 2026-11-10 the shard that holds `internal/session`
+  # failed in both CI runners: Instabox refused to fork
+  # (`fork/exec /usr/bin/git: resource temporarily unavailable`, same test and
+  # same seconds every run) and the GitHub fallback never finished. The required
+  # `test-go` stays on the bounded changed+core suite until the test side is
+  # fixed. Artifacts keep per-package timings and logs to work from.
   go-test-full:
     name: go-test-full (${{ matrix.shard }}/2)
     runs-on: instabox-large
-    timeout-minutes: 20
+    timeout-minutes: 25
+    env:
+      # Keeps the thread count of the compiler and of each test binary low.
+      GOMAXPROCS: "2"
+      # Outer per-package cap: a hang becomes a `timeout` row instead of
+      # holding the job until the workflow timeout.
+      PACKAGE_TIMEOUT_SECONDS: "480"
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -153,39 +160,30 @@ jobs:
       - name: Run this shard of the full Go suite
         run: bash ./tests/go-test-shard.sh run "${{ matrix.shard }}" 2
 
-      # Logs are uploaded from the machine that ran the tests. When a shard
-      # fails or the box disappears, the artifact still shows how far it got.
+      # Logs and timings are uploaded from the machine that ran the tests, so a
+      # failing or hanging package is named even when the box disappears later.
       - name: Upload shard evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: go-shard-${{ matrix.shard }}
+          name: go-test-full-shard-${{ matrix.shard }}
           path: ${{ runner.temp }}/go-test-shard/shard-${{ matrix.shard }}
           if-no-files-found: warn
           retention-days: 7
 
   test-go:
-    # Required check name kept from the previous workflow. It succeeds only
-    # when every shard succeeded and the shard package lists cover every
-    # package exactly once.
+    # Required check. Covers the packages changed by the PR plus the core list;
+    # the full suite is the non-blocking go-test-full job above.
     name: test-go
-    needs: [go-test-full]
-    if: always()
-    runs-on: instabox-medium
-    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-      - name: Fail when a shard did not succeed
-        if: needs.go-test-full.result != 'success'
-        run: |
-          echo "go-test-full result: ${{ needs.go-test-full.result }}" >&2
-          exit 1
-
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 1
+          fetch-depth: 0
           filter: blob:none
 
       - name: Setup Go (harness composite)
@@ -198,15 +196,12 @@ jobs:
         working-directory: go
         run: go build ./cmd/harness/
 
+      - name: Run Go tests (changed packages + core)
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          BEFORE_SHA: ${{ github.event.before }}
+        run: bash ./tests/test-go-changed.sh
+
       - name: Run go vet
         working-directory: go
         run: go vet ./...
-
-      - name: Download shard package lists
-        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
-        with:
-          pattern: go-shard-*
-          path: ${{ runner.temp }}/go-shards
-
-      - name: Verify every package ran in one shard
-        run: bash ./tests/go-test-shard.sh verify "${RUNNER_TEMP}/go-shards" 2

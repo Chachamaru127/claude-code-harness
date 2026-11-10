@@ -66,4 +66,60 @@ if "$shard_script" assign x 2 > /dev/null 2>&1; then
   fail "assign must reject a non-numeric index"
 fi
 
+# A machine-level fork error is retried once; a real test failure is not.
+mkdir -p "$tmp/bin"
+cat > "$tmp/bin/go" <<'SHIM'
+#!/usr/bin/env bash
+mode="${FAKE_GO_MODE:-ok}"
+state="${FAKE_GO_STATE:-/tmp/fake-go-state}"
+mkdir -p "$state"
+case "${1:-}" in
+  list)
+    printf './pkg/a\n./pkg/b\n'
+    exit 0
+    ;;
+  test)
+    if [ "${mode}" = "environment" ] && [ ! -f "$state/retried" ]; then
+      : > "$state/retried"
+      echo "fork/exec /usr/bin/git: resource temporarily unavailable" >&2
+      exit 1
+    fi
+    if [ "${mode}" = "failure" ]; then
+      echo "--- FAIL: TestReal (0.00s)"
+      exit 1
+    fi
+    if [ "${mode}" = "mixed" ]; then
+      echo "fork/exec /usr/bin/git: resource temporarily unavailable"
+      echo "--- FAIL: TestReal (0.00s)"
+      exit 1
+    fi
+    exit 0
+    ;;
+esac
+exit 0
+SHIM
+chmod +x "$tmp/bin/go"
+
+if ! PATH="$tmp/bin:$PATH" FAKE_GO_MODE=environment FAKE_GO_STATE="$tmp/state-env" \
+    SHARD_LOG_DIR="$tmp/logs-env" bash "$shard_script" run 1 1 > /dev/null 2>&1; then
+  fail "an environment error must be retried instead of failing the shard"
+fi
+grep -q "ok-retry" "$tmp/logs-env/shard-1/summary.tsv" || fail "the retry must be recorded in summary.tsv"
+
+if PATH="$tmp/bin:$PATH" FAKE_GO_MODE=failure FAKE_GO_STATE="$tmp/state-fail" \
+    SHARD_LOG_DIR="$tmp/logs-fail" bash "$shard_script" run 1 1 > /dev/null 2>&1; then
+  fail "a real test failure must fail the shard"
+fi
+awk -F'\t' 'NR > 1 && $3 == "fail" { found = 1 } END { exit found ? 0 : 1 }' \
+  "$tmp/logs-fail/shard-1/summary.tsv" || fail "a real failure must be recorded as fail"
+[ ! -f "$tmp/logs-fail/shard-1/pkg__a.retry.log" ] || fail "a real test failure must not be retried"
+
+# A log that contains a test failure is not retried even when the machine error
+# string is present.
+if PATH="$tmp/bin:$PATH" FAKE_GO_MODE=mixed FAKE_GO_STATE="$tmp/state-mixed" \
+    SHARD_LOG_DIR="$tmp/logs-mixed" bash "$shard_script" run 1 1 > /dev/null 2>&1; then
+  fail "a log with a test failure must not be retried into success"
+fi
+[ ! -f "$tmp/logs-mixed/shard-1/pkg__a.retry.log" ] || fail "a log with --- FAIL: must not be retried"
+
 echo "PASS: go-test-shard assigns every package once across 2 shards"
