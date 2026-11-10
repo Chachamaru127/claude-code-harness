@@ -510,10 +510,12 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 | 152.1 | `[lane:docs]` `[tdd:skip:docs-only]` 調査と提案 | 一次資料と現行 workflow の照合、未確認の分離、推奨案のHTML | cc:done [docs/reports/2026-11-09-go-ci-research/index.html] |
 | 152.2 | `[lane:gate]` `[tdd:required]` 分割の実装 | `tests/go-test-shard.sh` の assign/run/verify、割当の契約テスト、workflow の2分割 | cc:done [ローカルで `bash tests/test-go-test-shard.sh` PASS、`shellcheck --severity=error` 終了0、actionlint 終了0] |
 | 152.3 | `[lane:gate]` `[tdd:skip:ci-gate]` 必須チェックへの接続 | `test-go` が全 shard の成功と割当の網羅検証を要求し、失敗と skip を成功にしない | cc:done [workflow の needs/if/verify step、actionlint 終了0] |
-| 152.4 | `[lane:gate]` `[tdd:skip:ci-readback]` 対象commitのCI実測とmerge | 2 shard と verify が success、必須3件 success、所要時間を記録 | cc:WIP |
+| 152.4 | `[lane:gate]` `[tdd:skip:ci-readback]` 対象commitのCI実測とmerge | 2 shard と verify が success、必須3件 success、所要時間を記録 | cc:done [PR #408 を merge commit `0db3b21b` で main へ取り込み。head `de44daf` で必須3件（actionlint / validate / test-go）success。go-test-full 1/2 は26パッケージ81秒、2/2 は27パッケージ54秒、合計53パッケージが全 ok・fail 0。test-go の割当検証は同じ commit の全一覧と一致。artifact `go-shard-1` / `go-shard-2` を読戻し、パッケージごとのログと秒数を確認] |
+
+**実測 (2026-11-10)**: 分割前は1ジョブで11分かけてランナー通信断だった。分割後は shard のジョブが1分50秒と1分19秒で完了し、テスト本体の合計は135秒（session 50秒、cmd/harness 47秒）。Go のビルドキャッシュが効いた状態での値である。
 
 **残るリスク (2026-11-10時点)**:
 - 2分割で通信断が直る保証はない。shard が失敗したら、artifact の per-package ログで止まったパッケージを特定し、テスト側か実行方式を直す。
-- 配分はパッケージ数による2分割（26件と27件）。所要時間の偏りは初回の artifact で確認し、必要なら重いパッケージの寄せ方を変える。
+- 配分はパッケージ数による2分割（26件81秒 / 27件54秒、2026-11-10 実測）。片方が約1.5倍だが、通信断が起きた11分より十分短いため初期配分のまま。偏りが広がったら重いパッケージの寄せ方を変える。
 - 上位プラン（xlarge）と同時実行枠の変更は契約の判断なので対象外。
 - `go test` のハングは `-timeout=10m` で打ち切り、そのパッケージのログを artifact に残す。
