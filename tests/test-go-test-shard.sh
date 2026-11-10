@@ -88,6 +88,11 @@ case "${1:-}" in
       echo "--- FAIL: TestReal (0.00s)"
       exit 1
     fi
+    if [ "${mode}" = "mixed" ]; then
+      echo "fork/exec /usr/bin/git: resource temporarily unavailable"
+      echo "--- FAIL: TestReal (0.00s)"
+      exit 1
+    fi
     exit 0
     ;;
 esac
@@ -108,5 +113,13 @@ fi
 awk -F'\t' 'NR > 1 && $3 == "fail" { found = 1 } END { exit found ? 0 : 1 }' \
   "$tmp/logs-fail/shard-1/summary.tsv" || fail "a real failure must be recorded as fail"
 [ ! -f "$tmp/logs-fail/shard-1/pkg__a.retry.log" ] || fail "a real test failure must not be retried"
+
+# A log that contains a test failure is not retried even when the machine error
+# string is present.
+if PATH="$tmp/bin:$PATH" FAKE_GO_MODE=mixed FAKE_GO_STATE="$tmp/state-mixed" \
+    SHARD_LOG_DIR="$tmp/logs-mixed" bash "$shard_script" run 1 1 > /dev/null 2>&1; then
+  fail "a log with a test failure must not be retried into success"
+fi
+[ ! -f "$tmp/logs-mixed/shard-1/pkg__a.retry.log" ] || fail "a log with --- FAIL: must not be retried"
 
 echo "PASS: go-test-shard assigns every package once across 2 shards"

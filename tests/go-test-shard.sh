@@ -31,7 +31,12 @@ die() {
 # Instabox boxes intermittently refuse to fork during a test run
 # (`fork/exec ... resource temporarily unavailable`). That is the machine, not
 # the test, so the same package is retried once and the attempt is recorded.
+# A log that also contains a test failure (`--- FAIL:`) is never retried: the
+# failure is the test's, not the machine's.
 is_environment_error() {
+  if grep -q -- '--- FAIL:' "$1"; then
+    return 1
+  fi
   grep -Eq 'resource temporarily unavailable|cannot allocate memory|signal: killed' "$1"
 }
 
