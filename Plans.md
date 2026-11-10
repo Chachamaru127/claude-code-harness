@@ -496,5 +496,24 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 - `formal/quint` の `compile.cjs` と `toolchain.py` は上流RouteCLIの固定版。CodeRabbitの指摘（並行コンパイルの出力分離、timeout時の子プロセス回収、起動ログ）は上流へ戻す。このrepoの `check.py` は検査ごとに出力先を分ける。
 - ベンチマーク監査は2026-11-08時点の既知12件を期限2026-12-08で除外する。期限までに依存更新（undici 7.30.1、agent-eval/zod）を行う。新しい勧告は除外しない。
 - Windows の同一ファイル書き込みは、プロセス内の失敗時に直前の内容へ戻すが、復元はベストエフォートで、書き込みと復元の両方が失敗すると部分的な内容が残り得る。電源断などの途中状態までは保証しない。ACL維持とのトレードオフ。`Lstat` と書き込みの間のリンク差し替え（TOCTOU）は残る。状態ディレクトリは利用者本人の領域である。
-- 必須の `test-go` は変更パッケージ＋core の限定 suite。フル suite は Instabox の8GB箱で582秒・終了0だが、CI ランナーでは通信断、GitHub では OOM になる。`validate` は有料 Pro ワークスペースの instabox-large で実行するが、`tests/validate-plugin.sh` は Go のフル suite を含まない（2026-11-09 本人指示）。
+- 必須の `test-go` は変更パッケージ＋core の限定 suite。フル suite は Instabox の8GB箱で582秒・終了0だが、CI ランナーでは通信断、GitHub では OOM になる。`validate` は有料 Pro ワークスペースの instabox-large で実行するが、`tests/validate-plugin.sh` は Go のフル suite を含まない（2026-11-09 本人指示）。限定 suite は Phase 152 で分割した全 suite に置き換えた。
 - 診断の生ログは `.local/` に残る。clean checkout には模型・入力・HTMLを置き、再生成手順を `formal/baseline/route-setup-2026-11-08/README.md` に書く。
+
+## Phase 152: Go全テストのCI分割 (2026-11-10)
+
+**承認元**: 2026-11-10 本人「$team-R 承認します、完走させて」。対象は `docs/reports/2026-11-09-go-ci-research/index.html` の推奨案（全テストを分割し、全ジョブ成功で必須チェックを成功にする）。
+**目的**: 全53パッケージのGoテストを毎回のPRで実行し、必須チェック `test-go` をその合否につなぐ。1ジョブでは完走しなかった（2026-11-09: 有料の instabox-large が約11分で通信断、GitHub-hosted はメモリ不足）。原因は未確定のまま、全範囲と短い実行時間を両立する。
+**非対象**: テスト内容の変更、上位プランへの変更、branch protection の必須チェック名の変更、release。
+
+| ID | Task | DoD | Status |
+|----|------|-----|--------|
+| 152.1 | `[lane:docs]` `[tdd:skip:docs-only]` 調査と提案 | 一次資料と現行 workflow の照合、未確認の分離、推奨案のHTML | cc:done [docs/reports/2026-11-09-go-ci-research/index.html] |
+| 152.2 | `[lane:gate]` `[tdd:required]` 分割の実装 | `tests/go-test-shard.sh` の assign/run/verify、割当の契約テスト、workflow の2分割 | cc:done [ローカルで `bash tests/test-go-test-shard.sh` PASS、`shellcheck --severity=error` 終了0、actionlint 終了0] |
+| 152.3 | `[lane:gate]` `[tdd:skip:ci-gate]` 必須チェックへの接続 | `test-go` が全 shard の成功と割当の網羅検証を要求し、失敗と skip を成功にしない | cc:done [workflow の needs/if/verify step、actionlint 終了0] |
+| 152.4 | `[lane:gate]` `[tdd:skip:ci-readback]` 対象commitのCI実測とmerge | 2 shard と verify が success、必須3件 success、所要時間を記録 | cc:WIP |
+
+**残るリスク (2026-11-10時点)**:
+- 2分割で通信断が直る保証はない。shard が失敗したら、artifact の per-package ログで止まったパッケージを特定し、テスト側か実行方式を直す。
+- 配分はパッケージ数による2分割（26件と27件）。所要時間の偏りは初回の artifact で確認し、必要なら重いパッケージの寄せ方を変える。
+- 上位プラン（xlarge）と同時実行枠の変更は契約の判断なので対象外。
+- `go test` のハングは `-timeout=10m` で打ち切り、そのパッケージのログを artifact に残す。
