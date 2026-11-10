@@ -140,6 +140,9 @@ jobs:
       # Keeps the thread count of the compiler and of each test binary low;
       # the box intermittently refuses to fork under default parallelism.
       GOMAXPROCS: "2"
+      # Outer per-package cap: a hang becomes a `timeout` row instead of
+      # holding the job until the workflow timeout.
+      PACKAGE_TIMEOUT_SECONDS: "180"
     strategy:
       fail-fast: false
       max-parallel: 2
@@ -179,11 +182,13 @@ jobs:
   go-test-full-github:
     name: go-test-full-github (${{ matrix.shard }}/2)
     needs: [go-test-full]
-    if: always() && needs.go-test-full.result != 'success'
+    # !cancelled(): a newer push cancels this run; do not start the fallback then.
+    if: ${{ !cancelled() && needs.go-test-full.result != 'success' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 25
     env:
       GOMAXPROCS: "2"
+      PACKAGE_TIMEOUT_SECONDS: "180"
     strategy:
       fail-fast: false
       max-parallel: 2

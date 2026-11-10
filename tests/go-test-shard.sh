@@ -70,6 +70,22 @@ assign() {
   all_packages | awk -v shard="${index}" -v total="${total}" 'NR % total == (shard - 1) % total'
 }
 
+# `go test -timeout` panics the test binary but leaves its children alive, so a
+# package that hangs on a subprocess can still hold the job open. An outer
+# `timeout` kills the process group and reports 124, which keeps the shard
+# moving and lets the artifact show which package hung.
+run_package() {
+  local pkg="$1"
+  local seconds="${PACKAGE_TIMEOUT_SECONDS:-180}"
+  local go_timeout="$(( seconds - 20 ))s"
+  if command -v timeout >/dev/null 2>&1; then
+    timeout --kill-after=30s "${seconds}s" \
+      go test -count=1 -timeout="${go_timeout}" -p 1 -parallel 1 "${pkg}"
+  else
+    go test -count=1 -timeout="${go_timeout}" -p 1 -parallel 1 "${pkg}"
+  fi
+}
+
 run_shard() {
   local index="$1"
   local total="$2"
@@ -84,19 +100,23 @@ run_shard() {
   echo "shard ${index}/${total}: ${count} packages"
 
   printf 'package\tseconds\tstatus\n' > "${dir}/summary.tsv"
-  local fail=0 pkg status start duration safe
+  local fail=0 pkg status start duration safe rc
   while IFS= read -r pkg; do
     [ -n "${pkg}" ] || continue
     # Package paths become file names; the log name stays readable in artifacts.
     safe="$(printf '%s' "${pkg}" | sed 's|^\./||; s|/$||; s|/|__|g')"
     start="$(date +%s)"
+    rc=0
+    ( cd "${GO_DIR}" && run_package "${pkg}" ) > "${dir}/${safe}.log" 2>&1 || rc=$?
     status="ok"
-    if ! ( cd "${GO_DIR}" && go test -count=1 -timeout=10m -p 1 -parallel 1 "${pkg}" ) \
-        > "${dir}/${safe}.log" 2>&1; then
-      if [ "${GO_TEST_SHARD_RETRY:-1}" != "0" ] && is_environment_error "${dir}/${safe}.log"; then
+    if [ "${rc}" -ne 0 ]; then
+      if [ "${rc}" -eq 124 ]; then
+        status="timeout"
+      elif [ "${GO_TEST_SHARD_RETRY:-1}" != "0" ] && is_environment_error "${dir}/${safe}.log"; then
         echo "environment error, retrying once: ${pkg}"
-        if ( cd "${GO_DIR}" && go test -count=1 -timeout=10m -p 1 -parallel 1 "${pkg}" ) \
-            > "${dir}/${safe}.retry.log" 2>&1; then
+        rc=0
+        ( cd "${GO_DIR}" && run_package "${pkg}" ) > "${dir}/${safe}.retry.log" 2>&1 || rc=$?
+        if [ "${rc}" -eq 0 ]; then
           status="ok-retry"
         else
           status="fail"
@@ -104,9 +124,9 @@ run_shard() {
       else
         status="fail"
       fi
-      if [ "${status}" = "fail" ]; then
+      if [ "${status}" != "ok-retry" ]; then
         fail=1
-        echo "FAILED: ${pkg}"
+        echo "FAILED: ${pkg} (${status})"
         tail -n 60 "${dir}/${safe}.log" || true
       fi
     fi
