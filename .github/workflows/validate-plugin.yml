@@ -132,7 +132,10 @@ jobs:
   go-test-full:
     name: go-test-full (${{ matrix.shard }}/2)
     runs-on: instabox-large
-    timeout-minutes: 20
+    # Normal shard wall time is about two minutes. The cap bounds the wait when
+    # the runner listener dies silently and the job would otherwise sit until
+    # the workflow timeout.
+    timeout-minutes: 12
     env:
       # Keeps the thread count of the compiler and of each test binary low;
       # the box intermittently refuses to fork under default parallelism.
