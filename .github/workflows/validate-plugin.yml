@@ -123,13 +123,11 @@ jobs:
         # Live model invocations remain opt-in (see docs/research/host-workflow-smoke-policy.md).
         # REQUIRED=1 is reserved for nightly/release when CLI secrets/images are stable.
 
-  # Full Go suite, split across two Instabox shards. This job is evidence, not
-  # a required check. On 2026-11-10 the shard that holds `internal/session`
-  # failed in both CI runners: Instabox refused to fork
-  # (`fork/exec /usr/bin/git: resource temporarily unavailable`, same test and
-  # same seconds every run) and the GitHub fallback never finished. The required
-  # `test-go` stays on the bounded changed+core suite until the test side is
-  # fixed. Artifacts keep per-package timings and logs to work from.
+  # Full Go suite, split across two Instabox shards. Required since the
+  # `internal/session` failure was fixed: the session package used to run the
+  # Go test binary as the harness, which re-entered the suite until the box ran
+  # out of processes. Each shard writes per-package logs and timings; `test-go`
+  # fails unless both shards succeed and the lists cover every package once.
   go-test-full:
     name: go-test-full (${{ matrix.shard }}/2)
     runs-on: instabox-large
@@ -172,22 +170,40 @@ jobs:
           retention-days: 7
 
   test-go:
-    # Required check. Covers the packages changed by the PR plus the core list;
-    # the full suite is the non-blocking go-test-full job above.
+    # Required check. Every package has to run in go-test-full and pass; the
+    # coverage check compares the shard lists with `go list ./...` on the same
+    # commit. A failed or skipped shard is never treated as success.
     name: test-go
+    needs: [go-test-full]
+    if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
+      - name: Fail when a shard did not succeed
+        if: needs.go-test-full.result != 'success'
+        run: |
+          echo "go-test-full result: ${{ needs.go-test-full.result }}" >&2
+          exit 1
+
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 0
+          fetch-depth: 1
           filter: blob:none
 
       - name: Setup Go (harness composite)
         uses: ./.github/actions/setup-go-harness
+
+      - name: Download shard package lists
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          pattern: go-test-full-shard-*
+          path: ${{ runner.temp }}/go-shards
+
+      - name: Verify every package ran in one shard
+        run: bash ./tests/go-test-shard.sh verify "${RUNNER_TEMP}/go-shards" 2
 
       - name: Run Go format check
         run: bash ./tests/test-format-lint.sh
@@ -195,12 +211,6 @@ jobs:
       - name: Build harness binary
         working-directory: go
         run: go build ./cmd/harness/
-
-      - name: Run Go tests (changed packages + core)
-        env:
-          BASE_REF: ${{ github.base_ref }}
-          BEFORE_SHA: ${{ github.event.before }}
-        run: bash ./tests/test-go-changed.sh
 
       - name: Run go vet
         working-directory: go

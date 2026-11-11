@@ -34,7 +34,6 @@ targets=(
   "tests/test-shell-lint.sh"
   "tests/go-test-shard.sh"
   "tests/test-go-test-shard.sh"
-  "tests/test-go-changed.sh"
 )
 
 for target in "${targets[@]}"; do
