@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/Chachamaru127/claude-code-harness/go/internal/channelswake"
@@ -578,7 +579,9 @@ func resolveHarnessBinary() (string, error) {
 	// without bound: on CI that ends as `resource temporarily unavailable`
 	// (Instabox) or a run that never finishes (GitHub). Skip it and fall back
 	// to an installed harness, or skip the health check entirely.
-	if exe, err := os.Executable(); err == nil && exe != "" && !isTestBinary(exe) {
+	// testing.Testing() also catches a test binary built without the `.test`
+	// suffix (`go test -c -o name`), which isTestBinary cannot see.
+	if exe, err := os.Executable(); err == nil && exe != "" && !isTestBinary(exe) && !testing.Testing() {
 		return exe, nil
 	}
 	if root := os.Getenv("CLAUDE_PLUGIN_ROOT"); root != "" {
