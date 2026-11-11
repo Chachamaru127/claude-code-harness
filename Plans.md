@@ -503,7 +503,7 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 
 **承認元**: 2026-11-10 本人「$team-R 承認します、完走させて」。対象は `docs/reports/2026-11-09-go-ci-research/index.html` の推奨案。
 **目的**: 全53パッケージのGoテストを毎回のPRで実行できる形にし、その結果を必須チェックへつなぐ。
-**結論**: 分割と実行基盤は作れたが、`internal/session` を含む shard が CI の2環境のどちらでも完走しないため、全 suite を必須チェックにはできない。必須チェックは従来の「変更パッケージ＋core」に戻し、全 suite は記録用の非ブロッキングにした。
+**結論**: 分割と実行基盤を作り、`internal/session` が CI で完走しなかった原因（テストバイナリを harness として起動していた再帰）を特定して修正した。2026-11-11 に全 suite が Instabox で完走したため、必須チェック `test-go` を全パッケージの合否へ戻した。
 
 | ID | Task | DoD | Status |
 |----|------|-----|--------|
@@ -511,11 +511,13 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 | 152.2 | `[lane:gate]` `[tdd:required]` 分割の実装 | `tests/go-test-shard.sh` の assign/run/verify、割当の契約テスト、workflow の2分割 | cc:done [ローカルで `bash tests/test-go-test-shard.sh` PASS、shellcheck 終了0、actionlint 終了0] |
 | 152.3 | `[lane:gate]` `[tdd:skip:ci-readback]` 2環境での実測 | Instabox と GitHub の両方で shard の結果と所要時間を記録 | cc:done [Instabox: 84秒と79秒で成功した回がある一方、session を含む shard は `fork/exec /usr/bin/git: resource temporarily unavailable` を同じテスト・同じ秒数で再現。GitHub: shard 2 は97秒で成功、shard 1 は30分を超えて完走せず。artifact にパッケージ単位のログと秒数を保存] |
 | 152.4 | `[lane:release]` `[tdd:skip:ci-gate]` 必須チェックの確定 | 全 suite を非ブロッキングにし、必須チェックを限定 suite へ戻す | cc:done [go-test-full は artifact 付きの記録用、test-go は format・build・vet・変更パッケージ＋core。既存の必須チェック名は維持] |
+| 152.5 | `[lane:gate]` `[tdd:required]` 原因の特定と修正 | テストバイナリを harness として起動しない、回帰試験、ローカルで完走 | cc:done [PR #412。`resolveHarnessBinary` が `*.test` と `*.test.exe` を除外し、見つからない場合は health check をスキップ。`TestResolveHarnessBinary_SkipsTestBinary` と `TestIsTestBinary` を追加。session パッケージは 78秒から34秒へ短縮し、4つのバイナリを再生成] |
+| 152.6 | `[lane:release]` `[tdd:skip:ci-readback]` 全 suite を必須へ戻す | 2 shard が success、割当検証が success、必須3件が success | cc:done [PR #412 の CI で go-test-full 1/2 が66秒、2/2 が109秒で成功。shard 1 の artifact は26件・合計38秒・失敗0。test-go は shard の成功と `go list ./...` の一致を要求する形へ変更] |
 
 **残るリスク / 次の作業 (2026-11-10)**:
-- `internal/session` は CI 環境で完走しない。1テストごとに `git init` / `commit` / `checkout` を実行するため、遅い環境で時間とプロセスを消費する。テスト側の改善（リポジトリの共有、git 呼び出しの削減）を別 Issue にする。
+- `internal/session` の CI 失敗は修正済み。同じ形の再帰（テストが別のテストバイナリや自分自身を harness として起動する経路）が他に残っていないかは未確認（Issue #411）。
 - Instabox のランナーが結果を返さず、ジョブが保留のまま残る事象が 2026-11-10 に複数回あった。ジョブ上限で打ち切り、必須チェックは Instabox に依存させない。
-- 全 suite を必須へ戻す条件: session を含む shard が Instabox と GitHub の両方で5分以内に完走し、artifact が揃うこと。
+- 必須へ戻した後の条件: Instabox の2 shard が5分以内に完走し、artifact が揃うこと。GitHub では修正後に再測していない。Instabox が結果を返さない回は再実行で対応し、続くようなら runner の診断へ回す。
 - パッケージ単位の外側上限は 480秒。session の実測（8GBの箱で347秒）を下回らない値にしている。
 
 **原因と修正 (2026-11-11)**: `internal/session` の `resolveHarnessBinary()` が `os.Executable()` を最優先で返していた。テスト実行時の実体は `session.test` なので、`mem health` のたびにテストバイナリを起動していた。Go のテストバイナリは位置引数を無視してテストを再実行するため、テストが自分自身を起動し続け、プロセスが枯渇した。CI の痕跡は Instabox の `fork/exec ... resource temporarily unavailable`、GitHub の未完走、終了時の `Terminate orphan process ... (session.test)` 11 件。テストバイナリを解決対象から外し、見つからない場合は health check をスキップするよう修正した。ローカルの session パッケージは 78秒から34秒へ短縮し、子プロセスの多重起動はなくなった。
