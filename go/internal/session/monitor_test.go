@@ -293,6 +293,45 @@ func TestMonitorHandler_WriteSummary(t *testing.T) {
 // 48.1.1: harness-mem health 検知テスト
 // ---------------------------------------------------------------------------
 
+// A `go test` binary must never be resolved as the harness. Executing it with
+// `mem health` re-enters the test suite, which on CI turned into unbounded
+// forking (Instabox) and a run that never finished (GitHub).
+func TestResolveHarnessBinary_SkipsTestBinary(t *testing.T) {
+	exe, err := os.Executable()
+	if err != nil {
+		t.Skipf("os.Executable: %v", err)
+	}
+	if !isTestBinary(exe) {
+		t.Skipf("not running from a test binary: %s", exe)
+	}
+
+	resolved, err := resolveHarnessBinary()
+	if err != nil {
+		// No installed harness: defaultMemHealthCheck skips the check.
+		return
+	}
+	if resolved == exe || isTestBinary(resolved) {
+		t.Fatalf("resolveHarnessBinary returned a test binary: %s", resolved)
+	}
+}
+
+func TestIsTestBinary(t *testing.T) {
+	cases := []struct {
+		path string
+		want bool
+	}{
+		{"/tmp/go-build123/b001/session.test", true},
+		{`C:\tmp\session.test.exe`, true},
+		{"/usr/local/bin/harness", false},
+		{"/usr/local/bin/harness.test.go", false},
+	}
+	for _, c := range cases {
+		if got := isTestBinary(c.path); got != c.want {
+			t.Errorf("isTestBinary(%q) = %v, want %v", c.path, got, c.want)
+		}
+	}
+}
+
 func TestMonitorHandler_HarnessMemHealthy(t *testing.T) {
 	dir := t.TempDir()
 	stateDir := filepath.Join(dir, "state")

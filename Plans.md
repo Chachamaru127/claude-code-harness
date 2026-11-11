@@ -517,3 +517,5 @@ Purpose: 追加依頼の公式 prompting guide を CCH の全 active prompt 面�
 - Instabox のランナーが結果を返さず、ジョブが保留のまま残る事象が 2026-11-10 に複数回あった。ジョブ上限で打ち切り、必須チェックは Instabox に依存させない。
 - 全 suite を必須へ戻す条件: session を含む shard が Instabox と GitHub の両方で5分以内に完走し、artifact が揃うこと。
 - パッケージ単位の外側上限は 480秒。session の実測（8GBの箱で347秒）を下回らない値にしている。
+
+**原因と修正 (2026-11-11)**: `internal/session` の `resolveHarnessBinary()` が `os.Executable()` を最優先で返していた。テスト実行時の実体は `session.test` なので、`mem health` のたびにテストバイナリを起動していた。Go のテストバイナリは位置引数を無視してテストを再実行するため、テストが自分自身を起動し続け、プロセスが枯渇した。CI の痕跡は Instabox の `fork/exec ... resource temporarily unavailable`、GitHub の未完走、終了時の `Terminate orphan process ... (session.test)` 11 件。テストバイナリを解決対象から外し、見つからない場合は health check をスキップするよう修正した。ローカルの session パッケージは 78秒から34秒へ短縮し、子プロセスの多重起動はなくなった。
