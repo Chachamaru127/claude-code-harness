@@ -573,7 +573,12 @@ func atoi(s string) int {
 // projectRoot/bin/harness は信頼境界外（repo 内に悪意ある binary が混入する
 // 可能性がある）のため解決対象に含めない。
 func resolveHarnessBinary() (string, error) {
-	if exe, err := os.Executable(); err == nil && exe != "" {
+	// A `go test` binary is not the harness. Executing it with `mem health`
+	// re-enters the test suite, and a test that runs the monitor then forks
+	// without bound: on CI that ends as `resource temporarily unavailable`
+	// (Instabox) or a run that never finishes (GitHub). Skip it and fall back
+	// to an installed harness, or skip the health check entirely.
+	if exe, err := os.Executable(); err == nil && exe != "" && !isTestBinary(exe) {
 		return exe, nil
 	}
 	if root := os.Getenv("CLAUDE_PLUGIN_ROOT"); root != "" {
@@ -586,6 +591,13 @@ func resolveHarnessBinary() (string, error) {
 		return lookPath, nil
 	}
 	return "", errors.New("harness binary not found")
+}
+
+// isTestBinary reports whether path is a `go test` binary (`*.test`,
+// `*.test.exe`).
+func isTestBinary(path string) bool {
+	base := filepath.Base(path)
+	return strings.HasSuffix(base, ".test") || strings.HasSuffix(base, ".test.exe")
 }
 
 // checkMemHealth は harness-mem のヘルスを検査する。
