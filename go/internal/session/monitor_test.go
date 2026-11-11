@@ -315,6 +315,17 @@ func TestResolveHarnessBinary_SkipsTestBinary(t *testing.T) {
 	}
 }
 
+func TestUsableAsHarness_RejectsEveryPathInTests(t *testing.T) {
+	if !testing.Testing() {
+		t.Skip("only meaningful inside a test binary")
+	}
+	for _, path := range []string{"/usr/local/bin/harness", "/tmp/session.test", "/tmp/renamed"} {
+		if usableAsHarness(path) {
+			t.Errorf("usableAsHarness(%q) = true inside a test binary", path)
+		}
+	}
+}
+
 func TestIsTestBinary(t *testing.T) {
 	cases := []struct {
 		path string

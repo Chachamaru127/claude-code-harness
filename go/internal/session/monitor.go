@@ -581,7 +581,7 @@ func resolveHarnessBinary() (string, error) {
 	// to an installed harness, or skip the health check entirely.
 	// testing.Testing() also catches a test binary built without the `.test`
 	// suffix (`go test -c -o name`), which isTestBinary cannot see.
-	if exe, err := os.Executable(); err == nil && exe != "" && !isTestBinary(exe) && !testing.Testing() {
+	if exe, err := os.Executable(); err == nil && exe != "" && usableAsHarness(exe) {
 		return exe, nil
 	}
 	if root := os.Getenv("CLAUDE_PLUGIN_ROOT"); root != "" {
@@ -594,6 +594,13 @@ func resolveHarnessBinary() (string, error) {
 		return lookPath, nil
 	}
 	return "", errors.New("harness binary not found")
+}
+
+// usableAsHarness reports whether path may be executed as the harness.
+// Inside a test binary every path is rejected: `testing.Testing()` is true even
+// when the binary was built without the `.test` suffix (`go test -c -o name`).
+func usableAsHarness(path string) bool {
+	return !isTestBinary(path) && !testing.Testing()
 }
 
 // isTestBinary reports whether path is a `go test` binary (`*.test`,
